@@ -270,6 +270,7 @@ ACMD(do_petitio);
 ACMD(do_namechange);
 ACMD(do_retire);
 ACMD(do_top);
+ACMD(do_grouproll);
 
 char *command[] = {
    "north", 		               /* 1 */
@@ -280,8 +281,8 @@ char *command[] = {
    "down",
    "enter",
    "exits",
-   "flee", 
-   "get",  
+   "flee",
+   "get",
    "drink", 		               /* 11 */
    "eat",
    "wear",
@@ -326,7 +327,7 @@ char *command[] = {
    "hit",
    "petitio",   /* string */
    "give",
-   "quit",       
+   "quit",
    "stat",
    "rank",          /* skillset */
    "time",
@@ -353,7 +354,7 @@ char *command[] = {
    "lock",
    "unlock",
    "leave",                             /* 81 */
-   "write", 
+   "write",
    "hold",
    "hold",      /* never used */        /* 84 */
    "sneak",
@@ -391,13 +392,13 @@ char *command[] = {
    "credits",
    "petition",  /* compact */
    "pracreset", /* display */
-   "poofin",    
-   "poofout",                          /* 121 */   
+   "poofin",
+   "poofout",                          /* 121 */
    "teleport",
    "gecho",
    "wiznet",    /* don't move */
    "search",    /* holylight */
-   "invis", 
+   "invis",
    "specialize",
    "set",
    "ungroup",
@@ -475,7 +476,7 @@ char *command[] = {
    "zone",                             /* 201 */
    "slay",
    "gather",
-   "will", 
+   "will",
    "prepare",
    "light",
    "blowout",
@@ -499,6 +500,7 @@ char *command[] = {
    "delete",
    "world",
    "top",
+   "groll",
    "\n"
 };
 
@@ -523,11 +525,11 @@ int
 search_block(char *arg, char **list, char exact)
 {
   register int i, l;
-  
+
   /* Make into lower case, and get length of string */
   for(l = 0; *(arg + l); l++)
     *(arg + l) = LOWER(*(arg + l));
-  
+
   if(exact) {
     for(i = 0; **(list + i) != '\n'; i++)
       if(!strcmp(arg, *(list + i)))
@@ -540,7 +542,7 @@ search_block(char *arg, char **list, char exact)
       if(!strncmp(arg, *(list + i), l))
 	return i;
   }
-  
+
   return -1;
 }
 
@@ -550,12 +552,12 @@ int
 old_search_block(char *argument, int begin, unsigned int length, char **list, int mode)
 {
   unsigned int	guess, found, search;
-  
+
   /* If the word contain 0 letters, then a match is already found */
   found = (length < 1);
-  
+
   guess = 0;
-  
+
   /* Search for a match */
   if(mode)
     while(!found && *(list[guess]) != '\n') {
@@ -572,7 +574,7 @@ old_search_block(char *argument, int begin, unsigned int length, char **list, in
       guess++;
     }
   }
-  
+
   if(found)
     return guess;
   else
@@ -667,7 +669,7 @@ report_wrong_target(struct char_data *ch, int mask, char has_arg)
 		 ch);
     return;
   }
-  
+
   /* first, some argument exists. */
   if (has_arg) {
     if (IS_SET(mask, TAR_TEXT)) {
@@ -675,17 +677,17 @@ report_wrong_target(struct char_data *ch, int mask, char has_arg)
       return;
     }
 
-    if (IS_SET(mask, TAR_ALL)) {      
+    if (IS_SET(mask, TAR_ALL)) {
       send_to_char("You need to do this to \"all\"\n\r", ch);
       return;
     }
     /* recognizing gold - lame, but who cares */
-    
+
     if (IS_SET(mask, TAR_CHAR_WORLD)) {
       send_to_char("Nobody by that name.\n\r", ch);
       return;
     }
-    
+
     if (IS_SET(mask, TAR_CHAR_ROOM)) {
       send_to_char("Nobody here by that name.\n\r",ch);
       return;
@@ -720,7 +722,7 @@ report_wrong_target(struct char_data *ch, int mask, char has_arg)
       send_to_char("You can do that with money only.\n\r", ch);
       return;
     }
-    
+
     if (IS_SET(mask, TAR_DIR_NAME)) {
       send_to_char("Nothing here by that name.\n\r", ch);
       return;
@@ -782,10 +784,10 @@ target_check_one(struct char_data *ch, int mask, struct target_data *t1)
   if(t1->type == TARGET_OTHER || t1->type == TARGET_VALUE ||
      t1->type == TARGET_IGNORE)
     return 1;
-  
-  if(IS_SET(mask, TAR_IGNORE)) 
+
+  if(IS_SET(mask, TAR_IGNORE))
     return TAR_IGNORE;
-  
+
   if(t1->type == TARGET_NONE) {
     if(IS_SET(mask,TAR_NONE_OK))
       return TAR_NONE_OK;
@@ -793,37 +795,37 @@ target_check_one(struct char_data *ch, int mask, struct target_data *t1)
       return TAR_IGNORE;
     return 0;
   }
-  
+
   if(t1->type == TARGET_CHAR) {
     if(!char_exists(t1->ch_num))
       return 0;
-    if(IS_SET(mask, TAR_SELF_NONO) && (t1->ptr.ch == ch)) 
+    if(IS_SET(mask, TAR_SELF_NONO) && (t1->ptr.ch == ch))
       return 0;
-    
+
     if(IS_SET(mask, TAR_SELF_ONLY) && (t1->ptr.ch == ch))
       return TAR_SELF_ONLY;
-    if(IS_SET(mask, TAR_SELF) && (t1->ptr.ch == ch)) 
+    if(IS_SET(mask, TAR_SELF) && (t1->ptr.ch == ch))
       return TAR_SELF;
-    
+
     if(IS_SET(mask, TAR_FIGHT_VICT) && (t1->ptr.ch == ch->specials.fighting)
        && (t1->ptr.ch->in_room == ch->in_room))
       return TAR_FIGHT_VICT;
-    
-    if(!CAN_SEE(ch, t1->ptr.ch, (IS_SET(mask, TAR_DARK_OK))?1:0) && 
+
+    if(!CAN_SEE(ch, t1->ptr.ch, (IS_SET(mask, TAR_DARK_OK))?1:0) &&
        (t1->ptr.ch != ch))
       return 0;
 
     if(IS_SET(mask, TAR_CHAR_ROOM) && (t1->ptr.ch->in_room == ch->in_room))
       return TAR_CHAR_ROOM;
-    
-    if(IS_SET(mask, TAR_CHAR_WORLD)) 
+
+    if(IS_SET(mask, TAR_CHAR_WORLD))
       return TAR_CHAR_WORLD;
 
     return 0;
   }
 
   if(t1->type == TARGET_OBJ) {
-    if(!t1->ptr.obj) 
+    if(!t1->ptr.obj)
       return 0;
 
     if(IS_SET(mask, TAR_OBJ_ROOM) && (t1->ptr.obj->in_room == ch->in_room))
@@ -832,24 +834,24 @@ target_check_one(struct char_data *ch, int mask, struct target_data *t1)
       for(tmp = 0; tmp < MAX_WEAR; tmp++)
 	if(ch->equipment[tmp] == t1->ptr.obj)
 	  return TAR_OBJ_EQUIP;
-    }      
+    }
     if(IS_SET(mask, TAR_OBJ_INV) && (t1->ptr.obj->carried_by == ch))
       return TAR_OBJ_INV;
-    
-    if(IS_SET(mask, TAR_OBJ_WORLD)) 
+
+    if(IS_SET(mask, TAR_OBJ_WORLD))
       return TAR_OBJ_WORLD;
-    
+
     return 0;
   }
   if(t1->type == TARGET_TEXT) {
     if(!t1->ptr.text)
       return 0;
 
-    if(IS_SET(mask, TAR_TEXT)) 
+    if(IS_SET(mask, TAR_TEXT))
       return TAR_TEXT;
     if(IS_SET(mask, TAR_TEXT_ALL))
       return TAR_TEXT_ALL;
-    
+
     return 0;
   }
   if((t1->type == TARGET_OTHER) ||
@@ -868,9 +870,9 @@ target_check_one(struct char_data *ch, int mask, struct target_data *t1)
 char *
 target_from_word(struct char_data *ch, char *argument, int mask, struct target_data *t1)
   /*
-   * This one tries to take a target from argument string. 
+   * This one tries to take a target from argument string.
    * Possible targets are determined from the mask argument.
-   * Returns the target in t1 and the remaining string as return value 
+   * Returns the target in t1 and the remaining string as return value
    */
 {
   int tmp, arg_i, tmpvalue;
@@ -879,16 +881,16 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
   struct obj_data *tmpobj;
 
   /***************************************************
-    Okay, here we parse the argument line for two targets, if they are 
+    Okay, here we parse the argument line for two targets, if they are
     there. Priority is, from the highest.
     For no argument:
     TAR_NONE_OK, TARGET_IGNORE
     TAR_FIGHT_VICT
     TAR_SELF, TARGET_SELF_ONLY
 
-    For some argument:    
+    For some argument:
     TAR_TEXT_ALL - sends the whole line as a text argument, as for narrate.
-    TAR_TEXT    
+    TAR_TEXT
     TARGET_ALL
     TAR_GOLD
     TAR_CHAR_ROOM
@@ -902,7 +904,7 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
     **************************************************/
 
   arg_i = 0;
-  while(argument[arg_i] && (argument[arg_i]<=' ')) 
+  while(argument[arg_i] && (argument[arg_i]<=' '))
     arg_i++;
   t1->ptr.other = 0;
   t1->type = TARGET_NONE;
@@ -917,10 +919,10 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
     return argument+strlen(argument);
   }
 
-  if(IS_SET(mask, TAR_IGNORE)) 
+  if(IS_SET(mask, TAR_IGNORE))
     return argument + arg_i;
-  
-  if(!argument[arg_i]) {    
+
+  if(!argument[arg_i]) {
     if(IS_SET(mask, TAR_NONE_OK))
       return argument+arg_i;
     else if(IS_SET(mask, TAR_FIGHT_VICT) &&(ch->specials.fighting)) {
@@ -929,7 +931,7 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
       t1->type = TARGET_CHAR;
       t1->choice = TAR_FIGHT_VICT;
       return argument+arg_i;
-    } 
+    }
     else if(IS_SET(mask, TAR_SELF) || IS_SET(mask, TAR_SELF_ONLY)) {
       t1->ptr.ch = ch;
       t1->ch_num = ch->abs_number;
@@ -956,22 +958,22 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
   }
 
   if(argument[arg_i] == '\'') {
-    for(tmp = 0, arg_i++; argument[arg_i] && (argument[arg_i] != '\''); 
+    for(tmp = 0, arg_i++; argument[arg_i] && (argument[arg_i] != '\'');
 	tmp++, arg_i++)
       word[tmp] = argument[arg_i];
     word[tmp] = 0;
 
     if(argument[arg_i] == '\'')
       arg_i++;
-  } 
+  }
   else {
-    for(tmp = 0; argument[arg_i] && (argument[arg_i] > ' '); 
+    for(tmp = 0; argument[arg_i] && (argument[arg_i] > ' ');
 	tmp++, arg_i++)
       word[tmp] = argument[arg_i];
     word[tmp] = 0;
   }
 
-  
+
   if(IS_SET(mask, TAR_TEXT)) {
     t1->ptr.text = get_from_txt_block_pool();
     strcpy(GET_TARGET_TEXT(t1),word);
@@ -980,23 +982,23 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
     return argument + arg_i;
   }
   if(IS_SET(mask, TAR_ALL) && !strcmp(word, "all")) {
-    t1->type = TARGET_ALL; t1->ch_num = 0; 
+    t1->type = TARGET_ALL; t1->ch_num = 0;
     t1->choice = TAR_ALL;
     return argument + arg_i;
   }
   /* recognizing gold. lame */
-  if(IS_SET(mask, TAR_GOLD) && tmpvalue && !strcmp(word, "gold")) {      
-    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue * COPP_IN_GOLD; 
+  if(IS_SET(mask, TAR_GOLD) && tmpvalue && !strcmp(word, "gold")) {
+    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue * COPP_IN_GOLD;
     t1->choice = TAR_GOLD;
     return argument + arg_i;
   }
   if(IS_SET(mask, TAR_GOLD) && tmpvalue && !strcmp(word, "silver")) {
-    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue * COPP_IN_SILV; 
+    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue * COPP_IN_SILV;
     t1->choice = TAR_GOLD;
     return argument + arg_i;
   }
   if(IS_SET(mask, TAR_GOLD) && tmpvalue && !strcmp(word, "copper")) {
-    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue; 
+    t1->type = TARGET_GOLD; t1->ch_num = tmpvalue;
     t1->choice = TAR_GOLD;
     return argument + arg_i;
   }
@@ -1047,7 +1049,7 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
 	t1->ch_num = 0;
 	t1->type = TARGET_OBJ;
 	t1->choice = TAR_OBJ_EQUIP;
-	return argument + arg_i;	
+	return argument + arg_i;
       }
   }
   if(IS_SET(mask, TAR_OBJ_WORLD)) {
@@ -1089,7 +1091,7 @@ target_from_word(struct char_data *ch, char *argument, int mask, struct target_d
   /* wrong target */
   return 0;
 }
-  
+
 
 
 int
@@ -1098,21 +1100,21 @@ target_check(struct char_data *ch, int cmd, struct target_data *t1,
 {
   struct command_info *this_command;
   int tmp, tc, res, last_tc, check, last_check;
-  
+
   this_command = &cmd_info[cmd];
   last_check = last_tc = check = res = 0;
-  
+
   for (tc = 0; tc < 32; tc++) {
     if (cmd_info[cmd].target_mask[tc]) {
       check = target_check_one(ch, 1 << tc, t1);
-      
+
       if (check) {
 	res = target_check_one(ch, cmd_info[cmd].target_mask[tc], t2) != 0;
 	last_check = check;
 	last_tc = tc;
-      } else 
+      } else
 	res = 0;
-      
+
       if (res)
 	return 1;
     }
@@ -1120,15 +1122,15 @@ target_check(struct char_data *ch, int cmd, struct target_data *t1,
 
   if (!last_check) {   /* couldn't parse the first argument */
     for (tc = 0, tmp = 0; tc < 32; tc++)
-      if (cmd_info[cmd].target_mask[tc]) 
+      if (cmd_info[cmd].target_mask[tc])
 	tmp |= 1 << tc;
 
-    if (t1->type != TARGET_OTHER) 
+    if (t1->type != TARGET_OTHER)
       tmp = t1->choice;
 
-    report_wrong_target(ch, tmp, (t1->type == TARGET_NONE) ? 0 : 1);    
+    report_wrong_target(ch, tmp, (t1->type == TARGET_NONE) ? 0 : 1);
   } else {
-    if (t2->type != TARGET_OTHER) 
+    if (t2->type != TARGET_OTHER)
       tmp = t2->choice;
     else
       tmp = cmd_info[cmd].target_mask[last_tc];
@@ -1142,7 +1144,7 @@ target_check(struct char_data *ch, int cmd, struct target_data *t1,
 
 
 int
-target_parser(struct char_data *ch, int cmd, char *argument, 
+target_parser(struct char_data *ch, int cmd, char *argument,
 	      struct target_data *t1, struct target_data *t2)
 {
   struct command_info *this_command;
@@ -1154,24 +1156,24 @@ target_parser(struct char_data *ch, int cmd, char *argument,
   t1->ptr.other = 0;
   t1->type = TARGET_NONE;
   t1->ch_num = 0;
-  t2->ptr.other = 0; 
+  t2->ptr.other = 0;
   t2->type = TARGET_NONE;
   t2->ch_num = 0;
-  
+
   /** Selecting TARGET1  **/
   target_modif = 0;
   newarg = last_newarg = NULL;
-  
-  if(cmd_info[cmd].target_mask[20]) 
+
+  if(cmd_info[cmd].target_mask[20])
     target_modif = TAR_DARK_OK;
-  if(cmd_info[cmd].target_mask[21]) 
+  if(cmd_info[cmd].target_mask[21])
     target_modif |= TAR_IN_OTHER;
   for(tc = 0; tc < 32; tc++)
     if(cmd_info[cmd].target_mask[tc]) {
       newarg = target_from_word(ch, argument, (1<<tc) | target_modif, t1);
-      
+
       if(newarg) {
-	res = 
+	res =
 	  (target_from_word(ch, newarg, cmd_info[cmd].target_mask[tc], t2) != 0);
 	last_newarg = newarg;
 	last_tc = tc;
@@ -1183,14 +1185,14 @@ target_parser(struct char_data *ch, int cmd, char *argument,
 	return 1;
     }
   if(!last_newarg) { /* could not parse the first argument */
-    while(*argument && (*argument <= ' ')) 
+    while(*argument && (*argument <= ' '))
       argument++;
     for(tc = 0, tmp=0; tc < 32; tc++)
       if(cmd_info[cmd].target_mask[tc]) tmp |= (1<<tc);
     report_wrong_target(ch,tmp, (*argument) ? 1 : 0);
   }
   else
-    report_wrong_target(ch, cmd_info[cmd].target_mask[last_tc], 
+    report_wrong_target(ch, cmd_info[cmd].target_mask[last_tc],
 			(*last_newarg)?1:0);
   return 0;
 }
@@ -1203,10 +1205,10 @@ replace_aliases(struct char_data *ch, char *line)
   char new_line[MAX_INPUT_LENGTH*2];
   int begin, tmp;
   struct alias_list *list;
-  
+
   for(begin = 0 ; (*(line + begin ) == ' ' ) ; begin++);
   new_line[0] = 0;
-  
+
   if(ch->specials.alias) {
     for(list = ch->specials.alias; list; list = list->next) {
       tmp=strlen(list->keyword);
@@ -1219,7 +1221,7 @@ replace_aliases(struct char_data *ch, char *line)
       begin += strlen(list->keyword);
     }
   }
-  
+
   strcat(new_line, line + begin);
   new_line[MAX_INPUT_LENGTH-1] = 0;
   strcpy(line, new_line);
@@ -1235,12 +1237,12 @@ command_interpreter(struct char_data *ch, char *argument_chr,
   char argument[MAX_INPUT_LENGTH];
   char local_buf[MAX_INPUT_LENGTH];
   char *argument_raw = "";
-  struct waiting_type *argument_info, interp_argument_info;   
+  struct waiting_type *argument_info, interp_argument_info;
   extern int no_specials;
 
   bzero((char *) &interp_argument_info, sizeof(waiting_type));
   look_at = begin = mode = subcmd = 0;
-   
+
   /* should only happen if someone other than ch causes this function call */
   if(ch->delay.wait_value > 0) {
     send_to_char("You are busy with something else.\n\r", ch);
@@ -1263,24 +1265,24 @@ command_interpreter(struct char_data *ch, char *argument_chr,
     }
   }
 
-  
+
   /* there's nothing special going on with this guy */
   if(!mode) {
     bzero(argument, MAX_INPUT_LENGTH);
-    
+
     /* Find first non blank */
     for(begin = 0; (*(argument_raw + begin ) == ' ' ) ; begin++);
     strcpy(argument, argument_raw + begin);
     begin = 0;
-    
+
     /* Use do_shape level */
-    if((*(argument + begin) == '/') && 
-       (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) && 
+    if((*(argument + begin) == '/') &&
+       (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) &&
        !(RETIRED(ch))) {
       shape_center(ch, argument + begin + 1);
       return;
     }
-    
+
     /*
      * Already shaping.  Don't check for retirement.  If they're in here
      * somehow they have to be able to get out.
@@ -1290,7 +1292,7 @@ command_interpreter(struct char_data *ch, char *argument_chr,
       shape_center(ch, argument_raw);
       return;
     }
-     
+
     /* special checks required for shortcut tokenized commands */
     if(*(argument + begin) == '\'') {
       cmd = CMD_SAY;
@@ -1312,9 +1314,9 @@ command_interpreter(struct char_data *ch, char *argument_chr,
       return;
     else {
       /* get lower case letters and length */
-      for(look_at = 0; *(argument + begin + look_at ) > ' '; look_at++) 
+      for(look_at = 0; *(argument + begin + look_at ) > ' '; look_at++)
 	*(argument + begin + look_at) = LOWER(*(argument + begin + look_at));
-       
+
       cmd = old_search_block(argument, begin, look_at, command, 0);
     }
   }
@@ -1335,11 +1337,11 @@ command_interpreter(struct char_data *ch, char *argument_chr,
   /* lacking minimum level requirement */
   if(cmd > 0 && GET_LEVEL(ch) < cmd_info[cmd].minimum_level)
     cmd = -1;
-  
+
   /* retired players can't use this command */
   if(cmd > 0 && !cmd_info[cmd].retired_allowed && RETIRED(ch))
     cmd = -1;
-  
+
   if(cmd <= 0) {
     one_argument(argument + begin, local_buf);
     subcmd = find_action(local_buf);
@@ -1352,7 +1354,7 @@ command_interpreter(struct char_data *ch, char *argument_chr,
     send_to_char("Unrecognized command.\n\r",ch);
     return;
   }
-  
+
   /*
    * unhide hiders; commands with CMD_MASK_NO_UNHIDE shouldn't
    * unhide people.  If someone snuck into a room (and therefore
@@ -1367,19 +1369,19 @@ command_interpreter(struct char_data *ch, char *argument_chr,
    */
   if(cmd_info[cmd].minimum_position > POSITION_SLEEPING)
     if(!IS_SET(cmd_info[cmd].mask, CMD_MASK_NO_UNHIDE) &&
-       !(cmd == CMD_HIDE && 
+       !(cmd == CMD_HIDE &&
 	 IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-       !((cmd == CMD_PRACTICE || cmd == CMD_PRACTISE) && 
+       !((cmd == CMD_PRACTICE || cmd == CMD_PRACTISE) &&
 	!*(argument + begin + look_at)))
       stop_hiding(ch, TRUE);
-  
+
   /* is ch frozen? imps can't be frozen.. */
   if(!IS_NPC(ch) && PLR_FLAGGED(ch, PLR_FROZEN) &&
      GET_LEVEL(ch) < LEVEL_IMPL) {
     send_to_char("You try, but are restrained and cannot move...\n\r", ch);
     return;
   }
-  
+
   /* now we execute the function */
   if(cmd > 0 && (cmd_info[cmd].command_pointer)) {
     /* are we in the right position? */
@@ -1390,7 +1392,7 @@ command_interpreter(struct char_data *ch, char *argument_chr,
       if(!mode) {   /* Parse the target into ch->delay */
 	argument_info->wait_value = 0;
 	argument_info->cmd = cmd;
-	argument_info->subcmd = (cmd == CMD_SOCIAL) ? subcmd : 
+	argument_info->subcmd = (cmd == CMD_SOCIAL) ? subcmd :
 	  cmd_info[cmd].subcmd;
 	may_not_perform = target_parser(ch, cmd, argument + begin + look_at,
 					&argument_info->targ1,
@@ -1407,16 +1409,16 @@ command_interpreter(struct char_data *ch, char *argument_chr,
 	  may_not_perform = 1;
       }
 
-      /* 
+      /*
        * if the command has a target of TAR_CHAR_ROOM, a
        * move penalty applies.  this is to keep people from
        * spamming things like 'kill uruk' or 'pat uruk'
        */
 
-      if(!may_not_perform) {	
+      if(!may_not_perform) {
 	/* execute the command */
 	((*cmd_info[cmd].command_pointer)
-	 (ch, argument + begin + look_at, argument_info, cmd, 
+	 (ch, argument + begin + look_at, argument_info, cmd,
 	  mode ? subcmd : cmd_info[cmd].subcmd));
       }
     }
@@ -1426,7 +1428,7 @@ command_interpreter(struct char_data *ch, char *argument_chr,
     }
     return;
   }
-  
+
   if(cmd > 0 && (cmd_info[cmd].command_pointer == 0))
     send_to_char("Sorry, but that command has yet to be implemented...\n\r", ch);
   else
@@ -1459,12 +1461,12 @@ argument_interpreter(char *argument, char *first_arg, char *second_arg )
   do {
     /* Find first non blank */
     for( ; *(argument + begin ) == ' ' ; begin++);
-    
+
     /* Find length of first word */
     for(look_at = 0; *(argument + begin + look_at) > ' ' ; look_at++)
       /* Make all letters lower case, AND copy them to second_arg */
       *(second_arg + look_at) = LOWER(*(argument + begin + look_at));
-    
+
     *(second_arg + look_at) = '\0';
     begin += look_at;
   } while (fill_word(second_arg));
@@ -1479,7 +1481,7 @@ is_number(char *str)
 
   if(*str == '\0')
     return(0);
-  
+
   for(look_at = 0; *(str + look_at) != '\0'; look_at++)
     if((*(str + look_at) < '0') || (*(str + look_at) > '9'))
       return 0;
@@ -1497,9 +1499,9 @@ char
    */
 {
   int found, begin, look_at;
-  
+
   found = begin = 0;
-  
+
   do {
     /* Find first non blank */
     for( ; isspace(*(argument + begin)); begin++);
@@ -1510,8 +1512,8 @@ char
       for(look_at = 0; *(argument + begin + look_at) &&
 	    (*(argument + begin + look_at) != '\''); look_at++)
 	*(first_arg + look_at) = LOWER(*(argument + begin + look_at));
-      
-      if(*(argument + begin + look_at) == '\'') 
+
+      if(*(argument + begin + look_at) == '\'')
 	look_at++;
     }
     else {
@@ -1522,7 +1524,7 @@ char
     *(first_arg + look_at) = '\0';
     begin += look_at;
   } while (fill_word(first_arg));
-  
+
   return(argument + begin);
 }
 
@@ -1542,11 +1544,11 @@ is_abbrev(char *arg1, char *arg2)
 {
   if(!*arg1)
     return(0);
-  
+
   for(; *arg1; arg1++, arg2++)
     if(LOWER(*arg1) != LOWER(*arg2))
       return(0);
-  
+
   return(1);
 }
 
@@ -1557,19 +1559,19 @@ void
 half_chop(char *string, char *arg1, char *arg2)
 {
   for(; isspace(*string); string++);
-  
+
   if(*string == '\'') {
     for(string++; (*string != '\'') && *string; string++, arg1++)
       *arg1 = *string;
-    
+
     if(*string == '\'') string++;
   }
   else
     for(; !isspace(*string) && *string; string++, arg1++)
       *arg1 = *string;
-  
+
   *arg1 = '\0';
-  
+
   for(; isspace(*string); string++);
 
   for(; (*arg2 = *string); string++, arg2++);
@@ -1580,7 +1582,7 @@ half_chop(char *string, char *arg1, char *arg2)
 
 void *virt_program_number(int);
 
-int 
+int
 activate_char_special(struct char_data *k, struct char_data *ch, int cmd,
 		      char *arg, int callflag, struct waiting_type *wtl,
 		      int in_room)
@@ -1622,25 +1624,25 @@ activate_obj_special(struct obj_data *host, struct char_data *ch, int cmd,
 		     char *arg, int callflag, struct waiting_type *wtl)
 {
   SPECIAL(*tmpfunc);
-  
+
   if((void *)(obj_index[host->item_number].func)){
     if((*obj_index[host->item_number].func)
        ((struct char_data *)(host), ch, cmd, arg, callflag, wtl))
       return 1;
-  } 
+  }
   else
     if(host->obj_flags.prog_number) {
       tmpfunc = (SPECIAL(*)) virt_obj_program_number(host->obj_flags.prog_number);
       if(tmpfunc((char_data *)(host), ch, cmd, arg, callflag, wtl))
 	return 1;
-    } 
+    }
   return 0;
 }
 
 
 
 int
-special(struct char_data *ch, int cmd, char *arg, int callflag, 
+special(struct char_data *ch, int cmd, char *arg, int callflag,
 	struct waiting_type * wtl, int in_room)
 {
   register struct obj_data *i;
@@ -1648,7 +1650,7 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
   int j, remote_mode;
   struct char_data *tmpch;
 
-  if(in_room != ch->in_room) 
+  if(in_room != ch->in_room)
     remote_mode = 1;
   else
     remote_mode = 0;
@@ -1657,20 +1659,20 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
     in_room = ch->in_room;
     remote_mode = 0;
   }
-  
-  if(in_room == NOWHERE) 
+
+  if(in_room == NOWHERE)
     return FALSE;
-  
+
   if(callflag == SPECIAL_DEATH) {
     /* in this case, specials are called on ch itself */
-    if(activate_char_special(ch, ch, cmd, arg, callflag,wtl,in_room)) 
+    if(activate_char_special(ch, ch, cmd, arg, callflag,wtl,in_room))
       return 1;
     return 0;
   }
 
   if((callflag == SPECIAL_TARGET) ||
      (callflag == SPECIAL_DAMAGE)) { /* instead of room, checking targets */
-    if(!wtl) 
+    if(!wtl)
       return 0;
 
     switch(wtl->targ1.type) {
@@ -1687,18 +1689,18 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
 	break;
       if((void *)(obj_index[wtl->targ1.ptr.obj->item_number].func))
 	if((*obj_index[wtl->targ1.ptr.obj->item_number].func)
-	   (wtl->targ1.ptr.ch, ch, cmd, arg, callflag,wtl)) 
+	   (wtl->targ1.ptr.ch, ch, cmd, arg, callflag,wtl))
 	  return 1;
       break;
 
      case TARGET_CHAR:
        tmpch = wtl->targ1.ptr.ch;
        if(!char_exists(wtl->targ1.ch_num)) break;
-       if(activate_char_special(tmpch, ch, cmd, arg, callflag,wtl,in_room)) 
+       if(activate_char_special(tmpch, ch, cmd, arg, callflag,wtl,in_room))
 	 return 1;
        break;
     }
-    
+
     switch(wtl->targ2.type) {
     case TARGET_ROOM:
       if(!wtl->targ2.ptr.room) break;
@@ -1708,7 +1710,7 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
       break;
 
     case TARGET_OBJ:
-      if(wtl->targ2.ptr.obj->item_number < 0) 
+      if(wtl->targ2.ptr.obj->item_number < 0)
 	break;
       if((void *)(obj_index[wtl->targ2.ptr.obj->item_number].func))
 	if((*obj_index[wtl->targ2.ptr.obj->item_number].func)
@@ -1720,37 +1722,37 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
       tmpch = wtl->targ2.ptr.ch;
       if(!char_exists(wtl->targ2.ch_num))
 	break;
-      if(activate_char_special(tmpch, ch, cmd, arg, callflag,wtl,in_room)) 
+      if(activate_char_special(tmpch, ch, cmd, arg, callflag,wtl,in_room))
 	return 1;
       break;
     }
     return 0;
   }
-  
+
   /* special in room? */
   if((void *) (world[in_room].funct))
     if((*world[in_room].funct)(ch, ch, cmd, arg, callflag, 0))
       return(1);
-  
+
   if(!remote_mode) {
     /* special in equipment list? */
     for(j = 0; j <= (MAX_WEAR - 1); j++)
       if(ch->equipment[j] && ch->equipment[j]->item_number >= 0)
 	if(activate_obj_special(ch->equipment[j], ch, cmd, arg, callflag, wtl))
 	  return(1);
-    
+
     /* special in inventory? */
     for(i = ch->carrying; i; i = i->next_content)
       if(i->item_number >= 0)
 	if(activate_obj_special(i, ch, cmd, arg, callflag, wtl))
 	  return 1;
   }
-  
+
   /* special in mobile present? */
   for (k = world[in_room].people; k; k = k->next_in_room)
     if(activate_char_special(k, ch, cmd, arg, callflag,wtl,in_room))
       return 1;
-  
+
   /* special in object present? */
   for(i = world[in_room].contents; i; i = i->next_content)
     if(i->item_number >= 0)
@@ -1758,7 +1760,7 @@ special(struct char_data *ch, int cmd, char *arg, int callflag,
 	if((*obj_index[i->item_number].func)((struct char_data *)(i), ch,
 					     cmd, arg, callflag,wtl))
 	  return 1;
-  
+
   return 0;
 }
 
@@ -1768,10 +1770,10 @@ void
 assign_command_pointers(void)
 {
   int position;
-  
+
   for(position = 0 ; position < MAX_CMD_LIST; position++)
     cmd_info[position].command_pointer = 0;
-  
+
   COMMANDO(1,   POSITION_STANDING, do_move,      0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(2,   POSITION_STANDING, do_move,      0, TRUE, 0,
@@ -1848,7 +1850,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(38,  POSITION_STANDING, do_not_here,  0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(39,  POSITION_STANDING, do_not_here,  0, TRUE, 0, 
+  COMMANDO(39,  POSITION_STANDING, do_not_here,  0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(40,  POSITION_STANDING, do_not_here,  0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -1925,7 +1927,7 @@ assign_command_pointers(void)
   COMMANDO(76,  POSITION_DEAD,     do_advance,   LEVEL_GOD+2, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
 
-  COMMANDO(77,  POSITION_SITTING,  do_open,      0, TRUE, 0, 
+  COMMANDO(77,  POSITION_SITTING,  do_open,      0, TRUE, 0,
 	   TAR_OBJ_ROOM | TAR_OBJ_INV | TAR_OBJ_EQUIP , TAR_IGNORE, 0);
   ADD_TARGET(77, TAR_DIR_NAME, TAR_DIR_WAY | TAR_NONE_OK);
 
@@ -1933,7 +1935,7 @@ assign_command_pointers(void)
 	   TAR_OBJ_ROOM | TAR_OBJ_INV | TAR_OBJ_EQUIP , TAR_IGNORE, 0);
   ADD_TARGET(78, TAR_DIR_NAME, TAR_DIR_WAY | TAR_NONE_OK);
 
-  COMMANDO(79,  POSITION_SITTING,  do_lock,      0, TRUE, 0, 
+  COMMANDO(79,  POSITION_SITTING,  do_lock,      0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(80,  POSITION_SITTING,  do_unlock,    0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -1950,14 +1952,14 @@ assign_command_pointers(void)
   COMMANDO(86,  POSITION_STANDING, do_hide,      1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(87,  POSITION_STANDING, do_ambush,    1, TRUE, 0,
-	   TAR_CHAR_ROOM | TAR_TEXT | TAR_NONE_OK, TAR_IGNORE, 
+	   TAR_CHAR_ROOM | TAR_TEXT | TAR_NONE_OK, TAR_IGNORE,
 	   CMD_MASK_NO_UNHIDE);
   COMMANDO(88,  POSITION_STANDING, do_pick,      1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(89,  POSITION_STANDING, do_butcher,   0, TRUE, SCMD_SCALP,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(90,  POSITION_DEAD,     do_bash,      1, TRUE, 0,
-	   TAR_NONE_OK | TAR_CHAR_ROOM | TAR_FIGHT_VICT | TAR_DIR_NAME, 
+	   TAR_NONE_OK | TAR_CHAR_ROOM | TAR_FIGHT_VICT | TAR_DIR_NAME,
 	   TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
   COMMANDO(91,  POSITION_FIGHTING, do_rescue,    1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -1973,7 +1975,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(97,  POSITION_RESTING,  do_say,       0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(98,  POSITION_RESTING,  do_practice,  1, TRUE, 0, 
+  COMMANDO(98,  POSITION_RESTING,  do_practice,  1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(99,  POSITION_STANDING, do_use,       1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2009,7 +2011,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(117, POSITION_DEAD,     do_gen_ps,   0, TRUE, SCMD_CREDITS,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(118, POSITION_DEAD,     do_wiznet,   0, TRUE, 1, 
+  COMMANDO(118, POSITION_DEAD,     do_wiznet,   0, TRUE, 1,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(119, POSITION_DEAD,     do_pracreset, LEVEL_GRGOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2029,7 +2031,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(127, POSITION_DEAD,     do_specialize, 20, TRUE, 0,
 	   TAR_TEXT | TAR_NONE_OK, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
-  COMMANDO(128, POSITION_DEAD,     do_set,       0, TRUE, 0, 
+  COMMANDO(128, POSITION_DEAD,     do_set,       0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(129, POSITION_DEAD,     do_ungroup,   0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2053,7 +2055,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(139, POSITION_STANDING, do_not_here,  1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(140, POSITION_STANDING, do_not_here,  1, TRUE, 0, 
+  COMMANDO(140, POSITION_STANDING, do_not_here,  1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(141, POSITION_RESTING , do_not_here,  1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0); /* was visible - now can be reused */
@@ -2087,7 +2089,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(156, POSITION_RESTING,  do_register,  LEVEL_IMMORT, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(157, POSITION_DEAD,     do_vnum,      LEVEL_IMMORT, FALSE, 0, 
+  COMMANDO(157, POSITION_DEAD,     do_vnum,      LEVEL_IMMORT, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(158, POSITION_DEAD,     do_whois,     0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
@@ -2101,7 +2103,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(163, POSITION_DEAD,     do_unban,     LEVEL_AREAGOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(164, POSITION_DEAD,     do_date,      0, TRUE, 0, 
+  COMMANDO(164, POSITION_DEAD,     do_date,      0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(165, POSITION_DEAD,     do_zreset,    LEVEL_GOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2117,7 +2119,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(171, POSITION_DEAD,     do_board,      0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(172, POSITION_DEAD,     do_help,       0, TRUE, 1, 
+  COMMANDO(172, POSITION_DEAD,     do_help,       0, TRUE, 1,
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(173, POSITION_DEAD,     do_findzone,   LEVEL_IMMORT, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2153,7 +2155,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(190, POSITION_RESTING,  do_diagnose,  0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(191, POSITION_DEAD,     do_reload,    LEVEL_GRGOD, TRUE, 0, 
+  COMMANDO(191, POSITION_DEAD,     do_reload,    LEVEL_GRGOD, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(192, POSITION_DEAD,     do_syslog,    LEVEL_AREAGOD, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2171,7 +2173,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(200, POSITION_SHAPING,  do_shape,     LEVEL_IMMORT, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(201, POSITION_DEAD,     do_zone,      LEVEL_GOD, FALSE, 0, 
+  COMMANDO(201, POSITION_DEAD,     do_zone,      LEVEL_GOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(202, POSITION_FIGHTING, do_slay,      LEVEL_GOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2210,7 +2212,7 @@ assign_command_pointers(void)
   COMMANDO(219, POSITION_DEAD,     do_exploits,  0, TRUE, 0,
 	   TAR_IGNORE, TAR_IGNORE, 0);
   COMMANDO(220, POSITION_STANDING, do_trap,      1, TRUE, 0,
-	   TAR_TEXT | TAR_NONE_OK, TAR_CHAR_ROOM | TAR_NONE_OK, 
+	   TAR_TEXT | TAR_NONE_OK, TAR_CHAR_ROOM | TAR_NONE_OK,
 	   CMD_MASK_NO_UNHIDE);
   COMMANDO(224, POSITION_DEAD,     do_obj2html,  LEVEL_GRGOD, FALSE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2220,6 +2222,8 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, CMD_MASK_NO_UNHIDE);
   COMMANDO(227, POSITION_DEAD,     do_top,    0, TRUE, SCMD_TOP,
              FULL_TARGET, FULL_TARGET, 0);
+  COMMANDO(228, POSITION_RESTING,     do_grouproll,  0, TRUE, 0,
+     TAR_IGNORE, TAR_IGNORE, 0);
 }
 
 
@@ -2235,11 +2239,11 @@ find_name(char *name)
   /* locate entry in p_table with entry->name == name. -1 mrks failed search */
 {
   int i;
-  
+
   for(i = 0; i <= top_of_p_table; i++)
     if(!str_cmp((player_table + i)->name, name))
       return i;
-  
+
   return -1;
 }
 
@@ -2252,7 +2256,7 @@ _parse_name(char *arg, char *name)
 
   /* skip whitespaces */
   for(; isspace(*arg); arg++);
-  
+
   for(i = 0; (*name = *arg); arg++, i++, name++)
     if(!isalpha(*arg) || i > 15)
       return 1;
@@ -2293,24 +2297,24 @@ nanny(struct descriptor_data *d, char *arg)
       d->character->desc = d;
       SET_BIT(PRF_FLAGS(d->character), PRF_LATIN1);
     }
-    
+
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     /* blank input = we disconnect you */
     if (!*arg)
       close_socket(d);
-    
+
     if ((_parse_name(arg, tmp_name))) {
       SEND_TO_Q("Invalid name, please try another.\n\r", d);
       SEND_TO_Q("Name: ", d);
       return;
     }
-    
+
     if ((player_i = load_char(tmp_name, &tmp_store)) > -1) {
       d->pos = player_i;
       store_to_char(&tmp_store, d->character);
-     
+
       if (isbanned(d->host) > 0 &&
 	  !PLR_FLAGGED(d->character, PLR_SITEOK)) {
 	SEND_TO_Q("Sorry, your site has been banned.\r\n", d);
@@ -2337,25 +2341,25 @@ nanny(struct descriptor_data *d, char *arg)
       } else {
 	strncpy(d->pwd, tmp_store.pwd,MAX_PWD_LENGTH);
 	d->pwd[MAX_PWD_LENGTH] = 0;
-	
+
 	/* undo it just in case they are set */
 	REMOVE_BIT(PLR_FLAGS(d->character), PLR_WRITING | PLR_MAILING);
-	
+
 	SEND_TO_Q("Password: ", d);
 	echo_off(d->descriptor);
-	
+
 	STATE(d) = CON_PWDNRM;
       }
     } else {
       /* player unknown gotta make a new */
       d->pos = -1;
-      
+
       CREATE(d->character->player.name, char, strlen(tmp_name) + 1);
       CAP(tmp_name);
       strcpy(d->character->player.name, tmp_name);
       sprintf(buf, "\n\rNot found in the player database.\n\r"
 	      "A new character will be created if you enter 'Y'.\n\r"
-	      "Is %s a suitable name for roleplay in Middle-earth (Y/N)? ", 
+	      "Is %s a suitable name for roleplay in Middle-earth (Y/N)? ",
 	      tmp_name);
       SEND_TO_Q(buf, d);
       STATE(d) = CON_NMECNF;
@@ -2364,7 +2368,7 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_NMECNF: /* wait for conf. of new name */
     for (; isspace(*arg); arg++)
       continue;
-    
+
     if (is_abbrev(arg, "yes")) {
       /* they're banned */
       if(isbanned(d->host) >= BAN_NEW) {
@@ -2388,7 +2392,7 @@ nanny(struct descriptor_data *d, char *arg)
       }
 
       /* is joker trying to pull a dipshit name? */
-      if (fill_word(strcpy(buf,GET_NAME(d->character))) || 
+      if (fill_word(strcpy(buf,GET_NAME(d->character))) ||
 	 !valid_name(GET_NAME(d->character))) {
 	SEND_TO_Q("Illegal name, please try another: ", d);
 	RELEASE(GET_NAME(d->character));
@@ -2403,8 +2407,8 @@ nanny(struct descriptor_data *d, char *arg)
       SEND_TO_Q(buf, d);
       echo_off(d->descriptor);
       STATE(d) = CON_PWDGET;
-      
-      vmudlog(BRF, "%s [%s] has connected (new character).", 
+
+      vmudlog(BRF, "%s [%s] has connected (new character).",
 	      GET_NAME(d->character), d->host);
     } else if (is_abbrev(arg, "no")) {
       SEND_TO_Q("\n\rOk, what name would you like to use, then? ", d);
@@ -2417,10 +2421,10 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_PWDNRM:	/* get pwd for known player	*/
     /* turn echo back on */
     echo_on(d->descriptor);
-    
+
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (!*arg)
       close_socket(d);
     else {
@@ -2439,12 +2443,12 @@ nanny(struct descriptor_data *d, char *arg)
 	}
 	return;
       }
-      
+
       load_result = d->character->specials2.bad_pws;
       d->character->specials2.bad_pws = 0;
       save_char(d->character, d->character->specials2.load_room, 0);
-      
-      if (isbanned(d->host) == BAN_SELECT && 
+
+      if (isbanned(d->host) == BAN_SELECT &&
 	  !PLR_FLAGGED(d->character, PLR_SITEOK)) {
 	SEND_TO_Q("Sorry, this character has not been "
 		  "cleared for login from your site!\n\r", d);
@@ -2453,7 +2457,7 @@ nanny(struct descriptor_data *d, char *arg)
 		GET_NAME(d->character), d->host);
 	return;
       }
-      
+
       if (GET_LEVEL(d->character) < restrict) {
 	SEND_TO_Q("The game is temporarily restricted.\r\n"
 		  "Try again later.", d);
@@ -2464,7 +2468,7 @@ nanny(struct descriptor_data *d, char *arg)
 		GET_NAME(d->character), d->host);
 	return;
       }
-      
+
       /* first, check for switched characters */
       for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
 	if (IS_NPC(tmp_ch) && tmp_ch->desc && tmp_ch->desc->original &&
@@ -2484,17 +2488,17 @@ nanny(struct descriptor_data *d, char *arg)
 		  GET_NAME(d->character), d->host);
 	  return;
 	}
-      
+
       /* now check for linkless and usurpable */
       for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
-	if (!IS_NPC(tmp_ch) && 
+	if (!IS_NPC(tmp_ch) &&
 	    GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
 	  if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
 	    SEND_TO_Q("Reconnecting.\n\r", d);
 	    act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
-	    vmudlog(NRM, "%s [%s] has reconnected.", 
+	    vmudlog(NRM, "%s [%s] has reconnected.",
 		    GET_NAME(d->character), d->host);
-	    
+
 	    if (tmp_ch->desc) {
 	      tmp_ch->desc->character = 0;
 	      close_socket(tmp_ch->desc,TRUE);
@@ -2511,7 +2515,7 @@ nanny(struct descriptor_data *d, char *arg)
 		"$n's body has been taken over by a new spirit!",
 		TRUE, tmp_ch, 0, 0, TO_ROOM);
 	  }
-	  
+
 	  free_char(d->character);
 	  tmp_ch->desc = d;
 	  d->character = tmp_ch;
@@ -2520,15 +2524,15 @@ nanny(struct descriptor_data *d, char *arg)
 	  STATE(d) = CON_PLYNG;
 	  return;
 	}
-      
-      vmudlog(BRF, "%s [%s] has connected.", 
+
+      vmudlog(BRF, "%s [%s] has connected.",
 	      GET_NAME(d->character), d->host);
-      
+
       if (GET_LEVEL(d->character) >= LEVEL_IMMORT)
 	SEND_TO_Q(imotd, d);
       else
 	SEND_TO_Q(motd, d);
-      
+
       if (load_result) {
 	sprintf(buf, "\n\r\n\r"
 		"%s%d LOGIN FAILURE%s SINCE LAST SUCCESSFUL LOGIN.%s\n\r",
@@ -2536,7 +2540,7 @@ nanny(struct descriptor_data *d, char *arg)
 		(load_result > 1) ? "S" : "", CC_NORM(d->character));
 	SEND_TO_Q(buf, d);
       }
-      
+
       SEND_TO_Q(MENU, d);
       STATE(d) = CON_SLCT;
     }
@@ -2544,41 +2548,41 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_PWDGET:  /* get pwd for new player */
     for ( ; isspace(*arg); arg++)
       continue;
-    
-    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 || 
+
+    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
 	!str_cmp(arg, GET_NAME(d->character))) {
       SEND_TO_Q("\n\rIllegal password.\n\r", d);
       SEND_TO_Q("Password: ", d);
       return;
     }
-    
+
     strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
     *(d->pwd + MAX_PWD_LENGTH) = '\0';
-    
+
     SEND_TO_Q("Please retype your password: ", d);
     STATE(d) = CON_PWDCNF;
     break;
   case CON_PWDCNF:  /* get confirmation of new pwd */
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
       SEND_TO_Q("\n\rPasswords don't match... start over.\n\r", d);
       SEND_TO_Q("Password: ", d);
       STATE(d) = CON_PWDGET;
       return;
     }
-    
+
     /* turn echo back on */
     echo_on(d->descriptor);
-    
+
     SEND_TO_Q("What is your sex (M/F)? ", d);
     STATE(d) = CON_QSEX;
     break;
   case CON_QSEX:  /* query sex of new user */
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (is_abbrev(arg, "male"))
       d->character->player.sex = SEX_MALE;
     else if (is_abbrev(arg, "female"))
@@ -2588,7 +2592,7 @@ nanny(struct descriptor_data *d, char *arg)
 		"What is your sex? ", d);
       return;
     }
-    
+
     SEND_TO_Q("\r\n"
 	      "Please choose a race:\r\n"
 	      "\r\n"
@@ -2620,30 +2624,30 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_QRACE:
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     *arg = LOWER(*arg);
-    
+
     switch (*arg) {
     case 'h':
-      GET_RACE(d->character) = RACE_HUMAN; 
+      GET_RACE(d->character) = RACE_HUMAN;
       break;
     case 'd':
-      GET_RACE(d->character) = RACE_DWARF; 
+      GET_RACE(d->character) = RACE_DWARF;
       break;
     case 'w':
-      GET_RACE(d->character) = RACE_WOOD; 
+      GET_RACE(d->character) = RACE_WOOD;
       break;
     case 'b':
-      GET_RACE(d->character) = RACE_HOBBIT; 
+      GET_RACE(d->character) = RACE_HOBBIT;
       break;
     case 'u':
-      GET_RACE(d->character) = RACE_URUK; 
+      GET_RACE(d->character) = RACE_URUK;
       break;
     case 'c':
-      GET_RACE(d->character) = RACE_ORC; 
+      GET_RACE(d->character) = RACE_ORC;
       break;
     case 'l':
-      GET_RACE(d->character) = RACE_MAGUS; 
+      GET_RACE(d->character) = RACE_MAGUS;
       break;
     case '?':
       do_help(d->character, arg + 1, 0, 0, 0);
@@ -2655,7 +2659,7 @@ nanny(struct descriptor_data *d, char *arg)
 		"Race: ", d);
       return;
     }
-    
+
     /* end race */
     SEND_TO_Q("\n\r"
 	      "Please choose a class:\n\r"
@@ -2680,23 +2684,23 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_QPROF:
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     *arg = LOWER(*arg);
-    
-    if (*arg != 'm' && *arg != 't' && *arg != 'w' && *arg != 'r' && 
-       *arg != 'n' && *arg != 'i' && *arg != 'h' && *arg != 's' && 
+
+    if (*arg != 'm' && *arg != 't' && *arg != 'w' && *arg != 'r' &&
+       *arg != 'n' && *arg != 'i' && *arg != 'h' && *arg != 's' &&
        *arg != 'b' && *arg != 'a' && *arg != 'o' && *arg != '?') {
       SEND_TO_Q("\n\rThat's not a class\n\rClass: ", d);
       return;
     }
-    
+
     if (*arg == '?') {
       do_help(d->character, arg + 1, 0, 0, 0);
       SEND_TO_Q("\n\rClass: ", d);
       STATE(d) = CON_QPROF;
       return;
     }
-    
+
     /* chose custom class */
     if (*arg == 'o') {
       SEND_TO_Q("\n\r"
@@ -2711,11 +2715,11 @@ nanny(struct descriptor_data *d, char *arg)
       STATE(d) = CON_CREATE;
       return;
     }
-    
+
     for (tmp = 0; tmp < DEFAULT_PROFS; tmp++)
       if (*arg == existing_profs[tmp].letter)
 	for (i = 0; i < 5; i++)
-	  GET_PROF_POINTS(i, d->character) = 
+	  GET_PROF_POINTS(i, d->character) =
 	    existing_profs[tmp].Class_points[i];
     SEND_TO_Q("\r\n"
 	    "On RotS, you are allowed to create your own colour scheme.\r\n"
@@ -2768,11 +2772,11 @@ nanny(struct descriptor_data *d, char *arg)
       SEND_TO_Q("\r\nOk, you will use the latin-1 character set.\r\n", d);
 
     /* Give them an autowimpy of 10 */
-    WIMP_LEVEL(d->character) = 10;    
+    WIMP_LEVEL(d->character) = 10;
     introduce_char(d);
     SEND_TO_Q(MENU, d);
     STATE(d) = CON_SLCT;
-    vmudlog(NRM, "%s [%s] new player.", 
+    vmudlog(NRM, "%s [%s] new player.",
 	    GET_NAME(d->character), d->host);
     break;
   case CON_QOWN:
@@ -2786,22 +2790,22 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_SLCT:		/* get selection from main menu */
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     switch (*arg) {
     case '0':
       close_socket(d);
-      break;  
+      break;
     case '1':
 //new
 	    for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
-	if (!IS_NPC(tmp_ch) && 
+	if (!IS_NPC(tmp_ch) &&
 	    GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
 	  if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
 	    SEND_TO_Q("Reconnecting.\n\r", d);
 	    act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
-	    vmudlog(NRM, "%s [%s] has reconnected.", 
+	    vmudlog(NRM, "%s [%s] has reconnected.",
 		    GET_NAME(d->character), d->host);
-	    
+
 	    if (tmp_ch->desc) {
 	      tmp_ch->desc->character = 0;
 	      close_socket(tmp_ch->desc,TRUE);
@@ -2818,7 +2822,7 @@ nanny(struct descriptor_data *d, char *arg)
 		"$n's body has been taken over by a new spirit!",
 		TRUE, tmp_ch, 0, 0, TO_ROOM);
 	  }
-	  
+
 	  free_char(d->character);
 	  tmp_ch->desc = d;
 	  d->character = tmp_ch;
@@ -2844,7 +2848,7 @@ nanny(struct descriptor_data *d, char *arg)
 	send_to_char(START_MESSG, d->character);
       }
       do_look(d->character, "", 0, 0, 0);
-      
+
       /* report how long they must wait until unretire */
       if (IS_SET(PLR_FLAGS(d->character), PLR_RETIRED)) {
 	if ((s = secs_to_unretire(d->character)) > 0) {
@@ -2864,7 +2868,7 @@ nanny(struct descriptor_data *d, char *arg)
 	} else
 	  sprintf(buf, "You may unretire now.\r\n"
 		  "Type leave to leave the retirement home.\r\n");
-	
+
 	send_to_char(buf, d->character);
       }
       d->prompt_mode = 1;
@@ -2893,7 +2897,7 @@ nanny(struct descriptor_data *d, char *arg)
       SEND_TO_Q("\n\rEnter your password for verification: ", d);
       echo_off(d->descriptor);
       STATE(d) = CON_DELCNF1;
-      break; 
+      break;
     case '6':
       draw_coofs(buf, d->character);
       SEND_TO_Q(buf,d);
@@ -2904,12 +2908,12 @@ nanny(struct descriptor_data *d, char *arg)
       SEND_TO_Q("\n\rThat's not a menu choice!\n\r", d);
       SEND_TO_Q(MENU, d);
       break;
-    }   
+    }
     break;
   case CON_PWDNQO:
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
       SEND_TO_Q("\n\rIncorrect password.\n\r", d);
       SEND_TO_Q(MENU, d);
@@ -2925,14 +2929,14 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_PWDNEW:
     for ( ; isspace(*arg); arg++)
       continue;
-    
-    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 || 
+
+    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
 	!str_cmp(arg, GET_NAME(d->character))) {
       SEND_TO_Q("\n\rIllegal password.\n\r", d);
       SEND_TO_Q("Password: ", d);
       return;
     }
-    
+
     strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
     *(d->pwd + MAX_PWD_LENGTH) = '\0';
     SEND_TO_Q("\n\rPlease retype password: ", d);
@@ -2941,14 +2945,14 @@ nanny(struct descriptor_data *d, char *arg)
   case CON_PWDNCNF:
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
       SEND_TO_Q("\n\rPasswords don't match; start over.\n\r", d);
       SEND_TO_Q("Password: ", d);
       STATE(d) = CON_PWDNEW;
       return;
     }
-    
+
     SEND_TO_Q("\n\rDone.\r\n"
 	      "You must enter the game to make the change final.\n\r",
 	      d);
@@ -2960,7 +2964,7 @@ nanny(struct descriptor_data *d, char *arg)
     echo_on(d->descriptor);
     for ( ; isspace(*arg); arg++)
       continue;
-    
+
     if (strncmp(CRYPT(arg,d->pwd), d->pwd, MAX_PWD_LENGTH)) {
       SEND_TO_Q("\n\rIncorrect password.\n\r", d);
       SEND_TO_Q(MENU, d);
@@ -2980,19 +2984,19 @@ nanny(struct descriptor_data *d, char *arg)
 	STATE(d) = CON_CLOSE;
 	return;
       }
-      
+
       SET_BIT(PLR_FLAGS(d->character), PLR_DELETED);
-      
+
       pkill_unref_character(d->character);
-      
+
       save_char(d->character, NOWHERE, 0);
       Crash_delete_file(GET_NAME(d->character));
       delete_exploits_file(GET_NAME(d->character));
       delete_character_file(d->character);
-      sprintf(buf, "Character '%s' deleted!\n\rGoodbye.\n\r", 
+      sprintf(buf, "Character '%s' deleted!\n\rGoodbye.\n\r",
 	      GET_NAME(d->character));
       SEND_TO_Q(buf, d);
-      vmudlog(NRM, "%s (lev %d) has self-deleted.", 
+      vmudlog(NRM, "%s (lev %d) has self-deleted.",
 	      GET_NAME(d->character), GET_LEVEL(d->character));
       STATE(d) = CON_CLOSE;
       return;
@@ -3051,26 +3055,26 @@ new_player_select(struct descriptor_data *d, char *arg)
       for(tmp = 0; tmp < DEFAULT_PROFS; tmp++)
 	if(*arg == existing_profs[tmp].letter) {
 	  for(i = 0; i < 5; i++)
-	    GET_PROF_POINTS(i, d->character) = 
+	    GET_PROF_POINTS(i, d->character) =
 	      existing_profs[tmp].Class_points[i];
 	  draw_coofs(buf, d->character);
 	  SEND_TO_Q("Ok, your abilities are now as follows:\n\r", d);
 	  SEND_TO_Q(buf, d);
-	  sprintf(buf, "Points remaining: %d\n\r", 
+	  sprintf(buf, "Points remaining: %d\n\r",
 		  150 - points_used(d->character));
 	  SEND_TO_Q(buf,d);
 	  SEND_TO_Q("Your choice: ", d);
 	  return CON_CREATE;
 	}
-    
+
     if(isdigit(*arg) || (*arg == '-' && isdigit(*(arg+1)))) {
       d->character->classpoints = atoi(arg);
       SEND_TO_Q("Which class do you wish to add this number to (m/t/r/w)? ",
 		d);
       return CON_CREATE2;
     }
-    
-    
+
+
     if (*arg == '=') {
       if (points_used(d->character) <= 150) {
 	/* Must sync with message in CON_COLOR above */
@@ -3096,10 +3100,10 @@ new_player_select(struct descriptor_data *d, char *arg)
 		  "Please revise your decisions.\r\n"
 		  "Your choice: ", d);
 	return CON_CREATE;
-      }  
+      }
     }
-    
-    
+
+
     if(*arg == '*') {
       SEND_TO_Q("Your current abilities are:\n\r", d);
       draw_coofs(buf, d->character);
@@ -3117,17 +3121,17 @@ new_player_select(struct descriptor_data *d, char *arg)
 
     switch(*arg) {
     case 'm':
-      GET_PROF_POINTS(PROF_MAGE,d->character) = 
-	MAX(0, MIN(classpoints+GET_PROF_POINTS(PROF_MAGE,d->character), 165)); 
+      GET_PROF_POINTS(PROF_MAGE,d->character) =
+	MAX(0, MIN(classpoints+GET_PROF_POINTS(PROF_MAGE,d->character), 165));
       break;
-      
+
     case 't':
-      GET_PROF_POINTS(PROF_CLERIC,d->character) = 
+      GET_PROF_POINTS(PROF_CLERIC,d->character) =
 	MAX(0, MIN(classpoints+GET_PROF_POINTS(PROF_CLERIC,d->character),165));
       break;
-      
+
     case 'r':
-      GET_PROF_POINTS(PROF_RANGER,d->character) = 
+      GET_PROF_POINTS(PROF_RANGER,d->character) =
 	MAX(0, MIN(classpoints+GET_PROF_POINTS(PROF_RANGER,d->character),165));
       break;
 
@@ -3135,7 +3139,7 @@ new_player_select(struct descriptor_data *d, char *arg)
       GET_PROF_POINTS(PROF_WARRIOR,d->character) =
 	MAX(0,MIN(classpoints+GET_PROF_POINTS(PROF_WARRIOR,d->character),165));
       break;
-      
+
     default:
       sprintf(buf, "Invalid ability: %c\n\r", *arg);
       SEND_TO_Q(buf,d);
@@ -3161,15 +3165,15 @@ introduce_char(struct descriptor_data *d)
 {
   FILE *fp;
   init_char(d->character);
-  
+
   if(d->pos < 0) d->pos = create_entry(GET_NAME(d->character));
   sprintf(buf,"Char created: %s, idnum = %ld", GET_NAME(d->character),
 	  GET_IDNUM(d->character));
   log(buf);
-  
+
   if((fp = Crash_get_file_by_name(GET_NAME(d->character), "wb")))
     fclose(fp);
   save_char(d->character, NOWHERE,0);
-  
+
   SEND_TO_Q(motd, d);
 }

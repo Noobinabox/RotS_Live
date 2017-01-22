@@ -50,7 +50,7 @@ ACMD(do_gen_com);
 ACMD(do_look);
 ACMD(do_gsay);
 ACMD(do_say);
-ACMD(do_hit); 
+ACMD(do_hit);
 
 
 
@@ -59,7 +59,7 @@ ACMD(do_quit)
 {
   int tmp;
   void die(struct char_data *, struct char_data *, int);
-  
+
   if(IS_NPC(ch) || !ch->desc || !ch->desc->descriptor)
     return;
 
@@ -87,9 +87,9 @@ ACMD(do_quit)
   if(GET_LEVEL(ch) >= LEVEL_IMMORT)
     act("Goodbye, friend.. Come back soon!", FALSE, ch, 0, 0, TO_CHAR);
   else
-    act("As you quit, all your posessions drop to the ground!", 
+    act("As you quit, all your posessions drop to the ground!",
 	FALSE, ch, 0, 0, TO_CHAR);
-  
+
   act("$n has left the game.", TRUE, ch, 0, 0, TO_ROOM);
 
   sprintf(buf, "%s has quit the game.", GET_NAME(ch));
@@ -98,9 +98,9 @@ ACMD(do_quit)
   if(GET_LEVEL(ch) >= LEVEL_IMMORT) {
     Crash_crashsave(ch, RENT_QUIT);
     for(tmp = 0; tmp < MAX_WEAR; tmp++)
-      if(ch->equipment[tmp]) 
+      if(ch->equipment[tmp])
 	extract_obj(unequip_char(ch, tmp));
-     while(ch->carrying) 
+     while(ch->carrying)
        extract_obj(ch->carrying);
      /* char is saved in extract_char */
      extract_char(ch);
@@ -166,7 +166,7 @@ ACMD(do_recruit)
       return;
     }
   }
-  
+
   for(k = ch->followers; k; k = j) {
     j = k->next;
     if(IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND)) {
@@ -248,15 +248,15 @@ ACMD(do_recruit)
   af.modifier  = 0;
   af.location  = APPLY_NONE;
   af.bitvector = AFF_CHARM;
-  
+
   affect_to_char(victim, &af);
-  
+
   REMOVE_BIT(MOB_FLAGS(victim), MOB_SPEC);
   victim->specials.store_prog_number = 0;
   REMOVE_BIT(MOB_FLAGS(victim), MOB_AGGRESSIVE);
   REMOVE_BIT(MOB_FLAGS(victim), MOB_STAY_ZONE);
   SET_BIT(MOB_FLAGS(victim), MOB_PET);
-  
+
   victim->specials2.pref = 0; /* remove mob aggressions */
 }
 
@@ -290,7 +290,47 @@ ACMD(do_title)
   }
 }
 
+ACMD(do_grouproll)
+{
+  int roll
+  struct char_data *k;
+  struct follow_type *f;
 
+  one_argument(argument, buf);
+
+  if(IS_SHADOW(ch)) {
+    send_to_char("You cannot roll for groups while inhabiting the shadow world.\n\r", ch);
+    return;
+  }
+
+  if(!*buf) {
+    if(!ch->group_leader && !ch->group)
+    {
+      send_to_char("But you are not in a group!\n\r", ch);
+      return;
+    }
+    else {
+      if(ch->group_leader)
+      {
+        act("Only the group leader can roll for the group.", FALSE, ch, 0, 0, TO_CHAR);
+        return;
+      }
+
+      k = (ch->group_leader ? ch->group_leader : ch);
+      sprintf(buf, "$N -- Rolled: %3d", number(1, 100));
+      act(buf, FALSE, ch, 0, k, TO_ROOM);
+
+      for(f = k->group; f; f = f->next)
+      {
+        if(!IS_NPC(k->follower))
+        {
+          sprintf(buf, "$N -- Rolled: %3d", number(1, 100));
+          act(buf, FALSE, ch, 0, f->follower, TO_ROOM);
+        }
+      }
+    }
+  }
+}
 
 ACMD(do_group)
 {
@@ -304,7 +344,7 @@ ACMD(do_group)
   extern struct prompt_type prompt_move[];
 
   one_argument(argument, buf);
-  
+
   if(IS_SHADOW(ch)){
     send_to_char("You cannot group whilst inhabiting the shadow world.\n\r", ch);
     return;
@@ -315,18 +355,18 @@ ACMD(do_group)
       send_to_char("But you are not the member of a group!\n\r", ch);
     else {
       send_to_char("Your group consists of:\n\r", ch);
-      
+
       /* first, display the group leader's status */
       k = (ch->group_leader ? ch->group_leader : ch);
       for(tmp1=0; (1000*GET_HIT(k))/GET_MAX_HIT(k) > prompt_hit[tmp1].value; tmp1++);
       for(tmp2=0; (1000*GET_MANA(k))/GET_MAX_MANA(k) > prompt_mana[tmp2].value; tmp2++);
       for(tmp3=0; (1000*GET_MOVE(k))/GET_MAX_MOVE(k) > prompt_move[tmp3].value; tmp3++);
-         
+
       sprintf(buf, "HP:%9s,%11s,%13s -- $N (Head of group)",
-	      prompt_hit[tmp1].message,                                        
-	      *prompt_mana[tmp2].message == '\0' ? 
+	      prompt_hit[tmp1].message,
+	      *prompt_mana[tmp2].message == '\0' ?
 	      "S:Full" : prompt_mana[tmp2].message,
-	      *prompt_move[tmp3].message == '\0' ? 
+	      *prompt_move[tmp3].message == '\0' ?
 	      "MV:Energetic" : prompt_move[tmp3].message);
       act(buf, FALSE, ch, 0, k, TO_CHAR);
 
@@ -343,24 +383,24 @@ ACMD(do_group)
 	if(MOB_FLAGGED(f->follower, MOB_ORC_FRIEND))
 	  sprintf(buf, "HP:%9s,%11s,%13s -- $N (Lvl:%2d)",
 		  prompt_hit[tmp1].message,
-		  *prompt_mana[tmp2].message == '\0' ? 
+		  *prompt_mana[tmp2].message == '\0' ?
 		  "S:Full" : prompt_mana[tmp2].message,
-		  *prompt_move[tmp3].message == '\0' ? 
+		  *prompt_move[tmp3].message == '\0' ?
 		  "MV:Energetic":prompt_move[tmp3].message,
 		  GET_LEVEL(f->follower));
 	else
 	  sprintf(buf, "HP:%9s,%11s,%13s -- $N",
 		  prompt_hit[tmp1].message,
-		  *prompt_mana[tmp2].message == '\0' ? 
+		  *prompt_mana[tmp2].message == '\0' ?
 		  "S:Full":prompt_mana[tmp2].message,
-		  *prompt_move[tmp3].message == '\0' ? 
+		  *prompt_move[tmp3].message == '\0' ?
 		  "MV:Energetic":prompt_move[tmp3].message);
 	act(buf, FALSE, ch, 0, f->follower, TO_CHAR);
-      }    
-    }  
+      }
+    }
     return;
   }
-  
+
   if(ch->group_leader) {
     act("You can not enroll group members without being head of a group.",
 	FALSE, ch, 0, 0, TO_CHAR);
@@ -371,18 +411,18 @@ ACMD(do_group)
     victim = 0;
     for(f = ch->followers; f; f = f->next) {
       victim = f->follower;
-      if(!char_exists(f->fol_number)) 
+      if(!char_exists(f->fol_number))
 	f->follower = victim = 0;
       if(victim && !victim->group_leader && !other_side(ch, victim))
 	add_follower(victim, ch, FOLLOW_GROUP);
-    }  
+    }
     return;
   }
 
   if(!(victim = get_char_room_vis(ch, buf))) {
     send_to_char("No one here by that name.\n\r", ch);
     return;
-  } 
+  }
   else {
     found = FALSE;
 
@@ -416,7 +456,7 @@ ACMD(do_group)
 	act("$N is busy somewhere else already.",
 	    FALSE, ch, 0, victim, TO_CHAR);
       else
-	add_follower(victim, ch, FOLLOW_GROUP);  
+	add_follower(victim, ch, FOLLOW_GROUP);
     }
   }
 }
@@ -429,7 +469,7 @@ ACMD(do_ungroup)
   struct char_data *tch;
 
   one_argument(argument, buf);
-  
+
   if(!*buf) {
     if(ch->group_leader) {
       stop_follower(ch, FOLLOW_GROUP);
@@ -450,12 +490,12 @@ ACMD(do_ungroup)
       return;
     }
   }
-  
+
   if(!(tch = get_char_room_vis(ch, buf))) {
     send_to_char("There is no such person!\n\r", ch);
     return;
   }
-  
+
   if(tch->group_leader != ch) {
     send_to_char("That person is not in your group!\n\r", ch);
     return;
@@ -476,8 +516,8 @@ ACMD(do_report)
   extern struct prompt_type prompt_hit[];
   extern struct prompt_type prompt_mana[];
   extern struct prompt_type prompt_move[];
-  
-  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) && 
+
+  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) &&
      !(MOB_FLAGGED(ch, MOB_ORC_FRIEND))) {
     send_to_char("Sorry, tamed mobiles can't report.\n\r", ch);
     return;
@@ -489,9 +529,9 @@ ACMD(do_report)
 
   sprintf(str, "I am %s, my stamina is %s, and I am %s.",
 	  prompt_hit[tmp1].message,                     // No need to add
-	  *prompt_mana[tmp2].message == '\0' ? 
+	  *prompt_mana[tmp2].message == '\0' ?
 	  "full" : prompt_mana[tmp2].message + 3,       // Add 3 because of M:
-	  *prompt_move[tmp3].message == '\0' ? 
+	  *prompt_move[tmp3].message == '\0' ?
 	  "energetic" : prompt_move[tmp3].message + 4); // Add 4 because of MV:
 
   for(tmpchar = &str[1]; *tmpchar != '\0'; tmpchar++)
@@ -525,9 +565,9 @@ ACMD(do_split)
     }
 
     one_argument(current_arg, buf);
-    if(!strcmp(buf, "gold") || !strcmp(buf, "silver") || 
+    if(!strcmp(buf, "gold") || !strcmp(buf, "silver") ||
        !strcmp(buf, "copper")) {
-      
+
       /* save some strcmp'ing time since only the previous three
        * arguments could possibly have made it here */
       switch(*buf) {
@@ -551,14 +591,14 @@ ACMD(do_split)
 	k = ch->group_leader;
       else
 	k = ch;
-      
+
       /* num starts at 1, because the group leader is never
        * listed in the group */
       for(num = 1, f = k->group; f; f = f->next)
-	if((!IS_NPC(f->follower)) && 
+	if((!IS_NPC(f->follower)) &&
 	   (f->follower->in_room == ch->in_room))
 	  num++;
-      
+
       if(num > 1)
 	share = amount / num;
       else {
@@ -567,20 +607,20 @@ ACMD(do_split)
       }
 
       GET_GOLD(ch) -= share * (num - 1);
-      
+
       /* special check for `k' -- group leader, because the leader
        * is not listed in the group */
       if((k->in_room == ch->in_room)
 	 && !(IS_NPC(k)) &&  k != ch) {
 	GET_GOLD(k) += share;
-	sprintf(buf, "%s splits some money among the group; you receive %s.\r\n", 
+	sprintf(buf, "%s splits some money among the group; you receive %s.\r\n",
 		GET_NAME(ch), money_message(share, 0));
 	send_to_char(buf, k);
       }
-      
+
       for(f = k->group; f; f = f->next) {
-	if((!IS_NPC(f->follower)) && 
-	   (f->follower->in_room == ch->in_room) && 
+	if((!IS_NPC(f->follower)) &&
+	   (f->follower->in_room == ch->in_room) &&
 	   f->follower != ch) {
 	  GET_GOLD(f->follower) += share;
 	  sprintf(buf, "%s splits some money among the group; you receive %s.\r\n",
@@ -594,9 +634,9 @@ ACMD(do_split)
     }
     else
       send_to_char("You must specify what type of coin to split.\r\n", ch);
-  } 
+  }
   else
-    send_to_char("You must specify how much you wish to split.\r\n", 
+    send_to_char("You must specify how much you wish to split.\r\n",
 		 ch);
 }
 
@@ -616,7 +656,7 @@ ACMD(do_use)
   }
 
   stick = ch->equipment[HOLD];
-  
+
   if(stick->obj_flags.type_flag == ITEM_STAFF) {
     act("$n taps $p three times on the ground.", TRUE, ch, stick, 0, TO_ROOM);
     act("You tap $p three times on the ground.", FALSE, ch, stick, 0, TO_CHAR);
@@ -625,16 +665,16 @@ ACMD(do_use)
       stick->obj_flags.value[2]--;
       if(*skills[stick->obj_flags.value[3]].spell_pointer)
 	((*skills[stick->obj_flags.value[3]].spell_pointer)
-	 ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_STAFF, 
+	 ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_STAFF,
 	  0, 0, 0, 0));
-      
-    } 
+
+    }
     else
       send_to_char("The staff seems powerless.\n\r", ch);
-  } 
+  }
   else if(stick->obj_flags.type_flag == ITEM_WAND) {
-    bits = generic_find(argument, FIND_CHAR_ROOM | FIND_OBJ_INV | 
-			FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tmp_char, 
+    bits = generic_find(argument, FIND_CHAR_ROOM | FIND_OBJ_INV |
+			FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tmp_char,
 			&tmp_object);
     if(bits) {
       if(bits == FIND_CHAR_ROOM) {
@@ -650,15 +690,15 @@ ACMD(do_use)
 	stick->obj_flags.value[2]--;
 	if(*skills[stick->obj_flags.value[3]].spell_pointer)
 	  ((*skills[stick->obj_flags.value[3]].spell_pointer)
-	   ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_WAND, 
+	   ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_WAND,
 	    tmp_char, tmp_object, 0, 0));
-      } 
+      }
       else
 	send_to_char("The wand seems powerless.\n\r", ch);
     }
     else
       send_to_char("What should the wand be pointed at?\n\r", ch);
-  } 
+  }
   else
     send_to_char("Use is normally only for wands and staffs.\n\r", ch);
 }
@@ -677,13 +717,13 @@ ACMD(do_wimpy)
 	      ch->specials2.wimp_level);
       send_to_char(buf, ch);
       return;
-    } 
+    }
     else {
       send_to_char("You will not flee from combat.\n\r", ch);
       return;
     }
   }
-  
+
   if(isdigit(*arg)) {
     if((wimp_lev = atoi(arg))) {
       if(wimp_lev < 0)
@@ -694,12 +734,12 @@ ACMD(do_wimpy)
 	      wimp_lev);
       send_to_char(buf, ch);
       WIMP_LEVEL(ch) = wimp_lev;
-    } 
+    }
     else {
       send_to_char("OK, you'll tough out fights to the bitter end.\n\r", ch);
       WIMP_LEVEL(ch) = 0;
     }
-  } 
+  }
   else
     send_to_char("At how many hit points do you wish to flee?\n\r", ch);
 }
@@ -707,23 +747,23 @@ ACMD(do_wimpy)
 
 
 char *logtypes[] = {
-  "off", 
-  "brief", 
-  "normal", 
-  "spell", 
-  "complete", 
-  "\n" 
+  "off",
+  "brief",
+  "normal",
+  "spell",
+  "complete",
+  "\n"
 };
 
 ACMD(do_syslog)
 {
   int tp;
-  
+
   if(IS_NPC(ch))
     return;
-  
+
   one_argument (argument, arg);
-  
+
   if(!*arg) {
     tp = ((PRF_FLAGGED(ch, PRF_LOG1) ? 1 : 0) +
 	  (PRF_FLAGGED(ch, PRF_LOG2) ? 2 : 0) +
@@ -732,16 +772,16 @@ ACMD(do_syslog)
     send_to_char(buf, ch);
     return;
   }
-  
+
   if(((tp = search_block(arg, logtypes, FALSE)) == -1)) {
     send_to_char("Usage: syslog { Off | Brief | Normal | Spell | Complete }\n\r", ch);
     return;
   }
-  
+
   REMOVE_BIT(PRF_FLAGS(ch), PRF_LOG1 | PRF_LOG2 | PRF_LOG3);
   SET_BIT(PRF_FLAGS(ch), (PRF_LOG1 * (tp & 1)) | (PRF_LOG2 * (tp & 2) >> 1) |
 	  (PRF_LOG3 * (tp & 4) >> 2));
-  
+
   sprintf(buf, "Your syslog is now %s.\n\r", logtypes[tp]);
   send_to_char(buf, ch);
 }
@@ -757,21 +797,21 @@ ACMD(do_syslog)
 
 #define PRF_TOG_CHK(ch,flag) ((TOGGLE_BIT(PRF_FLAGS(ch), (flag))) & (flag))
 
-int 
+int
 flag_on(struct char_data *ch, int flag, char **message, int which)
 {
   if(!which)
     SET_BIT(PRF_FLAGS(ch),(flag));
   else
     SET_BIT(PLR_FLAGS(ch),(flag));
-    
+
   send_to_char(message[0],ch);
   return 1;
 }
 
 
 
-int 
+int
 flag_off(struct char_data *ch, int flag, char **message, int which)
 {
   if(!which)
@@ -784,7 +824,7 @@ flag_off(struct char_data *ch, int flag, char **message, int which)
 
 
 
-int 
+int
 flag_toggle(struct char_data *ch, int flag, char **message, int which)
 {
   int i;
@@ -805,13 +845,13 @@ flag_toggle(struct char_data *ch, int flag, char **message, int which)
 
 
 
-int 
+int
 flag_void(struct char_data *ch, int flag, char **message, int which)
 {
   int i;
   if(!which)
     i = IS_SET(PRF_FLAGS(ch),(flag));
-  else 
+  else
     i = IS_SET(PLR_FLAGS(ch),(flag));
 
   if(i)
@@ -819,12 +859,12 @@ flag_void(struct char_data *ch, int flag, char **message, int which)
   else
     send_to_char(message[3],ch);
 
-  return i;  
+  return i;
 }
 
 
 
-int 
+int
 (* flag_modify)(struct char_data *, int, char **, int);
 char *tog_messages[][4] = {
   {
@@ -833,79 +873,79 @@ char *tog_messages[][4] = {
     "You are safe from summoning by other players.\n\r",
     "You may be summoned by other players.\n\r"
   },
-  { 
+  {
     "You will now have your communication repeated.\r\n",
     "You will no longer have your communication repeated.\r\n",
     "You have your communication repeated.\r\n",
     "You don't have your communication repeated.\r\n",
   },
-  { 
-    "Brief mode now on.\n\r", 
+  {
+    "Brief mode now on.\n\r",
     "Brief mode now off.\n\r",
-    "Brief mode on.\n\r", 
+    "Brief mode on.\n\r",
     "Brief mode off.\n\r"
   },
-  { 
-    "Spam mode now on.\n\r", 
+  {
+    "Spam mode now on.\n\r",
     "Spam mode now off.\n\r",
-    "Spam mode on.\n\r", 
-    "Spam mode off.\n\r" 
+    "Spam mode on.\n\r",
+    "Spam mode off.\n\r"
   },
   {
-    "Compact mode now on.\n\r", 
+    "Compact mode now on.\n\r",
     "Compact mode now off.\n\r",
-    "Compact mode on.\n\r", 
-    "Compact mode off.\n\r" 
+    "Compact mode on.\n\r",
+    "Compact mode off.\n\r"
   },
   {
     "You are now deaf to tells.\n\r",
-    "You can now hear tells.\n\r", 
+    "You can now hear tells.\n\r",
     "You are deaf to tells.\n\r",
     "You can hear tells.\n\r"
-  }, 
-  { 
-    "You can now hear narrates.\n\r", 
+  },
+  {
+    "You can now hear narrates.\n\r",
     "You are now deaf to narrates.\n\r",
-    "You can hear narrates.\n\r", 
-    "You are deaf to narrates.\n\r" 
+    "You can hear narrates.\n\r",
+    "You are deaf to narrates.\n\r"
   },
-  { 
-    "You can now hear chat.\n\r", 
+  {
+    "You can now hear chat.\n\r",
     "You are now deaf to chat.\n\r",
-    "You can hear chat.\n\r", 
-    "You are deaf to chat.\n\r" 
+    "You can hear chat.\n\r",
+    "You are deaf to chat.\n\r"
   },
-  { 
-    "You can now hear the wiz-channel.\n\r", 
+  {
+    "You can now hear the wiz-channel.\n\r",
     "You are now deaf to the wiz-channel.\n\r",
-    "You can hear the wiz-channel.\n\r", 
-    "You are deaf to the wiz-channel.\n\r" 
+    "You can hear the wiz-channel.\n\r",
+    "You are deaf to the wiz-channel.\n\r"
   },
   {
     "You will now see the room flags.\n\r",
-    "You will no longer see the room flags.\n\r", 
-    "You see the room flags.\n\r", 
-    "You don't see the room flags.\n\r" 
+    "You will no longer see the room flags.\n\r",
+    "You see the room flags.\n\r",
+    "You don't see the room flags.\n\r"
   },
-  { 
-    "Nohassle now enabled.\n\r", 
+  {
+    "Nohassle now enabled.\n\r",
     "Nohassle now disabled.\n\r",
-    "Nohassle enabled.\n\r", 
-    "Nohassle disabled.\n\r" 
+    "Nohassle enabled.\n\r",
+    "Nohassle disabled.\n\r"
   },
-  { 
+  {
     "Holylight mode is now on.\n\r",
     "Holylight mode is now off.\n\r",
     "Holylight mode is on.\n\r",
-    "Holylight mode is off.\n\r" 
+    "Holylight mode is off.\n\r"
   },
-  { 
+  {
     "Nameserver_is_slow changed to NO; IP addresses will now be resolved.\n\r",
     "Nameserver_is_slow changed to YES; sitenames will no longer be resolved.\n\r",
     "Nameserver_is_slow is set to NO; IP addresses will be resolved.\n\r",
     "Nameserver_is_slow is set to YES; sitenames will not be resolved.\n\r"
   },
-  { 
+  {
     "Line wrapping is now on.\n\r",
     "Line wrapping is now off.\n\r",
     "Line wrapping is on.\n\r",
@@ -915,33 +955,33 @@ char *tog_messages[][4] = {
     "Autoexit mode is now on.\n\r",
     "Autoexit mode is now off.\n\r",
     "Autoexit mode is on.\n\r",
-    "Autoexit mode is off.\n\r" 
+    "Autoexit mode is off.\n\r"
   },
-  { 
+  {
     "AutoMental mode is now on.\n\r",
     "AutoMental mode is now off.\n\r",
     "AutoMental mode is on.\n\r",
-    "AutoMental mode is off.\n\r" 
+    "AutoMental mode is off.\n\r"
   },
   {
     "Incognito mode is now on.\n\r",
     "Incognito mode is now off.\n\r",
     "Incognito mode is on.\n\r",
-    "Incognito mode is off.\n\r" 
+    "Incognito mode is off.\n\r"
   },
   {
-    "You can now hear singing.\n\r", 
+    "You can now hear singing.\n\r",
     "You are now deaf to singing.\n\r",
-    "You can hear singing.\n\r", 
-    "You are deaf to singing.\n\r" 
+    "You can hear singing.\n\r",
+    "You are deaf to singing.\n\r"
   },
   {
     "Prompt is now on.\n\r",
     "Prompt is now off.\n\r",
     "Prompt is on.\n\r",
-    "Prompt is off.\n\r" 
+    "Prompt is off.\n\r"
   },
-  { 
+  {
     "You will now attempt to swim if needed.\r\n",
     "You will no longer attempt to swim.\r\n",
     "You swim when needed.\r\n",
@@ -966,15 +1006,15 @@ ACMD(do_gen_tog)
   long result;
   char str[10];
   int len, mod, tmp;
-  
+
   extern int nameserver_is_slow;
 
-  if(IS_NPC(ch)) 
+  if(IS_NPC(ch))
     return;
-  
+
   len = strlen(argument);
   mod = 0;
-  
+
   if(len) {
     for(tmp = 0; tmp < len && tmp < 9; tmp++)
       str[tmp]=tolower(argument[tmp]);
@@ -994,7 +1034,7 @@ ACMD(do_gen_tog)
     }
     if(!mod) {
       send_to_char("Options are on | off | toggle.\n\r",ch);
-      return; 
+      return;
     }
   }
   else {
@@ -1012,27 +1052,27 @@ ACMD(do_gen_tog)
     break;
 
   case SCMD_NOSUMMON:
-    result = flag_modify(ch, PRF_SUMMONABLE, tog_messages[0], 0); 
+    result = flag_modify(ch, PRF_SUMMONABLE, tog_messages[0], 0);
     break;
 
-  case SCMD_ECHO: 
-    result = flag_modify(ch, PRF_ECHO, tog_messages[1], 0); 
+  case SCMD_ECHO:
+    result = flag_modify(ch, PRF_ECHO, tog_messages[1], 0);
     break;
 
   case SCMD_BRIEF:
-    result = flag_modify(ch, PRF_BRIEF, tog_messages[2], 0); 
+    result = flag_modify(ch, PRF_BRIEF, tog_messages[2], 0);
     break;
 
   case SCMD_SPAM:
-    result = flag_modify(ch, PRF_SPAM, tog_messages[3], 0); 
+    result = flag_modify(ch, PRF_SPAM, tog_messages[3], 0);
     break;
 
   case SCMD_COMPACT:
-    result = flag_modify(ch, PRF_COMPACT, tog_messages[4], 0); 
+    result = flag_modify(ch, PRF_COMPACT, tog_messages[4], 0);
     break;
 
   case SCMD_NOTELL:
-    result = flag_modify(ch, PRF_NOTELL, tog_messages[5], 0); 
+    result = flag_modify(ch, PRF_NOTELL, tog_messages[5], 0);
     break;
 
   case SCMD_NARRATE:
@@ -1040,59 +1080,59 @@ ACMD(do_gen_tog)
     break;
 
   case SCMD_CHAT:
-    result = flag_modify(ch, PRF_CHAT, tog_messages[7], 0); 
+    result = flag_modify(ch, PRF_CHAT, tog_messages[7], 0);
     break;
 
   case SCMD_INCOGNITO:
-    result = flag_modify(ch, PLR_INCOGNITO, tog_messages[16], 1); 
+    result = flag_modify(ch, PLR_INCOGNITO, tog_messages[16], 1);
     break;
 
    case SCMD_SING:
-     result = flag_modify(ch, PRF_SING, tog_messages[17], 0); 
+     result = flag_modify(ch, PRF_SING, tog_messages[17], 0);
      break;
 
   case SCMD_SETPROMPT:
-    result = flag_modify(ch, PRF_PROMPT, tog_messages[18], 0); 
+    result = flag_modify(ch, PRF_PROMPT, tog_messages[18], 0);
     break;
 
   case SCMD_WIZ:
     result = flag_modify(ch, PRF_WIZ, tog_messages[8], 0);
     break;
 
-  case SCMD_SWIM: 
-    result = flag_modify(ch, PRF_SWIM, tog_messages[19], 0); 
+  case SCMD_SWIM:
+    result = flag_modify(ch, PRF_SWIM, tog_messages[19], 0);
     break;
 
-  case SCMD_ROOMFLAGS: 
-    result = flag_modify(ch, PRF_ROOMFLAGS, tog_messages[9], 0); 
+  case SCMD_ROOMFLAGS:
+    result = flag_modify(ch, PRF_ROOMFLAGS, tog_messages[9], 0);
     break;
 
   case SCMD_NOHASSLE:
-    result = flag_modify(ch, PRF_NOHASSLE, tog_messages[10], 0); 
+    result = flag_modify(ch, PRF_NOHASSLE, tog_messages[10], 0);
     break;
 
   case SCMD_HOLYLIGHT:
-    result = flag_modify(ch, PRF_HOLYLIGHT, tog_messages[11], 0); 
+    result = flag_modify(ch, PRF_HOLYLIGHT, tog_messages[11], 0);
     break;
 
   case SCMD_SLOWNS:
-    result = (nameserver_is_slow = !nameserver_is_slow); 
-    if(!result)  
+    result = (nameserver_is_slow = !nameserver_is_slow);
+    if(!result)
       send_to_char(tog_messages[12][2],ch);
-    else 
-      send_to_char(tog_messages[12][3],ch); 
+    else
+      send_to_char(tog_messages[12][3],ch);
     break;
 
   case SCMD_WRAP:
-    result = flag_modify(ch, PRF_WRAP, tog_messages[13], 0); 
+    result = flag_modify(ch, PRF_WRAP, tog_messages[13], 0);
     break;
 
   case SCMD_AUTOEXIT:
-    result = flag_modify(ch, PRF_AUTOEX, tog_messages[14], 0); 
+    result = flag_modify(ch, PRF_AUTOEX, tog_messages[14], 0);
     break;
 
   case SCMD_MENTAL:
-    result = flag_modify(ch, PRF_MENTAL, tog_messages[15], 0); 
+    result = flag_modify(ch, PRF_MENTAL, tog_messages[15], 0);
     break;
 
   default:
@@ -1112,17 +1152,17 @@ ACMD(do_tactics)
   char *s2 = "You are now employing";
   char *s;
   int tmp, len;
-  
+
   if(!*argument)
     s = s1;
   else {
     s = s2;
     len = strlen(argument);
-    
+
     for(tmp=0; tactics[tmp][0]!='\n'; tmp ++)
-      if(!strncmp(tactics[tmp],argument,len)) 
+      if(!strncmp(tactics[tmp],argument,len))
 	break;
-    
+
     if(tactics[tmp][0] == '\n') {
       sprintf(buf, "Possible tactics are:\n\r   ");
       for(tmp=0; tactics[tmp][0]!='\n'; tmp ++) {
@@ -1138,9 +1178,9 @@ ACMD(do_tactics)
 	send_to_char("You failed to cool down.\n\r",ch);
 	return;
       }
-    
+
     switch(tmp) {
-    case 0: 
+    case 0:
       SET_TACTICS(ch,TACTICS_DEFENSIVE);
       break;
 
@@ -1156,7 +1196,7 @@ ACMD(do_tactics)
       SET_TACTICS(ch,TACTICS_AGGRESSIVE);
       break;
 
-    case 4: 
+    case 4:
       SET_TACTICS(ch,TACTICS_BERSERK);
       break;
 
@@ -1170,23 +1210,23 @@ ACMD(do_tactics)
   case TACTICS_DEFENSIVE:
     sprintf(buf,"%s %s tactics.\n\r", s, tactics[0]);
     break;
-    
-  case TACTICS_CAREFUL: 
+
+  case TACTICS_CAREFUL:
     sprintf(buf,"%s %s tactics.\n\r",s,tactics[1]);
     break;
-    
+
   case TACTICS_NORMAL:
     sprintf(buf,"%s %s tactics.\n\r",s,tactics[2]);
     break;
-    
+
   case TACTICS_AGGRESSIVE:
     sprintf(buf,"%s %s tactics.\n\r",s,tactics[3]);
     break;
-    
+
   case TACTICS_BERSERK:
     sprintf(buf,"%s %s tactics.\n\r",s,tactics[4]);
     break;
-    
+
   default: sprintf(buf,"%s weird.\n\r",s);
     break;
   }
@@ -1214,7 +1254,7 @@ ACMD(do_language)
       send_to_char("You can't speak in the common tongue.\n\r", ch);
     else {
       ch->player.language = 0;
-      send_to_char("You will now use common language.\n\r",ch); 
+      send_to_char("You will now use common language.\n\r",ch);
     }
     return;
   }
@@ -1246,7 +1286,7 @@ char *change_comm[]={
   "tactics",
   "nosummon",
   "echo",
-  "brief",            
+  "brief",
   "spam",              /* 5 */
   "compact",
   "notell",
@@ -1261,7 +1301,7 @@ char *change_comm[]={
   "incognito",
   "time",
   "sing",
-  "mental",         
+  "mental",
   "swim",             /* 20 */
   "latin1",
   "spinner",
@@ -1282,7 +1322,7 @@ ACMD(do_set)
 {
   char command[50];
   char arg[250];
- 
+
   int tmp, tmp2, len;
 
   if(IS_NPC(ch)) {
@@ -1300,9 +1340,9 @@ ACMD(do_set)
   }
 
   for(tmp = 0; change_comm[tmp][0] != '\n'; tmp++)
-    if(!strncmp(change_comm[tmp], command, len)) 
+    if(!strncmp(change_comm[tmp], command, len))
       break;
-  
+
   if(change_comm[tmp][0] == '\n') {
   no_set:
     sprintf(buf, "Possible arguments are:\n\r");
@@ -1324,15 +1364,15 @@ ACMD(do_set)
   }
 
   switch(tmp) {
-  case 0: 
+  case 0:
     do_gen_tog(ch, arg, wtl, 0, SCMD_SETPROMPT);
     break;
 
-  case 1: 
+  case 1:
     do_tactics(ch, arg, wtl, 0, 0);
     break;
 
-  case 2: 
+  case 2:
     do_gen_tog(ch, arg, wtl, 0, SCMD_NOSUMMON);
     break;
 
@@ -1341,7 +1381,7 @@ ACMD(do_set)
     break;
 
   case 4:
-    do_gen_tog(ch, arg, wtl, 0, SCMD_BRIEF);       
+    do_gen_tog(ch, arg, wtl, 0, SCMD_BRIEF);
     break;
 
   case 5:
@@ -1364,7 +1404,7 @@ ACMD(do_set)
     do_gen_tog(ch, arg, wtl, 0, SCMD_CHAT);
     break;
 
-  case 10: 
+  case 10:
     do_title(ch, arg, wtl, 0, 0);
     break;
 
@@ -1372,11 +1412,11 @@ ACMD(do_set)
     do_wimpy(ch, arg, wtl, 0, 0);
     break;
 
-  case 12: 
+  case 12:
     do_gen_tog(ch, arg, wtl, 0, SCMD_WRAP);
     break;
 
-  case 13: 
+  case 13:
     do_gen_tog(ch, arg, wtl, 0, SCMD_AUTOEXIT);
     break;
 
@@ -1384,11 +1424,11 @@ ACMD(do_set)
     do_language(ch, arg, wtl, 0, 0);
     break;
 
-  case 15: 
+  case 15:
     string_add_init(ch->desc, &(ch->player.description));
     break;
 
-  case 16: 
+  case 16:
     if(GET_LEVEL(ch) < LEVEL_IMMORT)
       do_gen_tog(ch, arg, wtl, 0, SCMD_INCOGNITO);
     /* if the immortal is incog, then they can use incog to set it off */
@@ -1398,7 +1438,7 @@ ACMD(do_set)
       send_to_char("Immortals cannot be incognito.\n\r", ch);
     break;
 
-  case 17: 
+  case 17:
     do_gen_tog(ch, arg, wtl, 0, SCMD_TIME);
     break;
 
@@ -1425,14 +1465,14 @@ ACMD(do_set)
   case 23:
     if(GET_LEVEL(ch) >= LEVEL_IMMORT)
       do_gen_tog(ch, arg, wtl, 0, SCMD_WIZ);
-    else 
+    else
       goto no_set;
     break;
 
   case 24:
     if(GET_LEVEL(ch) >= LEVEL_IMMORT)
       do_gen_tog(ch, arg, wtl, 0, SCMD_ROOMFLAGS);
-    else 
+    else
       goto no_set;
     break;
 
@@ -1443,14 +1483,14 @@ ACMD(do_set)
       goto no_set;
     break;
 
-  case 26: 
-    if(GET_LEVEL(ch) >= LEVEL_IMMORT) 
+  case 26:
+    if(GET_LEVEL(ch) >= LEVEL_IMMORT)
       do_gen_tog(ch, arg, wtl, 0, SCMD_HOLYLIGHT);
-    else 
+    else
       goto no_set;
     break;
 
-  case 27: 
+  case 27:
     if(GET_LEVEL(ch) == LEVEL_IMPL)
       do_gen_tog(ch, arg, wtl, 0, SCMD_SLOWNS);
     else if(GET_LEVEL(ch) >= LEVEL_IMMORT)
@@ -1479,7 +1519,7 @@ ACMD(do_knock)
 {
   int tmp, room, oldroom;
   char str[200];
-  
+
   if (IS_SHADOW(ch)){
 	send_to_char("You are too insubstantial to do that.\n\r", ch);
 	return;
@@ -1537,7 +1577,7 @@ ACMD(do_knock)
 	  send_to_char(str, ch);
 	  sprintf(str,"$n waved $s hand %sward.\n", dirs[tmp]);
 	  act(str, FALSE, ch, 0, 0, TO_ROOM);
-	}	  
+	}
       }
   }
   send_to_char("There is nothing like that here.\n", ch);
@@ -1570,7 +1610,7 @@ ACMD(do_block)
 {
   int tmp, len;
   char str[255];
-  
+
   if(IS_SHADOW(ch)) {
     send_to_char("You are too insubstantial to do that.\n\r", ch);
     return;
@@ -1586,12 +1626,12 @@ ACMD(do_block)
     return;
   }
 
-  while((*argument <=' ') && (*argument)) 
+  while((*argument <=' ') && (*argument))
     argument++;
 
   if(!*argument) {
     tmp = ch->specials.store_prog_number - FIRST_BLOCK_PROC;
-    
+
     if((tmp < 0) || (tmp >= NUM_OF_DIRS)) {
       send_to_char("Which way do you want to block?\n\r", ch);
       return;
@@ -1602,15 +1642,15 @@ ACMD(do_block)
       return;
     }
   }
-  
+
   one_argument(argument, str);
   len = strlen(str);
-  
+
   for(tmp = 0; tmp < NUM_OF_DIRS; tmp++)
-    if(!strncmp(dirs[tmp],str, len)) 
+    if(!strncmp(dirs[tmp],str, len))
       break;
 
-  if(tmp < NUM_OF_DIRS) { 
+  if(tmp < NUM_OF_DIRS) {
     ch->specials.store_prog_number = tmp + FIRST_BLOCK_PROC;
 
     sprintf(buf,"You start blocking the way %s.\n\r",dirs[tmp]);
@@ -1619,11 +1659,11 @@ ACMD(do_block)
     act(buf, TRUE, ch, 0, 0, TO_ROOM);
     return;
   }
-  
+
   if(!strncmp(str, "none", len)) {
     tmp = ch->specials.store_prog_number - FIRST_BLOCK_PROC;
     if((tmp >= 0) & (tmp < NUM_OF_DIRS)){
-      ch->specials.store_prog_number = 0;    
+      ch->specials.store_prog_number = 0;
       sprintf(buf,"You stop blocking the way %s.\n\r",dirs[tmp]);
       send_to_char(buf, ch);
       sprintf(buf,"$n stops blocking the way %s.",dirs[tmp]);
@@ -1651,7 +1691,7 @@ ACMD(do_specialize)
     send_to_char("You are too young to specialize.\n\r", ch);
     return;
   }
-  
+
   if(wtl && (wtl->targ1.type == TARGET_TEXT)) {
     tmp = GET_SPEC(ch);
     if(tmp && (tmp < num_of_specializations)) {
@@ -1665,14 +1705,14 @@ ACMD(do_specialize)
       return;
 
     for(tmp = 1; tmp < num_of_specializations; tmp++)
-      if(!strncmp(specialize_name[tmp], wtl->targ1.ptr.text->text, len)) 
+      if(!strncmp(specialize_name[tmp], wtl->targ1.ptr.text->text, len))
 	break;
 
     if(GET_RACE(ch) == RACE_ORC && tmp == PLRSPEC_GRDN) {
 		send_to_char("Snagas can't specialize in guardian!\n\r", ch);
 		return;
 	}
-	
+
     if(tmp < num_of_specializations) {
       SET_SPEC(ch, tmp);
       sprintf(buf, "You are now specialized in %s.\n\r", specialize_name[tmp]);
@@ -1701,7 +1741,7 @@ ACMD(do_specialize)
 
 
 
-ACMD(do_fish) 
+ACMD(do_fish)
 {
   int fish = 7230;
   struct obj_data *tmpobj;
@@ -1736,7 +1776,7 @@ ACMD(do_fish)
       send_to_char("You can't fish here.\n\r", ch);
       return;
     }
-    
+
     if(!ch->equipment[HOLD] || !isname("fishing", ch->equipment[HOLD]->name)) {
       send_to_char("You need to hold a fishing pole to fish.\n\r", ch);
       return;
@@ -1759,17 +1799,14 @@ ACMD(do_fish)
     GET_MOVE(ch) -= move_use;
 
     if(number(0, 115) > percent)
-      send_to_char ("You give up, having failed to catch anything.\n\r", ch); 
-    
+      send_to_char ("You give up, having failed to catch anything.\n\r", ch);
+
     else if(number(0, 125) <= percent) {
       obj_to_char(tmpobj, ch);
       act("$n catches $p.", TRUE, ch, tmpobj, 0, TO_ROOM);
-      act("You catch $p.", TRUE, ch, tmpobj, 0, TO_CHAR); 
+      act("You catch $p.", TRUE, ch, tmpobj, 0, TO_CHAR);
     }
 
     abort_delay(ch);
   }
 }
-    
-  
- 

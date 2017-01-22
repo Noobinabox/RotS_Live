@@ -292,7 +292,7 @@ ACMD(do_title)
 
 ACMD(do_grouproll)
 {
-  int roll
+  int roll;
   struct char_data *k;
   struct follow_type *f;
 
@@ -312,20 +312,24 @@ ACMD(do_grouproll)
     else {
       if(ch->group_leader)
       {
-        act("Only the group leader can roll for the group.", FALSE, ch, 0, 0, TO_CHAR);
+        send_to_char("Only the group leader can roll for the group.\n\r", ch);
         return;
       }
 
       k = (ch->group_leader ? ch->group_leader : ch);
-      sprintf(buf, "$N -- Rolled: %3d", number(1, 100));
-      act(buf, FALSE, ch, 0, k, TO_ROOM);
+      roll = number(1, 100);
+      sprintf(buf, "%10s -- Rolled: %3d", GET_NAME(ch), roll);
+      act(buf, FALSE, ch, 0, 0, TO_CHAR);
+      act(buf, FALSE, ch, 0, 0, TO_ROOM);
 
       for(f = k->group; f; f = f->next)
       {
-        if(!IS_NPC(k->follower))
+        if(!IS_NPC(f->follower))
         {
-          sprintf(buf, "$N -- Rolled: %3d", number(1, 100));
-          act(buf, FALSE, ch, 0, f->follower, TO_ROOM);
+          roll = number(1, 100);
+          sprintf(buf, "%10s -- Rolled: %3d", GET_NAME(f->follower), roll);
+          act(buf, FALSE, ch, 0, 0, TO_CHAR);
+          act(buf, FALSE, ch, 0, 0, TO_ROOM);
         }
       }
     }

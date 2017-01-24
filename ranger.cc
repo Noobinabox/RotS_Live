@@ -931,160 +931,223 @@ trap_cleanup_quiet(struct char_data *ch)
 		ch->specials.store_prog_number = 0;
 }
 
+bool can_do_trap(char_data& character)
+{
+	const int max_trap_weapon_bulk = 2;
+	
+	if (IS_SHADOW(&character))
+	{
+		send_to_char("Shadows can't trap!\n\r", &character);
+		return false;
+	}
+
+	if (IS_NPC(&character) && MOB_FLAGGED(&character, MOB_ORC_FRIEND))
+	{
+		send_to_char("Leave that to your leader.\r\n", &character);
+		return false;
+	}
+
+	if (!GET_SKILL(&character, SKILL_AMBUSH))
+	{
+		send_to_char("You must learn how to ambush to set an effective trap.\r\n", &character);
+		return false;
+	}
+
+	const obj_data* weapon = character.equipment[WIELD];
+	if (!weapon)
+	{
+		send_to_char("You cannot trap without equipping a weapon.\r\n", &character);
+		return false;
+	}
+	
+	int weapon_bulk = weapon->obj_flags.value[2];
+	if (weapon_bulk > max_trap_weapon_bulk)
+	{
+		send_to_char("You must be using a lighter weapon to set a trap.\r\n", &character);
+		return false;
+	}
+
+	return true;
+}
+
+bool is_valid_subcommand(char_data& character, int sub_command, const waiting_type* wtl)
+{
+	/* Sanity check ... All subcmds past 0 are callbacks and require a context */
+	if (sub_command > 0 && wtl == nullptr) 
+	{
+		vmudlog(BRF, "do_trap: subcmd=%d, but the context is NULL!", sub_command);
+		vsend_to_char(&character, "ERROR: trap subcommand is %d, but the context is null.\r\n"
+			"Please report this message to an immortal.\r\n", sub_command);
+		
+		return false;
+	}
+
+	return true;
+}
+
+// dgurley:  Copied ACMD macro here so I could see the arguments.
+//void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int subcmd)
 ACMD(do_trap)
 {
-  static int ignore_recursion = 0;
-  struct char_data *victim;
-  int dmg;
-  int success;
+	static int ignore_recursion = 0;
+	struct char_data *victim;
+	int dmg;
+	int success;
 
-  if (IS_SHADOW(ch)) {
-    send_to_char("Shadows can't trap!\n\r", ch);
-    return;
-  }
+	// Early out if some preconditions aren't met.
+	if (!can_do_trap(*ch))
+		return;
 
-  if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND)) {
-    send_to_char("Leave that to your leader.\r\n", ch);
-    return;
-  }
+	// Perform a command sanity check.
+	if (!is_valid_subcommand(*ch, subcmd, wtl))
+		return;
 
-  if (!GET_SKILL(ch,SKILL_AMBUSH)) {
-    send_to_char("You must learn how to ambush to set an effective trap.\r\n",
-                 ch);
-    return;
-  }
+	/*
+	 * Subcommand callbacks:
+	 *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
+	 *       see what the purpose of ignore_recursion is.
+	 *   0   Command issued by a player or mob.  Has either a text keyword
+	 *       as an argument or has no argument.
+	 *   1   Callback: trap setup complete.  We cheat a little and store
+	 *       important target data on the character's waiting structure.
+	 *       This may cause problems if some other wait activity happens,
+	 *       because then the target data for our trap will be cleared.
+	 *   2   do_trap was called from react_trap in spec_pro.cc.  This means
+	 *       that someone has entered the room with ch.  If the person who
+	 *       entered matches ch's target data, then ch will attempt to trap
+	 *       them.  We delay ch's trap for 1 game tick before letting it go
+	 *       off.
+	 *   3   The trap is actually occurring.  Damage and bash the victim if
+	 *       the trap is successful.  Damage and success percent are heavily
+	 *       based on ambush success and damage.
+	 */
+	switch (subcmd)
+	{
+	case -1:
+		/* XXX: SUPER HACK */
+		if (ignore_recursion)
+		{
+			ignore_recursion = 0;
+			return;
+		}
+		send_to_char("You abandoned your trap.\r\n", ch);
+		trap_cleanup_quiet(ch);
+		break;
 
-  /* Sanity check ... All subcmds past 0 are callbacks and require a context */
-  if (subcmd > 0 && wtl == NULL) {
-    vmudlog(BRF, "do_trap: subcmd=%d, but the context is NULL!", subcmd);
-    vsend_to_char(ch, "ERROR: trap subcommand is %d, but the context is null.\r\n"
-                  "Please report this message to an immortal.\r\n", subcmd);
-    return;
-  }
+	case 0:
+		send_to_char("You begin setting up your trap...\r\n", ch);
 
-  /*
-   * Subcommand callbacks:
-   *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
-   *       see what the purpose of ignore_recursion is.
-   *   0   Command issued by a player or mob.  Has either a text keyword
-   *       as an argument or has no argument.
-   *   1   Callback: trap setup complete.  We cheat a little and store
-   *       important target data on the character's waiting structure.
-   *       This may cause problems if some other wait activity happens,
-   *       because then the target data for our trap will be cleared.
-   *   2   do_trap was called from react_trap in spec_pro.cc.  This means
-   *       that someone has entered the room with ch.  If the person who
-   *       entered matches ch's target data, then ch will attempt to trap
-   *       them.  We delay ch's trap for 1 game tick before letting it go
-   *       off.
-   *   3   The trap is actually occurring.  Damage and bash the victim if
-   *       the trap is successful.  Damage and success percent are heavily
-   *       based on ambush success and damage.
-   */
-  switch (subcmd) {
-  case -1:
-    /* XXX: SUPER HACK */
-    if (ignore_recursion) {
-      ignore_recursion = 0;
-      return;
-    }
-    send_to_char("You abandoned your trap.\r\n", ch);
-    trap_cleanup_quiet(ch);
-    break;
+		/* If there's a target keyword, then store it */
+		if (wtl->targ1.type == TARGET_TEXT)
+		{
+			WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
+				0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
+				AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
+		}
+		else
+		{
+			WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
+				0, NULL,
+				AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+		}
+		break;
 
-  case 0:
-    send_to_char("You begin setting up your trap...\r\n", ch);
+	case 1:
+		send_to_char("You begin to wait patiently for your victim.\r\n", ch);
 
-    /* If there's a target keyword, then store it */
-    if (wtl->targ1.type == TARGET_TEXT)
-      WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
-		      0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-		      AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
-    else
-      WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
-                      0, NULL,
-                      AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
-    break;
+		/* Use the wait state to store the target data */
+		if (wtl->targ1.type == TARGET_TEXT)
+		{
+			WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
+				0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
+				0, TARGET_TEXT);
+		}
+		else
+		{
+			WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
+				0, NULL,
+				0, TARGET_NONE);
+		}
 
-  case 1:
-    send_to_char("You begin to wait patiently for your victim.\r\n", ch);
+		/* We use spec_prog 16 for people with trap */
+		ch->specials.store_prog_number = 16;
+		return;
 
-    /* Use the wait state to store the target data */
-    if (wtl->targ1.type == TARGET_TEXT)
-      WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
-                      0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-		      0, TARGET_TEXT);
-    else
-      WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
-                      0, NULL,
-                      0, TARGET_NONE);
+	case 2:
+		victim = trap_get_valid_victim(ch, wtl);
+		if (victim == nullptr)
+			return;
 
-    /* We use spec_prog 16 for people with trap */
-    ch->specials.store_prog_number = 16;
-    return;
+		ch->specials.store_prog_number = 0;
 
-  case 2:
-    victim = trap_get_valid_victim(ch, wtl);
-    if (victim == NULL)
-      return;
+		/*
+		 * XXX: SUPER HACK.  If we are here, then case 1 has happened already.
+		 * In case 1, we store trap's target information in the character's
+		 * delay variable.  However, when we call WAIT_STATE_FULL, it will call
+		 * complete_delay, which will then call do_trap with subcmd -1 to clear
+		 * the data we stored there.  Once those targets are deleted, we're
+		 * screwed.
+		 *
+		 * So what we have here is a static variable that we set to 1 when we
+		 * know this screwball scenario is going to happen.  When ignore_recursion
+		 * is 1, then case -1 above reacts accordingly and does not clear the
+		 * target data.
+		 */
+		ignore_recursion = 1;
+		if (wtl->targ1.type == TARGET_TEXT)
+		{
+			WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
+				0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
+				AFF_WAITING, TARGET_TEXT);
+		}
+		else
+		{
+			WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
+				0, NULL,
+				AFF_WAITING, TARGET_NONE);
+		}
 
-    ch->specials.store_prog_number = 0;
+		/* WAIT_STATE_FULL clobbers targ2 unconditionally, so we refill it */
+		ch->delay.targ2 = wtl->targ2;
+		break;
 
-    /*
-     * XXX: SUPER HACK.  If we are here, then case 1 has happened already.
-     * In case 1, we store trap's target information in the character's
-     * delay variable.  However, when we call WAIT_STATE_FULL, it will call
-     * complete_delay, which will then call do_trap with subcmd -1 to clear
-     * the data we stored there.  Once those targets are deleted, we're
-     * screwed.
-     *
-     * So what we have here is a static variable that we set to 1 when we
-     * know this screwball scenario is going to happen.  When ignore_recursion
-     * is 1, then case -1 above reacts accordingly and does not clear the
-     * target data.
-     */
-    ignore_recursion = 1;
-    if (wtl->targ1.type == TARGET_TEXT)
-      WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
-                      0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-                      AFF_WAITING, TARGET_TEXT);
-    else
-      WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
-                      0, NULL,
-                      AFF_WAITING, TARGET_NONE);
+	case 3:
+		victim = trap_get_valid_victim(ch, wtl);
+		if (victim == NULL)
+		{
+			/* Reset the trap.  do_trap subcmd=1 does exactly this. */
+			do_trap(ch, "", wtl, CMD_TRAP, 1);
+			return;
+		}
 
-    /* WAIT_STATE_FULL clobbers targ2 unconditionally, so we refill it */
-    ch->delay.targ2 = wtl->targ2;
-    break;
+		trap_cleanup_quiet(ch);  /* Removes the spec prog */
+		success = ambush_calculate_success(ch, victim);
 
-  case 3:
-    victim = trap_get_valid_victim(ch, wtl);
-    if (victim == NULL) {
-      /* Reset the trap.  do_trap subcmd=1 does exactly this. */
-      do_trap(ch, "", wtl, CMD_TRAP, 1);
-      return;
-    }
+		if (success < 0)
+		{
+			damage(ch, victim, 0, SKILL_TRAP, 0);
+		}
+		else
+		{
+			dmg = ambush_calculate_damage(ch, victim, success);
+			dmg = dmg * 1 / 2; // Cut the damage in half?  Easier ways to do this.  dmg = dmg >> 1;
 
-    trap_cleanup_quiet(ch);  /* Removes the spec prog */
-    success = ambush_calculate_success(ch, victim);
+			/* Set a bash affection on the victim
+			WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 2 + number(0, PULSE_VIOLENCE / 2),
+					CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
+					TARGET_IGNORE);
+			*/
 
-    if (success < 0)
-      damage(ch, victim, 0, SKILL_TRAP, 0);
-    else {
-      dmg = ambush_calculate_damage(ch, victim, success);
-      dmg = dmg * 1 / 2;
+			damage(ch, victim, dmg, SKILL_TRAP, 0);
+		}
+		break;
 
-      WAIT_STATE_FULL(victim, 5,
-		      CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
-		      TARGET_IGNORE);
-
-      damage(ch, victim, dmg, SKILL_TRAP, 0);
-    }
-    break;
-
-  default:
-    abort_delay(ch);
-  }
+	default:
+	{
+		abort_delay(ch);
+		break;
+	}
+	}
 }
 
 

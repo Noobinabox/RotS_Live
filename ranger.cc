@@ -973,7 +973,7 @@ bool can_do_trap(char_data& character)
 bool is_valid_subcommand(char_data& character, int sub_command, const waiting_type* wtl)
 {
 	/* Sanity check ... All subcmds past 0 are callbacks and require a context */
-	if (sub_command > 0 && wtl == nullptr)
+	if (sub_command > 0 && wtl == NULL)
 	{
 		vmudlog(BRF, "do_trap: subcmd=%d, but the context is NULL!", sub_command);
 		vsend_to_char(&character, "ERROR: trap subcommand is %d, but the context is null.\r\n"
@@ -1075,7 +1075,7 @@ ACMD(do_trap)
 
 	case 2:
 		victim = trap_get_valid_victim(ch, wtl);
-		if (victim == nullptr)
+		if (victim == NULL)
 			return;
 
 		ch->specials.store_prog_number = 0;

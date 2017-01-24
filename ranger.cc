@@ -934,7 +934,7 @@ trap_cleanup_quiet(struct char_data *ch)
 bool can_do_trap(char_data& character)
 {
 	const int max_trap_weapon_bulk = 2;
-	
+
 	if (IS_SHADOW(&character))
 	{
 		send_to_char("Shadows can't trap!\n\r", &character);
@@ -959,7 +959,7 @@ bool can_do_trap(char_data& character)
 		send_to_char("You cannot trap without equipping a weapon.\r\n", &character);
 		return false;
 	}
-	
+
 	int weapon_bulk = weapon->obj_flags.value[2];
 	if (weapon_bulk > max_trap_weapon_bulk)
 	{
@@ -973,12 +973,12 @@ bool can_do_trap(char_data& character)
 bool is_valid_subcommand(char_data& character, int sub_command, const waiting_type* wtl)
 {
 	/* Sanity check ... All subcmds past 0 are callbacks and require a context */
-	if (sub_command > 0 && wtl == nullptr) 
+	if (sub_command > 0 && wtl == nullptr)
 	{
 		vmudlog(BRF, "do_trap: subcmd=%d, but the context is NULL!", sub_command);
 		vsend_to_char(&character, "ERROR: trap subcommand is %d, but the context is null.\r\n"
 			"Please report this message to an immortal.\r\n", sub_command);
-		
+
 		return false;
 	}
 
@@ -1130,13 +1130,12 @@ ACMD(do_trap)
 		else
 		{
 			dmg = ambush_calculate_damage(ch, victim, success);
-			dmg = dmg * 1 / 2; // Cut the damage in half?  Easier ways to do this.  dmg = dmg >> 1;
+			dmg = dmg >> 1; // Cut the damage in half?  Easier ways to do this.  dmg = dmg >> 1;
 
-			/* Set a bash affection on the victim
-			WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 2 + number(0, PULSE_VIOLENCE / 2),
+			// Set a bash affection on the victim
+			WAIT_STATE_FULL(victim, 5,
 					CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
 					TARGET_IGNORE);
-			*/
 
 			damage(ch, victim, dmg, SKILL_TRAP, 0);
 		}

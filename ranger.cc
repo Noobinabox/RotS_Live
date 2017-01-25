@@ -1808,7 +1808,7 @@ see_hiding(struct char_data *seeker)
  * slyon: Jan 24,2017 - Created function
  */
 
-int shoot_calculate_success(struct char_data &ch, struct char_data &victim)
+int shoot_calculate_success(struct char_data *ch, struct char_data *victim)
 {
 
 }
@@ -1821,7 +1821,7 @@ int shoot_calculate_success(struct char_data &ch, struct char_data &victim)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
  */
-int shoot_calculate_damage(struct char_data &ch, struct char_data &victim)
+int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
 {
 
 }
@@ -1836,7 +1836,7 @@ int shoot_calculate_damage(struct char_data &ch, struct char_data &victim)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
  */
-int shoot_calculate_wait(struct char_data &ch)
+int shoot_calculate_wait(struct char_data *ch)
 {
 
 }
@@ -1852,7 +1852,7 @@ int shoot_calculate_wait(struct char_data &ch)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-bool move_arrow_to_victim(struct char_data &ch, struct char_data &victim, struct item &arrow)
+bool move_arrow_to_victim(struct char_data *ch, struct char_data *victim, struct item *arrow)
 {
 
 }
@@ -1865,11 +1865,11 @@ bool move_arrow_to_victim(struct char_data &ch, struct char_data &victim, struct
  * slyon: Jan 24, 2017 - Created function
  * slyon: Jan 25, 2017 - Renamed function to better reflect what it's doing
  */
-bool can_ch_shoot(struct char_data &ch)
+bool can_ch_shoot(struct char_data *ch)
 {
   if(IS_SHADOW(ch)) {
     send_to_char("Hmm, perphaps you've spent to much time in the "
-                 " mortal lands.");
+                 " mortal lands.\r\n", ch);
     return false;
   }
 
@@ -1921,7 +1921,7 @@ bool can_ch_shoot(struct char_data &ch)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-bool is_targ_valid(struct char_data &victim)
+bool is_targ_valid(struct char_data *victim)
 {
 
 }

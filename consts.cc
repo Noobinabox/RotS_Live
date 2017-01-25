@@ -356,8 +356,8 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_STANDING    , 50, 72,  1152,  10,  1,  0, PLRSPEC_NONE },
 
   /* 61 */
-  { "heal"               , PROF_CLERIC,  21,  NULL,
-    POSITION_STANDING    , 20, 24,    10,  10,  1,  0, PLRSPEC_REGN },
+  { "archery"            , PROF_RANGER,  1,  NULL,
+    POSITION_FIGHTING    , 0, 20,    16,  24,  1,  0, PLRSPEC_NONE },
   { "summon"             , PROF_MAGE,    17,  spell_summon,
     POSITION_STANDING    , 50, 36,     6,  10,  1,  0, PLRSPEC_MIND },
   { "hallucinate"        , PROF_CLERIC,   3,  spell_hallucinate,
@@ -1875,7 +1875,7 @@ struct skill_teach_data guildmasters[]={
     "You're already perfect in this.",
     {0,
        25, 25, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 /*51*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -271,6 +271,7 @@ ACMD(do_namechange);
 ACMD(do_retire);
 ACMD(do_top);
 ACMD(do_grouproll);
+ACMD(do_shoot);
 
 char *command[] = {
    "north", 		               /* 1 */
@@ -501,6 +502,7 @@ char *command[] = {
    "world",
    "top",
    "groll",
+   "shoot",
    "\n"
 };
 
@@ -2224,6 +2226,8 @@ assign_command_pointers(void)
              FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(228, POSITION_RESTING,     do_grouproll,  0, TRUE, 0,
      TAR_IGNORE, TAR_IGNORE, 0);
+  COMMANDO(229, POSITION_FIGHTING,    do_shoot,      0, TRUE, 0,
+     TAR_TEXT, FULL_TARGET, CMD_MASK_NO_UNHIDE);
 }
 
 

@@ -1804,6 +1804,8 @@ see_hiding(struct char_data *seeker)
  *
  * NOTE: This should probably be changed after the first test of attacking.
  * XXX The skill accuracy should be taken into mind here
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 24,2017 - Created function
  */
 
 int shoot_calculate_success(struct char_data &ch, struct char_data &victim)
@@ -1811,28 +1813,59 @@ int shoot_calculate_success(struct char_data &ch, struct char_data &victim)
 
 }
 
+/*
+ * shoot_calculate_damage
+ *
+ *
+ *
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 24, 2017 - Created function
+ */
 int shoot_calculate_damage(struct char_data &ch, struct char_data &victim)
 {
 
 }
 
-int shoot_calculate_wait(struct char_data &ch, struct char_data &victim)
-{
-
-}
-
-void move_arrow_to_victim(struct char_data &ch, struct char_data &victim)
+/*
+ * shoot_calculate_wait will determine how long the shoot will be affected
+ * by WAIT_STATE_FULL and it will take into account the following:
+ * -- WEAPON SPEED
+ * -- SKILL_ARCHERY
+ * -- RANGER_LEVEL
+ * -- RACE;
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 24, 2017 - Created function
+ */
+int shoot_calculate_wait(struct char_data &ch)
 {
 
 }
 
 /*
- * check_shoot_conditions will check all the prereqs for shooting a bow
+ * move_arrow_to_victim will take the arrow out of the shooters quiver and
+ * tag the arrow with their character_id. After that it will move the arrow
+ * into the victims inventory. We tag the arrow so the shooter can type recover
+ * after the kill and it will return all arrows with his character_id on it.
+ *
+ * This function will also handle the breaking of arrows based on the
+ * victims armor and percentage on arrows themself.
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 25, 2017 - Created function
+ */
+bool move_arrow_to_victim(struct char_data &ch, struct char_data &victim, struct item &arrow)
+{
+
+}
+
+/*
+ * can_ch_shoot will check all the prereqs for shooting a bow
  *  -- Does the ch have the correct equipment
  *  -- Does the ch have SKILL_ARCHERY prac'd
- *  -- slyon:
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 24, 2017 - Created function
+ * slyon: Jan 25, 2017 - Renamed function to better reflect what it's doing
  */
-bool check_shoot_conditions(struct char_data &ch)
+bool can_ch_shoot(struct char_data &ch)
 {
   if(IS_SHADOW(ch)) {
     send_to_char("Hmm, perphaps you've spent to much time in the "
@@ -1855,7 +1888,10 @@ bool check_shoot_conditions(struct char_data &ch)
     send_to_char("You must be wielding a bow to shoot.\r\n", ch);
     return false;
   }
-
+  /* slyon:
+   * We need to check if they have something equiped on their back
+   * before we check for the name or it will crash the game.
+   */
   if(!ch->equipment[WEAR_BACK])
   {
     send_to_char("You must be wearing a quiver on your back.\r\n", ch);
@@ -1879,6 +1915,23 @@ bool check_shoot_conditions(struct char_data &ch)
   return true;
 }
 
+/*
+ * is_targ_valid will check to see if the target the shoot is a valid
+ * one and return true if so and false if not.
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 25, 2017 - Created function
+ */
+bool is_targ_valid(struct char_data &victim)
+{
+
+}
+
+/*
+ * do_shoot will attempt to shoot the victim with a bow or crossbow
+ * There is a lot of things going on with this ACMD so just read through it.
+ * --------------------------- Change Log --------------------------------
+ * slyon: Jan 25, 2017 - Created ACMD
+ */
 ACMD(do_shoot)
 {
   struct char_data *victim;
@@ -1889,7 +1942,7 @@ ACMD(do_shoot)
     act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
   }
 
-  if(!check_shoot_conditions(ch))
+  if(!can_ch_shoot(ch))
     return;
 
   send_to_char("Beginning shooting...", ch);

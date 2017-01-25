@@ -45,8 +45,8 @@
 #define SKILL_WEAPONS           10
 
 #define SKILL_PARRY             11
-#define SKILL_KICK              12 
-#define SKILL_BASH              13 
+#define SKILL_KICK              12
+#define SKILL_BASH              13
 #define SKILL_RESCUE            14
 #define SKILL_BERSERK           15
 #define SKILL_EXTRA_DAMAGE      16
@@ -99,7 +99,7 @@
 #define SPELL_TERROR            58
 #define SPELL_REFRESH_ALL       59
 #define SPELL_ENCHANT_WEAPON    60
-#define SPELL_HEAL              61
+#define SKILL_ARCHERY           61
 #define SPELL_SUMMON            62
 #define SPELL_HALLUCINATE       63
 #define SPELL_REGENERATION      64
@@ -190,7 +190,7 @@
 #define TYPE_CLEAVE                  140
 #define TYPE_FLAIL                   141
 #define TYPE_SMITE                   142
-#define TYPE_CRUSH                   143  
+#define TYPE_CRUSH                   143
 
 #define TYPE_SUFFERING               200
 
@@ -220,7 +220,7 @@ weapon_skill_num(int type)
   case 11:
     return SKILL_PIERCE;
   case 12:
-    return SKILL_CONCUSSION;  
+    return SKILL_CONCUSSION;
   default:
     return SKILL_BAREHANDED;
   };
@@ -249,7 +249,7 @@ weapon_skill_num(int type)
       (IS_SET(skills[sn].learn_type, REDUCED_MANA) ? 5 : 0))
 
 #define USE_SPIRIT(ch, sn) (skills[sn].min_usesmana)
-     
+
 #define CASTING_TIME(ch, sn)  \
   ((skills[sn].beats * 30) / (30 + GET_PROF_LEVEL((int) skills[sn].type, ch)))
 
@@ -270,13 +270,13 @@ weapon_skill_num(int type)
  *
  * NOTE: Many more target types exist.  See the skill array in
  * consts.cc for some commentary.
- */     
+ */
 struct skill_data {
   char name[50];
   char type;
   char level;
-  void (*spell_pointer)(byte level, struct char_data *ch, char *arg, 
-			int type, struct char_data *tar_ch, 
+  void (*spell_pointer)(byte level, struct char_data *ch, char *arg,
+			int type, struct char_data *tar_ch,
 			struct obj_data *tar_obj, int digit, int is_object);
   byte minimum_position;  /* Position for caster */
   int min_usesmana;       /* Amount of mana used by a spell */
@@ -401,4 +401,3 @@ ASPELL(spell_attune);
 ASPELL(spell_confuse);
 
 #endif /* SPELLS_H */
-

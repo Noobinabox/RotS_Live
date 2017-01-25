@@ -1793,3 +1793,104 @@ see_hiding(struct char_data *seeker)
 
   return can_see;
 }
+
+/*
+ * shoot_calculate_success determins the success rate of the
+ * archer versus the victim, taking into account:
+ * - the ranger level of the attacker
+ * - the amount of archery practiced by attacker
+ * - the ob of the attacker
+ * - the dex of the attacker
+ *
+ * NOTE: This should probably be changed after the first test of attacking.
+ * XXX The skill accuracy should be taken into mind here
+ */
+
+int shoot_calculate_success(struct char_data &ch, struct char_data &victim)
+{
+
+}
+
+int shoot_calculate_damage(struct char_data &ch, struct char_data &victim)
+{
+
+}
+
+int shoot_calculate_wait(struct char_data &ch, struct char_data &victim)
+{
+
+}
+
+void move_arrow_to_victim(struct char_data &ch, struct char_data &victim)
+{
+
+}
+
+/*
+ * check_shoot_conditions will check all the prereqs for shooting a bow
+ *  -- Does the ch have the correct equipment
+ *  -- Does the ch have SKILL_ARCHERY prac'd
+ *  -- slyon:
+ */
+bool check_shoot_conditions(struct char_data &ch)
+{
+  if(IS_SHADOW(ch)) {
+    send_to_char("Hmm, perphaps you've spent to much time in the "
+                 " mortal lands.");
+    return false;
+  }
+
+  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND)) {
+    send_to_char("Leave that to your leader.\r\n", ch);
+    return false;
+  }
+
+  if(IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+    send_to_char("A peaceful feeling overwhelms you, and you cannot bring"
+                 " yourself to attack.\r\n", ch);
+    return false;
+  }
+
+  if(!ch->equipment[WIELD] || !isname("bow", ch->equipment[WIELD]->name)) {
+    send_to_char("You must be wielding a bow to shoot.\r\n", ch);
+    return false;
+  }
+
+  if(!ch->equipment[WEAR_BACK])
+  {
+    send_to_char("You must be wearing a quiver on your back.\r\n", ch);
+    return false;
+  }
+
+  if(!isname("quiver", ch->equipment[WEAR_BACK]->name)) {
+    send_to_char("You must be wearing a quiver on your back.\r\n", ch);
+    return false;
+  }
+
+  if(!IS_TWOHANDED(ch)) {
+    send_to_char("You must be wielding your bow with two hands.\r\n", ch);
+    return false;
+  }
+  if(!GET_SKILL(ch, SKILL_ARCHERY)) {
+    send_to_char("Learn how to shoot a bow first.\r\n", ch);
+    return false;
+  }
+
+  return true;
+}
+
+ACMD(do_shoot)
+{
+  struct char_data *victim;
+  int success, dmg;
+  if(IS_AFFECTED(ch, AFF_SANCTUARY)) {
+    appear(ch);
+    send_to_char("You cast off your sanctuary!\r\n", ch);
+    act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+  }
+
+  if(!check_shoot_conditions(ch))
+    return;
+
+  send_to_char("Beginning shooting...", ch);
+}

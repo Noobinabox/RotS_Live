@@ -1870,7 +1870,7 @@ bool does_arrow_break(char_data* victim, obj_data* arrow)
  *
  * This function will also handle the breaking of arrows based on the
  * victims armor and percentage on arrows themself.
- * 
+ *
  * Returns true if the arrow was moved to the victim, false if it was destroyed.
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
@@ -1888,7 +1888,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 	}
 
 	// Tag arrow.  Set the arrow's owner to the archer.
-	// drelidan:  I chose the 'owner' variable because it makes 
+	// drelidan:  I chose the 'owner' variable because it makes
 	//            sense and it's not being used by anything else.
 	arrow->owner = (int)archer->specials2.idnum;
 
@@ -2039,7 +2039,7 @@ ACMD(do_shoot)
       victim = is_targ_valid(ch, wtl);
       if(victim == NULL)
         return;
-      WAIT_STATE_BRIEF(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+      WAIT_STATE_FULL(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
       break;
     case 1:
       // if(wtl == NULL)

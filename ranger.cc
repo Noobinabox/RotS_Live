@@ -1962,9 +1962,45 @@ bool can_ch_shoot(struct char_data *ch)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-bool is_targ_valid(struct char_data *victim)
+struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *target)
 {
+  struct char_data *victim;
 
+  if(target->targ1.type == TARGET_TEXT)
+  {
+    victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
+  }
+  else if (target->targ1.type == TARGET_CHAR)
+  {
+    if(char_exists(target->targ1.ch_num))
+      victim = target->targ1.ptr.ch;
+  }
+
+  if(victim == NULL)
+  {
+    if(ch->specials.fighting)
+    {
+      victim = ch->specials.fighting;
+    }
+    else
+    {
+      send_to_char("Shoot who?\n\r", ch);
+      return NULL;
+    }
+  }
+
+  if(ch->in_room != victim->in_room)
+  {
+    send_to_char("Your victim is no longer here.\n\r", ch);
+    return NULL;
+  }
+  if(!CAN_SEE(ch, victim))
+  {
+    send_to_char("Shoot who?\r\n", ch);
+    return NULL;
+  }
+
+  return victim;
 }
 
 /*
@@ -1975,8 +2011,10 @@ bool is_targ_valid(struct char_data *victim)
  */
 ACMD(do_shoot)
 {
-  struct char_data *victim;
+  struct char_data *victim = NULL;
   int success, dmg;
+
+  one_argument(argument, arg);
 
   if(subcmd == -1)
   {
@@ -1992,18 +2030,42 @@ ACMD(do_shoot)
     send_to_char("You cast off your sanctuary!\r\n", ch);
     act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
   }
-  
-  send_to_char("Beginning shooting...\n\r", ch);
+
+
+
   switch (subcmd) {
     case 0:
+      send_to_char("Beginning shooting...\n\r", ch);
+      victim = is_targ_valid(ch, wtl);
+      if(victim == NULL)
+        return;
       WAIT_STATE_BRIEF(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
       break;
     case 1:
-      if(ch->in_room != victim->in_room)
+      // if(wtl == NULL)
+      // {
+      //   vmudlog(BRF, "ERROR: shoot callback with no context");
+      //   send_to_char("Error: shoot callback with no context.\r\n", ch);
+      //   return;
+      // }
+      // victim = is_targ_valid(ch, wtl);
+      // if(victim == NULL)
+      //   return;
+      if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
       {
-        send_to_char("Your target is not here any longer.\r\n", ch);
+        send_to_char("Your victim is no longer among us.\n\r", ch);
         return;
       }
+      victim = (struct char_data *) wtl->targ1.ptr.ch;
+      if(!CAN_SEE(ch,victim)) {
+        send_to_char("Bash who?\n\r", ch);
+        return;
+      }
+      if(ch->in_room != victim->in_room) {
+        send_to_char("You target is not here any longer\n\r",ch);
+        return;
+      }
+      send_to_char("You release your arrow and it goes flying!", ch);
       damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
       break;
     default:

@@ -1823,7 +1823,8 @@ int shoot_calculate_success(struct char_data *ch, struct char_data *victim)
  */
 int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
 {
-
+  int totaldamage = GET_LEVEL(ch);
+  return totaldamage;
 }
 
 /*
@@ -1838,6 +1839,14 @@ int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
  */
 int shoot_calculate_wait(struct char_data *ch)
 {
+  int totalbeats;
+  totalbeats = 16 - ((GET_ENE_REGEN(ch) / 12) - 12);
+  totalbeats = totalbeats - (GET_PROF_LEVEL(PROF_RANGER, ch) / 12);
+  if(GET_RACE(ch) == RACE_WOOD)
+    totalbeats = totalbeats - 1;
+  if(totalbeats < 3)
+    totalbeats = 3;
+  return totalbeats;
 
 }
 
@@ -1936,14 +1945,39 @@ ACMD(do_shoot)
 {
   struct char_data *victim;
   int success, dmg;
-  if(IS_AFFECTED(ch, AFF_SANCTUARY)) {
-    appear(ch);
-    send_to_char("You cast off your sanctuary!\r\n", ch);
-    act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+
+  if(subcmd == -1)
+  {
+    send_to_char("You could not concentrate on shooting anymore!\n\r", ch);
+    return;
   }
 
   if(!can_ch_shoot(ch))
     return;
 
-  send_to_char("Beginning shooting...", ch);
+  if(IS_AFFECTED(ch, AFF_SANCTUARY)) {
+    appear(ch);
+    send_to_char("You cast off your sanctuary!\r\n", ch);
+    act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+  }
+  
+  send_to_char("Beginning shooting...\n\r", ch);
+  switch (subcmd) {
+    case 0:
+      WAIT_STATE_BRIEF(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+      break;
+    case 1:
+      if(ch->in_room != victim->in_room)
+      {
+        send_to_char("Your target is not here any longer.\r\n", ch);
+        return;
+      }
+      damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
+      break;
+    default:
+      sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);
+      mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+      abort_delay(ch);
+      return;
+  }
 }

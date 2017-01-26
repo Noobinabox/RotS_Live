@@ -1842,6 +1842,18 @@ int shoot_calculate_wait(struct char_data *ch)
 }
 
 /*
+ * This function will determine if an arrow breaks based on the
+ * victims armor and percentage on arrows themself.
+ * --------------------------- Change Log --------------------------------
+ * drelidan: Jan 26, 2017 - Created function
+ */
+bool does_arrow_break(char_data* victim, obj_data* arrow)
+{
+	//TODO(drelidan):  Add logic for calculating breaking here.
+	return false;
+}
+
+/*
  * move_arrow_to_victim will take the arrow out of the shooters quiver and
  * tag the arrow with their character_id. After that it will move the arrow
  * into the victims inventory. We tag the arrow so the shooter can type recover
@@ -1849,12 +1861,32 @@ int shoot_calculate_wait(struct char_data *ch)
  *
  * This function will also handle the breaking of arrows based on the
  * victims armor and percentage on arrows themself.
+ * 
+ * Returns true if the arrow was moved to the victim, false if it was destroyed.
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
+ * drelidan: Jan 26, 2017 - Implemented function logic.
  */
-bool move_arrow_to_victim(struct char_data *ch, struct char_data *victim, struct item *arrow)
+bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 {
+	// Remove object from the character.
+	obj_from_obj(arrow);
+	if (does_arrow_break(victim, arrow))
+	{
+		// Destroy the arrow and exit.
+		extract_obj(arrow);
+		return false;
+	}
 
+	// Tag arrow.  Set the arrow's owner to the archer.
+	// drelidan:  I chose the 'owner' variable because it makes 
+	//            sense and it's not being used by anything else.
+	arrow->owner = (int)archer->specials2.idnum;
+
+	// Move the arrow to the victim.
+	obj_to_char(arrow, victim);
+
+	return true;
 }
 
 /*

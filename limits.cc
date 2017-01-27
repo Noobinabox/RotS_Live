@@ -24,6 +24,8 @@
 #include "handler.h"
 #include "profs.h"
 
+#include "char_utils.h"
+
 extern char *pc_race_types[];
 
 #define READ_TITLE(ch) pc_race_types[GET_RACE(ch)]
@@ -75,9 +77,9 @@ int	graf(int age, int p0, int p1, int p2, int p3, int p4, int p5, int p6)
 }
 
 
-int     xp_to_level(int lvl)
+int xp_to_level(int lvl)
 {
-  return(lvl*lvl*1500);
+	return lvl * lvl * 1500;
 }
 
 inline void advance_mini_level(struct char_data *ch)
@@ -102,6 +104,19 @@ inline void advance_mini_level(struct char_data *ch)
   GET_MAX_MINI_LEVEL(ch) = MAX(GET_MAX_MINI_LEVEL(ch),GET_MINI_LEVEL(ch));
 }
 
+double adjust_regen_for_level(int character_level, double regen_amount)
+{
+	// No extra regen for characters over level 10.
+	if (character_level > 10)
+		return regen_amount;
+
+	const double flat_multiplier = 3.0;
+	const double level_penalty = 0.2;
+
+	double adjusted_amount = regen_amount * (flat_multiplier - (character_level * level_penalty));
+	return adjusted_amount;
+}
+
 // int     spirit_gain(struct char_data *ch)
 // {
 //   int gain =  GET_WILL(ch)/(number(1,20));
@@ -109,148 +124,177 @@ inline void advance_mini_level(struct char_data *ch)
 // }
 
 /* manapoint gain pr. game hour */
-int	mana_gain(struct char_data *ch)
+int	mana_gain(const char_data* character)
 {
-   int	gain;
+	using namespace char_utils;
 
-   if (IS_NPC(ch)) {
-      /* Neat and fast */
-      gain = GET_LEVEL(ch);
-   } else {
-     //      gain = graf(age(ch).year, 4, 8, 12, 16, 12, 10, 8)/4;
-     /* Prof calculations */
+	// dgurley: Do the math with a double and convert on the way out.
+	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
+	// and code easier and cleaner.
+	double gain(character->player.level);
+	if (is_pc(*character))
+	{
+		gain = 10.0 + character->tmpabilities.intel / 2.0;
 
-     gain = 10 + GET_INT(ch)/2;
+		switch (character->specials.position) 
+		{
+		case POSITION_SLEEPING:
+			gain *= 2;
+			break;
+		case POSITION_RESTING:
+			gain *= 1.5;
+			break;
+		case POSITION_SITTING:
+			gain *= 1.25;
+			break;
+		}
+	}
 
-     /* Skill/Spell calculations */
-     
-     /* Position calculations    */
-     switch (GET_POS(ch)) {
-     case POSITION_SLEEPING:
-       gain <<= 1;
-       break;
-     case POSITION_RESTING:
-       gain += (gain >> 1);  /* Divide by 2 */
-       break;
-     case POSITION_SITTING:
-       gain += (gain >> 2); /* Divide by 4 */
-       break;
-     }
-   }
-   
-   if (IS_AFFECTED(ch, AFF_POISON))
-     gain >>= 2;
-   
-   if ((GET_COND(ch, FULL) == 0) || (GET_COND(ch, THIRST) == 0))
-     gain >>= 2;
-   
-   return (gain);
+	if (is_affected_by(*character, AFF_POISON))
+	{
+		gain *= 0.25;
+	}
+
+	if (get_condition(*character, FULL) == 0 || get_condition(*character, THIRST) == 0)
+	{
+		gain *= 0.25;
+	}
+
+	gain = adjust_regen_for_level(character->player.level, gain);
+
+	// Cast back into an integer when we're done.
+	return int(gain);
 }
 
-
-int	hit_gain(struct char_data *ch)
 /* Hitpoint gain pr. game hour */
+int	hit_gain(const char_data* character)
 {
-   int	gain;
+	using namespace char_utils;
 
-   if (IS_NPC(ch)) {
-      gain = GET_LEVEL(ch);
-      /* Neat and fast */
-   } else {
+	// dgurley: Do the math with a double and convert on the way out.
+	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
+	// and code easier and cleaner.
+	double gain(character->player.level);
 
-     gain = 5;
+	if (is_pc(*character))
+	{
+		gain = 5.0 + character->tmpabilities.con / 2.0;
 
-     /* Prof/Level calculations */
-     gain += GET_CON(ch)/2;
-     
-      /* Skill/Spell calculations */
+		switch (character->specials.position) 
+		{
+		case POSITION_SLEEPING:
+			gain *= 1.5;
+			break;
+		case POSITION_RESTING:
+			gain *= 1.25;
+			break;
+		case POSITION_SITTING:
+			gain *= 1.125;
+			break;
+		}
 
-      /* Position calculations    */
+		// Casters get half regen.
+		if (character->player.prof == PROF_MAGIC_USER || character->player.prof == PROF_CLERIC)
+		{
+			gain *= 0.5;
+		}
+	}
 
-      switch (GET_POS(ch)) {
-      case POSITION_SLEEPING:
-	 gain += (gain >> 1); /* Divide by 2 */
-	 break;
-      case POSITION_RESTING:
-	 gain += (gain >> 2);  /* Divide by 4 */
-	 break;
-      case POSITION_SITTING:
-	 gain += (gain >> 3); /* Divide by 8 */
-	 break;
-      }
+	if (is_affected_by(*character, AFF_POISON))
+	{
+		gain *= 0.25;
+	}
 
-      if ((GET_PROF(ch) == PROF_MAGIC_USER) || (GET_PROF(ch) == PROF_CLERIC))
-	 gain >>= 1;
-   }
+	if (get_condition(*character, FULL) == 0 || get_condition(*character, THIRST) == 0)
+	{
+		gain *= 0.25;
+	}
 
-   if (IS_AFFECTED(ch, AFF_POISON))
-      gain >>= 2;
+	gain = adjust_regen_for_level(character->player.level, gain);
 
-   if ((GET_COND(ch, FULL) == 0) || (GET_COND(ch, THIRST) == 0))
-      gain >>= 2;
-
-   return (gain);
+	// Cast back into an integer when we're done.
+	return int(gain);
 }
 
-
-
-int	move_gain(struct char_data *ch)
-  /* move gain pr. game hour */
+int	move_gain(const char_data* character)
+/* move gain pr. game hour */
 {
-  int	gain;
-  
-  if (IS_NPC(ch))
-    if(MOB_FLAGGED(ch, MOB_MOUNT))
-	return GET_LEVEL(ch)*2 + 26 + GET_CON(ch) + GET_DEX(ch);
+	using namespace char_utils;
 
-  gain = 7;
-  
-  // Animals get move regen bonus
-  if(GET_BODYTYPE(ch) == 2)
-    gain += GET_LEVEL(ch) + 10;
-  
-  /* Prof/Level calculations */
-  gain += (GET_CON(ch) + GET_DEX(ch) /* - GET_LEG_ENCUMB(ch)*/)/2;
-  gain += GET_PROF_LEVEL(PROF_RANGER,ch)/6 + GET_RAW_KNOWLEDGE(ch,SKILL_TRAVELLING)/10;
-  
-  /* Skill/Spell calculations */
-  
-  
-  /* Position calculations    */
-  switch (GET_POS(ch)) {
-  case POSITION_SLEEPING:
-    gain += ((gain*3) >> 2); /* Times 3, / 4 */
-    break;
-  case POSITION_RESTING:
-    gain += (gain >> 1);  /* Divide by 2 */
-    break;
-  case POSITION_SITTING:
-    gain += (gain >> 3); /* Divide by 8 */
-    break;
-  }
-   if(IS_NPC(ch))
-     return(gain - 5);
-   if((GET_RACE(ch) == RACE_WOOD)||(GET_RACE(ch) == RACE_HIGH))
-     gain += 5;
-   
-   
-   if (IS_AFFECTED(ch, AFF_POISON))
-     gain >>= 2;
-   
-   if ((GET_COND(ch, FULL) == 0) || (GET_COND(ch, THIRST) == 0))
-     gain >>= 2;
-   
-   return (gain);
+	const char_ability_data& stats = character->tmpabilities;
+	if (is_npc(*character))
+	{
+		if (is_mob_flagged(*character, MOB_MOUNT))
+		{
+			return 26 + (character->player.level * 2) + stats.con + stats.dex;
+		}
+	}
+
+	double gain = 7.0;
+
+	// Animals get move regen bonus
+	if (GET_BODYTYPE(character) == 2)
+	{
+		gain += character->player.level + 10;
+	}
+
+	/* Prof/Level calculations */
+	gain += (stats.con + stats.dex) / 2.0;
+
+	double expertise_modifier = get_prof_level(PROF_RANGER, *character) / 6.0 + get_raw_knowledge(*character, SKILL_TRAVELLING) / 10.0;
+	gain += expertise_modifier;
+
+	/* Skill/Spell calculations */
+
+
+	/* Position calculations    */
+	switch (character->specials.position)
+	{
+	case POSITION_SLEEPING:
+		gain *= 1.75;
+		break;
+	case POSITION_RESTING:
+		gain *= 1.5;
+		break;
+	case POSITION_SITTING:
+		gain *= 1.125;
+		break;
+	}
+
+	if (is_npc(*character))
+	{
+		return int(gain - 5);
+	}
+	else
+	{
+		int race = character->player.race;
+		if (race == RACE_WOOD || race == RACE_HIGH)
+		{
+			gain += 5.0;
+		}
+
+		if (is_affected_by(*character, AFF_POISON))
+		{
+			gain *= 0.25;
+		}
+
+		if (get_condition(*character, FULL) == 0 || get_condition(*character, THIRST) == 0)
+		{
+			gain *= 0.25;
+		}
+
+		return int(gain);
+	}
 }
 
-void	set_title(struct char_data *ch)
+void set_title(char_data* character)
 {
-   if (GET_TITLE(ch))
-     RELEASE(GET_TITLE(ch));
-   CREATE(GET_TITLE(ch), char, strlen(READ_TITLE(ch)) + 5);
+	if (GET_TITLE(character))
+		RELEASE(GET_TITLE(character));
+	CREATE(GET_TITLE(character), char, strlen(READ_TITLE(character)) + 5);
 
-   sprintf(GET_TITLE(ch),"the %s", READ_TITLE(ch));
-   *(GET_TITLE(ch) + 4)=toupper(*(GET_TITLE(ch)+4));
+	sprintf(GET_TITLE(character), "the %s", READ_TITLE(character));
+	*(GET_TITLE(character) + 4) = toupper(*(GET_TITLE(character) + 4));
 }
 
 

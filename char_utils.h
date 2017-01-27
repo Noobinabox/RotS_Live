@@ -12,6 +12,7 @@ namespace char_utils
 	typedef signed short sh_int;
 	typedef unsigned char byte;
 
+	bool is_pc(const char_data& character);
 	bool is_npc(const char_data& character);
 	bool is_mob(const char_data& character);
 	bool is_retired(const char_data& character);

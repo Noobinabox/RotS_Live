@@ -16,6 +16,12 @@ extern sh_int square_root[];
 namespace char_utils
 {
 	//============================================================================
+	bool is_pc(const char_data& character)
+	{
+		return !is_npc(character);
+	}
+
+	//============================================================================
 	bool is_npc(const char_data& character)
 	{
 		return base_utils::is_set(character.specials2.act, (long)MOB_ISNPC);

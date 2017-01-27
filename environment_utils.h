@@ -18,3 +18,4 @@ namespace environment_utils
 
 	bool is_water_room(const room_data& room);
 }
+

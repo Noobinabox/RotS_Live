@@ -40,3 +40,4 @@ namespace object_utils
 		return object.obj_flags.value[2];
 	}
 }
+

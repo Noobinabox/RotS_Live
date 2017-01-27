@@ -82,8 +82,8 @@ void	object_list_new_owner(struct obj_data *list, struct char_data *ch);
 void	extract_obj(struct obj_data *obj);
 
 /* ******* characters ********* */
-int     other_side(struct char_data *ch, struct char_data *i);
-int     other_side_num(int ch_race, int i_race);
+int other_side(const char_data* character, const char_data* other);
+int other_side_num(int ch_race, int i_race);
 
 struct char_data *get_char_room(char *name, int room);
 struct char_data *get_char_num(int nr);

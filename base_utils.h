@@ -31,3 +31,4 @@ namespace base_utils
 		var = var ^ bit;
 	}
 }
+

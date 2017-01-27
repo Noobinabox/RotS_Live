@@ -119,29 +119,28 @@ char_power(int lev)
 
 
 /*
- * Decide if `ch' and `i' are on the same side of the race
+ * Decide if `character' and `other' are on the same side of the race
  * war.  Return 0 if they are, return 1 if they aren't.
  */
-int
-other_side(struct char_data *ch, struct char_data *i) 
+int other_side(const char_data* character, const char_data* other) 
 {
-  if(IS_NPC(i) && !IS_AFFECTED(i, AFF_CHARM))
+  if(IS_NPC(other) && !IS_AFFECTED(other, AFF_CHARM))
     return 0;
-  if(IS_NPC(ch) && !IS_AFFECTED(ch, AFF_CHARM))
+  if(IS_NPC(character) && !IS_AFFECTED(character, AFF_CHARM))
     return 0;
-  if((GET_RACE(ch) == RACE_GOD) || (GET_RACE(i) == RACE_GOD))
+  if((GET_RACE(character) == RACE_GOD) || (GET_RACE(other) == RACE_GOD))
     return 0;
-  if(RACE_EAST(i) && !(RACE_EAST(ch)))
+  if(RACE_EAST(other) && !(RACE_EAST(character)))
     return 1;
-  if(!(RACE_EAST(i)) && RACE_EAST(ch))
+  if(!(RACE_EAST(other)) && RACE_EAST(character))
     return 1;
-  if(RACE_MAGI(i) && !(RACE_MAGI(ch)))
+  if(RACE_MAGI(other) && !(RACE_MAGI(character)))
     return 1;
-  if(!(RACE_MAGI(i)) && RACE_MAGI(ch))
+  if(!(RACE_MAGI(other)) && RACE_MAGI(character))
     return 1;
-  if(RACE_EVIL(i) && RACE_GOOD(ch))
+  if(RACE_EVIL(other) && RACE_GOOD(character))
     return 1;
-  if(RACE_GOOD(i) && RACE_EVIL(ch))
+  if(RACE_GOOD(other) && RACE_EVIL(character))
     return 1;
 
   return 0;  

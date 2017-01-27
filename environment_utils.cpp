@@ -74,3 +74,4 @@ namespace environment_utils
 		return sector == SECT_WATER_SWIM || SECT_WATER_NOSWIM || SECT_UNDERWATER;
 	}
 }
+

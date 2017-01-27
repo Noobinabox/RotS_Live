@@ -4,10 +4,13 @@
 
 struct char_data;
 struct obj_data;
+struct weather_data;
+struct room_data;
 
 namespace char_utils
 {
-	using sh_int = signed short;
+	typedef signed short sh_int;
+	typedef unsigned char byte;
 
 	bool is_npc(const char_data& character);
 	bool is_mob(const char_data& character);
@@ -104,3 +107,4 @@ namespace char_utils
 
 	bool is_guardian(const char_data& character);
 }
+

@@ -746,7 +746,7 @@ namespace char_utils
 		case RACE_WOOD:  return 50;
 		case RACE_HOBBIT: return 30;
 		case RACE_HIGH: return 100;
-		case RACE_BEORN: return 30;
+		//case RACE_BEORN: return 30;
 		case RACE_URUK: return 30;
 		case RACE_HARAD: return 30;
 		case RACE_ORC: return 10;
@@ -783,7 +783,7 @@ namespace char_utils
 	//============================================================================
 	int get_specialization(const char_data& character)
 	{
-		if (is_npc(character) || character.profs == nullptr)
+		if (is_npc(character) || character.profs == NULL)
 			return 0;
 
 		return character.profs->specialization;
@@ -792,7 +792,7 @@ namespace char_utils
 	//============================================================================
 	void set_specialization(char_data& character, int value)
 	{
-		if (is_npc(character) || character.profs == nullptr)
+		if (is_npc(character) || character.profs == NULL)
 			return;
 
 		character.profs->specialization = value;
@@ -814,6 +814,7 @@ namespace char_utils
 	bool is_guardian(const char_data& character)
 	{
 		return is_npc(character) && is_affected_by(character, AFF_CHARM)
-			&& character.master != nullptr && is_mob_flagged(character, MOB_BODYGUARD);
+			&& character.master != NULL && is_mob_flagged(character, MOB_BODYGUARD);
 	}
 }
+

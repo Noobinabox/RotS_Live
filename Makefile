@@ -27,7 +27,7 @@ OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
 	config.o consts.o db.o fight.o graph.o handler.o interpre.o environment_utils.o  limits.o\
 	mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o \
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \
-	signals.o spec_ass.o spec_pro.o spell_pa.o utility.o weather.o zone.o
+	signals.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weather.o zone.o
 
 
 ageland:        /bin/ageland
@@ -51,6 +51,8 @@ environment_utils.o : environment_utils.cpp structs.h environment_utils.h
 	$(CC) -c $(CFLAGS) environment_utils.cpp
 object_utils.o : object_utils.cpp structs.h object_utils.h 
 	$(CC) -c $(CFLAGS) object_utils.cpp
+wait_functions.o : wait_functions.cpp structs.h base_utils.h char_utils.h object_utils.h  comm.h
+	$(CC) -c $(CFLAGS) wait_functions.cpp
 act_comm.o : act_comm.cc structs.h utils.h comm.h interpre.h handler.h \
 	db.h
 	$(CC) -c $(CFLAGS) act_comm.cc

@@ -3,6 +3,9 @@
 #include "wait_functions.h"
 #include "structs.h"
 
+#include "comm.h" // for send-to-char
+#include <algorithm>
+
 namespace wait_functions
 {
 	//============================================================================
@@ -17,7 +20,6 @@ namespace wait_functions
 		int delay_flag = 0;
 		sh_int ch_num = 0;
 		void* argument = NULL;
-		int sub_command = 0;
 		
 		wait_state_full(character, cycle, command, sub_command, priority, 
 			delay_flag, ch_num, argument, AFF_WAITING, TARGET_IGNORE);
@@ -54,8 +56,6 @@ namespace wait_functions
 			// Keep track of last.
 			// This file will take over complete_delay and abort_delay.
 			// Make use of std::find to see if the character is in the waiting list.
-
-			char_data* waiting_list = NULL;
 			char_data* temp_character = waiting_list;
 
 			if (temp_character == character)
@@ -168,6 +168,7 @@ namespace wait_functions
 	//============================================================================
 	void WaitList::complete_delay(char_data *ch)
 	{
+		/*
 		SPECIAL(*tmpfunc);
 
 		ch->delay.wait_value = 0;
@@ -182,7 +183,7 @@ namespace wait_functions
 
 		if (ch->delay.cmd == -1 && IS_NPC(ch)) 
 		{
-			/* Here calls special procedure */
+			// Here calls special procedure
 			if (mob_index[ch->nr].func)
 			{
 				(*mob_index[ch->nr].func) (ch, 0, -1, "", SPECIAL_NONE, &(ch->delay));
@@ -201,13 +202,17 @@ namespace wait_functions
 		{
 			command_interpreter(ch, "", &(ch->delay));
 		}
+		*/
 	}
 
 	//============================================================================
 	void WaitList::update()
 	{
+		static char* wait_wheel[8] = { "\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\r-\r", "\r/\r" };
+		typedef std::_List_iterator<char_data*> iter;
+
 		// Process commands in the wait list.
-		for (auto char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); )
+		for (iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); )
 		{
 			char_data* character = *char_iter;
 			int wait_value = character->delay.wait_value;
@@ -223,7 +228,7 @@ namespace wait_functions
 					if (char_utils::is_preference_flagged(*character, PRF_SPINNER))
 					{
 						// Add this function in somewhere.
-						//write_to_descriptor(wait_ch->desc->descriptor, wait_wheel[wait_value % 8]);
+						write_to_descriptor(character->desc->descriptor, wait_wheel[wait_value % 8]);
 					}
 				}
 
@@ -260,3 +265,4 @@ namespace wait_functions
 		return std::find(m_waitingList.begin(), m_waitingList.end(), character) != m_waitingList.end();
 	}
 }
+

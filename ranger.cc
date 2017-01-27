@@ -1848,7 +1848,7 @@ int shoot_calculate_wait(const char_data* archer)
 
 	int total_beats = base_beats - ((archer->points.ENE_regen / beats_modifier) - beats_modifier);
 	total_beats = total_beats - (char_utils::get_prof_level(PROF_RANGER, *archer) / beats_modifier);
-	
+
 	if (archer->player.race == RACE_WOOD)
 	{
 		total_beats = total_beats - 1;
@@ -1958,11 +1958,17 @@ bool can_ch_shoot(char_data* archer)
 		send_to_char("You must be wielding your bow with two hands.\r\n", archer);
 		return false;
 	}
-
+/*
 	if (get_skill(*archer, SKILL_ARCHERY) == 0) {
 		send_to_char("Learn how to shoot a bow first.\r\n", archer);
 		return false;
-	}
+	}*/
+
+  if (!GET_SKILL(archer, SKILL_ARCHERY))
+  {
+    send_to_char("Learn how to shoot a bow first.\r\n", archer);
+    return false;
+  }
 
 	return true;
 }
@@ -1995,14 +2001,14 @@ struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *targe
     }
     else
     {
-      send_to_char("Shoot who?\n\r", ch);
+      send_to_char("Shoot who?\r\n", ch);
       return NULL;
     }
   }
 
   if(ch->in_room != victim->in_room)
   {
-    send_to_char("Your victim is no longer here.\n\r", ch);
+    send_to_char("Your victim is no longer here.\r\n", ch);
     return NULL;
   }
   if(!CAN_SEE(ch, victim))
@@ -2029,14 +2035,14 @@ ACMD(do_shoot)
 
   if(subcmd == -1)
   {
-    send_to_char("You could not concentrate on shooting anymore!\n\r", ch);
+    send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
     return;
   }
 
   if(!can_ch_shoot(ch))
     return;
 
-  if (char_utils::is_affected_by(*ch, AFF_SANCTUARY)) 
+  if (char_utils::is_affected_by(*ch, AFF_SANCTUARY))
   {
     appear(ch);
     send_to_char("You cast off your sanctuary!\r\n", ch);
@@ -2045,40 +2051,31 @@ ACMD(do_shoot)
 
   switch (subcmd) {
     case 0:
-      send_to_char("You draw back your bow and prepare to fire...\n\r", ch);
       victim = is_targ_valid(ch, wtl);
       if(victim == NULL)
         return;
+      send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
       WAIT_STATE_FULL(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
       break;
     case 1:
-      // if(wtl == NULL)
-      // {
-      //   vmudlog(BRF, "ERROR: shoot callback with no context");
-      //   send_to_char("Error: shoot callback with no context.\r\n", ch);
-      //   return;
-      // }
-      // victim = is_targ_valid(ch, wtl);
-      // if(victim == NULL)
-      //   return;
       if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
       {
-        send_to_char("Your victim is no longer among us.\n\r", ch);
+        send_to_char("Your victim is no longer among us.\r\n", ch);
         return;
       }
 
       victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
       if(!CAN_SEE(ch,victim)) {
-        send_to_char("Shoot who?\n\r", ch);
+        send_to_char("Shoot who?\r\n", ch);
         return;
       }
 
       if(ch->in_room != victim->in_room) {
-        send_to_char("Your target is not here any longer\n\r",ch);
+        send_to_char("Your target is not here any longer\r\n",ch);
         return;
       }
 
-      send_to_char("You release your arrow and it goes flying!", ch);
+      send_to_char("You release your arrow and it goes flying!\r\n", ch);
       damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
       break;
     default:

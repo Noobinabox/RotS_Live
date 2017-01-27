@@ -409,7 +409,7 @@ namespace char_utils
 
 			// dgurley:  Clamp the value of the modifier to 0.  This is a 
 			// functionality change.  Feel free to remove this.
-			modifier = std::max(modifier, 0);
+			// modifier = std::max(modifier, 0);
 			return modifier;
 		}
 	}

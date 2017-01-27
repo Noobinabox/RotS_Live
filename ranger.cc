@@ -23,6 +23,9 @@
 #include "spells.h"
 #include "script.h"
 
+#include <algorithm>
+#include "char_utils.h"
+
 typedef char * string;
 
 /*
@@ -1808,9 +1811,9 @@ see_hiding(struct char_data *seeker)
  * slyon: Jan 24,2017 - Created function
  */
 
-int shoot_calculate_success(struct char_data *ch, struct char_data *victim)
+int shoot_calculate_success(const char_data* archer, const char_data* victim)
 {
-
+	return 100;
 }
 
 /*
@@ -1821,9 +1824,9 @@ int shoot_calculate_success(struct char_data *ch, struct char_data *victim)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
  */
-int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
+int shoot_calculate_damage(const char_data* archer, const char_data* victim)
 {
-  int totaldamage = GET_LEVEL(ch);
+  int totaldamage = archer->player.level;
   return totaldamage;
 }
 
@@ -1837,16 +1840,22 @@ int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
  */
-int shoot_calculate_wait(struct char_data *ch)
+int shoot_calculate_wait(const char_data* archer)
 {
-  int totalbeats;
-  totalbeats = 16 - ((GET_ENE_REGEN(ch) / 12) - 12);
-  totalbeats = totalbeats - (GET_PROF_LEVEL(PROF_RANGER, ch) / 12);
-  if(GET_RACE(ch) == RACE_WOOD)
-    totalbeats = totalbeats - 1;
-  if(totalbeats < 3)
-    totalbeats = 3;
-  return totalbeats;
+	const int base_beats = 16;
+	const int beats_modifier = 12;
+	const int min_beats = 3;
+
+	int total_beats = base_beats - ((archer->points.ENE_regen / beats_modifier) - beats_modifier);
+	total_beats = total_beats - (char_utils::get_prof_level(PROF_RANGER, *archer) / beats_modifier);
+	
+	if (archer->player.race == RACE_WOOD)
+	{
+		total_beats = total_beats - 1;
+	}
+
+	total_beats = std::max(total_beats, min_beats);
+	return total_beats;
 
 }
 
@@ -1856,7 +1865,7 @@ int shoot_calculate_wait(struct char_data *ch)
  * --------------------------- Change Log --------------------------------
  * drelidan: Jan 26, 2017 - Created function
  */
-bool does_arrow_break(char_data* victim, obj_data* arrow)
+bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 {
 	//TODO(drelidan):  Add logic for calculating breaking here.
 	return false;
@@ -1906,54 +1915,56 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
  * slyon: Jan 24, 2017 - Created function
  * slyon: Jan 25, 2017 - Renamed function to better reflect what it's doing
  */
-bool can_ch_shoot(struct char_data *ch)
+bool can_ch_shoot(char_data* archer)
 {
-  if(IS_SHADOW(ch)) {
-    send_to_char("Hmm, perphaps you've spent to much time in the "
-                 " mortal lands.\r\n", ch);
-    return false;
-  }
+	using namespace base_utils;
+	using namespace char_utils;
 
-  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND)) {
-    send_to_char("Leave that to your leader.\r\n", ch);
-    return false;
-  }
+	if (is_shadow(*archer)) {
+		send_to_char("Hmm, perhaps you've spent to much time in the "
+			" mortal lands.\r\n", archer);
+		return false;
+	}
 
-  if(IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
-    send_to_char("A peaceful feeling overwhelms you, and you cannot bring"
-                 " yourself to attack.\r\n", ch);
-    return false;
-  }
+	if (is_npc(*archer) && is_mob_flagged(*archer, MOB_ORC_FRIEND)) {
+		send_to_char("Leave that to your leader.\r\n", archer);
+		return false;
+	}
 
-  if(!ch->equipment[WIELD] || !isname("bow", ch->equipment[WIELD]->name)) {
-    send_to_char("You must be wielding a bow to shoot.\r\n", ch);
-    return false;
-  }
-  /* slyon:
-   * We need to check if they have something equiped on their back
-   * before we check for the name or it will crash the game.
-   */
-  if(!ch->equipment[WEAR_BACK])
-  {
-    send_to_char("You must be wearing a quiver on your back.\r\n", ch);
-    return false;
-  }
+	const room_data& room = world[archer->in_room];
+	if (is_set(room.room_flags, (long)PEACEROOM)) {
+		send_to_char("A peaceful feeling overwhelms you, and you cannot bring"
+			" yourself to attack.\r\n", archer);
+		return false;
+	}
 
-  if(!isname("quiver", ch->equipment[WEAR_BACK]->name)) {
-    send_to_char("You must be wearing a quiver on your back.\r\n", ch);
-    return false;
-  }
+	const obj_data* weapon = archer->equipment[WIELD];
+	if (!weapon || !isname("bow", weapon->name)) {
+		send_to_char("You must be wielding a bow to shoot.\r\n", archer);
+		return false;
+	}
+	/* slyon:
+	 * We need to check if they have something equiped on their back
+	 * before we check for the name or it will crash the game.
+	 */
+	const obj_data* quiver = archer->equipment[WEAR_BACK];
+	if (!quiver || !isname("quiver", quiver->name))
+	{
+		send_to_char("You must be wearing a quiver on your back.\r\n", archer);
+		return false;
+	}
 
-  if(!IS_TWOHANDED(ch)) {
-    send_to_char("You must be wielding your bow with two hands.\r\n", ch);
-    return false;
-  }
-  if(!GET_SKILL(ch, SKILL_ARCHERY)) {
-    send_to_char("Learn how to shoot a bow first.\r\n", ch);
-    return false;
-  }
+	if (!is_twohanded(*archer)) {
+		send_to_char("You must be wielding your bow with two hands.\r\n", archer);
+		return false;
+	}
 
-  return true;
+	if (get_skill(*archer, SKILL_ARCHERY) == 0) {
+		send_to_char("Learn how to shoot a bow first.\r\n", archer);
+		return false;
+	}
+
+	return true;
 }
 
 /*
@@ -2025,17 +2036,16 @@ ACMD(do_shoot)
   if(!can_ch_shoot(ch))
     return;
 
-  if(IS_AFFECTED(ch, AFF_SANCTUARY)) {
+  if (char_utils::is_affected_by(*ch, AFF_SANCTUARY)) 
+  {
     appear(ch);
     send_to_char("You cast off your sanctuary!\r\n", ch);
-    act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+    act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
   }
-
-
 
   switch (subcmd) {
     case 0:
-      send_to_char("Beginning shooting...\n\r", ch);
+      send_to_char("You draw back your bow and prepare to fire...\n\r", ch);
       victim = is_targ_valid(ch, wtl);
       if(victim == NULL)
         return;
@@ -2056,15 +2066,18 @@ ACMD(do_shoot)
         send_to_char("Your victim is no longer among us.\n\r", ch);
         return;
       }
-      victim = (struct char_data *) wtl->targ1.ptr.ch;
+
+      victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
       if(!CAN_SEE(ch,victim)) {
-        send_to_char("Bash who?\n\r", ch);
+        send_to_char("Shoot who?\n\r", ch);
         return;
       }
+
       if(ch->in_room != victim->in_room) {
-        send_to_char("You target is not here any longer\n\r",ch);
+        send_to_char("Your target is not here any longer\n\r",ch);
         return;
       }
+
       send_to_char("You release your arrow and it goes flying!", ch);
       damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
       break;

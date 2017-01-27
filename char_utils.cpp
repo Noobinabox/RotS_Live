@@ -417,7 +417,7 @@ namespace char_utils
 	//============================================================================
 	int get_raw_skill(const char_data& character, int skill_index)
 	{
-		if (character.player.bodytype != 2)
+		if (character.player.bodytype == 2)
 			return 0;
 
 		// TODO(dgurley):  This is the GET_RAW_SKILL macro as written.

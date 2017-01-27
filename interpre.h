@@ -22,7 +22,7 @@
    void (c)(struct char_data *ch,char *argument, struct waiting_type * wtl,\
 	    int cmd,int subcmd)
 
-//#define CRYPT(a,b) ((char *) crypt((a),(b))) 
+//#define CRYPT(a,b) ((char *) crypt((a),(b)))
 
 #define CRYPT(a,b) ((char *)(a))
 
@@ -45,7 +45,7 @@
 				mob_index[mob->nr].func = fname; }
 
 #define ASSIGNREALOBJ(obj, fname) { if (obj->item_number >= 0) \
-				obj_index[obj->item_number].func = fname; } 
+				obj_index[obj->item_number].func = fname; }
 
 #define ASSIGNOBJ(obj, fname) { if (real_object(obj) >= 0) \
 				obj_index[real_object(obj)].func = fname; }
@@ -57,14 +57,14 @@
 
 
 
-void	command_interpreter(struct char_data *ch, char *arg_chr, 
+void	command_interpreter(struct char_data *ch, char *arg_chr,
 			    struct waiting_type * arg_wtl = 0);
 int	search_block(char *arg, char **list, char exact);
 int	old_search_block(char *argument, int begin, unsigned int length, char **list, int mode);
 char	lower( char c );
 void	argument_interpreter(char *argument, char *first_arg, char *second_arg);
 int	special(struct char_data *ch, int cmd, char *arg, int callflag, waiting_type * wtl, int in_room = NOWHERE);
-int activate_char_special(char_data *k, char_data * ch, int cmd, char * arg, 
+int activate_char_special(char_data *k, char_data * ch, int cmd, char * arg,
 			  int callflag,waiting_type * wtl, int in_room);
 
 char	*one_argument(char *argument, char *first_arg);
@@ -78,7 +78,7 @@ void virt_assignmob(struct char_data *);
 void virt_assignobj(struct obj_data * obj);
 
 struct command_info {
-  void (*command_pointer)(struct char_data *ch, char *argument, 
+  void (*command_pointer)(struct char_data *ch, char *argument,
 			  struct waiting_type *, int cmd, int subcmd);
   byte minimum_position;
   sh_int minimum_level;
@@ -94,16 +94,16 @@ struct command_info {
   unsigned char mask;
 
   int target_mask[32];
-  void add_target(int t1, int t2) { 
+  void add_target(int t1, int t2) {
     for(int tmp = 0; tmp < 32; tmp++)
-      if((1 << tmp) & t1) 
+      if((1 << tmp) & t1)
 	target_mask[tmp] |= t2;
   }
 
   /* This is never used anywhere */
   int valid_target(int t1, int t2){
     for(int tmp = 0; tmp < 32; tmp++)
-      if(((1 << tmp) & t1) && (target_mask[tmp] & t2)); 
+      if(((1 << tmp) & t1) && (target_mask[tmp] & t2));
     return 1;
     return 0;
   }
@@ -111,7 +111,7 @@ struct command_info {
 
 
 #define SCMD_INFO       100
-#define SCMD_HANDBOOK   101 
+#define SCMD_HANDBOOK   101
 #define SCMD_CREDITS    102
 #define SCMD_WIZLIST    104
 #define SCMD_POLICIES   105
@@ -268,6 +268,7 @@ struct command_info {
 #define CMD_ORC_DELAY   209
 #define CMD_STALK       215
 #define CMD_COVER       216
+#define CMD_SHOOT       229
 
 #define CMD_HIDE	86
 #define CMD_AMBUSH      87
@@ -306,7 +307,7 @@ struct ferry_boat_type {
 struct ferry_captain_type {
   int num_of_ferry;  // virt. number of the ferry_boat.
   int length;   // route length
-  int ferry_route[100]; // where to put the ferry object 
+  int ferry_route[100]; // where to put the ferry object
   int cabin_route[100]; // where to put passengers
   int stop_time[100]; // in quarter-ticks (?) 0 = no stopping
   int timer;

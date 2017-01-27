@@ -1823,7 +1823,8 @@ int shoot_calculate_success(struct char_data *ch, struct char_data *victim)
  */
 int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
 {
-
+  int totaldamage = GET_LEVEL(ch);
+  return totaldamage;
 }
 
 /*
@@ -1838,7 +1839,27 @@ int shoot_calculate_damage(struct char_data *ch, struct char_data *victim)
  */
 int shoot_calculate_wait(struct char_data *ch)
 {
+  int totalbeats;
+  totalbeats = 16 - ((GET_ENE_REGEN(ch) / 12) - 12);
+  totalbeats = totalbeats - (GET_PROF_LEVEL(PROF_RANGER, ch) / 12);
+  if(GET_RACE(ch) == RACE_WOOD)
+    totalbeats = totalbeats - 1;
+  if(totalbeats < 3)
+    totalbeats = 3;
+  return totalbeats;
 
+}
+
+/*
+ * This function will determine if an arrow breaks based on the
+ * victims armor and percentage on arrows themself.
+ * --------------------------- Change Log --------------------------------
+ * drelidan: Jan 26, 2017 - Created function
+ */
+bool does_arrow_break(char_data* victim, obj_data* arrow)
+{
+	//TODO(drelidan):  Add logic for calculating breaking here.
+	return false;
 }
 
 /*
@@ -1849,12 +1870,32 @@ int shoot_calculate_wait(struct char_data *ch)
  *
  * This function will also handle the breaking of arrows based on the
  * victims armor and percentage on arrows themself.
+ *
+ * Returns true if the arrow was moved to the victim, false if it was destroyed.
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
+ * drelidan: Jan 26, 2017 - Implemented function logic.
  */
-bool move_arrow_to_victim(struct char_data *ch, struct char_data *victim, struct item *arrow)
+bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 {
+	// Remove object from the character.
+	obj_from_obj(arrow);
+	if (does_arrow_break(victim, arrow))
+	{
+		// Destroy the arrow and exit.
+		extract_obj(arrow);
+		return false;
+	}
 
+	// Tag arrow.  Set the arrow's owner to the archer.
+	// drelidan:  I chose the 'owner' variable because it makes
+	//            sense and it's not being used by anything else.
+	arrow->owner = (int)archer->specials2.idnum;
+
+	// Move the arrow to the victim.
+	obj_to_char(arrow, victim);
+
+	return true;
 }
 
 /*
@@ -1921,9 +1962,45 @@ bool can_ch_shoot(struct char_data *ch)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-bool is_targ_valid(struct char_data *victim)
+struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *target)
 {
+  struct char_data *victim;
 
+  if(target->targ1.type == TARGET_TEXT)
+  {
+    victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
+  }
+  else if (target->targ1.type == TARGET_CHAR)
+  {
+    if(char_exists(target->targ1.ch_num))
+      victim = target->targ1.ptr.ch;
+  }
+
+  if(victim == NULL)
+  {
+    if(ch->specials.fighting)
+    {
+      victim = ch->specials.fighting;
+    }
+    else
+    {
+      send_to_char("Shoot who?\n\r", ch);
+      return NULL;
+    }
+  }
+
+  if(ch->in_room != victim->in_room)
+  {
+    send_to_char("Your victim is no longer here.\n\r", ch);
+    return NULL;
+  }
+  if(!CAN_SEE(ch, victim))
+  {
+    send_to_char("Shoot who?\r\n", ch);
+    return NULL;
+  }
+
+  return victim;
 }
 
 /*
@@ -1934,16 +2011,67 @@ bool is_targ_valid(struct char_data *victim)
  */
 ACMD(do_shoot)
 {
-  struct char_data *victim;
+  struct char_data *victim = NULL;
   int success, dmg;
+
+  one_argument(argument, arg);
+
+  if(subcmd == -1)
+  {
+    send_to_char("You could not concentrate on shooting anymore!\n\r", ch);
+    return;
+  }
+
+  if(!can_ch_shoot(ch))
+    return;
+
   if(IS_AFFECTED(ch, AFF_SANCTUARY)) {
     appear(ch);
     send_to_char("You cast off your sanctuary!\r\n", ch);
     act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
   }
 
-  if(!can_ch_shoot(ch))
-    return;
 
-  send_to_char("Beginning shooting...", ch);
+
+  switch (subcmd) {
+    case 0:
+      send_to_char("Beginning shooting...\n\r", ch);
+      victim = is_targ_valid(ch, wtl);
+      if(victim == NULL)
+        return;
+      WAIT_STATE_FULL(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+      break;
+    case 1:
+      // if(wtl == NULL)
+      // {
+      //   vmudlog(BRF, "ERROR: shoot callback with no context");
+      //   send_to_char("Error: shoot callback with no context.\r\n", ch);
+      //   return;
+      // }
+      // victim = is_targ_valid(ch, wtl);
+      // if(victim == NULL)
+      //   return;
+      if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
+      {
+        send_to_char("Your victim is no longer among us.\n\r", ch);
+        return;
+      }
+      victim = (struct char_data *) wtl->targ1.ptr.ch;
+      if(!CAN_SEE(ch,victim)) {
+        send_to_char("Bash who?\n\r", ch);
+        return;
+      }
+      if(ch->in_room != victim->in_room) {
+        send_to_char("You target is not here any longer\n\r",ch);
+        return;
+      }
+      send_to_char("You release your arrow and it goes flying!", ch);
+      damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
+      break;
+    default:
+      sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);
+      mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+      abort_delay(ch);
+      return;
+  }
 }

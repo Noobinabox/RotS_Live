@@ -407,9 +407,6 @@ namespace char_utils
 				status_effect = status_effect->next;
 			}
 
-			// dgurley:  Clamp the value of the modifier to 0.  This is a 
-			// functionality change.  Feel free to remove this.
-			// modifier = std::max(modifier, 0);
 			return modifier;
 		}
 	}

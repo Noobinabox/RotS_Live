@@ -40,6 +40,10 @@
 #include "spells.h"
 #include "db.h"
 
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+
 extern struct time_data time_info;
 extern struct room_data world;
 extern int top_of_p_table;
@@ -851,13 +855,20 @@ int get_followers_level(char_data *ch)  /* summ of levels of mobs/players charme
 /* creates a random number in interval [from;to] */
 int	number(int from, int to)
 {
-  if(!(to - from + 1))
-     {
-       //       fprintf(stderr, "SYSERR: number(%d, %d)\n",from,to);
-       to = from;
-     }
-       
-   return((random() % (to - from + 1)) + from);
+	// Ensure that our to/from is in the proper order.
+	if (from > to)
+	{
+		std::swap(to, from);
+	}
+
+	int upper_end = to - from + 1;
+	if (upper_end == 0)
+	{
+		//       fprintf(stderr, "SYSERR: number(%d, %d)\n",from,to);
+		to = from;
+	}
+
+	return (std::rand() % upper_end) + from;
 }
 
 
@@ -865,33 +876,44 @@ int	number(int from, int to)
 /* simulates dice roll */
 int	dice(int number, int size)
 {
-   int	r;
-   int	sum = 0;
+	int	r;
+	int	sum = 0;
 
-   //   assert(size >= 1);
-   if(size < 1){
-     mudlog("Dice rolled with size < 1!", BRF, LEVEL_IMMORT, TRUE);
-     return 0;
-   }
-   for (r = 1; r <= number; r++)
-      sum += ((random() % size) + 1);
-   return(sum);
+	//   assert(size >= 1);
+	if (size < 1)
+	{
+		mudlog("Dice rolled with size < 1!", BRF, LEVEL_IMMORT, TRUE);
+		return 0;
+	}
+
+	for (r = 1; r <= number; r++)
+	{
+		sum += (std::rand() % size) + 1;
+	}
+
+	return(sum);
 }
 
 
 
 /* Create a duplicate of a string */
-char	*str_dup(char *source)
+char* str_dup(const char* source)
 {
-   char	*pnew;
-   int i,l;
-   if(!source) return 0;
-   l=strlen(source);
-   CREATE(pnew, char, ((int)(l/0x100) + 1) * 0x100);
-   for( i=0; i<l; i++) pnew[i] = source[i];
-   pnew[l] = 0;
+	if (!source)
+		return NULL;
 
-   return pnew;
+	char* new_string;
+	int length = std::strlen(source);
+
+	CREATE(new_string, char, ((int)(length / 0x100) + 1) * 0x100);
+	
+	for (int i = 0; i < length; i++)
+	{
+		new_string[i] = source[i];
+	}
+	new_string[length] = 0;
+
+	return new_string;
 }
 
 
@@ -943,31 +965,26 @@ void	log_death_trap(struct char_data *ch)
 
 
 /* writes a string to the log */
-void	log(char *str)
+void log(char *str)
 {
-   long	ct;
-   char	*tmstr;
+	time_t ct(0);
+	char* time_string = asctime(localtime(&ct));
 
-   ct = time(0);
-   tmstr = asctime(localtime(&ct));
-   *(tmstr + strlen(tmstr) - 1) = '\0';
-   fprintf(stderr, "%-19.19s :: %s\n", tmstr, str);
+	*(time_string + std::strlen(time_string) - 1) = '\0';
+	fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
 }
 
 
 
-void
-mudlog(char *str, char type, sh_int level, byte file)
+void mudlog(char *str, char type, sh_int level, byte file)
 {
   char buf[8000];
   extern struct descriptor_data *descriptor_list;
   struct descriptor_data *i;
-  char *tmp;
-  long ct;  
   char tp;
   
-  ct = time(0);
-  tmp = asctime(localtime(&ct));
+  time_t ct(0);
+  char* tmp = asctime(localtime(&ct));
   
   if(file)
     fprintf(stderr, "%d, %-19.19s :: %s\n", type, tmp, str);

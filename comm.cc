@@ -32,6 +32,9 @@
 #include "script.h"
 #include "zone.h"
 
+#include <cstdlib>
+#include <ctime>
+
 #define MAX_HOSTNAME	256
 #define OPT_USEC	250000  /* time delay corresponding to 4 passes/sec */
 #define DFLT_PORT       1024
@@ -135,6 +138,10 @@ char * wait_wheel[8]={"\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\
 int
 main(int argc, char **argv)
 {
+	// initialize the random number generator
+	std::srand(std::time(0));
+
+
    sh_int port;
    char	buf[512];
    int pos = 1;

@@ -33,7 +33,7 @@ void snuck_in(struct char_data *);
 int hide_prof(struct char_data *);
 int see_hiding(struct char_data *);
 char unaccent(char);
-char	*str_dup(char *source);
+char* str_dup(const char *source);
 int	str_cmp(char *arg1, char *arg2);
 int	strn_cmp(char *arg1, char *arg2, int n);
 void	log(char *str);

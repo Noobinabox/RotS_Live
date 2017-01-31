@@ -988,7 +988,7 @@ bool is_valid_subcommand(char_data& character, int sub_command, const waiting_ty
 	return true;
 }
 
-// dgurley:  Copied ACMD macro here so I could see the arguments.
+// drelidan:  Copied ACMD macro here so I could see the arguments.
 //void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int subcmd)
 ACMD(do_trap)
 {
@@ -1798,7 +1798,43 @@ see_hiding(struct char_data *seeker)
 }
 
 /*
- * shoot_calculate_success determins the success rate of the
+ * Assuming 'archer' is shooting 'victim', does 'archer' perform
+ * an 'accurate' hit (via the accuracy skill)?
+ *
+ * This is similar to the accuracy check in 'fight.cc', but it does not
+ * take tactics into consideration, since they are not used for archery.
+ *
+ * Returns: true if the hit should not be accurate, false if the
+ * hit should be accurate.
+ */
+bool check_archery_accuracy(char_data& archer, char_data& victim)
+{
+	using namespace char_utils;
+
+	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
+	// here for shooting quickly and a bonus for shooting slowly.
+	int player_level = archer.get_capped_level();
+
+	// Scale probability of success with the player level as well.
+	int probability = get_prof_level(PROF_RANGER, archer) * player_level / LEVEL_MAX;
+	probability -= get_skill_penalty(archer);
+	probability -= get_dodge_penalty(archer);
+	probability *= get_skill(archer, SKILL_ACCURACY) / 100;
+	
+	if (number(0, 99) < probability) 
+	{
+		// TODO(drelidan):  Move this code out of the 'check' function and add it to the function
+		// that calls this.
+		act("You manage to find an opening in $N's defense!", TRUE, &archer, NULL, &victim, TO_CHAR);
+		act("$n notices an opening in your defense!", TRUE, &archer, NULL, &victim, TO_VICT);
+		return true;
+	}
+
+	return false;
+}
+
+/*
+ * shoot_calculate_success determines the success rate of the
  * archer versus the victim, taking into account:
  * - the ranger level of the attacker
  * - the amount of archery practiced by attacker
@@ -1809,11 +1845,31 @@ see_hiding(struct char_data *seeker)
  * XXX The skill accuracy should be taken into mind here
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24,2017 - Created function
+ * drelidan: Jan 31, 2017 - Base implementation as an example.
  */
 
 int shoot_calculate_success(const char_data* archer, const char_data* victim)
 {
-	return 100;
+	using namespace char_utils;
+
+	int archery_skill = get_skill(*archer, SKILL_ARCHERY);
+	int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
+
+	int player_level = archer->get_capped_level();
+
+	// Scale probability of success with the player level as well.
+	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
+	int ranger_dex = archer->get_cur_dex();
+
+	// Calculate success is currently not taking 'OB' into account.  This is intentional.
+	// This can return over 100 currently.  Check out scaling for different factors to
+	// see how we want to adjust this.
+
+	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
+	// here for shooting quickly and a bonus for shooting slowly.
+	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 4);
+
+	return success_chance;
 }
 
 /*
@@ -1958,17 +2014,12 @@ bool can_ch_shoot(char_data* archer)
 		send_to_char("You must be wielding your bow with two hands.\r\n", archer);
 		return false;
 	}
-/*
+
 	if (get_skill(*archer, SKILL_ARCHERY) == 0) {
 		send_to_char("Learn how to shoot a bow first.\r\n", archer);
 		return false;
-	}*/
+	}
 
-  if (!GET_SKILL(archer, SKILL_ARCHERY))
-  {
-    send_to_char("Learn how to shoot a bow first.\r\n", archer);
-    return false;
-  }
 
 	return true;
 }

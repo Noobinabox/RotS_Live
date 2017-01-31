@@ -1062,48 +1062,70 @@ struct char_prof_data  {
 
 
 /* ================== Structure for player/non-player ===================== */
-struct char_data {
-   int abs_number;                       /* bit number in the control array */
-   int player_index;                     /* Index in player table */
-   sh_int nr;                            /* monster nr (pos in file)      */
-   int in_room;                       /* Location                      */
+struct char_data
+{
+public:
+	int get_cur_str() const { return tmpabilities.str; }
+	int get_cur_int() const { return tmpabilities.intel; }
+	int get_cur_wil() const { return tmpabilities.wil; }
+	int get_cur_dex() const { return tmpabilities.dex; }
+	int get_cur_con() const { return tmpabilities.con; }
+	int get_cur_lea() const { return tmpabilities.lea; }
 
-   struct char_player_data player;       /* Normal data                   */
-   struct char_ability_data abilities;   /* Max. Abilities                 */
-   struct char_ability_data tmpabilities;/* Current abilities    */
-   struct char_ability_data constabilities;/* Rolled abilities */
-   struct char_point_data points;        /* Points                        */
-   struct char_special_data specials;    /* Special playing constants      */
-   struct char_special2_data specials2;  /* Additional special constants  */
-   struct char_prof_data * profs;    /* prof cooficients */
-   byte *skills;			 /* dynam. alloc. array of pracs spent                                         on skills */
-   byte *knowledge;                     /* array of knowledge, computed from
-                                           pracs spent at logon */
-   struct affected_type *affected;       /* affected by what spells       */
-   struct obj_data *equipment[MAX_WEAR]; /* Equipment array               */
+	int get_max_str() const { return abilities.str; }
+	int get_max_int() const { return abilities.intel; }
+	int get_max_wil() const { return abilities.wil; }
+	int get_max_dex() const { return abilities.dex; }
+	int get_max_con() const { return abilities.con; }
+	int get_max_lea() const { return abilities.lea; }
 
-   struct obj_data *carrying;            /* Head of list                  */
-   struct descriptor_data *desc;         /* NULL for mobiles              */
+	int get_level() const { return player.level; }
+	bool is_legend() const { return player.level >= LEVEL_MAX; }
+	// Returns the level of the player, or the 'maximum' level, whichever is lower.
+	int get_capped_level() const { return std::min(get_level(), LEVEL_MAX); }
 
-   struct char_data *next_in_room;     /* For room->people - list         */
-   struct char_data *next;             /* For either monster or ppl-list  */
-   struct char_data *next_fighting;    /* For fighting list               */
-   struct char_data *next_fast_update; /* For fast-update list            */
+public:
+	int abs_number;                       /* bit number in the control array */
+	int player_index;                     /* Index in player table */
+	sh_int nr;                            /* monster nr (pos in file)      */
+	int in_room;                       /* Location                      */
 
-   struct follow_type *followers;        /* List of chars followers       */
-   struct char_data *master;             /* Who is char following?        */
-   sh_int master_number;
-  
-   struct follow_type *group;
-   struct char_data * group_leader;
-   sh_int group_leader_num;
+	struct char_player_data player;       /* Normal data                   */
+	struct char_ability_data abilities;   /* Max. Abilities                 */
+	struct char_ability_data tmpabilities;/* Current abilities    */
+	struct char_ability_data constabilities;/* Rolled abilities */
+	struct char_point_data points;        /* Points                        */
+	struct char_special_data specials;    /* Special playing constants      */
+	struct char_special2_data specials2;  /* Additional special constants  */
+	struct char_prof_data * profs;    /* prof cooficients */
+	byte *skills;			 /* dynam. alloc. array of pracs spent                                         on skills */
+	byte *knowledge;                     /* array of knowledge, computed from
+											pracs spent at logon */
+	struct affected_type *affected;       /* affected by what spells       */
+	struct obj_data *equipment[MAX_WEAR]; /* Equipment array               */
 
-   struct mount_data_type mount_data;
+	struct obj_data *carrying;            /* Head of list                  */
+	struct descriptor_data *desc;         /* NULL for mobiles              */
 
-   void * temp;         /* pointer to any special structures if need be   */
-   struct waiting_type delay;
-   struct char_data * next_die; /* next to die in the death_waiting_list :(  */
-   int classpoints; /* Only used for character creation in interpre.cc new_player_select.  Move variable elsewhere? */
+	struct char_data *next_in_room;     /* For room->people - list         */
+	struct char_data *next;             /* For either monster or ppl-list  */
+	struct char_data *next_fighting;    /* For fighting list               */
+	struct char_data *next_fast_update; /* For fast-update list            */
+
+	struct follow_type *followers;        /* List of chars followers       */
+	struct char_data *master;             /* Who is char following?        */
+	sh_int master_number;
+
+	struct follow_type *group;
+	struct char_data * group_leader;
+	sh_int group_leader_num;
+
+	struct mount_data_type mount_data;
+
+	void * temp;         /* pointer to any special structures if need be   */
+	struct waiting_type delay;
+	struct char_data * next_die; /* next to die in the death_waiting_list :(  */
+	int classpoints; /* Only used for character creation in interpre.cc new_player_select.  Move variable elsewhere? */
 };
 
 struct race_bodypart_data {

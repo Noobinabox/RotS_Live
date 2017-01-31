@@ -1823,10 +1823,6 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
 	
 	if (number(0, 99) < probability) 
 	{
-		// TODO(drelidan):  Move this code out of the 'check' function and add it to the function
-		// that calls this.
-		act("You manage to find an opening in $N's defense!", TRUE, &archer, NULL, &victim, TO_CHAR);
-		act("$n notices an opening in your defense!", TRUE, &archer, NULL, &victim, TO_VICT);
 		return true;
 	}
 
@@ -1856,8 +1852,6 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim)
 	int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
 
 	int player_level = archer->get_capped_level();
-
-	// Scale probability of success with the player level as well.
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
 	int ranger_dex = archer->get_cur_dex();
 
@@ -1873,17 +1867,111 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim)
 }
 
 /*
+ * Returns the part of the body on the victim that is getting hit.
+ *
+ **/
+int get_hit_location(const char_data& victim)
+{
+	int hit_location = 0;
+	
+	//TODO(drelidan):  Make this into a function.
+	int body_type = GET_BODYTYPE(&victim);
+	
+	const race_bodypart_data& body_data = bodyparts[body_type];
+	if (body_data.bodyparts != 0)
+	{
+		int roll = number(1, 100);
+		while (roll > 0 && hit_location < MAX_BODYPARTS)
+		{
+			roll -= body_data.percent[hit_location++];
+		}
+	}
+
+	if (hit_location > 0)
+		--hit_location;
+
+	return hit_location;
+}
+
+/*
+* Given a hit location and a damage, calculate how much damage
+* should be done after the victim's armor is factored in.  The
+* modified amount is returned.
+*
+* This used to be (tmp >= 0); this implied that torches
+* could parry. - Tuh
+*/
+int apply_armor_to_arrow_damage(const char_data& victim, int damage, int location)
+{
+	/* Bogus hit location */
+	if (location < 0 || location > MAX_WEAR)
+		return 0;
+
+	/* If they've got armor, let's let it do its thing */
+	obj_data* armor = victim.equipment[location];
+	if (armor)
+	{
+		/* First, remove minimum absorb */
+		damage -= armor->obj_flags.value[1];
+
+		/* Then apply the armor_absorb factor */
+		damage -= (damage * armor_absorb(armor) + 50) / 100;
+
+		//TODO(drelidan):  If we want any 'material' specific effects, add them here.
+		int material = armor->obj_flags.material;
+	}
+
+	return damage;
+}
+
+/*
  * shoot_calculate_damage
  *
- *
- *
+ * Damage should be based on the archer's ranger level, dexterity modifier,
+ *  the arrows that they are using, and the bow that they are using.
+ * 
+ * If the archer performs an accurate shot, the target's armor is ignored.
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
+ * drelidan: Jan 31, 2017 - First pass implementation.  Doesn't take weapon or
+ *   arrow type into account.
  */
-int shoot_calculate_damage(const char_data* archer, const char_data* victim)
+int shoot_calculate_damage(char_data* archer, char_data* victim)
 {
-  int totaldamage = archer->player.level;
-  return totaldamage;
+	using namespace char_utils;
+
+	int player_level = archer->get_capped_level();
+	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
+	int ranger_dex = archer->get_cur_dex();
+
+	// TODO(drelidan):  Replace some of these random factors with weapon and arrow
+	// contributions to damage.
+	int random_factor_1 = number(1, 12);
+	int random_factor_2 = number(1, 12);
+	int random_factor_3 = number(1, 12);
+	int random_factor_4 = number(1, 12);
+
+	int damage = (ranger_level * 3 / 4) + (ranger_dex * 3 / 4) + random_factor_1
+		+ random_factor_2 + random_factor_3 + random_factor_4;
+
+	int arrow_hit_location = get_hit_location(*victim);
+	if (check_archery_accuracy(*archer, *victim))
+	{
+		act("You manage to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_CHAR);
+		act("$n notices a weakness in your armor!", TRUE, archer, NULL, victim, TO_VICT);
+	}
+	else
+	{
+		int body_type = GET_BODYTYPE(victim);
+
+		const race_bodypart_data& body_data = bodyparts[body_type];
+
+		// Apply damage reduction.
+		int armor_location = body_data.armor_location[arrow_hit_location];
+		damage = apply_armor_to_arrow_damage(*victim, damage, armor_location);
+	}
+
+	return damage;
 }
 
 /*
@@ -2079,60 +2167,81 @@ struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *targe
  */
 ACMD(do_shoot)
 {
-  struct char_data *victim = NULL;
-  int success, dmg;
+	struct char_data *victim = NULL;
+	int success, dmg;
 
-  one_argument(argument, arg);
+	one_argument(argument, arg);
 
-  if(subcmd == -1)
-  {
-    send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
-    return;
-  }
+	if (subcmd == -1)
+	{
+		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+		return;
+	}
 
-  if(!can_ch_shoot(ch))
-    return;
+	if (!can_ch_shoot(ch))
+		return;
 
-  if (char_utils::is_affected_by(*ch, AFF_SANCTUARY))
-  {
-    appear(ch);
-    send_to_char("You cast off your sanctuary!\r\n", ch);
-    act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
-  }
+	if (char_utils::is_affected_by(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your sanctuary!\r\n", ch);
+		act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
 
-  switch (subcmd) {
-    case 0:
-      victim = is_targ_valid(ch, wtl);
-      if(victim == NULL)
-        return;
-      send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
-      WAIT_STATE_FULL(ch, shoot_calculate_wait(ch), CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
-      break;
-    case 1:
-      if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
-      {
-        send_to_char("Your victim is no longer among us.\r\n", ch);
-        return;
-      }
+	switch (subcmd) 
+	{
+	case 0:
+		victim = is_targ_valid(ch, wtl);
+		if (victim == NULL)
+		{
+			return;
+		}
+		
+		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
+		int wait_time = shoot_calculate_wait(ch);
+		WAIT_STATE_FULL(ch, wait_time, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+		break;
+	case 1:
+		if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
+		{
+			send_to_char("Your victim is no longer among us.\r\n", ch);
+			return;
+		}
 
-      victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
-      if(!CAN_SEE(ch,victim)) {
-        send_to_char("Shoot who?\r\n", ch);
-        return;
-      }
+		victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
+		if (!CAN_SEE(ch, victim)) 
+		{
+			send_to_char("Shoot who?\r\n", ch);
+			return;
+		}
 
-      if(ch->in_room != victim->in_room) {
-        send_to_char("Your target is not here any longer\r\n",ch);
-        return;
-      }
+		if (ch->in_room != victim->in_room) 
+		{
+			send_to_char("Your target is not here any longer\r\n", ch);
+			return;
+		}
 
-      send_to_char("You release your arrow and it goes flying!\r\n", ch);
-      damage(ch, victim, shoot_calculate_damage(ch, victim), SKILL_ARCHERY, 0);
-      break;
-    default:
-      sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);
-      mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
-      abort_delay(ch);
-      return;
-  }
+		send_to_char("You release your arrow and it goes flying!\r\n", ch);
+
+		int roll = number(0, 99);
+		int target_number = shoot_calculate_success(ch, victim);
+		if (roll < target_number)
+		{
+			int damage_dealt = shoot_calculate_damage(ch, victim);
+			damage(ch, victim, damage_dealt, SKILL_ARCHERY, 0);
+		}
+		else
+		{
+			// TODO(drelidan):  When an arrow misses, is it gone forever, or is it in
+			// the current room, or does it still have a chance to break?
+			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
+		}
+
+		break;
+	default:
+		sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);
+		mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+		abort_delay(ch);
+		return;
+	}
 }

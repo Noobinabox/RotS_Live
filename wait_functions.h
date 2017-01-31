@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <vector>
 
 struct char_data;
 
@@ -32,6 +33,15 @@ namespace wait_functions
 		//TODO(dgurley):  Use a more efficient data structure once you 
 		// figure out what the access pattern is.
 		std::list<char_data*> m_waitingList;
+		std::vector<char_data*> m_pendingDeletes;
 
+		// TODO(dgurley):  Switch m_waitingList to a std::vector and m_pendingDeletes
+		// to a set and implement an algorithm using 'remove-if' on the vector.
+		// It's just a pain to do it atm without lambdas.
+		/*
+		std::vector<char_data*> m_waitingList;
+		std::unordered_set<char_data> m_pendingDeletes;
+		*/
 	};
 }
+

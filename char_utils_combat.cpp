@@ -85,7 +85,6 @@ namespace combat_utils
 		{
 			const obj_flag_data& flags = weapon->obj_flags;
 			int weapon_skill = weapon_skill_num(flags.value[3]);
-			double weapon_bonus(flags.value[1]);
 
 			double skill_factor(char_utils::get_raw_knowledge(character, weapon_skill));
 			if (char_utils::is_twohanded(character))
@@ -378,6 +377,8 @@ namespace combat_utils
 					return base_ob * 0.75 - sun_mod;
 				}
 			}
+
+			return base_ob;
 		}
 
 	} // end anonymous namespace

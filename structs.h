@@ -18,6 +18,8 @@
 #include "color.h"    /* For MAX_COLOR_FIELDS */
 #include "platdef.h"  /* For sh_int, ush_int, byte, etc. */
 
+#include <algorithm>
+
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
 #define ENE_TO_HIT 1200
 #define BAREHANDED_DAMAGE 2
@@ -299,54 +301,78 @@ struct waiting_type {
   struct char_data *next;
 };
 
-struct obj_flag_data {
-  int	value[5];	/* Values of the item (see list) *//*changed*/
-  byte type_flag;	/* Type of item                     */
-  int	wear_flags;	/* Where you can wear it            */
-  int	extra_flags;	/* If it hums,glows etc             */
-  int	weight;		/* Weigt what else                  */
-  int	cost;		/* Value when sold (gp.)            */
-  sh_int	cost_per_day;	/* Cost to keep pr. real day        */
-  int	timer;		/* Timer for object                 */
-  long	bitvector;	/* To set chars bits                */
-  ubyte level;          /* level of an item (not to correspond to character's*/
-  ubyte rarity;         /* rarity of an item */
-  signed char  material; /* what is it made of               */
-  sh_int butcher_item;  /* virtual item to butcher, 0 for none, -1 for butchered */
-  int prog_number;      /* for special objects... */
-  int script_number;  /* identifies the script which is triggered under certain conditions */
-  struct info_script * script_info;  /* Pointer to char_script (protos.h) 0 if no script */
+struct obj_flag_data
+{
+public:
+	int get_ob_coef() const { return value[0]; }
+	int get_parry_coef() const { return value[1]; }
+	int get_bulk() const { return value[2]; }
+	int get_weapon_type() const { return value[3]; }
+	int get_level() const { return level; }
+	int get_weight() const { return std::max(weight, 1); }
+
+public:
+	int	value[5];	/* Values of the item (see list) *//*changed*/
+	byte type_flag;	/* Type of item                     */
+	int	wear_flags;	/* Where you can wear it            */
+	int	extra_flags;	/* If it hums,glows etc             */
+	int	weight;		/* Weigt what else                  */
+	int	cost;		/* Value when sold (gp.)            */
+	sh_int	cost_per_day;	/* Cost to keep pr. real day        */
+	int	timer;		/* Timer for object                 */
+	long	bitvector;	/* To set chars bits                */
+	ubyte level;          /* level of an item (not to correspond to character's*/
+	ubyte rarity;         /* rarity of an item */
+	signed char  material; /* what is it made of               */
+	sh_int butcher_item;  /* virtual item to butcher, 0 for none, -1 for butchered */
+	int prog_number;      /* for special objects... */
+	int script_number;  /* identifies the script which is triggered under certain conditions */
+	struct info_script * script_info;  /* Pointer to char_script (protos.h) 0 if no script */
+
 };
 
 /* Used in OBJ_FILE_ELEM *DO*NOT*CHANGE* */
-struct obj_affected_type {
-   byte location;      /* Which ability to change (APPLY_XXX) */
-   int modifier;     /* How much it changes by              */
+struct obj_affected_type
+{
+	byte location;      /* Which ability to change (APPLY_XXX) */
+	int modifier;     /* How much it changes by              */
 };
 
 /* ======================== Structure for object ========================= */
-struct obj_data {
-   sh_int item_number;            /* Where in data-base               */
-   int in_room;                /* In what room -1 when conta/carr  */
+struct obj_data
+{
+public:
+	int get_ob_coef() const { return obj_flags.get_ob_coef(); }
+	int get_parry_coef() const { return obj_flags.get_parry_coef(); }
+	int get_bulk() const { return obj_flags.get_bulk(); }
+	int get_weapon_type() const { return obj_flags.get_weapon_type(); }
+	int get_level() const { return obj_flags.get_level(); }
+	int get_weight() const { return obj_flags.get_weight(); }
 
-   struct obj_flag_data obj_flags;/* Object information               */
-   struct obj_affected_type affected[MAX_OBJ_AFFECT];  /* Which abilities in PC to change  */
+	const char_data* get_owner() const { return carried_by; }
 
-   char	*name;                    /* Title of object :get etc.        */
-   char	*description ;            /* When in room                     */
-   char	*short_description;       /* when worn/carry/in cont.         */
-   char	*action_description;      /* What to write when used          */
-   struct extra_descr_data *ex_description; /* extra descriptions     */
-   struct char_data *carried_by;  /* Carried by :NULL in room/conta   */
+public:
+	sh_int item_number;            /* Where in data-base               */
+	int in_room;                /* In what room -1 when conta/carr  */
 
-   int owner;
-   struct obj_data *in_obj;       /* In what object NULL when none    */
-   struct obj_data *contains;     /* Contains objects                 */
+	struct obj_flag_data obj_flags;/* Object information               */
+	struct obj_affected_type affected[MAX_OBJ_AFFECT];  /* Which abilities in PC to change  */
 
-   struct obj_data *next_content; /* For 'contains' lists             */
-   struct obj_data *next;         /* For the object list              */
-   int touched;			  /* Has a PC touched this object?    */
-   int loaded_by;     /* idnum of immortal who loaded the object (else 0) */
+	char	*name;                    /* Title of object :get etc.        */
+	char	*description;            /* When in room                     */
+	char	*short_description;       /* when worn/carry/in cont.         */
+	char	*action_description;      /* What to write when used          */
+	struct extra_descr_data *ex_description; /* extra descriptions     */
+	struct char_data *carried_by;  /* Carried by :NULL in room/conta   */
+
+	int owner;
+	struct obj_data *in_obj;       /* In what object NULL when none    */
+	struct obj_data *contains;     /* Contains objects                 */
+
+	struct obj_data *next_content; /* For 'contains' lists             */
+	struct obj_data *next;         /* For the object list              */
+	int touched;			  /* Has a PC touched this object?    */
+	int loaded_by;     /* idnum of immortal who loaded the object (else 0) */
 };
 
 /* ======================================================================= */

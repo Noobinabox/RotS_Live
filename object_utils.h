@@ -13,5 +13,7 @@ namespace object_utils
 
 	bool is_object_stat(const obj_data& object, int stat);
 	int get_item_bulk(const obj_data& object);
+
+	double get_weapon_damage(const obj_data& weapon);
 }
 

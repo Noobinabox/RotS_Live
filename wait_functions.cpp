@@ -105,11 +105,16 @@ namespace wait_functions
 		if (!character)
 			return;
 
-		if (character->delay.wait_value != 0)
+		waiting_type& delay = character->delay;
+
+		// If the character is already waiting, do a priority test.
+		// If this wait is a higher priority, complete the previous
+		// priority for the character.
+		if (delay.wait_value != 0)
 		{
-			if (priority > character->delay.priority)
+			if (priority > delay.priority)
 			{
-				character->delay.subcmd = -1;
+				delay.subcmd = -1;
 				complete_delay(character);
 				abort_delay(character);
 			}
@@ -121,23 +126,24 @@ namespace wait_functions
 			}
 		}
 
-		character->delay.wait_value = cycle;
-		character->delay.cmd = command;
-		character->delay.subcmd = sub_command;
-		character->delay.targ1.ptr.other = argument;
+		delay.wait_value = cycle;
+		delay.cmd = command;
+		delay.subcmd = sub_command;
+		delay.targ1.ptr.other = argument;
 		
-		character->delay.priority = priority;
-		character->delay.flg = delay_flag;
-		character->delay.targ1.ch_num = ch_num;
+		delay.priority = priority;
+		delay.flg = delay_flag;
+		delay.targ1.ch_num = ch_num;
 
-		character->delay.targ1.type = data_type;
-		character->delay.targ2.type = TARGET_IGNORE;
+		delay.targ1.type = data_type;
+		delay.targ2.type = TARGET_IGNORE;
 		base_utils::set_bit(character->specials.affected_by, affect_flag);
 
 		// This replicates the "add_char_to_waitlist" code, which is based on the waiting macro.
 		
-		// If the character is in the waiting list, remove him.
+		// If the character is in the waiting list or the pending delete list, remove him.
 		// Then insert the character at the end of the waiting list.
+		m_pendingDeletes.erase(std::remove(m_pendingDeletes.begin(), m_pendingDeletes.end(), character));
 		m_waitingList.erase(std::find(m_waitingList.begin(), m_waitingList.end(), character));
 		m_waitingList.push_back(character);
 	}
@@ -154,15 +160,8 @@ namespace wait_functions
 		character->delay.wait_value = 0;
 		character->delay.priority = 0;
 
-		// Remove the character from the waiting list.
-		m_waitingList.erase(std::find(m_waitingList.begin(), m_waitingList.end(), character));
-
-		// Ensure the character is not in the waiting list.
-		if (in_waiting_list(character)) 
-		{
-			log("SYSERR: abort_delay, character remaining in waiting_list");
-			abort_delay(character);
-		}
+		// Move the character into our pending delete list.
+		m_pendingDeletes.push_back(character);
 	}
 
 	//============================================================================
@@ -172,8 +171,8 @@ namespace wait_functions
 		SPECIAL(*tmpfunc);
 
 		ch->delay.wait_value = 0;
-		REMOVE_BIT(ch->specials.affected_by, AFF_WAITWHEEL);
-		REMOVE_BIT(ch->specials.affected_by, AFF_WAITING);
+		base_utils::remove_bit(ch->specials.affected_by, (long)AFF_WAITWHEEL);
+		base_utils::remove_bit(ch->specials.affected_by, (long)AFF_WAITING);
 
 		if (ch->delay.cmd == CMD_SCRIPT) 
 		{
@@ -210,6 +209,14 @@ namespace wait_functions
 	{
 		static char* wait_wheel[8] = { "\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\r-\r", "\r/\r" };
 		typedef std::_List_iterator<char_data*> iter;
+
+		// Clean up pending deletes.
+		for (size_t i = 0; i < m_pendingDeletes.size(); ++i)
+		{
+			char_data* removeMe = m_pendingDeletes[i];
+			m_waitingList.erase(std::find(m_waitingList.begin(), m_waitingList.end(), removeMe));
+		}
+		m_pendingDeletes.clear();
 
 		// Process commands in the wait list.
 		for (iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); )

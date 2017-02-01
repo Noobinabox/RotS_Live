@@ -1820,8 +1820,8 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
 	probability -= get_skill_penalty(archer);
 	probability -= get_dodge_penalty(archer);
 	probability *= get_skill(archer, SKILL_ACCURACY) / 100;
-	
-	if (number(0, 99) < probability) 
+
+	if (number(0, 99) < probability)
 	{
 		return true;
 	}
@@ -1873,10 +1873,10 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim)
 int get_hit_location(const char_data& victim)
 {
 	int hit_location = 0;
-	
+
 	//TODO(drelidan):  Make this into a function.
 	int body_type = GET_BODYTYPE(&victim);
-	
+
 	const race_bodypart_data& body_data = bodyparts[body_type];
 	if (body_data.bodyparts != 0)
 	{
@@ -1929,7 +1929,7 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  *
  * Damage should be based on the archer's ranger level, dexterity modifier,
  *  the arrows that they are using, and the bow that they are using.
- * 
+ *
  * If the archer performs an accurate shot, the target's armor is ignored.
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24, 2017 - Created function
@@ -1958,6 +1958,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim)
 	if (check_archery_accuracy(*archer, *victim))
 	{
 		act("You manage to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_CHAR);
+    act("$n manages to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_NOTVICT);
 		act("$n notices a weakness in your armor!", TRUE, archer, NULL, victim, TO_VICT);
 	}
 	else
@@ -2188,7 +2189,7 @@ ACMD(do_shoot)
 		act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
 	}
 
-	switch (subcmd) 
+	switch (subcmd)
 	{
 	case 0:
 		victim = is_targ_valid(ch, wtl);
@@ -2196,7 +2197,7 @@ ACMD(do_shoot)
 		{
 			return;
 		}
-		
+
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
 		int wait_time = shoot_calculate_wait(ch);
 		WAIT_STATE_FULL(ch, wait_time, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
@@ -2209,13 +2210,13 @@ ACMD(do_shoot)
 		}
 
 		victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
-		if (!CAN_SEE(ch, victim)) 
+		if (!CAN_SEE(ch, victim))
 		{
 			send_to_char("Shoot who?\r\n", ch);
 			return;
 		}
 
-		if (ch->in_room != victim->in_room) 
+		if (ch->in_room != victim->in_room)
 		{
 			send_to_char("Your target is not here any longer\r\n", ch);
 			return;

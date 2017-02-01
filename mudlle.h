@@ -64,4 +64,6 @@ struct special_list {
 
 #define MAX_MUDLLE_BUFFER 10000
 
+SPECIAL(intelligent);
+
 #endif /* MUDLLE_H */

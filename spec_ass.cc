@@ -15,6 +15,7 @@
 #include "interpre.h"
 #include "db.h"
 #include "utils.h"
+#include "comm.h"
 
 extern struct room_data world;
 extern int top_of_world;
@@ -299,77 +300,147 @@ char * spec_pro_message[] = {
 
 
 
-void *
-virt_program_number(int number)
+void* virt_program_number(int number)
 {
-  switch(number) {
-  case 0:
-    return 0;
-  case 1:
-    return (void *) snake;
-  case 2:
-    return (void *) gatekeeper;
-  case 3:
-    return  (void *) mob_cleric;
-  case 4:
-    return  (void *) mob_magic_user;
-  case 5:
-    return  (void *) mob_warrior;
-  case 6:
-    return  (void *) gatekeeper2;
-  case 7: 
-    return  (void *) mob_jig;
-  case 8:
-    return  (void *) block_exit_north;
-  case 9:
-    return  (void *) block_exit_east;
-  case 10:
-    return  (void *) block_exit_south;
-  case 11:
-    return  (void *) block_exit_west;
-  case 12:
-    return  (void *) block_exit_up;
-  case 13:
-    return  (void *) block_exit_down;
-  case 14:
-    return  (void *) resetter;
-  case 15:
-    return  (void *) mob_ranger;
-  case 16:
-    return  (void *) react_trap;
-  case 17:
-    return  (void *) gatekeeper_no_knock;
-  case 18:
-    return  (void *) ar_tarthalon;
-  case 19:
-    return  (void *) ghoul;
-  case 20:
-    return  (void *) vampire_huntress;
-  case 21:
-    return  (void *) thuringwethil;
-  case 22:
-    return  (void *) vampire_doorkeep;
-  case 23:
-    return  (void *) vampire_killer;
-  case 24:
-    return  (void *) healing_plant;
-  case 25:
-    return  (void *) vortex_elevator;
-  case 26:
-    return  (void *) wolf_summoner;
-  case 27:
-    return  (void *) reciter;
-  case 28:
-    return  (void *) herald;
-  case 29:
-    return  (void *) postmaster;
-  default:
-    log("Virt_assign: unknown prog_number for special mob.");
-    return 0;
-    break;
-  }
+	switch (number)
+	{
+	case 0:
+		return 0;
+	case 1:
+		return (void *)snake;
+	case 2:
+		return (void *)gatekeeper;
+	case 3:
+		return (void *)mob_cleric;
+	case 4:
+		return (void *)mob_magic_user;
+	case 5:
+		return (void *)mob_warrior;
+	case 6:
+		return (void *)gatekeeper2;
+	case 7:
+		return (void *)mob_jig;
+	case 8:
+		return (void *)block_exit_north;
+	case 9:
+		return (void *)block_exit_east;
+	case 10:
+		return (void *)block_exit_south;
+	case 11:
+		return (void *)block_exit_west;
+	case 12:
+		return (void *)block_exit_up;
+	case 13:
+		return (void *)block_exit_down;
+	case 14:
+		return (void *)resetter;
+	case 15:
+		return (void *)mob_ranger;
+	case 16:
+		return (void *)react_trap;
+	case 17:
+		return (void *)gatekeeper_no_knock;
+	case 18:
+		return (void *)ar_tarthalon;
+	case 19:
+		return (void *)ghoul;
+	case 20:
+		return (void *)vampire_huntress;
+	case 21:
+		return (void *)thuringwethil;
+	case 22:
+		return (void *)vampire_doorkeep;
+	case 23:
+		return (void *)vampire_killer;
+	case 24:
+		return (void *)healing_plant;
+	case 25:
+		return (void *)vortex_elevator;
+	case 26:
+		return (void *)wolf_summoner;
+	case 27:
+		return (void *)reciter;
+	case 28:
+		return (void *)herald;
+	case 29:
+		return (void *)postmaster;
+	default:
+		log("Virt_assign: unknown prog_number for special mob.");
+		return 0;
+		break;
+	}
 }
 
+special_func_ptr get_special_function(int number)
+{
+	switch (number)
+	{
+	case 0:
+		return 0;
+	case 1:
+		return &snake;
+	case 2:
+		return &gatekeeper;
+	case 3:
+		return &mob_cleric;
+	case 4:
+		return &mob_magic_user;
+	case 5:
+		return &mob_warrior;
+	case 6:
+		return &gatekeeper2;
+	case 7:
+		return &mob_jig;
+	case 8:
+		return &block_exit_north;
+	case 9:
+		return &block_exit_east;
+	case 10:
+		return &block_exit_south;
+	case 11:
+		return &block_exit_west;
+	case 12:
+		return &block_exit_up;
+	case 13:
+		return &block_exit_down;
+	case 14:
+		return &resetter;
+	case 15:
+		return &mob_ranger;
+	case 16:
+		return &react_trap;
+	case 17:
+		return &gatekeeper_no_knock;
+	case 18:
+		return &ar_tarthalon;
+	case 19:
+		return &ghoul;
+	case 20:
+		return &vampire_huntress;
+	case 21:
+		return &thuringwethil;
+	case 22:
+		return &vampire_doorkeep;
+	case 23:
+		return &vampire_killer;
+	case 24:
+		return &healing_plant;
+	case 25:
+		return &vortex_elevator;
+	case 26:
+		return &wolf_summoner;
+	case 27:
+		return &reciter;
+	case 28:
+		return &herald;
+	case 29:
+		return &postmaster;
+	default:
+		log("Virt_assign: unknown prog_number for special mob.");
+		return 0;
+		break;
+	}
+}
 
 
 void *

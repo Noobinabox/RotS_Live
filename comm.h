@@ -54,4 +54,10 @@ void	page_string(struct descriptor_data *d, char *str, int keep_internal);
 #define USING_SMALL(d)	((d)->output == (d)->small_outbuf)
 #define USING_LARGE(d)  (!USING_SMALL(d))
 
+// Implemented in spec_ass.cc.
+typedef int(*special_func_ptr) (char_data* host, char_data* character, int cmd, char* argument, int call_flag, waiting_type* wait_list);
+void* virt_program_number(int number);
+
+special_func_ptr get_special_function(int number);
+
 #endif /* COMM_H */

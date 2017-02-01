@@ -4,7 +4,15 @@
 #include "structs.h"
 
 #include "comm.h" // for send-to-char
+#include "interpre.h" // for complete-delay functionality
+#include "script.h" // for complete-delay functionality
+#include "mudlle.h" // for complete-delay functionality
+#include "db.h" // for complete-delay functionality
+
 #include <algorithm>
+
+// TODO(drelidan):  Put an accessor on here or something.
+extern struct index_data* mob_index; // for complete-delay functionality
 
 //============================================================================
 void WaitList::wait_state(char_data* character, int wait_time)
@@ -177,43 +185,48 @@ void WaitList::abort_delay(char_data* character)
 }
 
 //============================================================================
-void WaitList::complete_delay(char_data *ch)
+void WaitList::complete_delay(char_data* character)
 {
-	/*
-	SPECIAL(*tmpfunc);
+	typedef int(*special_ptr) (char_data* ch, char_data* victim, int cmd, char* argument, int call_flag, waiting_type* wait_list);
 
-	ch->delay.wait_value = 0;
-	base_utils::remove_bit(ch->specials.affected_by, (long)AFF_WAITWHEEL);
-	base_utils::remove_bit(ch->specials.affected_by, (long)AFF_WAITING);
+	character->delay.wait_value = 0;
+	base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITWHEEL);
+	base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITING);
 
-	if (ch->delay.cmd == CMD_SCRIPT)
+	if (character->delay.cmd == CMD_SCRIPT)
 	{
-	continue_char_script(ch);
-	return;
+		continue_char_script(character);
+		return;
 	}
 
-	if (ch->delay.cmd == -1 && IS_NPC(ch))
+	waiting_type* delay = &character->delay;
+	char_data* victim = NULL;
+	if (character->delay.cmd == -1 && IS_NPC(character))
 	{
-	// Here calls special procedure
-	if (mob_index[ch->nr].func)
+		special_ptr func_pointer = NULL;
+		int index = character->nr;
+		
+		// Here calls special procedure
+		func_pointer = mob_index[index].func;
+		if (func_pointer != NULL)
+		{
+			func_pointer(character, victim, -1, "", SPECIAL_NONE, delay);
+		}
+		else if (character->specials.store_prog_number)
+		{
+			int function_number = character->specials.store_prog_number;
+			func_pointer = get_special_function(function_number);
+			func_pointer(character, victim, character->delay.cmd, "", SPECIAL_DELAY, delay);
+		}
+		else if (character->specials.union1.prog_number)
+		{
+			intelligent(character, victim, -1, "", SPECIAL_DELAY, delay);
+		}
+	}
+	else if (character->delay.cmd > 0)
 	{
-	(*mob_index[ch->nr].func) (ch, 0, -1, "", SPECIAL_NONE, &(ch->delay));
+		command_interpreter(character, "", delay);
 	}
-	else if (ch->specials.store_prog_number)
-	{
-	tmpfunc = (SPECIAL(*)) virt_program_number(ch->specials.store_prog_number);
-	tmpfunc(ch, 0, ch->delay.cmd, "", SPECIAL_DELAY, &(ch->delay));
-	}
-	else if (ch->specials.union1.prog_number)
-	{
-	intelligent(ch, 0, -1, "", SPECIAL_DELAY, &(ch->delay));
-	}
-	}
-	else if (ch->delay.cmd > 0)
-	{
-	command_interpreter(ch, "", &(ch->delay));
-	}
-	*/
 }
 
 //============================================================================
@@ -231,7 +244,7 @@ void WaitList::update()
 	m_pendingDeletes.clear();
 
 	// Process commands in the wait list.
-	for (iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); )
+	for (iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); ++char_iter)
 	{
 		char_data* character = *char_iter;
 		int wait_value = character->delay.wait_value;
@@ -250,8 +263,6 @@ void WaitList::update()
 					write_to_descriptor(character->desc->descriptor, wait_wheel[wait_value % 8]);
 				}
 			}
-
-			++char_iter;
 		}
 		else if (character->delay.wait_value == 0)
 		{
@@ -259,13 +270,8 @@ void WaitList::update()
 			complete_delay(character);
 			if (character->delay.wait_value == 0)
 			{
-				/* look out for the similar code in raw_kill() */
-				//abort_delay(character);
-				char_iter = m_waitingList.erase(char_iter);
-			}
-			else
-			{
-				++char_iter;
+				// Update flags and put the character in the delete list.
+				abort_delay(character);
 			}
 		}
 		else

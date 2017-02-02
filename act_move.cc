@@ -1557,15 +1557,15 @@ ACMD(do_follow)
 	 send_to_char("You cannot follow anything whilst being a shadow.\n\r", ch);
 	 return;
    }
-
-   /* Orc players cannot follow others. */
+   /*
+   * Orc players cannot follow others. *
    if (GET_RACE(ch) == RACE_ORC) {
      send_to_char("You're an Orcish commander, you follow "
 		  "nobody.\r\n", ch);
      return;
    }
 
-   /* Furthermore, players cannot follow Orcs */
+   * Furthermore, players cannot follow Orcs *
    if (GET_RACE(leader) == RACE_ORC) {
      sprintf(buf, "Follow %s %s?  Certainly not.\r\n",
 	     strchr("aeiouyAEIOUY", *pc_races[RACE_ORC]) ?
@@ -1574,12 +1574,12 @@ ACMD(do_follow)
      return;
    }
 
-   /* 
+    * 
     * No race on the same side of the war as RACE_ORC is
     * allowed to follow mounts.  This is to keep people
     * from circumventing the rule that players cannot
     * follow Orc players.
-    */
+    *
    if (!other_side_num(GET_RACE(ch), RACE_ORC) &&
        MOB_FLAGGED(leader, MOB_MOUNT) ||
        MOB_FLAGGED(leader, MOB_ORC_FRIEND)) {
@@ -1588,7 +1588,7 @@ ACMD(do_follow)
      send_to_char(buf, ch);
      return;
    }
-
+   */
    if (ch->master == leader) {
       sprintf(buf, "Your are already following %s.\n\r", HMHR(leader));
       send_to_char(buf, ch);

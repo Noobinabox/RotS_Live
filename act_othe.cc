@@ -336,7 +336,9 @@ ACMD(do_grouproll)
         return;
       }
 
-  if(!(victim = get_char_room_vis(ch, buf)) {
+  victim = get_char_room_vis(ch, buf);
+  if(!victim) 
+  {
     send_to_char("There is no such person!\n\r", ch);
     return;
   }

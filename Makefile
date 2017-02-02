@@ -22,9 +22,8 @@ PROFILE = -g
 
 CFLAGS = $(MYFLAGS) $(PROFILE) $(OSFLAGS)
 
-#TODO(dgurley):  Add combat_manager.o up here once it has code in it.
 OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
-	act_othe.o act_soci.o act_wiz.o ban.o boards.o char_utils.o char_utils_combat.o clerics.o color.o \
+	act_othe.o act_soci.o act_wiz.o ban.o boards.o char_utils.o char_utils_combat.o clerics.o color.o combat_manager.o \
 	comm.o config.o consts.o db.o delayed_command_interpreter.o fight.o graph.o handler.o interpre.o environment_utils.o \
 	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o \
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \

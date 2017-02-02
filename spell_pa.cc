@@ -22,6 +22,8 @@
 #include "spells.h"
 #include "handler.h"
 
+#include "char_utils.h"
+
 extern struct descriptor_data *descriptor_list;
 extern struct char_data *fast_update_list;
 extern struct char_data *character_list;
@@ -394,35 +396,67 @@ char* skip_spaces(char* string)
 
 namespace
 {
+	bool can_orc_follower_cast_spell(int spell_index)
+	{
+		const int MAX_SPELLS = 15;
+
+		// Orc followers cannot cast any "whitie" or "lhuth" only spells.
+		// Assume any other spell is valid.
+		static int invalid_spells[MAX_SPELLS] = { SPELL_CREATE_LIGHT, SPELL_DETECT_EVIL,
+			SPELL_FLASH, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT, SPELL_LIGHTNING_STRIKE,
+			SPELL_FIREBALL, SPELL_WORD_OF_AGONY, SPELL_WORD_OF_PAIN,
+			SPELL_WORD_OF_SHOCK, SPELL_BLACK_ARROW, SPELL_WORD_OF_SIGHT,
+			SPELL_SPEAR_OF_DARKNESS, SPELL_LEACH, SPELL_SHOUT_OF_PAIN };
+
+		for (int i = 0; i < MAX_SPELLS; ++i)
+		{
+			if (spell_index == invalid_spells[i])
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	bool can_cast_spell(char_data& character, int spell_index, const skill_data& spell)
 	{
-		if (IS_NPC(&character) && MOB_FLAGGED(&character, MOB_PET))
+		if (utils::is_npc(character) && utils::is_mob_flagged(character, MOB_PET))
 		{
-			if (MOB_FLAGGED(&character, MOB_ORC_FRIEND))
+			// Ensure that the pet's master gets the message.
+			char_data* message_recipient = character.master;
+			if (character.master == NULL)
+			{
+				message_recipient = &character;
+			}
+			
+			if (utils::is_mob_flagged(character, MOB_ORC_FRIEND))
 			{
 				if (spell.level > character.player.level)
 				{
+					send_to_char("Pah!  Your follower is too weak for such a spell!\n\r", message_recipient);
 					return false;
 				}
 
-				if (spell.type == PROF_MAGE && character.tmpabilities.intel < 18)
+				if (spell.type == PROF_MAGE && character.get_cur_int() < 18)
 				{
+					send_to_char("Your stupid follower doesn't have the smarts for that!\n\r", message_recipient);
 					return false;
 				}
-				else if (spell.type == PROF_CLERIC && character.tmpabilities.wil < 18)
+				else if (spell.type == PROF_CLERIC && character.get_cur_wil() < 18)
 				{
+					send_to_char("Your dull follower doesn't have the will for that!\n\r", message_recipient);
 					return false;
 				}
-				else
+				else if(!can_orc_follower_cast_spell(spell_index))
 				{
-					// To-do(dgurley):  Uncomment out the below code if we want to disallow orc friends from casting spells.
-					//send_to_char("Sorry, orc friend such as you can not cast this\n\r", &character);
-					//return false;
+					send_to_char("Blasphemy!  Orcs cannot utter such words...\n\r", message_recipient);
+					return false;
 				}
 			}
 			else
 			{
-				send_to_char("Sorry, tamed mobiles can't cast.\n\r", &character);
+				send_to_char("Since when can animals talk?\n\r", message_recipient);
 				return false;
 			}
 		}

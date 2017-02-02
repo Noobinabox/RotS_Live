@@ -11,7 +11,7 @@ namespace game_types
 	{
 	public:
 		// Create a new Singleton and store a pointer to it in m_pInstance.
-		static void Create()
+		static void create()
 		{
 			// Task: initialize m_pInstance.  Ensure there is only one.
 			static wait_list theInstance;
@@ -19,7 +19,7 @@ namespace game_types
 		}
 
 		/// Gets the instance of the Global Library Manager.
-		static wait_list& Instance()
+		static wait_list& instance()
 		{
 			if (!m_pInstance)
 			{

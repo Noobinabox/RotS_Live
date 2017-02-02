@@ -244,10 +244,8 @@ namespace game_types
 			}
 			else
 			{
-				// Are wait values of less than 0 desired/allowed?
-				// Unsure of what the purpose would be.  The character
-				// would stay in the list forever.
-				++char_iter;
+				// No idea how we got here.  Get the character out of the wait list.
+				abort_delay(character);
 			}
 		}
 	}

@@ -1911,14 +1911,27 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 	obj_data* armor = victim.equipment[location];
 	if (armor)
 	{
+		const obj_flag_data& obj_flags = armor->obj_flags;
+
 		/* First, remove minimum absorb */
-		damage -= armor->obj_flags.value[1];
-
+		int damage_reduction = armor->get_base_damage_reduction();
+		
 		/* Then apply the armor_absorb factor */
-		damage -= (damage * armor_absorb(armor) + 50) / 100;
+		damage_reduction += (damage * armor_absorb(armor) + 50) / 100;
 
-		//TODO(drelidan):  If we want any 'material' specific effects, add them here.
-		//int material = armor->obj_flags.material;
+		if (obj_flags.is_leather() || obj_flags.is_cloth())
+		{
+			damage_reduction = 0;
+		}
+		else if (obj_flags.is_chain())
+		{
+			// Chain is half-effective against shooting.
+			damage_reduction = damage_reduction / 2;
+		}
+
+		// Reduce damage here, but not below 1.
+		damage -= damage_reduction;
+		damage = std::max(damage, 1);
 	}
 
 	return damage;

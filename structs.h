@@ -311,6 +311,13 @@ public:
 	int get_level() const { return level; }
 	int get_weight() const { return std::max(weight, 1); }
 
+	int get_base_damage_reduction() const { return value[1]; }
+
+	bool is_cloth() const { return material == 1; }
+	bool is_leather() const { return material == 2; }
+	bool is_chain() const { return material == 3; }
+	bool is_metal() const { return material == 4; }
+
 public:
 	int	value[5];	/* Values of the item (see list) *//*changed*/
 	byte type_flag;	/* Type of item                     */
@@ -348,6 +355,8 @@ public:
 	int get_weapon_type() const { return obj_flags.get_weapon_type(); }
 	int get_level() const { return obj_flags.get_level(); }
 	int get_weight() const { return obj_flags.get_weight(); }
+
+	int get_base_damage_reduction() const { return obj_flags.get_base_damage_reduction(); }
 
 	const char_data* get_owner() const { return carried_by; }
 

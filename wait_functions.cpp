@@ -127,7 +127,7 @@ namespace game_types
 			{
 				// The "AFF_WAITWHEEL" is typically associated with actions that
 				//   the player attempted to initiate.
-				if (base_utils::is_set(affect_flag, (long)AFF_WAITWHEEL))
+				if (utils::is_set(affect_flag, (long)AFF_WAITWHEEL))
 				{
 					// The character is trying to enter a casting state while they are
 					//   already waiting.  This is a bug.
@@ -156,7 +156,7 @@ namespace game_types
 
 		delay.targ1.type = data_type;
 		delay.targ2.type = TARGET_IGNORE;
-		base_utils::set_bit(character->specials.affected_by, affect_flag);
+		utils::set_bit(character->specials.affected_by, affect_flag);
 
 		// This replicates the "add_char_to_waitlist" code, which is based on the waiting macro.
 
@@ -174,8 +174,8 @@ namespace game_types
 			return;
 
 		// Update the character's wait values and priority.
-		base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITWHEEL);
-		base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITING);
+		utils::remove_bit(character->specials.affected_by, (long)AFF_WAITWHEEL);
+		utils::remove_bit(character->specials.affected_by, (long)AFF_WAITING);
 		character->delay.wait_value = 0;
 		character->delay.priority = 0;
 
@@ -190,8 +190,8 @@ namespace game_types
 			return;
 
 		character->delay.wait_value = 0;
-		base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITWHEEL);
-		base_utils::remove_bit(character->specials.affected_by, (long)AFF_WAITING);
+		utils::remove_bit(character->specials.affected_by, (long)AFF_WAITWHEEL);
+		utils::remove_bit(character->specials.affected_by, (long)AFF_WAITING);
 
 		delayed_command_interpreter interpreter(character);
 		interpreter.run();
@@ -223,9 +223,9 @@ namespace game_types
 
 			if (wait_value > 0)
 			{
-				if (!char_utils::is_npc(*character) && char_utils::is_affected_by(*character, AFF_WAITWHEEL))
+				if (!utils::is_npc(*character) && utils::is_affected_by(*character, AFF_WAITWHEEL))
 				{
-					if (char_utils::is_preference_flagged(*character, PRF_SPINNER))
+					if (utils::is_preference_flagged(*character, PRF_SPINNER))
 					{
 						// Add this function in somewhere.
 						write_to_descriptor(character->desc->descriptor, wait_wheel[wait_value % 8]);

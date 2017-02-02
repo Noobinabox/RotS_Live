@@ -5,7 +5,7 @@
 struct room_data;
 struct weather_data;
 
-namespace environment_utils
+namespace utils
 {
 	bool is_room_outside(const room_data& room);
 

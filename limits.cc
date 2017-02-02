@@ -126,7 +126,7 @@ double adjust_regen_for_level(int character_level, double regen_amount)
 /* manapoint gain pr. game hour */
 int	mana_gain(const char_data* character)
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	// dgurley: Do the math with a double and convert on the way out.
 	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
@@ -169,7 +169,7 @@ int	mana_gain(const char_data* character)
 /* Hitpoint gain pr. game hour */
 int	hit_gain(const char_data* character)
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	// dgurley: Do the math with a double and convert on the way out.
 	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
@@ -219,7 +219,7 @@ int	hit_gain(const char_data* character)
 int	move_gain(const char_data* character)
 /* move gain pr. game hour */
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	const char_ability_data& stats = character->tmpabilities;
 	if (is_npc(*character))

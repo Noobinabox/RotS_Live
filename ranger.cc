@@ -1809,7 +1809,7 @@ see_hiding(struct char_data *seeker)
  */
 bool check_archery_accuracy(char_data& archer, char_data& victim)
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
 	// here for shooting quickly and a bonus for shooting slowly.
@@ -1846,7 +1846,7 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
 
 int shoot_calculate_success(const char_data* archer, const char_data* victim)
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	int archery_skill = get_skill(*archer, SKILL_ARCHERY);
 	int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
@@ -1918,7 +1918,7 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 		damage -= (damage * armor_absorb(armor) + 50) / 100;
 
 		//TODO(drelidan):  If we want any 'material' specific effects, add them here.
-		int material = armor->obj_flags.material;
+		//int material = armor->obj_flags.material;
 	}
 
 	return damage;
@@ -1938,7 +1938,7 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  */
 int shoot_calculate_damage(char_data* archer, char_data* victim)
 {
-	using namespace char_utils;
+	using namespace utils;
 
 	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
@@ -1992,7 +1992,7 @@ int shoot_calculate_wait(const char_data* archer)
 	const int min_beats = 3;
 
 	int total_beats = base_beats - ((archer->points.ENE_regen / beats_modifier) - beats_modifier);
-	total_beats = total_beats - (char_utils::get_prof_level(PROF_RANGER, *archer) / beats_modifier);
+	total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / beats_modifier);
 
 	if (archer->player.race == RACE_WOOD)
 	{
@@ -2062,8 +2062,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
  */
 bool can_ch_shoot(char_data* archer)
 {
-	using namespace base_utils;
-	using namespace char_utils;
+	using namespace utils;
 
 	if (is_shadow(*archer)) {
 		send_to_char("Hmm, perhaps you've spent to much time in the "
@@ -2182,7 +2181,7 @@ ACMD(do_shoot)
 	if (!can_ch_shoot(ch))
 		return;
 
-	if (char_utils::is_affected_by(*ch, AFF_SANCTUARY))
+	if (utils::is_affected_by(*ch, AFF_SANCTUARY))
 	{
 		appear(ch);
 		send_to_char("You cast off your sanctuary!\r\n", ch);
@@ -2192,6 +2191,7 @@ ACMD(do_shoot)
 	switch (subcmd)
 	{
 	case 0:
+	{
 		victim = is_targ_valid(ch, wtl);
 		if (victim == NULL)
 		{
@@ -2199,10 +2199,12 @@ ACMD(do_shoot)
 		}
 
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
-		int wait_time = shoot_calculate_wait(ch);
-		WAIT_STATE_FULL(ch, wait_time, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+		int wait_delay = shoot_calculate_wait(ch);
+		WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+	}
 		break;
 	case 1:
+	{
 		if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
 		{
 			send_to_char("Your victim is no longer among us.\r\n", ch);
@@ -2237,7 +2239,7 @@ ACMD(do_shoot)
 			// the current room, or does it still have a chance to break?
 			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
 		}
-
+	}
 		break;
 	default:
 		sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);

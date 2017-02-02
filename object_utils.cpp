@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace object_utils
+namespace utils
 {
 	//============================================================================
 	bool is_artifact(const obj_data& object)
@@ -26,7 +26,7 @@ namespace object_utils
 	//============================================================================
 	bool can_wear(const obj_data& object, int body_part)
 	{
-		return base_utils::is_set(object.obj_flags.wear_flags, body_part);
+		return utils::is_set(object.obj_flags.wear_flags, body_part);
 	}
 
 	//============================================================================
@@ -38,7 +38,7 @@ namespace object_utils
 	//============================================================================
 	bool is_object_stat(const obj_data& object, int stat)
 	{
-		return base_utils::is_set(object.obj_flags.extra_flags, stat);
+		return utils::is_set(object.obj_flags.extra_flags, stat);
 	}
 
 	//============================================================================
@@ -72,7 +72,7 @@ namespace object_utils
 			}
 
 			/* Case (2): for skill=100, use full obj_level; skill=0, use obj_level/2 */
-			double owner_skill = char_utils::get_skill(owner, skill_type);
+			double owner_skill = utils::get_skill(owner, skill_type);
 			owner_skill = 50.0 + owner_skill / 2.0;
 			object_level = object_level * owner_skill * 0.01;
 			return object_level;

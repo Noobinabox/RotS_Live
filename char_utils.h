@@ -7,7 +7,7 @@ struct obj_data;
 struct weather_data;
 struct room_data;
 
-namespace char_utils
+namespace utils
 {
 	typedef signed short sh_int;
 	typedef unsigned char byte;

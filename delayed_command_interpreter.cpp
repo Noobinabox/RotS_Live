@@ -37,7 +37,7 @@ namespace game_types
 
 		waiting_type* delay = &m_character->delay;
 		char_data* victim = NULL;
-		if (m_character->delay.cmd == -1 && char_utils::is_npc(*m_character))
+		if (m_character->delay.cmd == -1 && utils::is_npc(*m_character))
 		{
 			special_ptr func_pointer = NULL;
 			int index = m_character->nr;

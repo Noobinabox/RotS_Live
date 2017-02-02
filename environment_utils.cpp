@@ -1,7 +1,7 @@
 #include "environment_utils.h"
 #include "structs.h"
 
-namespace environment_utils
+namespace utils
 {
 	//============================================================================
 	bool is_dark(const room_data& room, const weather_data& weather)
@@ -9,7 +9,7 @@ namespace environment_utils
 		if (room.light)
 			return false;
 
-		if (base_utils::is_set(room.room_flags, (long)DARK))
+		if (utils::is_set(room.room_flags, (long)DARK))
 			return true;
 
 		return weather.sunlight == SUN_DARK && room.sector_type != SECT_INSIDE && room.sector_type != SECT_CITY;
@@ -24,7 +24,7 @@ namespace environment_utils
 	//============================================================================
 	bool is_sunlit_exit(const weather_data& weather, const room_data& current_room, const room_data& adjacent_room, int door_index)
 	{
-		using namespace base_utils;
+		using namespace utils;
 		if (weather.sunlight != SUN_LIGHT)
 			return false;
 
@@ -41,7 +41,7 @@ namespace environment_utils
 	//============================================================================
 	bool is_shadowy_exit(const room_data& current_room, const room_data& adjacent_room, int door_index)
 	{
-		using namespace base_utils;
+		using namespace utils;
 
 		int exit_info = current_room.dir_option[door_index]->exit_info;
 		return is_set(adjacent_room.room_flags, (long)SHADOWY) && !is_set(exit_info, EX_CLOSED);
@@ -50,7 +50,7 @@ namespace environment_utils
 	//============================================================================
 	bool is_room_sunlit(const weather_data& weather, const room_data& room)
 	{
-		using namespace base_utils;
+		using namespace utils;
 		if (weather.sunlight != SUN_LIGHT)
 			return false;
 
@@ -63,7 +63,7 @@ namespace environment_utils
 	//============================================================================
 	bool is_room_outside(const room_data& room)
 	{
-		return !base_utils::is_set(room.room_flags, (long)INDOORS);
+		return !utils::is_set(room.room_flags, (long)INDOORS);
 	}
 
 	//============================================================================

@@ -13,7 +13,7 @@ struct race_bodypart_data;
 extern sh_int square_root[];
 //extern race_bodypart_data bodyparts[MAX_BODYTYPES]; // Due to where this is located, this currently isn't possible to support here.
 
-namespace char_utils
+namespace utils
 {
 	//============================================================================
 	bool is_pc(const char_data& character)
@@ -24,7 +24,7 @@ namespace char_utils
 	//============================================================================
 	bool is_npc(const char_data& character)
 	{
-		return base_utils::is_set(character.specials2.act, (long)MOB_ISNPC);
+		return utils::is_set(character.specials2.act, (long)MOB_ISNPC);
 	}
 
 	//============================================================================
@@ -36,25 +36,25 @@ namespace char_utils
 	//============================================================================
 	bool is_retired(const char_data& character)
 	{
-		return base_utils::is_set(character.specials2.act, (long)PLR_RETIRED);
+		return utils::is_set(character.specials2.act, (long)PLR_RETIRED);
 	}
 
 	//============================================================================
 	bool is_mob_flagged(const char_data& mob, long flag)
 	{
-		return is_npc(mob) && base_utils::is_set(mob.specials2.act, flag);
+		return is_npc(mob) && utils::is_set(mob.specials2.act, flag);
 	}
 
 	//============================================================================
 	bool is_player_flagged(const char_data& character, long flag)
 	{
-		return !is_npc(character) && base_utils::is_set(character.specials2.act, flag);
+		return !is_npc(character) && utils::is_set(character.specials2.act, flag);
 	}
 
 	//============================================================================
 	bool is_preference_flagged(const char_data& character, long flag)
 	{
-		return base_utils::is_set(character.specials2.pref, flag);
+		return utils::is_set(character.specials2.pref, flag);
 	}
 	
 	//============================================================================
@@ -70,7 +70,7 @@ namespace char_utils
 	//============================================================================
 	bool is_affected_by(const char_data& character, long skill_id)
 	{
-		return base_utils::is_set(character.specials.affected_by, skill_id);
+		return utils::is_set(character.specials.affected_by, skill_id);
 	}
 
 	//============================================================================
@@ -390,7 +390,7 @@ namespace char_utils
 
 #include "spells.h"
 
-		int get_confuse_modifier(const char_data& character)
+		int ch_get_confuse_modifier(const char_data& character)
 		{
 			int modifier = 0;
 			const affected_type* status_effect = character.affected;
@@ -429,7 +429,7 @@ namespace char_utils
 		
 		if (is_affected_by(character, AFF_CONFUSE))
 		{
-			raw_skill -= TEMPORARY::get_confuse_modifier(character);
+			raw_skill -= TEMPORARY::ch_get_confuse_modifier(character);
 		}
 
 		return raw_skill;
@@ -460,7 +460,7 @@ namespace char_utils
 		
 		if (is_affected_by(character, AFF_CONFUSE))
 		{
-			raw_knowledge -= TEMPORARY::get_confuse_modifier(character);
+			raw_knowledge -= TEMPORARY::ch_get_confuse_modifier(character);
 		}
 
 		return raw_knowledge;
@@ -495,7 +495,7 @@ namespace char_utils
 	//============================================================================
 	bool is_twohanded(const char_data& character)
 	{
-		return base_utils::is_set(character.specials.affected_by, (long)AFF_TWOHANDED);
+		return utils::is_set(character.specials.affected_by, (long)AFF_TWOHANDED);
 	}
 
 	//============================================================================
@@ -523,13 +523,13 @@ namespace char_utils
 			return true;
 
 		// need the current room for the character as well.
-		if (environment_utils::is_light(room, weather))
+		if (utils::is_light(room, weather))
 			return true;
 
 		if (is_affected_by(character, AFF_INFRARED) || is_preference_flagged(character, PRF_HOLYLIGHT))
 			return true;
 
-		if (weather.moonlight > 0 && is_affected_by(character, AFF_MOONVISION) && environment_utils::is_room_outside(room))
+		if (weather.moonlight > 0 && is_affected_by(character, AFF_MOONVISION) && utils::is_room_outside(room))
 			return true;
 		
 		return true;
@@ -542,13 +542,13 @@ namespace char_utils
 
 		if (is_shadow(character))
 		{
-			return base_utils::is_set(item_flags, ITEM_MAGIC) 
-				|| base_utils::is_set(item_flags, ITEM_WILLPOWER);
+			return utils::is_set(item_flags, ITEM_MAGIC) 
+				|| utils::is_set(item_flags, ITEM_WILLPOWER);
 		}
 		else
 		{
 			return can_see(character, weather, room)
-				&& (!base_utils::is_set(item_flags, ITEM_INVISIBLE)
+				&& (!utils::is_set(item_flags, ITEM_INVISIBLE)
 				|| is_affected_by(character, AFF_DETECT_INVISIBLE));
 
 		}
@@ -557,7 +557,7 @@ namespace char_utils
 	//============================================================================
 	bool can_get_object(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room)
 	{
-		return object_utils::can_wear(object, ITEM_TAKE)
+		return utils::can_wear(object, ITEM_TAKE)
 			&& can_carry_object(character, object)
 			&& can_see_object(character, object, weather, room);
 	}
@@ -567,11 +567,11 @@ namespace char_utils
 	{
 		if (is_npc(character))
 		{
-			return base_utils::is_set(character.specials2.act, (long)MOB_SHADOW);
+			return utils::is_set(character.specials2.act, (long)MOB_SHADOW);
 		}
 		else
 		{
-			return base_utils::is_set(character.specials2.act, (long)PLR_ISSHADOW);
+			return utils::is_set(character.specials2.act, (long)PLR_ISSHADOW);
 		}
 	}
 
@@ -668,7 +668,7 @@ namespace char_utils
 	bool is_rp_race_check(const char_data& character, const char_data& victim)
 	{
 		return is_npc(character) && character.specials2.rp_flag != 0 ||
-			base_utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
+			utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
 	}
 
 	//============================================================================

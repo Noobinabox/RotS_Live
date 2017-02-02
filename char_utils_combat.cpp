@@ -11,7 +11,7 @@
 #include <algorithm>
 
 
-namespace combat_utils
+namespace utils
 {
 	//============================================================================
 	// Functions in this namespace do not belong in this file and need to be moved
@@ -19,7 +19,7 @@ namespace combat_utils
 	//============================================================================
 	namespace TEMPORARY
 	{
-		int get_confuse_modifier(const char_data& character)
+		int chc_get_confuse_modifier(const char_data& character)
 		{
 			int modifier = 0;
 			const affected_type* status_effect = character.affected;
@@ -46,12 +46,12 @@ namespace combat_utils
 		//============================================================================
 		double get_real_npc_dodge(const char_data& character)
 		{
-			using namespace char_utils;
+			using namespace utils;
 
 			double npc_dodge(character.points.dodge + character.tmpabilities.dex - 5 + character.player.level / 2.0);
 			if (is_affected_by(character, AFF_CONFUSE))
 			{
-				npc_dodge -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+				npc_dodge -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 			}
 			return npc_dodge;
 		}
@@ -59,12 +59,12 @@ namespace combat_utils
 		//============================================================================
 		double get_real_npc_parry(const char_data& character)
 		{
-			using namespace char_utils;
+			using namespace utils;
 
 			double npc_parry(character.points.parry + character.player.level / 2.0 + 15.0);
 			if (is_affected_by(character, AFF_CONFUSE))
 			{
-				npc_parry -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+				npc_parry -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 			}
 			return npc_parry;
 		}
@@ -72,9 +72,9 @@ namespace combat_utils
 		//============================================================================
 		double get_dodge_skill_factor(const char_data& character)
 		{
-			double dodge_skill(char_utils::get_skill(character, SKILL_DODGE));
-			double stealth_skill(char_utils::get_skill(character, SKILL_STEALTH));
-			double ranger_level_factor(char_utils::get_prof_level(PROF_RANGER, character) * 0.005);
+			double dodge_skill(utils::get_skill(character, SKILL_DODGE));
+			double stealth_skill(utils::get_skill(character, SKILL_STEALTH));
+			double ranger_level_factor(utils::get_prof_level(PROF_RANGER, character) * 0.005);
 
 			double dodge = ((dodge_skill + (stealth_skill * 0.5) + 60) * ranger_level_factor) + (dodge_skill + (stealth_skill * 0.25)) * 0.05;
 			return dodge;
@@ -86,15 +86,15 @@ namespace combat_utils
 			const obj_flag_data& flags = weapon->obj_flags;
 			int weapon_skill = weapon_skill_num(flags.value[3]);
 
-			double skill_factor(char_utils::get_raw_knowledge(character, weapon_skill));
-			if (char_utils::is_twohanded(character))
+			double skill_factor(utils::get_raw_knowledge(character, weapon_skill));
+			if (utils::is_twohanded(character))
 			{
-				skill_factor = skill_factor + char_utils::get_raw_knowledge(character, SKILL_TWOHANDED) * 0.5;
+				skill_factor = skill_factor + utils::get_raw_knowledge(character, SKILL_TWOHANDED) * 0.5;
 			}
 
-			skill_factor = skill_factor + char_utils::get_raw_knowledge(character, SKILL_PARRY) * 0.75;
+			skill_factor = skill_factor + utils::get_raw_knowledge(character, SKILL_PARRY) * 0.75;
 
-			int character_tactics = char_utils::get_tactics(character);
+			int character_tactics = utils::get_tactics(character);
 			if (character_tactics == TACTICS_BERSERK)
 			{
 				skill_factor *= 0.5;
@@ -126,7 +126,7 @@ namespace combat_utils
 		//============================================================================
 		double apply_dodge_tactics_modifier(const char_data& character, double dodge_modifier)
 		{
-			int tactics = char_utils::get_tactics(character);
+			int tactics = utils::get_tactics(character);
 
 			double base_dex(character.tmpabilities.dex);
 			double total_dodge(character.points.dodge + dodge_modifier);
@@ -203,7 +203,7 @@ namespace combat_utils
 	//============================================================================
 	double get_real_dodge(const char_data& character)
 	{
-		using namespace char_utils;
+		using namespace utils;
 
 		if (is_npc(character))
 		{
@@ -221,7 +221,7 @@ namespace combat_utils
 
 		if (is_affected_by(character, AFF_CONFUSE))
 		{
-			dodge -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+			dodge -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 		}
 
 		dodge = apply_defensive_sun_modifier(character, dodge);
@@ -232,14 +232,14 @@ namespace combat_utils
 	//============================================================================
 	double get_real_parry(const char_data& character, const weather_data& weather, const room_data& room)
 	{
-		if (char_utils::is_npc(character))
+		if (utils::is_npc(character))
 		{
 			return get_real_npc_parry(character);
 		}
 
 		double parry(character.points.parry);
-		double parry_bonus(char_utils::get_prof_level(PROF_WARRIOR, character) * 2 + 
-			char_utils::get_level_legend_cap(character) + char_utils::get_bal_strength(character));
+		double parry_bonus(utils::get_prof_level(PROF_WARRIOR, character) * 2 + 
+			utils::get_level_legend_cap(character) + utils::get_bal_strength(character));
 
 		const obj_data* weapon = character.equipment[WIELD];
 		if (!weapon)
@@ -251,25 +251,25 @@ namespace combat_utils
 		double skill_factor = get_parry_skill_factor(character, weapon);
 
 		int tactics_mod = 0;
-		int character_tactics = char_utils::get_tactics(character);
+		int character_tactics = utils::get_tactics(character);
 
 		parry += apply_parry_tactics_modifier(character_tactics, parry_bonus, tactics_mod);
 		parry += skill_factor * (weapon_bonus + 20) * (14 - tactics_mod) * 0.001;
 		
 		// Parry should now have bigger effect on two-handers:
-		if (char_utils::is_twohanded(character))
+		if (utils::is_twohanded(character))
 		{
 			parry += weapon_bonus / 2;
 		}
 
-		if (char_utils::is_affected_by(character, AFF_CONFUSE))
+		if (utils::is_affected_by(character, AFF_CONFUSE))
 		{
-			parry -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+			parry -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 		}
 
 		parry = apply_defensive_sun_modifier(character, parry);
 
-		if (char_utils::can_see(character, weather, room))
+		if (utils::can_see(character, weather, room))
 		{
 			parry -= 10;
 		}
@@ -282,14 +282,14 @@ namespace combat_utils
 		//============================================================================
 		double get_real_npc_ob(const char_data& character)
 		{
-			using namespace char_utils;
+			using namespace utils;
 
 			double base_ob = 15 + character.points.OB + get_bal_strength(character);
 			base_ob -= get_skill_penalty(character) + character.player.level / 2.0;
 
 			if (is_affected_by(character, AFF_CONFUSE))
 			{
-				base_ob -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+				base_ob -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 			}
 
 			return base_ob;
@@ -298,7 +298,7 @@ namespace combat_utils
 		//============================================================================
 		double get_ob_bonus(const char_data& character)
 		{
-			using namespace char_utils;
+			using namespace utils;
 
 			//TODO(drelidan):  Perhaps replace get_bal_strength with a damage smoothing formula.
 			int strength = get_bal_strength(character);
@@ -317,7 +317,7 @@ namespace combat_utils
 		//============================================================================
 		double get_ob_tactics_modifier(const char_data& character, double ob_bonus, int& skill_multiplier)
 		{
-			int character_tactics = char_utils::get_tactics(character);
+			int character_tactics = utils::get_tactics(character);
 
 			switch (character_tactics)
 			{
@@ -348,13 +348,13 @@ namespace combat_utils
 			case TACTICS_BERSERK:
 			{
 				skill_multiplier = 10;
-				return ob_bonus * 1.0625 + 5 + char_utils::get_raw_skill(character, SKILL_BERSERK) * 0.125;
+				return ob_bonus * 1.0625 + 5 + utils::get_raw_skill(character, SKILL_BERSERK) * 0.125;
 			}
 			break;
 			default:
 			{
 				skill_multiplier = 0;
-				return ob_bonus + char_utils::get_bal_strength(character);
+				return ob_bonus + utils::get_bal_strength(character);
 			}
 			break;
 			};
@@ -386,7 +386,7 @@ namespace combat_utils
 	//============================================================================
 	double get_real_ob(const char_data& character, const weather_data& weather, const room_data& room)
 	{
-		using namespace char_utils;
+		using namespace utils;
 
 		if (is_npc(character))
 		{
@@ -406,7 +406,7 @@ namespace combat_utils
 		int weapon_skill = weapon_skill_num(flags.value[3]);
 
 		double skill_factor(get_raw_knowledge(character, weapon_skill));
-		int weapon_bulk = object_utils::get_item_bulk(*weapon);
+		int weapon_bulk = utils::get_item_bulk(*weapon);
 		if (is_twohanded(character))
 		{
 			int two_handed_skill = get_raw_knowledge(character, SKILL_TWOHANDED);
@@ -423,12 +423,12 @@ namespace combat_utils
 
 		if (is_affected_by(character, AFF_CONFUSE))
 		{
-			base_ob -= double(TEMPORARY::get_confuse_modifier(character)) * 2.0 / 3.0;
+			base_ob -= double(TEMPORARY::chc_get_confuse_modifier(character)) * 2.0 / 3.0;
 		}
 
 		base_ob = get_sun_offense_malus(character, base_ob);
 		
-		if (char_utils::can_see(character, weather, room))
+		if (utils::can_see(character, weather, room))
 		{
 			base_ob -= 10;
 		}

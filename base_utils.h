@@ -1,7 +1,7 @@
 #pragma once
 // This file exists for Game-Specific basic utility functions that can be shared by everything.
 
-namespace base_utils
+namespace utils
 {
 	//============================================================================
 	template<class T>

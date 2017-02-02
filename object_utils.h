@@ -4,7 +4,7 @@
 
 struct obj_data;
 
-namespace object_utils
+namespace utils
 {
 	bool is_artifact(const obj_data& object);
 	int get_item_type(const obj_data& object);

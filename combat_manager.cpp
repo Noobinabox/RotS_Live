@@ -30,21 +30,22 @@ namespace game_rules
 	//============================================================================
 	combat_manager::ob_roll combat_manager::roll_ob(char_data* attacker)
 	{
-		int roll = number(1, 35);
+		double roll = number(35.0);
 
 		const room_data& attacker_room = m_world[attacker->in_room];
 		double attacker_OB = utils::get_real_ob(*attacker, m_weather, attacker_room);
-		attacker_OB += number(1, 55 + attacker_OB * 0.25);
+		attacker_OB += number_d(1, 55 + attacker_OB * 0.25);
 		attacker_OB += roll;
 		attacker_OB = attacker_OB * 7.0 / 8.0;
 		attacker_OB -= 40.0;
 
-		if (roll == 35)
+		bool is_crit = roll > 34.0;
+		if (is_crit)
 		{
 			attacker_OB += 100.0;
 		}
 
-		return ob_roll(roll, attacker_OB);
+		return ob_roll(is_crit, attacker_OB);
 	}
 
 	//============================================================================
@@ -90,7 +91,7 @@ namespace game_rules
 			double dodge_malus = utils::get_real_dodge(*victim);
 
 			attacker_ob -= dodge_malus;
-			if (attacker_ob < 0.0 && rolled_ob.get_rolled_value() != 35)
+			if (attacker_ob < 0.0 && !rolled_ob.is_crit())
 			{
 				// Victim dodged the attack.
 				act("$N dodges $n's attack.", FALSE, attacker, 0, victim, TO_NOTVICT, TRUE);
@@ -102,7 +103,7 @@ namespace game_rules
 			double evasion_malus = get_evasion_malus(*attacker, *victim);
 
 			attacker_ob -= evasion_malus;
-			if (attacker_ob < 0.0 && rolled_ob.get_rolled_value() != 35)
+			if (attacker_ob < 0.0 && !rolled_ob.is_crit())
 			{
 				// Victim evaded the attack.
 				act("$N distracts $n into missing $M.", FALSE, attacker, 0, victim, TO_NOTVICT, TRUE);
@@ -123,7 +124,7 @@ namespace game_rules
 			victim->specials.current_parry = victim->specials.current_parry * 2 / 3;
 
 			attacker_ob -= victim_parry;
-			if (rolled_ob.get_rolled_value() == 35)
+			if (rolled_ob.is_crit())
 			{
 				// Attackers can't get below 0 OB with a roll of 35.
 				attacker_ob = std::max(attacker_ob, 0.0);
@@ -155,8 +156,21 @@ namespace game_rules
 		if (!utils::is_affected_by(victim, AFF_EVASION))
 			return 0.0;
 
-		double evasion_malus = 5.0 + utils::get_prof_level(PROF_CLERIC, victim) * (100 - utils::get_perception(attacker)) * 0.005;
-		return evasion_malus;
+		const double BASE_VALUE = 5.0;
+
+		double defender_bonus = utils::get_prof_level(PROF_CLERIC, victim) * 0.5;
+		double attacker_offset = utils::get_prof_level(PROF_CLERIC, attacker) * (100 - utils::get_perception(attacker)) * 0.005;
+		
+		if (utils::is_npc(attacker))
+		{
+			attacker_offset *= 0.5;
+		}
+
+		// Always return at least the base value.
+		if (attacker_offset > defender_bonus)
+			return BASE_VALUE;
+
+		return BASE_VALUE + defender_bonus - attacker_offset;
 	}
 	
 	//============================================================================

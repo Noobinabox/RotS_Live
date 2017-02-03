@@ -2,3 +2,5 @@ Drelidan:
 * Orc followers can no longer cast Whitie or Lhuth spells.
 * Fixed groll command for v1.0.2
 * Continued implementing the WaitList and CombatManagement replacements (there's a long way to go).
+* The 'shoot' command now ignores leather armor, and reduces chains effectiveness by 50%.
+* Evasion buffed against non-mystics.

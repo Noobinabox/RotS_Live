@@ -840,17 +840,43 @@ int get_real_dodge(struct char_data *ch)
 
 int get_followers_level(char_data *ch)  /* summ of levels of mobs/players charmed by ch */
 {
-  char_data *tmpch;
-  int levels = 0;
-  
-  for(tmpch = character_list; tmpch; tmpch = tmpch->next)
-    if((tmpch->master == ch) && IS_AFFECTED(tmpch, AFF_CHARM))
-      levels += MAX(2, GET_LEVEL(tmpch));
-  
-  return (levels);
+	int levels = 0;
+
+	for (char_data* tmpch = character_list; tmpch; tmpch = tmpch->next)
+	{
+		if ((tmpch->master == ch) && IS_AFFECTED(tmpch, AFF_CHARM))
+		{
+			levels += std::max(2, tmpch->get_level());
+		}
+	}
+
+	return levels;
 }
 
+// returns a random number from 0.0 to 1.0
+double number()
+{
+	double roll = std::rand();
+	double max = RAND_MAX;
+	return roll / max;
+}
 
+// returns a random number from 0.0 to max
+double number(double max)
+{
+	return number() * max;
+}
+
+// returns a random number in interval [from;to] */
+double number_d(double from, double to)
+{
+	if (from > to)
+	{
+		std::swap(from, to);
+	}
+
+	return number(to) + from;
+}
 
 /* creates a random number in interval [from;to] */
 int	number(int from, int to)
@@ -870,8 +896,6 @@ int	number(int from, int to)
 
 	return (std::rand() % upper_end) + from;
 }
-
-
 
 /* simulates dice roll */
 int	dice(int number, int size)

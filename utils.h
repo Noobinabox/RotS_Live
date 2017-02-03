@@ -23,6 +23,15 @@ extern int get_weapon_damage(struct obj_data *obj);
 /* public functions */
 void recalc_abilities(struct char_data *);
 
+// returns a random number from 0.0 to 1.0
+double number();
+
+// returns a random number from 0.0 to max
+double number(double max);
+
+// returns a random number in interval [from;to] */
+double number_d(double from, double to);
+
 struct time_info_data mud_time_passed(time_t, time_t);
 char *PERS(struct char_data *, struct char_data *, int, int);
 void retire(struct char_data *);

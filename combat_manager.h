@@ -41,14 +41,14 @@ namespace game_rules
 		struct ob_roll
 		{
 		public:
-			ob_roll() : m_rolled_value(0), m_ob_value(0.0) { }
-			ob_roll(int roll, double ob) : m_rolled_value(roll), m_ob_value(ob) { }
+			ob_roll() : m_is_crit(0), m_ob_value(0.0) { }
+			ob_roll(bool is_crit, double ob) : m_is_crit(is_crit), m_ob_value(ob) { }
 
-			int get_rolled_value() { return m_rolled_value; }
+			bool is_crit() { return m_is_crit; }
 			double get_ob_value() { return m_ob_value; }
 
 		private:
-			int m_rolled_value;
+			bool m_is_crit;
 			double m_ob_value;
 		};
 

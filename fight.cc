@@ -27,6 +27,8 @@
 #include "zone.h"  /* For zone_table */
 #include "pkill.h"
 
+#include "char_utils.h"
+
 #define IS_PHYSICAL(_at) \
   ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)
 
@@ -2046,10 +2048,31 @@ armor_effect(struct char_data *ch, struct char_data *victim,
   return damage;
 }
 
+//============================================================================
+int get_evasion_malus(const char_data& attacker, const char_data& victim)
+{
+	if (!utils::is_affected_by(victim, AFF_EVASION))
+		return 0.0;
 
+	const int BASE_VALUE = 5.0;
 
-void
-hit(struct char_data *ch, struct char_data *victim, int type)
+	int defender_bonus = utils::get_prof_level(PROF_CLERIC, victim) / 2;
+	int attacker_offset = utils::get_prof_level(PROF_CLERIC, attacker) * (100 - utils::get_perception(attacker)) / 200;
+
+	if (utils::is_npc(attacker))
+	{
+		attacker_offset *= 0.5;
+	}
+
+	// Always return at least the base value.
+	if (attacker_offset > defender_bonus)
+		return BASE_VALUE;
+
+	return BASE_VALUE + defender_bonus - attacker_offset;
+}
+
+//============================================================================
+void hit(struct char_data *ch, struct char_data *victim, int type)
 {
   struct obj_data *wielded = 0; /* weapon that ch wields */
   int hit_accurate;         /* has accuracy roll been made? */
@@ -2106,14 +2129,8 @@ hit(struct char_data *ch, struct char_data *victim, int type)
 
   dodge_malus = evasion_malus = 0;
   if (!hit_accurate) {
-    dodge_malus = get_real_dodge(victim);
-
-    if (IS_AFFECTED(victim, AFF_EVASION)) {
-      evasion_malus = 5 +
-	GET_PROF_LEVEL(PROF_CLERIC, victim)*(100-GET_PERCEPTION(ch)) / 200;
-      dodge_malus += evasion_malus;
-    }
-
+	evasion_malus = get_evasion_malus(*ch, *victim);
+    dodge_malus = get_real_dodge(victim) + evasion_malus;
     OB -= dodge_malus;
   }
 

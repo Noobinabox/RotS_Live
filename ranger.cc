@@ -1842,14 +1842,17 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 24,2017 - Created function
  * drelidan: Jan 31, 2017 - Base implementation as an example.
+ * slyon: Feb 3, 2017 - Added arrow tohit into the equation
  */
 
-int shoot_calculate_success(const char_data* archer, const char_data* victim)
+int shoot_calculate_success(const char_data* archer, const char_data* victim, const char_data* arrow)
 {
 	using namespace utils;
 
 	int archery_skill = get_skill(*archer, SKILL_ARCHERY);
 	int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
+	//This obj_flag is defined in act_info.cc
+	int arrow_tohit = arrow->obj_flags.[0];
 
 	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
@@ -1861,7 +1864,7 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim)
 
 	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
 	// here for shooting quickly and a bonus for shooting slowly.
-	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 4);
+	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 4) + arrow_tohit;
 
 	return success_chance;
 }
@@ -1948,14 +1951,16 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  * slyon: Jan 24, 2017 - Created function
  * drelidan: Jan 31, 2017 - First pass implementation.  Doesn't take weapon or
  *   arrow type into account.
+ * slyon: Feb 3, 2017 - Added arrowto_dam into the equation
  */
-int shoot_calculate_damage(char_data* archer, char_data* victim)
+int shoot_calculate_damage(char_data* archer, char_data* victim, const char_data* arrow)
 {
 	using namespace utils;
 
 	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
 	int ranger_dex = archer->get_cur_dex();
+	int arrow_todam = arrow->obj_flags.[1];
 
 	// TODO(drelidan):  Replace some of these random factors with weapon and arrow
 	// contributions to damage.
@@ -1965,7 +1970,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim)
 	int random_factor_4 = number(1, 12);
 
 	int damage = (ranger_level * 3 / 4) + (ranger_dex * 3 / 4) + random_factor_1
-		+ random_factor_2 + random_factor_3 + random_factor_4;
+		+ random_factor_2 + random_factor_3 + random_factor_4 + arrow_todam;
 
 	int arrow_hit_location = get_hit_location(*victim);
 	if (check_archery_accuracy(*archer, *victim))
@@ -2026,6 +2031,12 @@ int shoot_calculate_wait(const char_data* archer)
 bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 {
 	//TODO(drelidan):  Add logic for calculating breaking here.
+	const int breakpercentage = arrow->obj_flags[3];
+	const int rolledNumber = number(1, 100);
+	if (rolledNumber < breakpercentage)
+	{
+		return true;
+	}
 	return false;
 }
 
@@ -2053,11 +2064,8 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 		extract_obj(arrow);
 		return false;
 	}
-
-	// Tag arrow.  Set the arrow's owner to the archer.
-	// drelidan:  I chose the 'owner' variable because it makes
-	//            sense and it's not being used by anything else.
-	arrow->owner = (int)archer->specials2.idnum;
+	//tag arrow in value slot 2 of the shooter
+	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the victim.
 	obj_to_char(arrow, victim);

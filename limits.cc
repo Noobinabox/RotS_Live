@@ -193,8 +193,8 @@ int	hit_gain(const char_data* character)
 			break;
 		}
 
-		// Casters get half regen.
-		if (character->player.prof == PROF_MAGIC_USER || character->player.prof == PROF_CLERIC)
+		// Casters get half regen after level 10, since they have efficient ways to regain health.
+		if (character->get_level() > 10 && character->player.prof == PROF_MAGIC_USER || character->player.prof == PROF_CLERIC)
 		{
 			gain *= 0.5;
 		}

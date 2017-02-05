@@ -52,78 +52,36 @@ ACMD(do_flee);
 
 
 
-void
-say_spell(struct char_data *ch, int si)
+void say_spell(char_data* caster, int spell_index)
 {
-  char splwd[MAX_INPUT_LENGTH];
-  int j, offs;
-  struct char_data *temp_char;
-  
-  
-  struct syllable {
-    char	org[10];
-    char	pnew[10];
-  };
-  
-  struct syllable syls[] = {
-    { " ", " " },
-    { "ar", "abra"   },
-    { "au", "kada"    },
-    { "bless", "fido" },
-    { "blind", "nose" },
-    { "bur", "mosa" },
-    { "cu", "judi" },
-    { "de", "oculo" },
-    { "en", "unso" },
-    { "light", "dies" },
-    { "lo", "hi" },
-    { "mor", "zak" },
-    { "move", "sido" },
-    { "ness", "lacri" },
-    { "ning", "illa" },
-    { "per", "duda" },
-    { "ra", "gru"   },
-    { "re", "candus" },
-    { "son", "sabru" },
-    { "tect", "infra" },
-    { "tri", "cula" },
-    { "ven", "nofo" },
-    { "a", "a" }, { "b", "b" }, { "c", "q" }, { "d", "e" }, { "e", "z" },
-    { "f", "y" }, { "g", "o" }, { "h", "p" }, { "i", "u" }, { "j", "y" },
-    { "k", "t" }, { "l", "r" }, { "m", "w" }, { "n", "i" }, { "o", "a" },
-    { "p", "s" }, { "q", "d" }, { "r", "f" }, { "s", "g" }, { "t", "h" },
-    { "u", "j" }, { "v", "z" }, { "w", "x" }, { "x", "n" }, { "y", "l" },
-    { "z", "k" }, { "", "" }
-  };   
-  
-  strcpy(buf, "");
-  strcpy(splwd, skills[si].name);
-  splwd[strlen(skills[si].name)] = 0;
-  
-  offs = 0;
-  while(*(splwd + offs)) {
-    for(j = 0; *(syls[j].org); j++)
-      if(strncmp(syls[j].org, splwd + offs, strlen(syls[j].org)) == 0) {
-	strcat(buf, syls[j].pnew);
-	if(strlen(syls[j].org))
-	  offs += strlen(syls[j].org);
-	else
-	  ++offs;
-      }
-  }
-  
-  sprintf(buf2, "$n utters a strange command, '%s'", buf);
-  sprintf(buf, "$n utters a strange command, '%s'", skills[si].name);
-  
-  for(temp_char = world[ch->in_room].people; 
-      temp_char; 
-      temp_char = temp_char->next_in_room)
-    if((temp_char != ch) && (GET_POS(temp_char) > POSITION_SLEEPING)) {
-      if(GET_PROF(ch) == GET_PROF(temp_char))
-	act(buf, FALSE, ch, 0, temp_char, TO_VICT);
-      else
-	act(buf2, FALSE, ch, 0, temp_char, TO_VICT);   
-    }
+	// Validity check.
+	if (!caster || spell_index >= MAX_SKILLS)
+		return;
+
+	// Get the spell that we're casting.
+	const skill_data& spell = skills[spell_index];
+	const char* spell_name = spell.name;
+	if (!spell_name)
+	{
+		log("Cast a spell without a name!  Unable to say the spell.");
+		return;
+	}
+
+	// Reset the buffer.
+	strcpy(buf, "");
+	sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+	
+	const room_data& room = world[caster->in_room];
+	char_data* receiver = room.people;
+	while (receiver)
+	{
+		if ((receiver != caster) && (GET_POS(receiver) > POSITION_SLEEPING))
+		{
+			act(buf, FALSE, caster, 0, receiver, TO_VICT);
+		}
+
+		receiver = receiver->next_in_room;
+	}
 }
 
 
@@ -533,7 +491,7 @@ ACMD(do_cast)
 	struct obj_data *tar_obj;
 	struct char_data *tar_char;
 	struct obj_data *tmpobj;
-	int qend, spell_index, i, tmp;
+	int qend, i, tmp;
 	int tar_dig;
 	char *arg;
 	int spell_prof, prepared_spell;
@@ -543,12 +501,14 @@ ACMD(do_cast)
 
 	tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
 
-	if (subcmd == -1) {
+	if (subcmd == -1) 
+	{
 		send_to_char("You could not concentrate anymore!\n\r", ch);
 		return;
 	}
 
-	if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+	if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) 
+	{
 		send_to_char("Your lips falter and you cannot seem to find the words you seek.\n\r", ch);
 		return;
 	}
@@ -556,17 +516,22 @@ ACMD(do_cast)
 	/** no wtl, or wtl->subcmd==0  - the first call of do_cast,
 		starting  to cast now **/
 
-	if ((ch->delay.cmd == CMD_PREPARE) && (ch->delay.targ1.type == TARGET_IGNORE)) {
+	if ((ch->delay.cmd == CMD_PREPARE) && (ch->delay.targ1.type == TARGET_IGNORE)) 
+	{
 		prepared_spell = ch->delay.targ1.ch_num;
 		ch->delay.subcmd = 2;
 		complete_delay(ch);
 	}
 	else
+	{
 		prepared_spell = -1;
+	}
 
 	arg = argument;
 
-	if (!wtl || (wtl && !wtl->subcmd)) {
+	int spell_index = 0;
+	if (!wtl || (wtl && !wtl->subcmd)) 
+	{
 		/* this takes the argument from the target parser */
 		if (wtl && (wtl->targ1.type == TARGET_TEXT)) {
 			arg = wtl->targ1.ptr.text->text;
@@ -585,42 +550,56 @@ ACMD(do_cast)
 
 		}
 		else if (wtl && (wtl->targ1.type == TARGET_OTHER))
+		{
 			spell_index = wtl->targ1.ch_num;
-		else {           // wtl is no good, using the argument line.
-			if (!argument) {
+		}
+		else 
+		{           // wtl is no good, using the argument line.
+			if (!argument) 
+			{
 				printf("do_cast: no wtl, no argument\n");
 				return;
 			}
+			
 			arg = argument;
-
 			arg = skip_spaces(arg);
 
 
 			/* if there are no chars in argument */
-			if (!(*arg)) {
+			if (!(*arg)) 
+			{
 				send_to_char("Cast which what where?\n\r", ch);
 				return;
 			}
 
-			if (*arg != '\'') {
+			if (*arg != '\'') 
+			{
 				send_to_char("Magic must always be enclosed by the holy magic symbols: '\n\r", ch);
 				return;
 			}
 
 			/* Locate the last quote && lowercase the magic words (if any) */
 			for (qend = 1; *(arg + qend) && (*(arg + qend) != '\''); qend++)
+			{
 				*(arg + qend) = LOWER(*(arg + qend));
+			}
 
-			if (*(arg + qend) != '\'') {
+			if (*(arg + qend) != '\'') 
+			{
 				send_to_char("Magic must always be enclosed by the holy magic symbols: '\n\r", ch);
 				return;
 			}
 
 			for (tmp = 0; tmp < MAX_SKILLS; tmp++)
+			{
 				if (!strncmp(skills[tmp].name, arg + 1, qend - 1))
+				{
 					break;
+				}
+			}
 
-			if (tmp == MAX_SKILLS) {
+			if (tmp == MAX_SKILLS) 
+			{
 				send_to_char("No such spell.\n\r", ch);
 				return;
 			}
@@ -650,34 +629,39 @@ ACMD(do_cast)
 		/* Okay, the spell is selected, now to the target */
 
 		if (wtl && (wtl->targ2.choice & skills[spell_index].targets))
+		{
 			tmpwtl.targ2 = wtl->targ2;
-		else {
+		}
+		else 
+		{
 			if (wtl && (wtl->targ2.type == TARGET_TEXT))
+			{
 				arg = wtl->targ2.ptr.text->text;
+			}
+			
 			/* else we have arg from the above spell search */
-
-			if (!target_from_word(ch, arg, skills[spell_index].targets, &tmpwtl.targ2)) {
+			if (!target_from_word(ch, arg, skills[spell_index].targets, &tmpwtl.targ2))
+			{
 				report_wrong_target(ch, skills[spell_index].targets, (*arg) ? 1 : 0);
 				return;
 			}
 		}
 		/* supposedly, we have ch.delay formed now, except for delay value. */
 
-		if (!(prepared_spell == spell_index) &&
-			!IS_SET(ch->specials.affected_by, AFF_WAITING)) {
+		if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING))
+		{
 			/* putting the player into waiting list */
-			WAIT_STATE_BRIEF(ch, CASTING_TIME(ch, spell_index), cmd, spell_index, 30,
-				AFF_WAITING | AFF_WAITWHEEL);
+			WAIT_STATE_BRIEF(ch, CASTING_TIME(ch, spell_index), cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
 			ch->delay.targ1 = tmpwtl.targ1;
 			ch->delay.targ2 = tmpwtl.targ2;
 			tmpwtl.targ1.cleanup();
 			tmpwtl.targ2.cleanup();
-			act("$n begins quietly muttering some strange, powerful words.\n\r",
-				FALSE, ch, 0, 0, TO_ROOM);
+			act("$n begins quietly muttering some strange, powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
 			send_to_char("You start to concentrate.\n\r", ch);
 			return;                 /* time delay set, returning */
 		}
-		else {
+		else 
+		{
 			ch->delay.cmd = cmd;
 			ch->delay.subcmd = spell_index;
 			ch->delay.targ1 = tmpwtl.targ1;
@@ -701,12 +685,15 @@ ACMD(do_cast)
 
 	if (wtl->subcmd == -1)
 		return;
-	if (IS_SET(target_flag, TAR_CHAR_ROOM | TAR_CHAR_WORLD | TAR_FIGHT_VICT)) {
+
+	if (IS_SET(target_flag, TAR_CHAR_ROOM | TAR_CHAR_WORLD | TAR_FIGHT_VICT))
+	{
 		tar_char = wtl->targ2.ptr.ch;
 
 		/* get rid of sanctuaries for any spell targetted on someone other
 		 * than themseles */
-		if (tar_char && (tar_char != ch) && IS_AFFECTED(ch, AFF_SANCTUARY)) {
+		if (tar_char && (tar_char != ch) && IS_AFFECTED(ch, AFF_SANCTUARY))
+		{
 			appear(ch);
 			send_to_char("You cast off your sanctuary!\n\r", ch);
 			act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
@@ -714,67 +701,100 @@ ACMD(do_cast)
 	}
 
 	if (IS_SET(target_flag, TAR_OBJ_INV | TAR_OBJ_ROOM | TAR_OBJ_WORLD | TAR_OBJ_EQUIP))
+	{
 		tar_obj = wtl->targ2.ptr.obj;
+	}
 
 	if (IS_SET(target_flag, TAR_TEXT | TAR_TEXT_ALL))
+	{
 		arg = wtl->targ2.ptr.text->text;
+	}
 
-	switch (target_flag) {
+	// This switch statement determines if the spell-casting is still valid.
+	switch (target_flag) 
+	{
 	case TAR_DIR_NAME:
 	case TAR_DIR_WAY:
+	{
 		tar_dig = wtl->targ2.ch_num;
-		if (tar_dig < 0 || tar_dig > NUM_OF_DIRS) {
+		if (tar_dig < 0 || tar_dig > NUM_OF_DIRS)
+		{
 			send_to_char("Error in direction spell, please notify imps.\n\r", ch);
 			return;
 		}
-		break;
+	}
+	break;
 	case TAR_CHAR_ROOM:
-		if (tar_char->in_room != ch->in_room) {
+	{
+		if (tar_char->in_room != ch->in_room)
+		{
 			send_to_char("Your victim has fled.\n\r", ch);
 			return;
 		}
-		break;
+	}
+	break;
 	case TAR_CHAR_WORLD:  // supposedly he's still somewhere around :-)
 		break;
 	case TAR_OBJ_INV:
+	{
+		// Find the object that we're targeting.
 		for (tmpobj = ch->carrying; tmpobj; tmpobj = tmpobj->next_content)
-			if (tmpobj == tar_obj) break;
-		if (!tmpobj) {
+		{
+			if (tmpobj == tar_obj) 
+				break;
+		}
+
+		if (!tmpobj) 
+		{
 			send_to_char("Your target disappeared.\n\r", ch);
 			return;
 		}
+	}
 		break;
 	case TAR_OBJ_ROOM:
-		if (tar_obj->in_room != ch->in_room) {
+	{
+		if (tar_obj->in_room != ch->in_room)
+		{
 			send_to_char("Your target disappeared.\n\r", ch);
 			return;
 		}
+	}
 		break;
 	case TAR_OBJ_WORLD:  // again, where could it possibly go...
 		break;
 	case TAR_OBJ_EQUIP:
+	{
 		for (tmp = 0; tmp < MAX_WEAR; tmp++)
-			if (ch->equipment[tmp] == tar_obj) break;
-		if (tmp == MAX_WEAR) {
+		{
+			if (ch->equipment[tmp] == tar_obj) 
+				break;
+		}
+		if (tmp == MAX_WEAR) 
+		{
 			send_to_char("Your target disappeared.\n\r", ch);
 			return;
 		}
+	}
 		break;
 	case TAR_SELF_ONLY:
 	case TAR_SELF:
 		tar_char = ch;
 		break;
 	case TAR_FIGHT_VICT:
-		if ((tar_char != ch->specials.fighting) ||
-			(tar_char->in_room != ch->in_room)) {
+	{
+		if ((tar_char != ch->specials.fighting) || (tar_char->in_room != ch->in_room))
+		{
 			send_to_char("You could not find your opponent.\n\r", ch);
 			return;
 		}
+	}
 		break;
 	case TAR_IGNORE:
 	case TAR_NONE_OK:
+	{
 		tar_char = 0;
 		tar_obj = 0;
+	}
 		break;
 	case TAR_TEXT:
 	case TAR_TEXT_ALL:
@@ -786,42 +806,57 @@ ACMD(do_cast)
 
 	say_spell(ch, spell_index);
 	do_sense_magic(ch, spell_index);
-	if ((skills[spell_index].spell_pointer == 0) && spell_index > 0)
+	if ((skills[spell_index].spell_pointer == 0) && spell_index >= 0)
+	{
 		send_to_char("Sorry, this magic has not yet been implemented :(\n\r", ch);
-	else {
-		if (IS_NPC(ch)) {
-			tmp = GET_LEVEL(ch) * 8 - skills[spell_index].level * 10;
-			if (tmp < 0)
-				tmp = 0;
+	}
+	else 
+	{
+		if (IS_NPC(ch)) 
+		{
+			tmp = ch->player.level * 8 - skills[spell_index].level * 10;
+			tmp = std::max(tmp, 0);
 			tmp = tmp + 25;
 		}
 		else
+		{
 			tmp = GET_KNOWLEDGE(ch, spell_index);
+		}
 
 		/* encumberance spell penalty, about 10% at max. encumberance */
 		if (skills[spell_index].type == PROF_MAGE)
+		{
 			tmp -= GET_ENCUMB(ch) / 3 - 1;
+		}
+
 		tmp -= get_power_of_arda(ch);
 
-		if (tmp > 100)
-			tmp = 100;
+		tmp = std::min(tmp, 100);
 
-		if (number(1, 101) > tmp) { /* 101% is failure */
+		if (number(1, 101) > tmp) 
+		{ /* 101% is failure */
 			send_to_char("You lost your concentration!\n\r", ch);
 			if (skills[spell_index].type == PROF_MAGE)
+			{
 				GET_MANA(ch) -= (USE_MANA(ch, spell_index) >> 1);
+			}
 			else
+			{
 				GET_SPIRIT(ch) -= (USE_SPIRIT(ch, spell_index) >> 1);
+			}
 
 			return;
 		}
 
-		if (skills[spell_index].type == PROF_MAGE) {
+		if (skills[spell_index].type == PROF_MAGE) 
+		{
 			tmplevel = GET_PROF_LEVEL(PROF_MAGE, ch);
 
 			/* a bonus for anyone who is specialized in this spell's spec */
 			if (GET_SPEC(ch) == skills[spell_index].skill_spec)
+			{
 				tmplevel += (40 - tmplevel) * GET_LEVELA(ch) / 150;
+			}
 
 			/* we give one level bonus for each 5 int */
 			tmplevel += GET_INT(ch) / 5;
@@ -830,23 +865,30 @@ ACMD(do_cast)
 			 * cleanly divisible by five.  and the more int over 5 they
 			 * have, the better chance you have of getting the bonus */
 			if (GET_INT(ch) % 5)
+			{
 				tmplevel += (number(0, GET_INT(ch) % 5)) ? 1 : 0;
+			}
 
 			GET_MANA(ch) -= (USE_MANA(ch, spell_index));
 		}
 		/* it's a cleric spell */
-		else {
+		else 
+		{
 			/* the procedure is the same as above, substituting myst
 			 * level for mage level and wil for int */
 			tmplevel = GET_PROF_LEVEL(PROF_CLERIC, ch);
 
 			if (GET_SPEC(ch) == skills[spell_index].skill_spec)
+			{
 				tmplevel += (40 - tmplevel) * GET_LEVELA(ch) / 150;
+			}
 
 			tmplevel += GET_WILL(ch) / 5;
 
 			if (GET_WILL(ch) % 5)
+			{
 				tmplevel += (number(0, GET_WILL(ch) % 5)) ? 1 : 0;
+			}
 
 			GET_SPIRIT(ch) -= USE_SPIRIT(ch, spell_index);
 		}
@@ -859,7 +901,9 @@ ACMD(do_cast)
 		 * that the target is not yourself.
 		 */
 		if (tar_char && tar_char != ch && !check_hallucinate(ch, tar_char))
+		{
 			return;
+		}
 
 		/* execute the spell */
 		((*skills[spell_index].spell_pointer)(tmplevel, ch, arg, SPELL_TYPE_SPELL,
@@ -873,8 +917,9 @@ ACMD(do_cast)
 		 * *never* greater than zero.
 		 */
 		if (prepared_spell == spell_index)
-			WAIT_STATE_BRIEF(ch, number(1, skills[spell_index].beats / 4),
-				-1, 0, 50, AFF_WAITING);
+		{
+			WAIT_STATE_BRIEF(ch, number(1, skills[spell_index].beats / 4), -1, 0, 50, AFF_WAITING);
+		}
 
 		wtl->targ1.cleanup();
 		wtl->targ2.cleanup();

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <vector>
 #include "platdef.h"
 
 #include "structs.h"
@@ -23,6 +24,8 @@
 #include "spells.h"
 #include "limits.h"
 #include "profs.h"
+
+#include "char_utils.h"
 
 
 /*   external vars  */
@@ -1403,7 +1406,7 @@ SPECIAL(ferry_captain){
 
 int spell_list [] [4] = {
   {SPELL_MAGIC_MISSILE, SPELL_MAGIC_MISSILE, SPELL_WORD_OF_PAIN, SPELL_CURSE},/*level 5*/
-  {SPELL_CHILL_RAY, SPELL_CHILL_RAY, SPELL_LEACH, SPELL_INSIGHT},/*level 5*/
+  {SPELL_CHILL_RAY, SPELL_CHILL_RAY, SPELL_LEACH, SPELL_PRAGMATISM},/*level 5*/
   {SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE},/*level 15*/
   {SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_BLACK_ARROW, SPELL_TERROR},/*level 20*/
   {SPELL_FIREBOLT, SPELL_DARK_BOLT, SPELL_WORD_OF_AGONY, SPELL_POISON},/*level 25*/
@@ -1415,67 +1418,130 @@ int spell_list [] [4] = {
 
 };
 
+namespace
+{
+	int choose_mystic_spell(char_data* caster, char_data* target)
+	{
+		if (caster == target)
+		{
+			/*
+			* When this mob_type is poisoned it will cast remove
+			* and when below 1/3 of its hit points will start
+			* casting regeneration spells.
+			*/
+			if (affected_by_spell(caster, SPELL_POISON))
+			{
+				return SPELL_REMOVE_POISON;
+			}
+			else if (caster->tmpabilities.hit < caster->abilities.hit / 3)
+			{
+				if (!affected_by_spell(caster, SPELL_REGENERATION))
+				{
+					return SPELL_REGENERATION;
+				}
+				else if (!affected_by_spell(caster, SPELL_CURING))
+				{
+					return SPELL_CURING;
+				}
+			}
 
-SPECIAL(mob_cleric) {
-  waiting_type wtl_base;
-  int spl_num, num, tmp;
-  char_data * tmpch;
-  char_data * tar_ch = 0;
-	  
-  if((callflag == SPECIAL_COMMAND) || !ch || (ch && (ch->in_room == NOWHERE)))
-    return FALSE;
-  
-  if (!num)
-    return FALSE;
-  
-  tmp = number(1,num);
-  for (num = 0, tmpch = world[ch->in_room].people; (num < tmp) && tmpch; 
-       tmpch = tmpch->next_in_room)
-    if (!IS_NPC(tmpch)) {
-      num++;
-      tar_ch = tmpch;
-    }
-  /*
-   * When this mob_type is poisoned it will cast remove
-   * and when below 1/3 of its hit points will start
-   * casting regeneration spells.
-   */
-  if(!host->specials.fighting) {
-    tar_ch = host;
-    if(affected_by_spell(host, SPELL_POISON))
-      spl_num = SPELL_REMOVE_POISON;
-    else if (GET_HIT(host) < GET_MAX_HIT(host) /3) { 
-      if(!affected_by_spell(host, SPELL_REGENERATION)) 
-	spl_num = SPELL_REGENERATION;
-      else
-	return FALSE;
-    }
-    else
-      return FALSE;
-  } else {
-    /*
-     * If the mob is engaged its going to cast
-     * its mystic spells from the list.
-     * I'm using a random number one to ten here on a 
-     * temporary basis until i've written the code
-     * that allows for individual mob spell lists.
-     */
-    tmp = number(0, 10);
-    spl_num = spell_list[tmp][3];
-  }
-  
-  GET_SPIRIT(host) = 100;
-  wtl_base.cmd = CMD_CAST;
-  wtl_base.subcmd = 0;
-  wtl_base.targ1.ch_num = spl_num;
-  wtl_base.targ1.type = TARGET_OTHER;
-  wtl_base.targ2.ptr.ch = tar_ch;
-  wtl_base.targ2.ch_num = tar_ch->abs_number;
-  wtl_base.targ2.type = TARGET_CHAR;
-  wtl_base.targ2.choice = TAR_CHAR_ROOM;
-  wtl_base.flg = 1;
-  do_cast(host,"",&wtl_base, CMD_CAST, 0);
-  return FALSE;    
+			return 0;
+		}
+
+		/*
+		* If the mob is engaged its going to cast
+		* its mystic spells from the list.
+		* I'm using a random number one to ten here on a
+		* temporary basis until i've written the code
+		* that allows for individual mob spell lists.
+		*/
+		int spell_list_index = number(0, 9);
+		return spell_list[spell_list_index][3];
+	}
+
+	char_data* choose_mystic_target(char_data* caster)
+	{
+		// Choose an initial target.  If the caster isn't fighting anyone, it will be himself.
+		// Otherwise, it will be someone that is in combat with him.
+		if (caster->specials.fighting == NULL)
+		{
+			return caster;
+		}
+
+		// There isn't a good way to count how many characters are in the room...
+		// So put the list of possible targets into a pair of vectors.
+		std::vector<char_data*> pcs_in_room;
+		std::vector<char_data*> pcs_fighting_caster;
+
+		const room_data& room = world[caster->in_room];
+
+		char_data* target = room.people;
+		while (target)
+		{
+			if (utils::is_pc(*target))
+			{
+				pcs_in_room.push_back(target);
+				
+				if (target->specials.fighting == caster)
+				{
+					pcs_fighting_caster.push_back(target);
+				}
+			}
+
+			target = target->next_in_room;
+		}
+
+		if (!pcs_fighting_caster.empty())
+		{
+			size_t count = pcs_fighting_caster.size();
+			int target_index = number(0, count);
+			return pcs_fighting_caster[target_index];
+		}
+		else if (!pcs_in_room.empty())
+		{
+			size_t count = pcs_in_room.size();
+			int target_index = number(0, count);
+			return pcs_in_room[target_index];
+		}
+		else
+		{
+			// The caster is fighting a monster without any PCs in the room.  Have 'at em!
+			return caster->specials.fighting;
+		}
+	}
+} // end anonymous helper name_space
+
+SPECIAL(mob_cleric)
+{
+	if (callflag == SPECIAL_COMMAND)
+		return FALSE;
+
+	if (!ch || ch->in_room == NOWHERE)
+		return FALSE;
+
+	char_data* target = choose_mystic_target(host);
+	if (target == NULL)
+		return false;
+
+	// No good mystic spell to cast.
+	int spell_number = choose_mystic_spell(host, target);
+	if (spell_number == 0)
+		return false;
+
+	host->points.spirit = 100;
+
+	waiting_type wtl_base;
+	wtl_base.cmd = CMD_CAST;
+	wtl_base.subcmd = 0;
+	wtl_base.targ1.ch_num = spell_number;
+	wtl_base.targ1.type = TARGET_OTHER;
+	wtl_base.targ2.ptr.ch = target;
+	wtl_base.targ2.ch_num = target->abs_number;
+	wtl_base.targ2.type = TARGET_CHAR;
+	wtl_base.targ2.choice = TAR_CHAR_ROOM;
+	wtl_base.flg = 1;
+	do_cast(host, "", &wtl_base, CMD_CAST, 0);
+	return TRUE;
 }
 
 

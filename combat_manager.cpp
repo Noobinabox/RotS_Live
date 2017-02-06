@@ -254,9 +254,82 @@ namespace game_rules
 	}
 
 	//============================================================================
-	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, int hit_type)
+	namespace
 	{
+		//============================================================================
+		int weapon_hit_type(int weapon_type)
+		{
+			int w_type = TYPE_HIT;
+			switch (weapon_type) {
+			case 0:
+			case 1:
+			case 2:
+				w_type = TYPE_WHIP; /* whip */
+				break;
+			case 3:
+			case 4:
+				w_type = TYPE_SLASH;
+				break;
+			case 5:
+				w_type = TYPE_FLAIL;  /* flail */
+				break;
+			case 6:
+				w_type = TYPE_CRUSH;
+				break;
+			case 7:
+				w_type = TYPE_BLUDGEON;
+				break;
+			case 8:
+			case 9:
+				w_type = TYPE_CLEAVE;
+				break;
+			case 10:
+				w_type = TYPE_SPEARS;
+				break;
+			case 11:
+				w_type = TYPE_PIERCE;
+				break;
+			case 12:
+				w_type = TYPE_SMITE;
+				break;
+			default:
+				w_type = TYPE_HIT;
+				break;
+			}
+			return w_type;
+		}
+	} // end anonymous namespace
 
+	//============================================================================
+	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, int hit_type, bool hit_accurate, double remaining_ob)
+	{
+		int weapon_type = 0;
+
+
+		double damage = 0.0;
+		obj_data* weapon = attacker->equipment[WIELD];
+		if (weapon && weapon->obj_flags.type_flag == ITEM_WEAPON)
+		{
+			weapon_type = weapon_hit_type(weapon->get_weapon_type());
+			damage = utils::get_weapon_damage(*weapon);
+		}
+		else
+		{
+			weapon = NULL;
+
+			if (utils::is_npc(*attacker) && attacker->specials.attack_type >= TYPE_HIT)
+			{
+				weapon_type = attacker->specials.attack_type;
+			}
+			else
+			{
+				weapon_type = TYPE_HIT;
+				if (utils::is_pc(*attacker))
+				{
+					damage = BAREHANDED_DAMAGE * 10.0;
+				}
+			}
+		}
 	}
 
 	//============================================================================

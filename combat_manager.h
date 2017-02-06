@@ -64,7 +64,7 @@ namespace game_rules
 
 		double get_evasion_malus(const char_data& attacker, const char_data& victim);
 
-		void on_weapon_hit(char_data* attacker, char_data* victim, int hit_type);
+		void on_weapon_hit(char_data* attacker, char_data* victim, int hit_type, bool hit_accurate, double remaining_ob);
 
 		void apply_damage(char_data* victim, double damage);
 

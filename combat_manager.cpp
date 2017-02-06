@@ -2,6 +2,7 @@
 
 #include "char_utils_combat.h"
 #include "char_utils.h"
+#include "object_utils.h"
 
 #include "utils.h"
 #include "spells.h"
@@ -66,8 +67,9 @@ namespace game_rules
 		return roll < target_number;
 	}
 
+
 	//============================================================================
-	double combat_manager::offense_if_weapon_hits(char_data* attacker, char_data* victim, int hit_type)
+	double combat_manager::offense_if_weapon_hits(char_data* attacker, char_data* victim, bool hit_accurate)
 	{
 		ob_roll rolled_ob = roll_ob(attacker);
 		
@@ -79,7 +81,6 @@ namespace game_rules
 			attacker_ob += 10 * (POSITION_FIGHTING - victim_position);
 		}
 
-		bool hit_accurate = is_hit_accurate(*attacker);
 		if (hit_accurate)
 		{
 			act("You manage to find an opening in $N's defense!", TRUE, attacker, NULL, victim, TO_CHAR);
@@ -136,14 +137,14 @@ namespace game_rules
 				act("$N deflects your attack.", FALSE, attacker, 0, victim, TO_CHAR, TRUE);
 				act("You deflect $n's attack.", FALSE, attacker, 0, victim, TO_VICT, TRUE);
 
-				//TODO(dgurley):  Add Riposte check in here.
-				/*
-				if (check_riposte(ch, victim))
-					return;
+				if (does_victim_riposte(attacker, victim))
+				{
+					do_riposte(attacker, victim);
+				}
 
-				check_grip(ch, wielded);
+				check_grip(attacker, attacker->equipment[WIELD]);
 				check_grip(victim, victim->equipment[WIELD]);
-				*/
+				
 			}
 		}
 
@@ -173,6 +174,78 @@ namespace game_rules
 		return BASE_VALUE + defender_bonus - attacker_offset;
 	}
 	
+	//============================================================================
+	bool combat_manager::does_victim_riposte(char_data* attacker, char_data* riposter)
+	{
+		if (utils::is_npc(*riposter))
+			return false;
+
+		int riposte_skill = utils::get_skill(*riposter, SKILL_RIPOSTE);
+		if (riposte_skill == 0)
+			return false;
+
+		if (riposter->specials.position != POSITION_FIGHTING)
+			return false;
+
+		if (utils::is_affected_by(*riposter, AFF_BASH))
+			return false;
+
+		obj_data* weapon = riposter->equipment[WIELD];
+		if (!weapon)
+			return false;
+
+		if (weapon->get_bulk() > 3)
+			return false;
+
+		int prob = riposte_skill;
+		prob += utils::get_skill(*riposter, SKILL_STEALTH);
+		prob += riposter->tmpabilities.dex * 5;
+		prob *= utils::get_prof_level(PROF_RANGER, *riposter);
+		prob /= 200;
+
+		int roll = number(0, 99);
+		return roll <= prob;
+	}
+
+	//============================================================================
+	void combat_manager::do_riposte(char_data* attacker, char_data* riposter)
+	{
+		act("$n's riposte catches $N off guard.", FALSE, attacker, 0, riposter, TO_NOTVICT, FALSE);
+		act("Your riposte catches $N off guard.", FALSE, attacker, 0, riposter, TO_CHAR, FALSE);
+		act("$n's riposte catches you off guard.", FALSE, attacker, 0, riposter, TO_VICT, FALSE);
+
+		obj_data* weapon = riposter->equipment[WIELD];
+		double rip_damage = utils::get_weapon_damage(*weapon);
+		rip_damage *= std::min((int)riposter->tmpabilities.dex, 20);
+		rip_damage /= number_d(50.0, 100.0);
+
+		//TODO(drelidan):  Include skill type and weapon type.
+		apply_damage(attacker, rip_damage);
+
+		//if (damage(victim, ch, dam,
+			//weapon_hit_type(wielded->obj_flags.value[3]), 21))
+			//return 1;
+	}
+
+	//============================================================================
+	void combat_manager::check_grip(char_data* character, obj_data* weapon)
+	{
+		if (!weapon || !character)
+			return;
+
+		int bulk = weapon->get_bulk();
+		if (bulk <= 4 && utils::is_twohanded(*character))
+		{
+			int roll = number(0, 99);
+			int target = 30 + 5 - bulk;
+			if (roll < target)
+			{
+				character->specials.ENERGY -= 300 + ((5 - bulk) * 100);
+				act("You struggle to maintain your grip on $p.", FALSE, character, weapon, NULL, TO_CHAR);
+			}
+		}
+	}
+
 	//============================================================================
 	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, int hit_type)
 	{

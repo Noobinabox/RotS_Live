@@ -5,6 +5,7 @@
 struct char_data;
 struct weather_data;
 struct room_data;
+struct obj_data;
 
 namespace game_rules
 {
@@ -59,7 +60,7 @@ namespace game_rules
 
 		// This will return the character's 'left-over' OB if their strike hits.  If this value
 		// is less than 1, then the character missed.
-		double offense_if_weapon_hits(char_data* attacker, char_data* victim, int hit_type);
+		double offense_if_weapon_hits(char_data* attacker, char_data* victim, bool hit_accurate);
 
 		double get_evasion_malus(const char_data& attacker, const char_data& victim);
 
@@ -68,6 +69,11 @@ namespace game_rules
 		void apply_damage(char_data* victim, double damage);
 
 	private:
+		// Returns true if a riposte occurs.
+		bool does_victim_riposte(char_data* attacker, char_data* riposter);
+		void do_riposte(char_data* attacker, char_data* riposter);
+		void check_grip(char_data* character, obj_data* weapon);
+
 		// Deleted functions.
 		// Don't put definitions in here so trying to do them will cause a compile error.
 		combat_manager(const combat_manager&);

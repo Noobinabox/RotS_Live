@@ -228,6 +228,13 @@ namespace game_rules
 	}
 
 	//============================================================================
+	// Basically, if a character is wielding a one-handed weapon
+	// with both hands, we cause them to lose energy, and thus slow
+	// them down.
+	//
+	// NOTE: A weapon is considered one handed if it has a bulk of
+	// 4 or less.
+	//============================================================================
 	void combat_manager::check_grip(char_data* character, obj_data* weapon)
 	{
 		if (!weapon || !character)

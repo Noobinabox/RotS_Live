@@ -14,6 +14,10 @@
 #include "limits.h"
 #include "color.h"
 
+#include "char_utils.h"
+#include "object_utils.h"
+#include <algorithm>
+
 const int MIN_SAFE_STAT = 3;
 
 extern void remember(struct char_data *ch, struct char_data *victim);
@@ -34,7 +38,7 @@ char saves_power(struct char_data *, sh_int power, sh_int bonus);
 int check_overkill(struct char_data *);
 int check_hallucinate(struct char_data *, struct char_data *);
 
-char *stat_word[] = {
+const char* const stat_word[] = {
   "strength",
   "intelligence",
   "will",
@@ -440,59 +444,62 @@ int damage_stat(struct char_data *killer, struct char_data *ch, int stat_num, in
 
 
 
-/*
- * returns the amount of stats actually restored 
- */
-int restore_stat(struct char_data *ch, int stat_num, int amount)
+//============================================================================
+// Returns the amount of stats actually restored 
+//============================================================================
+int restore_stat(char_data* character, int stat_num, int amount)
 {
-  int max_amount;
-  
-  switch(stat_num) {
-  case 0: 
-    max_amount = GET_STR_BASE(ch) - GET_STR(ch); 
-    if(amount > max_amount)
-      amount = max_amount;
-    SET_STR(ch, GET_STR(ch) + amount);
-    return amount;
+	switch (stat_num) 
+	{
+	case 0:
+	{
+		int max_amount = character->abilities.str - character->tmpabilities.str;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.str += amount;
+		return amount;
+	}
+	case 1:
+	{
+		int max_amount = character->abilities.intel - character->tmpabilities.intel;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.intel += amount;
+		return amount;
+	}
+	case 2:
+	{
+		int max_amount = character->abilities.wil - character->tmpabilities.wil;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.wil += amount;
+		return amount;
+	}
+	case 3:
+	{
+		int max_amount = character->abilities.dex - character->tmpabilities.dex;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.dex += amount;
+		return amount;
+	}
+	case 4:
+	{
+		int max_amount = character->abilities.con - character->tmpabilities.con;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.con += amount;
+		return amount;
+	}
+	case 5:
+	{
+		int max_amount = character->abilities.lea - character->tmpabilities.lea;
+		amount = std::max(amount, max_amount);
+		character->tmpabilities.lea += amount;
+		return amount;
+	}
+	default:
+	{
+		return 0;
+	}
+	}
 
-  case 1:
-    max_amount = GET_INT_BASE(ch) - GET_INT(ch); 
-    if(amount > max_amount)
-      amount = max_amount;
-    GET_INT(ch) += amount;
-    return amount;
-    
-  case 2:
-    max_amount = GET_WILL_BASE(ch) - GET_WILL(ch); 
-    if(amount > max_amount)
-      amount = max_amount;
-    GET_WILL(ch) += amount;
-    return amount;
-
-  case 3:
-    max_amount = GET_DEX_BASE(ch) - GET_DEX(ch); 
-    if(amount > max_amount)
-      amount = max_amount;
-    GET_DEX(ch) += amount;
-    return amount;
-
-  case 4:
-    max_amount = GET_CON_BASE(ch) - GET_CON(ch); 
-    if(amount > max_amount)
-      amount = max_amount;
-    GET_CON(ch) += amount;
-    return amount;
-
-  case 5:
-    max_amount = GET_LEA_BASE(ch) - GET_LEA(ch); 
-    if(amount > max_amount) amount = max_amount;
-    GET_LEA(ch) += amount;
-    return amount;
-
-  default:
-    return 0;
-  }
-  return 0;
+	return 0;
 }
 
 
@@ -551,43 +558,50 @@ ACMD(do_concentrate)
   }
 }
 
-
-
-int
-weapon_willpower_damage(struct char_data *ch, struct char_data *victim)
+//============================================================================
+// Deals willpower based damage to the victim's stat.  If the attack was successful,
+// this function returns true.  Otherwise it weapons false.
+//============================================================================
+bool weapon_willpower_damage(char_data* attacker, char_data* victim)
 {
-  int damage, stat, weapon_level, save_bonus;
-  
-  if(!(ch->equipment[WIELD]))
-    return 0;
+	obj_data* weapon = attacker->equipment[WIELD];
+	if (!weapon)
+		return false;
 
-  if(!(IS_OBJ_STAT(ch->equipment[WIELD], ITEM_WILLPOWER)))
-    return 0;
-  
-  if(IS_SHADOW(ch))
-    return 0;
-  
-  if(GET_PERCEPTION(ch) * GET_PERCEPTION(victim) < number(1, 10000))
-    return 0;
-  
-  weapon_level = (ch->equipment[WIELD])->obj_flags.level +
-    GET_PROF_LEVEL(PROF_CLERIC, victim);
-  save_bonus = IS_AFFECTED(victim, AFF_CONCENTRATION) ?
-    GET_PROF_LEVEL(PROF_CLERIC, victim) / 2 : 0;
+	if (!utils::is_object_stat(*weapon, ITEM_WILLPOWER))
+		return false;
 
-  if(!saves_power(victim, weapon_level, save_bonus)) {
-    act("$CD$n's weapon burns you to your soul!",
-	FALSE, ch, NULL, victim, TO_VICT);
-    
-    act("$CHYour weapon burns $N to $S soul!\r\n",
-	FALSE, ch, NULL, victim, TO_CHAR);
-    
-    stat = number(0, 5);
-    damage = MAX((MIN((number(0, GET_WILLPOWER(ch)) / 10), 4)), 1);
-    damage_stat(ch, victim, stat, damage);
-    
-    return 1;	   
-  }
+	if (utils::is_shadow(*attacker))
+		return false;
+	
+	int combined_percep = utils::get_perception(*attacker) * utils::get_perception(*victim);
+	if (combined_percep < number(1, 10000))
+	{
+		//TODO(drelidan):  Add nifty message here.
+		return false;
+	}
 
-  return 0;
+	// Weapon level scales on the mystic level of the defender.  Interesting.
+	int victim_cleric_level = utils::get_prof_level(PROF_CLERIC, *victim);
+	int weapon_level = weapon->obj_flags.level + victim_cleric_level;
+	int save_bonus = 0;
+	if (utils::is_affected_by(*victim, AFF_CONCENTRATION))
+	{
+		save_bonus = victim_cleric_level / 2;
+	}
+
+	if (!saves_power(victim, weapon_level, save_bonus)) 
+	{
+		act("$CD$n's weapon burns you to your soul!", FALSE, attacker, NULL, victim, TO_VICT);
+		act("$CHYour weapon burns $N to $S soul!\r\n", FALSE, attacker, NULL, victim, TO_CHAR);
+
+		int stat_targeted = number(0, 5);
+		int rolled_damage = std::min(number(0, (int)attacker->points.willpower / 10), 4);
+		int stat_damage = std::max(rolled_damage, 1);
+		damage_stat(attacker, victim, stat_targeted, stat_damage);
+
+		return true;
+	}
+
+	return false;
 }

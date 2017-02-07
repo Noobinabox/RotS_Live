@@ -1952,39 +1952,39 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  * drelidan: Jan 31, 2017 - First pass implementation.  Doesn't take weapon or
  *   arrow type into account.
  * slyon: Feb 3, 2017 - Added arrowto_dam into the equation
+ * drelidan: Feburary 7, 2017 - Add weapon damage into the equation.
  */
 int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data* arrow)
 {
 	using namespace utils;
 
-	int player_level = archer->get_capped_level();
-	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
-	int ranger_dex = archer->get_cur_dex();
+	int ranger_level_factor = get_prof_level(PROF_RANGER, *archer) * 3 / 4;
+	int ranger_str_factor = get_bal_strength(*archer) * 3 / 4;
 	int arrow_todam = arrow->obj_flags.value[1];
 
-	const obj_data* bow = archer->equipment[WIELD];
+	obj_data* bow = archer->equipment[WIELD];
+	int weapon_damage = get_weapon_damage(bow);
 
-	// TODO(drelidan):  Replace some of these random factors with weapon and arrow
-	// contributions to damage.
-	int random_factor_1 = number(1, 12);
-	int random_factor_2 = number(1, 12);
-	int random_factor_3 = number(1, 12);
-	int random_factor_4 = number(1, 12);
+	// TODO(drelidan):  Revisit these calcs.  Weapon damage blows a fairly
+	// significant roll for damage calculations.
+	int random_factor_1 = number(weapon_damage / 8, weapon_damage / 4);
+	int random_factor_2 = number(weapon_damage / 8, weapon_damage / 4);
+	int random_factor_3 = number(weapon_damage / 8, weapon_damage / 4);
 
-	int damage = (ranger_level * 3 / 4) + (ranger_dex * 3 / 4) + random_factor_1
-		+ random_factor_2 + random_factor_3 + random_factor_4 + arrow_todam;
+	int bow_factor = random_factor_1 + random_factor_2 + random_factor_3;
+	bow_factor = bow_factor * ranger_str_factor / 10;
+	int damage = ranger_level_factor + bow_factor + arrow_todam;
 
 	int arrow_hit_location = get_hit_location(*victim);
 	if (check_archery_accuracy(*archer, *victim))
 	{
 		act("You manage to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_CHAR);
-    act("$n manages to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_NOTVICT);
+		act("$n manages to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_NOTVICT);
 		act("$n notices a weakness in your armor!", TRUE, archer, NULL, victim, TO_VICT);
 	}
 	else
 	{
-		int body_type = GET_BODYTYPE(victim);
-
+		int body_type = victim->player.bodytype;
 		const race_bodypart_data& body_data = bodyparts[body_type];
 
 		// Apply damage reduction.

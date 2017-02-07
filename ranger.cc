@@ -1845,14 +1845,14 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
  * slyon: Feb 3, 2017 - Added arrow tohit into the equation
  */
 
-int shoot_calculate_success(const char_data* archer, const char_data* victim, const char_data* arrow)
+int shoot_calculate_success(const char_data* archer, const char_data* victim, const obj_data* arrow)
 {
 	using namespace utils;
 
 	int archery_skill = get_skill(*archer, SKILL_ARCHERY);
 	int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
 	//This obj_flag is defined in act_info.cc
-	int arrow_tohit = arrow->obj_flags.[0];
+	int arrow_tohit = arrow->obj_flags.value[0];
 
 	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
@@ -1953,14 +1953,16 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  *   arrow type into account.
  * slyon: Feb 3, 2017 - Added arrowto_dam into the equation
  */
-int shoot_calculate_damage(char_data* archer, char_data* victim, const char_data* arrow)
+int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data* arrow)
 {
 	using namespace utils;
 
 	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
 	int ranger_dex = archer->get_cur_dex();
-	int arrow_todam = arrow->obj_flags.[1];
+	int arrow_todam = arrow->obj_flags.value[1];
+
+	const obj_data* bow = archer->equipment[WIELD];
 
 	// TODO(drelidan):  Replace some of these random factors with weapon and arrow
 	// contributions to damage.
@@ -2031,7 +2033,7 @@ int shoot_calculate_wait(const char_data* archer)
 bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 {
 	//TODO(drelidan):  Add logic for calculating breaking here.
-	const int breakpercentage = arrow->obj_flags[3];
+	const int breakpercentage = arrow->obj_flags.value[3];
 	const int rolledNumber = number(1, 100);
 	if (rolledNumber < breakpercentage)
 	{

@@ -1954,7 +1954,7 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
  * slyon: Feb 3, 2017 - Added arrowto_dam into the equation
  * drelidan: Feburary 7, 2017 - Add weapon damage into the equation.
  */
-int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data* arrow)
+int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data* arrow, int& hit_location)
 {
 	using namespace utils;
 
@@ -1992,6 +1992,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 		damage = apply_armor_to_arrow_damage(*victim, damage, armor_location);
 	}
 
+	hit_location = arrow_hit_location;
 	return damage;
 }
 
@@ -2121,6 +2122,12 @@ bool can_ch_shoot(char_data* archer)
 		return false;
 	}
 
+	if (!quiver->contains)
+	{
+		send_to_char("Your quiver is empty!  Find some more arrows.\r\n", archer);
+		return false;
+	}
+
 	if (!is_twohanded(*archer)) {
 		send_to_char("You must be wielding your bow with two hands.\r\n", archer);
 		return false;
@@ -2247,14 +2254,19 @@ ACMD(do_shoot)
 			return;
 		}
 
+		// Get the arrow.
+		obj_data* quiver = ch->equipment[WEAR_BACK];
+		obj_data* arrow = quiver->contains;
 		send_to_char("You release your arrow and it goes flying!\r\n", ch);
 
 		int roll = number(0, 99);
-		int target_number = shoot_calculate_success(ch, victim);
+		int target_number = shoot_calculate_success(ch, victim, arrow);
 		if (roll < target_number)
 		{
-			int damage_dealt = shoot_calculate_damage(ch, victim);
-			damage(ch, victim, damage_dealt, SKILL_ARCHERY, 0);
+			int hit_location = 0;
+			int damage_dealt = shoot_calculate_damage(ch, victim, arrow, hit_location);
+			move_arrow_to_victim(ch, victim, arrow);
+			damage(ch, victim, damage_dealt, SKILL_ARCHERY, hit_location);
 		}
 		else
 		{

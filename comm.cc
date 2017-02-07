@@ -1009,9 +1009,13 @@ std::string get_logged_in_count_message(descriptor_data* list)
 			{
 				message_writer << "The forces of the light are more prevalent." << std::endl;
 			}
-			else
+			else if(darkie_count + lhuth_count > whitie_count)
 			{
 				message_writer << "The forces of the dark are more prevalent." << std::endl;
+			}
+			else
+			{
+				message_writer << "The forces of the light and the dark are evenly matched." << std::endl;
 			}
 		}
 	}

@@ -57,7 +57,7 @@ char saves_poison(struct char_data *, struct char_data *);
 char saves_confuse(struct char_data *, char_data *);
 char saves_leadership(struct char_data *);
 char saves_insight(struct char_data *, struct char_data *);
-char check_mind_block(char_data *, char_data *, int, int);
+bool check_mind_block(char_data *, char_data *, int, int);
 void list_char_to_char(struct char_data *list, struct char_data *ch,
 		       int mode);
 ACMD(do_look);

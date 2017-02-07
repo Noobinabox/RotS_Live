@@ -14,7 +14,7 @@
 #include "limits.h"
 #include "color.h"
 
-#define MIN_SAFE_STAT 3
+const int MIN_SAFE_STAT = 3;
 
 extern void remember(struct char_data *ch, struct char_data *victim);
 extern void check_break_prep(struct char_data *);
@@ -44,33 +44,41 @@ char *stat_word[] = {
   "concentration"
 };
 
-
-char
-check_mind_block(char_data *ch, char_data *killer, int amount, int stat_num)
+namespace
 {
-  struct affected_type *aff;
-  
-  if((stat_num == 1 || stat_num == 2 || stat_num > 4) &&
-     affected_by_spell(ch, SPELL_MIND_BLOCK)) {
-    if(number(1, 100) <= 20) {
-      aff = affected_by_spell(ch, SPELL_MIND_BLOCK);
-      aff->duration -= amount;
-      if(aff->duration <=0) {
-	affect_from_char(ch, SPELL_MIND_BLOCK);
-	send_to_char("Your mind block resists for one final time, "
-		     "but is broken!\n\r", ch);
-	act("You break $N's mind block!\n\r", FALSE, killer, 0, ch, TO_CHAR);
-      } 
-      else {
-	send_to_char("Your attempts are blocked by a powerful spell.\n\r",
-		     killer);
-	send_to_char("Your mind block is holding strong.\n\r", ch);
-      }
-      return 0;
-    }
-  }
+	//============================================================================
+	bool is_mental_stat(int stat_num)
+	{
+		return stat_num == 1 || stat_num == 2 || stat_num > 4;
+	}
+} // end anonymous helper namespace
 
-  return 1;
+//============================================================================
+bool check_mind_block(char_data* character, char_data* attacker, int amount, int stat_num)
+{
+	affected_type* mind_block_affect = affected_by_spell(character, SPELL_MIND_BLOCK);
+	if (is_mental_stat(stat_num) && affected_by_spell(character, SPELL_MIND_BLOCK))
+	{
+		if(0.20 > number())
+		{
+			mind_block_affect = affected_by_spell(character, SPELL_MIND_BLOCK);
+			mind_block_affect->duration -= amount;
+			if (mind_block_affect->duration <= 0) 
+			{
+				affect_from_char(character, SPELL_MIND_BLOCK);
+				send_to_char("Your mind block resists for one final time, but is broken!\n\r", character);
+				act("You break $N's mind block!\n\r", FALSE, attacker, 0, character, TO_CHAR);
+			}
+			else 
+			{
+				send_to_char("Your attempts are blocked by a powerful spell.\n\r", attacker);
+				send_to_char("Your mind block is holding strong.\n\r", character);
+			}
+			return false;
+		}
+	}
+
+	return true;
 }
 
 
@@ -80,9 +88,7 @@ void report_char_mentals(struct char_data *, char *, int);
 void appear(struct char_data *);
 int damage_stat(struct char_data *, struct char_data *, int ,int);
 
-void
-do_mental(struct char_data *ch, char *argument, 
-	  struct waiting_type *wtl, int cmd, int subcmd)
+void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, int cmd, int subcmd)
 {
   char_data * victim;
   int result, tmp, damg, not_ready;
@@ -265,9 +271,7 @@ do_mental(struct char_data *ch, char *argument,
  */
 void die(struct char_data *ch, struct char_data *killer, int attacktype);
 
-int
-damage_stat(struct char_data *killer, struct char_data *ch,
-	    int stat_num, int amount)
+int damage_stat(struct char_data *killer, struct char_data *ch, int stat_num, int amount)
 {
   int result, i, must_flee, would_flee;
   struct waiting_type tmpwtl;
@@ -439,8 +443,7 @@ damage_stat(struct char_data *killer, struct char_data *ch,
 /*
  * returns the amount of stats actually restored 
  */
-int
-restore_stat(struct char_data *ch, int stat_num, int amount)
+int restore_stat(struct char_data *ch, int stat_num, int amount)
 {
   int max_amount;
   

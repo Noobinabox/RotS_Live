@@ -25,6 +25,8 @@
 
 #include <algorithm>
 #include "char_utils.h"
+#include <sstream>
+#include <iostream>
 
 typedef char * string;
 
@@ -1991,6 +1993,20 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 		int armor_location = body_data.armor_location[arrow_hit_location];
 		damage = apply_armor_to_arrow_damage(*victim, damage, armor_location);
 	}
+
+	std::ostringstream test;
+	test << "Ranger Factor: " << ranger_level_factor << std::endl;
+	test << "Bow Factor: " << bow_factor << std::endl;
+	test << "Arrow Factor: " << arrow_todam << std::endl;
+	test << "Total Damage: " << damage << std::endl;
+	test << "------Breakdown------" << std::endl;
+	test << "Weapon damage: " << weapon_damage << std::endl;
+	test << "Random Factor 1: " << random_factor_1 << std::endl;
+	test << "Random Factor 2: " << random_factor_2 << std::endl;
+	test << "Random Factor 3: " << random_factor_3 << std::endl;
+	
+	std::string message = test.str();
+	send_to_char(message.c_str(), archer);
 
 	hit_location = arrow_hit_location;
 	return damage;

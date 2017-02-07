@@ -8,8 +8,83 @@
 #include "spells.h"
 #include "comm.h"
 
+#include <cmath>
+
 namespace game_rules
 {
+	//============================================================================
+	namespace
+	{
+		//============================================================================
+		int weapon_hit_type(int weapon_type)
+		{
+			int w_type = TYPE_HIT;
+			switch (weapon_type) {
+			case 0:
+			case 1:
+			case 2:
+				w_type = TYPE_WHIP; /* whip */
+				break;
+			case 3:
+			case 4:
+				w_type = TYPE_SLASH;
+				break;
+			case 5:
+				w_type = TYPE_FLAIL;  /* flail */
+				break;
+			case 6:
+				w_type = TYPE_CRUSH;
+				break;
+			case 7:
+				w_type = TYPE_BLUDGEON;
+				break;
+			case 8:
+			case 9:
+				w_type = TYPE_CLEAVE;
+				break;
+			case 10:
+				w_type = TYPE_SPEARS;
+				break;
+			case 11:
+				w_type = TYPE_PIERCE;
+				break;
+			case 12:
+				w_type = TYPE_SMITE;
+				break;
+			default:
+				w_type = TYPE_HIT;
+				break;
+			}
+			return w_type;
+		}
+
+		//============================================================================
+		// Returns the part of the body on the victim that is getting hit.
+		//============================================================================
+		int get_hit_location(const char_data& victim)
+		{
+			int hit_location = 0;
+
+			int body_type = victim.player.bodytype;
+
+			const race_bodypart_data& body_data = bodyparts[body_type];
+			if (body_data.bodyparts != 0)
+			{
+				int roll = number(1, 100);
+				while (roll > 0 && hit_location < MAX_BODYPARTS)
+				{
+					roll -= body_data.percent[hit_location++];
+				}
+			}
+
+			if (hit_location > 0)
+				--hit_location;
+
+			return hit_location;
+		}
+
+	} // end anonymous namespace
+
 	/********************************************************************
 	* Public Functions
 	*********************************************************************/
@@ -220,11 +295,7 @@ namespace game_rules
 		rip_damage /= number_d(50.0, 100.0);
 
 		//TODO(drelidan):  Include skill type and weapon type.
-		apply_damage(attacker, rip_damage);
-
-		//if (damage(victim, ch, dam,
-			//weapon_hit_type(wielded->obj_flags.value[3]), 21))
-			//return 1;
+		apply_damage(attacker, riposter, rip_damage, weapon_hit_type(weapon->obj_flags.value[3]), 21);
 	}
 
 	//============================================================================
@@ -252,79 +323,6 @@ namespace game_rules
 			}
 		}
 	}
-
-	//============================================================================
-	namespace
-	{
-		//============================================================================
-		int weapon_hit_type(int weapon_type)
-		{
-			int w_type = TYPE_HIT;
-			switch (weapon_type) {
-			case 0:
-			case 1:
-			case 2:
-				w_type = TYPE_WHIP; /* whip */
-				break;
-			case 3:
-			case 4:
-				w_type = TYPE_SLASH;
-				break;
-			case 5:
-				w_type = TYPE_FLAIL;  /* flail */
-				break;
-			case 6:
-				w_type = TYPE_CRUSH;
-				break;
-			case 7:
-				w_type = TYPE_BLUDGEON;
-				break;
-			case 8:
-			case 9:
-				w_type = TYPE_CLEAVE;
-				break;
-			case 10:
-				w_type = TYPE_SPEARS;
-				break;
-			case 11:
-				w_type = TYPE_PIERCE;
-				break;
-			case 12:
-				w_type = TYPE_SMITE;
-				break;
-			default:
-				w_type = TYPE_HIT;
-				break;
-			}
-			return w_type;
-		}
-
-		//============================================================================
-		// Returns the part of the body on the victim that is getting hit.
-		//============================================================================
-		int get_hit_location(const char_data& victim)
-		{
-			int hit_location = 0;
-
-			int body_type = victim.player.bodytype;
-
-			const race_bodypart_data& body_data = bodyparts[body_type];
-			if (body_data.bodyparts != 0)
-			{
-				int roll = number(1, 100);
-				while (roll > 0 && hit_location < MAX_BODYPARTS)
-				{
-					roll -= body_data.percent[hit_location++];
-				}
-			}
-
-			if (hit_location > 0)
-				--hit_location;
-
-			return hit_location;
-		}
-
-	} // end anonymous namespace
 
 	//============================================================================
 	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, bool hit_accurate, double remaining_ob)
@@ -423,7 +421,7 @@ namespace game_rules
 	}
 
 	//============================================================================
-	bool does_find_weakness(const char_data& attacker)
+	bool combat_manager::does_find_weakness(const char_data& attacker)
 	{
 		if (utils::is_npc(attacker))
 			return false;
@@ -454,7 +452,7 @@ namespace game_rules
 	}
 
 	//============================================================================
-	bool does_rush(const char_data& attacker)
+	bool combat_manager::does_rush(const char_data& attacker)
 	{
 		if (utils::get_specialization(attacker) != PLRSPEC_WILD)
 			return false;
@@ -556,7 +554,7 @@ namespace game_rules
 	//============================================================================
 	bool combat_manager::apply_damage(char_data* attacker, char_data* victim, double damage, int attack_type, int hit_location)
 	{
-
+		return false;
 	}
 
 

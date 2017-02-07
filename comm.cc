@@ -34,6 +34,9 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <string>
+#include <sstream>
+#include <iostream>
 
 #define MAX_HOSTNAME	256
 #define OPT_USEC	250000  /* time delay corresponding to 4 passes/sec */
@@ -940,7 +943,86 @@ SocketType pnew_connection(SocketType s)
 }
 
 
+std::string get_logged_in_count_message()
+{
+	int whitie_count = 0;
+	int darkie_count = 0;
+	int lhuth_count = 0;
+	int imm_count = 0;
 
+	descriptor_data* descriptor = descriptor_list;
+	while (descriptor)
+	{
+		if (descriptor->connected && !(descriptor->connected == CON_LINKLS))
+		{
+			char_data* character = NULL;
+			if (descriptor->original)
+			{
+				character = descriptor->original;
+			}
+			else
+			{
+				character = descriptor->character;
+			}
+
+			if (character)
+			{
+				int race = character->player.race;
+				if (race == RACE_WOOD || race == RACE_DWARF || race == RACE_HOBBIT
+					|| race == RACE_HUMAN)
+				{
+					++whitie_count;
+				}
+				else if (race == RACE_URUK || race == RACE_ORC)
+				{
+					++darkie_count;
+				}
+				else if (race == RACE_MAGUS)
+				{
+					++lhuth_count;
+				}
+				else if (race == RACE_GOD)
+				{
+					if (character->specials.invis_level == 0)
+					{
+						++imm_count;
+					}
+				}
+			}
+		}
+
+		descriptor = descriptor->next;
+	}
+
+	const int DETAILED_LIST_CUT_OFF = 5;
+	int player_total = whitie_count + darkie_count + lhuth_count;
+	std::ostringstream message_writer;
+	message_writer << std::endl;
+	message_writer << "There are " << player_total << " players on currently, and " << imm_count << " gods." << std::endl;
+	
+	if (player_total > 0)
+	{
+		if (player_total < DETAILED_LIST_CUT_OFF)
+		{
+			message_writer << "There are " << whitie_count << " free people, and " << darkie_count + lhuth_count
+				<< " forces of the dark." << std::endl;
+		}
+		else
+		{
+			if (whitie_count > darkie_count + lhuth_count)
+			{
+				message_writer << "The forces of the light are more prevalent." << std::endl;
+			}
+			else
+			{
+				message_writer << "The forces of the dark are more prevalent." << std::endl;
+			}
+		}
+	}
+	
+	message_writer << std::endl;
+	return message_writer.str();
+}
 
 SocketType	pnew_descriptor(SocketType s)
 {
@@ -1047,7 +1129,10 @@ SocketType	pnew_descriptor(SocketType s)
 
    descriptor_list = pnewd;
 
+   std::string player_count_message = get_logged_in_count_message();
+
    SEND_TO_Q(GREETINGS, pnewd);
+   SEND_TO_Q(player_count_message.c_str(), pnewd);
    SEND_TO_Q("By what name do you wish to be known? ", pnewd);
 
    return(1);

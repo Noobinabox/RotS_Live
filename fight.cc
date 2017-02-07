@@ -2052,16 +2052,16 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 int get_evasion_malus(const char_data& attacker, const char_data& victim)
 {
 	if (!utils::is_affected_by(victim, AFF_EVASION))
-		return 0.0;
+		return 0;
 
-	const int BASE_VALUE = 5.0;
+	const int BASE_VALUE = 5;
 
 	int defender_bonus = utils::get_prof_level(PROF_CLERIC, victim) / 2;
 	int attacker_offset = utils::get_prof_level(PROF_CLERIC, attacker) * (100 - utils::get_perception(attacker)) / 200;
 
 	if (utils::is_npc(attacker))
 	{
-		attacker_offset *= 0.5;
+		attacker_offset /= 2;
 	}
 
 	// Always return at least the base value.

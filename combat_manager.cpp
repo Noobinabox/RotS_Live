@@ -471,7 +471,14 @@ namespace game_rules
 		int hit_location = get_hit_location(*victim);
 		int weapon_type = get_weapon_type(*attacker);
 		
-		damage = apply_armor_reduction(attacker, victim, damage, weapon_type, hit_location);
+		int body_type = victim->player.bodytype;
+		const race_bodypart_data& body_data = bodyparts[body_type];
+
+		// Apply damage reduction.
+		int armor_location = body_data.armor_location[hit_location];
+		damage = apply_armor_reduction(attacker, victim, damage, weapon_type, armor_location);
+
+		apply_damage(attacker, victim, damage, weapon_type, hit_location);
 
 		if (damage > 0)
 		{

@@ -718,6 +718,15 @@ void shape_center_proto(struct char_data * ch, char * arg){
 	if(IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_CHAIN))
 	  SHAPE_PROTO(ch)->editflag=proto_chain[39];
       break;
+  case 40:
+  {
+	  DIGITCHANGE("SPIRIT", mob->points.spirit);
+	  if (IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_CHAIN))
+	  {
+		  SHAPE_PROTO(ch)->editflag = proto_chain[40];
+	  }
+  }
+  break;
 #undef DIGITCHANGE
     case 48:
       if(!IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_DIGIT_ACTIVE)){
@@ -774,6 +783,7 @@ void list_simple_help(struct char_data * ch){
       send_to_char("10 - body_type;\n\r",ch);
       send_to_char("11 - race aggressions flag;\n\r",ch);
       send_to_char("12 - the item to butcher (0 for none);\n\r",ch);
+	  send_to_char("40 - mob spirit;\n\r", ch);
       send_to_char("49 - mob creation sequence;\n\r",ch);
       send_to_char("50 - list;\n\r",ch); 
 return;
@@ -814,6 +824,7 @@ void list_help(struct char_data * ch){
       send_to_char("37 - vulnerabilities;\n\r",ch);
       send_to_char("38 - script number;\n\r", ch);
       send_to_char("39 - roleplay flag;\n\r", ch);
+	  send_to_char("40 - mob spirit;\n\r", ch);
       send_to_char("49 - mob creation sequence;\n\r",ch);
       send_to_char("50 - list;\n\r",ch); 
 return;

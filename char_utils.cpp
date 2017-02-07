@@ -290,7 +290,7 @@ namespace utils
 		// treat all high strength scores with diminishing returns.  This function wouldn't be
 		// the correct place to do that though - it would be in whatever function is using strength.
 
-		int max_race_str[] = 
+		static const int max_race_str[] = 
 		{
 			20,            // IMM
 			20,            // HUMAN
@@ -327,6 +327,54 @@ namespace utils
 
 		// Otherwise, only even points of strength count.
 		int bounded_strength = race_strength_cap + ((character.tmpabilities.str - race_strength_cap) / 2);
+		return bounded_strength;
+	}
+
+	//============================================================================
+	double get_bal_strength_d(const char_data& character)
+	{
+		// dgurley:  I agree with the intent behind this function, but not it's implementation.
+		// I don't think that there should be a racial normalization factor.  However, we could
+		// treat all high strength scores with diminishing returns.  This function wouldn't be
+		// the correct place to do that though - it would be in whatever function is using strength.
+
+		static const double max_race_str[] =
+		{
+			20,            // IMM
+			20,            // HUMAN
+			20,            // DWARF
+			18,            // WOOD
+			16,            // HOBBIT
+			18,            // HIGH ELF
+			20,
+			20,
+			20,
+			20,
+			20,
+			20,           // URUK
+			20,           // HARAD
+			18,	   	// COMMON ORC
+			20,	  	// EASTERLING
+			18,	  	// LHUTH
+			20,
+			20,
+			20,
+			20,
+			20,   // TROLL
+			20
+		};
+
+		// If the character's strength is within normal bounds for their race, just return it.
+		int race = character.player.race;
+		if (race > 21)
+			return character.tmpabilities.str;
+
+		double race_strength_cap = max_race_str[race];
+		if (character.tmpabilities.str <= race_strength_cap)
+			return character.tmpabilities.str;
+
+		// Otherwise, only even points of strength count.
+		double bounded_strength = race_strength_cap + ((character.tmpabilities.str - race_strength_cap) * 0.5);
 		return bounded_strength;
 	}
 

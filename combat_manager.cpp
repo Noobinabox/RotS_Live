@@ -298,42 +298,256 @@ namespace game_rules
 			}
 			return w_type;
 		}
+
+		//============================================================================
+		// Returns the part of the body on the victim that is getting hit.
+		//============================================================================
+		int get_hit_location(const char_data& victim)
+		{
+			int hit_location = 0;
+
+			int body_type = victim.player.bodytype;
+
+			const race_bodypart_data& body_data = bodyparts[body_type];
+			if (body_data.bodyparts != 0)
+			{
+				int roll = number(1, 100);
+				while (roll > 0 && hit_location < MAX_BODYPARTS)
+				{
+					roll -= body_data.percent[hit_location++];
+				}
+			}
+
+			if (hit_location > 0)
+				--hit_location;
+
+			return hit_location;
+		}
+
 	} // end anonymous namespace
 
 	//============================================================================
-	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, int hit_type, bool hit_accurate, double remaining_ob)
+	void combat_manager::on_weapon_hit(char_data* attacker, char_data* victim, bool hit_accurate, double remaining_ob)
 	{
-		int weapon_type = 0;
+		double weapon_damage = calculate_weapon_damage(*attacker);
 
+		double damage = calculate_hit_damage(*attacker, hit_accurate, weapon_damage, remaining_ob);
 
-		double damage = 0.0;
-		obj_data* weapon = attacker->equipment[WIELD];
+		if (does_find_weakness(*attacker))
+		{
+			act("You discover a weakness in $N's defense!", TRUE, attacker, NULL, victim, TO_CHAR);
+			act("$n discovers a weakness in $N's defense!", TRUE, attacker, NULL, victim, TO_NOTVICT);
+			act("$n discovers a weakness in your defense!", TRUE, attacker, NULL, victim, TO_VICT);
+
+			damage *= 1.5;
+		}
+
+		if (does_rush(*attacker))
+		{
+			send_to_char("You rush forward wildly.\n\r", attacker);
+			act("$n rushes forward wildly.", TRUE, attacker, NULL, NULL, TO_ROOM);
+
+			damage *= 1.5;
+		}
+
+		apply_weapon_damage(attacker, victim, damage);
+	}
+
+	//============================================================================
+	int combat_manager::get_weapon_type(const char_data& attacker)
+	{
+		int weapon_type = TYPE_HIT;
+
+		obj_data* weapon = attacker.equipment[WIELD];
 		if (weapon && weapon->obj_flags.type_flag == ITEM_WEAPON)
 		{
 			weapon_type = weapon_hit_type(weapon->get_weapon_type());
-			damage = utils::get_weapon_damage(*weapon);
 		}
 		else
 		{
-			weapon = NULL;
+			if (utils::is_npc(attacker) && attacker.specials.attack_type >= TYPE_HIT)
+			{
+				weapon_type = attacker.specials.attack_type;
+			}
+		}
 
-			if (utils::is_npc(*attacker) && attacker->specials.attack_type >= TYPE_HIT)
+		return weapon_type;
+	}
+
+	//============================================================================
+	double combat_manager::calculate_weapon_damage(const char_data& attacker)
+	{
+		double weapon_damage = 0.0;
+		obj_data* weapon = attacker.equipment[WIELD];
+		if (weapon && weapon->obj_flags.type_flag == ITEM_WEAPON)
+		{
+			weapon_damage = utils::get_weapon_damage(*weapon);
+		}
+		else
+		{
+			if (utils::is_pc(attacker))
 			{
-				weapon_type = attacker->specials.attack_type;
+				weapon_damage = BAREHANDED_DAMAGE * 10.0;
 			}
-			else
+		}
+
+		if (utils::is_npc(attacker))
+		{
+			weapon_damage *= 0.5; // mobs have weapon damage halved
+		}
+
+		return weapon_damage;
+	}
+
+	//============================================================================
+	double combat_manager::calculate_hit_damage(const char_data& attacker, bool hit_accurate, double weapon_damage, double remaining_ob)
+	{
+		double damage = weapon_damage + attacker.points.damage * 10;
+		double damage_roll = number(100);
+		double random_factor = std::pow(damage_roll, 2) + 10000;
+		if (hit_accurate)
+		{
+			damage = damage * random_factor / 100000.0;
+		}
+		else
+		{
+			double strength_factor = utils::get_bal_strength_d(attacker);
+			double ob_factor = remaining_ob + 100.0;
+			int two_handed_factor = utils::is_twohanded(attacker) + 1;
+
+			damage = (damage * ob_factor * random_factor + (strength_factor * 133.0 * two_handed_factor))
+				/ 13300000.0;
+		}
+
+		return damage;
+	}
+
+	//============================================================================
+	bool does_find_weakness(const char_data& attacker)
+	{
+		if (utils::is_npc(attacker))
+			return false;
+
+		if (true)
+		{
+			// Old formula.  I don't like it.
+			int warrior_level = utils::get_prof_level(PROF_WARRIOR, attacker);
+			int prob = utils::get_raw_skill(attacker, SKILL_EXTRA_DAMAGE) / 3 * warrior_level / 30;
+			if (warrior_level > 30)
 			{
-				weapon_type = TYPE_HIT;
-				if (utils::is_pc(*attacker))
-				{
-					damage = BAREHANDED_DAMAGE * 10.0;
-				}
+				// This disproportionately favors high level warriors.
+				prob += warrior_level - 30;
 			}
+
+			int roll = number(0, 99);
+			return prob > roll;
+		}
+		else
+		{
+			// Chance to find is skill * warrior level in 'new' formula.
+			double chance = utils::get_raw_skill(attacker, SKILL_EXTRA_DAMAGE) * 0.001;
+			chance *= utils::get_prof_level(PROF_WARRIOR, attacker);
+			
+			double roll = number();
+			return chance > roll;
 		}
 	}
 
 	//============================================================================
-	void combat_manager::apply_damage(char_data* victim, double damage)
+	bool does_rush(const char_data& attacker)
+	{
+		if (utils::get_specialization(attacker) != PLRSPEC_WILD)
+			return false;
+
+		const double RUSH_CHANCE = 0.1;
+
+		double roll = number();
+		return RUSH_CHANCE > roll;
+	}
+
+	//============================================================================
+	void combat_manager::apply_weapon_damage(char_data* attacker, char_data* victim, double damage)
+	{
+		int hit_location = get_hit_location(*victim);
+		int weapon_type = get_weapon_type(*attacker);
+		
+		damage = apply_armor_reduction(attacker, victim, damage, weapon_type, hit_location);
+
+		if (damage > 0)
+		{
+			check_grip(attacker, attacker->equipment[WIELD]);
+		}
+	}
+
+	//============================================================================
+	// Given a hit location and a damage, calculate how much damage
+	// should be done after the victim's armor is factored in.  The
+	// modified amount is returned.
+	//============================================================================
+	double combat_manager::apply_armor_reduction(char_data* attacker, char_data* victim, double damage, int weapon_type, int hit_location)
+	{
+		// Bogus hit location
+		if (hit_location < 0 || hit_location > MAX_WEAR)
+			return 0.0;
+
+		// If they've got armor, let's let it do its thing
+		obj_data* armor = victim->equipment[hit_location];
+		if (armor)
+		{
+			double base_damage = damage;
+
+			// First, remove minimum absorb
+			damage -= armor->obj_flags.value[1];
+
+			// Calculate damage reduction.
+			double damage_reduction = (damage * armor_absorb(armor) + 50) * 0.01;
+			if (weapon_type == TYPE_SPEARS)
+			{
+				// Spears ignore half of the armor.
+				damage_reduction *= 0.5;
+			}
+			
+			damage -= damage_reduction;
+
+			/*
+			* Smiting weapons can sometimes crush an opponent's bones
+			* under the armor; wearing armor will actually INCREASE
+			* the amount of damage taken, since the bodypart cannot
+			* recoil under the disfigured metal.  Additionally, one's
+			* head can hit the armor from the inside and add extra
+			* damage.
+			*
+			* Based on a real life program on the discovery channel.
+			*
+			* Alright, now smiting only works on rigid metal armor,
+			* not chain or leather.  Unfortunately, it won't work on
+			* armor made of mithril, even if the description says the
+			* armor is made of mithril plats.  Perhaps mithril should
+			* never appear in plates? Or perhaps we should have some
+			* other flag to define rigidity? Or perhaps smiting should
+			* not exist? :)
+			*/
+			if (weapon_type == TYPE_SMITE && armor->obj_flags.material == 4)
+			{
+				const double SMITE_CHANCE = 0.2;
+				double roll = number();
+				if (SMITE_CHANCE > roll)
+				{
+					send_to_char("Your opponent's bones crunch loudly.\n\r", attacker);
+					send_to_char("OUCH! You hear a crunching sound and feel a sharp pain.\n\r", victim);
+					send_to_room_except_two("You hear a crunching sound.\n\r", attacker->in_room, attacker, victim);
+					damage = base_damage + (base_damage - damage);
+				}
+			}
+		}
+
+		return damage;
+	}
+
+	//============================================================================
+	// Damage returns true if the victim is killed and false otherwise.
+	//============================================================================
+	bool combat_manager::apply_damage(char_data* attacker, char_data* victim, double damage, int attack_type, int hit_location)
 	{
 
 	}

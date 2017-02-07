@@ -48,6 +48,7 @@ namespace utils
 	// Returns a capped strength score to offset some of the unbalancing impacts of
 	// overly high strength scores.
 	int get_bal_strength(const char_data& character);
+	double get_bal_strength_d(const char_data& character);
 
 	bool is_evil_race(const char_data& character);
 

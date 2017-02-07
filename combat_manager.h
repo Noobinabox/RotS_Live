@@ -64,15 +64,25 @@ namespace game_rules
 
 		double get_evasion_malus(const char_data& attacker, const char_data& victim);
 
-		void on_weapon_hit(char_data* attacker, char_data* victim, int hit_type, bool hit_accurate, double remaining_ob);
+		void on_weapon_hit(char_data* attacker, char_data* victim, bool hit_accurate, double remaining_ob);
 
-		void apply_damage(char_data* victim, double damage);
+		void apply_weapon_damage(char_data* attacker, char_data* victim, double damage);
+		bool apply_damage(char_data* attacker, char_data* victim, double damage, int attack_type, int hit_location);
 
 	private:
 		// Returns true if a riposte occurs.
 		bool does_victim_riposte(char_data* attacker, char_data* riposter);
 		void do_riposte(char_data* attacker, char_data* riposter);
 		void check_grip(char_data* character, obj_data* weapon);
+
+		double calculate_weapon_damage(const char_data& attacker);
+		int get_weapon_type(const char_data& attacker);
+		double calculate_hit_damage(const char_data& attacker, bool hit_accurate, double weapon_damage, double remaining_ob);
+		
+		bool does_find_weakness(const char_data& attacker);
+		bool does_rush(const char_data& attacker);
+
+		double apply_armor_reduction(char_data* attacker, char_data* victim, double damage, int weapon_type, int hit_location);
 
 		// Deleted functions.
 		// Don't put definitions in here so trying to do them will cause a compile error.

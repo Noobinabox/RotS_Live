@@ -2051,6 +2051,11 @@ bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 {
 	//TODO(drelidan):  Add logic for calculating breaking here.
 	const int breakpercentage = arrow->obj_flags.value[3];
+	if (victim)
+	{
+		// factor in victim contribution here - but victim is optional.
+	}
+
 	const int rolledNumber = number(1, 100);
 	if (rolledNumber < breakpercentage)
 	{
@@ -2088,6 +2093,38 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 
 	// Move the arrow to the victim.
 	obj_to_char(arrow, victim);
+
+	return true;
+}
+
+/*
+* move_arrow_to_room will take the arrow out of the shooters quiver and
+* tag the arrow with their character_id. After that it will deposit the arrow
+* on the ground. We tag the arrow so the shooter can type recover
+* after the kill and it will return all arrows with his character_id on it.
+*
+* This function will also handle the breaking of arrows based on the
+* victims armor and percentage on arrows themself.
+*
+* Returns true if the arrow was moved to the victim, false if it was destroyed.
+* --------------------------- Change Log --------------------------------
+* drelidan: Feb 07, 2017 - Created function
+*/
+bool move_arrow_to_room(char_data* archer, obj_data* arrow)
+{
+	// Remove object from the character.
+	obj_from_obj(arrow);
+	if (does_arrow_break(NULL, arrow))
+	{
+		// Destroy the arrow and exit.
+		extract_obj(arrow);
+		return false;
+	}
+	//tag arrow in value slot 2 of the shooter
+	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
+
+	// Move the arrow to the room.
+	obj_to_room(arrow, archer->in_room);
 
 	return true;
 }
@@ -2286,9 +2323,8 @@ ACMD(do_shoot)
 		}
 		else
 		{
-			// TODO(drelidan):  When an arrow misses, is it gone forever, or is it in
-			// the current room, or does it still have a chance to break?
 			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
+			move_arrow_to_room(ch, arrow);
 		}
 	}
 		break;

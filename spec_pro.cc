@@ -1494,7 +1494,7 @@ namespace
 		if (!pcs_fighting_caster.empty())
 		{
 			size_t count = pcs_fighting_caster.size();
-			int target_index = number(0, count);
+			int target_index = number(0, count -1);
 			return pcs_fighting_caster[target_index];
 		}
 		else if (!pcs_in_room.empty())
@@ -1541,7 +1541,7 @@ SPECIAL(mob_cleric)
 	wtl_base.targ2.choice = TAR_CHAR_ROOM;
 	wtl_base.flg = 1;
 	do_cast(host, "", &wtl_base, CMD_CAST, 0);
-	return TRUE;
+	return FALSE;
 }
 
 

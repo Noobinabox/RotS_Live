@@ -881,6 +881,10 @@ double number_d(double from, double to)
 /* creates a random number in interval [from;to] */
 int	number(int from, int to)
 {
+	if (from == to)
+	{
+		return from;
+	}
 	// Ensure that our to/from is in the proper order.
 	if (from > to)
 	{

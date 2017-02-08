@@ -994,7 +994,8 @@ std::string get_logged_in_count_message(descriptor_data* list)
 	int player_total = whitie_count + darkie_count + lhuth_count;
 	std::ostringstream message_writer;
 	message_writer << std::endl;
-	message_writer << "There are " << player_total << " players on currently, and " << imm_count << " gods." << std::endl;
+	message_writer << "There " << (player_total == 1?"is ":"are ") << player_total << (player_total == 1?" player":" players") 
+		<< " on currently, and " << imm_count << (imm_count == 1?" god.":" gods.") << std::endl;
 	
 	if (player_total > 0)
 	{

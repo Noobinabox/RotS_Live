@@ -1001,7 +1001,7 @@ std::string get_logged_in_count_message(descriptor_data* list)
 	{
 		if (player_total < DETAILED_LIST_CUT_OFF)
 		{
-			message_writer << "There " << (whitie_count == 1? "is ":"are " << whitie_count << " free people, and " 
+			message_writer << "There " << (whitie_count == 1? "is ":"are ") << whitie_count << " free people, and " 
 				<< darkie_count + lhuth_count << " forces of the dark." << std::endl;
 		}
 		else

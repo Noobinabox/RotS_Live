@@ -120,6 +120,7 @@ int command_simple_convert(int key){
   case 10:return 26;
   case 11:return 20;
   case 12:return 31;
+  case 13: return 40;
   case 49:return 49;
   case 50: return 50;
   default: return 0;
@@ -285,12 +286,13 @@ write_proto(FILE *f, struct char_data *m, int num)
 	  m->abilities.dex,
 	  m->abilities.con,
 	  m->abilities.lea );
-  fprintf(f, "%d %d %d %d %d  0\n",
+  fprintf(f, "%d %d %d %d %d %d 0\n",
 	  m->player.language,
 	  m->specials2.perception,
 	  m->specials.resistance,
 	  m->specials.vulnerability,
-	  m->specials.script_number);
+	  m->specials.script_number,
+	  m->points.spirit);
 }
 
 
@@ -865,6 +867,8 @@ void list_simple_proto(struct char_data * ch, struct char_data * mob){
   send_to_char(str,ch);
   sprintf(str,"(12) butcher item:%d\n\r", mob->specials.butcher_item);
   send_to_char(str,ch);
+  sprintf(str, "(13) spirit:%d\n\r", mob->points.spirit);
+  send_to_char(str, ch);
 }
 
 void list_proto(struct char_data * ch, struct char_data * mob){
@@ -954,6 +958,8 @@ static char str[MAX_STRING_LENGTH];
   sprintf(str,"(38) script number  :%d\n\r", mob->specials.script_number);
   send_to_char(str, ch);
   sprintf(str,"(39) roleplay flag  :%d\n\4", mob->specials2.rp_flag);
+  send_to_char(str, ch);
+  sprintf(str, "(40) spirit:%d\n\r", mob->points.spirit);
   send_to_char(str, ch);
 
 }
@@ -1136,6 +1142,12 @@ int load_proto(struct char_data * ch,char * arg){
       
 	fscanf(f, "%d ", &tmp);
 	  SHAPE_PROTO(ch)->proto->specials.script_number = tmp;
+
+	int val = fscanf(f, "%d ", &tmp);
+	if (val != 0)
+	{
+	  SHAPE_PROTO(ch)->proto->points.spirit = tmp;
+	}
 
 
     for(tmp=0;tmp<3;tmp++) SHAPE_PROTO(ch)->proto->specials2.conditions[tmp]=-1;

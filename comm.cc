@@ -943,7 +943,7 @@ SocketType pnew_connection(SocketType s)
 }
 
 
-std::string get_logged_in_count_message(descriptor_data* list)
+std::string get_logged_in_count_message(descriptor_data* list, descriptor_data* pnewd)
 {
 	int whitie_count = 0;
 	int darkie_count = 0;
@@ -953,7 +953,7 @@ std::string get_logged_in_count_message(descriptor_data* list)
 	descriptor_data* descriptor = list;
 	while (descriptor)
 	{
-		if (descriptor->connected)
+		if (descriptor->connected == CON_PLYNG)
 		{
 			char_data* character = descriptor->character;
 			if (descriptor->original)
@@ -977,7 +977,7 @@ std::string get_logged_in_count_message(descriptor_data* list)
 				{
 					++lhuth_count;
 				}
-				else if (character->player.level >= LEVEL_GOD)
+				else if (character->player.level >= LEVEL_IMMORT)
 				{
 					if (character->specials.invis_level == 0)
 					{
@@ -1127,8 +1127,10 @@ SocketType	pnew_descriptor(SocketType s)
 
    /* prepend to list */
 
-   std::string player_count_message = get_logged_in_count_message(descriptor_list);
+   descriptor_data* cur_list = descriptor_list;
    descriptor_list = pnewd;
+
+   std::string player_count_message = get_logged_in_count_message(cur_list, pnewd);
 
    SEND_TO_Q(GREETINGS, pnewd);
    SEND_TO_Q(player_count_message.c_str(), pnewd);

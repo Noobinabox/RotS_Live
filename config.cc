@@ -102,7 +102,7 @@ char *GREETINGS =
 "                       Original concept and code by:\n\r"
 "                  Hans Henrik Staerfeldt, Katja Nyboe,\n\r"
 "           Tom Madsen, Michael Seifert, and Sebastian Hammer\n\r"
-"       Currently maintained by Ingolemo, Vakaur, Azriya, and others\n\r\n\r"
+"       Currently maintained by Maga, Lowtheim, Drelidan, and others\n\r\n\r"
 "                       Webpage: http://www.rots.us\n\r"
 "\n\r";
 

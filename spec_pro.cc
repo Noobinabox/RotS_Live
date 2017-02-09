@@ -1495,13 +1495,13 @@ namespace
 		{
 			size_t count = pcs_fighting_caster.size();
 			int target_index = number(0, count -1);
-			return pcs_fighting_caster[target_index];
+			return pcs_fighting_caster.at(target_index);
 		}
 		else if (!pcs_in_room.empty())
 		{
 			size_t count = pcs_in_room.size();
 			int target_index = number(0, count - 1);
-			return pcs_in_room[target_index];
+			return pcs_in_room.at(target_index);
 		}
 		else
 		{

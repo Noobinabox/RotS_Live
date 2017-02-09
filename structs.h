@@ -258,6 +258,53 @@ struct room_data;
 
 #define GET_TARGET_TEXT(t1) ((t1)->ptr.text->text)
 
+namespace game_types
+{
+	enum WeaponType
+	{
+		WT_Unused_0,
+		WT_Unused_1,
+		WT_Whipping,
+		WT_Slashing,
+		WT_Slashing_Two,
+		WT_Flailing,
+		WT_Bludgeoning,
+		WT_Bludgeoning_Two,
+		WT_Cleaving,
+		WT_Cleaving_Two,
+		WT_Stabbing,
+		WT_Piercing,
+		WT_Smiting,
+		WT_Bow,
+		WT_Crossbow,
+		WT_Count,
+	};
+
+	const char* GetWeaponName(WeaponType type)
+	{
+		static const char* WEAPON_TYPE_STRINGS[WeaponType::WT_Count] =
+		{
+			"Error, Unsed weapon type, contact Imms",
+			"Error, Unsed weapon type, contact Imms",
+			"whipping",
+			"slashing",
+			"two-handed slashing",
+			"flailing",
+			"bludgeoning",
+			"bludgeoning",
+			"cleaving",
+			"two-handed cleaving",
+			"stabbing",
+			"piercing",
+			"smiting",
+			"bow",
+			"crossbow",
+		};
+
+		return WEAPON_TYPE_STRINGS[type];
+	}
+}
+
 struct target_data {
   signed char type;
   union {
@@ -307,7 +354,7 @@ public:
 	int get_ob_coef() const { return value[0]; }
 	int get_parry_coef() const { return value[1]; }
 	int get_bulk() const { return value[2]; }
-	int get_weapon_type() const { return value[3]; }
+	game_types::WeaponType get_weapon_type() const { return (game_types::WeaponType)value[3]; }
 	int get_level() const { return level; }
 	int get_weight() const { return std::max(weight, 1); }
 
@@ -352,7 +399,7 @@ public:
 	int get_ob_coef() const { return obj_flags.get_ob_coef(); }
 	int get_parry_coef() const { return obj_flags.get_parry_coef(); }
 	int get_bulk() const { return obj_flags.get_bulk(); }
-	int get_weapon_type() const { return obj_flags.get_weapon_type(); }
+	game_types::WeaponType get_weapon_type() const { return obj_flags.get_weapon_type(); }
 	int get_level() const { return obj_flags.get_level(); }
 	int get_weight() const { return obj_flags.get_weight(); }
 

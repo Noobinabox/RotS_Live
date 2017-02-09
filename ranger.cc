@@ -2267,6 +2267,9 @@ ACMD(do_shoot)
 	if (subcmd == -1)
 	{
 		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+
+		// Reset energy to 0 so that archer's cannot melee effectively.
+		ch->specials.ENERGY = 0;
 		return;
 	}
 
@@ -2335,6 +2338,9 @@ ACMD(do_shoot)
 			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
 			move_arrow_to_room(ch, arrow);
 		}
+
+		// Reset energy to 0 so that archer's cannot melee effectively.
+		ch->specials.ENERGY = 0;
 	}
 		break;
 	default:

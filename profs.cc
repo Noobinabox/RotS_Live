@@ -416,88 +416,89 @@ roll_abilities(struct char_data *ch, int min, int max)
 void
 recalc_abilities(struct char_data *ch)
 {
-  int tmp, tmp2, dex_speed;
-  struct obj_data *weapon;
-  
-  if (!IS_NPC(ch)) {
-    ch->abilities.str = ch->constabilities.str;
-    ch->abilities.lea = ch->constabilities.lea;
-    ch->abilities.intel = ch->constabilities.intel;
-    ch->abilities.wil = ch->constabilities.wil;
-    ch->abilities.dex = ch->constabilities.dex;
-    ch->abilities.con = ch->constabilities.con;
+	int tmp, tmp2, dex_speed;
+	struct obj_data *weapon;
 
-    ch->abilities.hit = 10 + MIN(LEVEL_MAX, GET_LEVEL(ch)) +
-      ch->constabilities.hit * GET_CON(ch) / 20 +
-      (class_HP(ch) * (GET_CON(ch) + 20)/14) *
-      MIN(LEVEL_MAX * 100, GET_MINI_LEVEL(ch)) / 100000;
+	if (!IS_NPC(ch)) {
+		ch->abilities.str = ch->constabilities.str;
+		ch->abilities.lea = ch->constabilities.lea;
+		ch->abilities.intel = ch->constabilities.intel;
+		ch->abilities.wil = ch->constabilities.wil;
+		ch->abilities.dex = ch->constabilities.dex;
+		ch->abilities.con = ch->constabilities.con;
 
-    // dirty test to see if this ranger change can work
-    ch->abilities.hit = MAX(ch->abilities.hit -
-			    (GET_RAW_SKILL(ch, SKILL_STEALTH) *
-			     GET_LEVELA(ch) +
-			     GET_RAW_SKILL(ch, SKILL_STEALTH) * 3) / 33, 10);
-    
-    if (ch->tmpabilities.hit > ch->abilities.hit)
-      ch->tmpabilities.hit = ch->abilities.hit;
-    
-    ch->abilities.mana = ch->constabilities.mana + GET_INT(ch) + 
-      GET_WILL(ch) / 2 + GET_PROF_LEVEL(PROF_MAGE,ch) * 2;
-    
-    if (ch->tmpabilities.mana > ch->abilities.mana)
-      ch->tmpabilities.mana = ch->abilities.mana;
-    
-    ch->abilities.move = ch->constabilities.move + GET_CON(ch) +
-      20 + GET_PROF_LEVEL(PROF_RANGER, ch) +
-      GET_RAW_KNOWLEDGE(ch, SKILL_TRAVELLING) / 4;
-    if((GET_RACE(ch) == RACE_WOOD) || GET_RACE(ch) == RACE_HIGH)
-      ch->abilities.move += 15;
-    
-    if(ch->tmpabilities.move > ch->abilities.move)
-      ch->tmpabilities.move = ch->abilities.move;
-    
-    if ((weapon = ch->equipment[WIELD])) {
-      if (!GET_OBJ_WEIGHT(weapon)) {  
-	/*UPDATE*, temporary check for 0 weight weapons*/
-	GET_OBJ_WEIGHT(weapon) = 1;
-	sprintf(buf,"SYSERR: 0 wegith weapon");
-	mudlog(buf, NRM, LEVEL_GOD, TRUE);
-      }
-      
-      ch->specials.null_speed = 3 * GET_DEX(ch) + 
-	2 * (GET_RAW_SKILL(ch, SKILL_ATTACK) +
-	     GET_RAW_SKILL(ch, SKILL_STEALTH) / 2) / 3 + 100;
-      
-      ch->specials.str_speed = GET_BAL_STR(ch) * 2500000 /
-	(GET_OBJ_WEIGHT(weapon) * (weapon->obj_flags.value[2] + 3));
+		ch->abilities.hit = 10 + MIN(LEVEL_MAX, GET_LEVEL(ch)) +
+			ch->constabilities.hit * GET_CON(ch) / 20 +
+			(class_HP(ch) * (GET_CON(ch) + 20) / 14) *
+			MIN(LEVEL_MAX * 100, GET_MINI_LEVEL(ch)) / 100000;
 
-      if (IS_TWOHANDED(ch))
-	ch->specials.str_speed *= 2;
-      
-      /* Dex adjustment by Fingol */
-      if (weapon->obj_flags.value[2] < 4) {
-	dex_speed = GET_DEX(ch) * 2500000 / 
-	  (GET_OBJ_WEIGHT(weapon) * (weapon->obj_flags.value[2] + 3));
-	
-	tmp2 = (ch->specials.str_speed * weapon->obj_flags.value[2] / 5) +
-	  (dex_speed * (5 - weapon->obj_flags.value[2]) / 5);
+		// dirty test to see if this ranger change can work
+		ch->abilities.hit = MAX(ch->abilities.hit -
+			(GET_RAW_SKILL(ch, SKILL_STEALTH) *
+				GET_LEVELA(ch) +
+				GET_RAW_SKILL(ch, SKILL_STEALTH) * 3) / 33, 10);
 
-	ch->specials.str_speed = ch->specials.str_speed > tmp2 ?
-	  tmp2 : ch->specials.str_speed;
-      }
-      
-      tmp = 1000000;
-      tmp /= 1000000 / ch->specials.str_speed +
-	1000000 / (ch->specials.null_speed * ch->specials.null_speed);
-      
-      GET_ENE_REGEN(ch) = do_squareroot(tmp / 100, ch) / 20;
+		if (ch->tmpabilities.hit > ch->abilities.hit)
+			ch->tmpabilities.hit = ch->abilities.hit;
 
-      if (GET_RACE(ch) == RACE_DWARF &&
-	  weapon_skill_num(weapon->obj_flags.value[3]) == SKILL_AXE)
-	GET_ENE_REGEN(ch) += MIN(GET_ENE_REGEN(ch) / 10, 10);
-    } else
-      GET_ENE_REGEN(ch) = 60 + 5 * GET_DEX(ch);
-  }
+		ch->abilities.mana = ch->constabilities.mana + GET_INT(ch) +
+			GET_WILL(ch) / 2 + GET_PROF_LEVEL(PROF_MAGE, ch) * 2;
+
+		if (ch->tmpabilities.mana > ch->abilities.mana)
+			ch->tmpabilities.mana = ch->abilities.mana;
+
+		ch->abilities.move = ch->constabilities.move + GET_CON(ch) +
+			20 + GET_PROF_LEVEL(PROF_RANGER, ch) +
+			GET_RAW_KNOWLEDGE(ch, SKILL_TRAVELLING) / 4;
+		if ((GET_RACE(ch) == RACE_WOOD) || GET_RACE(ch) == RACE_HIGH)
+			ch->abilities.move += 15;
+
+		if (ch->tmpabilities.move > ch->abilities.move)
+			ch->tmpabilities.move = ch->abilities.move;
+
+		if ((weapon = ch->equipment[WIELD])) {
+			if (!GET_OBJ_WEIGHT(weapon)) {
+				/*UPDATE*, temporary check for 0 weight weapons*/
+				GET_OBJ_WEIGHT(weapon) = 1;
+				sprintf(buf, "SYSERR: 0 wegith weapon");
+				mudlog(buf, NRM, LEVEL_GOD, TRUE);
+			}
+
+			ch->specials.null_speed = 3 * GET_DEX(ch) +
+				2 * (GET_RAW_SKILL(ch, SKILL_ATTACK) +
+					GET_RAW_SKILL(ch, SKILL_STEALTH) / 2) / 3 + 100;
+
+			ch->specials.str_speed = GET_BAL_STR(ch) * 2500000 /
+				(GET_OBJ_WEIGHT(weapon) * (weapon->obj_flags.value[2] + 3));
+
+			if (IS_TWOHANDED(ch))
+				ch->specials.str_speed *= 2;
+
+			/* Dex adjustment by Fingol */
+			if (weapon->obj_flags.value[2] < 4) {
+				dex_speed = GET_DEX(ch) * 2500000 /
+					(GET_OBJ_WEIGHT(weapon) * (weapon->obj_flags.value[2] + 3));
+
+				tmp2 = (ch->specials.str_speed * weapon->obj_flags.value[2] / 5) +
+					(dex_speed * (5 - weapon->obj_flags.value[2]) / 5);
+
+				ch->specials.str_speed = ch->specials.str_speed > tmp2 ?
+					tmp2 : ch->specials.str_speed;
+			}
+
+			tmp = 1000000;
+			tmp /= 1000000 / ch->specials.str_speed +
+				1000000 / (ch->specials.null_speed * ch->specials.null_speed);
+
+			GET_ENE_REGEN(ch) = do_squareroot(tmp / 100, ch) / 20;
+
+			if (GET_RACE(ch) == RACE_DWARF &&
+				weapon_skill_num(weapon->obj_flags.value[3]) == SKILL_AXE)
+				GET_ENE_REGEN(ch) += MIN(GET_ENE_REGEN(ch) / 10, 10);
+		}
+		else
+			GET_ENE_REGEN(ch) = 60 + 5 * GET_DEX(ch);
+	}
 }
 
 /* Hp per level:  con/6 for pure mage, con/3 for normal warrior. plus*/

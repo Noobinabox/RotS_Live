@@ -1813,22 +1813,13 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
 {
 	using namespace utils;
 
-	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
-	// here for shooting quickly and a bonus for shooting slowly.
-	int player_level = archer.get_capped_level();
-
-	// Scale probability of success with the player level as well.
-	int probability = get_prof_level(PROF_RANGER, archer) * player_level / LEVEL_MAX;
-	probability -= get_skill_penalty(archer);
-	probability -= get_dodge_penalty(archer);
-	probability *= get_skill(archer, SKILL_ACCURACY) / 100;
-
-	if (number(0, 99) < probability)
-	{
-		return true;
-	}
-
-	return false;
+	double probability = get_prof_level(PROF_RANGER, archer) * 0.01; // 30% chance at 30r
+	probability -= get_skill_penalty(archer) * 0.01; // minus any skill penalty
+	probability -= get_dodge_penalty(archer) * 0.01; // minus any dodge penalty
+	probability *= get_skill(archer, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
+	
+	double roll = number();
+	return roll < probability;
 }
 
 /*

@@ -4298,8 +4298,8 @@ char * value_array [] [5] = {
 };
 
 
-const char* weapon_types[] = 
-{
+char *weapon_types [] = {
+
   "Error, Unsed weapon type, contact Imms",
   "Error, Unsed weapon type, contact Imms",
   "whipping",
@@ -4313,8 +4313,6 @@ const char* weapon_types[] =
   "stabbing",
   "piercing",
   "smiting",
-  "bow",
-  "crossbow",
 };
 
 /*
@@ -4402,13 +4400,14 @@ void do_flag_values_display (struct char_data *ch, struct obj_data *j) {
   }
 }
 
-void do_weapon_display(char_data* character, obj_data* weapon)
-{
-	game_types::WeaponType type = weapon->get_weapon_type();
-	sprintf(buf, "The weapon you hold is a %s weapon.\r\n"
-		"\n\rDamage Rating \t   %d/10.\r\n",
-		game_types::GetWeaponName(type), get_weapon_damage(weapon));
-	send_to_char(buf, character);
+void do_weapon_display (struct char_data *ch, struct obj_data *j) {
+
+  sprintf (buf1, weapon_types[j->obj_flags.value[3]]);
+  sprintf (buf, "The weapon you hold is a %s weapon.\r\n"
+	   "\n\rDamage Rating \t   %d/10.\r\n",
+	   buf1, get_weapon_damage(j));
+  send_to_char (buf, ch);
+
 }
 
 

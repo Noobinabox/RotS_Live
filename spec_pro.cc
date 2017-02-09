@@ -1500,7 +1500,7 @@ namespace
 		else if (!pcs_in_room.empty())
 		{
 			size_t count = pcs_in_room.size();
-			int target_index = number(0, count);
+			int target_index = number(0, count - 1);
 			return pcs_in_room[target_index];
 		}
 		else

@@ -1942,6 +1942,20 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 	return damage;
 }
 
+
+//============================================================================
+// Returns a multiplier to archery damage based on ranger level.
+//============================================================================ 
+double get_ranger_level_multiplier(int ranger_level)
+{
+	if (ranger_level <= 20)
+		return 1.0;
+	
+	// ranger level > 20
+	int num_steps = ranger_level - 20;
+	return 1.0 + num_steps * 0.02; // ranger level 25 is 10% bonus damage, 30 is 20% bonus damage, 35 is 30% bonus
+}
+
 /*
  * shoot_calculate_damage
  *
@@ -1960,22 +1974,24 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 {
 	using namespace utils;
 
-	int ranger_level_factor = get_prof_level(PROF_RANGER, *archer) * 3 / 4;
-	int ranger_str_factor = get_bal_strength(*archer) * 3 / 4;
+	int ranger_level = get_prof_level(PROF_RANGER, *archer);
+	double ranger_level_factor = ranger_level * 0.9;
+	double strength_factor = (archer->get_cur_str() - 10) * 0.5;
+	
 	int arrow_todam = arrow->obj_flags.value[1];
 
 	obj_data* bow = archer->equipment[WIELD];
 	int weapon_damage = get_weapon_damage(bow);
+	int random_cap = arrow_todam + weapon_damage; // should be between ~4 and 30 at the ABSOLUTE max
+	
+	double random_factor_1 = number(random_cap);
+	double random_factor_2 = number(random_cap);
+	double random_factor_3 = number(random_cap);
 
-	// TODO(drelidan):  Revisit these calcs.  Weapon damage blows a fairly
-	// significant roll for damage calculations.
-	int random_factor_1 = number(weapon_damage / 8, weapon_damage / 4);
-	int random_factor_2 = number(weapon_damage / 8, weapon_damage / 4);
-	int random_factor_3 = number(weapon_damage / 8, weapon_damage / 4);
+	double bow_factor = random_factor_1 + random_factor_2 + random_factor_3 + strength_factor;
 
-	int bow_factor = random_factor_1 + random_factor_2 + random_factor_3;
-	bow_factor = bow_factor * ranger_str_factor / 10;
-	int damage = ranger_level_factor + bow_factor + arrow_todam;
+	double multipler = get_ranger_level_multiplier(ranger_level);
+	int damage = int(ranger_level_factor + (bow_factor * multipler));
 
 	int arrow_hit_location = get_hit_location(*victim);
 	if (check_archery_accuracy(*archer, *victim))
@@ -1995,12 +2011,14 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	}
 
 	std::ostringstream test;
-	test << "Ranger Factor: " << ranger_level_factor << std::endl;
+	test << "Ranger Base Factor: " << ranger_level_factor << std::endl;
+	test << "Ranger Multiplier: " << multipler << std::endl;
 	test << "Bow Factor: " << bow_factor << std::endl;
-	test << "Arrow Factor: " << arrow_todam << std::endl;
 	test << "Total Damage: " << damage << std::endl;
 	test << "------Breakdown------" << std::endl;
 	test << "Weapon damage: " << weapon_damage << std::endl;
+	test << "Arrow damage: " << arrow_todam << std::endl;
+	test << "Strength factor: " << strength_factor << std::endl;
 	test << "Random Factor 1: " << random_factor_1 << std::endl;
 	test << "Random Factor 2: " << random_factor_2 << std::endl;
 	test << "Random Factor 3: " << random_factor_3 << std::endl;

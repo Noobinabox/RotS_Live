@@ -454,42 +454,42 @@ int restore_stat(char_data* character, int stat_num, int amount)
 	case 0:
 	{
 		int max_amount = character->abilities.str - character->tmpabilities.str;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.str += amount;
 		return amount;
 	}
 	case 1:
 	{
 		int max_amount = character->abilities.intel - character->tmpabilities.intel;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.intel += amount;
 		return amount;
 	}
 	case 2:
 	{
 		int max_amount = character->abilities.wil - character->tmpabilities.wil;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.wil += amount;
 		return amount;
 	}
 	case 3:
 	{
 		int max_amount = character->abilities.dex - character->tmpabilities.dex;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.dex += amount;
 		return amount;
 	}
 	case 4:
 	{
 		int max_amount = character->abilities.con - character->tmpabilities.con;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.con += amount;
 		return amount;
 	}
 	case 5:
 	{
 		int max_amount = character->abilities.lea - character->tmpabilities.lea;
-		amount = std::max(amount, max_amount);
+		amount = std::min(amount, max_amount);
 		character->tmpabilities.lea += amount;
 		return amount;
 	}

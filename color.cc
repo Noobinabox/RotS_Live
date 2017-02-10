@@ -10,7 +10,7 @@
 #include "interpre.h"
 #include "utils.h"
 
-char *color_fields[] = {
+const char *color_fields[] = {
   "narrate",
   "chat",
   "yell",
@@ -30,7 +30,7 @@ char *color_fields[] = {
 
 int num_of_color_fields = sizeof(color_fields) / sizeof(color_fields[0]);
 
-char *color_color[] = {
+const char *color_color[] = {
   "normal",
   "red",
   "green",

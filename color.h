@@ -45,7 +45,7 @@
 #define CC_FIX(ch, col) \
   (clr((ch)) ? color_sequence[col] : "")
 
-extern char *color_color[];
+extern const char *color_color[];
 extern char *color_sequence[];
 
 void set_colors_default(struct char_data *);

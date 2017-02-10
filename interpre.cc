@@ -273,7 +273,7 @@ ACMD(do_top);
 ACMD(do_grouproll);
 ACMD(do_shoot);
 
-char *command[] = {
+const char *command[] = {
    "north", 		               /* 1 */
    "east",
    "south",
@@ -550,8 +550,7 @@ search_block(char *arg, char **list, char exact)
 
 
 
-int
-old_search_block(char *argument, int begin, unsigned int length, char **list, int mode)
+int old_search_block(char *argument, int begin, unsigned int length, const char **list, int mode)
 {
   unsigned int	guess, found, search;
 

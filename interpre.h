@@ -60,7 +60,7 @@
 void	command_interpreter(struct char_data *ch, char *arg_chr,
 			    struct waiting_type * arg_wtl = 0);
 int	search_block(char *arg, char **list, char exact);
-int	old_search_block(char *argument, int begin, unsigned int length, char **list, int mode);
+int	old_search_block(char *argument, int begin, unsigned int length, const char **list, int mode);
 char	lower( char c );
 void	argument_interpreter(char *argument, char *first_arg, char *second_arg);
 int	special(struct char_data *ch, int cmd, char *arg, int callflag, waiting_type * wtl, int in_room = NOWHERE);

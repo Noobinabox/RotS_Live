@@ -33,7 +33,7 @@ void	show_string(struct descriptor_data *d, char *input);
 
 
 
-char	*string_fields[] = 
+const char* string_fields[] = 
 {
    "name",
    "short",

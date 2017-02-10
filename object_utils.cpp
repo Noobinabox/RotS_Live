@@ -198,11 +198,25 @@ namespace utils
 			return damage_coef;
 		}
 
+		//============================================================================
+		double get_bow_weapon_damage(const obj_data& weapon)
+		{
+			const char_data* owner = weapon.get_owner();
+			double level_factor = std::min(weapon.get_level(), owner->get_level()) / 3.0;
+			return level_factor + weapon.get_ob_coef() + weapon.get_bulk();
+		}
+
 	} // end anonymous helper namespace
 
 	//============================================================================
 	double get_weapon_damage(const obj_data& weapon)
 	{
+		game_types::weapon_type w_type = weapon.get_weapon_type();
+		if (w_type == game_types::WT_BOW || w_type == game_types::WT_CROSSBOW)
+		{
+			return get_bow_weapon_damage(weapon);
+		}
+
 		if (get_item_type(weapon) != ITEM_WEAPON)
 		{
 			mudlog("Calculating damage for non-weapon!", NRM, LEVEL_IMMORT, TRUE);
@@ -245,3 +259,29 @@ namespace utils
 	}
 }
 
+namespace game_types
+{
+	const char* get_weapon_name(weapon_type type)
+	{
+		static const char* weapon_types[WT_COUNT] =
+		{
+			"Error, Unsed weapon type, contact Imms",
+			"Error, Unsed weapon type, contact Imms",
+			"whipping",
+			"slashing",
+			"two-handed slashing",
+			"flailing",
+			"bludgeoning",
+			"bludgeoning",
+			"cleaving",
+			"two-handed cleaving",
+			"stabbing",
+			"piercing",
+			"smiting",
+			"bow",
+			"crossbow",
+		};
+
+		return weapon_types[type];
+	}
+}

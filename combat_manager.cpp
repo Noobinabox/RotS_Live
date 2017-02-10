@@ -16,46 +16,53 @@ namespace game_rules
 	namespace
 	{
 		//============================================================================
-		int weapon_hit_type(int weapon_type)
+		int weapon_hit_type(game_types::weapon_type weapon_type)
 		{
-			int w_type = TYPE_HIT;
-			switch (weapon_type) {
-			case 0:
-			case 1:
-			case 2:
-				w_type = TYPE_WHIP; /* whip */
+			int hit_type = TYPE_HIT;
+			switch (weapon_type)
+			{
+			case game_types::WT_UNUSED_1:
+			case game_types::WT_UNUSED_2:
+			case game_types::WT_WHIPPING:
+				hit_type = TYPE_WHIP;
 				break;
-			case 3:
-			case 4:
-				w_type = TYPE_SLASH;
+			case game_types::WT_SLASHING:
+			case game_types::WT_SLASHING_TWO:
+				hit_type = TYPE_SLASH;
 				break;
-			case 5:
-				w_type = TYPE_FLAIL;  /* flail */
+			case game_types::WT_FLAILING:
+				hit_type = TYPE_FLAIL;
 				break;
-			case 6:
-				w_type = TYPE_CRUSH;
+			case game_types::WT_BLUDGEONING:
+			case game_types::WT_BLUDGEONING_TWO:
+				hit_type = TYPE_BLUDGEON;
 				break;
-			case 7:
-				w_type = TYPE_BLUDGEON;
+			case game_types::WT_CLEAVING:
+			case game_types::WT_CLEAVING_TWO:
+				hit_type = TYPE_CLEAVE;
 				break;
-			case 8:
-			case 9:
-				w_type = TYPE_CLEAVE;
+			case game_types::WT_STABBING:
+				hit_type = TYPE_SPEARS;
 				break;
-			case 10:
-				w_type = TYPE_SPEARS;
+			case game_types::WT_PIERCING:
+				hit_type = TYPE_PIERCE;
 				break;
-			case 11:
-				w_type = TYPE_PIERCE;
+			case game_types::WT_SMITING:
+				hit_type = TYPE_SMITE;
 				break;
-			case 12:
-				w_type = TYPE_SMITE;
+			case game_types::WT_BOW:
+			case game_types::WT_CROSSBOW:
+				hit_type = TYPE_BLUDGEON;
+				break;
+			case game_types::WT_COUNT:
+				hit_type = TYPE_HIT;
 				break;
 			default:
-				w_type = TYPE_HIT;
+				hit_type = TYPE_HIT;
 				break;
 			}
-			return w_type;
+
+			return hit_type;
 		}
 
 		//============================================================================
@@ -295,7 +302,7 @@ namespace game_rules
 		rip_damage /= number_d(50.0, 100.0);
 
 		//TODO(drelidan):  Include skill type and weapon type.
-		apply_damage(attacker, riposter, rip_damage, weapon_hit_type(weapon->obj_flags.value[3]), 21);
+		apply_damage(attacker, riposter, rip_damage, weapon_hit_type(weapon->get_weapon_type()), 21);
 	}
 
 	//============================================================================
@@ -352,7 +359,7 @@ namespace game_rules
 	}
 
 	//============================================================================
-	int combat_manager::get_weapon_type(const char_data& attacker)
+	int combat_manager::get_weapon_skill_type(const char_data& attacker)
 	{
 		int weapon_type = TYPE_HIT;
 
@@ -467,7 +474,7 @@ namespace game_rules
 	void combat_manager::apply_weapon_damage(char_data* attacker, char_data* victim, double damage)
 	{
 		int hit_location = get_hit_location(*victim);
-		int weapon_type = get_weapon_type(*attacker);
+		int weapon_type = get_weapon_skill_type(*attacker);
 		
 		int body_type = victim->player.bodytype;
 		const race_bodypart_data& body_data = bodyparts[body_type];

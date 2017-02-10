@@ -1972,8 +1972,8 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	int arrow_todam = arrow->obj_flags.value[1];
 
 	obj_data* bow = archer->equipment[WIELD];
-	int weapon_damage = get_weapon_damage(bow);
-	int random_cap = arrow_todam + weapon_damage; // should be between ~4 and 30 at the ABSOLUTE max
+	double weapon_damage = get_weapon_damage(bow);
+	double random_cap = arrow_todam + weapon_damage; // should be between ~4 and 30 at the ABSOLUTE max
 	
 	double random_factor_1 = number(random_cap);
 	double random_factor_2 = number(random_cap);
@@ -2267,6 +2267,7 @@ ACMD(do_shoot)
 	if (subcmd == -1)
 	{
 		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after interruption.
 		return;
 	}
 
@@ -2335,6 +2336,8 @@ ACMD(do_shoot)
 			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
 			move_arrow_to_room(ch, arrow);
 		}
+
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after loosing an arrow.
 	}
 		break;
 	default:

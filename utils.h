@@ -269,8 +269,8 @@ struct time_info_data age(struct char_data *ch);
 
 #define GET_LEVEL(ch)   ((ch)->player.level)
 
-#define GET_LEVELA(ch)   (IS_NPC(ch) ? GET_LEVEL(ch) : MIN(GET_LEVEL(ch), LEVEL_MAX))
-#define GET_LEVELB(ch)   (IS_NPC(ch) ? GET_LEVEL(ch) : MIN(GET_LEVEL(ch), LEVEL_MAX*2/3 + GET_LEVEL(ch)/3))
+#define GET_LEVELA(ch)   (IS_NPC(ch) ? GET_LEVEL(ch) : std::min(GET_LEVEL(ch), LEVEL_MAX))
+#define GET_LEVELB(ch)   (IS_NPC(ch) ? GET_LEVEL(ch) : std::min(GET_LEVEL(ch), LEVEL_MAX*2/3 + GET_LEVEL(ch)/3))
 
 #define GET_PROF_LEVEL(prof,ch) (((prof==PROF_GENERAL)||IS_NPC(ch))?GET_LEVEL(ch) : (ch)->profs->prof_level[prof])
 

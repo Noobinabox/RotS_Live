@@ -76,7 +76,7 @@ namespace game_rules
 		void check_grip(char_data* character, obj_data* weapon);
 
 		double calculate_weapon_damage(const char_data& attacker);
-		int get_weapon_type(const char_data& attacker);
+		int get_weapon_skill_type(const char_data& attacker);
 		double calculate_hit_damage(const char_data& attacker, bool hit_accurate, double weapon_damage, double remaining_ob);
 		
 		bool does_find_weakness(const char_data& attacker);

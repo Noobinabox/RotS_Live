@@ -200,6 +200,30 @@
 #define CONT_CLOSED         4
 #define CONT_LOCKED         8
 
+namespace game_types
+{
+	enum weapon_type
+	{
+		WT_UNUSED_1,
+		WT_UNUSED_2,
+		WT_WHIPPING,
+		WT_SLASHING,
+		WT_SLASHING_TWO,
+		WT_FLAILING,
+		WT_BLUDGEONING,
+		WT_BLUDGEONING_TWO,
+		WT_CLEAVING,
+		WT_CLEAVING_TWO,
+		WT_STABBING,
+		WT_PIERCING,
+		WT_SMITING,
+		WT_BOW,
+		WT_CROSSBOW,
+		WT_COUNT,
+	};
+
+	const char* get_weapon_name(weapon_type type);
+}
 
 #ifdef CONSTANTSMARK
 int global_release_flag = 1;
@@ -307,7 +331,7 @@ public:
 	int get_ob_coef() const { return value[0]; }
 	int get_parry_coef() const { return value[1]; }
 	int get_bulk() const { return value[2]; }
-	int get_weapon_type() const { return value[3]; }
+	game_types::weapon_type get_weapon_type() const { return game_types::weapon_type(value[3]); }
 	int get_level() const { return level; }
 	int get_weight() const { return std::max(weight, 1); }
 
@@ -352,7 +376,7 @@ public:
 	int get_ob_coef() const { return obj_flags.get_ob_coef(); }
 	int get_parry_coef() const { return obj_flags.get_parry_coef(); }
 	int get_bulk() const { return obj_flags.get_bulk(); }
-	int get_weapon_type() const { return obj_flags.get_weapon_type(); }
+	game_types::weapon_type get_weapon_type() const { return obj_flags.get_weapon_type(); }
 	int get_level() const { return obj_flags.get_level(); }
 	int get_weight() const { return obj_flags.get_weight(); }
 

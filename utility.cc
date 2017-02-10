@@ -400,106 +400,120 @@ string_to_new_value(char *arg, int *value)
   return *value;
 }
 
-
-
-int
-get_weapon_damage(struct obj_data *obj)
+//============================================================================
+int get_bow_weapon_damage(const obj_data& weapon)
 {
-  int parry_coef, OB_coef, dam_coef;
-  int tmp, bulk, str_speed, null_speed, ene_regen;
-  int obj_level, skill_type;
-  struct char_data *owner;
+	const char_data* owner = weapon.get_owner();
+	int level_factor = std::min(weapon.get_level(), owner->get_level()) / 3;
+	return level_factor + weapon.get_ob_coef() + weapon.get_bulk();
+}
 
-  if(GET_ITEM_TYPE(obj) != ITEM_WEAPON) {
-    mudlog("Calculating damage for non-weapon!", NRM, LEVEL_IMMORT, TRUE);
-    return 1;
-  }
-  
-  parry_coef = obj->obj_flags.value[1];
-  OB_coef = obj->obj_flags.value[0];
-  bulk = obj->obj_flags.value[2];
-  skill_type = weapon_skill_num(obj->obj_flags.value[3]);
-  obj_level = obj->obj_flags.level;
-  owner = obj->carried_by;
-  
-  /*
-   * If the weapon is owned by someone (i.e., we aren't just statting
-   * an object), then that person will affect how well the weapon
-   * works.  Currently, there are two maluses:
-   *   (1) If the wielder's level is a good deal lower than the
-   *       object's level, then the level of the object is lowered
-   *       to be closer to the wielder's; thus reducing damage.
-   *   (2) If the wielder has low weapon skill for the object, then
-   *       we reduce the damage.
-   */
-  if (owner != NULL) {
-    /* Case (1) */
-    if (obj_level > (GET_LEVEL(owner) * 4/3 + 7))
-      obj_level -= (obj_level - GET_LEVEL(owner) * 4/3 - 7) * 2/3;
+//============================================================================
+int get_weapon_damage(struct obj_data *obj)
+{
+	int parry_coef, OB_coef, dam_coef;
+	int tmp, bulk, str_speed, null_speed, ene_regen;
+	int obj_level, skill_type;
+	struct char_data *owner;
 
-    /* Case (2): for skill=100, use full obj_level; skill=0, use obj_level/2 */
-    obj_level = obj_level * GET_SKILL(owner, skill_type) / 100;
-  }
+	if (GET_ITEM_TYPE(obj) != ITEM_WEAPON) 
+	{
+		mudlog("Calculating damage for non-weapon!", NRM, LEVEL_IMMORT, TRUE);
+		return 1;
+	}
 
-  switch(obj->obj_flags.value[3]) {
-  case 2:   /* whip */
-    parry_coef += 8;
-    OB_coef -= 5;
-    break;
+	game_types::weapon_type w_type = obj->get_weapon_type();
+	if (w_type == game_types::WT_BOW || w_type == game_types::WT_CROSSBOW)
+	{
+		return get_bow_weapon_damage(*obj);
+	}
 
-  case 3:
-  case 4:
-    parry_coef -= 2; 
-    break;
 
-  case 6: 
-  case 7:
-    parry_coef += 3; 
-    break;
-  }
-  
-  if(parry_coef < -7)
-    parry_coef = parry_coef / 3 - 1; /* i.e. parry < -7 */
-  else
-    if(parry_coef < 0)
-      parry_coef = parry_coef / 2;
+	parry_coef = obj->obj_flags.value[1];
+	OB_coef = obj->obj_flags.value[0];
+	bulk = obj->obj_flags.value[2];
+	skill_type = weapon_skill_num(obj->obj_flags.value[3]);
+	obj_level = obj->obj_flags.level;
+	owner = obj->carried_by;
 
-  if(parry_coef > 5) 
-    parry_coef = parry_coef * 2 - 5;
-  
-  if(OB_coef < -7) 
-    OB_coef = OB_coef / 2 - 1;
-  else
-    if(OB_coef < 0) 
-      OB_coef = OB_coef * 2 / 3;
+	/*
+	 * If the weapon is owned by someone (i.e., we aren't just statting
+	 * an object), then that person will affect how well the weapon
+	 * works.  Currently, there are two maluses:
+	 *   (1) If the wielder's level is a good deal lower than the
+	 *       object's level, then the level of the object is lowered
+	 *       to be closer to the wielder's; thus reducing damage.
+	 *   (2) If the wielder has low weapon skill for the object, then
+	 *       we reduce the damage.
+	 */
+	if (owner != NULL) {
+		/* Case (1) */
+		if (obj_level > (GET_LEVEL(owner) * 4 / 3 + 7))
+			obj_level -= (obj_level - GET_LEVEL(owner) * 4 / 3 - 7) * 2 / 3;
 
-  if(OB_coef > 40)
-    OB_coef = 40; /* just against crashes */
-  
-  /* dam_coef is about 3000 on avg. low weapon */
-  dam_coef = (40 + obj_level - parry_coef) * (50 - OB_coef) * 4/3;
-  dam_coef = dam_coef * (20 - abs(bulk - 3)) / 20;
-  
-  null_speed = 225;
-  if(GET_OBJ_WEIGHT(obj) == 0)
-    GET_OBJ_WEIGHT(obj) = 1;
-  
-  /* all equal damage in 2-hands, with 20 str 20 dex. 100% attack */  
-  str_speed = 2 * 20 * 2500000 / (GET_OBJ_WEIGHT(obj) * (bulk + 3));
-  
-  tmp = (1000000/(1000000/str_speed + 1000000/(null_speed*null_speed)));
+		/* Case (2): for skill=100, use full obj_level; skill=0, use obj_level/2 */
+		obj_level = obj_level * GET_SKILL(owner, skill_type) / 100;
+	}
 
-  /* ene_regen is about 100 on average */
-  ene_regen = do_squareroot(tmp / 100, NULL) / 20;
-  dam_coef = dam_coef / ene_regen * 3;
-  
-  if (dam_coef > 70)
-    dam_coef = 70 + (dam_coef - 70) * 3/4;
-  
-  if (dam_coef > 90)
-    dam_coef = 90 + (dam_coef - 90) * 3/4;
-  
-  return dam_coef; /* returning damage * 10 */
+	switch (obj->obj_flags.value[3]) {
+	case 2:   /* whip */
+		parry_coef += 8;
+		OB_coef -= 5;
+		break;
+
+	case 3:
+	case 4:
+		parry_coef -= 2;
+		break;
+
+	case 6:
+	case 7:
+		parry_coef += 3;
+		break;
+	}
+
+	if (parry_coef < -7)
+		parry_coef = parry_coef / 3 - 1; /* i.e. parry < -7 */
+	else
+		if (parry_coef < 0)
+			parry_coef = parry_coef / 2;
+
+	if (parry_coef > 5)
+		parry_coef = parry_coef * 2 - 5;
+
+	if (OB_coef < -7)
+		OB_coef = OB_coef / 2 - 1;
+	else
+		if (OB_coef < 0)
+			OB_coef = OB_coef * 2 / 3;
+
+	if (OB_coef > 40)
+		OB_coef = 40; /* just against crashes */
+
+	  /* dam_coef is about 3000 on avg. low weapon */
+	dam_coef = (40 + obj_level - parry_coef) * (50 - OB_coef) * 4 / 3;
+	dam_coef = dam_coef * (20 - abs(bulk - 3)) / 20;
+
+	null_speed = 225;
+	if (GET_OBJ_WEIGHT(obj) == 0)
+		GET_OBJ_WEIGHT(obj) = 1;
+
+	/* all equal damage in 2-hands, with 20 str 20 dex. 100% attack */
+	str_speed = 2 * 20 * 2500000 / (GET_OBJ_WEIGHT(obj) * (bulk + 3));
+
+	tmp = (1000000 / (1000000 / str_speed + 1000000 / (null_speed*null_speed)));
+
+	/* ene_regen is about 100 on average */
+	ene_regen = do_squareroot(tmp / 100, NULL) / 20;
+	dam_coef = dam_coef / ene_regen * 3;
+
+	if (dam_coef > 70)
+		dam_coef = 70 + (dam_coef - 70) * 3 / 4;
+
+	if (dam_coef > 90)
+		dam_coef = 90 + (dam_coef - 90) * 3 / 4;
+
+	return dam_coef; /* returning damage * 10 */
 }
 
 

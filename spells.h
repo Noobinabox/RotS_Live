@@ -196,34 +196,80 @@
 
 
 /* More anything but spells and weapontypes can be insterted here! */
-inline int
-weapon_skill_num(int type)
+inline int weapon_skill_num(int type)
 {
-  switch(type) {
-  case 1:
-    return SKILL_WEAPONS;
-  case 2:
-    return SKILL_WHIP;
-  case 3:
-  case 4:
-    return SKILL_SLASH;
-  case 5:
-    return SKILL_WHIP;
-  case 6:
-  case 7:
-    return SKILL_CONCUSSION;
-  case 8:
-  case 9:
-    return SKILL_AXE;
-  case 10:
-    return SKILL_SPEARS;
-  case 11:
-    return SKILL_PIERCE;
-  case 12:
-    return SKILL_CONCUSSION;
-  default:
-    return SKILL_BAREHANDED;
-  };
+	switch (type)
+	{
+	case 1:
+		return SKILL_WEAPONS;
+	case 2:
+		return SKILL_WHIP;
+	case 3:
+	case 4:
+		return SKILL_SLASH;
+	case 5:
+		return SKILL_WHIP;
+	case 6:
+	case 7:
+		return SKILL_CONCUSSION;
+	case 8:
+	case 9:
+		return SKILL_AXE;
+	case 10:
+		return SKILL_SPEARS;
+	case 11:
+		return SKILL_PIERCE;
+	case 12:
+		return SKILL_CONCUSSION;
+	default:
+		return SKILL_BAREHANDED;
+	};
+}
+
+//============================================================================
+inline int weapon_skill_num(game_types::weapon_type weapon_type)
+{
+	switch (weapon_type)
+	{
+	case game_types::WT_UNUSED_1:
+	case game_types::WT_UNUSED_2:
+		return SKILL_WEAPONS;
+	case game_types::WT_WHIPPING:
+		return SKILL_WHIP;
+		break;
+	case game_types::WT_SLASHING:
+	case game_types::WT_SLASHING_TWO:
+		return SKILL_SLASH;
+		break;
+	case game_types::WT_FLAILING:
+		return SKILL_WHIP;
+		break;
+	case game_types::WT_BLUDGEONING:
+	case game_types::WT_BLUDGEONING_TWO:
+		return SKILL_CONCUSSION;
+		break;
+	case game_types::WT_CLEAVING:
+	case game_types::WT_CLEAVING_TWO:
+		return SKILL_AXE;
+		break;
+	case game_types::WT_STABBING:
+		return SKILL_SPEARS;
+		break;
+	case game_types::WT_PIERCING:
+		return SKILL_PIERCE;
+		break;
+	case game_types::WT_SMITING:
+	case game_types::WT_BOW:
+	case game_types::WT_CROSSBOW:
+		return SKILL_CONCUSSION;
+		break;
+	case game_types::WT_COUNT:
+		return SKILL_BAREHANDED;
+		break;
+	default:
+		return SKILL_BAREHANDED;
+		break;
+	}
 }
 
 #define MAX_TYPES 100

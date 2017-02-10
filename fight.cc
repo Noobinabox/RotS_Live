@@ -1321,69 +1321,73 @@ dam_message(int dam, struct char_data *ch, struct char_data *victim,
 
 
 
-void
-generate_damage_message(struct char_data *ch, struct char_data *victim,
-			int dam, int attacktype, int hit_location)
+void generate_damage_message(struct char_data *ch, struct char_data *victim, int dam, int attacktype, int hit_location)
 {
-  int nr;
-  int i, j;
-  struct message_type *messages;
+	int nr;
+	int i, j;
+	struct message_type *messages;
 
-  if (IS_PHYSICAL(attacktype)) {
-    if (!ch->equipment[WIELD])
-      dam_message(dam, ch, victim, TYPE_HIT,
-		  (bodyparts[GET_BODYTYPE(victim)].parts[hit_location]));
-    else
-      dam_message(dam, ch, victim, attacktype,
-		  (bodyparts[GET_BODYTYPE(victim)].parts[hit_location]));
-  } else {
-    for (i = 0; i < MAX_MESSAGES; i++) {
-      if (fight_messages[i].a_type == attacktype) {
-	nr = dice(1, fight_messages[i].number_of_attacks);
-
-	for (j = 1, messages = fight_messages[i].msg; j < nr && messages; j++)
-	  messages = messages->next;
-
-	if (!messages) {
-	  dam_message(dam, ch, victim, TYPE_HIT,
-		      (bodyparts[GET_BODYTYPE(victim)].parts[hit_location]));
-	  vmudlog(BRF, "No fight_message for attacktype %d, i=%d\n",
-		  attacktype, i);
-	  break;
+	const race_bodypart_data& part = bodyparts[GET_BODYTYPE(victim)];
+	char* body_part = part.parts[hit_location];
+	if (IS_PHYSICAL(attacktype)) 
+	{
+		if (!ch->equipment[WIELD])
+		{
+			dam_message(dam, ch, victim, TYPE_HIT, body_part);
+		}
+		else
+		{
+			dam_message(dam, ch, victim, attacktype, body_part);
+		}
 	}
+	else 
+	{
+		for (i = 0; i < MAX_MESSAGES; i++) 
+		{
+			if (fight_messages[i].a_type == attacktype) 
+			{
+				nr = dice(1, fight_messages[i].number_of_attacks);
 
-	if (victim == ch) {
-	  act(messages->self_msg.victim_msg,
-	      FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-	  act(messages->self_msg.room_msg,
-	      FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
-	} else if (dam != 0) {
-	  if (GET_POS(victim) == POSITION_DEAD) {
-	    act(messages->die_msg.attacker_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-	    act(messages->die_msg.victim_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-	    act(messages->die_msg.room_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
-	  } else {
-	    act(messages->hit_msg.attacker_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-	    act(messages->hit_msg.victim_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-	    act(messages->hit_msg.room_msg,
-		FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
-	  }
-	} else { /* Dam == 0 */
-	  act(messages->miss_msg.attacker_msg,
-	      FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-	  act(messages->miss_msg.victim_msg,
-	      FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-	  act(messages->miss_msg.room_msg,
-	      FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+				for (j = 1, messages = fight_messages[i].msg; j < nr && messages; j++)
+				{
+					messages = messages->next;
+				}
+
+				if (!messages) 
+				{
+					dam_message(dam, ch, victim, TYPE_HIT, body_part);
+					vmudlog(BRF, "No fight_message for attacktype %d, i=%d\n", attacktype, i);
+					break;
+				}
+
+				if (victim == ch) 
+				{
+					act(messages->self_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
+					act(messages->self_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+				}
+				else if (dam != 0) 
+				{
+					if (GET_POS(victim) == POSITION_DEAD) 
+					{
+						act(messages->die_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
+						act(messages->die_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
+						act(messages->die_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+					}
+					else 
+					{
+						act(messages->hit_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
+						act(messages->hit_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
+						act(messages->hit_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+					}
+				}
+				else { /* Dam == 0 */
+					act(messages->miss_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
+					act(messages->miss_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
+					act(messages->miss_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+				}
+			}
+		}
 	}
-      }
-    }
-  }
 }
 
 
@@ -1803,44 +1807,48 @@ do_riposte(struct char_data *ch, struct char_data *victim)
 int
 weapon_hit_type(int weapon_type)
 {
-  int w_type;
-  switch (weapon_type) {
-  case 0:
-  case 1:
-  case 2:
-    w_type = TYPE_WHIP; /* whip */
-    break;
-  case 3:
-  case 4:
-    w_type = TYPE_SLASH;
-    break;
-  case 5:
-    w_type = TYPE_FLAIL;  /* flail */
-    break;
-  case 6:
-    w_type = TYPE_CRUSH;
-    break;
-  case 7:
-    w_type = TYPE_BLUDGEON;
-    break;
-  case 8:
-  case 9:
-    w_type = TYPE_CLEAVE;
-    break;
-  case 10:
-    w_type = TYPE_SPEARS;
-    break;
-  case 11:
-    w_type = TYPE_PIERCE;
-    break;
-  case 12:
-    w_type = TYPE_SMITE;
-    break;
-  default:
-    w_type = TYPE_HIT;
-    break;
-  }
-  return w_type;
+	int w_type;
+	switch (weapon_type) {
+	case 0:
+	case 1:
+	case 2:
+		w_type = TYPE_WHIP; /* whip */
+		break;
+	case 3:
+	case 4:
+		w_type = TYPE_SLASH;
+		break;
+	case 5:
+		w_type = TYPE_FLAIL;  /* flail */
+		break;
+	case 6:
+		w_type = TYPE_CRUSH;
+		break;
+	case 7:
+		w_type = TYPE_BLUDGEON;
+		break;
+	case 8:
+	case 9:
+		w_type = TYPE_CLEAVE;
+		break;
+	case 10:
+		w_type = TYPE_SPEARS;
+		break;
+	case 11:
+		w_type = TYPE_PIERCE;
+		break;
+	case 12:
+		w_type = TYPE_SMITE;
+		break;
+	case 13:
+	case 14:
+		w_type = TYPE_BLUDGEON;
+		break;
+	default:
+		w_type = TYPE_HIT;
+		break;
+	}
+	return w_type;
 }
 
 

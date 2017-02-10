@@ -15,6 +15,9 @@
 #include "spells.h"
 #include "handler.h"
 
+#include "char_utils.h"
+#include <cmath>
+
 #define MAX_STATSUM 99
 
 
@@ -71,19 +74,18 @@ int do_squareroot(int i, struct char_data *ch)
   return (4 - i%4)*square_root[i/4] + (i%4)*square_root[i/4+1];
 }
 
-
-
-inline int class_HP(struct char_data *ch)
+inline int class_HP(const char_data* character)
 {
-  int HPcoofs;
-  HPcoofs = (3*GET_PROF_POINTS(PROF_WARRIOR,ch) + 
-	     2*GET_PROF_POINTS(PROF_RANGER,ch) +
-	     GET_PROF_POINTS(PROF_CLERIC,ch));
+	double hp_coofs = 3 * utils::get_prof_points(PROF_WARRIOR, *character) +
+		2 * utils::get_prof_points(PROF_RANGER, *character) +
+		utils::get_prof_points(PROF_CLERIC, *character);
 
-  if(GET_RACE(ch) == RACE_ORC)
-    HPcoofs = HPcoofs * 4 / 7;
+	if (GET_RACE(character) == RACE_ORC)
+	{
+		hp_coofs = hp_coofs * 4.0 / 7.0;
+	}
 
-  return(do_squareroot(HPcoofs,ch));
+	return int(std::sqrt(hp_coofs) * 200.0);
 }
 
 

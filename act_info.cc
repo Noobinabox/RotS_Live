@@ -29,6 +29,8 @@
 #include "zone.h"  /* For zone_table */
 #include "pkill.h"
 
+#include <cmath>
+
 /* extern variables */
 extern struct room_data world;
 extern struct descriptor_data *descriptor_list;
@@ -1783,7 +1785,31 @@ ACMD(do_info)
   do_affections(ch, "", 0, 0, 0);
 }
 
+/*
+* This function, when given i < 170*4, returns 200*sqrt(i).
+* CH is only needed to send overflow to.
+*/
+int do_squareroot(int i)
+{
+	if (i / 4 > 170) 
+	{
+		i = 170 * 4;
+	}
 
+	return (4 - i % 4)*square_root[i / 4] + (i % 4)*square_root[i / 4 + 1];
+}
+
+int test_hp(int war_points, int ran_points, int cler_points, int level, int con_score)
+{
+	int coof_points = 3 * war_points + 2 * ran_points + 1 * cler_points;
+	double class_factor = std::sqrt(coof_points) * 200;
+	class_factor = class_factor * (con_score + 20) / 14.0;
+	class_factor = class_factor * std::min(LEVEL_MAX * 100, level * 100) / 100000.0;
+
+	double const_factor = (11 + (level * 2)) * con_score / 20.0;
+	int health = int(10 + std::min(level, LEVEL_MAX) + const_factor + class_factor);
+	return health;
+}
 
 ACMD(do_score)
 {
@@ -1823,7 +1849,7 @@ ACMD(do_score)
   else
     if(GET_COND(ch, THIRST) < 4 && GET_COND(ch, THIRST) > 0)
       bufpt += sprintf(bufpt, "You are getting thirsty.\r\n");
-
+  
   send_to_char(buf, ch);
 }
 

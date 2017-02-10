@@ -235,64 +235,64 @@ void new_mob(struct char_data * ch){
 void
 write_proto(FILE *f, struct char_data *m, int num)
 {
-  fprintf(f, "#%-d\n", num);
-  fprintf(f, "%s~\n", m->player.name);
-  fprintf(f, "%s~\n", m->player.short_descr);
-  fprintf(f, "%s~\n", m->player.long_descr);
-  fprintf(f, "%s~\n", m->player.description);
-  fprintf(f, "%ld %ld %d N\n",
-	  m->specials2.act, 
-	  m->specials.affected_by,
-	  m->specials2.alignment);
-  fprintf(f, "%s~\n", m->player.death_cry);
-  fprintf(f, "%s~\n", m->player.death_cry2);
-  fprintf(f, "%d %d %d %d ",
-	  m->player.level,
-	  m->points.OB, 
-	  m->points.parry,
-	  m->points.dodge);
-  fprintf(f, "%d %d %d %d\n",
-	  m->tmpabilities.hit,
-	  m->abilities.hit,
-	  m->points.damage,
-	  m->points.ENE_regen);
-  fprintf(f, "%d %d %d\n",
-	  m->points.gold,
-	  m->points.exp,
-	  17);
-  fprintf(f, "%d %d %d %d %ld\n",
-	  m->specials.position,
-	  m->specials.default_pos, 
-	  m->player.sex, 
-	  m->player.race,
-	  m->specials2.pref);
-  fprintf(f, "%d %d %d %d %d %d\n",
-	  m->player.weight,
-	  m->player.height,
-	  m->specials.store_prog_number,
-	  m->specials.butcher_item,
-	  m->player.corpse_num,
-	  m->specials2.rp_flag);
-  fprintf(f, "%d %d %d %d \n",
-	  m->player.prof,
-	  m->abilities.mana,
-	  m->abilities.move, 
-	  m->player.bodytype);
-  fprintf(f, "%d %d %d %d %d %d %d\n",
-	  m->specials2.saving_throw,
-	  m->abilities.str,
-	  m->abilities.intel,
-	  m->abilities.wil,
-	  m->abilities.dex,
-	  m->abilities.con,
-	  m->abilities.lea );
-  fprintf(f, "%d %d %d %d %d %d 0\n",
-	  m->player.language,
-	  m->specials2.perception,
-	  m->specials.resistance,
-	  m->specials.vulnerability,
-	  m->specials.script_number,
-	  m->points.spirit);
+	fprintf(f, "#%-d\n", num);
+	fprintf(f, "%s~\n", m->player.name);
+	fprintf(f, "%s~\n", m->player.short_descr);
+	fprintf(f, "%s~\n", m->player.long_descr);
+	fprintf(f, "%s~\n", m->player.description);
+	fprintf(f, "%ld %ld %d N\n",
+		m->specials2.act,
+		m->specials.affected_by,
+		m->specials2.alignment);
+	fprintf(f, "%s~\n", m->player.death_cry);
+	fprintf(f, "%s~\n", m->player.death_cry2);
+	fprintf(f, "%d %d %d %d ",
+		m->player.level,
+		m->points.OB,
+		m->points.parry,
+		m->points.dodge);
+	fprintf(f, "%d %d %d %d\n",
+		m->tmpabilities.hit,
+		m->abilities.hit,
+		m->points.damage,
+		m->points.ENE_regen);
+	fprintf(f, "%d %d %d\n",
+		m->points.gold,
+		m->points.exp,
+		17);
+	fprintf(f, "%d %d %d %d %ld\n",
+		m->specials.position,
+		m->specials.default_pos,
+		m->player.sex,
+		m->player.race,
+		m->specials2.pref);
+	fprintf(f, "%d %d %d %d %d %d\n",
+		m->player.weight,
+		m->player.height,
+		m->specials.store_prog_number,
+		m->specials.butcher_item,
+		m->player.corpse_num,
+		m->specials2.rp_flag);
+	fprintf(f, "%d %d %d %d \n",
+		m->player.prof,
+		m->abilities.mana,
+		m->abilities.move,
+		m->player.bodytype);
+	fprintf(f, "%d %d %d %d %d %d %d\n",
+		m->specials2.saving_throw,
+		m->abilities.str,
+		m->abilities.intel,
+		m->abilities.wil,
+		m->abilities.dex,
+		m->abilities.con,
+		m->abilities.lea);
+	fprintf(f, "%d %d %d %d %d %d 0\n",
+		m->player.language,
+		m->specials2.perception,
+		m->specials.resistance,
+		m->specials.vulnerability,
+		m->specials.script_number,
+		m->points.spirit);
 }
 
 
@@ -379,9 +379,8 @@ void shape_center_proto(struct char_data * ch, char * arg){
   mob=SHAPE_PROTO(ch)->proto;
 
   tmp=SHAPE_PROTO(ch)->procedure;
-//  SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-  if((tmp!=SHAPE_NONE)&&(tmp!=SHAPE_EDIT)){
-//    send_to_char("mixed orders. aborted - better restart shaping.\n\r",ch);
+  if((tmp!=SHAPE_NONE)&&(tmp!=SHAPE_EDIT))
+  {
     extra_coms_proto(ch,arg); 
     return;
   }
@@ -486,9 +485,7 @@ void shape_center_proto(struct char_data * ch, char * arg){
       break;  
 /*-----------here go new mobs' features...----------*/
     case 8:
-      //      printf("level change called, arg=%s.\n",arg);
       DIGITCHANGE("LEVEL",mob->player.level);
-      /*      send_to_char(tmpstr,ch);*/
 	if(IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_CHAIN))
 	  SHAPE_PROTO(ch)->editflag=proto_chain[8];
       break;
@@ -540,7 +537,6 @@ void shape_center_proto(struct char_data * ch, char * arg){
       }
       mob->tmpabilities.hit=tmp;
       mob->abilities.hit=tmp1;
-      /*      mob->tmpabilities.move=tmp2; mob->abilities.move=tmp2;*/
       REMOVE_BIT(SHAPE_PROTO(ch)->flags,SHAPE_DIGIT_ACTIVE);
       shape_standup(ch,SHAPE_PROTO(ch)->position);
           ch->specials.prompt_number=5;
@@ -871,299 +867,305 @@ void list_simple_proto(struct char_data * ch, struct char_data * mob){
   send_to_char(str, ch);
 }
 
-void list_proto(struct char_data * ch, struct char_data * mob){
-static char str[MAX_STRING_LENGTH];
-  send_to_char("Full editing mode.\n\r",ch);
-  sprintf(str,"(1) alias(es)         :%s\n\r",mob->player.name);
-  send_to_char(str,ch);
-  sprintf(str,"(2) reference description  :%s\n\r",mob->player.short_descr);
-  send_to_char(str,ch);
-  sprintf(str,"(3) full  description   :\n\r");
-  send_to_char(str,ch);
-  send_to_char(mob->player.long_descr,ch);
-  send_to_char("\n\r",ch);
-  sprintf(str,"(4) detailed description  :\n\r");
-  send_to_char(str,ch);
-  send_to_char(mob->player.description,ch);
-  send_to_char("\n\r",ch);
-  sprintf(str,"(5) flag number  :%ld\n\r",mob->specials2.act);
-  send_to_char(str,ch);
-  sprintf(str,"(6) affections   :%ld\n\r",mob->specials.affected_by);
-  send_to_char(str,ch);
-  sprintf(str,"(7) alignment    :%d\n\r",mob->specials2.alignment);
-  send_to_char(str,ch);
-  sprintf(str,"(8) level        :%d\n\r",mob->player.level);
-  send_to_char(str,ch);
-  sprintf(str,"(9) OB:%d,   parry:%d, dodge:%d\n\r",mob->points.OB,
-	 mob->points.parry, mob->points.dodge);
-  send_to_char(str,ch);
-  sprintf(str,"(10) min_hit:%d, max_hit:%d\n\r",
-	  mob->tmpabilities.hit,mob->abilities.hit);
-  send_to_char(str,ch);
-  sprintf(str,"(11) damage       :%d\n\r",mob->points.damage);
-  send_to_char(str,ch);
-  sprintf(str,"(12) energy regen :%d\n\r",mob->points.ENE_regen);
-  send_to_char(str,ch);
-  sprintf(str,"(13) gold         :%d\n\r",mob->points.gold);
-  send_to_char(str,ch);
-  sprintf(str,"(14) exp          :%d\n\r",mob->points.exp);
-  send_to_char(str,ch);
-  sprintf(str,"(16) position     :%d\n\r",mob->specials.position);
-  send_to_char(str,ch);
-  sprintf(str,"(17) default pos. :%d\n\r",mob->specials.default_pos);
-  send_to_char(str,ch);
-  sprintf(str,"(18) sex          :%d\n\r",mob->player.sex);
-  send_to_char(str,ch);
-  sprintf(str,"(19) race         :%d\n\r",mob->player.race);
-  send_to_char(str,ch);
-  sprintf(str,"(20) race aggr.   :%ld\n\r",mob->specials2.pref);
-  send_to_char(str,ch);
-  sprintf(str,"(21) weight       :%d\n\r",mob->player.weight);
-  send_to_char(str,ch);
-  sprintf(str,"(22) height       :%d\n\r",mob->player.height);
-  send_to_char(str,ch);
-  sprintf(str,"(23) prof        :%d\n\r",mob->player.prof);
-  send_to_char(str,ch);
-  sprintf(str,"(24) stamina      :%d\n\r",mob->abilities.mana);
-  send_to_char(str,ch);
-  sprintf(str,"(25) movepoints   :%d\n\r",mob->abilities.move);
-  send_to_char(str,ch);
-  sprintf(str,"(26) bodytype     :%d\n\r",mob->player.bodytype);
-  send_to_char(str,ch);
-  sprintf(str,"(27) saving throw :%d\n\r",mob->specials2.saving_throw);
-  send_to_char(str,ch);
-  sprintf(str,"(28) STR=%d INT=%d WILL=%d DEX=%d CON=%d LEA=%d\n\r",
-	  mob->abilities.str,mob->abilities.intel, mob->abilities.wil,
-	  mob->abilities.dex, mob->abilities.con, mob->abilities.lea);
-  send_to_char(str,ch);
-  sprintf(str,"(29) program number:%d\n\r",mob->specials.store_prog_number);
-  send_to_char(str,ch);
-  sprintf(str,"(30) language (0-%d):%d\n\r",language_number,
-	  mob->player.language);
-  send_to_char(str,ch);
-  sprintf(str,"(31) butcher item   :%d\n\r", mob->specials.butcher_item);
-  send_to_char(str,ch);
-  sprintf(str,"(32) perception     :%d\n\r", mob->specials2.perception);
-  send_to_char(str,ch);
-  sprintf(str,"(33) death cry_1    :%s\n\r", (mob->player.death_cry)?mob->player.death_cry : "(None)");
-  send_to_char(str, ch);
-  sprintf(str,"(34) death cry_2    :%s\n\r", (mob->player.death_cry2)?mob->player.death_cry2 : "(None)");
-  send_to_char(str, ch);
-  sprintf(str,"(35) corpse number  :%d\n\r", mob->player.corpse_num);
-  send_to_char(str, ch);
-  sprintf(str,"(36) resistances    :%d\n\r", mob->specials.resistance);
-  send_to_char(str,ch);
-  sprintf(str,"(37) vulnerabilities:%d\n\r", mob->specials.vulnerability);
-  send_to_char(str,ch);
-  sprintf(str,"(38) script number  :%d\n\r", mob->specials.script_number);
-  send_to_char(str, ch);
-  sprintf(str,"(39) roleplay flag  :%d\n\4", mob->specials2.rp_flag);
-  send_to_char(str, ch);
-  sprintf(str, "(40) spirit:%d\n\r", mob->points.spirit);
-  send_to_char(str, ch);
+void list_proto(struct char_data * ch, struct char_data * mob)
+{
+	static char str[MAX_STRING_LENGTH];
+	send_to_char("Full editing mode.\n\r", ch);
+	sprintf(str, "(1) alias(es)         :%s\n\r", mob->player.name);
+	send_to_char(str, ch);
+	sprintf(str, "(2) reference description  :%s\n\r", mob->player.short_descr);
+	send_to_char(str, ch);
+	sprintf(str, "(3) full  description   :\n\r");
+	send_to_char(str, ch);
+	send_to_char(mob->player.long_descr, ch);
+	send_to_char("\n\r", ch);
+	sprintf(str, "(4) detailed description  :\n\r");
+	send_to_char(str, ch);
+	send_to_char(mob->player.description, ch);
+	send_to_char("\n\r", ch);
+	sprintf(str, "(5) flag number  :%ld\n\r", mob->specials2.act);
+	send_to_char(str, ch);
+	sprintf(str, "(6) affections   :%ld\n\r", mob->specials.affected_by);
+	send_to_char(str, ch);
+	sprintf(str, "(7) alignment    :%d\n\r", mob->specials2.alignment);
+	send_to_char(str, ch);
+	sprintf(str, "(8) level        :%d\n\r", mob->player.level);
+	send_to_char(str, ch);
+	sprintf(str, "(9) OB:%d,   parry:%d, dodge:%d\n\r", mob->points.OB,
+		mob->points.parry, mob->points.dodge);
+	send_to_char(str, ch);
+	sprintf(str, "(10) min_hit:%d, max_hit:%d\n\r",
+		mob->tmpabilities.hit, mob->abilities.hit);
+	send_to_char(str, ch);
+	sprintf(str, "(11) damage       :%d\n\r", mob->points.damage);
+	send_to_char(str, ch);
+	sprintf(str, "(12) energy regen :%d\n\r", mob->points.ENE_regen);
+	send_to_char(str, ch);
+	sprintf(str, "(13) gold         :%d\n\r", mob->points.gold);
+	send_to_char(str, ch);
+	sprintf(str, "(14) exp          :%d\n\r", mob->points.exp);
+	send_to_char(str, ch);
+	sprintf(str, "(16) position     :%d\n\r", mob->specials.position);
+	send_to_char(str, ch);
+	sprintf(str, "(17) default pos. :%d\n\r", mob->specials.default_pos);
+	send_to_char(str, ch);
+	sprintf(str, "(18) sex          :%d\n\r", mob->player.sex);
+	send_to_char(str, ch);
+	sprintf(str, "(19) race         :%d\n\r", mob->player.race);
+	send_to_char(str, ch);
+	sprintf(str, "(20) race aggr.   :%ld\n\r", mob->specials2.pref);
+	send_to_char(str, ch);
+	sprintf(str, "(21) weight       :%d\n\r", mob->player.weight);
+	send_to_char(str, ch);
+	sprintf(str, "(22) height       :%d\n\r", mob->player.height);
+	send_to_char(str, ch);
+	sprintf(str, "(23) prof        :%d\n\r", mob->player.prof);
+	send_to_char(str, ch);
+	sprintf(str, "(24) stamina      :%d\n\r", mob->abilities.mana);
+	send_to_char(str, ch);
+	sprintf(str, "(25) movepoints   :%d\n\r", mob->abilities.move);
+	send_to_char(str, ch);
+	sprintf(str, "(26) bodytype     :%d\n\r", mob->player.bodytype);
+	send_to_char(str, ch);
+	sprintf(str, "(27) saving throw :%d\n\r", mob->specials2.saving_throw);
+	send_to_char(str, ch);
+	sprintf(str, "(28) STR=%d INT=%d WILL=%d DEX=%d CON=%d LEA=%d\n\r",
+		mob->abilities.str, mob->abilities.intel, mob->abilities.wil,
+		mob->abilities.dex, mob->abilities.con, mob->abilities.lea);
+	send_to_char(str, ch);
+	sprintf(str, "(29) program number:%d\n\r", mob->specials.store_prog_number);
+	send_to_char(str, ch);
+	sprintf(str, "(30) language (0-%d):%d\n\r", language_number,
+		mob->player.language);
+	send_to_char(str, ch);
+	sprintf(str, "(31) butcher item   :%d\n\r", mob->specials.butcher_item);
+	send_to_char(str, ch);
+	sprintf(str, "(32) perception     :%d\n\r", mob->specials2.perception);
+	send_to_char(str, ch);
+	sprintf(str, "(33) death cry_1    :%s\n\r", (mob->player.death_cry) ? mob->player.death_cry : "(None)");
+	send_to_char(str, ch);
+	sprintf(str, "(34) death cry_2    :%s\n\r", (mob->player.death_cry2) ? mob->player.death_cry2 : "(None)");
+	send_to_char(str, ch);
+	sprintf(str, "(35) corpse number  :%d\n\r", mob->player.corpse_num);
+	send_to_char(str, ch);
+	sprintf(str, "(36) resistances    :%d\n\r", mob->specials.resistance);
+	send_to_char(str, ch);
+	sprintf(str, "(37) vulnerabilities:%d\n\r", mob->specials.vulnerability);
+	send_to_char(str, ch);
+	sprintf(str, "(38) script number  :%d\n\r", mob->specials.script_number);
+	send_to_char(str, ch);
+	sprintf(str, "(39) roleplay flag  :%d\n\4", mob->specials2.rp_flag);
+	send_to_char(str, ch);
+	sprintf(str, "(40) spirit:%d\n\r", mob->points.spirit);
+	send_to_char(str, ch);
 
 }
+
 /*********--------------------------------*********/
-int find_mob(FILE *f, int n){
-  int check,i;
-  char c;
-  do{
-    do{
-      check=fscanf(f,"%c",&c);
-    }while((c!='#')&&(check!=EOF));
-//    res=ftell(f)-1;
-    fscanf(f,"%d",&i);
-  }while((i<n)&&(check!=EOF));
-  if(check==EOF) return -1;
- // else return (int)res-1;
-  else return i;
+int find_mob(FILE *f, int n)
+{
+	int check = 0;
+	int i = 0;
+	do
+	{
+		char c = 0;
+		do
+		{
+			check = fscanf(f, "%c", &c);
+		} 
+		while ((c != '#') && (check != EOF));
+		
+		fscanf(f, "%d", &i);
+	} 
+	while ((i < n) && (check != EOF));
+
+	if (check == EOF)
+	{
+		return -1;
+	}
+		
+	return i;
 }
 
-int get_text(FILE *f, char ** line){
-  *line=fread_string(f,"shaping");
-  if(*line)
-    return 0;
-  else return -1;
+int get_text(FILE *f, char ** line)
+{
+	*line = fread_string(f, "shaping");
+	if (*line)
+		return 0;
+	else return -1;
 }
 
 /****************-------------------------------------****************/
-int load_proto(struct char_data * ch,char * arg){
-  char format;
-  //int i;
-  int  tmp, number, room_number;
-  char str[255],fname[80];
-  FILE * f;
+int load_proto(struct char_data * ch, char * arg) {
+	char format;
+	//int i;
+	int  tmp, number, room_number;
+	char str[255], fname[80];
+	FILE* file;
 
-  if(2!=sscanf(arg,"%s %d",str,&number)){
-    send_to_char("Choose a mobile by 'shape mobile <number>'\n\r",ch);
-    return -1;
-  }
-  sprintf(fname,"%d",number/100);
-  sprintf(str,SHAPE_MOB_DIR,fname);
-
-  send_to_char(str, ch);
-  f=fopen(str,"r+");
-  if(f==0){
-    send_to_char(" could not open that file.\n\r",ch);
-    return -1;
-  }
-  strcpy(SHAPE_PROTO(ch)->f_from,str);
-  SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_FILENAME);
-  sprintf(SHAPE_PROTO(ch)->f_old,SHAPE_MOB_BACKDIR,fname);
-
-  if(GET_IDNUM(ch) == mobile_master_idnum) 
-    SHAPE_PROTO(ch)->permission = 1;
-  else
-    SHAPE_PROTO(ch)->permission = get_permission(number/100, ch);
-  tmp=find_mob(f,number);
-/*  fseek(f,tmp,SEEK_SET);
-  fscanf(f,"%c",&c);
-  if(c!='#') {send_to_char("no mob here.\n\r",ch); fclose(f);return -1;}
-  
-  fscanf(f,"%d",&tmp);
-  */
-  if(tmp==-1){
-    send_to_char("No such mob or file corrupted.\n\r",ch);
-    fclose(f);
-    return -1;
-  }
-  if(tmp>number){
-    new_mob(ch);
-    SHAPE_PROTO(ch)->number=number;
-    sprintf(str," could not find mob #%d, created it.\n\r",number);
-    send_to_char(str,ch);
-  }
-  else{
-    sprintf(str," loading mob #%d\n\r",tmp);
-    send_to_char(str,ch);
-    number=tmp;
-    SHAPE_PROTO(ch)->number=number;
-    room_number=ch->in_room;
-    //    SHAPE_PROTO(ch)->proto=(struct char_data *)calloc(1,sizeof(struct char_data));
-    //bzero((char *)(SHAPE_PROTO(ch)->proto),sizeof(struct char_data));
-    CREATE1(SHAPE_PROTO(ch)->proto,char_data);
-    SHAPE_PROTO(ch)->proto ->player.time.birth = time(0);
-    SHAPE_PROTO(ch)->proto->player.time.played = 0;
-    SHAPE_PROTO(ch)->proto->player.time.logon  = time(0);
-    SHAPE_PROTO(ch)->proto->specials2.act=MOB_ISNPC;
-    
-    SHAPE_PROTO(ch)->proto->nr=real_mobile(number); /*    ????????     to check    */
-    get_text(f,&(SHAPE_PROTO(ch)->proto->player.name));
-    get_text(f,&(SHAPE_PROTO(ch)->proto->player.short_descr));
-    get_text(f,&(SHAPE_PROTO(ch)->proto->player.long_descr));
-    get_text(f,&(SHAPE_PROTO(ch)->proto->player.description));
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials2.act=tmp|MOB_ISNPC;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials.affected_by=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials2.alignment=tmp;
-    
-    fscanf(f,"%s ",str);
-    format=str[0];
-    
-    if(format == 'N'){
-      get_text(f,&(SHAPE_PROTO(ch)->proto->player.death_cry));
-      get_text(f,&(SHAPE_PROTO(ch)->proto->player.death_cry2));
-    }
-    else{
-      SHAPE_PROTO(ch)->proto->player.death_cry = NULL;
-	// str_dup("");
-      SHAPE_PROTO(ch)->proto->player.death_cry2 =  NULL;
-	// str_dup("");
-    }
-    fscanf(f,"%d",&tmp); SHAPE_PROTO(ch)->proto->player.level=tmp;
-    fscanf(f,"%d",&tmp); SHAPE_PROTO(ch)->proto->points.OB=tmp;
-    fscanf(f,"%d",&tmp); SHAPE_PROTO(ch)->proto->points.parry=tmp;
-    fscanf(f,"%d",&tmp); SHAPE_PROTO(ch)->proto->points.dodge=tmp;
-
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->tmpabilities.hit=tmp;
-    fscanf(f," %d ",&tmp); SHAPE_PROTO(ch)->proto->abilities.hit=tmp;
-
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->points.damage=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->points.ENE_regen=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->points.gold=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->points.exp=tmp;
-    fscanf(f,"%d ",&tmp); /* some mysterious owner...*/
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials.position=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials.default_pos=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.sex=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.race=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials2.pref=tmp;
-    
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.weight=tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.height=tmp;
-    fscanf(f,"%d ",&tmp); 
-    SHAPE_PROTO(ch)->proto->specials.store_prog_number=tmp;
-
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials.butcher_item = tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.corpse_num = tmp;
-    fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials2.rp_flag = tmp;
-    if(( format == 'M' ) || (format == 'N')){
-      fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.prof=tmp;
-      fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->abilities.mana=tmp;
-      fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->abilities.move=tmp;
-      fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->player.bodytype=tmp;
-      fscanf(f,"%d ",&tmp); SHAPE_PROTO(ch)->proto->specials2.saving_throw=tmp;
-      
-      fscanf(f,"%d ",&tmp); 
-      SHAPE_PROTO(ch)->proto->tmpabilities.str=
-	SHAPE_PROTO(ch)->proto->abilities.str=tmp;
-      fscanf(f,"%d ",&tmp); 
-      SHAPE_PROTO(ch)->proto->tmpabilities.intel=
-	SHAPE_PROTO(ch)->proto->abilities.intel=tmp;
-      fscanf(f,"%d ",&tmp);  
-      SHAPE_PROTO(ch)->proto->tmpabilities.wil=
-	SHAPE_PROTO(ch)->proto->abilities.wil=tmp;
-      fscanf(f,"%d ",&tmp);  
-      SHAPE_PROTO(ch)->proto->tmpabilities.dex=
-	SHAPE_PROTO(ch)->proto->abilities.dex=tmp;
-      fscanf(f,"%d ",&tmp); 
-      SHAPE_PROTO(ch)->proto->tmpabilities.con=
-	SHAPE_PROTO(ch)->proto->abilities.con=tmp;
-      fscanf(f,"%d ",&tmp); 
-    SHAPE_PROTO(ch)->proto->tmpabilities.lea=
-      SHAPE_PROTO(ch)->proto->abilities.lea=tmp;
-    
-      fscanf(f,"%d ",&tmp); 
-//       for(tmp2=0; tmp2 < language_number; tmp2++)
-// 	if(language_skills[tmp2] == tmp) break;
-//       if(tmp2 == language_number) tmp = 0;
-//       if(tmp) SHAPE_PROTO(ch)->proto->player.language = tmp+1;
-//       else SHAPE_PROTO(ch)->proto->player.language = 0;
-      SHAPE_PROTO(ch)->proto->player.language = tmp;
-    }
-
-    fscanf(f,"%d ",&tmp);
-      SHAPE_PROTO(ch)->proto->specials2.perception=tmp;
-
-    fscanf(f,"%d ",&tmp);
-      SHAPE_PROTO(ch)->proto->specials.resistance=tmp;
-
-    fscanf(f,"%d ",&tmp);
-      SHAPE_PROTO(ch)->proto->specials.vulnerability=tmp;
-      
-	fscanf(f, "%d ", &tmp);
-	  SHAPE_PROTO(ch)->proto->specials.script_number = tmp;
-
-	int val = fscanf(f, "%d ", &tmp);
-	if (val != 0)
+	if (2 != sscanf(arg, "%s %d", str, &number))
 	{
-	  SHAPE_PROTO(ch)->proto->points.spirit = tmp;
+		send_to_char("Choose a mobile by 'shape mobile <number>'\n\r", ch);
+		return -1;
+	}
+	sprintf(fname, "%d", number / 100);
+	sprintf(str, SHAPE_MOB_DIR, fname);
+
+	send_to_char(str, ch);
+	file = fopen(str, "r+");
+	if (file == 0) 
+	{
+		send_to_char(" could not open that file.\n\r", ch);
+		return -1;
 	}
 
+	strcpy(SHAPE_PROTO(ch)->f_from, str);
+	SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_FILENAME);
+	sprintf(SHAPE_PROTO(ch)->f_old, SHAPE_MOB_BACKDIR, fname);
 
-    for(tmp=0;tmp<3;tmp++) SHAPE_PROTO(ch)->proto->specials2.conditions[tmp]=-1;
-    
-    if( (format!='M') && (format!='N') ){
-      send_to_char("Created new mobile or loaded wrong\n\rif you did the new mob and you sure it's correct do /save\n\r",ch);
-    }
-    
-  }
-  SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_PROTO_LOADED);
-  SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-  ch->specials.prompt_value=number;
-  send_to_char("causing the eternal order to shiver in apprehension, you load a mobile\n\r",
-      ch);
-  fclose(f);
-  return number;
+	if (GET_IDNUM(ch) == mobile_master_idnum)
+	{
+		SHAPE_PROTO(ch)->permission = 1;
+	}
+	else
+	{
+		SHAPE_PROTO(ch)->permission = get_permission(number / 100, ch);
+	}
+	tmp = find_mob(file, number);
+	if (tmp == -1) 
+	{
+		send_to_char("No such mob or file corrupted.\n\r", ch);
+		fclose(file);
+		return -1;
+	}
+	if (tmp > number) 
+	{
+		new_mob(ch);
+		SHAPE_PROTO(ch)->number = number;
+		sprintf(str, " could not find mob #%d, created it.\n\r", number);
+		send_to_char(str, ch);
+	}
+	else 
+	{
+		sprintf(str, " loading mob #%d\n\r", tmp);
+		send_to_char(str, ch);
+		number = tmp;
+		SHAPE_PROTO(ch)->number = number;
+		room_number = ch->in_room;
+		CREATE1(SHAPE_PROTO(ch)->proto, char_data);
+		SHAPE_PROTO(ch)->proto->player.time.birth = time(0);
+		SHAPE_PROTO(ch)->proto->player.time.played = 0;
+		SHAPE_PROTO(ch)->proto->player.time.logon = time(0);
+		SHAPE_PROTO(ch)->proto->specials2.act = MOB_ISNPC;
+
+		SHAPE_PROTO(ch)->proto->nr = real_mobile(number); /*    ????????     to check    */
+		get_text(file, &(SHAPE_PROTO(ch)->proto->player.name));
+		get_text(file, &(SHAPE_PROTO(ch)->proto->player.short_descr));
+		get_text(file, &(SHAPE_PROTO(ch)->proto->player.long_descr));
+		get_text(file, &(SHAPE_PROTO(ch)->proto->player.description));
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials2.act = tmp | MOB_ISNPC;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials.affected_by = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials2.alignment = tmp;
+
+		fscanf(file, "%s ", str);
+		format = str[0];
+
+		if (format == 'N') 
+		{
+			get_text(file, &(SHAPE_PROTO(ch)->proto->player.death_cry));
+			get_text(file, &(SHAPE_PROTO(ch)->proto->player.death_cry2));
+		}
+		else 
+		{
+			SHAPE_PROTO(ch)->proto->player.death_cry = NULL;
+			SHAPE_PROTO(ch)->proto->player.death_cry2 = NULL;
+		}
+		fscanf(file, "%d", &tmp); SHAPE_PROTO(ch)->proto->player.level = tmp;
+		fscanf(file, "%d", &tmp); SHAPE_PROTO(ch)->proto->points.OB = tmp;
+		fscanf(file, "%d", &tmp); SHAPE_PROTO(ch)->proto->points.parry = tmp;
+		fscanf(file, "%d", &tmp); SHAPE_PROTO(ch)->proto->points.dodge = tmp;
+
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->tmpabilities.hit = tmp;
+		fscanf(file, " %d ", &tmp); SHAPE_PROTO(ch)->proto->abilities.hit = tmp;
+
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->points.damage = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->points.ENE_regen = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->points.gold = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->points.exp = tmp;
+		fscanf(file, "%d ", &tmp); /* some mysterious owner...*/
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials.position = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials.default_pos = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.sex = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.race = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials2.pref = tmp;
+
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.weight = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.height = tmp;
+		fscanf(file, "%d ", &tmp);
+		SHAPE_PROTO(ch)->proto->specials.store_prog_number = tmp;
+
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials.butcher_item = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.corpse_num = tmp;
+		fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials2.rp_flag = tmp;
+		if ((format == 'M') || (format == 'N')) 
+		{
+			fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.prof = tmp;
+			fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->abilities.mana = tmp;
+			fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->abilities.move = tmp;
+			fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->player.bodytype = tmp;
+			fscanf(file, "%d ", &tmp); SHAPE_PROTO(ch)->proto->specials2.saving_throw = tmp;
+
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.str = SHAPE_PROTO(ch)->proto->abilities.str = tmp;
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.intel = SHAPE_PROTO(ch)->proto->abilities.intel = tmp;
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.wil = SHAPE_PROTO(ch)->proto->abilities.wil = tmp;
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.dex = SHAPE_PROTO(ch)->proto->abilities.dex = tmp;
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.con = SHAPE_PROTO(ch)->proto->abilities.con = tmp;
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->tmpabilities.lea = SHAPE_PROTO(ch)->proto->abilities.lea = tmp;
+
+			fscanf(file, "%d ", &tmp);
+			SHAPE_PROTO(ch)->proto->player.language = tmp;
+		}
+
+		fscanf(file, "%d ", &tmp);
+		SHAPE_PROTO(ch)->proto->specials2.perception = tmp;
+
+		fscanf(file, "%d ", &tmp);
+		SHAPE_PROTO(ch)->proto->specials.resistance = tmp;
+
+		fscanf(file, "%d ", &tmp);
+		SHAPE_PROTO(ch)->proto->specials.vulnerability = tmp;
+
+		fscanf(file, "%d ", &tmp);
+		SHAPE_PROTO(ch)->proto->specials.script_number = tmp;
+
+		for (tmp = 0; tmp < 3; tmp++)
+		{
+			SHAPE_PROTO(ch)->proto->specials2.conditions[tmp] = -1;
+		}
+
+		if (fscanf(file, "%d ", &tmp) != EOF)
+		{
+			SHAPE_PROTO(ch)->proto->points.spirit = tmp;
+		}
+
+		if ((format != 'M') && (format != 'N')) 
+		{
+			send_to_char("Created new mobile or loaded wrong\n\rif you did the new mob and you sure it's correct do /save\n\r", ch);
+		}
+
+	}
+	SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_PROTO_LOADED);
+	SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+	ch->specials.prompt_value = number;
+	send_to_char("causing the eternal order to shiver in apprehension, you load a mobile\n\r", ch);
+	fclose(file);
+	return number;
 }
 /*****************----------------------------------******************/
 int append_proto(struct char_data * ch,char *arg);

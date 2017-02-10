@@ -1340,171 +1340,183 @@ struct char_data *read_mobile(int nr, int type)
 }
 
 
-void
-load_mobiles(FILE *mob_f)
+void load_mobiles(FILE *mob_f)
 {
-  static int i = 0;
-  int nr, j;
-  int tmp, tmp2, tmp3, tmp4, tmp5, tmp6;
-  char chk[10], *tmpptr;
-  char letter;
-    
-  if(!fscanf(mob_f, "%s\n", chk)) {
-    perror("load_mobiles");
-    exit(1);
-  }
-  
-  for( ; ; ) {
-    if(*chk == '#') {
-      sscanf(chk, "#%d\n", &nr);
-      if(nr >= 99999) 
-	break;
-      
-      mob_index[i].virt = nr;
-      mob_index[i].number = 0;
-      mob_index[i].func = 0;
-      
-      clear_char(mob_proto + i, MOB_ISNPC);
-      
-      sprintf(buf2, "mob vnum %d", nr);
-      
-      /***** String data *** */
-      mob_proto[i].player.name = fread_string(mob_f, buf2);
-      tmpptr = mob_proto[i].player.short_descr = fread_string(mob_f, buf2);
+	static int i = 0;
+	int nr, j;
+	int tmp, tmp2, tmp3, tmp4, tmp5, tmp6;
+	char chk[10], *tmpptr;
+	char letter;
 
-      if(tmpptr && *tmpptr)
-	if(!str_cmp(fname(tmpptr), "a") || 
-	   !str_cmp(fname(tmpptr), "an") || 
-	   !str_cmp(fname(tmpptr), "the"))
-	  *tmpptr = tolower(*tmpptr);
+	if (!fscanf(mob_f, "%s\n", chk)) {
+		perror("load_mobiles");
+		exit(1);
+	}
 
-      mob_proto[i].player.long_descr = fread_string(mob_f, buf2);
-      mob_proto[i].player.description = fread_string(mob_f, buf2);
+	for (; ; ) {
+		if (*chk == '#') {
+			sscanf(chk, "#%d\n", &nr);
+			if (nr >= 99999)
+				break;
 
-      CREATE(mob_proto[i].player.title, char, 1);
+			mob_index[i].virt = nr;
+			mob_index[i].number = 0;
+			mob_index[i].func = 0;
 
-      fscanf(mob_f, "%d ", &tmp);
-      MOB_FLAGS(mob_proto + i) = tmp;
-      SET_BIT(MOB_FLAGS(mob_proto + i), MOB_ISNPC);
-      
-      fscanf(mob_f, " %d %d %c \n", &tmp, &tmp2, &letter);
-      mob_proto[i].specials.affected_by = tmp;
-      GET_ALIGNMENT(mob_proto + i) = tmp2;
-      GET_LOADLINE(mob_proto + i) = 0;
-      
-      /* New monsters */
-      if(letter == 'N') {
-	mob_proto[i].player.death_cry = fread_string(mob_f, buf2);	
-	mob_proto[i].player.death_cry2 = fread_string(mob_f, buf2);	
-      }
-      else {
-	mob_proto[i].player.death_cry = 0;
-	mob_proto[i].player.death_cry2 = 0;
-      }
-      
-      if((letter == 'M') || (letter == 'N')) {
-	fscanf(mob_f, " %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
-	GET_LEVEL(mob_proto + i) = tmp;
-	SET_OB(mob_proto + i) = tmp2;
-	SET_DODGE(mob_proto + i) = tmp4;
-	SET_PARRY(mob_proto + i) = tmp3;
-	
-	fscanf(mob_f, " %d %d", &tmp, &tmp2);
-	mob_proto[i].tmpabilities.hit = tmp;
-	mob_proto[i].abilities.hit    = tmp2;
-	
-	fscanf(mob_f, " %d %d \n", &tmp, &tmp2);
-	mob_proto[i].points.damage = tmp;
-	mob_proto[i].points.ENE_regen = tmp2;
-	mob_proto[i].specials.ENERGY = 1200;
-	
-	fscanf(mob_f, " %d %d %d \n", &tmp, &tmp2, &tmp3);
-	GET_GOLD(mob_proto + i) = tmp;
-	GET_EXP(mob_proto + i) = tmp2;
-	/* Here we load owner integer */
-	
-	fscanf(mob_f, " %d %d %d %d %d \n", &tmp, &tmp2, &tmp3, &tmp4, &tmp5);
-	mob_proto[i].specials.position = tmp;
-	mob_proto[i].specials.default_pos = tmp2;
-	mob_proto[i].player.sex = tmp3;
-	mob_proto[i].player.race = tmp4;
-	mob_proto[i].specials2.pref = tmp5;
-	
-	mob_proto[i].player.prof = 0;
-	
-	fscanf(mob_f, " %d %d %d %d %d %d \n", 
-	       &tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
-	mob_proto[i].player.weight = tmp;
-	mob_proto[i].player.height = tmp2;
-	mob_proto[i].specials.store_prog_number = tmp3;
-	mob_proto[i].specials.butcher_item = tmp4;
-	if(!IS_SET((mob_proto + i)->specials2.act, MOB_SPEC))
-	  mob_proto[i].specials.store_prog_number = 
-	    real_program(tmp3);
-	if(letter  == 'N')
-	  mob_proto[i].player.corpse_num = tmp5;
-	else
-	  mob_proto[i].player.corpse_num = 0;
-	mob_proto[i].specials2.rp_flag = tmp6;
+			clear_char(mob_proto + i, MOB_ISNPC);
 
-	fscanf(mob_f, " %d %d %d %d \n", &tmp, &tmp2, &tmp3, &tmp4);
-	mob_proto[i].player.prof = tmp;
-	mob_proto[i].abilities.mana = tmp2;
-	mob_proto[i].abilities.move = tmp3;
-	mob_proto[i].player.bodytype = tmp4;
-	
-	fscanf(mob_f, " %d", &tmp);
-	mob_proto[i].specials2.saving_throw = tmp;
-	
-	fscanf(mob_f, " %d %d %d %d %d %d \n", 
-	       &tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
-	mob_proto[i].abilities.str   = tmp;
-	mob_proto[i].abilities.intel = tmp2;
-	mob_proto[i].abilities.wil   = tmp3;
-	mob_proto[i].abilities.dex   = tmp4;
-	mob_proto[i].abilities.con   = tmp5;
-	mob_proto[i].abilities.lea   = tmp6;
+			sprintf(buf2, "mob vnum %d", nr);
 
-	mob_proto[i].constabilities=mob_proto[i].abilities;
+			/***** String data *** */
+			mob_proto[i].player.name = fread_string(mob_f, buf2);
+			tmpptr = mob_proto[i].player.short_descr = fread_string(mob_f, buf2);
 
-	fscanf(mob_f, " %d %d %d %d %d %d \n",
-	       &tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
-	if((tmp>language_number) || (tmp <=0)) 
-	  mob_proto[i].player.language = 0;
-	else
-	  mob_proto[i].player.language = language_skills[tmp-1];
-	mob_proto[i].specials2.perception = tmp2;
-	mob_proto[i].specials.resistance = tmp3;
-	mob_proto[i].specials.vulnerability = tmp4;
-	mob_proto[i].specials.script_number = tmp5;
-	
-	for (j = 0; j < 3; j++)  /* Spare */
-	  GET_COND(mob_proto + i, j) = -1;
-      }	 /* End new monsters */
+			if (tmpptr && *tmpptr)
+				if (!str_cmp(fname(tmpptr), "a") ||
+					!str_cmp(fname(tmpptr), "an") ||
+					!str_cmp(fname(tmpptr), "the"))
+					*tmpptr = tolower(*tmpptr);
 
-      for(j = 0; j < MAX_WEAR; j++)   /* Initialisering Ok */
-	mob_proto[i].equipment[j] = 0;
-      
-      mob_proto[i].nr = i;
-      mob_proto[i].desc = 0;
-      
-      if(!fscanf(mob_f, "%s\n", chk)) {
-	sprintf(buf2, "SYSERR: Format error in mob file near mob #%d", nr);
-	log(buf2);
-	exit(1);
-      }
-      
-      i++;
-    } 
-    else if (*chk == '$') /* EOF */
-      break;
-    else {
-      sprintf(buf2, "SYSERR: Format error in mob file near mob #%d", nr);
-      log(buf2);
-      exit(1);
-    } 
-  }
-  top_of_mobt = i - 1;
+			mob_proto[i].player.long_descr = fread_string(mob_f, buf2);
+			mob_proto[i].player.description = fread_string(mob_f, buf2);
+
+			CREATE(mob_proto[i].player.title, char, 1);
+
+			fscanf(mob_f, "%d ", &tmp);
+			MOB_FLAGS(mob_proto + i) = tmp;
+			SET_BIT(MOB_FLAGS(mob_proto + i), MOB_ISNPC);
+
+			fscanf(mob_f, " %d %d %c \n", &tmp, &tmp2, &letter);
+			mob_proto[i].specials.affected_by = tmp;
+			GET_ALIGNMENT(mob_proto + i) = tmp2;
+			GET_LOADLINE(mob_proto + i) = 0;
+
+			/* New monsters */
+			if (letter == 'N') {
+				mob_proto[i].player.death_cry = fread_string(mob_f, buf2);
+				mob_proto[i].player.death_cry2 = fread_string(mob_f, buf2);
+			}
+			else {
+				mob_proto[i].player.death_cry = 0;
+				mob_proto[i].player.death_cry2 = 0;
+			}
+
+			if ((letter == 'M') || (letter == 'N')) {
+				fscanf(mob_f, " %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
+				GET_LEVEL(mob_proto + i) = tmp;
+				SET_OB(mob_proto + i) = tmp2;
+				SET_DODGE(mob_proto + i) = tmp4;
+				SET_PARRY(mob_proto + i) = tmp3;
+
+				fscanf(mob_f, " %d %d", &tmp, &tmp2);
+				mob_proto[i].tmpabilities.hit = tmp;
+				mob_proto[i].abilities.hit = tmp2;
+
+				fscanf(mob_f, " %d %d \n", &tmp, &tmp2);
+				mob_proto[i].points.damage = tmp;
+				mob_proto[i].points.ENE_regen = tmp2;
+				mob_proto[i].specials.ENERGY = 1200;
+
+				fscanf(mob_f, " %d %d %d \n", &tmp, &tmp2, &tmp3);
+				GET_GOLD(mob_proto + i) = tmp;
+				GET_EXP(mob_proto + i) = tmp2;
+				/* Here we load owner integer */
+
+				fscanf(mob_f, " %d %d %d %d %d \n", &tmp, &tmp2, &tmp3, &tmp4, &tmp5);
+				mob_proto[i].specials.position = tmp;
+				mob_proto[i].specials.default_pos = tmp2;
+				mob_proto[i].player.sex = tmp3;
+				mob_proto[i].player.race = tmp4;
+				mob_proto[i].specials2.pref = tmp5;
+
+				mob_proto[i].player.prof = 0;
+
+				fscanf(mob_f, " %d %d %d %d %d %d \n",
+					&tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
+				mob_proto[i].player.weight = tmp;
+				mob_proto[i].player.height = tmp2;
+				mob_proto[i].specials.store_prog_number = tmp3;
+				mob_proto[i].specials.butcher_item = tmp4;
+				if (!IS_SET((mob_proto + i)->specials2.act, MOB_SPEC))
+					mob_proto[i].specials.store_prog_number =
+					real_program(tmp3);
+				if (letter == 'N')
+					mob_proto[i].player.corpse_num = tmp5;
+				else
+					mob_proto[i].player.corpse_num = 0;
+				mob_proto[i].specials2.rp_flag = tmp6;
+
+				fscanf(mob_f, " %d %d %d %d \n", &tmp, &tmp2, &tmp3, &tmp4);
+				mob_proto[i].player.prof = tmp;
+				mob_proto[i].abilities.mana = tmp2;
+				mob_proto[i].abilities.move = tmp3;
+				mob_proto[i].player.bodytype = tmp4;
+
+				fscanf(mob_f, " %d", &tmp);
+				mob_proto[i].specials2.saving_throw = tmp;
+
+				fscanf(mob_f, " %d %d %d %d %d %d \n",
+					&tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
+				mob_proto[i].abilities.str = tmp;
+				mob_proto[i].abilities.intel = tmp2;
+				mob_proto[i].abilities.wil = tmp3;
+				mob_proto[i].abilities.dex = tmp4;
+				mob_proto[i].abilities.con = tmp5;
+				mob_proto[i].abilities.lea = tmp6;
+
+				mob_proto[i].constabilities = mob_proto[i].abilities;
+
+				int tmp7 = 0;
+				fscanf(mob_f, " %d %d %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6, &tmp7);
+				if ((tmp > language_number) || (tmp <= 0))
+				{
+					mob_proto[i].player.language = 0;
+				}
+				else
+				{
+					mob_proto[i].player.language = language_skills[tmp - 1];
+				}
+
+				mob_proto[i].specials2.perception = tmp2;
+				mob_proto[i].specials.resistance = tmp3;
+				mob_proto[i].specials.vulnerability = tmp4;
+				mob_proto[i].specials.script_number = tmp5;
+				mob_proto[i].points.spirit = tmp6;
+
+				fscanf(mob_f, " \n");
+
+				for (j = 0; j < 3; j++)  /* Spare */
+				{
+					GET_COND(mob_proto + i, j) = -1;
+				}
+			}	 /* End new monsters */
+
+			for (j = 0; j < MAX_WEAR; j++)   /* Initialisering Ok */
+			{
+				mob_proto[i].equipment[j] = 0;
+			}
+
+			mob_proto[i].nr = i;
+			mob_proto[i].desc = 0;
+
+			if (!fscanf(mob_f, "%s\n", chk)) 
+			{
+				sprintf(buf2, "SYSERR: Format error in mob file near mob #%d", nr);
+				log(buf2);
+				exit(1);
+			}
+
+			i++;
+		}
+		else if (*chk == '$') /* EOF */
+			break;
+		else {
+			sprintf(buf2, "SYSERR: Format error in mob file near mob #%d", nr);
+			log(buf2);
+			exit(1);
+		}
+	}
+	top_of_mobt = i - 1;
 }
 
 

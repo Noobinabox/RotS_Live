@@ -404,7 +404,15 @@ string_to_new_value(char *arg, int *value)
 int get_bow_weapon_damage(const obj_data& weapon)
 {
 	const char_data* owner = weapon.get_owner();
-	int level_factor = std::min(weapon.get_level(), owner->get_level()) / 3;
+	int level_factor = 0;
+	if (owner)
+	{
+		level_factor = std::min(weapon.get_level(), owner->get_level()) / 3;
+	}
+	else
+	{
+		level_factor = weapon.get_level() / 3;
+	}
 	return level_factor + weapon.get_ob_coef() + weapon.get_bulk();
 }
 

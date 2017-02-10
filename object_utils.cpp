@@ -202,7 +202,15 @@ namespace utils
 		double get_bow_weapon_damage(const obj_data& weapon)
 		{
 			const char_data* owner = weapon.get_owner();
-			double level_factor = std::min(weapon.get_level(), owner->get_level()) / 3.0;
+			double level_factor = 0.0;
+			if (owner)
+			{
+				level_factor = std::min(weapon.get_level(), owner->get_level()) / 3.0;
+			}
+			else
+			{
+				level_factor = weapon.get_level() / 3.0;
+			}
 			return level_factor + weapon.get_ob_coef() + weapon.get_bulk();
 		}
 

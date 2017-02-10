@@ -682,7 +682,7 @@ get_real_OB(struct char_data *ch)
   if(!wpn) 
     return tmpob + bonus;
 
-  tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(wpn->obj_flags.value[3]));
+  tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(wpn->get_weapon_type()));
   
   if(IS_TWOHANDED(ch)) {
     tmpob += wpn->obj_flags.value[2] * 

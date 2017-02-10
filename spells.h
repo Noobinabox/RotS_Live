@@ -220,6 +220,8 @@ inline int weapon_skill_num(int type)
 	case 11:
 		return SKILL_PIERCE;
 	case 12:
+	case 13:
+	case 14:
 		return SKILL_CONCUSSION;
 	default:
 		return SKILL_BAREHANDED;

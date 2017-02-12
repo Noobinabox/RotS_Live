@@ -9,7 +9,7 @@
 
 #include "structs.h"
 #include <algorithm>
-
+#include <set>
 
 namespace utils
 {
@@ -436,6 +436,37 @@ namespace utils
 		base_ob += skill_factor * (weapon_bulk + 20) * skill_multiplier * 0.001;
 
 		return base_ob;
+	}
+
+	//============================================================================
+	// Returns a vector of all of the characters that are currently engaged with the
+	// character passed in.
+	//============================================================================
+	std::vector<char_data*> get_engaged_characters(const char_data* character, const room_data& room)
+	{
+		std::set<char_data*> seen_fighters;
+		std::vector<char_data*> engaged_fighters;
+
+		// Add the person the character is fighting to the list.
+		if (character->specials.fighting != NULL)
+		{
+			seen_fighters.insert(character->specials.fighting);
+			engaged_fighters.push_back(character->specials.fighting);
+		}
+
+		// Add everyone in the room that is fighting the character to the list.
+		for (char_data* other = room.people; other; other = other->next_in_room)
+		{
+			if (other->specials.fighting == character)
+			{
+				if (seen_fighters.insert(other->specials.fighting).second)
+				{
+					engaged_fighters.push_back(other->specials.fighting);
+				}
+			}
+		}
+
+		return engaged_fighters;
 	}
 }
 

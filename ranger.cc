@@ -23,8 +23,10 @@
 #include "spells.h"
 #include "script.h"
 
-#include <algorithm>
 #include "char_utils.h"
+#include "char_utils_combat.h"
+
+#include <algorithm>
 #include <sstream>
 #include <iostream>
 #include <vector>
@@ -1784,7 +1786,7 @@ see_hiding(struct char_data *seeker)
   int can_see, awareness;
 
   if(IS_NPC(seeker))
-    awareness = MIN(100, 40 + GET_INT(seeker) + GET_LEVEL(seeker));
+    awareness = std::min(100, 40 + GET_INT(seeker) + GET_LEVEL(seeker));
   else
     awareness = GET_SKILL(seeker, SKILL_AWARENESS) + GET_INT(seeker);
 
@@ -2251,6 +2253,60 @@ struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *targe
   return victim;
 }
 
+//============================================================================
+// Handles an arrow missing the target.
+// The arrow may impact into someone else, go into a separate room, or land
+// harmlessly on the ground (if it doesn't break).
+//============================================================================
+void handle_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	const room_data& room = world[archer->in_room];
+
+	double roll = number();
+	if (roll <= 0.01)
+	{
+		// The arrow flies into an adjacent room.
+		// TODO(drelidan):  Fill this out when I am less tired.  Look at the "exa" code.
+	}
+	else if (roll <= 0.21)
+	{
+		// The arrow strikes a target near the original victim.
+		
+		// Get the list of people that are in-combat with the victim, and
+		// ensure that the archer isn't in the list of potential targets.
+		std::vector<char_data*> potential_targets = utils::get_engaged_characters(victim, room);
+		potential_targets.erase(std::remove(potential_targets.begin(), potential_targets.end(), archer));
+
+		size_t target_count = potential_targets.size();
+		
+		// If there aren't any targets, have the arrow fall into the room.
+		if (potential_targets.empty())
+		{
+			// The arrow falls harmlessly into the room.
+			send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
+			move_arrow_to_room(archer, arrow);
+		}
+		else
+		{
+			int target_roll = number(0, target_count - 1);
+			char_data* new_victim = potential_targets.at(target_roll);
+
+			// TODO(drelidan):  Add message here indicating that the arrow missed and hits someone else.
+
+			int hit_location = 0;
+			int damage_dealt = shoot_calculate_damage(archer, new_victim, arrow, hit_location);
+			move_arrow_to_victim(archer, new_victim, arrow);
+			damage(archer, new_victim, damage_dealt, SKILL_ARCHERY, hit_location);
+		}
+	}
+	else
+	{
+		// The arrow falls harmlessly into the room.
+		send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
+		move_arrow_to_room(archer, arrow);
+	}
+}
+
 /*
  * do_shoot will attempt to shoot the victim with a bow or crossbow
  * There is a lot of things going on with this ACMD so just read through it.
@@ -2333,8 +2389,7 @@ ACMD(do_shoot)
 		}
 		else
 		{
-			send_to_char("Your arrow harmlessly flies past your target.\r\n", ch);
-			move_arrow_to_room(ch, arrow);
+			handle_arrow_miss(ch, victim, arrow);
 		}
 
 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after loosing an arrow.

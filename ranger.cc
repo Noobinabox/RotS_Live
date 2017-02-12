@@ -2121,7 +2121,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 * --------------------------- Change Log --------------------------------
 * drelidan: Feb 07, 2017 - Created function
 */
-bool move_arrow_to_room(char_data* archer, obj_data* arrow)
+bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
 	// Remove object from the character.
 	obj_from_obj(arrow);
@@ -2135,7 +2135,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow)
 	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the room.
-	obj_to_room(arrow, archer->in_room);
+	obj_to_room(arrow, room_num);
 
 	return true;
 }
@@ -2212,45 +2212,143 @@ bool can_ch_shoot(char_data* archer)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *target)
+char_data* is_targ_valid(char_data* archer, waiting_type* target)
 {
-  struct char_data *victim;
+	char_data* victim = NULL;
 
-  if(target->targ1.type == TARGET_TEXT)
-  {
-    victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
-  }
-  else if (target->targ1.type == TARGET_CHAR)
-  {
-    if(char_exists(target->targ1.ch_num))
-      victim = target->targ1.ptr.ch;
-  }
+	if (target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(archer, target->targ1.ptr.text->text);
+	}
+	else if (target->targ1.type == TARGET_CHAR)
+	{
+		if (char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
 
-  if(victim == NULL)
-  {
-    if(ch->specials.fighting)
-    {
-      victim = ch->specials.fighting;
-    }
-    else
-    {
-      send_to_char("Shoot who?\r\n", ch);
-      return NULL;
-    }
-  }
+	if (victim == NULL)
+	{
+		if (archer->specials.fighting)
+		{
+			victim = archer->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Shoot who?\r\n", archer);
+			return NULL;
+		}
+	}
 
-  if(ch->in_room != victim->in_room)
-  {
-    send_to_char("Your victim is no longer here.\r\n", ch);
-    return NULL;
-  }
-  if(!CAN_SEE(ch, victim))
-  {
-    send_to_char("Shoot who?\r\n", ch);
-    return NULL;
-  }
+	if (archer->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", archer);
+		return NULL;
+	}
+	if (!CAN_SEE(archer, victim))
+	{
+		send_to_char("Shoot who?\r\n", archer);
+		return NULL;
+	}
 
-  return victim;
+	return victim;
+}
+
+//============================================================================
+// Moves the arrow to the room specified.
+//============================================================================
+void do_move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
+{
+	send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
+	move_arrow_to_room(archer, arrow, room_num);
+}
+
+//============================================================================
+// Handles an arrow hitting a target - calculating and applying damage, and
+// moving the arrow to that target.
+//============================================================================
+void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	int hit_location = 0;
+	int damage_dealt = shoot_calculate_damage(archer, victim, arrow, hit_location);
+	move_arrow_to_victim(archer, victim, arrow);
+	damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
+}
+
+//============================================================================
+// Handles the arrow hitting another target.  Currently only considers characters
+// in combat with the victim as potential targets.
+//============================================================================
+void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	const room_data& room = world[archer->in_room];
+
+	// Get the list of people that are in-combat with the victim, and
+	// ensure that the archer isn't in the list of potential targets.
+	std::vector<char_data*> potential_targets = utils::get_engaged_characters(victim, room);
+	potential_targets.erase(std::remove(potential_targets.begin(), potential_targets.end(), archer));
+
+	// If there aren't any targets, have the arrow fall into the room.
+	if (potential_targets.empty())
+	{
+		do_move_arrow_to_room(archer, arrow, archer->in_room);
+	}
+	else
+	{
+		int target_roll = number(0, potential_targets.size() - 1);
+		char_data* new_victim = potential_targets.at(target_roll);
+
+		// TODO(drelidan):  Add message here indicating that the arrow missed and hits someone else.
+		on_arrow_hit(archer, new_victim, arrow);
+	}
+}
+
+//============================================================================
+// Gets the room that the arrow will land in.
+//============================================================================
+int get_arrow_landing_location(const room_data& room)
+{
+	// The arrow flies into an adjacent room.
+	// Build the possible exit list...
+	int valid_dirs = 0;
+	int exit_indices[NUM_OF_DIRS] = { -1 };
+	for (int i = 0; i < NUM_OF_DIRS; ++i)
+	{
+		// The room exit exits and goes somewhere.
+		room_direction_data* dir = room.dir_option[i];
+		if (dir && dir->to_room != NOWHERE)
+		{
+			// The exit has a door...
+			if (utils::is_set(dir->exit_info, EX_ISDOOR))
+			{
+				// But it's open, so the arrow can fly that way.
+				if (!utils::is_set(dir->exit_info, EX_CLOSED))
+				{
+					exit_indices[valid_dirs++] = i;
+				}
+			}
+			// There's no door - this is a valid location for the arrow to land.
+			else
+			{
+				exit_indices[valid_dirs++] = i;
+			}
+		}
+	}
+
+	if (valid_dirs == 0)
+	{
+		// The arrow has to fall in the room passed in.
+		return room.number;
+	}
+	else
+	{
+		int random_exit = number(0, valid_dirs - 1);
+		int exit_index = exit_indices[random_exit];
+
+		// The arrow flies into a nearby room.
+		return room.dir_option[random_exit]->to_room;
+	}
 }
 
 //============================================================================
@@ -2258,53 +2356,29 @@ struct char_data *is_targ_valid(struct char_data *ch, struct waiting_type *targe
 // The arrow may impact into someone else, go into a separate room, or land
 // harmlessly on the ground (if it doesn't break).
 //============================================================================
-void handle_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
+void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
 {
 	const room_data& room = world[archer->in_room];
 
 	double roll = number();
-	if (roll <= 0.01)
+	roll -= 0.20;
+	if (roll <= 0)
 	{
-		// The arrow flies into an adjacent room.
-		// TODO(drelidan):  Fill this out when I am less tired.  Look at the "exa" code.
+		change_arrow_target(archer, victim, arrow);
+		return;
 	}
-	else if (roll <= 0.21)
+
+	int arrow_landing_location = archer->in_room;
+
+	roll -= 0.01;
+	if (roll <= 0)
 	{
-		// The arrow strikes a target near the original victim.
-		
-		// Get the list of people that are in-combat with the victim, and
-		// ensure that the archer isn't in the list of potential targets.
-		std::vector<char_data*> potential_targets = utils::get_engaged_characters(victim, room);
-		potential_targets.erase(std::remove(potential_targets.begin(), potential_targets.end(), archer));
-
-		size_t target_count = potential_targets.size();
-		
-		// If there aren't any targets, have the arrow fall into the room.
-		if (potential_targets.empty())
-		{
-			// The arrow falls harmlessly into the room.
-			send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
-			move_arrow_to_room(archer, arrow);
-		}
-		else
-		{
-			int target_roll = number(0, target_count - 1);
-			char_data* new_victim = potential_targets.at(target_roll);
-
-			// TODO(drelidan):  Add message here indicating that the arrow missed and hits someone else.
-
-			int hit_location = 0;
-			int damage_dealt = shoot_calculate_damage(archer, new_victim, arrow, hit_location);
-			move_arrow_to_victim(archer, new_victim, arrow);
-			damage(archer, new_victim, damage_dealt, SKILL_ARCHERY, hit_location);
-		}
+		arrow_landing_location = get_arrow_landing_location(room);
 	}
-	else
-	{
-		// The arrow falls harmlessly into the room.
-		send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
-		move_arrow_to_room(archer, arrow);
-	}
+
+	// The arrow falls into this or a nearby room.
+	send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
+	move_arrow_to_room(archer, arrow, arrow_landing_location);
 }
 
 /*
@@ -2382,14 +2456,11 @@ ACMD(do_shoot)
 		int target_number = shoot_calculate_success(ch, victim, arrow);
 		if (roll < target_number)
 		{
-			int hit_location = 0;
-			int damage_dealt = shoot_calculate_damage(ch, victim, arrow, hit_location);
-			move_arrow_to_victim(ch, victim, arrow);
-			damage(ch, victim, damage_dealt, SKILL_ARCHERY, hit_location);
+			on_arrow_hit(ch, victim, arrow);
 		}
 		else
 		{
-			handle_arrow_miss(ch, victim, arrow);
+			on_arrow_miss(ch, victim, arrow);
 		}
 
 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after loosing an arrow.
@@ -2412,6 +2483,7 @@ void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vect
 	// Iterate through items in the list.
 	for (obj_data* item = obj_list; item; item = item->next_content)
 	{
+		// TODO(drelidan): See if there's another way to determine that these items are ammo.
 		if (strstr(item->name, "arrow") != NULL || strstr(item->name, "bolt") != NULL)
 		{
 			if (item->obj_flags.value[2] == character->specials2.idnum)

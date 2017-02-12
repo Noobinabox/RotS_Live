@@ -1841,6 +1841,7 @@ weapon_hit_type(int weapon_type)
 		w_type = TYPE_SMITE;
 		break;
 	case 13:
+		w_type = TYPE_WHIP;
 	case 14:
 		w_type = TYPE_BLUDGEON;
 		break;

@@ -2444,6 +2444,11 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 			if (character->specials.carry_weight + arrow->get_weight() < max_carry_weight)
 			{
 				++num_recovered;
+				obj_data* arrow_container = arrow->in_obj;
+				if (arrow_container)
+				{
+					obj_from_obj(arrow);
+				}
 				obj_to_char(arrow, character);
 			}
 			else

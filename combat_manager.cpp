@@ -51,6 +51,8 @@ namespace game_rules
 				hit_type = TYPE_SMITE;
 				break;
 			case game_types::WT_BOW:
+				hit_type = TYPE_WHIP;
+				break;
 			case game_types::WT_CROSSBOW:
 				hit_type = TYPE_BLUDGEON;
 				break;

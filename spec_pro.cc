@@ -1448,6 +1448,11 @@ namespace
 			return 0;
 		}
 
+		// Level cap the spells that the caster will use.
+		int max_spell_list_index = (caster->player.level / 5) - 1;
+		max_spell_list_index = std::min(max_spell_list_index, 9);
+		max_spell_list_index = std::max(max_spell_list_index, 0);
+
 		/*
 		* If the mob is engaged its going to cast
 		* its mystic spells from the list.
@@ -1455,7 +1460,7 @@ namespace
 		* temporary basis until i've written the code
 		* that allows for individual mob spell lists.
 		*/
-		int spell_list_index = number(0, 9);
+		int spell_list_index = number(0, max_spell_list_index);
 		return spell_list[spell_list_index][3];
 	}
 

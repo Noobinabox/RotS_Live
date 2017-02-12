@@ -27,6 +27,7 @@
 #include "char_utils.h"
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 typedef char * string;
 
@@ -2345,4 +2346,126 @@ ACMD(do_shoot)
 		abort_delay(ch);
 		return;
 	}
+}
+
+//============================================================================
+// Gets all arrows in the object list that are tagged to the character.  These
+// arrows are placed in the 'arrows' vector.
+//============================================================================
+void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vector<obj_data*>& arrows)
+{
+	// Iterate through items in the list.
+	for (obj_data* item = obj_list; item; item = item->next_content)
+	{
+		if (strstr(item->name, "arrow") != NULL || strstr(item->name, "bolt") != NULL)
+		{
+			if (item->obj_flags.value[2] == character->specials2.idnum)
+			{
+				arrows.push_back(item);
+			}
+		}
+	}
+}
+
+//============================================================================
+// Gets all arrows in the room that are tagged to the character passed in.
+//============================================================================
+void get_room_tagged_arrows(const char_data* character, std::vector<obj_data*>& arrows)
+{
+	const room_data& room = world[character->in_room];
+	obj_data* obj_list = room.contents;
+
+	return get_tagged_arrows(character, obj_list, arrows);
+}
+
+//============================================================================
+// Gets all arrows from the corpses in the room that are tagged to the 
+// character passed in.
+//============================================================================
+void get_corpse_tagged_arrows(const char_data* character, std::vector<obj_data*>& arrows)
+{
+	const room_data& room = world[character->in_room];
+	obj_data* obj_list = room.contents;
+
+	// Iterate through items in the list.
+	for (obj_data* item = obj_list; item; item = item->next_content)
+	{
+		if (strstr(item->name, "corpse") != NULL)
+		{
+			get_tagged_arrows(character, item->contains, arrows);
+		}
+	}
+}
+
+//============================================================================
+// Recovers arrows that have been tagged by a player from the room that the
+// player is in, and any corpses within the room.
+//============================================================================
+void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
+{
+	if (character == NULL)
+		return;
+
+	// Characters cannot recover arrows if they are blind.
+	if (!CAN_SEE(character))
+	{
+		send_to_char("You can't see anything in this darkness!", character);
+		return;
+	}
+
+	// Characters cannot recover arrows if they are a shadow.
+	if (utils::is_shadow(*character))
+	{
+		send_to_char("Try rejoining the corporal world first...", character);
+		return;
+	}
+
+	int max_inventory = utils::get_carry_item_limit(*character);
+	int max_carry_weight = utils::get_carry_weight_limit(*character);
+
+	std::vector<obj_data*> arrows_to_get;
+	get_room_tagged_arrows(character, arrows_to_get);
+	get_corpse_tagged_arrows(character, arrows_to_get);
+	
+	if (arrows_to_get.empty())
+	{
+		send_to_char("You have no expended arrows here.", character);
+		return;
+	}
+
+	int num_recovered = 0;
+
+	typedef std::vector<obj_data*>::iterator iter;
+	for (iter arrow_iter = arrows_to_get.begin(); arrow_iter != arrows_to_get.end(); ++arrow_iter)
+	{
+		obj_data* arrow = *arrow_iter;
+		if (character->specials.carry_items < max_inventory)
+		{
+			if (character->specials.carry_weight + arrow->get_weight() < max_carry_weight)
+			{
+				++num_recovered;
+				obj_to_char(arrow, character);
+			}
+			else
+			{
+				send_to_char("You can't carry that many items!", character);
+				break;
+			}
+		}
+		else
+		{
+			send_to_char("You can't that much weight!", character);
+			break;
+		}
+	}
+
+	std::ostringstream message_writer;
+	message_writer << "You recover " << num_recovered << (num_recovered > 1 ? " arrows." : " arrow.") << std::endl;
+	std::string message = message_writer.str();
+	send_to_char(message.c_str(), character);
+
+	message_writer.clear();
+	message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
+	message_writer.str(message);
+	send_to_room_except(message.c_str(), character->in_room, character);
 }

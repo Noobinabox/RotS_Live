@@ -524,7 +524,7 @@ namespace utils
 	}
 
 	//============================================================================
-	bool get_carry_weight_limit(const char_data& character)
+	int get_carry_weight_limit(const char_data& character)
 	{
 		const int base_carry_weight = 2000;
 		const int strength_multiplier = 1000;
@@ -533,7 +533,7 @@ namespace utils
 	}
 	
 	//============================================================================
-	bool get_carry_item_limit(const char_data& character)
+	int get_carry_item_limit(const char_data& character)
 	{
 		const int base_items = 5;
 

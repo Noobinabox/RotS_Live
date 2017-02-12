@@ -18,11 +18,10 @@
 /* comm.c */
 void	send_to_all(char *messg);
 void	send_to_char(const char *messg, struct char_data *ch);
-void	send_to_except(char *messg, struct char_data *ch);
-void	send_to_room(char *messg, int room);
-void	send_to_room_except(char *messg, int room, struct char_data *ch);
-void	send_to_room_except_two
-(char *messg, int room, struct char_data *ch1, struct char_data *ch2);
+void	send_to_except(const char *messg, struct char_data *ch);
+void	send_to_room(const char *messg, int room);
+void	send_to_room_except(const char *messg, int room, struct char_data *ch);
+void	send_to_room_except_two(const char *messg, int room, struct char_data *ch1, struct char_data *ch2);
 void	send_to_outdoor(char *messg, int mode);
 void    send_to_sector(char *messg, int sector_type);
 void	perform_to_all(char *messg, struct char_data *ch);

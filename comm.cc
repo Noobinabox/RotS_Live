@@ -1656,7 +1656,7 @@ send_to_sector(char *messg, int sector_type)
 
 
 void
-send_to_except(char *messg, struct char_data *ch)
+send_to_except(const char *messg, struct char_data *ch)
 {
   struct descriptor_data *i;
   
@@ -1669,7 +1669,7 @@ send_to_except(char *messg, struct char_data *ch)
 
 
 void
-send_to_room(char *messg, int room)
+send_to_room(const char *messg, int room)
 {
   struct char_data *i;
   
@@ -1682,7 +1682,7 @@ send_to_room(char *messg, int room)
 
 
 void
-send_to_room_except(char *messg, int room, struct char_data *ch)
+send_to_room_except(const char *messg, int room, struct char_data *ch)
 {
   struct char_data *i;
   
@@ -1695,7 +1695,7 @@ send_to_room_except(char *messg, int room, struct char_data *ch)
 
 
 void
-send_to_room_except_two(char *messg, int room, 
+send_to_room_except_two(const char *messg, int room,
 			struct char_data *ch1, struct char_data *ch2)
 {
   struct char_data *i;

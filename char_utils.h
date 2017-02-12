@@ -68,8 +68,8 @@ namespace utils
 
 	bool can_see(const char_data& character, const weather_data& weather, const room_data& room);
 
-	bool get_carry_weight_limit(const char_data& character);
-	bool get_carry_item_limit(const char_data& character);
+	int get_carry_weight_limit(const char_data& character);
+	int get_carry_item_limit(const char_data& character);
 	bool is_twohanded(const char_data& character);
 	bool can_carry_object(const char_data& character, const obj_data& object);
 	bool can_see_object(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room);

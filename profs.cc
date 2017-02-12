@@ -499,11 +499,6 @@ recalc_abilities(struct char_data *ch)
 			{
 				GET_ENE_REGEN(ch) += std::min(GET_ENE_REGEN(ch) / 10, 10);
 			}
-			else if(w_type == game_types::WT_BOW || w_type == game_types::WT_CROSSBOW)
-			{
-				// Give a speed penalty for melee attacking with bows.
-				ch->points.ENE_regen = ch->points.ENE_regen / 3;
-			}
 		}
 		else
 		{

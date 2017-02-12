@@ -273,6 +273,8 @@ ACMD(do_top);
 ACMD(do_grouproll);
 ACMD(do_shoot);
 
+void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
+
 const char *command[] = {
    "north", 		               /* 1 */
    "east",
@@ -503,6 +505,8 @@ const char *command[] = {
    "top",
    "groll",
    "shoot",
+   "recover",
+   "retrieve",
    "\n"
 };
 
@@ -2227,6 +2231,10 @@ assign_command_pointers(void)
      TAR_IGNORE, TAR_IGNORE, 0);
   COMMANDO(229, POSITION_FIGHTING,    do_shoot,      0, TRUE, 0,
      TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
+  COMMANDO(230, POSITION_STANDING, do_recover, 0, TRUE, 0,
+	  FULL_TARGET, TAR_IGNORE, 0);
+  COMMANDO(231, POSITION_STANDING, do_recover, 0, TRUE, 0,
+	  FULL_TARGET, TAR_IGNORE, 0);
 }
 
 
@@ -3180,3 +3188,4 @@ introduce_char(struct descriptor_data *d)
 
   SEND_TO_Q(motd, d);
 }
+

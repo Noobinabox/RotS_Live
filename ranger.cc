@@ -2525,6 +2525,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	send_to_char(message.c_str(), character);
 
 	message_writer.clear();
+	message.clear();
 	message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
 	message_writer.str(message);
 	send_to_room_except(message.c_str(), character->in_room, character);

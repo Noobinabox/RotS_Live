@@ -1941,14 +1941,14 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 //============================================================================ 
 double get_ranger_level_multiplier(int ranger_level)
 {
-	const double base_multiplier = 0.9;
+	const double base_multiplier = 0.8;
 
 	if (ranger_level <= 20)
 		return base_multiplier;
 	
 	// ranger level > 20
 	int num_steps = ranger_level - 20;
-	return base_multiplier + num_steps * 0.02; // ranger level 20 is 90% damage, 25 is base damage, 30 is +10% damage
+	return base_multiplier + num_steps * 0.02; // ranger level 20 is 80% damage, 25 is 90% damage, 30 is base damage
 }
 
 /*
@@ -2272,8 +2272,22 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
 
 	// Get the list of people that are in-combat with the victim, and
 	// ensure that the archer isn't in the list of potential targets.
+
+	typedef std::vector<char_data*>::iterator iter;
+
 	std::vector<char_data*> potential_targets = utils::get_engaged_characters(victim, room);
-	potential_targets.erase(std::remove(potential_targets.begin(), potential_targets.end(), archer));
+
+	iter archer_iter = std::remove(potential_targets.begin(), potential_targets.end(), archer);
+	if (archer_iter != potential_targets.end())
+	{
+		potential_targets.erase(archer_iter);
+	}
+
+	iter victim_iter = std::remove(potential_targets.begin(), potential_targets.end(), victim);
+	if (victim_iter != potential_targets.end())
+	{
+		potential_targets.erase(victim_iter);
+	}
 
 	// If there aren't any targets, have the arrow fall into the room.
 	if (potential_targets.empty())
@@ -2285,7 +2299,7 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
 		int target_roll = number(0, potential_targets.size() - 1);
 		char_data* new_victim = potential_targets.at(target_roll);
 
-		send_to_char("Your shot misses your target and flies into someone else!", archer);
+		send_to_char("Your shot misses your target and flies into someone else!\r\n", archer);
 		on_arrow_hit(archer, new_victim, arrow);
 	}
 }
@@ -2333,7 +2347,7 @@ int get_arrow_landing_location(const room_data& room)
 		int exit_index = exit_indices[random_exit];
 
 		// The arrow flies into a nearby room.
-		return room.dir_option[random_exit]->to_room;
+		return room.dir_option[exit_index]->to_room;
 	}
 }
 

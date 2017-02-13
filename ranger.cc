@@ -1816,11 +1816,12 @@ bool check_archery_accuracy(char_data& archer, char_data& victim)
 	using namespace utils;
 
 	double probability = get_prof_level(PROF_RANGER, archer) * 0.01; // 30% chance at 30r
-	probability -= get_skill_penalty(archer) * 0.01; // minus any skill penalty
-	probability -= get_dodge_penalty(archer) * 0.01; // minus any dodge penalty
+	probability -= get_skill_penalty(archer) * 0.0001; // minus any skill penalty
+	probability -= get_dodge_penalty(archer) * 0.0001; // minus any dodge penalty
 	probability *= get_skill(archer, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
 	
 	double roll = number();
+
 	return roll < probability;
 }
 
@@ -2004,22 +2005,6 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 		int armor_location = body_data.armor_location[arrow_hit_location];
 		damage = apply_armor_to_arrow_damage(*victim, damage, armor_location);
 	}
-
-	std::ostringstream test;
-	test << "Ranger Base Factor: " << ranger_level_factor << std::endl;
-	test << "Ranger Multiplier: " << multipler << std::endl;
-	test << "Bow Factor: " << bow_factor << std::endl;
-	test << "Total Damage: " << damage << std::endl;
-	test << "------Breakdown------" << std::endl;
-	test << "Weapon damage: " << weapon_damage << std::endl;
-	test << "Arrow damage: " << arrow_todam << std::endl;
-	test << "Strength factor: " << strength_factor << std::endl;
-	test << "Random Factor 1: " << random_factor_1 << std::endl;
-	test << "Random Factor 2: " << random_factor_2 << std::endl;
-	test << "Random Factor 3: " << random_factor_3 << std::endl;
-	
-	std::string message = test.str();
-	send_to_char(message.c_str(), archer);
 
 	hit_location = arrow_hit_location;
 	return damage;

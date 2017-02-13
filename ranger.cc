@@ -2480,11 +2480,13 @@ ACMD(do_shoot)
 //============================================================================
 void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vector<obj_data*>& arrows)
 {
+	const int arrow_type = 7;
+
 	// Iterate through items in the list.
 	for (obj_data* item = obj_list; item; item = item->next_content)
 	{
 		// TODO(drelidan): See if there's another way to determine that these items are ammo.
-		if (strstr(item->name, "arrow") != NULL || strstr(item->name, "bolt") != NULL)
+		if (item->obj_flags.type_flag == arrow_type)
 		{
 			if (item->obj_flags.value[2] == character->specials2.idnum)
 			{

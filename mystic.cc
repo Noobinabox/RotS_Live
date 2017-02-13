@@ -32,6 +32,11 @@
 #include "db.h"
 #include "limits.h"
 
+#include <algorithm>
+#include <sstream>
+#include <iostream>
+#include <vector>
+
 /*---------------------------------------------------------------------------------------------*/
 
 /*
@@ -540,69 +545,100 @@ ASPELL(spell_slow_digestion)
 
 ASPELL(spell_divination)
 {
-  int tmp, found;
-  char buff[1000];
-  struct char_data *tmpch;
-  struct obj_data *tmpobj;
-  
-  if(!ch)
-    return;
-  if(ch->in_room == NOWHERE) 
-    return;
+	// Ensure that we have a valid caster and location.
+	if (ch == NULL || ch->in_room == NOWHERE)
+		return;
 
-  sprintf(buff, "You feel confident about your location.\n\r");
-  sprintbit((long) world[ch->in_room].room_flags, room_bits, buf, 0);
-  sprintf(buff, "%s (#%d) [ %s, %s], Exits are:\n\r",
-	  buff, world[ch->in_room].number,
-	  sector_types[world[ch->in_room].sector_type], buf);
-  send_to_char(buff, ch);
-  
-  found = 0;
-  for(tmp = 0; tmp < NUM_OF_DIRS; tmp++)
-    if(EXIT(ch, tmp) && (EXIT(ch, tmp)->to_room != NOWHERE)) {
-      found = 1;
-      sprintf(buff,"%5s: to %s (#%d)\n\r", dirs[tmp],
-	      world[EXIT(ch, tmp)->to_room].name, 
-	      world[EXIT(ch, tmp)->to_room].number);
-      if(EXIT(ch, tmp)->exit_info != 0)
-	sprintf(buff,"%s     door '%s', key '%s'.\n\r",buff,
-		(EXIT(ch, tmp)->keyword)?EXIT(ch, tmp)->keyword:"", 
-		(EXIT(ch, tmp)->key > 0)? 
-		obj_proto[real_object(EXIT(ch, tmp)->key)].short_description :
-		"None");
-      send_to_char(buff, ch);
-    }
-  if(!found)
-    send_to_char("None.\n\r",ch);
+	char buff[1000];
+	
+	const room_data& cur_room = world[ch->in_room];
 
-  sprintf(buff,"Living beings in the room:\n\r");
-  if(world[ch->in_room].people) {
-    for(tmpch = world[ch->in_room].people; tmpch; 
-	tmpch = tmpch->next_in_room) {
-      strcat(buff, GET_NAME(tmpch));
-      if(tmpch->next_in_room) 
-	strcat(buff, ", ");
-      else 
-	strcat(buff, ".\n\r");
-    }
-    send_to_char(buff, ch);
-  }
-  else
-    send_to_char("Living beings in the room:\n\r None.\n\r", ch);
+	sprintf(buff, "You feel confident about your location.\n\r");
+	sprintbit(cur_room.room_flags, room_bits, buf, 0);
+	sprintf(buff, "%s (#%d) [ %s, %s], Exits are:\n\r", buff, cur_room.number, sector_types[cur_room.sector_type], buf);
+	send_to_char(buff, ch);
 
-  if(world[ch->in_room].contents) {
-    sprintf(buff,"Objects in the room:\n\r");
-    for(tmpobj = world[ch->in_room].contents; tmpobj; 
-	tmpobj = tmpobj->next_content) {
-      strcat(buff, tmpobj->short_description);
-      if(tmpobj->next_content) 
-	strcat(buff, ", ");
-      else 
-	strcat(buff, ".\n\r");
-    }
-    send_to_char(buff, ch);
-  }
-  else send_to_char("Objects in the room:\n\r None.\n\r",ch);
+	bool found = false;
+	for (int dir = 0; dir < NUM_OF_DIRS; dir++)
+	{
+		room_direction_data* exit = cur_room.dir_option[dir];
+		if (exit && exit->to_room != NOWHERE)
+		{
+			const room_data& exit_room = world[exit->to_room];
+
+			found = true;
+			sprintf(buff, "%5s: to %s (#%d)\n\r", dirs[dir], exit_room.name, exit_room.number);
+			if (exit->exit_info != 0)
+			{
+				const char* keyword = exit->keyword ? exit->keyword : "";
+				const char* key_name = "None";
+				if (exit->key > 0)
+				{
+					int obj_index = real_object(exit->key);
+					if (obj_index >= 0)
+					{
+						const obj_data& key = obj_proto[obj_index];
+						key_name = key.short_description;
+					}
+					else
+					{
+						send_to_char("You found a key that shouldn't exist!  Please notify the imm group immediately at rots.management3791@gmail.com with your room name.", ch);
+					}
+				}
+
+				sprintf(buff, "%s     door '%s', key '%s'.\n\r", buff, keyword, key_name);
+			}
+			send_to_char(buff, ch);
+		}
+	}
+	if (!found)
+	{
+		send_to_char("None.\n\r", ch);
+	}
+
+	sprintf(buff, "Living beings in the room:\n\r");
+	if (cur_room.people)
+	{
+		for (char_data* character = cur_room.people; character; character = character->next_in_room)
+		{
+			strcat(buff, GET_NAME(character));
+			if (character->next_in_room)
+			{
+				strcat(buff, ", ");
+			}
+			else
+			{
+				strcat(buff, ".\n\r");
+			}
+		}
+		send_to_char(buff, ch);
+	}
+	else
+	{
+		send_to_char("Living beings in the room:\n\r None.\n\r", ch);
+	}
+
+	if (cur_room.contents)
+	{
+		sprintf(buff, "Objects in the room:\n\r");
+		for (obj_data* item = cur_room.contents; item; item = item->next_content)
+		{
+			strcat(buff, item->short_description);
+			if (item->next_content)
+			{
+				strcat(buff, ", ");
+			}
+			else
+			{
+				strcat(buff, ".\n\r");
+			}
+		}
+		send_to_char(buff, ch);
+	}
+	else
+	{
+		send_to_char("Objects in the room:\n\r None.\n\r", ch);
+	}
 }
 
 

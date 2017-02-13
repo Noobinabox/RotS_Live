@@ -1873,8 +1873,7 @@ int get_hit_location(const char_data& victim)
 {
 	int hit_location = 0;
 
-	//TODO(drelidan):  Make this into a function.
-	int body_type = GET_BODYTYPE(&victim);
+	int body_type = victim.player.bodytype;
 
 	const race_bodypart_data& body_data = bodyparts[body_type];
 	if (body_data.bodyparts != 0)
@@ -2286,9 +2285,7 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
 		int target_roll = number(0, potential_targets.size() - 1);
 		char_data* new_victim = potential_targets.at(target_roll);
 
-		std::ostringstream message_writer;
-
-		// TODO(drelidan):  Add message here indicating that the arrow missed and hits someone else.
+		send_to_char("Your shot misses your target and flies into someone else!", archer);
 		on_arrow_hit(archer, new_victim, arrow);
 	}
 }

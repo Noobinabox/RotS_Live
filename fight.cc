@@ -1162,55 +1162,57 @@ group_gain(struct char_data *ch, struct char_data *victim)
 
 char replace_string_buf[500];
 
-char *
-replace_string(char *str, char *weapon_singular,
-	       char *weapon_plural, char *bodypart)
+char* replace_string(char *str, char *weapon_singular, char *weapon_plural, char *bodypart)
 {
-  char *buf;
-  char *cp;
+	char *buf;
+	char *cp;
 
-  buf = replace_string_buf;
-  cp = buf;
+	buf = replace_string_buf;
+	cp = buf;
 
-  for ( ; *str; str++) {
-    if (*str == '#') {
-      switch (*(++str)) {
-      case 'W':
-	for ( ; *weapon_plural; *(cp++) = *(weapon_plural++))
-	  continue;
-	break;
-      case 'w':
-	for ( ; *weapon_singular; *(cp++) = *(weapon_singular++))
-	  continue;
-	break;
-      case 'b':
-	if (bodypart[0]) {
-	  *(cp++)=' ';
-	  for ( ; *bodypart; *(cp++) = *(bodypart++))
-	    continue;
+	for (; *str; str++) 
+	{
+		if (*str == '#') 
+		{
+			switch (*(++str)) 
+			{
+			case 'W':
+				for (; *weapon_plural; *(cp++) = *(weapon_plural++))
+					continue;
+				break;
+			case 'w':
+				for (; *weapon_singular; *(cp++) = *(weapon_singular++))
+					continue;
+				break;
+			case 'b':
+				if (bodypart[0]) {
+					*(cp++) = ' ';
+					for (; *bodypart; *(cp++) = *(bodypart++))
+						continue;
+				}
+				break;
+			case 's':
+				if (bodypart[0]) {
+					*(cp++) = '\'';
+					*(cp++) = 's';
+				}
+				break;
+			case 'r':
+				if (bodypart[0])
+					*(cp++) = 'r';
+				break;
+			default:
+				*(cp++) = '#';
+				break;
+			}
+		}
+		else
+			*(cp++) = *str;
+
+		*cp = 0;
 	}
-	break;
-      case 's':
-	if (bodypart[0]) {
-	  *(cp++) = '\'';
-	  *(cp++) = 's';
-	}
-	break;
-      case 'r' :
-	if (bodypart[0])
-	  *(cp++)='r';
-	break;
-      default :
-	*(cp++) = '#';
-	break;
-      }
-    } else
-      *(cp++) = *str;
 
-    *cp = 0;
-  }
-
-  return buf;
+	return buf;
 }
 
 
@@ -1256,72 +1258,67 @@ static struct dam_weapon_type {
     "$CD$n MUTILATES you#r#b with $s deadly #w!!" }
 };
 
-void
-dam_message(int dam, struct char_data *ch, struct char_data *victim,
-	    int w_type, char *bodypart)
+//============================================================================
+// Gets the damage message index for a given damage value.
+//============================================================================
+int get_damage_message_number(int damage)
 {
-   struct obj_data *wield;
-   char	*buf;
-   int	msgnum;
+	int message_number = 0;
 
-   // That is, instead of using the TYPE_ which starts at 140+,
-   // see spells.h for details, we use w_type range from 0 to 13 or so,
-   // whatever number of different weapon types we have.
-   w_type -= TYPE_HIT;   /* Change to base of table with text */
+	if (damage == 0)
+		message_number = 0;
+	else if (damage <= 1)
+		message_number = 1;
+	else if (damage <= 3)
+		message_number = 2;
+	else if (damage <= 6)
+		message_number = 3;
+	else if (damage <= 11)
+		message_number = 4;
+	else if (damage <= 17)
+		message_number = 5;
+	else if (damage <= 24)
+		message_number = 6;
+	else if (damage <= 33)
+		message_number = 7;
+	else if (damage <= 60)
+		message_number = 8;
+	else if (damage <= 90)
+		message_number = 9;
+	else
+		message_number = 10;
 
-   wield = ch->equipment[WIELD];
-
-   if (dam == 0)
-     msgnum = 0;
-   else if (dam <= 1)
-     msgnum = 1;
-   else if (dam <= 3)
-     msgnum = 2;
-   else if (dam <= 6)
-     msgnum = 3;
-   else if (dam <= 11)
-     msgnum = 4;
-   else if (dam <= 17)
-     msgnum = 5;
-   else if (dam <= 24)
-     msgnum = 6;
-   else if (dam <= 33)
-     msgnum = 7;
-   else if (dam <= 60)
-     msgnum = 8;
-   else	if (dam <= 90)
-     msgnum = 9;
-   else
-     msgnum = 10;
-
-   /* damage message to onlookers.  see note on replace_string */
-   buf = replace_string(dam_weapons[msgnum].to_room,
-			attack_hit_text[w_type].singular,
-			attack_hit_text[w_type].plural,
-			bodypart);
-   act(buf, FALSE, ch, wield, victim, TO_NOTVICT,
-       !msgnum ? TRUE : FALSE);
-
-   /* damage message to damager */
-   buf = replace_string(dam_weapons[msgnum].to_char,
-			attack_hit_text[w_type].singular,
-			attack_hit_text[w_type].plural,
-			bodypart);
-   act(buf, FALSE, ch, wield, victim, TO_CHAR,
-       !msgnum ? TRUE : FALSE);
-
-   /* damage message to damagee */
-   buf = replace_string(dam_weapons[msgnum].to_victim,
-			attack_hit_text[w_type].singular,
-			attack_hit_text[w_type].plural,
-			bodypart);
-   act(buf, FALSE, ch, wield, victim, TO_VICT,
-       !msgnum ? TRUE : FALSE);
+	return message_number;
 }
 
 
+void dam_message(int damage, char_data* attacker, char_data* victim, int w_type, char* bodypart)
+{
+	// That is, instead of using the TYPE_ which starts at 140+,
+	// see spells.h for details, we use w_type range from 0 to 13 or so,
+	// whatever number of different weapon types we have.
+	w_type -= TYPE_HIT;   /* Change to base of table with text */
 
-void generate_damage_message(struct char_data *ch, struct char_data *victim, int dam, int attacktype, int hit_location)
+	obj_data* wield = attacker->equipment[WIELD];
+
+	int msgnum = get_damage_message_number(damage);
+	const dam_weapon_type& weap = dam_weapons[msgnum];
+	const attack_hit_type& text = attack_hit_text[w_type];
+
+	/* damage message to onlookers.  see note on replace_string */
+	char* buf = replace_string(weap.to_room, text.singular, text.plural, bodypart);
+	act(buf, FALSE, attacker, wield, victim, TO_NOTVICT, FALSE);
+
+	/* damage message to attacker */
+	buf = replace_string(weap.to_char, text.singular, text.plural, bodypart);
+	act(buf, FALSE, attacker, wield, victim, TO_CHAR, FALSE);
+
+	/* damage message to victim */
+	buf = replace_string(weap.to_victim, text.singular, text.plural, bodypart);
+	act(buf, FALSE, attacker, wield, victim, TO_VICT, FALSE);
+}
+
+void generate_damage_message(char_data* attacker, char_data *victim, int damage, int attacktype, int hit_location)
 {
 	int nr;
 	int i, j;
@@ -1331,14 +1328,38 @@ void generate_damage_message(struct char_data *ch, struct char_data *victim, int
 	char* body_part = part.parts[hit_location];
 	if (IS_PHYSICAL(attacktype)) 
 	{
-		if (!ch->equipment[WIELD])
+		if (!attacker->equipment[WIELD])
 		{
-			dam_message(dam, ch, victim, TYPE_HIT, body_part);
+			dam_message(damage, attacker, victim, TYPE_HIT, body_part);
 		}
 		else
 		{
-			dam_message(dam, ch, victim, attacktype, body_part);
+			dam_message(damage, attacker, victim, attacktype, body_part);
 		}
+	}
+	else if (attacktype == SKILL_ARCHERY)
+	{
+		// Add archery damage message here.
+		// TODO(drelidan):  There's probably a better way to do this... but laziness!  Woohoo!
+		obj_data* wield = attacker->equipment[WIELD];
+
+		int msg_num = get_damage_message_number(damage);
+		const dam_weapon_type& weap = dam_weapons[msg_num];
+		char* singular = "shoot";
+		char* plural = "shoots";
+
+		/* damage message to onlookers.  see note on replace_string */
+		char* buf = replace_string(weap.to_room, singular, plural, body_part);
+		act(buf, FALSE, attacker, wield, victim, TO_NOTVICT, FALSE);
+
+		/* damage message to attacker */
+		buf = replace_string(weap.to_char, singular, plural, body_part);
+		act(buf, FALSE, attacker, wield, victim, TO_CHAR, FALSE);
+
+		/* damage message to victim */
+		buf = replace_string(weap.to_victim, singular, plural, body_part);
+		act(buf, FALSE, attacker, wield, victim, TO_VICT, FALSE);
+
 	}
 	else 
 	{
@@ -1355,35 +1376,35 @@ void generate_damage_message(struct char_data *ch, struct char_data *victim, int
 
 				if (!messages) 
 				{
-					dam_message(dam, ch, victim, TYPE_HIT, body_part);
+					dam_message(damage, attacker, victim, TYPE_HIT, body_part);
 					vmudlog(BRF, "No fight_message for attacktype %d, i=%d\n", attacktype, i);
 					break;
 				}
 
-				if (victim == ch) 
+				if (victim == attacker) 
 				{
-					act(messages->self_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-					act(messages->self_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+					act(messages->self_msg.victim_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_CHAR);
+					act(messages->self_msg.room_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_NOTVICT);
 				}
-				else if (dam != 0) 
+				else if (damage != 0) 
 				{
 					if (GET_POS(victim) == POSITION_DEAD) 
 					{
-						act(messages->die_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-						act(messages->die_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-						act(messages->die_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+						act(messages->die_msg.attacker_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_CHAR);
+						act(messages->die_msg.victim_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_VICT);
+						act(messages->die_msg.room_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_NOTVICT);
 					}
 					else 
 					{
-						act(messages->hit_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-						act(messages->hit_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-						act(messages->hit_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+						act(messages->hit_msg.attacker_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_CHAR);
+						act(messages->hit_msg.victim_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_VICT);
+						act(messages->hit_msg.room_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_NOTVICT);
 					}
 				}
 				else { /* Dam == 0 */
-					act(messages->miss_msg.attacker_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_CHAR);
-					act(messages->miss_msg.victim_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_VICT);
-					act(messages->miss_msg.room_msg, FALSE, ch, ch->equipment[WIELD], victim, TO_NOTVICT);
+					act(messages->miss_msg.attacker_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_CHAR);
+					act(messages->miss_msg.victim_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_VICT);
+					act(messages->miss_msg.room_msg, FALSE, attacker, attacker->equipment[WIELD], victim, TO_NOTVICT);
 				}
 			}
 		}

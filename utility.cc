@@ -1791,53 +1791,58 @@ pool_to_list(struct universal_list **list, struct universal_list **head)
  * and removes it from the list and adds it to the head of the
  * pool 
  */
-void
-from_list_to_pool(struct universal_list **list, struct universal_list **head, 
-		  struct universal_list *body)
+void from_list_to_pool(universal_list **list, universal_list **head, universal_list *body)
 {
-  struct universal_list *tmplist;
-  
-  if(*list == body) 
-    *list = body->next;
-  else {
-    for(tmplist = *list; tmplist->next; tmplist = tmplist->next)
-      if(tmplist->next == body) 
-	break;
-    
-    if(tmplist->next == body) 
-      tmplist->next = body->next;
-  }
+	if (*list == body)
+	{
+		*list = body->next;
+	}
+	else 
+	{
+		universal_list* tmplist = NULL;
+		for (tmplist = *list; tmplist->next; tmplist = tmplist->next)
+		{
+			if (tmplist->next == body)
+			{
+				break;
+			}
+		}
 
-  /* Thus not putting universal lists into a pool, but freeing the memory */
-  used_in_universal_list--; 
-  universal_list_counter++;  /* added because we are freeing body */
-  
-  free(body);
+		if (tmplist->next == body)
+		{
+			tmplist->next = body->next;
+		}
+	}
+
+	/* Thus not putting universal lists into a pool, but freeing the memory */
+	used_in_universal_list--;
+	universal_list_counter++;  /* added because we are freeing body */
+
+	free(body);
 }
 
 
 
-int
-check_resistances(struct char_data *ch, int attacktype)
+int check_resistances(char_data* victim, int attack_type)
 {
-  extern skill_data skills[];
-  
-  if((attacktype < MAX_SKILLS) && 
-     IS_RESISTANT(ch, skills[attacktype].skill_spec))
-    return 1;
-  
-  if((attacktype < MAX_SKILLS) && 
-     IS_VULNERABLE(ch, skills[attacktype].skill_spec))
-    return -1;
-  
-  if((attacktype >= TYPE_HIT) && (attacktype <= TYPE_CRUSH)) {
-    if(IS_RESISTANT(ch, PLRSPEC_WILD)) 
-      return 1;
-    if(IS_VULNERABLE(ch, PLRSPEC_WILD)) 
-      return -1;
-  }
-  
-  return 0;
+	extern skill_data skills[];
+
+	if ((attack_type < MAX_SKILLS) && IS_RESISTANT(victim, skills[attack_type].skill_spec))
+		return 1;
+
+	if ((attack_type < MAX_SKILLS) && IS_VULNERABLE(victim, skills[attack_type].skill_spec))
+		return -1;
+
+	if ((attack_type >= TYPE_HIT) && (attack_type <= TYPE_CRUSH) || attack_type == SKILL_ARCHERY)
+	{
+		if (IS_RESISTANT(victim, PLRSPEC_WILD))
+			return 1;
+
+		if (IS_VULNERABLE(victim, PLRSPEC_WILD))
+			return -1;
+	}
+
+	return 0;
 }
 
 

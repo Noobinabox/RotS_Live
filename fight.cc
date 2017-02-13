@@ -1574,7 +1574,7 @@ damage(struct char_data *ch, struct char_data *victim,
 
   /* 33% chance to resist with protection physical*/
   tmp = check_resistances(victim, attacktype);
-  if (number(0, 2) && IS_PHYSICAL(attacktype))
+  if (number(0, 2) == 0 && IS_PHYSICAL(attacktype))
     tmp = 0;
 
   if (tmp > 0) {
@@ -1590,8 +1590,8 @@ damage(struct char_data *ch, struct char_data *victim,
   }
 
   /* 10% chance for wild fighters to rush when they hit */
-  if (IS_PHYSICAL(attacktype) && GET_SPEC(ch) == PLRSPEC_WILD
-      && !number(0, 9)) {
+  if (IS_PHYSICAL(attacktype) && GET_SPEC(ch) == PLRSPEC_WILD && number(0, 9) == 0)
+  {
     dam = dam * 3 / 2;
 
     send_to_char("You rush forward wildly.\n\r",ch);
@@ -1944,28 +1944,29 @@ check_grip(struct char_data *ch, struct obj_data *wielded)
  * Returns: 0 if the hit should not be accurate, 1 if the
  * hit should be accurate.
  */
-int
-check_accuracy(struct char_data *ch, struct char_data *victim)
+int check_accuracy(char_data* attacker, char_data* victim)
 {
-  int prob;
+	int tactics = attacker->specials.tactics;
+	if (tactics != TACTICS_CAREFUL && tactics != TACTICS_AGGRESSIVE)
+		return 0;
 
-  if (GET_TACTICS(ch) != TACTICS_CAREFUL &&
-      GET_TACTICS(ch) != TACTICS_AGGRESSIVE)
-    return 0;
+	using namespace utils;
 
-  prob = GET_PROF_LEVEL(PROF_RANGER, ch);
-  prob -= GET_SKILL_PENALTY(ch);
-  prob -= GET_DODGE_PENALTY(ch);
-  prob *= GET_SKILL(ch, SKILL_ACCURACY) / 100;
-  if (number(0, 100) < prob) {
-    act("You manage to find an opening in $N's defense!",
-	TRUE, ch, NULL, victim, TO_CHAR);
-    act("$n notices an opening in your defense!",
-	TRUE, ch, NULL, victim, TO_VICT);
-    return 1;
-  }
+	double probability = get_prof_level(PROF_RANGER, *attacker) * 0.01; // 30% chance at 30r
+	probability -= get_skill_penalty(*attacker) * 0.0001; // minus any skill penalty
+	probability -= get_dodge_penalty(*attacker) * 0.0001; // minus any dodge penalty
+	probability *= get_skill(*attacker, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
 
-  return 0;
+	double roll = number();
+
+	if (roll < probability)
+	{
+		act("You manage to find an opening in $N's defense!", TRUE, attacker, NULL, victim, TO_CHAR);
+		act("$n notices an opening in your defense!", TRUE, attacker, NULL, victim, TO_VICT);
+		return 1;
+	}
+
+	return 0;
 }
 
 

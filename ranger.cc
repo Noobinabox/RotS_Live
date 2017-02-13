@@ -1851,7 +1851,7 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim, co
 	int arrow_tohit = arrow->obj_flags.value[0];
 
 	int player_level = archer->get_capped_level();
-	int ranger_level = get_prof_level(PROF_RANGER, *archer) * player_level / LEVEL_MAX;
+	int ranger_level = get_prof_level(PROF_RANGER, *archer);
 	int ranger_dex = archer->get_cur_dex();
 
 	// Calculate success is currently not taking 'OB' into account.  This is intentional.
@@ -1860,7 +1860,7 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim, co
 
 	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
 	// here for shooting quickly and a bonus for shooting slowly.
-	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 4) + arrow_tohit;
+	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 3) + (accuracy_skill / 3) + arrow_tohit;
 
 	return success_chance;
 }

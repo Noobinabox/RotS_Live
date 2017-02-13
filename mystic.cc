@@ -582,6 +582,10 @@ ASPELL(spell_divination)
 					}
 					else
 					{
+						std::ostringstream error_log;
+						error_log << "Found a room with an invalid key.  Room Number: " << exit_room.number << " and Room Name: " << exit_room.name << std::endl;
+						std::string msg = error_log.str();
+						log(const_cast<char*>(msg.c_str()));
 						send_to_char("You found a key that shouldn't exist!  Please notify the imm group immediately at rots.management3791@gmail.com with your room name.", ch);
 					}
 				}

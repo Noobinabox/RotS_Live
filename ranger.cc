@@ -1850,7 +1850,6 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim, co
 	//This obj_flag is defined in act_info.cc
 	int arrow_tohit = arrow->obj_flags.value[0];
 
-	int player_level = archer->get_capped_level();
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
 	int ranger_dex = archer->get_cur_dex();
 

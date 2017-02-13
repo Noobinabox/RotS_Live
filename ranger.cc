@@ -1941,12 +1941,14 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 //============================================================================ 
 double get_ranger_level_multiplier(int ranger_level)
 {
+	const double base_multiplier = 0.9;
+
 	if (ranger_level <= 20)
-		return 1.0;
+		return base_multiplier;
 	
 	// ranger level > 20
 	int num_steps = ranger_level - 20;
-	return 1.0 + num_steps * 0.02; // ranger level 25 is 10% bonus damage, 30 is 20% bonus damage, 35 is 30% bonus
+	return base_multiplier + num_steps * 0.02; // ranger level 20 is 90% damage, 25 is base damage, 30 is +10% damage
 }
 
 /*
@@ -1968,8 +1970,8 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	using namespace utils;
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
-	double ranger_level_factor = ranger_level * 0.9;
-	double strength_factor = (archer->get_cur_str() - 10) * 0.5;
+	double ranger_level_factor = ranger_level * number_d(0.5, 1.0);
+	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
 	
 	int arrow_todam = arrow->obj_flags.value[1];
 
@@ -2298,6 +2300,8 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
 	{
 		int target_roll = number(0, potential_targets.size() - 1);
 		char_data* new_victim = potential_targets.at(target_roll);
+
+		std::ostringstream message_writer;
 
 		// TODO(drelidan):  Add message here indicating that the arrow missed and hits someone else.
 		on_arrow_hit(archer, new_victim, arrow);

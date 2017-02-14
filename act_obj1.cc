@@ -93,8 +93,9 @@ ACMD(do_put)
       if (!container) {
 	 sprintf(buf, "You don't see a %s here.\n\r", arg2);
 	 send_to_char(buf, ch);
-      } else if (GET_ITEM_TYPE(container) != ITEM_CONTAINER) {
-	 act("$p is not a container.", FALSE, ch, container, 0, TO_CHAR);
+	  }
+	  else if (GET_ITEM_TYPE(container) != ITEM_CONTAINER) {
+		  act("$p is not a container.", FALSE, ch, container, 0, TO_CHAR);	  
       } else if (IS_SET(container->obj_flags.value[1], CONT_CLOSED)) {
 	 send_to_char("You'd better open it first!\n\r", ch);
       } else {
@@ -104,8 +105,14 @@ ACMD(do_put)
 	       send_to_char("You don't seem to have anything to put in it.\n\r", ch);
 	    else for (obj = ch->carrying; obj; obj = next_obj) {
 	       next_obj = obj->next_content;
-	       if (obj != container)
-		  perform_put(ch, obj, container);
+		   if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+		   {
+
+		   }
+		   else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+			   perform_put(ch, obj, container);
+		   else if (obj != container)
+			   perform_put(ch, obj, container);
 	    }
 	 } else if (obj_dotmode == FIND_ALLDOT) {  /* "put all.x <cont>" case */
 	    if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying,9999))) {
@@ -113,16 +120,25 @@ ACMD(do_put)
 	       send_to_char(buf, ch);
 	    } else while (obj) {
 	       next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content,9999);
-	       if (obj != container)
-		  perform_put(ch, obj, container);
+		   if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+		   {
+
+		   }
+		   else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+			   perform_put(ch, obj, container);
+		   else if (obj != container)
+			   perform_put(ch, obj, container);
 	       obj = next_obj;
 	    }
 	 } else {		    /* "put <thing> <container>" case */
-	    if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying,9999))) {
-	       sprintf(buf, "You aren't carrying %s %s.\n\r", AN(arg1), arg1);
-	       send_to_char(buf, ch);
-	    } else if (obj == container)
-	       send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
+		 if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying, 9999))) {
+			 sprintf(buf, "You aren't carrying %s %s.\n\r", AN(arg1), arg1);
+			 send_to_char(buf, ch);
+		 }
+		 else if (obj == container)
+			 send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
+		 else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+			 send_to_char("You may only put arrows into a quiver.\n\r", ch);
 	    else
 	       perform_put(ch, obj, container);
 	 }

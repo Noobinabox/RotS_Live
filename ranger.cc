@@ -1969,7 +1969,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	using namespace utils;
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
-	double ranger_level_factor = ranger_level * number_d(0.5, 1.0);
+	double ranger_level_factor = (ranger_level / 2) * number_d(0.5, 1.0);
 	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
 	
 	int arrow_todam = arrow->obj_flags.value[1];
@@ -2421,6 +2421,18 @@ ACMD(do_shoot)
 		}
 
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
+		if (GET_SEX(ch) == SEX_MALE)
+		{
+			act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else if (GET_SEX(ch) == SEX_FEMALE)
+		{
+			act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else
+		{
+			act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
 		int wait_delay = shoot_calculate_wait(ch);
 		WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
 	}
@@ -2450,7 +2462,18 @@ ACMD(do_shoot)
 		obj_data* quiver = ch->equipment[WEAR_BACK];
 		obj_data* arrow = quiver->contains;
 		send_to_char("You release your arrow and it goes flying!\r\n", ch);
-
+		if (GET_SEX(ch) == SEX_MALE)
+		{
+			act("$n releases his arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else if (GET_SEX(ch) == SEX_FEMALE)
+		{
+			act("$n releases her arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else
+		{
+			act("$n releases their arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
 		int roll = number(0, 99);
 		int target_number = shoot_calculate_success(ch, victim, arrow);
 		if (roll < target_number)
@@ -2596,10 +2619,10 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	message_writer << "You recover " << num_recovered << (num_recovered > 1 ? " arrows." : " arrow.") << std::endl;
 	std::string message = message_writer.str();
 	send_to_char(message.c_str(), character);
-
 	message_writer.clear();
 	message.clear();
-	message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
+	/*message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
 	message_writer.str(message);
-	send_to_room_except(message.c_str(), character->in_room, character);
+	send_to_room_except(message.c_str(), character->in_room, character);*/
+	act("$n recovers some arrows.\r\n", FALSE, character, 0, 0, TO_ROOM);
 }

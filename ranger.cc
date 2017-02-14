@@ -1978,7 +1978,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	using namespace utils;
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
-	double ranger_level_factor = (ranger_level * 0.5) * number_d(0.5, 1.0);
+	double ranger_level_factor = ((ranger_level / 2) * 0.5) * number_d(0.5, 1.0);
 	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
 	
 	int arrow_todam = arrow->obj_flags.value[1];

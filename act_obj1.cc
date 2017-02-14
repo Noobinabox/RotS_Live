@@ -68,66 +68,117 @@ void perform_put(struct char_data *ch, struct obj_data *obj,
 
 ACMD(do_put)
 {
-   char	arg1[MAX_INPUT_LENGTH];
-   char	arg2[MAX_INPUT_LENGTH];
-   struct obj_data *obj;
-   struct obj_data *next_obj;
-   struct obj_data *container;
-   struct char_data *tmp_char;
-   int	obj_dotmode, cont_dotmode;
+	char	arg1[MAX_INPUT_LENGTH];
+	char	arg2[MAX_INPUT_LENGTH];
+	struct obj_data *obj;
+	struct obj_data *next_obj;
+	struct obj_data *container;
+	struct char_data *tmp_char;
+	int	obj_dotmode, cont_dotmode;
 
-   argument_interpreter(argument, arg1, arg2);
-   obj_dotmode = find_all_dots(arg1);
-   cont_dotmode = find_all_dots(arg2);
+	argument_interpreter(argument, arg1, arg2);
+	obj_dotmode = find_all_dots(arg1);
+	cont_dotmode = find_all_dots(arg2);
 
-   if (cont_dotmode != FIND_INDIV)
-      send_to_char("You can only put things into one container at a time.\n\r", ch);
-   else if (!*arg1)
-      send_to_char("Put what in what?\n\r", ch);
-   else if (!*arg2) {
-      sprintf(buf, "What do you want to put %s in?\n\r",
-	      ((obj_dotmode != FIND_INDIV) ? "them" : "it"));
-      send_to_char(buf, ch);
-   } else {
-      generic_find(arg2, FIND_OBJ_INV | FIND_OBJ_ROOM, ch, &tmp_char, &container);
-      if (!container) {
-	 sprintf(buf, "You don't see a %s here.\n\r", arg2);
-	 send_to_char(buf, ch);
-      } else if (GET_ITEM_TYPE(container) != ITEM_CONTAINER) {
-	 act("$p is not a container.", FALSE, ch, container, 0, TO_CHAR);
-      } else if (IS_SET(container->obj_flags.value[1], CONT_CLOSED)) {
-	 send_to_char("You'd better open it first!\n\r", ch);
-      } else {
-	 if (obj_dotmode == FIND_ALL) {	    /* "put all <container>" case */
-	    /* check and make sure the guy has something first */
-	    if (container == ch->carrying && !ch->carrying->next_content)
-	       send_to_char("You don't seem to have anything to put in it.\n\r", ch);
-	    else for (obj = ch->carrying; obj; obj = next_obj) {
-	       next_obj = obj->next_content;
-	       if (obj != container)
-		  perform_put(ch, obj, container);
-	    }
-	 } else if (obj_dotmode == FIND_ALLDOT) {  /* "put all.x <cont>" case */
-	    if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying,9999))) {
-	       sprintf(buf, "You don't seem to have any %ss.\n\r", arg1);
-	       send_to_char(buf, ch);
-	    } else while (obj) {
-	       next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content,9999);
-	       if (obj != container)
-		  perform_put(ch, obj, container);
-	       obj = next_obj;
-	    }
-	 } else {		    /* "put <thing> <container>" case */
-	    if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying,9999))) {
-	       sprintf(buf, "You aren't carrying %s %s.\n\r", AN(arg1), arg1);
-	       send_to_char(buf, ch);
-	    } else if (obj == container)
-	       send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
-	    else
-	       perform_put(ch, obj, container);
-	 }
-      }
-   }
+	if (cont_dotmode != FIND_INDIV)
+		send_to_char("You can only put things into one container at a time.\n\r", ch);
+	else if (!*arg1)
+		send_to_char("Put what in what?\n\r", ch);
+	else if (!*arg2) {
+		sprintf(buf, "What do you want to put %s in?\n\r",
+			((obj_dotmode != FIND_INDIV) ? "them" : "it"));
+		send_to_char(buf, ch);
+	}
+	else {
+		generic_find(arg2, FIND_OBJ_INV | FIND_OBJ_ROOM, ch, &tmp_char, &container);
+		if (!container) 
+		{
+			sprintf(buf, "You don't see a %s here.\n\r", arg2);
+			send_to_char(buf, ch);
+		}
+		else if (GET_ITEM_TYPE(container) != ITEM_CONTAINER) 
+		{
+			act("$p is not a container.", FALSE, ch, container, 0, TO_CHAR);
+		}
+		else if (IS_SET(container->obj_flags.value[1], CONT_CLOSED)) 
+		{
+			send_to_char("You'd better open it first!\n\r", ch);
+		}
+		else 
+		{
+			if (obj_dotmode == FIND_ALL) 
+			{	    /* "put all <container>" case */
+			   /* check and make sure the guy has something first */
+				if (container == ch->carrying && !ch->carrying->next_content)
+				{
+					send_to_char("You don't seem to have anything to put in it.\n\r", ch);
+				}
+				else for (obj = ch->carrying; obj; obj = next_obj) 
+				{
+					next_obj = obj->next_content;
+					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+					{
+						// Will this be too spammy?
+						//send_to_char("You can't put that in there.\n\r", ch);
+					}
+					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+					{
+						perform_put(ch, obj, container);
+					}
+					else if (obj != container)
+					{
+						perform_put(ch, obj, container);
+					}
+				}
+			}
+			else if (obj_dotmode == FIND_ALLDOT) 
+			{  /* "put all.x <cont>" case */
+				if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying, 9999))) 
+				{
+					sprintf(buf, "You don't seem to have any %ss.\n\r", arg1);
+					send_to_char(buf, ch);
+				}
+				else while (obj) 
+				{
+					next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content, 9999);
+					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+					{
+						// Will this be too spammy?
+						//send_to_char("You can't put that in there.\n\r", ch);
+					}
+					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+					{
+						perform_put(ch, obj, container);
+					}
+					else if (obj != container)
+					{
+						perform_put(ch, obj, container);
+					}	
+					obj = next_obj;
+				}
+			}
+			else 
+			{		    /* "put <thing> <container>" case */
+				if (!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying, 9999))) 
+				{
+					sprintf(buf, "You aren't carrying %s %s.\n\r", AN(arg1), arg1);
+					send_to_char(buf, ch);
+				}
+				else if (obj == container)
+				{
+					send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
+				}
+				else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+				{
+					send_to_char("Arrows can only go into a quiver.\n\r", ch);
+				}
+				else
+				{
+					perform_put(ch, obj, container);
+				}
+			}
+		}
+	}
 }
 
 

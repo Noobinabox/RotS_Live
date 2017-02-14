@@ -2078,6 +2078,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 {
 	// Remove object from the character.
 	obj_from_obj(arrow);
+	obj_to_char(arrow, archer); // Move the arrow into the archer's base inventory first...
 	if (does_arrow_break(victim, arrow))
 	{
 		// Destroy the arrow and exit.
@@ -2088,6 +2089,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the victim.
+	obj_from_char(arrow); // And then remove it from the inventory here to ensure that it has the correct owner.
 	obj_to_char(arrow, victim);
 
 	return true;
@@ -2110,6 +2112,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
 	// Remove object from the character.
 	obj_from_obj(arrow);
+	obj_to_char(arrow, archer); // Move the arrow into the archer's base inventory first...
 	if (does_arrow_break(NULL, arrow))
 	{
 		// Destroy the arrow and exit.
@@ -2120,6 +2123,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the room.
+	obj_from_char(arrow); // And then remove it from the inventory here to ensure that it has the correct owner.
 	obj_to_room(arrow, room_num);
 
 	return true;
@@ -2577,6 +2581,10 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 				{
 					obj_from_obj(arrow);
 				}
+				if (arrow->in_room >= 0)
+				{
+					obj_from_room(arrow);
+				}
 				obj_to_char(arrow, character);
 			}
 			else
@@ -2600,6 +2608,6 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	message_writer.clear();
 	message.clear();
 	message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
-	message_writer.str(message);
+	message = message_writer.str();
 	send_to_room_except(message.c_str(), character->in_room, character);
 }

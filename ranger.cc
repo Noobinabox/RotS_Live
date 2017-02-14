@@ -1811,7 +1811,7 @@ see_hiding(struct char_data *seeker)
  * Returns: true if the hit should not be accurate, false if the
  * hit should be accurate.
  */
-bool check_archery_accuracy(char_data& archer, char_data& victim)
+bool check_archery_accuracy(const char_data& archer, const char_data& victim)
 {
 	using namespace utils;
 
@@ -1898,7 +1898,7 @@ int get_hit_location(const char_data& victim)
 * This used to be (tmp >= 0); this implied that torches
 * could parry. - Tuh
 */
-int apply_armor_to_arrow_damage(const char_data& victim, int damage, int location)
+int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage, int location)
 {
 	/* Bogus hit location */
 	if (location < 0 || location > MAX_WEAR)
@@ -1908,6 +1908,15 @@ int apply_armor_to_arrow_damage(const char_data& victim, int damage, int locatio
 	obj_data* armor = victim.equipment[location];
 	if (armor)
 	{
+		// The target has armor, but we made an accurate shot.
+		if (check_archery_accuracy(archer, victim))
+		{
+			act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_CHAR);
+			act("$n manages to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_NOTVICT);
+			act("$n notices a weakness in your armor!", TRUE, &archer, NULL, &victim, TO_VICT);
+			return damage;
+		}
+
 		const obj_flag_data& obj_flags = armor->obj_flags;
 
 		/* First, remove minimum absorb */
@@ -1969,7 +1978,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	using namespace utils;
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
-	double ranger_level_factor = ranger_level * number_d(0.5, 1.0);
+	double ranger_level_factor = (ranger_level * 0.5) * number_d(0.5, 1.0);
 	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
 	
 	int arrow_todam = arrow->obj_flags.value[1];
@@ -1988,21 +1997,14 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	int damage = int(ranger_level_factor + (bow_factor * multipler));
 
 	int arrow_hit_location = get_hit_location(*victim);
-	if (check_archery_accuracy(*archer, *victim))
-	{
-		act("You manage to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_CHAR);
-		act("$n manages to find a weakness in $N's armor!", TRUE, archer, NULL, victim, TO_NOTVICT);
-		act("$n notices a weakness in your armor!", TRUE, archer, NULL, victim, TO_VICT);
-	}
-	else
-	{
-		int body_type = victim->player.bodytype;
-		const race_bodypart_data& body_data = bodyparts[body_type];
 
-		// Apply damage reduction.
-		int armor_location = body_data.armor_location[arrow_hit_location];
-		damage = apply_armor_to_arrow_damage(*victim, damage, armor_location);
-	}
+	int body_type = victim->player.bodytype;
+	const race_bodypart_data& body_data = bodyparts[body_type];
+
+	// Apply damage reduction.
+	int armor_location = body_data.armor_location[arrow_hit_location];
+	damage = apply_armor_to_arrow_damage(*archer, *victim, damage, armor_location);
+
 
 	hit_location = arrow_hit_location;
 	return damage;
@@ -2078,6 +2080,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 {
 	// Remove object from the character.
 	obj_from_obj(arrow);
+	obj_to_char(arrow, archer); // Move it into his inventory.
 	if (does_arrow_break(victim, arrow))
 	{
 		// Destroy the arrow and exit.
@@ -2088,6 +2091,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the victim.
+	obj_from_char(arrow);
 	obj_to_char(arrow, victim);
 
 	return true;
@@ -2110,6 +2114,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
 	// Remove object from the character.
 	obj_from_obj(arrow);
+	obj_to_char(arrow, archer); // Move it into his inventory.
 	if (does_arrow_break(NULL, arrow))
 	{
 		// Destroy the arrow and exit.
@@ -2120,6 +2125,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
 
 	// Move the arrow to the room.
+	obj_from_char(arrow);
 	obj_to_room(arrow, room_num);
 
 	return true;
@@ -2421,6 +2427,18 @@ ACMD(do_shoot)
 		}
 
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
+		if (GET_SEX(ch) == SEX_MALE)
+		{
+			act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else if (GET_SEX(ch) == SEX_FEMALE)
+		{
+			act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else
+		{
+			act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
 		int wait_delay = shoot_calculate_wait(ch);
 		WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
 	}
@@ -2450,6 +2468,19 @@ ACMD(do_shoot)
 		obj_data* quiver = ch->equipment[WEAR_BACK];
 		obj_data* arrow = quiver->contains;
 		send_to_char("You release your arrow and it goes flying!\r\n", ch);
+
+		if (GET_SEX(ch) == SEX_MALE)
+		{
+			act("$n releases his arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else if (GET_SEX(ch) == SEX_FEMALE)
+		{
+			act("$n releases her arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
+		else
+		{
+			act("$n releases their arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
+		}
 
 		int roll = number(0, 99);
 		int target_number = shoot_calculate_success(ch, victim, arrow);
@@ -2577,6 +2608,10 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 				{
 					obj_from_obj(arrow);
 				}
+				if (arrow->in_room >= 0)
+				{
+					obj_from_room(arrow);
+				}
 				obj_to_char(arrow, character);
 			}
 			else
@@ -2597,9 +2632,5 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	std::string message = message_writer.str();
 	send_to_char(message.c_str(), character);
 
-	message_writer.clear();
-	message.clear();
-	message_writer << utils::get_name(*character) << " recovers some arrows." << std::endl;
-	message_writer.str(message);
-	send_to_room_except(message.c_str(), character->in_room, character);
+	act("$n recovers some arrows.\r\n", FALSE, character, 0, 0, TO_ROOM);
 }

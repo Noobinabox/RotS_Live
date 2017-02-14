@@ -1978,17 +1978,17 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	using namespace utils;
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
-	double ranger_level_factor = ((ranger_level / 2) * 0.5) * number_d(0.5, 1.0);
+	double ranger_level_factor = (ranger_level * 0.5)  * number_d(0.5, 1.0);
 	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
 	
 	int arrow_todam = arrow->obj_flags.value[1];
 
 	obj_data* bow = archer->equipment[WIELD];
-	double weapon_damage = get_weapon_damage(bow);
+	double weapon_damage = get_weapon_damage(bow) * 0.75;
 	double random_cap = arrow_todam + weapon_damage; // should be between ~4 and 30 at the ABSOLUTE max
 	
-	double random_factor_1 = number(random_cap);
-	double random_factor_2 = number(random_cap);
+	double random_factor_1 = number(1, 5);
+	double random_factor_2 = number(1, 6);
 	double random_factor_3 = number(random_cap);
 
 	double bow_factor = random_factor_1 + random_factor_2 + random_factor_3 + strength_factor;

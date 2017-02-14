@@ -106,6 +106,7 @@ ACMD(do_put)
 		}
 		else 
 		{
+			bool is_quiver = isname("quiver", container->name) != 0;
 			if (obj_dotmode == FIND_ALL) 
 			{	    /* "put all <container>" case */
 			   /* check and make sure the guy has something first */
@@ -116,12 +117,17 @@ ACMD(do_put)
 				else for (obj = ch->carrying; obj; obj = next_obj) 
 				{
 					next_obj = obj->next_content;
-					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver)
 					{
-						// Will this be too spammy?
-						//send_to_char("You can't put that in there.\n\r", ch);
+						send_to_char("Arrows can only go into a quiver.\n\r", ch);
+						break;
 					}
-					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+					else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver)
+					{
+						send_to_char("Only arrows can go into a quiver.\n\r", ch);
+						break;
+					}
+					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && is_quiver)
 					{
 						perform_put(ch, obj, container);
 					}
@@ -141,12 +147,17 @@ ACMD(do_put)
 				else while (obj) 
 				{
 					next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content, 9999);
-					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+					if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver)
 					{
-						// Will this be too spammy?
-						//send_to_char("You can't put that in there.\n\r", ch);
+						send_to_char("Arrows can only go into a quiver.\n\r", ch);
+						break;
 					}
-					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && isname("quiver", container->name))
+					else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver)
+					{
+						send_to_char("Only arrows can go into a quiver.\n\r", ch);
+						break;
+					}
+					else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && is_quiver)
 					{
 						perform_put(ch, obj, container);
 					}
@@ -168,9 +179,13 @@ ACMD(do_put)
 				{
 					send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
 				}
-				else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !isname("quiver", container->name))
+				else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver)
 				{
 					send_to_char("Arrows can only go into a quiver.\n\r", ch);
+				}
+				else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver)
+				{
+					send_to_char("Only arrows can go into a quiver.\n\r", ch);
 				}
 				else
 				{

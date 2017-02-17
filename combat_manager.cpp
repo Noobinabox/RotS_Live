@@ -422,7 +422,7 @@ namespace game_rules
 			double ob_factor = remaining_ob + 100.0;
 			int two_handed_factor = utils::is_twohanded(attacker) + 1;
 
-			damage = (damage * ob_factor * random_factor + (strength_factor * 133.0 * two_handed_factor))
+			damage = (damage * ob_factor * random_factor + (133.0 * two_handed_factor) * strength_factor)
 				/ 13300000.0;
 		}
 

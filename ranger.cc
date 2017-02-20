@@ -1987,8 +1987,8 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	double weapon_damage = get_weapon_damage(bow) * 0.75;
 	double random_cap = arrow_todam + weapon_damage; // should be between ~4 and 30 at the ABSOLUTE max
 	
-	double random_factor_1 = number(1, 5);
-	double random_factor_2 = number(1, 6);
+	double random_factor_1 = number(random_cap);
+	double random_factor_2 = number(random_cap);
 	double random_factor_3 = number(random_cap);
 
 	double bow_factor = random_factor_1 + random_factor_2 + random_factor_3 + strength_factor;
@@ -2005,7 +2005,8 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	int armor_location = body_data.armor_location[arrow_hit_location];
 	damage = apply_armor_to_arrow_damage(*archer, *victim, damage, armor_location);
 
-
+	sprintf(buf,"%s archery damage of %3d to %s.", GET_NAME(archer), damage, GET_NAME(victim));
+	mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 	hit_location = arrow_hit_location;
 	return damage;
 }
@@ -2149,9 +2150,15 @@ bool can_ch_shoot(char_data* archer)
 		return false;
 	}
 
-	if (is_npc(*archer) && is_mob_flagged(*archer, MOB_ORC_FRIEND)) {
-		send_to_char("Leave that to your leader.\r\n", archer);
-		return false;
+	if (is_npc(*archer) && is_mob_flagged(*archer, MOB_ORC_FRIEND)) 
+	{
+		int dex = archer->get_cur_dex();
+		if (dex < 18)
+		{
+			char_data* receiver = archer->master ? archer->master : archer;
+			send_to_char("Your clumsy lacks the dexterity to do such a thing.", receiver);
+			return false;
+		}
 	}
 
 	const room_data& room = world[archer->in_room];
@@ -2237,6 +2244,13 @@ char_data* is_targ_valid(char_data* archer, waiting_type* target)
 		send_to_char("Your victim is no longer here.\r\n", archer);
 		return NULL;
 	}
+
+	if (archer == victim)
+	{
+		send_to_char("But you have so much to live for!\r\n", archer);
+		return NULL;
+	}
+
 	if (!CAN_SEE(archer, victim))
 	{
 		send_to_char("Shoot who?\r\n", archer);
@@ -2394,15 +2408,17 @@ void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
  */
 ACMD(do_shoot)
 {
-	struct char_data *victim = NULL;
-	int success, dmg;
-
+	char_data *victim = NULL;
 	one_argument(argument, arg);
 
 	if (subcmd == -1)
 	{
 		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after interruption.
+		
+		// Clean-up targets.
+		wtl->targ1.cleanup();
+		wtl->targ2.cleanup();
 		return;
 	}
 
@@ -2425,33 +2441,48 @@ ACMD(do_shoot)
 		{
 			return;
 		}
+		sprintf(buf,"(%s) subcmd first target of %s.", GET_NAME(ch), GET_NAME(victim));
+		mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
-		if (GET_SEX(ch) == SEX_MALE)
+
+		// Only send a message to the room if the character isn't hiding.
+		// To onlookers, it will be impossible to tell if the archer is shooting or ambushing.
+		if (!utils::is_affected_by(*ch, AFF_HIDE))
 		{
-			act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+			if (GET_SEX(ch) == SEX_MALE)
+			{
+				act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+			}
+			else if (GET_SEX(ch) == SEX_FEMALE)
+			{
+				act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+			}
+			else
+			{
+				act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+			}
 		}
-		else if (GET_SEX(ch) == SEX_FEMALE)
-		{
-			act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-		}
-		else
-		{
-			act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-		}
+
+		// Clean-up targets prior to setting new targets.
+		wtl->targ1.cleanup();
+		wtl->targ2.cleanup();
+
 		int wait_delay = shoot_calculate_wait(ch);
-		WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, 0, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+		WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
 	}
 		break;
 	case 1:
 	{
-		if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num))
+		victim = is_targ_valid(ch, wtl);
+		if (victim == NULL)
 		{
-			send_to_char("Your victim is no longer among us.\r\n", ch);
 			return;
 		}
-
-		victim = reinterpret_cast<char_data*>(wtl->targ1.ptr.ch);
+		
+		sprintf(buf,"(%s) subcmd return target of %s.", GET_NAME(ch), GET_NAME(victim));
+		mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
+		
 		if (!CAN_SEE(ch, victim))
 		{
 			send_to_char("Shoot who?\r\n", ch);
@@ -2469,11 +2500,12 @@ ACMD(do_shoot)
 		obj_data* arrow = quiver->contains;
 		send_to_char("You release your arrow and it goes flying!\r\n", ch);
 
-		if (GET_SEX(ch) == SEX_MALE)
+		byte sex = ch->player.sex;
+		if (sex == SEX_MALE)
 		{
 			act("$n releases his arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
 		}
-		else if (GET_SEX(ch) == SEX_FEMALE)
+		else if (sex == SEX_FEMALE)
 		{
 			act("$n releases her arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
 		}
@@ -2494,13 +2526,17 @@ ACMD(do_shoot)
 		}
 
 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after loosing an arrow.
+
+		// Clean-up targets.
+		wtl->targ1.cleanup();
+		wtl->targ2.cleanup();
 	}
-		break;
+	break;
 	default:
 		sprintf(buf2, "do_shoot: illegal subcommand '%d'.\r\n", subcmd);
 		mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
 		abort_delay(ch);
-		return;
+		break;;
 	}
 }
 
@@ -2510,13 +2546,10 @@ ACMD(do_shoot)
 //============================================================================
 void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vector<obj_data*>& arrows)
 {
-	const int arrow_type = 7;
-
 	// Iterate through items in the list.
 	for (obj_data* item = obj_list; item; item = item->next_content)
 	{
-		// TODO(drelidan): See if there's another way to determine that these items are ammo.
-		if (item->obj_flags.type_flag == arrow_type)
+		if (item->obj_flags.type_flag == ITEM_MISSILE)
 		{
 			if (item->obj_flags.value[2] == character->specials2.idnum)
 			{
@@ -2634,3 +2667,4 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
 	act("$n recovers some arrows.\r\n", FALSE, character, 0, 0, TO_ROOM);
 }
+

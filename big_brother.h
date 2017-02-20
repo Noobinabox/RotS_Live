@@ -66,11 +66,7 @@ namespace game_rules
 		// Removes a character from our afk_characters set.
 		void remove_character_from_set(const char_data* character);
 
-		// TODO(drelidan):
-		// There will be a map between obj_data* corpses and a struct containing information
-		// about them - who they belong to, who has looting rights, etc.
 		std::map<obj_data*, char_data*> m_corpse_map;
-
 		std::set<const char_data*> m_afk_characters;
 		
 		// For tracking when people engaged in PK can get AFK protection.

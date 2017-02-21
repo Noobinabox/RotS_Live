@@ -18,9 +18,112 @@ namespace game_rules
 	//============================================================================ 
 	
 	//============================================================================
-	bool big_brother::is_target_afk(const char_data* victim)
+	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
+	{
+		// Not Big Brother's job to check these pointers.
+		if (!attacker || !victim)
+			return true;
+
+		// Big Brother only protects PCs.
+		if (utils::is_npc(*attacker) || utils::is_npc(*victim))
+			return true;
+
+		// The ability being used isn't offensive - all good.
+		if (!is_skill_offensive(skill_id))
+			return true;
+
+		// Can't attack AFK targets.
+		if (is_target_afk(victim))
+			return false;
+
+		// Can't attack looting targets.
+		if (is_target_looting(victim))
+			return false;
+
+		// Can't kill lowbies.
+		if (!is_level_range_appropriate(attacker, victim))
+			return false;
+
+		return true;
+	}
+
+	//============================================================================
+	bool big_brother::is_skill_offensive(int skill_id) const
+	{
+		// TODO(drelidan):  Add spells to the list.
+		static int OFFENSIVE_SKILLS[128] = { 0 };
+
+		for (int i = 0; i < 128; ++i)
+		{
+			if (OFFENSIVE_SKILLS[i] == skill_id)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	//============================================================================
+	bool big_brother::is_target_afk(const char_data* victim) const
 	{
 		return m_afk_characters.find(victim) != m_afk_characters.end();
+	}
+
+	//============================================================================
+	bool big_brother::is_target_looting(const char_data* victim) const
+	{
+		return m_looting_characters.find(victim) != m_looting_characters.end();
+	}
+
+	//============================================================================
+	bool big_brother::is_level_range_appropriate(const char_data* attacker, const char_data* victim) const
+	{
+		int attacker_level = utils::get_level_legend_cap(*attacker);
+		int defender_level = utils::get_level_legend_cap(*victim);
+
+		// Attacker is 50% higher than defender; no go.
+		if (attacker_level > (defender_level * 3 / 2))
+		{
+			return false;
+		}
+
+		// Defender is 50% higher than attacker; no go.  This is to prevent abuse.
+		if (defender_level > (attacker_level * 3 / 2))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	//============================================================================
+	bool big_brother::is_same_side_race_war(const char_data* attacker, const char_data* victim)
+	{
+		/*
+		* Decide if `character' and `other' are on the same side of the race
+		* war.  Return 0 if they are, return 1 if they aren't.
+		*/
+		if (IS_NPC(other) && !IS_AFFECTED(other, AFF_CHARM))
+			return 0;
+		if (IS_NPC(character) && !IS_AFFECTED(character, AFF_CHARM))
+			return 0;
+		if ((GET_RACE(character) == RACE_GOD) || (GET_RACE(other) == RACE_GOD))
+			return 0;
+		if (RACE_EAST(other) && !(RACE_EAST(character)))
+			return 1;
+		if (!(RACE_EAST(other)) && RACE_EAST(character))
+			return 1;
+		if (RACE_MAGI(other) && !(RACE_MAGI(character)))
+			return 1;
+		if (!(RACE_MAGI(other)) && RACE_MAGI(character))
+			return 1;
+		if (RACE_EVIL(other) && RACE_GOOD(character))
+			return 1;
+		if (RACE_GOOD(other) && RACE_EVIL(character))
+			return 1;
+
+		return 0;
 	}
 
 	//============================================================================
@@ -37,6 +140,15 @@ namespace game_rules
 
 		tm* time_info = localtime(&current_time);
 		m_last_engaged_pk_time[attacker] = *time_info; // copy tm_struct into map
+
+		typedef std::set<const char_data*>::iterator set_iter;
+
+		// If you attack someone in PK, you are no longer considered looting.
+		set_iter attacker_iter = m_looting_characters.find(attacker);
+		if (attacker_iter != m_looting_characters.end())
+		{
+			m_looting_characters.erase(attacker_iter);
+		}
 	}
 
 	//============================================================================

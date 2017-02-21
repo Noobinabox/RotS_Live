@@ -2023,12 +2023,11 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
  */
 int shoot_calculate_wait(const char_data* archer)
 {
-	const int base_beats = 16;
-	const int beats_modifier = 12;
-	const int min_beats = 3;
+	const int base_beats = 12;
+	const int min_beats = 4;
 
-	int total_beats = base_beats - ((archer->points.ENE_regen / beats_modifier) - beats_modifier);
-	total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / beats_modifier);
+	int total_beats = base_beats - ((archer->points.ENE_regen / base_beats) - base_beats);
+	total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / base_beats);
 
 	if (archer->player.race == RACE_WOOD)
 	{
@@ -2036,6 +2035,7 @@ int shoot_calculate_wait(const char_data* archer)
 	}
 
 	total_beats = std::max(total_beats, min_beats);
+	total_beats = std::min(total_beats, base_beats);
 	return total_beats;
 
 }
@@ -2540,6 +2540,24 @@ ACMD(do_shoot)
 	}
 }
 
+
+//============================================================================
+// Put the arrows recovered into the quiver worn on the characters
+// back.
+//============================================================================
+
+void put_arrow_quiver(char_data* character, obj_data *arrow, obj_data* quiver)
+{
+	if (GET_OBJ_WEIGHT(quiver) + GET_OBJ_WEIGHT(arrow) > quiver->obj_flags.value[0])
+		act("$p won't fit in $P.", FALSE, character, arrow, quiver, TO_CHAR);
+	else
+	{
+		obj_from_char(arrow);
+		obj_to_obj(arrow, quiver);
+	}
+}
+
+
 //============================================================================
 // Gets all arrows in the object list that are tagged to the character.  These
 // arrows are placed in the 'arrows' vector.
@@ -2598,6 +2616,16 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	if (character == NULL)
 		return;
 
+	bool quivercheck;
+	obj_data* quiver = character->equipment[WEAR_BACK];
+	if (!quiver || !isname("quiver", quiver->name))
+	{
+		quivercheck = FALSE;
+	}
+	else
+	{
+		quivercheck = TRUE;
+	}
 	// Characters cannot recover arrows if they are blind.
 	if (!CAN_SEE(character))
 	{
@@ -2646,16 +2674,18 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 					obj_from_room(arrow);
 				}
 				obj_to_char(arrow, character);
+				if (quivercheck == TRUE)
+					put_arrow_quiver(character, arrow, quiver);
 			}
 			else
 			{
-				send_to_char("You can't carry that many items!", character);
+				send_to_char("You can't carry that much weight!", character);
 				break;
 			}
 		}
 		else
 		{
-			send_to_char("You can't that much weight!", character);
+			send_to_char("You can't carry that many items!", character);
 			break;
 		}
 	}

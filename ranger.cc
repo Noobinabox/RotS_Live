@@ -2156,7 +2156,7 @@ bool can_ch_shoot(char_data* archer)
 		if (dex < 18)
 		{
 			char_data* receiver = archer->master ? archer->master : archer;
-			send_to_char("Your clumsy lacks the dexterity to do such a thing.", receiver);
+			send_to_char("Your clumsy follower lacks the dexterity to use a bow.", receiver);
 			return false;
 		}
 	}
@@ -2180,11 +2180,36 @@ bool can_ch_shoot(char_data* archer)
 	const obj_data* quiver = archer->equipment[WEAR_BACK];
 	if (!quiver || !isname("quiver", quiver->name))
 	{
-		send_to_char("You must be wearing a quiver on your back.\r\n", archer);
-		return false;
+		if (is_pc(*archer))
+		{
+			send_to_char("You must be wearing a quiver on your back.\r\n", archer); 
+			return false;
+		}
+		else
+		{
+			// Ensure that the NPC has an arrow.
+			obj_data* arrow = NULL;
+			
+			// Must be a follower and shooting from their inventory.  Find the first missile they have.
+			for (obj_data* item = archer->carrying; item; item = item->next)
+			{
+				if (item->obj_flags.type_flag == ITEM_MISSILE)
+				{
+					arrow = item;
+					break;
+				}
+			}
+
+			if (arrow == NULL)
+			{
+				char_data* receiver = archer->master ? archer->master : archer;
+				send_to_char("Your follower is our of arrows.", receiver);
+				return false;
+			}
+		}
 	}
 
-	if (!quiver->contains)
+	if (is_pc(*archer) && !quiver->contains)
 	{
 		send_to_char("Your quiver is empty!  Find some more arrows.\r\n", archer);
 		return false;
@@ -2496,8 +2521,24 @@ ACMD(do_shoot)
 		}
 
 		// Get the arrow.
+		obj_data* arrow = NULL;
 		obj_data* quiver = ch->equipment[WEAR_BACK];
-		obj_data* arrow = quiver->contains;
+		if (quiver)
+		{
+			arrow = quiver->contains;
+		}
+		else
+		{
+			// Must be a follower and shooting from their inventory.  Find the first missile they have.
+			for (obj_data* item = ch->carrying; item; item = item->next)
+			{
+				if (item->obj_flags.type_flag == ITEM_MISSILE)
+				{
+					arrow = item;
+					break;
+				}
+			}
+		}
 		send_to_char("You release your arrow and it goes flying!\r\n", ch);
 
 		byte sex = ch->player.sex;

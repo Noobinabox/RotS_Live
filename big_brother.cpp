@@ -24,13 +24,33 @@ namespace game_rules
 		if (!attacker || !victim)
 			return true;
 
-		// Big Brother only protects PCs.
-		if (utils::is_npc(*attacker) || utils::is_npc(*victim))
+		// Big Brother does not protect against NPCs.
+		if (utils::is_npc(*attacker))
+		{
 			return true;
+		}
 
 		// The ability being used isn't offensive - all good.
 		if (!is_skill_offensive(skill_id))
 			return true;
+
+		// You cannot attack characters that are writing.
+		if (utils::is_player_flagged(*victim, PLR_WRITING))
+			return false;
+
+		// Big Brother protects PCs and their mounts.
+		if (utils::is_npc(*victim))
+		{
+			// The victim is a mount.  Test if his rider is a valid target.
+			if (utils::is_ridden(*victim))
+			{
+				return is_target_valid(attacker, victim->mount_data.rider, skill_id);
+			}
+			else
+			{
+				return true;
+			}
+		}
 
 		// Can't attack AFK targets.
 		if (is_target_afk(victim))

@@ -34,7 +34,7 @@ namespace game_rules
 		if (!is_skill_offensive(skill_id))
 			return true;
 
-		// You cannot attack characters that are writing.
+		// You cannot attack a character that is writing.
 		if (utils::is_player_flagged(*victim, PLR_WRITING))
 			return false;
 
@@ -118,32 +118,42 @@ namespace game_rules
 	}
 
 	//============================================================================
-	bool big_brother::is_same_side_race_war(const char_data* attacker, const char_data* victim)
+	bool big_brother::is_same_side_race_war(const char_data* attacker, const char_data* victim) const
 	{
-		/*
-		* Decide if `character' and `other' are on the same side of the race
-		* war.  Return 0 if they are, return 1 if they aren't.
-		*/
-		if (IS_NPC(other) && !IS_AFFECTED(other, AFF_CHARM))
-			return 0;
-		if (IS_NPC(character) && !IS_AFFECTED(character, AFF_CHARM))
-			return 0;
-		if ((GET_RACE(character) == RACE_GOD) || (GET_RACE(other) == RACE_GOD))
-			return 0;
-		if (RACE_EAST(other) && !(RACE_EAST(character)))
-			return 1;
-		if (!(RACE_EAST(other)) && RACE_EAST(character))
-			return 1;
-		if (RACE_MAGI(other) && !(RACE_MAGI(character)))
-			return 1;
-		if (!(RACE_MAGI(other)) && RACE_MAGI(character))
-			return 1;
-		if (RACE_EVIL(other) && RACE_GOOD(character))
-			return 1;
-		if (RACE_GOOD(other) && RACE_EVIL(character))
-			return 1;
+		int attacker_race = attacker->player.race;
+		int victim_race = victim->player.race;
 
-		return 0;
+		// All players are on the same side as Gods.
+		if (attacker_race == RACE_GOD || victim_race == RACE_GOD)
+			return true;
+
+		// Good guys are on the same side.
+		if (utils::is_race_good(*attacker))
+		{
+			return utils::is_race_good(*victim);
+		}
+
+		// Lhuths and easterlings are on the same side.  Note, this must be checked before
+		// is_race_evil, since lhuths and easterlings are also considered evil races.
+		if (utils::is_race_easterling(*attacker) || utils::is_race_magi(*attacker))
+		{
+			return utils::is_race_easterling(*victim) || utils::is_race_magi(*victim);
+		}
+
+		// Evil races are only on the side of other evil races that are not lhuths or easterlings.
+		if (utils::is_race_evil(*attacker))
+		{
+			if (utils::is_race_evil(*victim))
+			{
+				return !(utils::is_race_easterling(*victim) || utils::is_race_magi(*victim));
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	//============================================================================

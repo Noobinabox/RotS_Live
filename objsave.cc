@@ -732,13 +732,34 @@ void Crash_follower_load(struct char_data *ch, FILE *fp){
         break;
       
       case FOL_TAMED:  //need same for tame
-        af.type      = SKILL_TAME;
-        af.duration  = -1;
-        af.modifier  = 0;
-        af.location  = APPLY_NONE;
-        af.bitvector = AFF_CHARM;
-        affect_to_char(mob, &af);
-        SET_BIT(MOB_FLAGS(mob), MOB_PET);
+	  {
+		  af.type = SKILL_TAME;
+		  af.duration = -1;
+		  af.modifier = 0;
+		  af.location = APPLY_NONE;
+		  af.bitvector = AFF_CHARM;
+		  affect_to_char(mob, &af);
+		  SET_BIT(MOB_FLAGS(mob), MOB_PET);
+
+		  // If the prototype tame is flagged as aggressive and the mob is tamed,
+		  // assume that the mob has been calmed and add that spell effect to it.
+		  char_data* mob_proto = read_mobile(mob->nr, REAL);
+		  if (mob_proto)
+		  {
+			  if (MOB_FLAGGED(mob_proto, MOB_AGGRESSIVE))
+			  {
+				  affected_type calm_affect;
+				  calm_affect.type = SKILL_CALM;
+				  calm_affect.duration = -1;
+				  calm_affect.modifier = 0;
+				  calm_affect.location = APPLY_NONE;
+				  calm_affect.bitvector = 0;
+				  affect_to_char(mob, &calm_affect);
+			  }
+			  extract_char(mob_proto);
+		  }
+
+	  }
         break;
       
       case FOL_GUARDIAN:  // and guardian

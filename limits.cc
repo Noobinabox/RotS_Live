@@ -84,24 +84,35 @@ int xp_to_level(int lvl)
 
 inline void advance_mini_level(struct char_data *ch)
 {
-  int i, n;
-  i = ++GET_MINI_LEVEL(ch);
-  /* add on average 2 HP/level */
-  if(GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
-    if(!number(0,50))
-      ch->constabilities.hit++;
-  
-  if((xp_to_level(GET_LEVEL(ch)+1) <= GET_EXP(ch)))
-    {
-      GET_LEVEL(ch)++;
-      advance_level(ch);
-    }
-  
-  for(n = 1;n <= MAX_PROFS; n++)
-    if((i)*GET_PROF_COOF(n,ch) >= 100000 * (GET_PROF_LEVEL(n,ch) + 1))
-      if(GET_PROF_COOF(n,ch) * LEVEL_MAX >= 1000 * (GET_PROF_LEVEL(n,ch)+1))
-	advance_level_prof(n,ch);
-  GET_MAX_MINI_LEVEL(ch) = MAX(GET_MAX_MINI_LEVEL(ch),GET_MINI_LEVEL(ch));
+	int i, n;
+	i = ++GET_MINI_LEVEL(ch);
+	/* add on average 2 HP/level */
+	if (GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
+	{
+		if (number(0, 50) == 0)
+		{
+			ch->constabilities.hit++;
+		}
+	}
+
+	if ((xp_to_level(GET_LEVEL(ch) + 1) <= GET_EXP(ch)))
+	{
+		GET_LEVEL(ch)++;
+		advance_level(ch);
+	}
+
+	for (n = 1; n <= MAX_PROFS; n++)
+	{
+		if ((i)*GET_PROF_COOF(n, ch) >= 100000 * (GET_PROF_LEVEL(n, ch) + 1))
+		{
+			if (GET_PROF_COOF(n, ch) * LEVEL_MAX >= 1000 * (GET_PROF_LEVEL(n, ch) + 1))
+			{
+				advance_level_prof(n, ch);
+			}
+		}
+	}
+
+	GET_MAX_MINI_LEVEL(ch) = std::max(GET_MAX_MINI_LEVEL(ch), GET_MINI_LEVEL(ch));
 }
 
 double adjust_regen_for_level(int character_level, double regen_amount)
@@ -117,24 +128,17 @@ double adjust_regen_for_level(int character_level, double regen_amount)
 	return adjusted_amount;
 }
 
-// int     spirit_gain(struct char_data *ch)
-// {
-//   int gain =  GET_WILL(ch)/(number(1,20));
-//   return gain;
-// }
-
 /* manapoint gain pr. game hour */
 int	mana_gain(const char_data* character)
 {
 	using namespace utils;
 
-	// dgurley: Do the math with a double and convert on the way out.
-	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
-	// and code easier and cleaner.
 	double gain(character->player.level);
 	if (is_pc(*character))
 	{
-		gain = 10.0 + character->tmpabilities.intel / 2.0;
+		const char_ability_data& abils = character->tmpabilities;
+		gain = 8.0 + abils.intel / 2.0 + abils.wil / 5.0;
+		gain = gain + get_prof_level(PROF_MAGE, *character) / 5.0 + get_prof_level(PROF_CLERIC, *character) / 5.0;
 
 		switch (character->specials.position) 
 		{
@@ -147,6 +151,14 @@ int	mana_gain(const char_data* character)
 		case POSITION_SITTING:
 			gain *= 1.25;
 			break;
+		}
+	}
+	else
+	{
+		// NPCs that aren't in combat regenerate mana 50% faster to compensate for increased player health/mana regen.
+		if (character->specials.fighting == NULL)
+		{
+			gain *= 1.5;
 		}
 	}
 
@@ -171,14 +183,11 @@ int	hit_gain(const char_data* character)
 {
 	using namespace utils;
 
-	// dgurley: Do the math with a double and convert on the way out.
-	// It's 2017, CPUs have dedicated FPUs now, and it makes the math
-	// and code easier and cleaner.
 	double gain(character->player.level);
 
 	if (is_pc(*character))
 	{
-		gain = 5.0 + character->tmpabilities.con / 2.0;
+		gain = 8.0 + character->tmpabilities.con / 2.0 + get_prof_level(PROF_WARRIOR, *character) / 3.0 + get_prof_level(PROF_RANGER, *character) / 5.0;
 
 		switch (character->specials.position) 
 		{
@@ -192,11 +201,13 @@ int	hit_gain(const char_data* character)
 			gain *= 1.125;
 			break;
 		}
-
-		// Casters get half regen after level 10, since they have efficient ways to regain health.
-		if (character->get_level() > 10 && character->player.prof == PROF_MAGIC_USER || character->player.prof == PROF_CLERIC)
+	}
+	else
+	{
+		// NPCs that aren't in combat regenerate health 50% faster to compensate for increased player health/mana regen.
+		if (character->specials.fighting == NULL)
 		{
-			gain *= 0.5;
+			gain *= 1.5;
 		}
 	}
 
@@ -263,6 +274,17 @@ int	move_gain(const char_data* character)
 
 	if (is_npc(*character))
 	{
+		// Tames get double move regen (have to be animals).
+		if (affected_by_spell(const_cast<char_data*>(character), SKILL_TAME))
+		{
+			gain *= 2.0;
+			char_data* master = character->master;
+			if (master && get_specialization(*master) == PLRSPEC_PETS)
+			{
+				// If the tamer is animals spec, double move regen again.
+				gain *= 2.0;
+			}
+		}
 		return int(gain - 5);
 	}
 	else

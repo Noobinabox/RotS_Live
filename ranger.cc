@@ -421,7 +421,7 @@ ACMD (do_gather_food) {
 		     "\n\r", ch);
 	break;
 	  case 5:
-		  if ((obj = read_object(6451, VIRT)) != NULL)
+		  if ((obj = read_object(2700, VIRT)) != NULL)
 		  {
 			  obj_to_char(obj, ch);
 			  send_to_char("You manage to find some branches that you fashion into a bow.\n\r", ch);
@@ -432,7 +432,7 @@ ACMD (do_gather_food) {
 		  }
 		  break;
 	  case 6:
-		  if ((obj = read_object(6455, VIRT)) != NULL)
+		  if ((obj = read_object(2720, VIRT)) != NULL)
 		  {
 			  obj_to_char(obj, ch);
 			  send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);

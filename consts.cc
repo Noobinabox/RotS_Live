@@ -515,7 +515,7 @@ byte language_skills[] = {
 };
 
 
-char guildmaster_number = 55;
+char guildmaster_number = 56;
 
 struct skill_teach_data guildmasters[]={
   {    // ALL SKILLS (1)

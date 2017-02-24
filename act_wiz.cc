@@ -648,6 +648,7 @@ void do_stat_object(struct char_data *ch, struct obj_data *j)
     sprintf(buf, "OB: %d, Parry: %d, Bulk: %d,  Type: %d, Damage: %d/10 (set to %d)", j->obj_flags.value[0], j->obj_flags.value[1], j->obj_flags.value[2], j->obj_flags.value[3], get_weapon_damage(j), j->obj_flags.value[4]);
     break;
   case ITEM_MISSILE :
+    sprintf(buf, "To Hit: %d, To Dam: %d, Break Percentage: %d", j->obj_flags.value[0],
 	    j->obj_flags.value[1], j->obj_flags.value[3]);
     break;
   case ITEM_ARMOR :

@@ -1940,42 +1940,6 @@ check_grip(struct char_data *ch, struct obj_data *wielded)
     }
 }
 
-
-
-/*
- * Assuming 'ch' is hitting 'victim', does 'ch' perform
- * an 'accurate' hit (via the accuracy skill)?
- *
- * Returns: 0 if the hit should not be accurate, 1 if the
- * hit should be accurate.
- */
-int check_accuracy(char_data* attacker, char_data* victim)
-{
-	int tactics = attacker->specials.tactics;
-	if (tactics != TACTICS_CAREFUL && tactics != TACTICS_AGGRESSIVE)
-		return 0;
-
-	using namespace utils;
-
-	double probability = get_prof_level(PROF_RANGER, *attacker) * 0.01; // 30% chance at 30r
-	probability -= get_skill_penalty(*attacker) * 0.0001; // minus any skill penalty
-	probability -= get_dodge_penalty(*attacker) * 0.0001; // minus any dodge penalty
-	probability *= get_skill(*attacker, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
-
-	double roll = number();
-
-	if (roll < probability)
-	{
-		act("You manage to find an opening in $N's defense!", TRUE, attacker, NULL, victim, TO_CHAR);
-		act("$n notices an opening in your defense!", TRUE, attacker, NULL, victim, TO_VICT);
-		return 1;
-	}
-
-	return 0;
-}
-
-
-
 /*
  * Hit was parried - can victim riposte?  Should encumbrance
  * be factored in?
@@ -2111,7 +2075,6 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 void hit(struct char_data *ch, struct char_data *victim, int type)
 {
   struct obj_data *wielded = 0; /* weapon that ch wields */
-  int hit_accurate;         /* has accuracy roll been made? */
   int w_type; /* weapon type, like TYPE_SLASH */
   int OB;
   int dam = 0, dodge_malus, evasion_malus;
@@ -2127,8 +2090,6 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 
   if (GET_POS(ch) < POSITION_FIGHTING)
     return;
-
-  hit_accurate = check_accuracy(ch, victim);
 
   if (ch->equipment[WIELD] &&
       ch->equipment[WIELD]->obj_flags.type_flag == ITEM_WEAPON) {
@@ -2164,11 +2125,9 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
     OB += 100;
 
   dodge_malus = evasion_malus = 0;
-  if (!hit_accurate) {
-	evasion_malus = get_evasion_malus(*ch, *victim);
-    dodge_malus = get_real_dodge(victim) + evasion_malus;
-    OB -= dodge_malus;
-  }
+  evasion_malus = get_evasion_malus(*ch, *victim);
+  dodge_malus = get_real_dodge(victim) + evasion_malus;
+  OB -= dodge_malus;
 
   if (GET_POS(victim) < POSITION_FIGHTING)
     OB += 10 * (POSITION_FIGHTING - GET_POS(victim));
@@ -2194,8 +2153,10 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 
       SET_CURRENT_PARRY(victim) = GET_CURRENT_PARRY(victim) * 2/3;
 
-      if (tmp == 35)
-	OB = MAX(OB, 0);
+	  if (tmp == 35)
+	  {
+		  OB = std::max(OB, 0);
+	  }
 
       if (OB < 0) {
 	do_parry(ch, victim, w_type);
@@ -2231,13 +2192,11 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	 */
 	dam += GET_DAMAGE(ch) * 10;
 	tmp = number(0, 100);
-	if (hit_accurate)
-	  dam = (dam * (10000 + (tmp*tmp))) / 100000;
-	else  /* damage divided again by 10 */
-	  dam = (dam * (OB + 100) * (10000 + (tmp * tmp) +
-				     (IS_TWOHANDED(ch) ? 2 : 1) * 133 *
-				     GET_BAL_STR(ch))) / 13300000;
-
+	/* damage divided again by 10 */
+	dam = (dam * (OB + 100) * (10000 + (tmp * tmp) +
+		(IS_TWOHANDED(ch) ? 2 : 1) * 133 *
+		GET_BAL_STR(ch))) / 13300000;
+	  
 	dam = check_find_weakness(ch, victim, dam);
 
 	tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
@@ -2246,7 +2205,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	if (GET_POS(victim) < POSITION_FIGHTING)
 	  dam += dam/2;
 
-	dam = MAX(0, dam);  /* Not less than 0 damage */
+	dam = std::max(0, dam);  /* Not less than 0 damage */
 	damage(ch, victim, dam, w_type, location);
 
 	if (dam > 0)
@@ -2344,7 +2303,7 @@ perform_violence(int mini_tics)
   for(ch = combat_list; ch; ch = combat_next_dude) {
     combat_next_dude = ch->next_fighting;
 
-    SET_CURRENT_PARRY(ch) = MIN(GET_CURRENT_PARRY(ch) + 3, 100);
+    SET_CURRENT_PARRY(ch) = std::min(GET_CURRENT_PARRY(ch) + 3, 100);
 
     if(GET_MENTAL_DELAY(ch) && (GET_MENTAL_DELAY(ch) > -120))
       GET_MENTAL_DELAY(ch)--;

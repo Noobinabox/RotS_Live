@@ -188,6 +188,7 @@ assign_mobiles(void)
   ASSIGNMOB(32529, guild);  // maelor, orcish illusionist
   ASSIGNMOB(18833, guild);  // Lhuth mob in vinyanost tombs
   ASSIGNMOB(10213, guild);  // Karvok
+  ASSIGNMOB(4647, guild);  //Ungorod Swashbuckler
 
   ASSIGNMOB(28473, receptionist);  // temporary innkeeper in uruk mage tower
   ASSIGNMOB(21343, receptionist);  // tawarost receptionist

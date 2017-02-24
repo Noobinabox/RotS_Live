@@ -534,236 +534,281 @@ void recount_light_room(int room);
 void update_room_tracks();
 extern int LOOT_DECAY_TIME;
 
-void	point_update( void )
+void point_update(void)
 {
-  int recalc_flag = 0, full_update, feeling, mytime, tmp;
-  void	update_char_objects( struct char_data *ch ); /* handler.c */
-  void	extract_obj(struct obj_data *obj); /* handler.c */
-  struct char_data *i, *next_dude;
-  struct obj_data *j, *next_thing, *jj, *next_thing2;
-  struct affected_type * hjp;
+	int recalc_flag = 0, full_update, feeling, mytime, tmp;
+	void	update_char_objects(struct char_data *ch); /* handler.c */
+	void	extract_obj(struct obj_data *obj); /* handler.c */
+	struct char_data *i, *next_dude;
+	struct obj_data *j, *next_thing, *jj, *next_thing2;
+	struct affected_type * hjp;
 
-  /* characters */
+	/* characters */
+	recalc_zone_power();
+	update_room_tracks();
 
-  recalc_zone_power();
-  update_room_tracks();
+	mytime = time(0);
 
-  mytime = time(0);
-
-  if(((mytime/3600)%24 == 9) && ((mytime/60)%60 == 30)){
-    send_to_all("ROUTINE REBOOT IN 30 MINUTES.\n\r");
-  }
-  if(((mytime/3600)%24 == 9) && ((mytime/60)%60 == 55)){
-    send_to_all("ROUTINE REBOOT IN 5 MINUTES.\n\r");
-  }
-  if(((mytime/3600)%24 == 9) && ((mytime/60)%60 == 56)){
-    send_to_all("ROUTINE REBOOT IN 4 MINUTES.\n\r");
-  }
-  if(((mytime/3600)%24 == 9) && ((mytime/60)%60 == 59)){
-    send_to_all("ROUTINE REBOOT IN 1 MINUTE.\n\r");
-  }
-  if(((mytime/3600)%24 == 10)&&(((mytime/60)%60 == 0)||((mytime/60)%60 == 1))){
-    send_to_all("ROUTINE REBOOT NOW.\n\r");
-    circle_shutdown = 1;
-  }
-
-  for (i = character_list; i; i = next_dude) {
-    next_dude = i->next;
-
-
-    affect_total(i, AFFECT_TOTAL_TIME);
-    feeling = report_zone_power(i);
-    // hint/stench messages no longer automatic
-    if((GET_LEVEL(i) < LEVEL_IMMORT) && (GET_POS(i) > POSITION_SLEEPING) && !IS_SET(PLR_FLAGS(i),PLR_WRITING)){
-	  if ((feeling < 0) && !(number(0, 3)))
-		send_to_char("You catch a waft of evil stench in the air.\n\r",i);
-	  if ((feeling > 0) & !(number(0, 4)))
-		send_to_char("The air brings a hint of goodness' presence to you.\n\r", i);
-    }
-
-    if (!IS_NPC(i)) {
-      update_char_objects(i);
-
-	//  Time messages removed.
-    //  if(PRF_FLAGGED(i, PRF_TIME) && (GET_POS(i) >= POSITION_SLEEPING))
-	//    send_to_char("You feel the time passing by...\n\r",i);
-      if(check_idling(i)) continue;
-    }
-    
-    full_update = -1;
-    if((hjp = affected_by_spell(i,SPELL_SLOW_DIGESTION)) != 0){
-       if(hjp->modifier > number(0,49)) full_update = 0;
-    }
-
-    if ((!IS_NPC(i) && !PLR_FLAGGED(i, PLR_RETIRED)) || IS_NPC(i)) {
-      gain_condition(i, FULL, full_update);
-      gain_condition(i, THIRST, full_update);
-    }
-    gain_condition(i, DRUNK, -1);
-
-    if (GET_POS(i) == POSITION_STUNNED)
-      update_pos(i);  // Added by Fingolfin 30th December 2001
-
-    if (GET_POS(i) >= POSITION_STUNNED) {
-      if(GET_AMBUSHED(i))
-	if(IS_NPC(i))
-	  GET_AMBUSHED(i) -= GET_AMBUSHED(i)/(GET_LEVELA(i)+5) + 1;
-	else
-	  GET_AMBUSHED(i) -= GET_AMBUSHED(i)/10 + 1;
-      
-      recalc_flag = 0;
-      
-      if(GET_POS(i) == POSITION_SLEEPING) tmp = 2;
-      else tmp = 1;
-      
-      if(GET_STR(i)!=GET_STR_BASE(i)){
-	SET_STR(i, MIN(GET_STR(i)+number(1,tmp), GET_STR_BASE(i))); 
-	recalc_flag++;}
-      if(GET_INT(i)!=GET_INT_BASE(i)){
-	GET_INT(i)  = MIN(GET_INT(i)+number(1,tmp), GET_INT_BASE(i)); 
-	recalc_flag++;}
-      if(GET_WILL(i)!=GET_WILL_BASE(i)){
-	GET_WILL(i)  = MIN(GET_WILL(i)+number(1,tmp), GET_WILL_BASE(i)); 
-	recalc_flag++;}
-      if(GET_DEX(i)!=GET_DEX_BASE(i)){
-	GET_DEX(i)  = MIN(GET_DEX(i)+number(1,tmp), GET_DEX_BASE(i));
-	recalc_flag++;}
-      if(GET_CON(i)!=GET_CON_BASE(i)){
-	GET_CON(i)  = MIN(GET_CON(i)+number(1,tmp), GET_CON_BASE(i));
-	recalc_flag++;}
-      if(GET_LEA(i)!=GET_LEA_BASE(i)){
-	GET_LEA(i)  = MIN(GET_LEA(i)+number(1,tmp), GET_LEA_BASE(i));
-	recalc_flag++;}
-      if(recalc_flag){
-	//	recalc_abilities(i);
-	affect_total(i);
-      }
-//Moving all this to fast effect
-//     GET_HIT(i)  = MIN(GET_HIT(i)  + hit_gain(i),  GET_MAX_HIT(i));
-//      GET_MANA(i) = MIN(GET_MANA(i) + mana_gain(i), GET_MAX_MANA(i));
-//      GET_MOVE(i) = MIN(GET_MOVE(i) + move_gain(i), GET_MAX_MOVE(i));
-//      //GET_SPIRIT(i) = MIN(GET_SPIRIT(i) + spirit_gain(i), GET_MAX_SPIRIT(i));
-//      if(GET_SPIRIT(i) < GET_WILL(i)/3 + GET_PROF_LEVEL(PROF_CLERIC,i)/3)
-//	GET_SPIRIT(i) += number(1,GET_WILL(i)+GET_PROF_LEVEL(PROF_CLERIC,i))/10;
-
-      if(IS_NPC(i) && i->specials.attacked_level){
-
-	if(i->specials.attacked_level <= 1) i->specials.attacked_level = 0;
-	else 
-	  if(GET_POS(i) != POSITION_FIGHTING)
-	    i->specials.attacked_level -= 2;
-
-      }
-
-      if (!affected_by_spell(i, SPELL_POISON) && IS_AFFECTED(i, AFF_POISON))
-  	damage(i, i, 5, SPELL_POISON,0);
-//        if (GET_POS(i) == POSITION_STUNNED)
-//  	update_pos(i);
-
-    } else if (GET_POS(i) == POSITION_INCAP)
-      damage(i, i, 3, TYPE_SUFFERING,0);
-  } /* for */
-  
-  /* objects */
-  for (j = object_list; j ; j = next_thing) {
-    next_thing = j->next; /* Next in object list */
-    
-    //      /* If this is a corpse */
-    //if ( (GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (j->obj_flags.value[3]) ) {
-    if(j->obj_flags.timer >= 0) {
-      /* timer count down */
-      if (j->obj_flags.timer > 0)
-	j->obj_flags.timer--;
-      
-      if (!j->obj_flags.timer) {
-	
-	if (j->carried_by)
-	  act("$p decays in your hands.", FALSE, j->carried_by, j, 0, TO_CHAR);
-	else if ((j->in_room != NOWHERE) && (world[j->in_room].people)) {
-	  act("$p decays into dust.",
-	      TRUE, world[j->in_room].people, j, 0, TO_ROOM);
-	  act("$p decays into dust.",
-	      TRUE, world[j->in_room].people, j, 0, TO_CHAR);
+	if (((mytime / 3600) % 24 == 9) && ((mytime / 60) % 60 == 30)) 
+	{
+		send_to_all("ROUTINE REBOOT IN 30 MINUTES.\n\r");
 	}
-	
-	if(GET_ITEM_TYPE(j) == ITEM_CONTAINER)
-	  for (jj = j->contains; jj; jj = next_thing2) {
-	    next_thing2 = jj->next_content; /* Next in inventory */
-	    obj_from_obj(jj);
-	    
-	    if (j->in_obj)
-	      obj_to_obj(jj, j->in_obj);
-	    else if (j->carried_by)
-	      obj_to_room(jj, j->carried_by->in_room);
-	    else if (j->in_room != NOWHERE)
-	      obj_to_room(jj, j->in_room);
-	    else
-	      log("SYSERR: OBJ DECAYED IN NOWHERE (limits.c)!!!");
-	    jj->obj_flags.timer = LOOT_DECAY_TIME;
-	  }
-	extract_obj(j);
-	continue;
-      }
-    }
-     
-    if(GET_ITEM_TYPE(j) == ITEM_FOUNTAIN){
-      /* supposedly this will refill fountains at zone resets. */
-      //      printf("resetting fountain %s\n",j->name);
-      j->obj_flags.value[1] = j->obj_flags.value[0];
-    }
-    else if(GET_ITEM_TYPE(j) == ITEM_LIGHT){
-      if((j->obj_flags.value[2] > 0) && (j->obj_flags.value[3] > 0) && !(IS_NPC(j->carried_by)))
-	j->obj_flags.value[2]--;
-      if((j->obj_flags.value[2] == 0) && (j->obj_flags.value[3] > 0)){
-	// the torch went out messages
-	j->obj_flags.value[3] = 0;
-	
-	if(j->carried_by){
-	  act("Your $o went out.", FALSE, j->carried_by, j, 0, TO_CHAR);
-	  act("$n's $o went out.", TRUE, j->carried_by, j, 0, TO_ROOM);
-	  recount_light_room(j->carried_by->in_room);	  
+	if (((mytime / 3600) % 24 == 9) && ((mytime / 60) % 60 == 55)) 
+	{
+		send_to_all("ROUTINE REBOOT IN 5 MINUTES.\n\r");
 	}
-	else if(j->in_room != NOWHERE){
-	  sprintf(buf, "%s here went out.\n\r",j->short_description);
-	  send_to_room(buf, j->in_room);
-	  recount_light_room(j->in_room);
+	if (((mytime / 3600) % 24 == 9) && ((mytime / 60) % 60 == 56))
+	{
+		send_to_all("ROUTINE REBOOT IN 4 MINUTES.\n\r");
 	}
-	extract_obj(j);
-      }
-      else if((j->obj_flags.value[2]  < 3) && 
-	 (j->obj_flags.value[2]  >= 0) && 
-	 (j->obj_flags.value[3] > 0)){
-	// the torch flickers messages
-	
-	if(j->carried_by){
-	  act("Your $o flickers weakly.", FALSE, j->carried_by, j, 0, TO_CHAR);
-	  act("$n's $o flickers weakly.", TRUE, j->carried_by, j, 0, TO_ROOM);
-	  //	  recount_light_room(j->carried_by->in_room);
+	if (((mytime / 3600) % 24 == 9) && ((mytime / 60) % 60 == 59)) 
+	{
+		send_to_all("ROUTINE REBOOT IN 1 MINUTE.\n\r");
 	}
-	else if(j->in_room != NOWHERE){
-	  sprintf(buf, "%s here flickers weakly.\n\r",j->short_description);
-	  send_to_room(buf, j->in_room);
-	  //	  recount_light_room(j->in_room);
+	if (((mytime / 3600) % 24 == 10) && (((mytime / 60) % 60 == 0) || ((mytime / 60) % 60 == 1))) 
+	{
+		send_to_all("ROUTINE REBOOT NOW.\n\r");
+		circle_shutdown = 1;
 	}
-      }
-    }
-    else if((GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (!j->obj_flags.value[3]) 
-	    && (!j->carried_by) &&(j->in_room != NOWHERE)){
-      /* the object is not a corpse, and is on the ground... */
-      /* restoring its closed/locked state */
-      if(!(j->obj_flags.value[1]&CONT_CLOSED) &&
-	 (j->obj_flags.value[4]&CONT_CLOSED))
-	act("$o closes quietly.",TRUE, 0, j, 0, TO_ROOM);
-      if((j->obj_flags.value[1]&CONT_CLOSED) &&
-	 !(j->obj_flags.value[4]&CONT_CLOSED))
-	act("$o opens quietly.",TRUE, 0, j, 0, TO_ROOM);
-      if(!(j->obj_flags.value[1]&CONT_LOCKED) &&
-	 (j->obj_flags.value[4]&CONT_LOCKED))
-	act("You hear a soft click.",FALSE, 0, j, 0, TO_ROOM);
-      j->obj_flags.value[1] = j->obj_flags.value[4];
-    }
-    
-  }
+
+	for (i = character_list; i; i = next_dude) 
+	{
+		next_dude = i->next;
+
+		affect_total(i, AFFECT_TOTAL_TIME);
+		feeling = report_zone_power(i);
+		// hint/stench messages no longer automatic
+		if ((GET_LEVEL(i) < LEVEL_IMMORT) && (GET_POS(i) > POSITION_SLEEPING) && !IS_SET(PLR_FLAGS(i), PLR_WRITING)) 
+		{
+			if ((feeling < 0) && !(number(0, 3)))
+			{
+				send_to_char("You catch a waft of evil stench in the air.\n\r", i);
+			}
+			if ((feeling > 0) & !(number(0, 4)))
+			{
+				send_to_char("The air brings a hint of goodness' presence to you.\n\r", i);
+			}
+		}
+
+		if (!IS_NPC(i)) 
+		{
+			update_char_objects(i);
+
+			//  Time messages removed.
+			//  if(PRF_FLAGGED(i, PRF_TIME) && (GET_POS(i) >= POSITION_SLEEPING))
+			//    send_to_char("You feel the time passing by...\n\r",i);
+			if (check_idling(i)) 
+				continue;
+		}
+
+		full_update = -1;
+		if ((hjp = affected_by_spell(i, SPELL_SLOW_DIGESTION)) != 0) 
+		{
+			if (hjp->modifier > number(0, 49)) full_update = 0;
+		}
+
+		if ((!IS_NPC(i) && !PLR_FLAGGED(i, PLR_RETIRED)) || IS_NPC(i)) 
+		{
+			gain_condition(i, FULL, full_update);
+			gain_condition(i, THIRST, full_update);
+		}
+		gain_condition(i, DRUNK, -1);
+
+		if (GET_POS(i) == POSITION_STUNNED)
+			update_pos(i);  // Added by Fingolfin 30th December 2001
+
+		if (GET_POS(i) >= POSITION_STUNNED) 
+		{
+			if (GET_AMBUSHED(i))
+				if (IS_NPC(i))
+					GET_AMBUSHED(i) -= GET_AMBUSHED(i) / (GET_LEVELA(i) + 5) + 1;
+				else
+					GET_AMBUSHED(i) -= GET_AMBUSHED(i) / 10 + 1;
+
+			recalc_flag = 0;
+
+			if (GET_POS(i) == POSITION_SLEEPING) tmp = 2;
+			else tmp = 1;
+
+			if (GET_STR(i) != GET_STR_BASE(i)) {
+				SET_STR(i, MIN(GET_STR(i) + number(1, tmp), GET_STR_BASE(i)));
+				recalc_flag++;
+			}
+			if (GET_INT(i) != GET_INT_BASE(i)) {
+				GET_INT(i) = MIN(GET_INT(i) + number(1, tmp), GET_INT_BASE(i));
+				recalc_flag++;
+			}
+			if (GET_WILL(i) != GET_WILL_BASE(i)) {
+				GET_WILL(i) = MIN(GET_WILL(i) + number(1, tmp), GET_WILL_BASE(i));
+				recalc_flag++;
+			}
+			if (GET_DEX(i) != GET_DEX_BASE(i)) {
+				GET_DEX(i) = MIN(GET_DEX(i) + number(1, tmp), GET_DEX_BASE(i));
+				recalc_flag++;
+			}
+			if (GET_CON(i) != GET_CON_BASE(i)) {
+				GET_CON(i) = MIN(GET_CON(i) + number(1, tmp), GET_CON_BASE(i));
+				recalc_flag++;
+			}
+			if (GET_LEA(i) != GET_LEA_BASE(i)) {
+				GET_LEA(i) = MIN(GET_LEA(i) + number(1, tmp), GET_LEA_BASE(i));
+				recalc_flag++;
+			}
+			if (recalc_flag) {
+				//	recalc_abilities(i);
+				affect_total(i);
+			}
+			//Moving all this to fast effect
+			//     GET_HIT(i)  = MIN(GET_HIT(i)  + hit_gain(i),  GET_MAX_HIT(i));
+			//      GET_MANA(i) = MIN(GET_MANA(i) + mana_gain(i), GET_MAX_MANA(i));
+			//      GET_MOVE(i) = MIN(GET_MOVE(i) + move_gain(i), GET_MAX_MOVE(i));
+			//      //GET_SPIRIT(i) = MIN(GET_SPIRIT(i) + spirit_gain(i), GET_MAX_SPIRIT(i));
+			//      if(GET_SPIRIT(i) < GET_WILL(i)/3 + GET_PROF_LEVEL(PROF_CLERIC,i)/3)
+			//	GET_SPIRIT(i) += number(1,GET_WILL(i)+GET_PROF_LEVEL(PROF_CLERIC,i))/10;
+
+			if (IS_NPC(i) && i->specials.attacked_level) {
+
+				if (i->specials.attacked_level <= 1) i->specials.attacked_level = 0;
+				else
+					if (GET_POS(i) != POSITION_FIGHTING)
+						i->specials.attacked_level -= 2;
+
+			}
+
+			if (!affected_by_spell(i, SPELL_POISON) && IS_AFFECTED(i, AFF_POISON))
+				damage(i, i, 5, SPELL_POISON, 0);
+			//        if (GET_POS(i) == POSITION_STUNNED)
+			//  	update_pos(i);
+
+		}
+		else if (GET_POS(i) == POSITION_INCAP)
+			damage(i, i, 3, TYPE_SUFFERING, 0);
+	} /* for */
+
+	/* objects */
+	for (j = object_list; j; j = next_thing)
+	{
+		next_thing = j->next; /* Next in object list */
+
+		//      /* If this is a corpse */
+		//if ( (GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (j->obj_flags.value[3]) ) {
+		if (j->obj_flags.timer >= 0)
+		{
+			/* timer count down */
+			if (j->obj_flags.timer > 0)
+				j->obj_flags.timer--;
+
+			if (j->obj_flags.timer == 0)
+			{
+				if (j->carried_by)
+				{
+					act("$p decays in your hands.", FALSE, j->carried_by, j, 0, TO_CHAR);
+				}
+				else if ((j->in_room != NOWHERE) && (world[j->in_room].people)) 
+				{
+					act("$p decays into dust.", TRUE, world[j->in_room].people, j, 0, TO_ROOM);
+					act("$p decays into dust.", TRUE, world[j->in_room].people, j, 0, TO_CHAR);
+				}
+
+				if (GET_ITEM_TYPE(j) == ITEM_CONTAINER)
+				{
+					// If this is a corpse, let big brother know that it is decaying.
+					if (j->obj_flags.value[3] == 1)
+					{
+						// TODO(drelidan): When big brother is building, uncomment out the code below.
+						// big_brother& bb_instance = big_brother::instance();
+						// bb_instance.on_corpse_decayed(j);
+					}
+
+					for (jj = j->contains; jj; jj = next_thing2)
+					{
+						next_thing2 = jj->next_content; /* Next in inventory */
+						obj_from_obj(jj);
+
+						if (j->in_obj)
+						{
+							obj_to_obj(jj, j->in_obj);
+						}
+						else if (j->carried_by)
+						{
+							obj_to_room(jj, j->carried_by->in_room);
+						}
+						else if (j->in_room != NOWHERE)
+						{
+							obj_to_room(jj, j->in_room);
+						}
+						else
+						{
+							log("SYSERR: OBJ DECAYED IN NOWHERE (limits.c)!!!");
+						}
+
+						jj->obj_flags.timer = LOOT_DECAY_TIME;
+					}
+				}
+
+				extract_obj(j);
+				continue;
+			}
+		}
+
+		if (GET_ITEM_TYPE(j) == ITEM_FOUNTAIN) {
+			/* supposedly this will refill fountains at zone resets. */
+			//      printf("resetting fountain %s\n",j->name);
+			j->obj_flags.value[1] = j->obj_flags.value[0];
+		}
+		else if (GET_ITEM_TYPE(j) == ITEM_LIGHT) {
+			if ((j->obj_flags.value[2] > 0) && (j->obj_flags.value[3] > 0) && !(IS_NPC(j->carried_by)))
+				j->obj_flags.value[2]--;
+			if ((j->obj_flags.value[2] == 0) && (j->obj_flags.value[3] > 0)) {
+				// the torch went out messages
+				j->obj_flags.value[3] = 0;
+
+				if (j->carried_by) {
+					act("Your $o went out.", FALSE, j->carried_by, j, 0, TO_CHAR);
+					act("$n's $o went out.", TRUE, j->carried_by, j, 0, TO_ROOM);
+					recount_light_room(j->carried_by->in_room);
+				}
+				else if (j->in_room != NOWHERE) {
+					sprintf(buf, "%s here went out.\n\r", j->short_description);
+					send_to_room(buf, j->in_room);
+					recount_light_room(j->in_room);
+				}
+				extract_obj(j);
+			}
+			else if ((j->obj_flags.value[2] < 3) &&
+				(j->obj_flags.value[2] >= 0) &&
+				(j->obj_flags.value[3] > 0)) {
+				// the torch flickers messages
+
+				if (j->carried_by) {
+					act("Your $o flickers weakly.", FALSE, j->carried_by, j, 0, TO_CHAR);
+					act("$n's $o flickers weakly.", TRUE, j->carried_by, j, 0, TO_ROOM);
+					//	  recount_light_room(j->carried_by->in_room);
+				}
+				else if (j->in_room != NOWHERE) {
+					sprintf(buf, "%s here flickers weakly.\n\r", j->short_description);
+					send_to_room(buf, j->in_room);
+					//	  recount_light_room(j->in_room);
+				}
+			}
+		}
+		else if ((GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (!j->obj_flags.value[3])
+			&& (!j->carried_by) && (j->in_room != NOWHERE)) {
+			/* the object is not a corpse, and is on the ground... */
+			/* restoring its closed/locked state */
+			if (!(j->obj_flags.value[1] & CONT_CLOSED) &&
+				(j->obj_flags.value[4] & CONT_CLOSED))
+				act("$o closes quietly.", TRUE, 0, j, 0, TO_ROOM);
+			if ((j->obj_flags.value[1] & CONT_CLOSED) &&
+				!(j->obj_flags.value[4] & CONT_CLOSED))
+				act("$o opens quietly.", TRUE, 0, j, 0, TO_ROOM);
+			if (!(j->obj_flags.value[1] & CONT_LOCKED) &&
+				(j->obj_flags.value[4] & CONT_LOCKED))
+				act("You hear a soft click.", FALSE, 0, j, 0, TO_ROOM);
+			j->obj_flags.value[1] = j->obj_flags.value[4];
+		}
+
+	}
 }
 
 void update_room_tracks(){

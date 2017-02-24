@@ -18,6 +18,41 @@ namespace game_rules
 	//============================================================================ 
 	
 	//============================================================================
+	// Returns true if the item can be looted from the corpse.
+	//============================================================================
+	bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* item)
+	{
+		// Something's not right.  Go for it, we won't stop you.
+		if (looter == NULL || corpse == NULL)
+			return true;
+
+		typedef corpse_map::iterator iter;
+		iter corpse_iter = m_corpse_map.find(corpse);
+
+		// If we aren't tracking this corpse - you can loot from it.
+		if (corpse_iter == m_corpse_map.end())
+			return true;
+
+		player_corpse_data& corpse_data = corpse_iter->second;
+		if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
+			return true;
+
+		if (corpse_data.num_items_looted >= 2)
+			return false;
+
+		// Containers can't be looted.
+		// TODO(drelidan):  Add 'abuse' protection by players that unequip a bunch of
+		// gear and stuff it in containers.
+		if (item->obj_flags.type_flag == ITEM_CONTAINER)
+			return false;
+
+		// The corpse has had less than 2-items looted from it.  Return that the
+		// item can be looted and increment the counter.
+		++corpse_data.num_items_looted;
+		return true;
+	}
+
+	//============================================================================
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
 	{
 		// Not Big Brother's job to check these pointers.
@@ -118,34 +153,31 @@ namespace game_rules
 	}
 
 	//============================================================================
-	bool big_brother::is_same_side_race_war(const char_data* attacker, const char_data* victim) const
+	bool big_brother::is_same_side_race_war(int attacker_race, int victim_race) const
 	{
-		int attacker_race = attacker->player.race;
-		int victim_race = victim->player.race;
-
 		// All players are on the same side as Gods.
 		if (attacker_race == RACE_GOD || victim_race == RACE_GOD)
 			return true;
 
 		// Good guys are on the same side.
-		if (utils::is_race_good(*attacker))
+		if (utils::is_race_good(attacker_race))
 		{
-			return utils::is_race_good(*victim);
+			return utils::is_race_good(victim_race);
 		}
 
 		// Lhuths and easterlings are on the same side.  Note, this must be checked before
 		// is_race_evil, since lhuths and easterlings are also considered evil races.
-		if (utils::is_race_easterling(*attacker) || utils::is_race_magi(*attacker))
+		if (utils::is_race_easterling(attacker_race) || utils::is_race_magi(attacker_race))
 		{
-			return utils::is_race_easterling(*victim) || utils::is_race_magi(*victim);
+			return utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race);
 		}
 
 		// Evil races are only on the side of other evil races that are not lhuths or easterlings.
-		if (utils::is_race_evil(*attacker))
+		if (utils::is_race_evil(attacker_race))
 		{
-			if (utils::is_race_evil(*victim))
+			if (utils::is_race_evil(victim_race))
 			{
-				return !(utils::is_race_easterling(*victim) || utils::is_race_magi(*victim));
+				return !(utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race));
 			}
 			else
 			{
@@ -162,8 +194,30 @@ namespace game_rules
 	//============================================================================ 
 	
 	//============================================================================
+	void big_brother::on_character_died(char_data* character, obj_data* corpse)
+	{
+		// Spirits don't leave corpses behind.  If we have 'shadow' mode for players again,
+		// this could create some issues.
+		if (corpse == NULL)
+			return;
+
+		// Big Brother doesn't track NPC corpses.
+		// TODO(drelidan):  Add protection for orc followers.
+		if (utils::is_npc(*character))
+			return;
+
+		// Each corpse will be unique, so even if a player dies multiple times,
+		// each corpse will be protected.
+		m_corpse_map[corpse] = player_corpse_data(character);
+	}
+
+	//============================================================================
 	void big_brother::on_character_attacked_player(const char_data* attacker)
 	{
+		// TODO(drelidan):  Track the amount of items the attacker started with equipped.  If this is
+		// a significant difference at death, put a flag in so that the looter can still get their
+		// appropriate rewards.
+
 		// Get the current time.
 		time_t current_time;
 		time(&current_time);
@@ -258,6 +312,25 @@ namespace game_rules
 			return;
 
 		m_corpse_map.erase(corpse_iter);
+	}
+
+	//============================================================================
+	// Private Data Structure implementation
+	//============================================================================ 
+	//============================================================================
+	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man) : num_items_looted(0), killer_id(-1)
+	{
+		player_race = dead_man->player.race;
+		player_id = dead_man->abs_number;
+	}
+
+	//============================================================================
+	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man, char_data* killer) : num_items_looted(0)
+	{
+		player_race = dead_man->player.race;
+		player_id = dead_man->abs_number;
+		
+		killer_id = killer->abs_number;
 	}
 }
 

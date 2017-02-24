@@ -72,7 +72,7 @@ public:
 				on_instance_not_created();
 			}
 		}
-		return m_pInstance;
+		return *m_pInstance;
 	}
 
 protected:

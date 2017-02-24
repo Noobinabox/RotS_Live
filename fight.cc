@@ -519,21 +519,30 @@ move_gold (struct char_data *ch, struct obj_data *object, int option)
  * of the function. Might be nice to have varying decay
  * times in certain circumstances.
  */
-void
-corpse_decay_time (struct char_data *ch, struct obj_data *corpse, int duration)
+void corpse_decay_time(char_data* character, obj_data* corpse, int duration)
 {
-
-  if (duration > 0)
-    corpse->obj_flags.timer = duration;
-  else
-    if (IS_NPC(ch)) {
-      if (MOB_FLAGGED(ch, MOB_ORC_FRIEND))
-	corpse->obj_flags.timer = max_npc_corpse_time + 15;
-      else
-	corpse->obj_flags.timer = max_npc_corpse_time;
-    } else
-      corpse->obj_flags.timer = max_pc_corpse_time;
-
+	if (duration > 0)
+	{
+		corpse->obj_flags.timer = duration;
+	}
+	else
+	{
+		if (IS_NPC(character))
+		{
+			if (MOB_FLAGGED(character, MOB_ORC_FRIEND))
+			{
+				corpse->obj_flags.timer = max_npc_corpse_time + 15;
+			}
+			else
+			{
+				corpse->obj_flags.timer = max_npc_corpse_time;
+			}
+		}
+		else
+		{
+			corpse->obj_flags.timer = max_pc_corpse_time;
+		}
+	}
 }
 
 /*
@@ -542,148 +551,178 @@ corpse_decay_time (struct char_data *ch, struct obj_data *corpse, int duration)
  * The first two objects that an NPC carries are immune to the
  * chance of being taken.
  */
-void
-remove_random_item (struct char_data *ch, struct obj_data *corpse)
+void remove_random_item(struct char_data *ch, struct obj_data *corpse)
 {
-  int chance, i;
-  struct obj_data *obj;
+	int chance, i;
+	struct obj_data *obj;
 
-  if (!IS_NPC(ch) || IS_AFFECTED(ch, AFF_CHARM) || IS_GUARDIAN(ch)) {
-    chance = number(0, 24);
-    i = 0;
-    for (obj = corpse->contains;obj;obj = obj->next_content) {
-      i++;
+	if (!IS_NPC(ch) || IS_AFFECTED(ch, AFF_CHARM) || IS_GUARDIAN(ch)) 
+	{
+		chance = number(0, 24);
+		i = 0;
+		for (obj = corpse->contains; obj; obj = obj->next_content) 
+		{
+			i++;
 
-      if (i%25 == chance) {
-        if (!IS_SET(obj->obj_flags.extra_flags, ITEM_NORENT) &&
-	    GET_ITEM_TYPE(obj) != ITEM_KEY && !IS_ARTIFACT(obj)) {
-          if (GET_ITEM_TYPE(obj) == ITEM_CONTAINER)
-            i--;
-          else {
-            extract_obj(obj);
-            break;
-          }
-        }
-      }
-    }
-  }
+			if (i % 25 == chance) 
+			{
+				if (!IS_SET(obj->obj_flags.extra_flags, ITEM_NORENT) &&
+					GET_ITEM_TYPE(obj) != ITEM_KEY && !IS_ARTIFACT(obj)) 
+				{
+					if (GET_ITEM_TYPE(obj) == ITEM_CONTAINER)
+					{
+						i--;
+					}
+					else 
+					{
+						extract_obj(obj);
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
-void
-remove_and_drop_object (struct char_data *ch)
+void remove_and_drop_object(char_data* character)
 {
-  struct obj_data *obj;
-  struct obj_data *next_obj;
-  int i;
+	obj_data* next_obj = NULL;
+	for (obj_data* cur_obj = character->carrying; cur_obj; cur_obj = next_obj) 
+	{
+		// Do this here since cur_obj->next_content becomes invalid after the item gets
+		// moved to the room.
+		next_obj = cur_obj->next_content;
+		obj_to_room(cur_obj, character->in_room);
+	}
+	character->carrying = 0;
 
-  for(obj = ch->carrying; obj; obj = next_obj){
-    next_obj = obj->next_content;
-    obj_to_room(obj, ch->in_room);
-  }
-  ch->carrying = 0;
-
-  for (i = 0; i < MAX_WEAR; i++)
-    if (ch->equipment[i])
-      obj_to_room(unequip_char(ch, i), ch->in_room);
+	for (int gear_index = 0; gear_index < MAX_WEAR; gear_index++)
+	{
+		if (character->equipment[gear_index])
+		{
+			obj_data* item = unequip_char(character, gear_index);
+			obj_to_room(item, character->in_room);
+		}
+	}
 }
 
-void
-make_physical_corpse (struct char_data *ch, int attacktype)
+//============================================================================
+// Makes a corpse from the character passed in.  Returns a pointer to the corpse.
+//============================================================================
+obj_data* make_physical_corpse(char_data* character, int attack_type)
 {
-  struct obj_data *obj;
-  struct obj_data *corpse;
-  int i;
+	obj_data* corpse = NULL;
 
-  if(ch->player.corpse_num)
-    corpse = read_object(ch->player.corpse_num, VIRT);
-  else
-    corpse = 0;
+	if (character->player.corpse_num)
+	{
+		corpse = read_object(character->player.corpse_num, VIRT);
+	}
 
-  if(!corpse) {
-    CREATE(corpse, struct obj_data, 1);
-    clear_object(corpse);
-    corpse->next = object_list;
-    object_list = corpse;
-    corpse->item_number = NOWHERE;
-    corpse->in_room = NOWHERE;
-    corpse->name = str_dup("corpse");
+	if (!corpse) 
+	{
+		CREATE(corpse, struct obj_data, 1);
+		clear_object(corpse);
+		corpse->next = object_list;
+		object_list = corpse;
+		corpse->item_number = NOWHERE;
+		corpse->in_room = NOWHERE;
+		corpse->name = str_dup("corpse");
 
-    /* We call this function to retrieve our corpse "type"*/
-    get_corpse_desc(corpse, ch, attacktype);
-    corpse->obj_flags.type_flag = ITEM_CONTAINER;
-    corpse->obj_flags.wear_flags = ITEM_TAKE;
-    corpse->obj_flags.value[0] = 0; /* You can't store stuff in a corpse */
-    corpse->obj_flags.value[3] = 1; /* corpse identifyer */
-    corpse->obj_flags.weight = GET_WEIGHT(ch) + IS_CARRYING_W(ch);
-    corpse->obj_flags.cost_per_day = 10000;
-    corpse->obj_flags.level = GET_LEVEL(ch);
-  }
-  /*
-   * Next two lines are used to identify to who the corpse belongs to
-   * In the case of the first, its for the purposes of beheading
-   * In the case of the second value, it allows the owner
-   * of the corpse to freely use "get all corpse".
-   */
-  corpse->obj_flags.value[4] = IS_NPC(ch)?mob_index[ch->nr].virt:
-    (-GET_IDNUM(ch));
-  corpse->obj_flags.value[2] = IS_NPC(ch) ? mob_index[ch->nr].virt:
-    -GET_IDNUM(ch);
+		/* We call this function to retrieve our corpse "type"*/
+		get_corpse_desc(corpse, character, attack_type);
+		corpse->obj_flags.type_flag = ITEM_CONTAINER;
+		corpse->obj_flags.wear_flags = ITEM_TAKE;
+		corpse->obj_flags.value[0] = 0; /* You can't store stuff in a corpse */
+		corpse->obj_flags.value[3] = 1; /* corpse identifier */
+		corpse->obj_flags.weight = GET_WEIGHT(character) + IS_CARRYING_W(character);
+		corpse->obj_flags.cost_per_day = 10000;
+		corpse->obj_flags.level = GET_LEVEL(character);
+	}
 
-  corpse->obj_flags.butcher_item = ch->specials.butcher_item;
-  corpse->contains = ch->carrying;
-  /* this function sorts out money related matters */
-  move_gold(ch, corpse, 0);
-  /*
-   * Sets our corpse decay time
-   * The third value passed in an integer value, if
-   * this value is set to anything but 0 then that value
-   * will become the corpse decay time.
-   */
-  corpse_decay_time(ch, corpse, 0);
+	/*
+	 * Next two lines are used to identify to who the corpse belongs to
+	 * In the case of the first, its for the purposes of beheading
+	 * In the case of the second value, it allows the owner
+	 * of the corpse to freely use "get all corpse".
+	 */
+	int corpse_id = 0;
+	if (IS_NPC(character))
+	{
+		corpse_id = mob_index[character->nr].virt;
+	}
+	else
+	{
+		corpse_id = -GET_IDNUM(character);
+	}
 
-  /* removing our victims eq */
-  for (i = 0; i < MAX_WEAR; i++)
-    if (ch->equipment[i])
-      obj_to_obj(unequip_char(ch, i), corpse);
+	corpse->obj_flags.value[4] = corpse_id;
+	corpse->obj_flags.value[2] = corpse_id;
+
+	corpse->obj_flags.butcher_item = character->specials.butcher_item;
+	corpse->contains = character->carrying;
+	/* this function sorts out money related matters */
+	move_gold(character, corpse, 0);
+	/*
+	 * Sets our corpse decay time
+	 * The third value passed in an integer value, if
+	 * this value is set to anything but 0 then that value
+	 * will become the corpse decay time.
+	 */
+	corpse_decay_time(character, corpse, 0);
+
+	/* removing our victims eq */
+	for (int gear_index = 0; gear_index < MAX_WEAR; gear_index++)
+	{
+		if (character->equipment[gear_index])
+		{
+			obj_data* item = unequip_char(character, gear_index);
+			obj_to_obj(item, corpse);
+		}
+	}
 
 
-  ch->carrying = 0;
-  IS_CARRYING_N(ch) = 0;
-  IS_CARRYING_W(ch) = 0;
+	character->carrying = NULL;
+	IS_CARRYING_N(character) = 0;
+	IS_CARRYING_W(character) = 0;
 
-  /* putting everything into the corpse */
-  for (obj = corpse->contains; obj; obj = obj->next_content)
-    obj->in_obj = corpse;
-  object_list_new_owner(corpse, 0);
-  //remove_random_item(ch, corpse);
-  /* moving the corpse into the room of our players death */
-  obj_to_room(corpse, ch->in_room);
-
+	/* putting everything into the corpse */
+	for (obj_data* obj = corpse->contains; obj; obj = obj->next_content)
+	{
+		obj->in_obj = corpse;
+	}
+	
+	object_list_new_owner(corpse, 0);
+	// remove_random_item(character, corpse); // To re-enable item decay, remove the comment before this line.
+	/* moving the corpse into the room of our players death */
+	obj_to_room(corpse, character->in_room);
+	
+	return corpse;
 }
 
-void
-spirit_death (struct char_data *ch)
+void spirit_death(char_data* character)
 {
-  act("$n vanishes into thin air.",TRUE, ch, 0, 0, TO_ROOM);
-  remove_and_drop_object (ch);
-  move_gold(ch, NULL, 1);
-
+	act("$n vanishes into thin air.", TRUE, character, 0, 0, TO_ROOM);
+	remove_and_drop_object(character);
+	move_gold(character, NULL, 1);
 }
 
-void
-make_corpse(struct char_data *ch, int attacktype)
+obj_data* make_corpse(char_data* character, int attack_type)
 {
-
-  if(!IS_SHADOW(ch))
-    make_physical_corpse(ch, attacktype);
-  else
-    spirit_death(ch);
+	if (!IS_SHADOW(character))
+	{
+		return make_physical_corpse(character, attack_type);
+	}
+	else
+	{
+		spirit_death(character);
+		return NULL;
+	}
 }
 
 
 
 /* When ch kills victim */
-void	change_alignment(struct char_data *ch, struct char_data *victim)
+void change_alignment(struct char_data *ch, struct char_data *victim)
 {
   int	align;
   extern int min_race_align[];
@@ -815,65 +854,78 @@ void	death_cry(struct char_data *ch)
    }
 }
 
-
-
-void
-raw_kill(struct char_data *ch, int attacktype)
+void raw_kill(char_data* character, int attack_type)
 {
-  waiting_type tmpwtl;
+	waiting_type tmpwtl;
 
-  if((ch->delay.wait_value >= 0) && (ch->delay.cmd > 0)){
-    ch->delay.subcmd = -1;
-    complete_delay(ch);
-  }
-  abort_delay(ch);
+	if ((character->delay.wait_value >= 0) && (character->delay.cmd > 0)) 
+	{
+		character->delay.subcmd = -1;
+		complete_delay(character);
+	}
+	abort_delay(character);
 
-  if (ch->specials.fighting)
-    stop_fighting(ch);
+	if (character->specials.fighting)
+	{
+		stop_fighting(character);
+	}
 
-  if(special(ch, 0, "", SPECIAL_DEATH, &tmpwtl))
-    return;
+	if (special(character, 0, "", SPECIAL_DEATH, &tmpwtl))
+		return;
 
-  if(IS_RIDING(ch))
-    stop_riding(ch);
+	if (IS_RIDING(character))
+		stop_riding(character);
 
-  if(IS_AFFECTED(ch, AFF_BASH))
-    REMOVE_BIT(ch->specials.affected_by, AFF_BASH);
+	if (IS_AFFECTED(character, AFF_BASH))
+		REMOVE_BIT(character->specials.affected_by, AFF_BASH);
 
-  while(ch->affected)
-    affect_remove(ch, ch->affected);
-  death_cry(ch);
-  make_corpse(ch, attacktype);
+	while (character->affected)
+	{
+		affect_remove(character, character->affected);
+	}
+	death_cry(character);
+	obj_data* corpse = make_corpse(character, attack_type);
 
-  if(!IS_NPC(ch)) {
-    save_char(ch, r_mortal_start_room[GET_RACE(ch)], 0);
-    Crash_crashsave(ch);
+	if (!IS_NPC(character)) 
+	{
+		int race = GET_RACE(character);
+		save_char(character, r_mortal_start_room[race], 0);
+		Crash_crashsave(character);
 
-    // Set his stats to 2/3 their current value.
-    if (GET_STR(ch) > 0) SET_STR(ch, GET_STR(ch) * 2 / 3);
-    if (GET_INT(ch) > 0) GET_INT(ch) = GET_INT(ch) * 2 / 3;
-    if (GET_WILL(ch) > 0) GET_WILL(ch) = GET_WILL(ch) * 2/ 3;
-    if (GET_DEX(ch) > 0) GET_DEX(ch) = GET_DEX(ch) * 2 / 3;
-    if (GET_CON(ch) > 0) GET_CON(ch) = GET_CON(ch)  * 2 / 3;
-    if (GET_LEA(ch) > 0) GET_LEA(ch) = GET_LEA(ch) * 2 / 3;
+		// Set his stats to 2/3 their current value.
+		if (GET_STR(character) > 0) SET_STR(character, GET_STR(character) * 2 / 3);
+		if (GET_INT(character) > 0) GET_INT(character) = GET_INT(character) * 2 / 3;
+		if (GET_WILL(character) > 0) GET_WILL(character) = GET_WILL(character) * 2 / 3;
+		if (GET_DEX(character) > 0) GET_DEX(character) = GET_DEX(character) * 2 / 3;
+		if (GET_CON(character) > 0) GET_CON(character) = GET_CON(character) * 2 / 3;
+		if (GET_LEA(character) > 0) GET_LEA(character) = GET_LEA(character) * 2 / 3;
 
-    // Set hits to 1, moves and mana to 0.
-    GET_HIT(ch)  = 1;
-    GET_MANA(ch) = 0;
-    GET_MOVE(ch) = 0;
+		// Set hits to 1, moves and mana to 0.
+		GET_HIT(character) = 1;
+		GET_MANA(character) = 0;
+		GET_MOVE(character) = 0;
 
-    if(GET_LEVEL(ch) < LEVEL_IMMORT) {
-      ch->specials2.load_room = mortal_start_room[GET_RACE(ch)];
-      extract_char(ch, r_mortal_start_room[GET_RACE(ch)]);
-    }
-    else{
-      ch->specials2.load_room = immort_start_room;
-      extract_char(ch, r_immort_start_room);
-    }
+		if (GET_LEVEL(character) < LEVEL_IMMORT) 
+		{
+			// Note, these are two different int arrays.
+			character->specials2.load_room = mortal_start_room[race];
+			extract_char(character, r_mortal_start_room[race]);
+		}
+		else 
+		{
+			character->specials2.load_room = immort_start_room;
+			extract_char(character, r_immort_start_room);
+		}
 
-    REMOVE_BIT(PLR_FLAGS(ch), PLR_WAS_KITTED);
-  } else
-    extract_char(ch);
+		REMOVE_BIT(PLR_FLAGS(character), PLR_WAS_KITTED);
+		// TODO(drelidan): Once big_brother is building with everything else, uncomment out the lines below.
+		// big_brother& bb_instance = big_brother::instance();
+		// bb_instance.on_character_died(character, corpse);
+	}
+	else
+	{
+		extract_char(character);
+	}
 }
 
 /*
@@ -914,95 +966,102 @@ check_death_ward(struct char_data *ch)
     return FALSE;
 }
 
-void
-die(struct char_data *ch, struct char_data *killer, int attacktype)
+void die(char_data* dead_man, char_data* killer, int attack_type)
 {
-  int poison_death;
+	int poison_death = 43;
 
-  poison_death = 43;
+	/* Character doesn't die if call_trigger returns FALSE */
+	if (call_trigger(ON_DIE, dead_man, killer, 0) == FALSE) 
+	{
+		stop_fighting_him(dead_man);
+		stop_fighting(dead_man);
+		update_pos(dead_man);
+		return;
+	}
 
-  //  if (check_death_ward(ch))
-  //return;
+	/* the following piece is moved here, might cause problems... */
+	if (killer) 
+	{
+		if (IS_NPC(dead_man) || dead_man->desc)
+			group_gain(killer, dead_man);
 
-  /* Character doesn't die if call_trigger returns FALSE */
-  if (call_trigger(ON_DIE, ch, killer, 0) == FALSE) {
-    stop_fighting_him(ch);
-    stop_fighting(ch);
-    update_pos(ch);
-    return;
-  }
+		if (!IS_NPC(dead_man)) 
+		{
+			if (MOB_FLAGGED(killer, MOB_PET))
+			{
+				vmudlog(BRF, "%s killed by %s (%s) at %s", GET_NAME(dead_man), GET_NAME(killer), GET_NAME(killer->master), world[dead_man->in_room].name);
+			}
+			else
+			{
+				vmudlog(BRF, "%s killed by %s at %s", GET_NAME(dead_man), GET_NAME(killer), world[dead_man->in_room].name);
+			}
+		}
 
-  /* the following piece is moved here, might cause problems... */
-  if (killer) {
-    if (IS_NPC(ch) || ch->desc)
-      group_gain(killer, ch);
+		/*
+		 * If a mob kills a player, it no longer has memory of the player.
+		 *
+		 * Greeeeaaaat, so if a player dies to one mob with memory, every
+		 * other mob who remembers the player still has him on memory.  So
+		 * death isn't a clean start-over.
+		 */
+		if (IS_NPC(killer) && !IS_NPC(dead_man) && IS_SET(killer->specials2.act, MOB_MEMORY))
+		{
+			forget(killer, dead_man);
+		}
+	}
 
-    if (!IS_NPC(ch)) {
-      if (MOB_FLAGGED(killer, MOB_PET))
-        vmudlog(BRF, "%s killed by %s (%s) at %s",
-		GET_NAME(ch), GET_NAME(killer),
-	        GET_NAME(killer->master), world[ch->in_room].name);
-      else
-        vmudlog(BRF, "%s killed by %s at %s",
-		GET_NAME(ch),GET_NAME(killer),
-                world[ch->in_room].name);
-    }
+	/* A mob died.  Who cares. */
+	if (IS_NPC(dead_man)) 
+	{
+		raw_kill(dead_man, attack_type);
+		return;
+	}
 
-    /*
-     * If a mob kills a player, it no longer has memory of the player.
-     *
-     * Greeeeaaaat, so if a player dies to one mob with memory, every
-     * other mob who remembers the player still has him on memory.  So
-     * death isn't a clean start-over.
-     */
-    if (IS_NPC(killer) && !IS_NPC(ch) &&
-	IS_SET(killer->specials2.act, MOB_MEMORY))
-      forget(killer, ch);
-  }
+	/* log mobdeaths */
+	if (IS_NPC(killer))
+	{
+		add_exploit_record(EXPLOIT_MOBDEATH, dead_man, GET_IDNUM(killer), GET_NAME(killer));
+	}
 
-  /* A mob died.  Who cares. */
-  if (IS_NPC(ch)) {
-    raw_kill(ch, attacktype);
-    return;
-  }
+	/* A player died: DT/poison/incap/etc. death. */
+	if (!killer)
+	{
+		gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2) / 10));
+	}
+	else 
+	{
+		if (attack_type == poison_death) 
+		{
+			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
+			raw_kill(dead_man, attack_type);
+			return;
+		}
+		pkill_create(dead_man);
+		add_exploit_record(EXPLOIT_PK, dead_man, 0, NULL);  /* pk records to killers */
 
-  /* log mobdeaths */
-  if (IS_NPC(killer))
-    add_exploit_record(EXPLOIT_MOBDEATH, ch,
-		       GET_IDNUM(killer), GET_NAME(killer));
+		/* add death records to dead player */
+		/* Fingolfin: Jul 19: since we record mobdeaths earlier */
+		if (killer && !IS_NPC(killer))
+		{
+			add_exploit_record(EXPLOIT_DEATH, dead_man, 0, NULL);
+		}
 
-  /* A player died: DT/poison/incap/etc. death. */
-  if (!killer)
-     gain_exp_regardless(ch, MIN(0, -(GET_EXP(ch)-3000)/ (GET_LEVEL(ch)+2)/10));
+		if (IS_NPC(killer) && !(MOB_FLAGGED(killer, MOB_ORC_FRIEND) && MOB_FLAGGED(killer, MOB_PET)))
+		{
+			gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2)));
+		}
+		else if (attack_type == 43)
+		{
+			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
+		}
+		gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2) / 10));
+	}
 
-  else {
-    if (attacktype == poison_death) {
-	add_exploit_record(EXPLOIT_POISON, ch, 0, NULL);
-	raw_kill(ch, attacktype);
-	return;
-    }
-    pkill_create(ch);
-    add_exploit_record(EXPLOIT_PK, ch, 0, NULL);  /* pk records to killers */
+	GET_COND(dead_man, FULL) = 24;
+	GET_COND(dead_man, THIRST) = 24;
+	GET_COND(dead_man, DRUNK) = 0;
 
-    /* add death records to dead player */
-    /* Fingolfin: Jul 19: since we record mobdeaths earlier */
-    if(killer && !IS_NPC(killer))
-      add_exploit_record(EXPLOIT_DEATH, ch, 0, NULL);
-
-    if(IS_NPC(killer) &&
-       !(MOB_FLAGGED(killer, MOB_ORC_FRIEND) && MOB_FLAGGED(killer, MOB_PET)))
-      gain_exp_regardless(ch, MIN(0,-(GET_EXP(ch)-3000)/(GET_LEVEL(ch)+2)));
-    else
-      if (attacktype == 43)
-	add_exploit_record(EXPLOIT_POISON, ch, 0, NULL);
-      gain_exp_regardless(ch, MIN(0,-(GET_EXP(ch)-3000)/(GET_LEVEL(ch)+2)/10));
-    }
-
-  GET_COND(ch, FULL) = 24;
-  GET_COND(ch, THIRST) = 24;
-  GET_COND(ch, DRUNK) = 0;
-
-  raw_kill(ch, attacktype);
+	raw_kill(dead_man, attack_type);
 }
 
 

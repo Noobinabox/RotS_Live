@@ -626,26 +626,49 @@ namespace utils
 	//============================================================================
 	bool is_race_good(const char_data& character)
 	{
-		int race = character.player.race;
-		return race > 0 && race < 10;
+		return is_race_good(character.player.race);
 	}
 
 	//============================================================================
 	bool is_race_evil(const char_data& character)
 	{
-		return character.player.race > 10;
+		return is_race_evil(character.player.race);
 	}
 
 	//============================================================================
 	bool is_race_easterling(const char_data& character)
 	{
-		return character.player.race == 14;
+		return is_race_easterling(character.player.race);
 	}
 
 	//============================================================================
 	bool is_race_magi(const char_data& character)
 	{
-		return character.player.race == 15;
+		return is_race_magi(character.player.race);
+	}
+
+	//============================================================================
+	bool is_race_good(int race)
+	{
+		return race > 0 && race < 10;
+	}
+
+	//============================================================================
+	bool is_race_evil(int race)
+	{
+		return race > 10;
+	}
+
+	//============================================================================
+	bool is_race_easterling(int race)
+	{
+		return race == 14;
+	}
+
+	//============================================================================
+	bool is_race_magi(int race)
+	{
+		return race == 15;
 	}
 
 	//============================================================================

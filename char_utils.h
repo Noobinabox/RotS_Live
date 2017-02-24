@@ -82,6 +82,11 @@ namespace utils
 	bool is_race_easterling(const char_data& character);
 	bool is_race_magi(const char_data& character);
 
+	bool is_race_good(int race);
+	bool is_race_evil(int race);
+	bool is_race_easterling(int race);
+	bool is_race_magi(int race);
+
 	const char* get_object_string(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room);
 	const char* get_object_name(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room);
 

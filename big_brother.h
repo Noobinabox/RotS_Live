@@ -17,7 +17,7 @@ namespace game_rules
 	public:
 
 		// Called before any character loots an item.  This enforces our PK loot rules.
-		bool on_loot_item(char_data* looter, obj_data* item);
+		bool on_loot_item(char_data* looter, obj_data* corpse, obj_data* item);
 
 		// Called before any character attempts to damage or attack another character.
 		// This enforces our PK engagement rules.
@@ -64,12 +64,26 @@ namespace game_rules
 		bool is_target_afk(const char_data* victim) const;
 
 		// Returns true if two targets are on the same side of the race war.
-		bool is_same_side_race_war(const char_data* attacker, const char_data* victim) const;
+		bool is_same_side_race_war(int attacker_race, int victim_race) const;
 
 		// Removes a character from our afk_characters set.
 		void remove_character_from_set(const char_data* character);
 
-		std::map<obj_data*, char_data*> m_corpse_map;
+		struct player_corpse_data
+		{
+			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0) { };
+			player_corpse_data(char_data* dead_man);
+			player_corpse_data(char_data* dead_man, char_data* killer);
+
+			int num_items_looted;
+			int player_race;
+			int killer_id;
+			int player_id;
+		};
+
+		typedef std::map<obj_data*, player_corpse_data> corpse_map;
+		corpse_map m_corpse_map;
+
 		std::set<const char_data*> m_afk_characters;
 		std::set<const char_data*> m_looting_characters;
 		

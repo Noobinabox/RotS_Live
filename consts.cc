@@ -1886,6 +1886,28 @@ struct skill_teach_data guildmasters[]={
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
        0, 0, 0, 0, 0, 0}
+  },
+  {    /* Ungorod Uruk Swashbuckler 4647 (56)*/
+	  "You can train in these skills:",
+	  "$n snarls 'Get out!'",
+	  "$n trains $N.",
+	  "You practice it for a while.",
+	  "The guildmaster tells you 'I won't teach you any better.'",
+	  "You're already perfect in this.",
+	  { 0,
+	  100,100,100,100,100,100,  0,  0,  0,100,
+	  100,  0,  0,  0,100,100,  0,  0,  0,100,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+/*51*/0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  0,  0,  0,  0,  0,  0,  0 }
   }
 };
 

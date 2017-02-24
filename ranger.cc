@@ -332,6 +332,8 @@ ACMD (do_gather_food) {
     "light",
     "healing",
     "energy",
+	"bow",
+	"arrows",
     "\n"
   };
 
@@ -361,7 +363,7 @@ ACMD (do_gather_food) {
     one_argument(argument, arg);
     GatherType = search_block(arg, gather_type, 0);
     if (GatherType == -1) { /*If we can't find an argument */
-      send_to_char("You can gather food, healing, energy or light.\n\r", ch);
+      send_to_char("You can gather food, healing, energy, bows, arrows, or light.\n\r", ch);
       return;
     }
     if (!check_gather_conditions(ch, percent, GatherType)) /*Checks sector and race conditions */
@@ -418,6 +420,28 @@ ACMD (do_gather_food) {
 	send_to_char("You manage to find some herbs which have given you energy."
 		     "\n\r", ch);
 	break;
+	  case 5:
+		  if ((obj = read_object(6451, VIRT)) != NULL)
+		  {
+			  obj_to_char(obj, ch);
+			  send_to_char("You manage to find some branches that you fashion into a bow.\n\r", ch);
+		  }
+		  else
+		  {
+			  send_to_char("Problem in gather bow. Could not create item. Please notify imps.\n\r", ch);
+		  }
+		  break;
+	  case 6:
+		  if ((obj = read_object(6455, VIRT)) != NULL)
+		  {
+			  obj_to_char(obj, ch);
+			  send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);
+		  }
+		  else
+		  {
+			  send_to_char("Problem in gather arrows. Could you create item. Please notify imps.\n\r", ch);
+		  }
+		  break;
       }
 
       /*
@@ -430,7 +454,7 @@ ACMD (do_gather_food) {
       ranger_bonus = number(GET_PROF_LEVEL(PROF_RANGER, ch) / 4,
 			    GET_PROF_LEVEL(PROF_RANGER, ch) / 3);
       affects_last = 22 - ranger_bonus;
-      if (subcmd > 2) {
+      if (subcmd == 3 || subcmd == 4) {
 	af.type      = SKILL_GATHER_FOOD;
 	af.duration  = affects_last;
 	af.modifier  = 0;
@@ -2089,7 +2113,18 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 		return false;
 	}
 	//tag arrow in value slot 2 of the shooter
-	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
+	if (!IS_NPC(archer))
+	{
+		arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
+	}
+	else if (IS_NPC(archer))
+	{
+		arrow->obj_flags.value[2] = archer->abs_number;
+	}
+	else
+	{
+		return false;
+	}
 
 	// Move the arrow to the victim.
 	obj_from_char(arrow);
@@ -2123,7 +2158,18 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 		return false;
 	}
 	//tag arrow in value slot 2 of the shooter
-	arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
+	if (!IS_NPC(archer))
+	{
+		arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
+	}
+	else if (IS_NPC(archer))
+	{
+		arrow->obj_flags.value[2] = archer->abs_number;
+	}
+	else
+	{
+		return false;
+	}
 
 	// Move the arrow to the room.
 	obj_from_char(arrow);
@@ -2610,9 +2656,19 @@ void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vect
 	{
 		if (item->obj_flags.type_flag == ITEM_MISSILE)
 		{
-			if (item->obj_flags.value[2] == character->specials2.idnum)
+			if (!IS_NPC(character))
 			{
-				arrows.push_back(item);
+				if (item->obj_flags.value[2] == character->specials2.idnum)
+				{
+					arrows.push_back(item);
+				}
+			}
+			else if (IS_NPC(character))
+			{
+				if (item->obj_flags.value[2] == character->abs_number)
+				{
+					arrows.push_back(item);
+				}
 			}
 		}
 	}

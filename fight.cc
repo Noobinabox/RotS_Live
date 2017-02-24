@@ -1347,6 +1347,11 @@ void generate_damage_message(char_data* attacker, char_data *victim, int damage,
 		const dam_weapon_type& weap = dam_weapons[msg_num];
 		char* singular = "shot";
 		char* plural = "shot";
+		if (damage < 34)
+		{
+			singular = "shoot";
+			plural = "shoots";
+		}
 
 		/* damage message to onlookers.  see note on replace_string */
 		char* buf = replace_string(weap.to_room, singular, plural, body_part);

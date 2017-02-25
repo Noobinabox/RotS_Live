@@ -2224,7 +2224,7 @@ bool can_ch_shoot(char_data* archer)
 	 * before we check for the name or it will crash the game.
 	 */
 	const obj_data* quiver = archer->equipment[WEAR_BACK];
-	if (!quiver || !isname("quiver", quiver->name))
+	if (!quiver || !quiver->is_quiver())
 	{
 		if (is_pc(*archer))
 		{
@@ -2636,7 +2636,9 @@ ACMD(do_shoot)
 void put_arrow_quiver(char_data* character, obj_data *arrow, obj_data* quiver)
 {
 	if (GET_OBJ_WEIGHT(quiver) + GET_OBJ_WEIGHT(arrow) > quiver->obj_flags.value[0])
+	{
 		act("$p won't fit in $P.", FALSE, character, arrow, quiver, TO_CHAR);
+	}
 	else
 	{
 		obj_from_char(arrow);
@@ -2713,16 +2715,17 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	if (character == NULL)
 		return;
 
-	bool quivercheck;
+	bool has_quiver;
 	obj_data* quiver = character->equipment[WEAR_BACK];
-	if (!quiver || !isname("quiver", quiver->name))
+	if (!quiver || quiver->is_quiver())
 	{
-		quivercheck = FALSE;
+		has_quiver = false;
 	}
 	else
 	{
-		quivercheck = TRUE;
+		has_quiver = true;
 	}
+
 	// Characters cannot recover arrows if they are blind.
 	if (!CAN_SEE(character))
 	{
@@ -2771,8 +2774,10 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 					obj_from_room(arrow);
 				}
 				obj_to_char(arrow, character);
-				if (quivercheck == TRUE)
+				if (has_quiver)
+				{
 					put_arrow_quiver(character, arrow, quiver);
+				}
 			}
 			else
 			{
@@ -2792,6 +2797,6 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	std::string message = message_writer.str();
 	send_to_char(message.c_str(), character);
 
-	act("$n recovers some arrows.\r\n", FALSE, character, 0, 0, TO_ROOM);
+	act("$n recovers some arrows.\r\n", FALSE, character, NULL, NULL, TO_ROOM);
 }
 

@@ -28,7 +28,7 @@
 /* GAME PLAY OPTIONS */
 /* number of tics (usually 75 seconds) before PC/NPC corpses decompose */
 int max_npc_corpse_time = 10;
-int max_pc_corpse_time = 30;
+int max_pc_corpse_time = 45;
 int LOOT_DECAY_TIME = 5;
 int average_mob_life = 40;
 

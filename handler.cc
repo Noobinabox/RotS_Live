@@ -195,51 +195,48 @@ recount_light_room(int room)
   world[room].light = count;
 }
 
-
-
-int
-isname(char *str, char *namelist, char full)
+int isname(char *str, char *namelist, char full)
 {
-  register char *curname, *curstr;
-  int tmp;
-  
-  while(*str && (*str <= ' '))
-    str++;
-  
-  tmp = strlen(str);
-  if(!tmp)
-    return 0;
+	register char *curname, *curstr;
+	int tmp;
 
-  if((tmp < 3) || (tmp > 4)) 
-    full = 1;
-  
-  if(!namelist) 
-    return 0;
+	while (*str && (*str <= ' '))
+		str++;
 
-  curname = namelist;
-  for( ; ; ) {
-    for(curstr = str; ; curstr++, curname++) {
-      if(!*curstr && (!full ||!isalpha(*curname)))
-	return 1;
-      
-      if(!*curname)
-	return 0;
-      
-      if(!*curstr || *curname == ' ')
-	break;
-      
-      if(LOWER(*curstr) != LOWER(*curname))
-	break;
-    } /* skip to next name */    
+	tmp = strlen(str);
+	if (!tmp)
+		return 0;
 
-    for( ; isalpha(*curname); curname++);
-    
-    if(!*curname)
-      return 0;
-    
-    /* first char of new name */
-    for( ; *curname &&( !isalpha(*curname) || (*curname == ' ')); curname++); 
-  }
+	if ((tmp < 3) || (tmp > 4))
+		full = 1;
+
+	if (!namelist)
+		return 0;
+
+	curname = namelist;
+	for (; ; ) {
+		for (curstr = str; ; curstr++, curname++) {
+			if (!*curstr && (!full || !isalpha(*curname)))
+				return 1;
+
+			if (!*curname)
+				return 0;
+
+			if (!*curstr || *curname == ' ')
+				break;
+
+			if (LOWER(*curstr) != LOWER(*curname))
+				break;
+		} /* skip to next name */
+
+		for (; isalpha(*curname); curname++);
+
+		if (!*curname)
+			return 0;
+
+		/* first char of new name */
+		for (; *curname && (!isalpha(*curname) || (*curname == ' ')); curname++);
+	}
 }
 
 
@@ -1782,81 +1779,95 @@ void  obj_from_room(struct obj_data *object)
 
 
 /* put an object in an object (quaint)  */
-void	obj_to_obj(struct obj_data *obj, struct obj_data *obj_to, char change_weight)
+void obj_to_obj(obj_data* item, obj_data* container, char change_weight)
 {
-   struct obj_data *tmp_obj;
+	if (!item || !container) 
+		return;
 
-   if(!obj || !obj_to) return;
+	item->next_content = container->contains;
+	container->contains = item;
+	item->in_obj = container;
 
-   obj->next_content = obj_to->contains;
-   obj_to->contains = obj;
-   obj->in_obj = obj_to;
+	if (change_weight) 
+	{
+		obj_data* tmp_obj = NULL;
+		for (tmp_obj = item->in_obj; tmp_obj->in_obj; tmp_obj = tmp_obj->in_obj)
+		{
+			GET_OBJ_WEIGHT(tmp_obj) += GET_OBJ_WEIGHT(item);
+		}
 
-   if(change_weight){
-
-     for (tmp_obj = obj->in_obj; tmp_obj->in_obj; tmp_obj = tmp_obj->in_obj)
-       GET_OBJ_WEIGHT(tmp_obj) += GET_OBJ_WEIGHT(obj);
-     
-     /* top level object.  Subtract weight from inventory if necessary. */
-     GET_OBJ_WEIGHT(tmp_obj) += GET_OBJ_WEIGHT(obj);
-     if (tmp_obj->carried_by)
-       IS_CARRYING_W(tmp_obj->carried_by) += GET_OBJ_WEIGHT(obj);
-   }
+		/* top level object.  Subtract weight from inventory if necessary. */
+		GET_OBJ_WEIGHT(tmp_obj) += GET_OBJ_WEIGHT(item);
+		if (tmp_obj->carried_by)
+		{
+			IS_CARRYING_W(tmp_obj->carried_by) += GET_OBJ_WEIGHT(item);
+		}
+	}
 }
 
 
 /* remove an object from an object */
-void	obj_from_obj(struct obj_data *obj)
+void obj_from_obj(obj_data* item)
 {
-   struct obj_data *tmp, *obj_from;
+	if (!item)
+		return;
 
-   if(!obj) return;
+	if (item->in_obj) 
+	{
+		obj_data* tmp;
+		obj_data* obj_from = item->in_obj;
+		if (item == obj_from->contains)   /* head of list */
+		{
+			obj_from->contains = item->next_content;
+		}
+		else 
+		{
+			for (tmp = obj_from->contains; tmp && (tmp->next_content != item); tmp = tmp->next_content)
+				; /* locate previous */
 
-   if (obj->in_obj) {
-      obj_from = obj->in_obj;
-      if (obj == obj_from->contains)   /* head of list */
-	 obj_from->contains = obj->next_content;
-      else {
-	 for (tmp = obj_from->contains; 
-	     tmp && (tmp->next_content != obj); 
-	     tmp = tmp->next_content)
-	    ; /* locate previous */
+			if (!tmp) 
+			{
+				perror("SYSERR: Fatal error in object structures.");
+				abort();
+			}
 
-	 if (!tmp) {
-	    perror("SYSERR: Fatal error in object structures.");
-	    abort();
-	 }
-
-	 tmp->next_content = obj->next_content;
-      }
+			tmp->next_content = item->next_content;
+		}
 
 
-      /* Subtract weight from containers container */
-      for (tmp = obj->in_obj; tmp->in_obj; tmp = tmp->in_obj)
-	 GET_OBJ_WEIGHT(tmp) -= GET_OBJ_WEIGHT(obj);
+		/* Subtract weight from containers container */
+		for (tmp = item->in_obj; tmp->in_obj; tmp = tmp->in_obj)
+		{
+			GET_OBJ_WEIGHT(tmp) -= GET_OBJ_WEIGHT(item);
+		}
 
-      /* Subtract weight from char that carries the object */
-      GET_OBJ_WEIGHT(tmp) -= GET_OBJ_WEIGHT(obj);
-      if (tmp->carried_by)
-	 IS_CARRYING_W(tmp->carried_by) -= GET_OBJ_WEIGHT(obj);
+		/* Subtract weight from char that carries the object */
+		GET_OBJ_WEIGHT(tmp) -= GET_OBJ_WEIGHT(item);
+		if (tmp->carried_by)
+		{
+			IS_CARRYING_W(tmp->carried_by) -= GET_OBJ_WEIGHT(item);
+		}
 
-      obj->in_obj = 0;
-      obj->next_content = 0;
-   } else {
-      perror("SYSERR: Trying to object from object when in no object.");
-      abort();
-   }
+		item->in_obj = 0;
+		item->next_content = 0;
+	}
+	else 
+	{
+		perror("SYSERR: Trying to object from object when in no object.");
+		abort();
+	}
 }
 
 
 /* Set all carried_by to point to new owner */
-void	object_list_new_owner(struct obj_data *list, struct char_data *ch)
+void object_list_new_owner(struct obj_data *list, struct char_data *ch)
 {
-   if (list) {
-      object_list_new_owner(list->contains, ch);
-      object_list_new_owner(list->next_content, ch);
-      list->carried_by = ch;
-   }
+	if (list) 
+	{
+		object_list_new_owner(list->contains, ch);
+		object_list_new_owner(list->next_content, ch);
+		list->carried_by = ch;
+	}
 }
 
 

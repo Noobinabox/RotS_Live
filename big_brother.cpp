@@ -41,10 +41,8 @@ namespace game_rules
 		if (corpse_data.num_items_looted >= 2)
 			return false;
 
-		// Containers can't be looted.
-		// TODO(drelidan):  Add 'abuse' protection by players that unequip a bunch of
-		// gear and stuff it in containers.
-		if (item->obj_flags.type_flag == ITEM_CONTAINER)
+		// Containers (other than quivers) can't be looted.
+		if (item->obj_flags.type_flag == ITEM_CONTAINER && !item->is_quiver())
 			return false;
 
 		// The corpse has had less than 2-items looted from it.  Return that the

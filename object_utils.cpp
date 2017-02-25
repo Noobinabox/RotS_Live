@@ -4,16 +4,20 @@
 
 #include "utils.h"
 #include "spells.h"
+#include "handler.h"
 
 #include <algorithm>
 #include <cmath>
 
+//============================================================================
+// Utility functions that take in an obj_data object.
+//============================================================================
 namespace utils
 {
 	//============================================================================
 	bool is_artifact(const obj_data& object)
 	{
-		//dgurley:  This macro always returns false.
+		//drelidan:  This macro always returns false.
 		return false;
 	}
 	
@@ -267,14 +271,17 @@ namespace utils
 	}
 }
 
+//============================================================================
+// Implementations of functions defined in structs.h
+//============================================================================
 namespace game_types
 {
 	const char* get_weapon_name(weapon_type type)
 	{
 		static const char* weapon_types[WT_COUNT] =
 		{
-			"Error, Unsed weapon type, contact Imms",
-			"Error, Unsed weapon type, contact Imms",
+			"Error, Unused weapon type, contact Imms",
+			"Error, Unused weapon type, contact Imms",
 			"whipping",
 			"slashing",
 			"two-handed slashing",
@@ -292,4 +299,38 @@ namespace game_types
 
 		return weapon_types[type];
 	}
+}
+
+//============================================================================
+bool obj_data::is_quiver() const
+{
+	if (obj_flags.type_flag == ITEM_CONTAINER)
+	{
+		return isname(name, "quiver");
+	}
+	return false;
+}
+
+//============================================================================
+bool obj_flag_data::is_wearable() const
+{
+	static int WEARABLE_ITEMS[7] = { 
+		ITEM_WAND,
+		ITEM_STAFF,
+		ITEM_WEAPON,
+		ITEM_FIREWEAPON,
+		ITEM_ARMOR,
+		ITEM_WORN,
+		ITEM_SHIELD,
+	};
+
+	for (int index = 0; index < 7; index++)
+	{
+		if (WEARABLE_ITEMS[index] == type_flag)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

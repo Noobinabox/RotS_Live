@@ -342,6 +342,9 @@ public:
 	bool is_chain() const { return material == 3; }
 	bool is_metal() const { return material == 4; }
 
+	// Returns true if the object can be equipped.
+	bool is_wearable() const;
+
 public:
 	int	value[5];	/* Values of the item (see list) *//*changed*/
 	byte type_flag;	/* Type of item                     */
@@ -383,6 +386,12 @@ public:
 	int get_base_damage_reduction() const { return obj_flags.get_base_damage_reduction(); }
 
 	const char_data* get_owner() const { return carried_by; }
+
+	// Returns true if the object can be equipped.
+	bool is_wearable() const { return obj_flags.is_wearable(); }
+	
+	// Returns true if the object is a quiver.
+	bool is_quiver() const;
 
 public:
 	sh_int item_number;            /* Where in data-base               */

@@ -47,12 +47,12 @@ extern int r_mortal_start_room[];
 extern int r_immort_start_room;
 extern struct index_data *mob_index;
 extern int armor_absorb(struct obj_data *obj);
-extern int average_mob_life;
+extern const int average_mob_life;
 extern skill_data skills[];
 extern int max_race_str[];
 extern bool weapon_willpower_damage(char_data *ch, char_data *victim);
 extern void check_break_prep(struct char_data *);
-extern int max_npc_corpse_time, max_pc_corpse_time;
+extern const int max_npc_corpse_time, max_pc_corpse_time;
 extern char * pc_star_types[];
 
 /* External procedures */
@@ -607,9 +607,61 @@ void remove_and_drop_object(char_data* character)
 }
 
 //============================================================================
+// Moves an item from its current container to the corpse.
+//============================================================================
+void move_from_container_to_corpse(obj_data* corpse, obj_data* item)
+{
+	obj_from_obj(item);
+	obj_to_obj(item, corpse);
+}
+
+//============================================================================
+// Recursively parses the container passed in, moving any wearable or key items
+// from the container into the corpse's inventory.
+//============================================================================
+void parse_container(obj_data* corpse, obj_data* container)
+{
+	obj_data* next_item = NULL;
+	for (obj_data* item = container->contains; item; item = next_item)
+	{
+		next_item = item->next_content;
+		if (item->is_wearable())
+		{
+			// Move wearable items into base inventory.
+			move_from_container_to_corpse(corpse, item);
+		}
+		else if (GET_ITEM_TYPE(item) == ITEM_KEY)
+		{
+			// Move keys into base inventory.
+			move_from_container_to_corpse(corpse, item);
+		}
+		else if (GET_ITEM_TYPE(item) == ITEM_CONTAINER)
+		{
+			// Recursively parse containers so people can't hide anything.
+			parse_container(corpse, item);
+		}
+	}
+}
+
+//============================================================================
+// Moves all items that can be worn into corpse object, out of any containers
+// that they were in.
+//============================================================================
+void move_wearables_to_corpse(obj_data* corpse)
+{
+	for (obj_data* item = corpse->contains; item; item = item->next_content)
+	{
+		if (GET_ITEM_TYPE(item) == ITEM_CONTAINER)
+		{
+			parse_container(corpse, item);
+		}
+	}
+}
+
+//============================================================================
 // Makes a corpse from the character passed in.  Returns a pointer to the corpse.
 //============================================================================
-obj_data* make_physical_corpse(char_data* character, int attack_type)
+obj_data* make_physical_corpse(char_data* character, char_data* killer, int attack_type)
 {
 	obj_data* corpse = NULL;
 
@@ -680,6 +732,13 @@ obj_data* make_physical_corpse(char_data* character, int attack_type)
 		}
 	}
 
+	// If the character died to another player or poison, move all of their
+	// wearable gear into their corpse and out of any containers they own.
+	if (attack_type == SPELL_POISON || !IS_NPC(killer))
+	{
+		move_wearables_to_corpse(corpse);
+	}
+
 
 	character->carrying = NULL;
 	IS_CARRYING_N(character) = 0;
@@ -691,8 +750,9 @@ obj_data* make_physical_corpse(char_data* character, int attack_type)
 		obj->in_obj = corpse;
 	}
 	
-	object_list_new_owner(corpse, 0);
+	object_list_new_owner(corpse, NULL);
 	// remove_random_item(character, corpse); // To re-enable item decay, remove the comment before this line.
+	
 	/* moving the corpse into the room of our players death */
 	obj_to_room(corpse, character->in_room);
 	
@@ -706,11 +766,11 @@ void spirit_death(char_data* character)
 	move_gold(character, NULL, 1);
 }
 
-obj_data* make_corpse(char_data* character, int attack_type)
+obj_data* make_corpse(char_data* character, char_data* killer, int attack_type)
 {
 	if (!IS_SHADOW(character))
 	{
-		return make_physical_corpse(character, attack_type);
+		return make_physical_corpse(character, killer, attack_type);
 	}
 	else
 	{
@@ -884,7 +944,7 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 		affect_remove(dead_man, dead_man->affected);
 	}
 	death_cry(dead_man);
-	obj_data* corpse = make_corpse(dead_man, attack_type);
+	obj_data* corpse = make_corpse(dead_man, killer, attack_type);
 
 	if (!IS_NPC(dead_man))
 	{

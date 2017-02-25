@@ -288,7 +288,7 @@ namespace game_rules
 		tm* time_info = localtime(&current_time);
 		m_last_engaged_pk_time[attacker] = *time_info; // copy tm_struct into map
 
-		typedef std::set<const char_data*>::iterator set_iter;
+		typedef character_set::iterator set_iter;
 
 		// If you attack someone in PK, you are no longer considered looting.
 		set_iter attacker_iter = m_looting_characters.find(attacker);
@@ -305,7 +305,7 @@ namespace game_rules
 		// "is-character-afk" test.
 		const double SECONDS_PER_MIN = 60;
 		const double CUTOFF_SECS = 900;
-		typedef std::map<const char_data*, tm>::iterator map_iter;
+		typedef time_map::iterator map_iter;
 
 		bool insert = true;
 
@@ -336,15 +336,16 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_returned(const char_data* character)
 	{
-		remove_character_from_set(character);
+		remove_character_from_afk_set(character);
 	}
 
 	//============================================================================
 	void big_brother::on_character_disconnected(const char_data* character)
 	{
-		remove_character_from_set(character);
+		remove_character_from_afk_set(character);
+		remove_character_from_looting_set(character);
 
-		typedef std::map<const char_data*, tm>::iterator map_iter;
+		typedef time_map::iterator map_iter;
 
 		map_iter char_map_iter = m_last_engaged_pk_time.find(character);
 		if (char_map_iter != m_last_engaged_pk_time.end())
@@ -354,9 +355,9 @@ namespace game_rules
 	}
 
 	//============================================================================
-	void big_brother::remove_character_from_set(const char_data* character)
+	void big_brother::remove_character_from_afk_set(const char_data* character)
 	{
-		typedef std::set<const char_data*>::iterator iter;
+		typedef character_set::iterator iter;
 
 		iter char_iter = m_afk_characters.find(character);
 		if (char_iter != m_afk_characters.end())
@@ -366,9 +367,21 @@ namespace game_rules
 	}
 
 	//============================================================================
+	void big_brother::remove_character_from_looting_set(const char_data* character)
+	{
+		typedef character_set::iterator iter;
+
+		iter char_iter = m_looting_characters.find(character);
+		if (char_iter != m_looting_characters.end())
+		{
+			m_looting_characters.erase(character);
+		}
+	}
+
+	//============================================================================
 	void big_brother::on_corpse_decayed(obj_data* corpse)
 	{
-		typedef std::map<obj_data*, char_data*>::iterator map_iter;
+		typedef corpse_map::iterator map_iter;
 
 		map_iter corpse_iter = m_corpse_map.find(corpse);
 		if (corpse_iter == m_corpse_map.end())

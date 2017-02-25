@@ -67,7 +67,10 @@ namespace game_rules
 		bool is_same_side_race_war(int attacker_race, int victim_race) const;
 
 		// Removes a character from our afk_characters set.
-		void remove_character_from_set(const char_data* character);
+		void remove_character_from_afk_set(const char_data* character);
+
+		// Removes a character from our looting characters set.
+		void remove_character_from_looting_set(const char_data* character);
 
 		struct player_corpse_data
 		{
@@ -84,11 +87,13 @@ namespace game_rules
 		typedef std::map<obj_data*, player_corpse_data> corpse_map;
 		corpse_map m_corpse_map;
 
-		std::set<const char_data*> m_afk_characters;
-		std::set<const char_data*> m_looting_characters;
+		typedef std::set<const char_data*> character_set;
+		character_set m_afk_characters;
+		character_set m_looting_characters;
 		
 		// For tracking when people engaged in PK can get AFK protection.
-		std::map<const char_data*, tm> m_last_engaged_pk_time;
+		typedef std::map<const char_data*, tm> time_map;
+		time_map m_last_engaged_pk_time;
 	};
 }
 

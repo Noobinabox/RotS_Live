@@ -23,7 +23,7 @@ PROFILE = -g
 CFLAGS = $(MYFLAGS) $(PROFILE) $(OSFLAGS)
 
 OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
-	act_othe.o act_soci.o act_wiz.o ban.o boards.o char_utils.o char_utils_combat.o clerics.o color.o combat_manager.o \
+	act_othe.o act_soci.o act_wiz.o ban.o big_brother.o boards.o char_utils.o char_utils_combat.o clerics.o color.o combat_manager.o \
 	comm.o config.o consts.o db.o delayed_command_interpreter.o fight.o graph.o handler.o interpre.o environment_utils.o \
 	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o \
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \
@@ -55,6 +55,8 @@ char_utils_combat.o : char_utils_combat.cpp structs.h base_utils.h char_utils.h 
 	$(CC) -c $(CFLAGS) char_utils_combat.cpp
 combat_manager.o : combat_manager.cpp combat_manager.h base_utils.h
 	$(CC) -c $(CFLAGS) combat_manager.cpp
+big_brother.o : big_brother.cpp big_brother.h base_utils.h singleton.h
+	$(CC) -c $(CFLAGS) big_brother.cpp
 delayed_command_interpreter.o : delayed_command_interpreter.cpp delayed_command_interpreter.h
 	$(CC) -c $(CFLAGS) delayed_command_interpreter.cpp
 wait_functions.o : wait_functions.cpp structs.h base_utils.h char_utils.h object_utils.h  comm.h
@@ -89,7 +91,7 @@ act_wiz.o : act_wiz.cc structs.h utils.h comm.h interpre.h \
 handler.o : handler.cc structs.h utils.h comm.h db.h handler.h interpre.h
 	$(CC) -c $(CFLAGS) handler.cc 
 db.o : db.cc structs.h utils.h db.h comm.h handler.h limits.h spells.h \
-        interpre.h
+        interpre.h big_brother.h
 	$(CC) -c $(CFLAGS) db.cc
 ban.o : ban.cc structs.h utils.h comm.h interpre.h handler.h db.h
 	$(CC) -c $(CFLAGS) ban.cc

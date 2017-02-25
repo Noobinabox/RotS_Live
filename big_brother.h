@@ -48,8 +48,15 @@ namespace game_rules
 
 		// Alert the Big Brother system that a character has returned to their keyboard.
 		void on_character_returned(const char_data* character);
+	
 
 	private:
+
+		friend class world_singleton<big_brother>;
+
+		// Private constructor that we friend with our parent to grant access.
+		big_brother(const weather_data* weather, const room_data* world)
+			: world_singleton<big_brother>(weather, world) { }
 
 		// Is the spell being cast or skill being used offensive in nature.
 		bool is_skill_offensive(int skill_id) const;

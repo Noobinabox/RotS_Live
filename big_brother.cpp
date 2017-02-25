@@ -8,8 +8,11 @@
 /********************************************************************
 * Singleton Implementation
 *********************************************************************/
-game_rules::big_brother* game_rules::big_brother::m_pInstance(NULL);
-bool game_rules::big_brother::m_bDestroyed(false);
+template<>
+game_rules::big_brother* world_singleton<game_rules::big_brother>::m_pInstance(0);
+
+template<>
+bool world_singleton<game_rules::big_brother>::m_bDestroyed(false);
 
 namespace game_rules
 {
@@ -24,7 +27,7 @@ namespace game_rules
 	bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* item)
 	{
 		// Something's not right.  Go for it, we won't stop you.
-		if (looter == NULL || corpse == NULL)
+		if (looter == NULL || corpse == NULL || !item)
 			return true;
 
 		typedef corpse_map::iterator iter;
@@ -317,7 +320,6 @@ namespace game_rules
 	{
 		// This is one possible implementation.  Another is to do the time-check in the
 		// "is-character-afk" test.
-		const double SECONDS_PER_MIN = 60;
 		const double CUTOFF_SECS = 900;
 		typedef time_map::iterator map_iter;
 

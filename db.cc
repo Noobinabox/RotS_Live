@@ -23,6 +23,8 @@
 #include "zone.h"
 #include "pkill.h"
 
+#include "big_brother.h"
+
 
 /**************************************************************************
 *  declarations of most of the 'global' variables                         *
@@ -375,26 +377,10 @@ void	boot_db(void)
       log("Loading shops.");
       index_boot(DB_BOOT_SHP);
       }
-   /*
-   log("Assigning function pointers:");
 
-   if (!no_specials) {
-      log("   Shopkeepers.");
-      assign_the_shopkeepers();
-      log("   Mobiles.");
-      assign_mobiles();
-      log("   Objects.");
-      assign_objects();
-      log("   Rooms.");
-      assign_rooms();
-   }
-               This is moved one screen lower :(
-   */
    log("   Commands.");
    assign_command_pointers();
-   /*   log("   Spells.");
-   assign_spell_pointers();
-   */
+
    log("Sorting command list.");
    sort_commands();
 
@@ -409,7 +395,6 @@ void	boot_db(void)
 
    log("Reading banned site and invalid-name list.");
    load_banned();
-   // Read_Invalid_List();
 
    if (!no_rent_check) {
       log("Deleting timed-out crash and rent files:");
@@ -463,78 +448,21 @@ void	boot_db(void)
 
    log("Boot db -- DONE.");
    boot_mode = 0;
+
+   // Initialize the Big Brother system after we have our weather data and
+   // our map.
+   game_rules::big_brother::create(weather_info, &world);
 }
 
 
 /* reset the time in the game from file */
-void	reset_time(void)
+void reset_time(void)
 {
 
    void initialise_weather();
 
    time_info = mud_time_passed(time(0), beginning_of_time);
    initialise_weather();
-  /* weather and time initialisation now moved to weather.cc
-
-   switch (time_info.hours) {
-   case 0 :
-   case 1 :
-   case 2 :
-   case 3 :
-   case 4 :
-      weather_info.sunlight = SUN_DARK;
-      break;
-   case 5 :
-      weather_info.sunlight = SUN_RISE;
-      break;
-   case 6 :
-   case 7 :
-   case 8 :
-   case 9 :
-   case 10 :
-   case 11 :
-   case 12 :
-   case 13 :
-   case 14 :
-   case 15 :
-   case 16 :
-   case 17 :
-   case 18 :
-   case 19 :
-   case 20 :
-      weather_info.sunlight = SUN_LIGHT;
-      break;
-   case 21 :
-      weather_info.sunlight = SUN_SET;
-      break;
-   case 22 :
-   case 23 :
-   default :
-      weather_info.sunlight = SUN_DARK;
-      break;
-   }
-
-   sprintf(buf, "   Current Gametime: %dH %dD %dM %dY.",
-       time_info.hours, time_info.day,
-       time_info.month, time_info.year);
-   log(buf);
-
-   weather_info.pressure = 960;
-   if ((time_info.month >= 7) && (time_info.month <= 12))
-      weather_info.pressure += dice(1, 50);
-   else
-      weather_info.pressure += dice(1, 80);
-
-   weather_info.change = 0;
-
-   if (weather_info.pressure <= 980)
-      weather_info.sky = SKY_LIGHTNING;
-   else if (weather_info.pressure <= 1000)
-      weather_info.sky = SKY_RAINING;
-   else if (weather_info.pressure <= 1020)
-      weather_info.sky = SKY_CLOUDY;
-   else
-      weather_info.sky = SKY_CLOUDLESS;  */
 }
 
 void inc_p_table(void){

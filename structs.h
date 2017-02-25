@@ -614,6 +614,7 @@ struct room_data {
 #define AFF_POISON            (1 << 11)
 #define AFF_SHIELD            (1 << 12)
 #define AFF_BREATHE           (1 << 13) // was paralysis - now indicates the ch can breathe whatever the room conditions
+#define AFF_UNUSED            (1 << 14) // unused affect
 #define AFF_CONFUSE           (1 << 15)
 #define AFF_SLEEP             (1 << 16)
 #define AFF_BASH              (1 << 17)

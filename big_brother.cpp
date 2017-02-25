@@ -3,6 +3,7 @@
 #include "object_utils.h"
 #include "char_utils.h"
 #include "structs.h"
+#include "spells.h"
 
 /********************************************************************
 * Singleton Implementation
@@ -105,15 +106,77 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_skill_offensive(int skill_id) const
 	{
-		// TODO(drelidan):  Add spells to the list.
-		static int OFFENSIVE_SKILLS[128] = { 0 };
+		const int TYPE_END = 9999;
 
-		for (int i = 0; i < 128; ++i)
+		static int OFFENSIVE_SKILLS[] = { 
+			SKILL_BAREHANDED,
+			SKILL_SLASH,
+			SKILL_CONCUSSION,
+			SKILL_WHIP,
+			SKILL_PIERCE,
+			SKILL_SPEARS,
+			SKILL_AXE,
+			SKILL_TWOHANDED,
+			SKILL_KICK,
+			SKILL_BASH,
+			SKILL_SWING,
+			SKILL_RIPOSTE,
+			SKILL_AMBUSH,
+			SPELL_CURING,
+			SPELL_RESTLESSNESS,
+			SPELL_INSIGHT,
+			SPELL_PRAGMATISM,
+			SPELL_HAZE,
+			SPELL_FEAR,
+			SPELL_POISON,
+			SPELL_TERROR,
+			SKILL_ARCHERY,
+			SPELL_HALLUCINATE,
+			SPELL_CURSE,
+			SPELL_MAGIC_MISSILE,
+			SPELL_CHILL_RAY,
+			SPELL_FREEZE,
+			SPELL_LIGHTNING_BOLT,
+			SPELL_EARTHQUAKE,
+			SPELL_DARK_BOLT,
+			SPELL_MIST_OF_BAAZUNGA,
+			SPELL_BLAZE,
+			SPELL_FIREBOLT,
+			SPELL_CONE_OF_COLD,
+			SPELL_FIREBALL,
+			SPELL_FIREBALL2,
+			SPELL_SEARING_DARKNESS,
+			SPELL_LIGHTNING_STRIKE,
+			SPELL_WORD_OF_PAIN,
+			SPELL_WORD_OF_AGONY,
+			SPELL_WORD_OF_SHOCK,
+			SPELL_LEACH,
+			SPELL_BLACK_ARROW,
+			SPELL_CONFUSE,
+			SKILL_TRAP,
+			TYPE_HIT,
+			TYPE_BLUDGEON,
+			TYPE_PIERCE,
+			TYPE_SLASH,
+			TYPE_STAB,
+			TYPE_WHIP,
+			TYPE_SPEARS,
+			TYPE_CLEAVE,
+			TYPE_FLAIL,
+			TYPE_SMITE,
+			TYPE_CRUSH,
+			TYPE_SUFFERING,
+			TYPE_END
+		};
+
+		int skill_index = 0;
+		while (OFFENSIVE_SKILLS[skill_index] != TYPE_END)
 		{
-			if (OFFENSIVE_SKILLS[i] == skill_id)
+			if (OFFENSIVE_SKILLS[skill_index] == skill_id)
 			{
 				return true;
 			}
+			++skill_index;
 		}
 
 		return false;

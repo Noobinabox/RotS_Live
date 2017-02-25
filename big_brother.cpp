@@ -34,9 +34,18 @@ namespace game_rules
 		if (corpse_iter == m_corpse_map.end())
 			return true;
 
+		// Players on the same side as the race war as you can loot your corpse.
 		player_corpse_data& corpse_data = corpse_iter->second;
 		if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
+		{
+			if (!item->next_content)
+			{
+				// This is the last item from the corpse.  Stop tracking the corpse.
+				remove_character_from_looting_set(corpse_data.player_id);
+				m_corpse_map.erase(corpse_iter);
+			}
 			return true;
+		}
 
 		if (corpse_data.num_items_looted >= 2)
 			return false;
@@ -48,6 +57,14 @@ namespace game_rules
 		// The corpse has had less than 2-items looted from it.  Return that the
 		// item can be looted and increment the counter.
 		++corpse_data.num_items_looted;
+
+		if (!item->next_content)
+		{
+			// This is the last item from the corpse.  Stop tracking the corpse.
+			remove_character_from_looting_set(corpse_data.player_id);
+			m_corpse_map.erase(corpse_iter);
+		}
+
 		return true;
 	}
 
@@ -189,7 +206,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_looting(const char_data* victim) const
 	{
-		return m_looting_characters.find(victim) != m_looting_characters.end();
+		return m_looting_characters.find(victim->abs_number) != m_looting_characters.end();
 	}
 
 	//============================================================================
@@ -255,45 +272,44 @@ namespace game_rules
 	//============================================================================ 
 	
 	//============================================================================
-	void big_brother::on_character_died(char_data* character, obj_data* corpse)
+	void big_brother::on_character_died(char_data* character, char_data* killer, obj_data* corpse)
 	{
 		// Spirits don't leave corpses behind.  If we have 'shadow' mode for players again,
 		// this could create some issues.
 		if (corpse == NULL)
 			return;
 
-		// Big Brother doesn't track NPC corpses.
-		// TODO(drelidan):  Add protection for orc followers.
+		// Big Brother doesn't track NPC corpses that are not orc followers.
 		if (utils::is_npc(*character))
+		{
+			if (utils::is_affected_by(*character, AFF_CHARM) && character->master)
+			{
+				// Treat the player as the character that died.
+				m_corpse_map[corpse] = player_corpse_data(character->master, killer);
+			}
+
 			return;
+		}
 
 		// Each corpse will be unique, so even if a player dies multiple times,
 		// each corpse will be protected.
-		m_corpse_map[corpse] = player_corpse_data(character);
+		m_corpse_map[corpse] = player_corpse_data(character, killer);
+		m_looting_characters.insert(character->abs_number);
 	}
 
 	//============================================================================
-	void big_brother::on_character_attacked_player(const char_data* attacker)
+	void big_brother::on_character_attacked_player(const char_data* attacker, const char_data* victim)
 	{
-		// TODO(drelidan):  Track the amount of items the attacker started with equipped.  If this is
-		// a significant difference at death, put a flag in so that the looter can still get their
-		// appropriate rewards.
-
 		// Get the current time.
 		time_t current_time;
 		time(&current_time);
 
 		tm* time_info = localtime(&current_time);
 		m_last_engaged_pk_time[attacker] = *time_info; // copy tm_struct into map
-
-		typedef character_set::iterator set_iter;
+		m_last_engaged_pk_time[victim] = *time_info; // copy tm_struct into map
 
 		// If you attack someone in PK, you are no longer considered looting.
-		set_iter attacker_iter = m_looting_characters.find(attacker);
-		if (attacker_iter != m_looting_characters.end())
-		{
-			m_looting_characters.erase(attacker_iter);
-		}
+		remove_character_from_looting_set(attacker->abs_number);
 	}
 
 	//============================================================================
@@ -341,7 +357,7 @@ namespace game_rules
 	void big_brother::on_character_disconnected(const char_data* character)
 	{
 		remove_character_from_afk_set(character);
-		remove_character_from_looting_set(character);
+		remove_character_from_looting_set(character->abs_number);
 
 		typedef time_map::iterator map_iter;
 
@@ -365,14 +381,14 @@ namespace game_rules
 	}
 
 	//============================================================================
-	void big_brother::remove_character_from_looting_set(const char_data* character)
+	void big_brother::remove_character_from_looting_set(int char_id)
 	{
-		typedef character_set::iterator iter;
+		typedef character_id_set::iterator iter;
 
-		iter char_iter = m_looting_characters.find(character);
+		iter char_iter = m_looting_characters.find(char_id);
 		if (char_iter != m_looting_characters.end())
 		{
-			m_looting_characters.erase(character);
+			m_looting_characters.erase(char_iter);
 		}
 	}
 
@@ -385,6 +401,7 @@ namespace game_rules
 		if (corpse_iter == m_corpse_map.end())
 			return;
 
+		remove_character_from_looting_set(corpse_iter->second.player_id);
 		m_corpse_map.erase(corpse_iter);
 	}
 
@@ -404,7 +421,14 @@ namespace game_rules
 		player_race = dead_man->player.race;
 		player_id = dead_man->abs_number;
 		
-		killer_id = killer->abs_number;
+		if (killer)
+		{
+			killer_id = killer->abs_number;
+		}
+		else
+		{
+			killer_id = -1;
+		}
 	}
 }
 

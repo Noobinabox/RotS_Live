@@ -29,14 +29,14 @@ namespace game_rules
 		char_data* get_valid_target(char_data* attacker, const char_data* victim, const char* argument) const;
 
 		// Called when a character dies to create information about loot rules.
-		void on_character_died(char_data* character, obj_data* corpse);
+		void on_character_died(char_data* character, char_data* killer, obj_data* corpse);
 
 		// Called when a character auto-AFKs so that they can [potentially] be protected.
 		void on_character_afked(const char_data* character);
 
 		// Called when a character successfully attacks another player.  This is used to
 		// track whether or not a character should get AFK protection.
-		void on_character_attacked_player(const char_data* attacker);
+		void on_character_attacked_player(const char_data* attacker, const char_data* victim);
 
 		// When a character disconnects, let the Big Brother system know so that it can
 		// clean up any references.
@@ -70,7 +70,7 @@ namespace game_rules
 		void remove_character_from_afk_set(const char_data* character);
 
 		// Removes a character from our looting characters set.
-		void remove_character_from_looting_set(const char_data* character);
+		void remove_character_from_looting_set(int char_id);
 
 		struct player_corpse_data
 		{
@@ -89,7 +89,9 @@ namespace game_rules
 
 		typedef std::set<const char_data*> character_set;
 		character_set m_afk_characters;
-		character_set m_looting_characters;
+
+		typedef std::set<int> character_id_set;
+		character_id_set m_looting_characters;
 		
 		// For tracking when people engaged in PK can get AFK protection.
 		typedef std::map<const char_data*, tm> time_map;

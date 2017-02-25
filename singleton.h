@@ -64,11 +64,11 @@ public:
 		{
 			if (m_bDestroyed)
 			{
-				on_instance_destroyed();
+				//on_instance_destroyed();
 			}
 			else
 			{
-				on_instance_not_created();
+				//on_instance_not_created();
 			}
 		}
 		return *m_pInstance;

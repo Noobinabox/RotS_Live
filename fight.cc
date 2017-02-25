@@ -28,6 +28,7 @@
 #include "pkill.h"
 
 #include "char_utils.h"
+#include "big_brother.h"
 
 #define IS_PHYSICAL(_at) \
   ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)
@@ -962,8 +963,11 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 			char_ability_data& cur_abils = dead_man->tmpabilities;
 			char_ability_data& max_abils = dead_man->abilities;
 			
-			// Restore the character to full.
+			// Restore the character to full, and then set health to 1/4 and mana to 0
+			// to ensure that characters don't abuse this in town-siege situations.
 			cur_abils = max_abils;
+			cur_abils.hit = cur_abils.hit / 4;
+			cur_abils.mana = 0;
 		}
 		else
 		{
@@ -994,9 +998,10 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 		}
 
 		REMOVE_BIT(PLR_FLAGS(dead_man), PLR_WAS_KITTED);
-		// TODO(drelidan): Once big_brother is building with everything else, uncomment out the lines below.
-		// big_brother& bb_instance = big_brother::instance();
-		// bb_instance.on_character_died(character, corpse);
+		
+		// Let big brother know that the player died.
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		bb_instance.on_character_died(dead_man, killer, corpse);
 	}
 	else
 	{

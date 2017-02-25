@@ -35,7 +35,7 @@ extern struct time_info_data time_info;
 extern struct skill_data skills[];
 extern int get_real_stealth(struct char_data *ch);
 
-void	raw_kill(struct char_data *ch, int attacktype);
+extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 
 
 ACMD(do_look);
@@ -352,7 +352,7 @@ perform_move_mount(struct char_data *ch, int dir)
       char_from_room(tmpch);
       char_to_room(tmpch, new_room);
       if(is_death)
-	raw_kill(tmpch, 0);
+	raw_kill(tmpch, NULL, 0);
     }
 
     if((IS_NPC(ch) || (GET_RACE(ch) != RACE_GOD)) && !(IS_AFFECTED(ch, AFF_FLYING))){
@@ -371,7 +371,7 @@ perform_move_mount(struct char_data *ch, int dir)
     char_to_room(ch, new_room);
 
     if(is_death){
-      raw_kill(ch, 0);
+      raw_kill(ch, NULL, 0);
       return 0;
     }
     do_look(ch,"", 0, 0, SCMD_LOOK_BRIEF);
@@ -628,7 +628,7 @@ ACMD(do_move)
       call_trigger(ON_ENTER, (void *) &world[ch->in_room], (void *) ch, 0);
       
       if(is_death)
-	raw_kill(ch, 0);
+	raw_kill(ch, NULL, 0);
     }
     else { // riding...
       if((ch->mount_data.mount)->mount_data.rider != ch){

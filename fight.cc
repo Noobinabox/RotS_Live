@@ -854,77 +854,93 @@ void	death_cry(struct char_data *ch)
    }
 }
 
-void raw_kill(char_data* character, int attack_type)
+void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 {
 	waiting_type tmpwtl;
 
-	if ((character->delay.wait_value >= 0) && (character->delay.cmd > 0)) 
+	if ((dead_man->delay.wait_value >= 0) && (dead_man->delay.cmd > 0)) 
 	{
-		character->delay.subcmd = -1;
-		complete_delay(character);
+		dead_man->delay.subcmd = -1;
+		complete_delay(dead_man);
 	}
-	abort_delay(character);
+	abort_delay(dead_man);
 
-	if (character->specials.fighting)
+	if (dead_man->specials.fighting)
 	{
-		stop_fighting(character);
+		stop_fighting(dead_man);
 	}
 
-	if (special(character, 0, "", SPECIAL_DEATH, &tmpwtl))
+	if (special(dead_man, 0, "", SPECIAL_DEATH, &tmpwtl))
 		return;
 
-	if (IS_RIDING(character))
-		stop_riding(character);
+	if (IS_RIDING(dead_man))
+		stop_riding(dead_man);
 
-	if (IS_AFFECTED(character, AFF_BASH))
-		REMOVE_BIT(character->specials.affected_by, AFF_BASH);
+	if (IS_AFFECTED(dead_man, AFF_BASH))
+		REMOVE_BIT(dead_man->specials.affected_by, AFF_BASH);
 
-	while (character->affected)
+	while (dead_man->affected)
 	{
-		affect_remove(character, character->affected);
+		affect_remove(dead_man, dead_man->affected);
 	}
-	death_cry(character);
-	obj_data* corpse = make_corpse(character, attack_type);
+	death_cry(dead_man);
+	obj_data* corpse = make_corpse(dead_man, attack_type);
 
-	if (!IS_NPC(character)) 
+	if (!IS_NPC(dead_man))
 	{
-		int race = GET_RACE(character);
-		save_char(character, r_mortal_start_room[race], 0);
-		Crash_crashsave(character);
+		int race = GET_RACE(dead_man);
+		save_char(dead_man, r_mortal_start_room[race], 0);
+		Crash_crashsave(dead_man);
 
-		// Set his stats to 2/3 their current value.
-		if (GET_STR(character) > 0) SET_STR(character, GET_STR(character) * 2 / 3);
-		if (GET_INT(character) > 0) GET_INT(character) = GET_INT(character) * 2 / 3;
-		if (GET_WILL(character) > 0) GET_WILL(character) = GET_WILL(character) * 2 / 3;
-		if (GET_DEX(character) > 0) GET_DEX(character) = GET_DEX(character) * 2 / 3;
-		if (GET_CON(character) > 0) GET_CON(character) = GET_CON(character) * 2 / 3;
-		if (GET_LEA(character) > 0) GET_LEA(character) = GET_LEA(character) * 2 / 3;
+		// The player was killed by another player (probably).
+		// Restore them.
+		// TODO(drelidan):  When we can track the origin of status effects, include that
+		// here so we can determine if the 'poisoned' kill type was actually from a player.
+		bool died_to_player = attack_type == SPELL_POISON || killer != NULL && !IS_NPC(killer);
+		if (died_to_player)
+		{
+			char_ability_data& cur_abils = dead_man->tmpabilities;
+			char_ability_data& max_abils = dead_man->abilities;
+			
+			// Restore the character to full.
+			cur_abils = max_abils;
+		}
+		else
+		{
+			// Set his stats to 2/3 their current value.
+			if (GET_STR(dead_man) > 0) SET_STR(dead_man, GET_STR(dead_man) * 2 / 3);
+			if (GET_INT(dead_man) > 0) GET_INT(dead_man) = GET_INT(dead_man) * 2 / 3;
+			if (GET_WILL(dead_man) > 0) GET_WILL(dead_man) = GET_WILL(dead_man) * 2 / 3;
+			if (GET_DEX(dead_man) > 0) GET_DEX(dead_man) = GET_DEX(dead_man) * 2 / 3;
+			if (GET_CON(dead_man) > 0) GET_CON(dead_man) = GET_CON(dead_man) * 2 / 3;
+			if (GET_LEA(dead_man) > 0) GET_LEA(dead_man) = GET_LEA(dead_man) * 2 / 3;
 
-		// Set hits to 1, moves and mana to 0.
-		GET_HIT(character) = 1;
-		GET_MANA(character) = 0;
-		GET_MOVE(character) = 0;
+			// Set hits to 1, moves and mana to 0.
+			GET_HIT(dead_man) = 1;
+			GET_MANA(dead_man) = 0;
+			GET_MOVE(dead_man) = 0;
+		}
 
-		if (GET_LEVEL(character) < LEVEL_IMMORT) 
+		if (GET_LEVEL(dead_man) < LEVEL_IMMORT) 
 		{
 			// Note, these are two different int arrays.
-			character->specials2.load_room = mortal_start_room[race];
-			extract_char(character, r_mortal_start_room[race]);
+			dead_man->specials2.load_room = mortal_start_room[race];
+			extract_char(dead_man, r_mortal_start_room[race]);
 		}
 		else 
 		{
-			character->specials2.load_room = immort_start_room;
-			extract_char(character, r_immort_start_room);
+			dead_man->specials2.load_room = immort_start_room;
+			extract_char(dead_man, r_immort_start_room);
 		}
 
-		REMOVE_BIT(PLR_FLAGS(character), PLR_WAS_KITTED);
+		REMOVE_BIT(PLR_FLAGS(dead_man), PLR_WAS_KITTED);
 		// TODO(drelidan): Once big_brother is building with everything else, uncomment out the lines below.
 		// big_brother& bb_instance = big_brother::instance();
 		// bb_instance.on_character_died(character, corpse);
 	}
 	else
 	{
-		extract_char(character);
+		extract_char(dead_man);
 	}
 }
 
@@ -968,7 +984,7 @@ check_death_ward(struct char_data *ch)
 
 void die(char_data* dead_man, char_data* killer, int attack_type)
 {
-	int poison_death = 43;
+	int poison_death = SPELL_POISON;
 
 	/* Character doesn't die if call_trigger returns FALSE */
 	if (call_trigger(ON_DIE, dead_man, killer, 0) == FALSE) 
@@ -1013,7 +1029,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	/* A mob died.  Who cares. */
 	if (IS_NPC(dead_man)) 
 	{
-		raw_kill(dead_man, attack_type);
+		raw_kill(dead_man, killer, attack_type);
 		return;
 	}
 
@@ -1033,7 +1049,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 		if (attack_type == poison_death) 
 		{
 			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
-			raw_kill(dead_man, attack_type);
+			raw_kill(dead_man, killer, attack_type);
 			return;
 		}
 		pkill_create(dead_man);
@@ -1061,7 +1077,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	GET_COND(dead_man, THIRST) = 24;
 	GET_COND(dead_man, DRUNK) = 0;
 
-	raw_kill(dead_man, attack_type);
+	raw_kill(dead_man, killer, attack_type);
 }
 
 

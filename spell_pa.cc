@@ -41,7 +41,6 @@ void affect_update_person(struct char_data *, int);
 char saves_spell(struct char_data *, sh_int, int);
 void one_mobile_activity(struct char_data *);
 void do_sense_magic(struct char_data *, int);
-void raw_kill(struct char_data *, int);
 char saves_mystic(struct char_data *);
 void appear(struct char_data *);
 void affect_update();

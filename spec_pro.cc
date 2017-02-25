@@ -34,7 +34,7 @@ extern int num_of_ferries;
 extern int num_of_captains;
 extern char  guildmaster_number;
 extern char *dirs[];
-extern void raw_kill(struct char_data *ch, int attacktype);
+extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 extern byte language_number;
 extern byte language_skills[];
 extern struct char_data *character_list;
@@ -2672,124 +2672,129 @@ SPECIAL(vampire_doorkeep){
   return 0;
 }
 
-SPECIAL(vampire_killer){
-  struct char_data *victim, *victim2;
-  room_data *room = 0;
-  int which_room;
-  waiting_type tmpwtl;
-  
-  for (victim = world[host->in_room].people; victim; victim = victim->next_in_room)
-    if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim)) break;
-  if (victim && victim != host){
-    if (number(0,50))                                    //Give them a chance to get away...
-      return 0;
-    act("$n leans over and bites $N on the neck!!", TRUE, host, 0, victim, TO_NOTVICT);
-    act("$n leans over and bites you on the neck!!", FALSE, host, 0, victim, TO_VICT);
-    send_to_char("\n\rYou feel a moment of intense pain... as your numb body slumps to the floor.\n\r\n",victim);
-    send_to_char("You are dead, sorry...\n\r", victim);
-    sprintf(buf, "%s killed by %s at %s", GET_NAME(victim),GET_NAME(host),
-	    world[victim->in_room].name);
-    mudlog(buf, BRF, LEVEL_GOD, TRUE);
-    add_exploit_record(EXPLOIT_MOBDEATH,victim, GET_IDNUM(host), GET_NAME(host)); 
-    raw_kill(victim, 0);
-    return 0;
-  }
-  
-  which_room = 0;
-  tmpwtl.cmd = 0;
-  for (victim = world[real_room(15399)].people; victim; victim = victim->next_in_room)
-    if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim)) break;
-  if (victim) which_room = 1;
-  for (victim2 = world[real_room(15398)].people; victim2; victim2 = victim2->next_in_room)
-    if ((victim2 != host) && CAN_SEE(host, victim2) && !IS_NPC(victim2)) break;
-  if (victim2) which_room += 2;
-  if (!which_room){
-    switch (world[host->in_room].number){               //If nothing to bite, get out of the cell
-    case 15399: tmpwtl.cmd = 1; break;
-    case 15398: tmpwtl.cmd = 1; break;       
-    default: {
-      if (number(0,1))
-	tmpwtl.cmd = 2;
-      else
-	tmpwtl.cmd = 4;
-      if (number(0,15))                                //So he doesn't run around down there
+SPECIAL(vampire_killer) 
+{
+	struct char_data *victim, *victim2;
+	room_data *room = 0;
+	int which_room;
+	waiting_type tmpwtl;
+
+	for (victim = world[host->in_room].people; victim; victim = victim->next_in_room)
+		if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim)) break;
+	if (victim && victim != host) {
+		if (number(0, 50))                                    //Give them a chance to get away...
+			return 0;
+		act("$n leans over and bites $N on the neck!!", TRUE, host, 0, victim, TO_NOTVICT);
+		act("$n leans over and bites you on the neck!!", FALSE, host, 0, victim, TO_VICT);
+		send_to_char("\n\rYou feel a moment of intense pain... as your numb body slumps to the floor.\n\r\n", victim);
+		send_to_char("You are dead, sorry...\n\r", victim);
+		sprintf(buf, "%s killed by %s at %s", GET_NAME(victim), GET_NAME(host),
+			world[victim->in_room].name);
+		mudlog(buf, BRF, LEVEL_GOD, TRUE);
+		add_exploit_record(EXPLOIT_MOBDEATH, victim, GET_IDNUM(host), GET_NAME(host));
+		raw_kill(victim, host, 0);
+		return 0;
+	}
+
+	which_room = 0;
+	tmpwtl.cmd = 0;
+	for (victim = world[real_room(15399)].people; victim; victim = victim->next_in_room)
+		if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim)) break;
+	if (victim) which_room = 1;
+	for (victim2 = world[real_room(15398)].people; victim2; victim2 = victim2->next_in_room)
+		if ((victim2 != host) && CAN_SEE(host, victim2) && !IS_NPC(victim2)) break;
+	if (victim2) which_room += 2;
+	if (!which_room) {
+		switch (world[host->in_room].number) {               //If nothing to bite, get out of the cell
+		case 15399: tmpwtl.cmd = 1; break;
+		case 15398: tmpwtl.cmd = 1; break;
+		default: {
+			if (number(0, 1))
+				tmpwtl.cmd = 2;
+			else
+				tmpwtl.cmd = 4;
+			if (number(0, 15))                                //So he doesn't run around down there
+				return 0;
+		}
+		}
+		tmpwtl.subcmd = 0;
+		if (tmpwtl.cmd == 1) {
+			if (IS_SET(room->dir_option[0]->exit_info, EX_CLOSED)) {
+				do_unlock(host, "irondoor", 0, 0, 0);
+				do_open(host, "irondoor", 0, 0, 0);
+			}
+		}
+		if (CAN_GO(host, tmpwtl.cmd - 1))
+			do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
+		tmpwtl.targ1.cleanup();
+		return 0;
+	}
+	else {
+		if (number(0, 10))
+			return 0;                                          //Slow him down a bit
+		if (which_room == 3)
+			which_room = number(1, 2);                          //If both whities and darkies are there 50% which
+		switch (world[host->in_room].number) {                //one
+		case 15395: tmpwtl.cmd = 2; break;
+		case 15300: tmpwtl.cmd = 3; break;
+		case 15302: tmpwtl.cmd = 2; break;
+		case 15354: tmpwtl.cmd = 5; break;
+		case 15396: {
+			if (which_room == 1)
+				tmpwtl.cmd = 2;
+			else {
+				room = &world[real_room(15396)];
+				if (IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)) {
+					do_unlock(host, "irondoor", 0, 0, 0);
+					do_open(host, "irondoor", 0, 0, 0);
+				}
+				else
+					tmpwtl.cmd = 3;
+			}
+			break;
+		}
+		case 15397: {
+			if (which_room == 2)
+				tmpwtl.cmd = 4;
+			else {
+				room = &world[real_room(15397)];
+				if (IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)) {
+					do_unlock(host, "irondoor", 0, 0, 0);
+					do_open(host, "irondoor", 0, 0, 0);
+				}
+				else
+					tmpwtl.cmd = 3;
+			}
+			break;
+		}
+		default: tmpwtl.cmd = 0;
+		}
+		tmpwtl.subcmd = 0;
+		if (CAN_GO(host, tmpwtl.cmd - 1))
+			do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
+		tmpwtl.targ1.cleanup();
+	}
 	return 0;
-    }
-    }
-    tmpwtl.subcmd = 0;
-    if (tmpwtl.cmd == 1){
-      if (IS_SET(room->dir_option[0]->exit_info, EX_CLOSED)){
-	do_unlock(host, "irondoor", 0, 0, 0);
-	do_open(host, "irondoor", 0, 0, 0);
-      }
-    }
-    if(CAN_GO(host, tmpwtl.cmd -1))
-      do_move(host,"", &tmpwtl, tmpwtl.cmd, 0);
-    tmpwtl.targ1.cleanup();
-    return 0;
-  } else {
-    if (number(0,10))
-      return 0;                                          //Slow him down a bit
-    if (which_room == 3)  
-      which_room = number(1,2);                          //If both whities and darkies are there 50% which
-    switch (world[host->in_room].number){                //one
-    case 15395: tmpwtl.cmd = 2; break;
-    case 15300: tmpwtl.cmd = 3; break;
-    case 15302: tmpwtl.cmd = 2; break;
-    case 15354: tmpwtl.cmd = 5; break;
-    case 15396: {
-      if (which_room == 1)
-	tmpwtl.cmd = 2;
-      else {
-	room = &world[real_room(15396)];
-	if (IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)){
-	  do_unlock(host, "irondoor", 0, 0, 0);
-	  do_open(host, "irondoor", 0, 0, 0);
-	} else
-	  tmpwtl.cmd = 3;
-      }
-      break;  
-    }
-    case 15397: {
-      if (which_room == 2) 
-	tmpwtl.cmd = 4;
-      else {
-	room = &world[real_room(15397)];
-	if(IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)){
-	  do_unlock(host, "irondoor", 0, 0, 0);
-	  do_open(host, "irondoor", 0, 0, 0);
-	} else
-	  tmpwtl.cmd = 3;
-      }
-      break;
-    }
-    default: tmpwtl.cmd = 0;
-    }
-    tmpwtl.subcmd = 0;
-    if(CAN_GO(host, tmpwtl.cmd -1))
-      do_move(host,"", &tmpwtl, tmpwtl.cmd, 0);
-    tmpwtl.targ1.cleanup();  
-  }
-  return 0;
 }
 
 
 
 SPECIAL(healing_plant)
 {
-  int level;
-  struct char_data *c;
+	if (callflag != SPECIAL_SELF)
+		return 0;
 
-  if (callflag != SPECIAL_SELF)
-    return 0;
-  
-  level = MAX(1, GET_LEVEL(host) / 2);
-  
-  for (c = world[host->in_room].people; c != NULL; c = c->next_in_room)
-    if (IS_GOOD(c) && host != c)
-      GET_HIT(c) = MIN(GET_MAX_HIT(c), GET_HIT(c) + number(1, level));
-  
-  return 0;
+	int level = std::max(1, GET_LEVEL(host) / 2);
+
+	for (char_data* character = world[host->in_room].people; character != NULL; character = character->next_in_room)
+	{
+		if (IS_GOOD(character) && host != character)
+		{
+			GET_HIT(character) = std::min(GET_MAX_HIT(character), GET_HIT(character) + number(1, level));
+		}
+	}
+
+	return 0;
 }
 
 

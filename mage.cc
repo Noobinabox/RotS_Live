@@ -52,7 +52,6 @@ extern char *   sector_types[];
  * external functions
  */
 void list_char_to_char(struct char_data *list, struct char_data *ch, int mode);
-void raw_kill(struct char_data *ch, int attacktype);
 char saves_spell(struct char_data *, sh_int, int);
 //void do_stat_object(struct char_data *ch, struct obj_data *j);
 void stop_hiding(struct char_data *ch, char);

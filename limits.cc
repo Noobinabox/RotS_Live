@@ -44,7 +44,7 @@ extern struct char_data * death_waiting_list;
 
 void recalc_skills(struct char_data * ch);
 
-void       raw_kill(struct char_data *ch, int attacktype);
+extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 void one_mobile_activity(char_data * ch);
 
 ACMD(do_flee);
@@ -1049,7 +1049,7 @@ void	affect_update_person(struct char_data * i, int mode )
 	     act("$n suddenly collapses on the ground.",
 		 TRUE, i, 0, 0, TO_ROOM);
 	     send_to_char("Your body failed to the magic.\n\r",i);
-	     raw_kill(i, TYPE_UNDEFINED);
+	     raw_kill(i, NULL, TYPE_UNDEFINED);
 	     add_exploit_record(EXPLOIT_REGEN_DEATH, i, 0, NULL);
 	     return;
 	   }
@@ -1067,7 +1067,7 @@ void	affect_update_person(struct char_data * i, int mode )
 		 if (af->modifier > 40){
 		   send_to_char("You gasp one final time as your body loses its battle for life...\n\r", i);
 		   act("$n gasps one last time... and dies.", TRUE, i, 0, 0, TO_ROOM);
-		   raw_kill(i, SPELL_ASPHYXIATION);
+		   raw_kill(i, NULL, SPELL_ASPHYXIATION);
 		   return;
 		 }
 		 if (af->modifier > 20){

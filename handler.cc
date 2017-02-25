@@ -1205,8 +1205,6 @@ char_to_room(struct char_data *ch, int room)
   struct char_data *tmpch;
   int tmp;
   
-  void raw_kill(struct char_data *, int);
-  
   /* append ch to the room's list */
   if(!world[room].people) 
     world[room].people = ch;
@@ -1397,7 +1395,7 @@ equip_char(struct char_data *ch, struct obj_data *obj, int pos)
   // Special case for poisoned objects.  The wearer should get poison damage
   // when wearing/removing something poisoned.
   if(was_poisoned == 0 && IS_AFFECTED(ch, AFF_POISON)) { 
-    void raw_kill(struct char_data *ch, int attacktype);
+    extern void raw_kill(struct char_data *ch, char_data* killer, int attacktype);
     
     damage(ch, ch, 5, SPELL_POISON, 0);
     
@@ -1405,7 +1403,7 @@ equip_char(struct char_data *ch, struct obj_data *obj, int pos)
       act("$n suddenly collapses on the ground.",
 	  TRUE, ch, 0, 0, TO_ROOM);
       send_to_char("Your body failed to the magic.\n\r", ch);
-      raw_kill(ch, 0);
+      raw_kill(ch, NULL, 0);
     }
   } 
 }
@@ -1483,7 +1481,7 @@ struct obj_data *unequip_char(struct char_data *ch, int pos)
    // when wearing/removing something poisoned.
    if (was_poisoned != 0 && !IS_AFFECTED(ch, AFF_POISON))
    { 
-     void raw_kill(struct char_data *ch, int attacktype);
+	   extern void raw_kill(struct char_data *ch, char_data* killer, int attacktype);
 
      damage(ch, ch, 5, SPELL_POISON, 0);
 
@@ -1491,7 +1489,7 @@ struct obj_data *unequip_char(struct char_data *ch, int pos)
        act("$n suddenly collapses on the ground.",
            TRUE, ch, 0, 0, TO_ROOM);
        send_to_char("Your body failed to the magic.\n\r", ch);
-       raw_kill(ch, 0);
+       raw_kill(ch, NULL, 0);
      }
    }
 

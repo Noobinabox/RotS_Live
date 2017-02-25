@@ -50,7 +50,7 @@ extern  int top_of_script_table;
 int set_exit_state(struct room_data * room, int dir, int newstate);
 extern int rev_dir[];
 extern struct char_data * waiting_list;
-void raw_kill(struct char_data *ch, int attacktype);
+extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 void perform_give(struct char_data *ch, struct char_data *vict, struct obj_data *obj);
 int	perform_drop(struct char_data *ch, struct obj_data *obj, sh_int RDR);
 void perform_remove(struct char_data *ch, int pos);
@@ -1229,7 +1229,7 @@ run_script(struct info_script *info, struct script_data *position)
 	  if (curr->param[0]){
 		tmpch = get_char_param(curr->param[0], info);
 		if (tmpch)
-		  raw_kill(tmpch, 0);
+		  raw_kill(tmpch, NULL, 0);
 	  }
 	  curr = curr->next;
 	  break;

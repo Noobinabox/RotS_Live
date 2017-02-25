@@ -36,7 +36,7 @@ ACMD(do_move);
 ACMD(do_mental);
 
 /* extern functions */
-void	raw_kill(struct char_data *ch, int attacktype);
+extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 int	check_simple_move(struct char_data *ch, int cmd, int * move_cost, int mode);
 int get_real_stealth(struct char_data * ch);
 int	find_door(struct char_data *ch, char *type, char *dir);
@@ -194,31 +194,32 @@ ACMD(do_assist)
 
 ACMD(do_slay)
 {
-   struct char_data *victim;
+	struct char_data *victim;
 
-   if ((GET_LEVEL(ch) < LEVEL_GOD) || IS_NPC(ch)) {
-      do_hit(ch, argument, wtl, cmd, subcmd);
-      return;
-   }
+	if ((GET_LEVEL(ch) < LEVEL_GOD) || IS_NPC(ch)) {
+		do_hit(ch, argument, wtl, cmd, subcmd);
+		return;
+	}
 
-   one_argument(argument, arg);
+	one_argument(argument, arg);
 
-   if (!*arg) {
-      send_to_char("Kill who?\n\r", ch);
-   } else {
-      if (!(victim = get_char_room_vis(ch, arg)))
-	 send_to_char("They aren't here.\n\r", ch);
-      else if (ch == victim)
-	send_to_char("Your mother would be so sad.. :(\n\r", ch);
-      else if(GET_LEVEL(ch) <= GET_LEVEL(victim))
-	send_to_char("You can only slay wimpier things\n\r",ch);
-      else {
-	 act("You chop $M to pieces!  Ah!  The blood!", FALSE, ch, 0, victim, TO_CHAR);
-	 act("$N chops you to pieces!", FALSE, victim, 0, ch, TO_CHAR);
-	 act("$n bloodlessly slays $N!", FALSE, ch, 0, victim, TO_NOTVICT);
-	 raw_kill(victim, 0);
-      }
-   }
+	if (!*arg) {
+		send_to_char("Kill who?\n\r", ch);
+	}
+	else {
+		if (!(victim = get_char_room_vis(ch, arg)))
+			send_to_char("They aren't here.\n\r", ch);
+		else if (ch == victim)
+			send_to_char("Your mother would be so sad.. :(\n\r", ch);
+		else if (GET_LEVEL(ch) <= GET_LEVEL(victim))
+			send_to_char("You can only slay wimpier things\n\r", ch);
+		else {
+			act("You chop $M to pieces!  Ah!  The blood!", FALSE, ch, 0, victim, TO_CHAR);
+			act("$N chops you to pieces!", FALSE, victim, 0, ch, TO_CHAR);
+			act("$n bloodlessly slays $N!", FALSE, ch, 0, victim, TO_NOTVICT);
+			raw_kill(victim, NULL, 0);
+		}
+	}
 }
 
 ACMD(do_order)

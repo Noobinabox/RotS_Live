@@ -5,6 +5,8 @@
 #include "structs.h"
 #include "spells.h"
 
+#include <assert.h>
+
 /********************************************************************
 * Singleton Implementation
 *********************************************************************/
@@ -270,6 +272,13 @@ namespace game_rules
 	}
 
 	//============================================================================
+	char_data* big_brother::get_valid_target(char_data* attacker, const char_data* victim, const char* argument) const
+	{
+		// TODO(drelidan):  Implement logic here.
+		return NULL;
+	}
+
+	//============================================================================
 	// Data Structure Management Code:
 	//   This code is responsible for ensuring that our data structures stay up-to-date.
 	//============================================================================ 
@@ -277,6 +286,8 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_died(char_data* character, char_data* killer, obj_data* corpse)
 	{
+		assert(character);
+
 		// Spirits don't leave corpses behind.  If we have 'shadow' mode for players again,
 		// this could create some issues.
 		if (corpse == NULL)
@@ -285,10 +296,10 @@ namespace game_rules
 		// Big Brother doesn't track NPC corpses that are not orc followers.
 		if (utils::is_npc(*character))
 		{
-			if (utils::is_affected_by(*character, AFF_CHARM) && character->master)
+			if (utils::is_affected_by(*character, AFF_CHARM))
 			{
-				// Treat the player as the character that died.
-				m_corpse_map[corpse] = player_corpse_data(character->master, killer);
+				// Protect the mob in the corpse map, but don't give anyone looting protection.
+				m_corpse_map[corpse] = player_corpse_data(character, killer);
 			}
 
 			return;
@@ -303,6 +314,9 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_attacked_player(const char_data* attacker, const char_data* victim)
 	{
+		assert(attacker);
+		assert(victim);
+
 		// Get the current time.
 		time_t current_time;
 		time(&current_time);
@@ -318,6 +332,8 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_afked(const char_data* character)
 	{
+		assert(character);
+
 		// This is one possible implementation.  Another is to do the time-check in the
 		// "is-character-afk" test.
 		const double CUTOFF_SECS = 900;
@@ -352,12 +368,14 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_returned(const char_data* character)
 	{
+		assert(character);
 		remove_character_from_afk_set(character);
 	}
 
 	//============================================================================
 	void big_brother::on_character_disconnected(const char_data* character)
 	{
+		assert(character);
 		remove_character_from_afk_set(character);
 		remove_character_from_looting_set(character->abs_number);
 
@@ -373,6 +391,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::remove_character_from_afk_set(const char_data* character)
 	{
+		assert(character);
 		typedef character_set::iterator iter;
 
 		iter char_iter = m_afk_characters.find(character);
@@ -397,6 +416,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_corpse_decayed(obj_data* corpse)
 	{
+		assert(corpse);
 		typedef corpse_map::iterator map_iter;
 
 		map_iter corpse_iter = m_corpse_map.find(corpse);
@@ -413,16 +433,22 @@ namespace game_rules
 	//============================================================================
 	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man) : num_items_looted(0), killer_id(-1)
 	{
+		assert(dead_man);
 		player_race = dead_man->player.race;
 		player_id = dead_man->abs_number;
+
+		is_npc = utils::is_npc(*dead_man);
 	}
 
 	//============================================================================
 	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man, char_data* killer) : num_items_looted(0)
 	{
+		assert(dead_man);
 		player_race = dead_man->player.race;
 		player_id = dead_man->abs_number;
 		
+		is_npc = utils::is_npc(*dead_man);
+
 		if (killer)
 		{
 			killer_id = killer->abs_number;

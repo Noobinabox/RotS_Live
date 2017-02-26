@@ -2072,11 +2072,12 @@ int shoot_calculate_wait(const char_data* archer)
  */
 bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 {
-	//TODO(drelidan):  Add logic for calculating breaking here.
 	const int breakpercentage = arrow->obj_flags.value[3];
 	if (victim)
 	{
 		// factor in victim contribution here - but victim is optional.
+		// TODO(drelidan):  Figure out break contribution.  Perhaps this function
+		// should be called and given an armor location or something.
 	}
 
 	const int rolledNumber = number(1, 100);

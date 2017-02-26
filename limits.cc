@@ -25,6 +25,7 @@
 #include "profs.h"
 
 #include "char_utils.h"
+#include "big_brother.h"
 
 extern char *pc_race_types[];
 
@@ -715,9 +716,8 @@ void point_update(void)
 					// If this is a corpse, let big brother know that it is decaying.
 					if (j->obj_flags.value[3] == 1)
 					{
-						// TODO(drelidan): When big brother is building, uncomment out the code below.
-						// big_brother& bb_instance = big_brother::instance();
-						// bb_instance.on_corpse_decayed(j);
+						game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+						bb_instance.on_corpse_decayed(j);
 					}
 
 					for (jj = j->contains; jj; jj = next_thing2)

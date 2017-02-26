@@ -1806,7 +1806,7 @@ int test_hp(int war_points, int ran_points, int cler_points, int level, int con_
 	class_factor = class_factor * (con_score + 20) / 14.0;
 	class_factor = class_factor * std::min(LEVEL_MAX * 100, level * 100) / 100000.0;
 
-	double const_factor = (11 + (level * 2)) * con_score / 20.0;
+	double const_factor = (11 + (level * 1.94)) * con_score / 20.0;
 	int health = int(10 + std::min(level, LEVEL_MAX) + const_factor + class_factor);
 	return health;
 }

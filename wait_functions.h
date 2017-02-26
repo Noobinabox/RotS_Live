@@ -56,8 +56,13 @@ namespace game_types
 	private:
 		//TODO(dgurley):  Use a more efficient data structure once you 
 		// figure out what the access pattern is.
-		std::list<char_data*> m_waitingList;
-		std::vector<char_data*> m_pendingDeletes;
+		typedef std::list<char_data*> wait_list_type;
+		typedef wait_list_type::iterator wait_list_iter;
+		wait_list_type m_waitingList;
+
+		typedef std::list<char_data*> delete_list_type;
+		typedef delete_list_type::iterator delete_list_iter;
+		delete_list_type m_pendingDeletes;
 
 		// TODO(dgurley):  Switch m_waitingList to a std::vector and m_pendingDeletes
 		// to a set and implement an algorithm using 'remove-if' on the vector.

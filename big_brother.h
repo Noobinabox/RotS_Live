@@ -19,6 +19,9 @@ namespace game_rules
 		// Called before any character loots an item.  This enforces our PK loot rules.
 		bool on_loot_item(char_data* looter, obj_data* corpse, obj_data* item);
 
+		// Returns true if the victim has the 'looting' flag.
+		bool is_target_looting(const char_data* victim) const;
+
 		// Called before any character attempts to damage or attack another character.
 		// This enforces our PK engagement rules.
 		bool is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const;
@@ -61,9 +64,6 @@ namespace game_rules
 		// Is the spell being cast or skill being used offensive in nature.
 		bool is_skill_offensive(int skill_id) const;
 
-		// Returns true if the victim has the 'looting' flag.
-		bool is_target_looting(const char_data* victim) const;
-
 		// Returns true if the victim is within an appropriate level of the attacker.
 		bool is_level_range_appropriate(const char_data* attacker, const char_data* victim) const;
 
@@ -81,7 +81,7 @@ namespace game_rules
 
 		struct player_corpse_data
 		{
-			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0) { };
+			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0), is_npc(false) { };
 			player_corpse_data(char_data* dead_man);
 			player_corpse_data(char_data* dead_man, char_data* killer);
 
@@ -89,6 +89,7 @@ namespace game_rules
 			int player_race;
 			int killer_id;
 			int player_id;
+			bool is_npc;
 		};
 
 		typedef std::map<obj_data*, player_corpse_data> corpse_map;

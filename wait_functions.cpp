@@ -162,8 +162,9 @@ namespace game_types
 
 		// If the character is in the waiting list or the pending delete list, remove him.
 		// Then insert the character at the end of the waiting list.
-		m_pendingDeletes.erase(std::remove(m_pendingDeletes.begin(), m_pendingDeletes.end(), character));
-		m_waitingList.erase(std::find(m_waitingList.begin(), m_waitingList.end(), character));
+		m_pendingDeletes.remove(character);
+		m_waitingList.remove(character);
+
 		m_waitingList.push_back(character);
 	}
 
@@ -201,18 +202,16 @@ namespace game_types
 	void wait_list::update()
 	{
 		static char* wait_wheel[8] = { "\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\r-\r", "\r/\r" };
-		typedef std::_List_iterator<char_data*> iter;
-
+		
 		// Clean up pending deletes.
-		for (size_t i = 0; i < m_pendingDeletes.size(); ++i)
+		for (delete_list_iter iter = m_pendingDeletes.begin(); iter != m_pendingDeletes.end(); ++iter)
 		{
-			char_data* removeMe = m_pendingDeletes[i];
-			m_waitingList.erase(std::find(m_waitingList.begin(), m_waitingList.end(), removeMe));
+			m_waitingList.remove(*iter);
 		}
 		m_pendingDeletes.clear();
 
 		// Process commands in the wait list.
-		for (iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); ++char_iter)
+		for (wait_list_iter char_iter = m_waitingList.begin(); char_iter != m_waitingList.end(); ++char_iter)
 		{
 			char_data* character = *char_iter;
 			int wait_value = character->delay.wait_value;

@@ -83,10 +83,17 @@ namespace game_rules
 		if (!attacker || !victim)
 			return true;
 
-		// Big Brother does not protect against NPCs.
+		// Big Brother does not protect against NPC that aren't charmed.
 		if (utils::is_npc(*attacker))
 		{
-			return true;
+			if (utils::is_mob_flagged(*attacker, AFF_CHARM))
+			{
+				return is_target_valid(attacker->master, victim, skill_id);
+			}
+			else
+			{
+				return true;
+			}
 		}
 
 		// The ability being used isn't offensive - all good.

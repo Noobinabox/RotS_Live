@@ -1562,344 +1562,375 @@ void generate_damage_message(char_data* attacker, char_data *victim, int damage,
  * damage now modified to return int - 1 if the victim was
  * killed, 0 if not.
  */
-int
-damage(struct char_data *ch, struct char_data *victim,
-       int dam, int attacktype, int hit_location)
+int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int hit_location)
 {
-  struct affected_type *aff;
-  int i, tmp, tmp1;
-  struct waiting_type tmpwtl;
-  extern void record_spell_damage(struct char_data *, struct char_data *,
-				  int, int);
+	struct affected_type *aff;
+	int i, tmp, tmp1;
+	struct waiting_type tmpwtl;
+	extern void record_spell_damage(struct char_data *, struct char_data *,
+		int, int);
 
-  if (!victim)
-    return 0;
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	
+	// Don't allow damage to affect invalid targets.
+	if (!bb_instance.is_target_valid(attacker, victim, attacktype))
+	{
+		send_to_char("You feel the Gods looking down upon you and protecting your target.  Your hand is stayed.", attacker);
+		return 0;
+	}
 
-  if (!ch)
-    ch = victim;  /* emergency fix */
+	if (!victim)
+		return 0;
 
-  if (GET_POS(victim) <= POSITION_DEAD) {
-    log("SYSERR: Attempt to damage a corpse.");
-    return 0;   /* -je, 7/7/92 */
-  }
+	if (!attacker)
+		attacker = victim;  /* emergency fix */
 
-  if (GET_POS(victim) <= POSITION_DEAD){
-    send_to_char("Don't mess with the dead body!\r\n"
-		 "Notify imps of this bug!\n\r", ch);
-    return 0;
-  }
+	if (GET_POS(victim) <= POSITION_DEAD) {
+		log("SYSERR: Attempt to damage a corpse.");
+		return 0;   /* -je, 7/7/92 */
+	}
 
-  /*
-   * Check hallucination.  Only check this if it's a physical hit type (to
-   * avoid checking spells twice).
-   */
-  if (IS_PHYSICAL(attacktype) &&
-      !check_hallucinate(ch, victim))
-    return 0;
+	if (GET_POS(victim) <= POSITION_DEAD) {
+		send_to_char("Don't mess with the dead body!\r\n"
+			"Notify imps of this bug!\n\r", attacker);
+		return 0;
+	}
 
-  /* Call special procs on damage */
-  if (victim->specials.fighting != ch) {
-    tmpwtl.targ1.ptr.ch = victim;
-    tmpwtl.targ1.type = TARGET_CHAR;
-    tmpwtl.targ2.ptr.other = 0;
-    tmpwtl.targ2.type = TARGET_NONE;
-    i = special(ch, 0, "", SPECIAL_DAMAGE, &tmpwtl);
-    if (i) {
-      if (ch->specials.fighting == victim)
-	stop_fighting(ch);
-      return 0;
-    }
-  }
+	/*
+	 * Check hallucination.  Only check this if it's a physical hit type (to
+	 * avoid checking spells twice).
+	 */
+	if (IS_PHYSICAL(attacktype) &&
+		!check_hallucinate(attacker, victim))
+		return 0;
 
-  if (IS_SHADOW(victim)) {
-    do_pass_through(ch, victim, 0);
-    return 0;
-  }
+	/* Call special procs on damage */
+	if (victim->specials.fighting != attacker) {
+		tmpwtl.targ1.ptr.ch = victim;
+		tmpwtl.targ1.type = TARGET_CHAR;
+		tmpwtl.targ2.ptr.other = 0;
+		tmpwtl.targ2.type = TARGET_NONE;
+		i = special(attacker, 0, "", SPECIAL_DAMAGE, &tmpwtl);
+		if (i) {
+			if (attacker->specials.fighting == victim)
+				stop_fighting(attacker);
+			return 0;
+		}
+	}
 
-  if (!check_overkill(victim)) {
-    act("There is too much activity to attack $N.",
-	FALSE, ch, 0, victim, TO_CHAR);
-    act("$N tried to attack you but could not get close enough.",
-	FALSE, victim, 0, ch, TO_CHAR);
-    act("$n tried to attack $N but could not get close enough.",
-	FALSE, ch, 0, victim, TO_NOTVICT);
-    return 0;
-  }
+	if (IS_SHADOW(victim)) {
+		do_pass_through(attacker, victim, 0);
+		return 0;
+	}
 
-  if (!check_sanctuary(ch, victim))
-    return 0;
+	if (!check_overkill(victim)) {
+		act("There is too much activity to attack $N.",
+			FALSE, attacker, 0, victim, TO_CHAR);
+		act("$N tried to attack you but could not get close enough.",
+			FALSE, victim, 0, attacker, TO_CHAR);
+		act("$n tried to attack $N but could not get close enough.",
+			FALSE, attacker, 0, victim, TO_NOTVICT);
+		return 0;
+	}
 
-  /* Give the damager anger */
-  if (victim && !IS_NPC(ch) && ch != victim) {
-    struct affected_type af;
-    struct affected_type *afptr;
-    afptr = affected_by_spell(ch, SPELL_ANGER);
-    if (afptr)
-      afptr->duration = IS_NPC(victim) ? 2 : 5;
-    else {
-      af.type      = SPELL_ANGER;
-      af.duration  = IS_NPC(victim) ? 2 : 5;
-      af.modifier  = 0;
-      af.location  = APPLY_NONE;
-      af.bitvector = 0;
-      affect_to_char(ch, &af);
-    }
-  }
+	if (!check_sanctuary(attacker, victim))
+		return 0;
 
-  /* If sanctuary wasn't broken, victim is NULL */
-  if (!victim) {
-    set_fighting(ch, 0);
-    return 0;
-  }
+	/* Give the damager anger */
+	if (victim && !IS_NPC(attacker) && attacker != victim) 
+	{
+		struct affected_type af;
+		struct affected_type *afptr;
+		afptr = affected_by_spell(attacker, SPELL_ANGER);
+		if (afptr)
+		{
+			afptr->duration = IS_NPC(victim) ? 2 : 5;
+		}
+		else 
+		{
+			af.type = SPELL_ANGER;
+			af.duration = IS_NPC(victim) ? 2 : 5;
+			af.modifier = 0;
+			af.location = APPLY_NONE;
+			af.bitvector = 0;
+			affect_to_char(attacker, &af);
+		}
 
-  if (victim != ch) {
-    if (GET_POS(ch) > POSITION_STUNNED) {
-      if (!(ch->specials.fighting))
-	set_fighting(ch, victim);
+		// Alert Big Brother that some PK is happening.
+		if (!IS_NPC(victim))
+		{
+			bb_instance.on_character_attacked_player(attacker, victim);
+		}
+	}
 
-      if(IS_RIDING(ch) && (ch->mount_data.mount == victim))
-	stop_riding(ch);
-      if(IS_RIDING(victim) && (victim->mount_data.mount == ch))
-	stop_riding(victim);
+	/* If sanctuary wasn't broken, victim is NULL */
+	if (!victim) {
+		set_fighting(attacker, 0);
+		return 0;
+	}
 
-      if (IS_NPC(ch) && IS_NPC(victim) && victim->master &&
-	  !number(0, 10) && IS_AFFECTED(victim, AFF_CHARM) &&
-	  (victim->master->in_room == ch->in_room)) {
-	if (ch->specials.fighting)
-	  stop_fighting(ch);
-	hit(ch, victim->master, TYPE_UNDEFINED);
-	return 0;
-      }
-    }
+	if (victim != attacker) 
+	{
+		if (GET_POS(attacker) > POSITION_STUNNED) 
+		{
+			if (!(attacker->specials.fighting))
+				set_fighting(attacker, victim);
 
-    if (GET_POS(victim) > POSITION_STUNNED) {
-      if (!(victim->specials.fighting))
-	set_fighting(victim, ch);
-      if (IS_NPC(victim) && IS_SET(victim->specials2.act, MOB_MEMORY) &&
-	  !IS_NPC(ch) && (GET_LEVEL(ch) < LEVEL_IMMORT))
-	remember(victim, ch);
-      GET_POS(victim) = POSITION_FIGHTING;
-    }
-  }
+			if (IS_RIDING(attacker) && (attacker->mount_data.mount == victim))
+				stop_riding(attacker);
+			if (IS_RIDING(victim) && (victim->mount_data.mount == attacker))
+				stop_riding(victim);
 
-  if (victim->master == ch)
-    stop_follower(victim, FOLLOW_MOVE);
-  if ((victim->group_leader == ch) && (victim != ch))
-    stop_follower(victim, FOLLOW_GROUP);
+			if (IS_NPC(attacker) && IS_NPC(victim) && victim->master &&
+				!number(0, 10) && IS_AFFECTED(victim, AFF_CHARM) &&
+				(victim->master->in_room == attacker->in_room)) 
+			{
+				if (attacker->specials.fighting)
+					stop_fighting(attacker);
+				hit(attacker, victim->master, TYPE_UNDEFINED);
+				return 0;
+			}
+		}
 
-  if (ch->group_leader && victim->group_leader == ch->group_leader &&
-      victim != ch) {
-    stop_follower(ch, FOLLOW_GROUP);
-    stop_follower(victim, FOLLOW_GROUP);
-  }
+		if (GET_POS(victim) > POSITION_STUNNED) {
+			if (!(victim->specials.fighting))
+				set_fighting(victim, attacker);
+			if (IS_NPC(victim) && IS_SET(victim->specials2.act, MOB_MEMORY) &&
+				!IS_NPC(attacker) && (GET_LEVEL(attacker) < LEVEL_IMMORT))
+				remember(victim, attacker);
+			GET_POS(victim) = POSITION_FIGHTING;
+		}
+	}
 
-  if (IS_AFFECTED(ch, AFF_SANCTUARY))
-    appear(ch);
+	if (victim->master == attacker)
+		stop_follower(victim, FOLLOW_MOVE);
+	if ((victim->group_leader == attacker) && (victim != attacker))
+		stop_follower(victim, FOLLOW_GROUP);
 
-  /*
-   * XXX: This should really use stop_hiding.  But stop_hiding
-   * needs modifications first.
-   */
-  if (IS_AFFECTED(ch, AFF_HIDE)) {
-    act("$n steps out of $s cover.",TRUE, ch, 0, 0, TO_ROOM);
-    send_to_char("You step out of your cover.\n\r",ch);
-    REMOVE_BIT(ch->specials.affected_by, AFF_HIDE);
-  }
+	if (attacker->group_leader && victim->group_leader == attacker->group_leader &&
+		victim != attacker) {
+		stop_follower(attacker, FOLLOW_GROUP);
+		stop_follower(victim, FOLLOW_GROUP);
+	}
 
-  /* Remove delay if wait_wheel */
-  if (dam > 0) {
-    if (IS_AFFECTED(victim, AFF_WAITWHEEL) &&
-	GET_WAIT_PRIORITY(victim) <= 40)
-      break_spell(victim);
-  }
+	if (IS_AFFECTED(attacker, AFF_SANCTUARY))
+		appear(attacker);
 
-  if (IS_NPC(victim) &&
-      victim->specials.attacked_level < GET_LEVELB(ch))
-    victim->specials.attacked_level = GET_LEVELB(ch);
+	/*
+	 * XXX: This should really use stop_hiding.  But stop_hiding
+	 * needs modifications first.
+	 */
+	if (IS_AFFECTED(attacker, AFF_HIDE)) {
+		act("$n steps out of $s cover.", TRUE, attacker, 0, 0, TO_ROOM);
+		send_to_char("You step out of your cover.\n\r", attacker);
+		REMOVE_BIT(attacker->specials.affected_by, AFF_HIDE);
+	}
 
-  /* 33% chance to resist with protection physical*/
-  tmp = check_resistances(victim, attacktype);
-  if (number(0, 2) == 0 && IS_PHYSICAL(attacktype))
-    tmp = 0;
+	/* Remove delay if wait_wheel */
+	if (dam > 0) {
+		if (IS_AFFECTED(victim, AFF_WAITWHEEL) &&
+			GET_WAIT_PRIORITY(victim) <= 40)
+			break_spell(victim);
+	}
 
-  if (tmp > 0) {
-    send_to_char("You resist a lot.\n\r", victim);
-    act("$n resists a lot.\n\r",
-	TRUE, victim, 0, 0, TO_ROOM);
-    dam = dam * 2/3;
-  }
+	if (IS_NPC(victim) && victim->specials.attacked_level < GET_LEVELB(attacker))
+		victim->specials.attacked_level = GET_LEVELB(attacker);
 
-  if (tmp < 0) {
-    send_to_char("You feel it a lot.\n\r", victim);
-    dam = dam * 3/2;
-  }
+	/* 33% chance to resist with protection physical*/
+	tmp = check_resistances(victim, attacktype);
+	if (number(0, 2) == 0 && IS_PHYSICAL(attacktype))
+		tmp = 0;
 
-  /* 10% chance for wild fighters to rush when they hit */
-  if (IS_PHYSICAL(attacktype) && GET_SPEC(ch) == PLRSPEC_WILD && number(0, 9) == 0)
-  {
-    dam = dam * 3 / 2;
+	if (tmp > 0) {
+		send_to_char("You resist a lot.\n\r", victim);
+		act("$n resists a lot.\n\r",
+			TRUE, victim, 0, 0, TO_ROOM);
+		dam = dam * 2 / 3;
+	}
 
-    send_to_char("You rush forward wildly.\n\r",ch);
-    act("$n rushes forward wildly.", TRUE, ch, 0, 0, TO_ROOM);
-  }
+	if (tmp < 0) {
+		send_to_char("You feel it a lot.\n\r", victim);
+		dam = dam * 3 / 2;
+	}
 
-  if (dam > 230 && attacktype != SKILL_AMBUSH) {
-    vmudlog(NRM, "Damage overflow for %s (%dhit).",
-	    GET_NAME(ch), dam);
-    dam = MIN(dam, 200);
-  }
-  dam = MAX(dam, 0);
+	/* 10% chance for wild fighters to rush when they hit */
+	if (IS_PHYSICAL(attacktype) && GET_SPEC(attacker) == PLRSPEC_WILD && number(0, 9) == 0)
+	{
+		dam = dam * 3 / 2;
 
-  /*
-   * Seether's shield:
-   * If the victim has the shield spell up, we're going to take
-   * some of his mana before his hitpoints, if he makes the roll.
-   * It will only drain mana to 1 (not 0) and will do at -least-
-   * 1 hp of damage; we allow for the hit to take at most all of
-   * their mana minus one.
-   *   if(affected_by_spell(victim, SPELL_SHIELD) &&
-   *      attacktype != SKILL_AMBUSH) {
-   *     if(number(1, 101) < (29 + GET_PROF_LEVEL(PROF_MAGE, victim) * 2)) {
-   *       int shield_prof, mana_remove = 0;
-   *
-   *       shield_prof = number(1, GET_PROF_LEVEL(PROF_MAGE, victim)) +
-   *                     number(1, GET_MANA(victim) / 3);
-   *       mana_remove = MIN(MIN(dam - 1, shield_prof), GET_MANA(victim));
-   *       GET_MANA(victim) -= mana_remove;
-   *       dam -= mana_remove;
-   *     }
-   *   }
-   *
-   *
-   * Fingol's shield:
-   * We should compare the two - see how they work in the game.  If
-   * the victim has shield spell up it absorbs up to 40% of damage
-   * remaining by now (after other abs etc) at a cost of mana
-   * dependent on mage level.  My simple version: 20 / mage_level
-   * cost in mana.
-   *
-   * Dim's shield:
-   *   mana cost = level * 20 / mage_level +
-   *               number(0, mage_level) > i * 20 % mage_level ? 1 : 0;
-   *
-   * 01/01/00: now we check that attack is not bash, else damage will
-   * be absorbed and the bash message won't be given.
-   */
-  if (affected_by_spell(victim, SPELL_SHIELD) &&
-      attacktype != SKILL_AMBUSH && attacktype != SKILL_BASH) {
-    i = (dam * 2 + 4) / 5;
-    aff = affected_by_spell(victim, SPELL_SHIELD);
+		send_to_char("You rush forward wildly.\n\r", attacker);
+		act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
+	}
 
-    /* cost of mana to absorb the hit */
-    tmp1 = (i * 15) / GET_PROF_LEVEL(PROF_MAGE,victim);
-    if (number(0, GET_PROF_LEVEL(PROF_MAGE, victim)) >
-	i * 15 % GET_PROF_LEVEL(PROF_MAGE, victim))
-      tmp1++;
+	if (dam > 200 && attacktype != SKILL_AMBUSH)
+	{
+		vmudlog(NRM, "Damage overflow for %s (%dhit).", GET_NAME(attacker), dam);
+		dam = std::min(dam, 200);
+	}
+	dam = std::max(dam, 0);
 
-    /* max hits for remaining mana */
-    if (tmp1 > GET_MANA(victim)) {
-      i = i * GET_MANA(victim) / tmp1;
-      GET_MANA(victim) = 0;
-    } else
-      GET_MANA(victim) -= tmp1;
-    dam -= i;
-    if (GET_MANA(victim) == 0)
-      affect_from_char(victim, SPELL_SHIELD);
-    else
-      if (aff->duration > 2)
-	aff->duration = 2;
-  }
+	/*
+	 * Seether's shield:
+	 * If the victim has the shield spell up, we're going to take
+	 * some of his mana before his hitpoints, if he makes the roll.
+	 * It will only drain mana to 1 (not 0) and will do at -least-
+	 * 1 hp of damage; we allow for the hit to take at most all of
+	 * their mana minus one.
+	 *   if(affected_by_spell(victim, SPELL_SHIELD) &&
+	 *      attacktype != SKILL_AMBUSH) {
+	 *     if(number(1, 101) < (29 + GET_PROF_LEVEL(PROF_MAGE, victim) * 2)) {
+	 *       int shield_prof, mana_remove = 0;
+	 *
+	 *       shield_prof = number(1, GET_PROF_LEVEL(PROF_MAGE, victim)) +
+	 *                     number(1, GET_MANA(victim) / 3);
+	 *       mana_remove = MIN(MIN(dam - 1, shield_prof), GET_MANA(victim));
+	 *       GET_MANA(victim) -= mana_remove;
+	 *       dam -= mana_remove;
+	 *     }
+	 *   }
+	 *
+	 *
+	 * Fingol's shield:
+	 * We should compare the two - see how they work in the game.  If
+	 * the victim has shield spell up it absorbs up to 40% of damage
+	 * remaining by now (after other abs etc) at a cost of mana
+	 * dependent on mage level.  My simple version: 20 / mage_level
+	 * cost in mana.
+	 *
+	 * Dim's shield:
+	 *   mana cost = level * 20 / mage_level +
+	 *               number(0, mage_level) > i * 20 % mage_level ? 1 : 0;
+	 *
+	 * 01/01/00: now we check that attack is not bash, else damage will
+	 * be absorbed and the bash message won't be given.
+	 */
+	if (affected_by_spell(victim, SPELL_SHIELD) && attacktype != SKILL_AMBUSH && attacktype != SKILL_BASH) 
+	{
+		i = (dam * 2 + 4) / 5;
+		aff = affected_by_spell(victim, SPELL_SHIELD);
 
-  if (!call_trigger(ON_DAMAGE, victim, ch, 0)) {
-    update_pos(victim);
-    update_pos(ch);
-    return 0;
-  }
+		/* cost of mana to absorb the hit */
+		tmp1 = (i * 15) / GET_PROF_LEVEL(PROF_MAGE, victim);
+		if (number(0, GET_PROF_LEVEL(PROF_MAGE, victim)) >
+			i * 15 % GET_PROF_LEVEL(PROF_MAGE, victim))
+			tmp1++;
 
-  /* Spell damage logging */
-  record_spell_damage(ch, victim, attacktype, dam);
+		/* max hits for remaining mana */
+		if (tmp1 > GET_MANA(victim))
+		{
+			i = i * GET_MANA(victim) / tmp1;
+			GET_MANA(victim) = 0;
+		}
+		else
+		{
+			GET_MANA(victim) -= tmp1;
+		}
+		dam -= i;
+		if (GET_MANA(victim) == 0)
+		{
+			affect_from_char(victim, SPELL_SHIELD);
+		}
+		else if (aff->duration > 2)
+		{
+			aff->duration = 2;
+		}
+	}
 
-  GET_HIT(victim) -= dam;
+	if (!call_trigger(ON_DAMAGE, victim, attacker, 0)) 
+	{
+		update_pos(victim);
+		update_pos(attacker);
+		return 0;
+	}
 
-  if (ch != victim)
-    gain_exp(ch, (1 + GET_LEVEL(victim)) *
-	     MIN(20 + GET_LEVEL(ch) * 2, dam) / (1 + GET_LEVEL(ch)));
+	/* Spell damage logging */
+	record_spell_damage(attacker, victim, attacktype, dam);
 
-  /* hack for PC vs. PC fights to skip the incap step */
-  if (GET_HIT(victim) < 0 && !IS_NPC(ch))
-    GET_HIT(victim) = MIN(GET_HIT(victim), -20);
+	GET_HIT(victim) -= dam;
 
-  update_pos(victim);
-  update_pos(ch);
+	if (attacker != victim)
+	{
+		gain_exp(attacker, (1 + GET_LEVEL(victim)) * std::min(20 + GET_LEVEL(attacker) * 2, dam) / (1 + GET_LEVEL(attacker)));
+	}
 
-  generate_damage_message(ch, victim, dam, attacktype, hit_location);
+	/* hack for PC vs. PC fights to skip the incap step */
+	if (GET_HIT(victim) < 0 && !IS_NPC(attacker))
+	{
+		GET_HIT(victim) = std::min(GET_HIT(victim), -20);
+	}
 
-  if (dam > 0) {
-    check_break_prep(victim);
-    check_break_prep(ch);
-  }
+	update_pos(victim);
+	update_pos(attacker);
 
-  /* Use send_to_char -- act() doesn't send message if you are DEAD. */
-  switch (GET_POS(victim)) {
-  case POSITION_INCAP:
-    act("$n is incapacitated and will die, if not aided.",
-	TRUE, victim, 0, 0, TO_ROOM);
-    send_to_char("You are incapacitated and will slowly die, "
-		 "if not aided.\n\r", victim);
-    break;
-  case POSITION_STUNNED:
-    act("$n is stunned, but will probably regain consciousness again.",
-	TRUE, victim, 0, 0, TO_ROOM);
-    send_to_char("You're stunned, but will probably regain "
-		 "consciousness again.\n\r", victim);
-    break;
-  case POSITION_DEAD:
-    act("$n is dead!  R.I.P.", TRUE, victim, 0, 0, TO_ROOM);
-    send_to_char("You are dead!  Sorry...\n\r", victim);
-    break;
-  default:  /* >= POSITION SLEEPING */
-    /*
-     * This code gets duplicated in hit().  Make sure to check
-     * there if you change anything here.
-     */
-    if (dam > (GET_MAX_HIT(victim) / 5))
-      act("That really did HURT!", FALSE, victim, 0, 0, TO_CHAR);
+	generate_damage_message(attacker, victim, dam, attacktype, hit_location);
 
-    if (GET_HIT(victim) < (GET_MAX_HIT(victim) / 5)) {
-      act("You wish that your wounds would stop BLEEDING so much!",
-	  FALSE, victim, 0, 0, TO_CHAR);
-      if (IS_NPC(victim)) {
-	if (IS_SET(victim->specials2.act, MOB_WIMPY))
-	  if (GET_POSITION(victim) > POSITION_SLEEPING)
-	    do_flee(victim, "", 0, 0, 0);
-      }
-    }
+	if (dam > 0) {
+		check_break_prep(victim);
+		check_break_prep(attacker);
+	}
 
-    if (!IS_NPC(victim) && WIMP_LEVEL(victim) && victim != ch &&
-	GET_HIT(victim) < WIMP_LEVEL(victim))
-      if (GET_POSITION(victim) > POSITION_SLEEPING &&
-	  GET_TACTICS(victim) != TACTICS_BERSERK) {
-	send_to_char("You wimp out, and attempt to flee!\n\r",
-		     victim);
-	do_flee(victim, "", 0, 0, 0);
-      }
-  }
+	/* Use send_to_char -- act() doesn't send message if you are DEAD. */
+	switch (GET_POS(victim)) {
+	case POSITION_INCAP:
+		act("$n is incapacitated and will die, if not aided.",
+			TRUE, victim, 0, 0, TO_ROOM);
+		send_to_char("You are incapacitated and will slowly die, "
+			"if not aided.\n\r", victim);
+		break;
+	case POSITION_STUNNED:
+		act("$n is stunned, but will probably regain consciousness again.",
+			TRUE, victim, 0, 0, TO_ROOM);
+		send_to_char("You're stunned, but will probably regain "
+			"consciousness again.\n\r", victim);
+		break;
+	case POSITION_DEAD:
+		act("$n is dead!  R.I.P.", TRUE, victim, 0, 0, TO_ROOM);
+		send_to_char("You are dead!  Sorry...\n\r", victim);
+		break;
+	default:  /* >= POSITION SLEEPING */
+	  /*
+	   * This code gets duplicated in hit().  Make sure to check
+	   * there if you change anything here.
+	   */
+		if (dam > (GET_MAX_HIT(victim) / 5))
+			act("That really did HURT!", FALSE, victim, 0, 0, TO_CHAR);
 
-  if (!IS_NPC(victim) && !(victim->desc && victim->desc->descriptor) &&
-      (victim->specials.fighting) && GET_POS(victim) > POSITION_INCAP) {
-    do_flee(victim, "", 0, 0, 0);
-    victim->specials.was_in_room = victim->in_room;
-  }
+		if (GET_HIT(victim) < (GET_MAX_HIT(victim) / 5)) {
+			act("You wish that your wounds would stop BLEEDING so much!",
+				FALSE, victim, 0, 0, TO_CHAR);
+			if (IS_NPC(victim)) {
+				if (IS_SET(victim->specials2.act, MOB_WIMPY))
+					if (GET_POSITION(victim) > POSITION_SLEEPING)
+						do_flee(victim, "", 0, 0, 0);
+			}
+		}
 
-  if (!AWAKE(victim))
-    if (victim->specials.fighting)
-      stop_fighting(victim);
+		if (!IS_NPC(victim) && WIMP_LEVEL(victim) && victim != attacker &&
+			GET_HIT(victim) < WIMP_LEVEL(victim))
+			if (GET_POSITION(victim) > POSITION_SLEEPING &&
+				GET_TACTICS(victim) != TACTICS_BERSERK) {
+				send_to_char("You wimp out, and attempt to flee!\n\r",
+					victim);
+				do_flee(victim, "", 0, 0, 0);
+			}
+	}
 
-  if (GET_POS(victim) == POSITION_DEAD) {
-    die(victim, ch, attacktype);
-    return 1;
-  } else
-    return 0;
+	if (!IS_NPC(victim) && !(victim->desc && victim->desc->descriptor) &&
+		(victim->specials.fighting) && GET_POS(victim) > POSITION_INCAP) {
+		do_flee(victim, "", 0, 0, 0);
+		victim->specials.was_in_room = victim->in_room;
+	}
+
+	if (!AWAKE(victim))
+		if (victim->specials.fighting)
+			stop_fighting(victim);
+
+	if (GET_POS(victim) == POSITION_DEAD) {
+		die(victim, attacker, attacktype);
+		return 1;
+	}
+	else
+		return 0;
 }
 
 
@@ -2214,220 +2245,231 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 //============================================================================
 void hit(struct char_data *ch, struct char_data *victim, int type)
 {
-  struct obj_data *wielded = 0; /* weapon that ch wields */
-  int w_type; /* weapon type, like TYPE_SLASH */
-  int OB;
-  int dam = 0, dodge_malus, evasion_malus;
-  int location;
-  int tmp; /* rolled number stored as the chance to hit, adds OB */
-  struct waiting_type tmpwtl;
-  extern struct race_bodypart_data bodyparts[15];
+	struct obj_data *wielded = 0; /* weapon that ch wields */
+	int w_type; /* weapon type, like TYPE_SLASH */
+	int OB;
+	int dam = 0, dodge_malus, evasion_malus;
+	int location;
+	int tmp; /* rolled number stored as the chance to hit, adds OB */
+	struct waiting_type tmpwtl;
+	extern struct race_bodypart_data bodyparts[15];
 
-  if (ch->in_room != victim->in_room) {
-    log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");
-    return;
-  }
-
-  if (GET_POS(ch) < POSITION_FIGHTING)
-    return;
-
-  if (ch->equipment[WIELD] &&
-      ch->equipment[WIELD]->obj_flags.type_flag == ITEM_WEAPON) {
-    wielded = ch->equipment[WIELD];
-    w_type = weapon_hit_type(wielded->obj_flags.value[3]);
-    dam = get_weapon_damage(wielded);
-  } else {
-    /* XXX: Can we find some uses of attack_type elsewhere? */
-    if (IS_NPC(ch) && ch->specials.attack_type >= TYPE_HIT)
-      w_type = ch->specials.attack_type;
-    else {
-      w_type = TYPE_HIT;
-      if (!IS_NPC(ch))
-	dam = BAREHANDED_DAMAGE * 10;
-    }
-  }
-
-  /*
-   * Calculate hits/misses/damage
-   *
-   * NOTE: If tmp is 35, then the hit will succeed no matter
-   * what.  This is not just because of the 100 OB bonus, but
-   * because of the if statements which decide whether a dodge,
-   * parry or evade is possible.
-   */
-  tmp = number(1, 35);
-  OB = get_real_OB(ch);
-  OB += number(1, 55 + OB/4);
-  OB += tmp;
-  OB -= OB/8;
-  OB -= 40;
-  if (tmp == 35)
-    OB += 100;
-
-  dodge_malus = evasion_malus = 0;
-  evasion_malus = get_evasion_malus(*ch, *victim);
-  dodge_malus = get_real_dodge(victim) + evasion_malus;
-  OB -= dodge_malus;
-
-  if (GET_POS(victim) < POSITION_FIGHTING)
-    OB += 10 * (POSITION_FIGHTING - GET_POS(victim));
-
-  /* checking here for the hit legitimacy... i hate this */
-  if (GET_ENERGY(ch) >= ENE_TO_HIT) {
-    GET_ENERGY(ch) -= ENE_TO_HIT;
-
-    if (IS_SHADOW(victim)) {
-      if (!weapon_willpower_damage(ch, victim))
-	do_pass_through(ch, victim, 0);
-      return;
-    }
-
-    if (OB < 0 && tmp != 35) {
-      if (number(0, dodge_malus) < evasion_malus)
-	do_evade(ch, victim, w_type);
-      else
-	do_dodge(ch, victim, w_type);
-    } else {
-      if (GET_POS(victim) > POSITION_STUNNED)
-	OB -= get_real_parry(victim) * GET_CURRENT_PARRY(victim) / 100;
-
-      SET_CURRENT_PARRY(victim) = GET_CURRENT_PARRY(victim) * 2/3;
-
-	  if (tmp == 35)
-	  {
-		  OB = std::max(OB, 0);
-	  }
-
-      if (OB < 0) {
-	do_parry(ch, victim, w_type);
-	if (check_riposte(ch, victim))
-	  return;
-
-	check_grip(ch, wielded);
-	check_grip(victim, victim->equipment[WIELD]);
-      } else {
-	/* Generate a hit location based on bodypart structure */
-	/*
-	 *XXX: Make into a separate function that treats bodyparts
-	 * for all body types well.
-	 */
-	location = 0;
-	if (bodyparts[GET_BODYTYPE(victim)].bodyparts) {
-	  tmp = number(1, 100);
-
-	  for ( ; tmp > 0 && location < MAX_BODYPARTS; location++)
-	    tmp -= bodyparts[GET_BODYTYPE(victim)].percent[location];
+	if (ch->in_room != victim->in_room) {
+		log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");
+		return;
 	}
 
-	if (location)
-	  location--;
-	if (IS_NPC(ch))
-	  dam /= 2; /* mobs have weapon damage halved */
+	if (GET_POS(ch) < POSITION_FIGHTING)
+		return;
+
+	if (ch->equipment[WIELD] &&
+		ch->equipment[WIELD]->obj_flags.type_flag == ITEM_WEAPON) {
+		wielded = ch->equipment[WIELD];
+		w_type = weapon_hit_type(wielded->obj_flags.value[3]);
+		dam = get_weapon_damage(wielded);
+	}
+	else {
+		/* XXX: Can we find some uses of attack_type elsewhere? */
+		if (IS_NPC(ch) && ch->specials.attack_type >= TYPE_HIT)
+			w_type = ch->specials.attack_type;
+		else {
+			w_type = TYPE_HIT;
+			if (!IS_NPC(ch))
+				dam = BAREHANDED_DAMAGE * 10;
+		}
+	}
+
+	// Don't allow damage to affect invalid targets.
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if (!bb_instance.is_target_valid(ch, victim, w_type))
+	{
+		send_to_char("You feel the Gods looking down upon you and protecting your target.  Your hand is stayed.", ch);
+		return;
+	}
 
 	/*
-	 * 100 str would double damage, double effect for
-	 * 2-handers, last factor is avg. 1.4 with str 13
-	 * OB bonus factored in, and mult. by number between
-	 * 1 and 2, with  numbers close to 1 more probable
+	 * Calculate hits/misses/damage
+	 *
+	 * NOTE: If tmp is 35, then the hit will succeed no matter
+	 * what.  This is not just because of the 100 OB bonus, but
+	 * because of the if statements which decide whether a dodge,
+	 * parry or evade is possible.
 	 */
-	dam += GET_DAMAGE(ch) * 10;
-	tmp = number(0, 100);
-	/* damage divided again by 10 */
-	dam = (dam * (OB + 100) * (10000 + (tmp * tmp) +
-		(IS_TWOHANDED(ch) ? 2 : 1) * 133 *
-		GET_BAL_STR(ch))) / 13300000;
-	  
-	dam = check_find_weakness(ch, victim, dam);
+	tmp = number(1, 35);
+	OB = get_real_OB(ch);
+	OB += number(1, 55 + OB / 4);
+	OB += tmp;
+	OB -= OB / 8;
+	OB -= 40;
+	if (tmp == 35)
+		OB += 100;
 
-	tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
-	dam = armor_effect(ch, victim, dam, tmp, w_type);
+	dodge_malus = evasion_malus = 0;
+	evasion_malus = get_evasion_malus(*ch, *victim);
+	dodge_malus = get_real_dodge(victim) + evasion_malus;
+	OB -= dodge_malus;
 
 	if (GET_POS(victim) < POSITION_FIGHTING)
-	  dam += dam/2;
+		OB += 10 * (POSITION_FIGHTING - GET_POS(victim));
 
-	dam = std::max(0, dam);  /* Not less than 0 damage */
-	damage(ch, victim, dam, w_type, location);
+	/* checking here for the hit legitimacy... i hate this */
+	if (GET_ENERGY(ch) >= ENE_TO_HIT) {
+		GET_ENERGY(ch) -= ENE_TO_HIT;
 
-	if (dam > 0)
-	  check_grip(ch, wielded);
+		if (IS_SHADOW(victim)) {
+			if (!weapon_willpower_damage(ch, victim))
+				do_pass_through(ch, victim, 0);
+			return;
+		}
 
-	/* so we won't check engagement for hit people */
-	return;
-      }
-    }
-  }
+		if (OB < 0 && tmp != 35) {
+			if (number(0, dodge_malus) < evasion_malus)
+				do_evade(ch, victim, w_type);
+			else
+				do_dodge(ch, victim, w_type);
+		}
+		else {
+			if (GET_POS(victim) > POSITION_STUNNED)
+				OB -= get_real_parry(victim) * GET_CURRENT_PARRY(victim) / 100;
 
-  /*
-   * Following moved here from damage function, so dodge/parry
-   * would engage.  It might be better done by just rewriting
-   * dodge to go through damage parser, we'll see.
-   *
-   * Later: I think it could be marginally better to send this
-   * code through the damage function, mainly so that we don't
-   * have to worry about duplicated code.  However, we might
-   * not have a very elegant way to preclude parries/dodges
-   * from calling the SPECIAL_DAMAGE proc in that case.
-   *
-   * NOTE: Everything beyond this point happens ONLY if 'ch'
-   * didn't have enough energy to hit, or 'ch' was parried,
-   * dodged or evaded.  If any amount of damage is dealt
-   * (whether it be by riposte, a normal hit, etc), this code
-   * is not reached, and its functionality is duplicated in
-   * damage().  It is for this reason why I think these calls
-   * for SPECIAL_DAMAGE procs are highly out of place, and
-   * this mess of position updating is also absolutely horrid.
-   */
-  if(ch->specials.fighting != victim) {
-    tmpwtl.targ1.ptr.ch = victim;
-    tmpwtl.targ1.type = TARGET_CHAR;
-    tmpwtl.targ2.ptr.other = 0;
-    tmpwtl.targ2.type = TARGET_NONE;
-    tmp = special(ch, 0, "", SPECIAL_DAMAGE, &tmpwtl);
-    if(tmp) {
-      if(ch->specials.fighting == victim)
-	stop_fighting(ch);
-      return;
-    }
-  }
+			SET_CURRENT_PARRY(victim) = GET_CURRENT_PARRY(victim) * 2 / 3;
 
-  if (GET_POS(ch) > POSITION_STUNNED && victim != ch)
-    if (!ch->specials.fighting || GET_POS(ch) != POSITION_FIGHTING)
-      set_fighting(ch, victim);
+			if (tmp == 35)
+			{
+				OB = std::max(OB, 0);
+			}
 
-  if (GET_POS(victim) > POSITION_STUNNED) {
-    if (!victim->specials.fighting ||
-       GET_POS(victim) != POSITION_FIGHTING)
-      set_fighting(victim, ch);
+			if (OB < 0) {
+				do_parry(ch, victim, w_type);
+				if (check_riposte(ch, victim))
+					return;
 
-    if(IS_NPC(victim) && IS_SET(victim->specials2.act, MOB_MEMORY) &&
-       !IS_NPC(ch) && (GET_LEVEL(ch) < LEVEL_IMMORT))
-      remember(victim, ch);
+				check_grip(ch, wielded);
+				check_grip(victim, victim->equipment[WIELD]);
+			}
+			else {
+				/* Generate a hit location based on bodypart structure */
+				/*
+				 *XXX: Make into a separate function that treats bodyparts
+				 * for all body types well.
+				 */
+				location = 0;
+				if (bodyparts[GET_BODYTYPE(victim)].bodyparts) {
+					tmp = number(1, 100);
 
-    GET_POS(victim) = POSITION_FIGHTING;
-  }
+					for (; tmp > 0 && location < MAX_BODYPARTS; location++)
+						tmp -= bodyparts[GET_BODYTYPE(victim)].percent[location];
+				}
 
-  if (GET_HIT(victim) < GET_MAX_HIT(victim) / 5) {
-    act("You wish that your wounds would stop BLEEDING so much!",
-	FALSE, victim, 0, 0, TO_CHAR);
-    if (IS_NPC(victim))
-      if (IS_SET(victim->specials2.act, MOB_WIMPY))
-	if (GET_POSITION(victim) > POSITION_SLEEPING)
-	  do_flee(victim, "", 0, 0, 0);
-  }
+				if (location)
+					location--;
+				if (IS_NPC(ch))
+					dam /= 2; /* mobs have weapon damage halved */
 
-  if (!IS_NPC(victim) && WIMP_LEVEL(victim) && victim != ch &&
-      GET_HIT(victim) < WIMP_LEVEL(victim)) {
-    if (GET_POSITION(victim) > POSITION_SLEEPING) {
-      send_to_char("You wimp out, and attempt to flee!\n\r", victim);
-      do_flee(victim, "", 0, 0, 0);
-    }
-  }
+				  /*
+				   * 100 str would double damage, double effect for
+				   * 2-handers, last factor is avg. 1.4 with str 13
+				   * OB bonus factored in, and mult. by number between
+				   * 1 and 2, with  numbers close to 1 more probable
+				   */
+				dam += GET_DAMAGE(ch) * 10;
+				tmp = number(0, 100);
+				/* damage divided again by 10 */
+				dam = (dam * (OB + 100) * (10000 + (tmp * tmp) +
+					(IS_TWOHANDED(ch) ? 2 : 1) * 133 *
+					GET_BAL_STR(ch))) / 13300000;
 
-  if (!IS_NPC(victim) && !(victim->desc && victim->desc->descriptor) &&
-      victim->specials.fighting && GET_POS(victim)> POSITION_INCAP) {
-    do_flee(victim, "", 0, 0, 0);
-    victim->specials.was_in_room = victim->in_room;
-  }
+				dam = check_find_weakness(ch, victim, dam);
+
+				tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
+				dam = armor_effect(ch, victim, dam, tmp, w_type);
+
+				if (GET_POS(victim) < POSITION_FIGHTING)
+					dam += dam / 2;
+
+				dam = std::max(0, dam);  /* Not less than 0 damage */
+				damage(ch, victim, dam, w_type, location);
+
+				if (dam > 0)
+					check_grip(ch, wielded);
+
+				/* so we won't check engagement for hit people */
+				return;
+			}
+		}
+	}
+
+	/*
+	 * Following moved here from damage function, so dodge/parry
+	 * would engage.  It might be better done by just rewriting
+	 * dodge to go through damage parser, we'll see.
+	 *
+	 * Later: I think it could be marginally better to send this
+	 * code through the damage function, mainly so that we don't
+	 * have to worry about duplicated code.  However, we might
+	 * not have a very elegant way to preclude parries/dodges
+	 * from calling the SPECIAL_DAMAGE proc in that case.
+	 *
+	 * NOTE: Everything beyond this point happens ONLY if 'ch'
+	 * didn't have enough energy to hit, or 'ch' was parried,
+	 * dodged or evaded.  If any amount of damage is dealt
+	 * (whether it be by riposte, a normal hit, etc), this code
+	 * is not reached, and its functionality is duplicated in
+	 * damage().  It is for this reason why I think these calls
+	 * for SPECIAL_DAMAGE procs are highly out of place, and
+	 * this mess of position updating is also absolutely horrid.
+	 */
+	if (ch->specials.fighting != victim) {
+		tmpwtl.targ1.ptr.ch = victim;
+		tmpwtl.targ1.type = TARGET_CHAR;
+		tmpwtl.targ2.ptr.other = 0;
+		tmpwtl.targ2.type = TARGET_NONE;
+		tmp = special(ch, 0, "", SPECIAL_DAMAGE, &tmpwtl);
+		if (tmp) {
+			if (ch->specials.fighting == victim)
+				stop_fighting(ch);
+			return;
+		}
+	}
+
+	if (GET_POS(ch) > POSITION_STUNNED && victim != ch)
+		if (!ch->specials.fighting || GET_POS(ch) != POSITION_FIGHTING)
+			set_fighting(ch, victim);
+
+	if (GET_POS(victim) > POSITION_STUNNED) {
+		if (!victim->specials.fighting ||
+			GET_POS(victim) != POSITION_FIGHTING)
+			set_fighting(victim, ch);
+
+		if (IS_NPC(victim) && IS_SET(victim->specials2.act, MOB_MEMORY) &&
+			!IS_NPC(ch) && (GET_LEVEL(ch) < LEVEL_IMMORT))
+			remember(victim, ch);
+
+		GET_POS(victim) = POSITION_FIGHTING;
+	}
+
+	if (GET_HIT(victim) < GET_MAX_HIT(victim) / 5) {
+		act("You wish that your wounds would stop BLEEDING so much!",
+			FALSE, victim, 0, 0, TO_CHAR);
+		if (IS_NPC(victim))
+			if (IS_SET(victim->specials2.act, MOB_WIMPY))
+				if (GET_POSITION(victim) > POSITION_SLEEPING)
+					do_flee(victim, "", 0, 0, 0);
+	}
+
+	if (!IS_NPC(victim) && WIMP_LEVEL(victim) && victim != ch &&
+		GET_HIT(victim) < WIMP_LEVEL(victim)) {
+		if (GET_POSITION(victim) > POSITION_SLEEPING) {
+			send_to_char("You wimp out, and attempt to flee!\n\r", victim);
+			do_flee(victim, "", 0, 0, 0);
+		}
+	}
+
+	if (!IS_NPC(victim) && !(victim->desc && victim->desc->descriptor) &&
+		victim->specials.fighting && GET_POS(victim) > POSITION_INCAP) {
+		do_flee(victim, "", 0, 0, 0);
+		victim->specials.was_in_room = victim->in_room;
+	}
 }
 
 
@@ -2435,47 +2477,58 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 /*
  * Control all of the fights going on; works on PULSE_VIOLENCE
  */
-void
-perform_violence(int mini_tics)
+void perform_violence(int mini_tics)
 {
-  struct char_data *ch;
+	struct char_data *ch;
 
-  for(ch = combat_list; ch; ch = combat_next_dude) {
-    combat_next_dude = ch->next_fighting;
+	for (ch = combat_list; ch; ch = combat_next_dude) 
+	{
+		combat_next_dude = ch->next_fighting;
 
-    SET_CURRENT_PARRY(ch) = std::min(GET_CURRENT_PARRY(ch) + 3, 100);
+		SET_CURRENT_PARRY(ch) = std::min(GET_CURRENT_PARRY(ch) + 3, 100);
 
-    if(GET_MENTAL_DELAY(ch) && (GET_MENTAL_DELAY(ch) > -120))
-      GET_MENTAL_DELAY(ch)--;
+		if (GET_MENTAL_DELAY(ch) && (GET_MENTAL_DELAY(ch) > -120))
+		{
+			GET_MENTAL_DELAY(ch)--;
+		}
 
-    if(GET_MENTAL_DELAY(ch) > 1)
-      continue;
+		if (GET_MENTAL_DELAY(ch) > 1)
+			continue;
 
-    if(ch->specials.fighting &&
-       (IS_MENTAL(ch) || (IS_NPC(ch) && IS_SHADOW(ch->specials.fighting)))) {
-      if((GET_POS(ch) >= POSITION_FIGHTING) && !IS_AFFECTED(ch, AFF_WAITING))
-	do_mental(ch, "", 0, 0, 0);
-      continue; // have in mind, the ch could die himself
-    }
+		if (ch->specials.fighting && (IS_MENTAL(ch) || (IS_NPC(ch) && IS_SHADOW(ch->specials.fighting)))) 
+		{
+			if ((GET_POS(ch) >= POSITION_FIGHTING) && !IS_AFFECTED(ch, AFF_WAITING))
+			{
+				do_mental(ch, "", 0, 0, 0);
+			}
+			continue; // have in mind, the ch could die himself
+		}
 
 
-    if(!IS_AFFECTED(ch, AFF_WAITING) || (GET_WAIT_PRIORITY(ch) == 29) ||
-       (GET_WAIT_PRIORITY(ch) == 59)) {
-      if((GET_POS(ch) >= POSITION_FIGHTING) &&
-	 (GET_ENERGY(ch) <= ENE_TO_HIT))
-	GET_ENERGY(ch) += GET_ENE_REGEN(ch);
-      else if(IS_NPC(ch) && !ch->delay.wait_value)
-	do_stand(ch,"",0,0,0);
+		if (!IS_AFFECTED(ch, AFF_WAITING) || (GET_WAIT_PRIORITY(ch) == 29) || (GET_WAIT_PRIORITY(ch) == 59)) 
+		{
+			if ((GET_POS(ch) >= POSITION_FIGHTING) && (GET_ENERGY(ch) <= ENE_TO_HIT))
+			{
+				GET_ENERGY(ch) += GET_ENE_REGEN(ch);
+			}
+			else if (IS_NPC(ch) && !ch->delay.wait_value)
+			{
+				do_stand(ch, "", 0, 0, 0);
+			}
 
-      if((GET_ENERGY(ch) > ENE_TO_HIT)) {
-	if(AWAKE(ch) && ch->specials.fighting &&
-	   (ch->in_room == ch->specials.fighting->in_room))
-	  hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
-	else /* Not in same room */
-	  stop_fighting(ch);
-      }
-    }
-  }
+			if ((GET_ENERGY(ch) > ENE_TO_HIT)) 
+			{
+				if (AWAKE(ch) && ch->specials.fighting && (ch->in_room == ch->specials.fighting->in_room))
+				{
+					hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+				}
+				else /* Not in same room */
+				{
+					stop_fighting(ch);
+				}
+			}
+		}
+	}
 }
 
 

@@ -23,6 +23,7 @@
 #include "db.h"
 #include "spells.h"
 #include "script.h"
+#include "big_brother.h"
 
 /* extern variables */
 extern struct room_data world;
@@ -196,25 +197,28 @@ ACMD(do_put)
 	}
 }
 
-
-
-int	can_take_obj(struct char_data *ch, struct obj_data *obj)
+int	can_take_obj(char_data* character, obj_data* item)
 {
-   if (IS_CARRYING_N(ch) >= CAN_CARRY_N(ch)) {
-      sprintf(buf, "%s: You can't carry that many items.\n\r", OBJS(obj, ch));
-      send_to_char(buf, ch);
-      return 0;
-   } else if ((IS_CARRYING_W(ch) + GET_OBJ_WEIGHT(obj)) > CAN_CARRY_W(ch)) {
-      sprintf(buf, "%s: You can't carry that much weight.\n\r", OBJS(obj, ch));
-      send_to_char(buf, ch);
-      return 0;
-   } else if (!(CAN_WEAR(obj, ITEM_TAKE))) {
-      sprintf(buf, "%s: You can't take that!\n\r", OBJS(obj, ch));
-      send_to_char(buf, ch);
-      return 0;
-   }
+	if (IS_CARRYING_N(character) >= CAN_CARRY_N(character)) 
+	{
+		sprintf(buf, "%s: You can't carry that many items.\n\r", OBJS(item, character));
+		send_to_char(buf, character);
+		return 0;
+	}
+	else if ((IS_CARRYING_W(character) + GET_OBJ_WEIGHT(item)) > CAN_CARRY_W(character)) 
+	{
+		sprintf(buf, "%s: You can't carry that much weight.\n\r", OBJS(item, character));
+		send_to_char(buf, character);
+		return 0;
+	}
+	else if (!(CAN_WEAR(item, ITEM_TAKE))) 
+	{
+		sprintf(buf, "%s: You can't take that!\n\r", OBJS(item, character));
+		send_to_char(buf, character);
+		return 0;
+	}
 
-   return 1;
+	return 1;
 }
 
 
@@ -232,124 +236,165 @@ void	get_check_money(struct char_data *ch, struct obj_data *obj)
    }
 }
 
-
-void	perform_get_from_container(struct char_data *ch, struct obj_data *obj,
-				   struct obj_data *cont, int mode)
+bool is_corpse(obj_data* container)
 {
-   if (mode == FIND_OBJ_INV || can_take_obj(ch, obj)) {
-      if (IS_CARRYING_N(ch) >= CAN_CARRY_N(ch))
-	 sprintf(buf, "%s: You can't hold any more items.\n\r", OBJS(obj, ch));
-      else {
-         obj_from_obj(obj);
-         obj_to_char(obj, ch);
-	 act("You get $p from $P.", FALSE, ch, obj, cont, TO_CHAR);
-	 act("$n gets $p from $P.", TRUE, ch, obj, cont, TO_ROOM);
-         if (obj->touched == 1 && ((GET_ITEM_TYPE(obj) != ITEM_FOOD) && (GET_ITEM_TYPE(obj) != ITEM_DRINKCON)))
-         {
-	   snprintf(buf, MAX_STRING_LENGTH, "OBJ: %s gets %s (%d) from %s (%d)", GET_NAME(ch),
-             obj->short_description,
-             (obj->item_number >= 0) ? obj_index[obj->item_number].virt : -1,
-             cont->short_description,
-             (cont->item_number >= 0) ? obj_index[cont->item_number].virt : -1);
-           log(buf);
-         }
-         if (!IS_NPC(ch))
-         {
-           obj->touched = 1;
-         }
-	 get_check_money(ch, obj);
-      }
-   }
+	return container && container->obj_flags.type_flag == ITEM_CONTAINER && container->obj_flags.value[3] == 1;
+}
+
+void perform_get_from_container(char_data* character, obj_data* item, obj_data* container, int mode)
+{
+	if (mode == FIND_OBJ_INV || can_take_obj(character, item)) 
+	{
+		// Enforce Big Brother loot protection if the container is a corpse.
+		if (is_corpse(container))
+		{
+			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+			if (!bb_instance.on_loot_item(character, container, item))
+			{
+				sprintf(buf, "That corpse has already been looted enough.");
+				return;
+			}
+		}
+
+		if (IS_CARRYING_N(character) >= CAN_CARRY_N(character))
+		{
+			sprintf(buf, "%s: You can't hold any more items.\n\r", OBJS(item, character));
+		}
+		else 
+		{
+			obj_from_obj(item);
+			obj_to_char(item, character);
+			act("You get $p from $P.", FALSE, character, item, container, TO_CHAR);
+			act("$n gets $p from $P.", TRUE, character, item, container, TO_ROOM);
+
+			if (item->touched == 1 && ((GET_ITEM_TYPE(item) != ITEM_FOOD) && (GET_ITEM_TYPE(item) != ITEM_DRINKCON)))
+			{
+				snprintf(buf, MAX_STRING_LENGTH, "OBJ: %s gets %s (%d) from %s (%d)", GET_NAME(character),
+					item->short_description,
+					(item->item_number >= 0) ? obj_index[item->item_number].virt : -1,
+					container->short_description,
+					(container->item_number >= 0) ? obj_index[container->item_number].virt : -1);
+				log(buf);
+			}
+
+			if (!IS_NPC(character))
+			{
+				item->touched = 1;
+			}
+
+			get_check_money(character, item);
+		}
+	}
 }
 
 
-void	get_from_container(struct char_data *ch, struct obj_data *cont,
-			   char *arg, int mode)
+void get_from_container(struct char_data *ch, struct obj_data *cont, char *arg, int mode)
 {
-   struct obj_data *obj, *next_obj;
-   int obj_dotmode, found = 0;
-   obj_dotmode = find_all_dots(arg);
+	struct obj_data *obj, *next_obj;
+	int obj_dotmode, found = 0;
+	obj_dotmode = find_all_dots(arg);
 
-   if (IS_SET(cont->obj_flags.value[1], CONT_CLOSED))
-      act("The $p is closed.", FALSE, ch, cont, 0, TO_CHAR);
- 
-   else if (obj_dotmode == FIND_ALL) {
+	if (IS_SET(cont->obj_flags.value[1], CONT_CLOSED))
+	{
+		act("The $p is closed.", FALSE, ch, cont, 0, TO_CHAR);
+	}
 
-   /*
-    * This if prevents people from spam 
-    * looting corpses while still allowing 
-    * for characters to use the get all corpse
-    * command while looting their own corpse.
-    */
-   if (cont->obj_flags.value[3] != 0 && 
-       GET_IDNUM(ch) != -(cont->obj_flags.value[2])) {
-     send_to_char("You'll have to be more specific about "
-                  "what you loot.\r\n", ch);
-     return;
-    }
-      for (obj = cont->contains; obj; obj = next_obj) {
-	 next_obj = obj->next_content;
-	 if (1 /*CAN_SEE_OBJ(ch, obj)*/) {
-	    found = 1;
-	    perform_get_from_container(ch, obj, cont, mode);
-	 }
-      }
-      if (!found)
-	 act("$p seems to be empty.", FALSE, ch, cont, 0, TO_CHAR);
-   } else if (obj_dotmode == FIND_ALLDOT) {
-      if (!*arg) {
-	 send_to_char("Get all of what?\n\r", ch);
-	 return;
-      }
-      //      obj = get_obj_in_list_vis(ch, arg, cont->contains,9999);
-      obj = get_obj_in_list(arg, cont->contains);
-      while (obj) {
-         next_obj = get_obj_in_list_vis(ch, arg, obj->next_content,9999);
-	 if (CAN_SEE_OBJ(ch, obj)) {
-	    found = 1;
-	    perform_get_from_container(ch, obj, cont, mode);
-	 }
-	 obj = next_obj;
-      }
-      if (!found) {
-	 sprintf(buf, "You can't find any %ss in $p.", arg);
-	 act(buf, FALSE, ch, cont, 0, TO_CHAR);
-      }
-   } else {
-     //      if (!(obj = get_obj_in_list_vis(ch, arg, cont->contains,9999))) {
-      if (!(obj = get_obj_in_list(arg, cont->contains))) {
-	 sprintf(buf, "There doesn't seem to be %s %s in $p.", AN(arg), arg);
-	 act(buf, FALSE, ch, cont, 0, TO_CHAR);
-      } else
-	 perform_get_from_container(ch, obj, cont, mode);
-   }
+	else if (obj_dotmode == FIND_ALL) 
+	{
+		/*
+		 * This if prevents people from spam
+		 * looting corpses while still allowing
+		 * for characters to use the get all corpse
+		 * command while looting their own corpse.
+		 */
+		if (cont->obj_flags.value[3] != 0 && GET_IDNUM(ch) != -(cont->obj_flags.value[2])) 
+		{
+			send_to_char("You'll have to be more specific about what you loot.\r\n", ch);
+			return;
+		}
+		for (obj = cont->contains; obj; obj = next_obj) 
+		{
+			next_obj = obj->next_content;
+			found = 1;
+			perform_get_from_container(ch, obj, cont, mode);
+		}
+		if (!found)
+		{
+			act("$p seems to be empty.", FALSE, ch, cont, 0, TO_CHAR);
+		}
+	}
+	else if (obj_dotmode == FIND_ALLDOT) 
+	{
+		if (!*arg) 
+		{
+			send_to_char("Get all of what?\n\r", ch);
+			return;
+		}
+
+		obj = get_obj_in_list(arg, cont->contains);
+		while (obj) 
+		{
+			next_obj = get_obj_in_list_vis(ch, arg, obj->next_content, 9999);
+			if (CAN_SEE_OBJ(ch, obj)) 
+			{
+				found = 1;
+				perform_get_from_container(ch, obj, cont, mode);
+			}
+			obj = next_obj;
+		}
+
+		if (!found) 
+		{
+			sprintf(buf, "You can't find any %ss in $p.", arg);
+			act(buf, FALSE, ch, cont, 0, TO_CHAR);
+		}
+	}
+	else 
+	{
+		if (!(obj = get_obj_in_list(arg, cont->contains))) 
+		{
+			sprintf(buf, "There doesn't seem to be %s %s in $p.", AN(arg), arg);
+			act(buf, FALSE, ch, cont, 0, TO_CHAR);
+		}
+		else
+		{
+			perform_get_from_container(ch, obj, cont, mode);
+		}
+	}
 }
 
-
-int	perform_get_from_room(struct char_data *ch, struct obj_data *obj)
+int	perform_get_from_room(char_data* character, obj_data* item)
 {
-   if (can_take_obj(ch, obj)) {
-      obj_from_room(obj);
-      obj_to_char(obj, ch);
-      act("You get $p.", FALSE, ch, obj, 0, TO_CHAR);
-      act("$n gets $p.", TRUE, ch, obj, 0, TO_ROOM);
-      if (obj->touched == 1 && ((GET_ITEM_TYPE(obj) != ITEM_FOOD)) && (GET_ITEM_TYPE(obj) != ITEM_DRINKCON))
-      {
-        snprintf(buf, MAX_STRING_LENGTH, "OBJ: %s gets %s (%d) at %s (%d)", GET_NAME(ch),
-          obj->short_description,
-          (obj->item_number >= 0) ? obj_index[obj->item_number].virt : -1,
-	  world[ch->in_room].name, world[ch->in_room].number);
-        log(buf);
-      }
-      if (!IS_NPC(ch))
-      {
-        obj->touched = 1;
-      }
-      get_check_money(ch, obj);
-      return 1;
-   }
+	// Player corpses have negative values on their ID.
+	if (is_corpse(item) && item->obj_flags.value[2] < 0)
+	{
+		send_to_char("You should leave the dead where they lay...", character);
+		return 0;
+	}
 
-   return 0;
+	if (can_take_obj(character, item))
+	{
+		obj_from_room(item);
+		obj_to_char(item, character);
+		act("You get $p.", FALSE, character, item, 0, TO_CHAR);
+		act("$n gets $p.", TRUE, character, item, 0, TO_ROOM);
+		if (item->touched == 1 && ((GET_ITEM_TYPE(item) != ITEM_FOOD)) && (GET_ITEM_TYPE(item) != ITEM_DRINKCON))
+		{
+			snprintf(buf, MAX_STRING_LENGTH, "OBJ: %s gets %s (%d) at %s (%d)", GET_NAME(character),
+				item->short_description,
+				(item->item_number >= 0) ? obj_index[item->item_number].virt : -1,
+				world[character->in_room].name, world[character->in_room].number);
+			log(buf);
+		}
+		if (!IS_NPC(character))
+		{
+			item->touched = 1;
+		}
+		get_check_money(character, item);
+		return 1;
+	}
+
+	return 0;
 }
 
 

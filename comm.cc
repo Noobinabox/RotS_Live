@@ -31,6 +31,8 @@
 #include "limits.h"
 #include "script.h"
 #include "zone.h"
+#include "char_utils.h"
+#include "big_brother.h"
 
 #include <cstdlib>
 #include <ctime>
@@ -279,400 +281,477 @@ void add_prompt(char * prompt, struct char_data * ch, long flag);
 struct timeval opt_time;
 int pulse = 0;  // moved here from being a local variable
 
-void
-game_loop(SocketType s)
+void game_loop(SocketType s)
 {
-  fd_set input_set, output_set, exc_set;
-  struct timeval last_time, now, timespent, timeout, null_time;
-  char comm[MAX_INPUT_LENGTH];
-  char prompt[MAX_INPUT_LENGTH];
-  char *pptr;
-  struct descriptor_data *point, *next_point;
-  struct char_data * wait_ch, * wait_tmp;
-  int mins_since_crashsave = 0, mask;
-  int sockets_connected, sockets_playing;
-  int tmp, was_updated;
-  char disp, tmpflag;
-  char buf[100];
-  
-  null_time.tv_sec = 0;
-  null_time.tv_usec = 0;
-  
-  opt_time.tv_usec = OPT_USEC;  /* Init time values */
-  opt_time.tv_sec = 0;
-  gettimeofday(&last_time, NULL);
-  
-  maxdesc = s;
-  
-#if defined (OPEN_MAX)
-  avail_descs = OPEN_MAX - 8;
-#elif defined (USE_TABLE_SIZE)
-  {
-    int retval;
-    
-    retval = setdtablesize(64);
-    if (retval == -1)
-      log("SYSERR: unable to set table size");
-    else {
-      sprintf(buf, "%s %d\n", "dtablesize set to: ", retval);
-      log(buf);
-    }
-    avail_descs = getdtablesize() - 8;
-  }
-#else
-  avail_descs = MAX_DESCRIPTORS_AVAILABLE;
-#endif
-  
-  avail_descs = MIN(avail_descs, MAX_PLAYERS);
-  
-  mask = sigmask(SIGUSR1) | sigmask(SIGUSR2) | sigmask(SIGALRM) |
-    sigmask(SIGTERM) | sigmask(SIGURG) | sigmask(SIGXCPU) | 
-    sigmask(SIGHUP) | sigmask(SIGSEGV) | sigmask(SIGBUS);
-  
-  /* Main loop */
-  while(!circle_shutdown) {
-    /* Check what's happening out there */
-    FD_ZERO(&input_set);
-    FD_ZERO(&output_set);
-    FD_ZERO(&exc_set);
-    FD_SET(s, &input_set);
-    for(point = descriptor_list; point; point = point->next)
-      if(point->descriptor){
-	FD_SET(point->descriptor, &input_set);
-	FD_SET(point->descriptor, &exc_set);
-	FD_SET(point->descriptor, &output_set);
-      }
-    
-    /* check out the time */
-    gettimeofday(&now, NULL);
-    timespent = timediff(&now, &last_time);
-    timeout = timediff(&opt_time, &timespent);
-    last_time.tv_sec = now.tv_sec + timeout.tv_sec;
-    last_time.tv_usec = now.tv_usec + timeout.tv_usec;
-    if(last_time.tv_usec >= 1000000) {
-      last_time.tv_usec -= 1000000;
-      last_time.tv_sec++;
-    }
-    
-    sigsetmask(mask);
-    
-    if((tmp = select(maxdesc+1, &input_set, &output_set, &exc_set, 
-		     &null_time) < 0))
-      if(errno != EINTR) {
-	perror("Select poll");
-	return;
-      }
-    
-    if(select(0, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0, &timeout) < 0) {
-      if(errno != EINTR) {
-	perror("Select sleep");
-	exit(1);
-      }
-    }
-    
-    sigsetmask(0);
-    
-    /* Respond to whatever might be happening */
-    
-    /* Pnew connection? */
-    if(FD_ISSET(s, &input_set))
-      if(pnew_descriptor(s) == 0) // here was <0, had to change
-	perror("Pnew connection");
-    
-    /* kick out the freaky folks */
-    for(point = descriptor_list; point; point = next_point) { 
-      next_point = point->next;
-      if(point->descriptor) {
-	if (FD_ISSET(point->descriptor, &exc_set)) {
-	  FD_CLR(point->descriptor, &input_set);
-	  FD_CLR(point->descriptor, &output_set);
-	  close_socket(point, FALSE);
-	}
-      }
-    }
-    
-    /* take our input off of the TCP queues */
-    for(point = descriptor_list; point; point = next_point) { 
-      next_point = point->next;
-      if(point->descriptor) {
-	if(FD_ISSET(point->descriptor, &input_set)) {
-	  if(process_input(point) < 0)
-	    close_socket(point, FALSE);
-	}
-      }
-    }
-    
-    /* process_commands */
-    for(wait_ch = waiting_list; wait_ch; wait_ch = wait_tmp) {
-      if(wait_ch->delay.wait_value > 0) 
-	(wait_ch->delay.wait_value)--;
-      
-      if(wait_ch->delay.wait_value > 0) {
-	if(!IS_NPC(wait_ch) && IS_AFFECTED(wait_ch, AFF_WAITWHEEL))
-	  if(PRF_FLAGGED(wait_ch,PRF_SPINNER))
-	    write_to_descriptor(wait_ch->desc->descriptor, 
-				wait_wheel[wait_ch->delay.wait_value % 8]);
-	
-	wait_tmp = wait_ch->delay.next;
-      }
-      else if(wait_ch->delay.wait_value == 0) {
-	/* here is the block calling actual procedures */
-	complete_delay(wait_ch);
-	wait_tmp = wait_ch->delay.next;
-	
-	if(wait_ch->delay.wait_value == 0)
-	  /* look out for the similar code in raw_kill() */
-	  abort_delay(wait_ch);
-      }
-      else
-	wait_tmp = wait_ch->delay.next;
-    }
-    
-    for(point = descriptor_list; point; point = next_to_process) {
-      next_to_process = point->next;
-      if(point->descriptor) { 
-	if(point->character)
-	  tmpflag= (!IS_AFFECTED(point->character,AFF_WAITING));	   
-	else 
-	  tmpflag=1;
-	
-	if(tmpflag && (get_from_q(&point->input, comm))) {
-	  if(point->character && !IS_NPC(point->character) &&
-	     point->connected == CON_PLYNG && 
-	     point->character->specials.was_in_room != NOWHERE) {
-	    if(point->character->in_room != NOWHERE)
-	      char_from_room(point->character);
-	    
-	    char_to_room(point->character,
-			 point->character->specials.was_in_room);
-	    point->character->specials.was_in_room = NOWHERE;
-	    act("$n has returned.", 	TRUE, point->character, 0, 0, TO_ROOM);
-	    point->character->specials.timer = 0;
-	  }
-	  if(point->character && 
-	     IS_AFFECTED(point->character, AFF_WAITWHEEL)) {
-	    point->character->delay.wait_value = 1;
-	    point->character->specials.timer = 0;
-	  }
-	  if(point->character && 
-	     IS_SET(PLR_FLAGS(point->character), PLR_WRITING))
-	    string_add(point, comm);
-	  
-	  point->prompt_mode = 1;
-	  if(!point->connected)
-	    if(point->showstr_point)
-	      show_string(point, comm);
-	    else {
-	      if(!IS_SET(PLR_FLAGS(point->character),PLR_WRITING)){
-		replace_aliases(point->character, comm);
-		command_interpreter(point->character, comm, 0);
-	      }
-	    }
-	  else
-	    nanny(point, comm);
-	}
-      }
-    }
-    
-    for(point = descriptor_list; point; point = next_point) {
-      next_point = point->next;
-      if(point->descriptor) {
-	if(FD_ISSET(point->descriptor, &output_set) && *(point->output))
-	  if(process_output(point) < 0)
-	    close_socket(point, FALSE);
-	  else
-	    point->prompt_mode = 1;
-      }
-    }
-    
-    /* kick out the Phreaky Pholks II  -JE */
-    for(point = descriptor_list; point; point = next_to_process) {  
-      next_to_process = point->next;
-      if(point->descriptor) {
-	if(STATE(point) == CON_CLOSE)
-	  close_socket(point, FALSE);
-      }
-    }
-    
-    /* give the people some prompts */
-    for(point = descriptor_list; point; point = point->next)
-      if(point->prompt_mode && point->descriptor) {
-	if(point->character)
-	  tmp=(IS_SET(PLR_FLAGS(point->character),PLR_WRITING));
-	else tmp = !(point->connected); 
-	if(tmp)
-	  write_to_descriptor(point->descriptor, "] ");
-	else if(!point->connected) {
-	  if(point->showstr_point)
-	    write_to_descriptor(point->descriptor, 
-				"*** Press return to continue, q to quit ***");
-	  else { /*if point->showstr_point */
-	    struct char_data *opponent;
-	    struct char_data *tank;
-	    
-	    pptr = prompt;
-	    
-	    if(GET_INVIS_LEV(point->character)) {
-	      sprintf(prompt, "i%d", GET_INVIS_LEV(point->character));
-	      disp = FALSE;
-	    }  
-	    else
-	      prompt[0] = 0;
-	    
-	    if(IS_RIDING(point->character))
-	      sprintf(prompt, "%s R", prompt);
-	    
-	    if(((GET_HIT(point->character)<GET_MAX_HIT(point->character)) ||
-		point->character->specials.fighting) &&
-	       PRF_FLAGGED(point->character, PRF_PROMPT))
-	      sprintf(prompt,"%s HP:",prompt);
-	    
-	    opponent=point->character->specials.fighting;
-	    
-	    add_prompt(prompt,point->character,
-		       PRF_FLAGGED(point->character, PRF_DISPTEXT) ? 
-		       PRF_DISPTEXT : 
-		       !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0 :
-		       PROMPT_ALL);
-	    
-	    if(opponent && IS_MENTAL(opponent)) {
-	      sprintf(prompt,"%s Mind:",prompt);
-	      add_prompt(prompt,point->character,PROMPT_STAT);
-	    }
-	    
-	    if(IS_RIDING(point->character))
-	      add_prompt(prompt, point->character->mount_data.mount,
-			 PROMPT_MOVE);
-	    
-	    if(point->character->specials.position==POSITION_FIGHTING) {
-	      if(opponent) {
-		if(opponent->specials.fighting!=point->character) {
-		  tank=opponent->specials.fighting;
-		  if(tank) {
-		    sprintf(prompt, "%s, %s:", 
-			    prompt,
-			    PERS(tank, point->character, FALSE, FALSE));
-		    add_prompt(prompt,tank,
-			       (IS_MENTAL(opponent))?PROMPT_STAT:PROMPT_HIT);
-		  }
-		}
-		sprintf(prompt, "%s, %s:",
-			prompt,
-			PERS(opponent, point->character, FALSE, FALSE));
-		
-		add_prompt(prompt,opponent,(IS_MENTAL(point->character)) ?
-			   PROMPT_STAT : (IS_SHADOW(opponent) ? PROMPT_STAT : 
-					  PROMPT_HIT));
-	      }
-	    }
-	    
-	    // Check for a blank space in the first position or the last
-	    if(prompt[0] == ' ')
-	      pptr++;
-	    if(prompt[strlen(prompt) - 1] == ' ')
-	      prompt[strlen(prompt) - 1] = '\0';
-	    
-	    disp=TRUE;
-	    if(point->character->specials.position==POSITION_SHAPING)
-	      strcat(prompt, "]");
-	    else
-	      strcat(prompt, ">");
-	    
-	    if(point->character)
-	      tmpflag = !IS_AFFECTED(point->character, AFF_WAITWHEEL);
-	    else tmpflag=1;
-	    if(tmpflag)
-	      write_to_descriptor(point->descriptor, pptr);
-	  }
-	} 
-	point->prompt_mode = 0;
-      }
-    
-    
-    /* handle heartbeat stuff */
-    /* Note: pulse now changes every 1/4 sec  */
-    
-    pulse++;
-    was_updated = 0;
-    
-    if(!((pulse+3) % PULSE_ZONE))	zone_update();
-    if(!((pulse+9) % PULSE_MOBILE)){
-      mobile_activity();
-      was_updated = 1;
-    }
-    perform_violence(pulse%(PULSE_VIOLENCE*2));
-    /* parry is restored in 2 combat (PULSE_VIOLENCE) rounds */
-    
-    if(!((pulse % (SECS_PER_MUD_HOUR * 4)))) {
-      weather_and_time(1);
-      point_update(); // putting affect_total call in point_update.
-      stat_update();
-      was_updated = 1;
-    }
-    if(!(pulse % (PULSE_FAST_UPDATE)) /*&& !was_updated*/){
-      //now increasing hp/mp/mana/spirit fast in fast_update.. 
-      fast_update();
-      affect_update();
-    }
-    if(!(pulse % (60 * 4))) /* one minute */
-      if(++mins_since_crashsave >= autosave_time) {
-	mins_since_crashsave = 0;
-	Crash_save_all();
-      }
-    
-    if(!(pulse % 1200)) {
-      sockets_connected = sockets_playing = 0;
-      
-      for(point = descriptor_list; point; point = next_point) {
-	next_point = point->next;
-	if(point->descriptor) {
-	  sockets_connected++;
-	  if(!point->connected)
-	    sockets_playing++;
-	}
-      }
-      
-      sprintf(buf, "nusage: %-3d sockets connected, %-3d sockets playing",
-	      sockets_connected, sockets_playing);
-      log(buf);
-      
-#ifdef RUSAGE
-      {
-	struct rusage rusagedata;
-	
-	getrusage(0, &rusagedata);
-	sprintf(buf, "rusage: %d %d %d %d %d %d %d",
-		rusagedata.ru_utime.tv_sec,
-		rusagedata.ru_stime.tv_sec,
-		rusagedata.ru_maxrss,
-		rusagedata.ru_ixrss,
-		rusagedata.ru_ismrss,
-		rusagedata.ru_idrss,
-		rusagedata.ru_isrss);
-	log(buf);
-      }
-#endif
-      
-    }
-    
-    if(pulse >= 2400)
-      pulse = 0;
+	fd_set input_set, output_set, exc_set;
+	struct timeval last_time, now, timespent, timeout, null_time;
+	char comm[MAX_INPUT_LENGTH];
+	char prompt[MAX_INPUT_LENGTH];
+	char *pptr;
+	struct descriptor_data *point, *next_point;
+	struct char_data * wait_ch, *wait_tmp;
+	int mins_since_crashsave = 0, mask;
+	int sockets_connected, sockets_playing;
+	int tmp, was_updated;
+	char disp, tmpflag;
+	char buf[100];
 
-    tics++;        /* tics since last checkpoint signal */
- 
-   
-    // Save chars before a shutdown or reboot.  --S
-    if(circle_shutdown || circle_reboot) {
-      struct char_data *ch;
-      
-      for(ch = character_list; ch; ch = ch->next) {
-	if(!IS_NPC(ch) && ch->desc) {
-	  save_char(ch, NOWHERE,0);
-	  Crash_crashsave(ch);
+	null_time.tv_sec = 0;
+	null_time.tv_usec = 0;
+
+	opt_time.tv_usec = OPT_USEC;  /* Init time values */
+	opt_time.tv_sec = 0;
+	gettimeofday(&last_time, NULL);
+
+	maxdesc = s;
+
+#if defined (OPEN_MAX)
+	avail_descs = OPEN_MAX - 8;
+#elif defined (USE_TABLE_SIZE)
+	{
+		int retval;
+
+		retval = setdtablesize(64);
+		if (retval == -1)
+			log("SYSERR: unable to set table size");
+		else {
+			sprintf(buf, "%s %d\n", "dtablesize set to: ", retval);
+			log(buf);
+		}
+		avail_descs = getdtablesize() - 8;
 	}
-      }
-    }
-  }
+#else
+	avail_descs = MAX_DESCRIPTORS_AVAILABLE;
+#endif
+
+	avail_descs = std::min(avail_descs, MAX_PLAYERS);
+
+	mask = sigmask(SIGUSR1) | sigmask(SIGUSR2) | sigmask(SIGALRM) |
+		sigmask(SIGTERM) | sigmask(SIGURG) | sigmask(SIGXCPU) |
+		sigmask(SIGHUP) | sigmask(SIGSEGV) | sigmask(SIGBUS);
+
+	/* Main loop */
+	while (!circle_shutdown) {
+		/* Check what's happening out there */
+		FD_ZERO(&input_set);
+		FD_ZERO(&output_set);
+		FD_ZERO(&exc_set);
+		FD_SET(s, &input_set);
+		for (point = descriptor_list; point; point = point->next)
+			if (point->descriptor) {
+				FD_SET(point->descriptor, &input_set);
+				FD_SET(point->descriptor, &exc_set);
+				FD_SET(point->descriptor, &output_set);
+			}
+
+		/* check out the time */
+		gettimeofday(&now, NULL);
+		timespent = timediff(&now, &last_time);
+		timeout = timediff(&opt_time, &timespent);
+		last_time.tv_sec = now.tv_sec + timeout.tv_sec;
+		last_time.tv_usec = now.tv_usec + timeout.tv_usec;
+
+		if (last_time.tv_usec >= 1000000)
+		{
+			last_time.tv_usec -= 1000000;
+			last_time.tv_sec++;
+		}
+
+		sigsetmask(mask);
+
+		if ((tmp = select(maxdesc + 1, &input_set, &output_set, &exc_set, &null_time) < 0))
+		{
+			if (errno != EINTR)
+			{
+				perror("Select poll");
+				return;
+			}
+		}
+
+		if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &timeout) < 0)
+		{
+			if (errno != EINTR)
+			{
+				perror("Select sleep");
+				exit(1);
+			}
+		}
+
+		sigsetmask(0);
+
+		/* Respond to whatever might be happening */
+
+		/* Pnew connection? */
+		if (FD_ISSET(s, &input_set))
+		{
+			if (pnew_descriptor(s) == 0) // here was <0, had to change
+			{
+				perror("Pnew connection");
+			}
+		}
+
+		/* kick out the freaky folks */
+		for (point = descriptor_list; point; point = next_point) 
+		{
+			next_point = point->next;
+			if (point->descriptor) 
+			{
+				if (FD_ISSET(point->descriptor, &exc_set)) 
+				{
+					FD_CLR(point->descriptor, &input_set);
+					FD_CLR(point->descriptor, &output_set);
+					close_socket(point, FALSE);
+				}
+			}
+		}
+
+		/* take our input off of the TCP queues */
+		for (point = descriptor_list; point; point = next_point) 
+		{
+			next_point = point->next;
+			if (point->descriptor) 
+			{
+				if (FD_ISSET(point->descriptor, &input_set)) 
+				{
+					if (process_input(point) < 0)
+					{
+						close_socket(point, FALSE);
+					}
+				}
+			}
+		}
+
+		/* process_commands */
+		for (wait_ch = waiting_list; wait_ch; wait_ch = wait_tmp) 
+		{
+			if (wait_ch->delay.wait_value > 0)
+			{
+				(wait_ch->delay.wait_value)--;
+			}
+
+			if (wait_ch->delay.wait_value > 0) 
+			{
+				if (!IS_NPC(wait_ch) && IS_AFFECTED(wait_ch, AFF_WAITWHEEL))
+				{
+					if (PRF_FLAGGED(wait_ch, PRF_SPINNER))
+					{
+						write_to_descriptor(wait_ch->desc->descriptor, wait_wheel[wait_ch->delay.wait_value % 8]);
+					}
+				}
+
+				wait_tmp = wait_ch->delay.next;
+			}
+			else if (wait_ch->delay.wait_value == 0) 
+			{
+				/* here is the block calling actual procedures */
+				complete_delay(wait_ch);
+				wait_tmp = wait_ch->delay.next;
+
+				if (wait_ch->delay.wait_value == 0)
+					/* look out for the similar code in raw_kill() */
+					abort_delay(wait_ch);
+			}
+			else
+			{
+				wait_tmp = wait_ch->delay.next;
+			}
+		}
+
+		for (point = descriptor_list; point; point = next_to_process) 
+		{
+			next_to_process = point->next;
+			if (point->descriptor) 
+			{
+				if (point->character)
+					tmpflag = (!IS_AFFECTED(point->character, AFF_WAITING));
+				else
+					tmpflag = 1;
+
+				if (tmpflag && (get_from_q(&point->input, comm))) 
+				{
+					if (point->character && !IS_NPC(point->character) &&
+						point->connected == CON_PLYNG &&
+						point->character->specials.was_in_room != NOWHERE) 
+					{
+						if (point->character->in_room != NOWHERE)
+						{
+							char_from_room(point->character);
+						}
+
+						char_to_room(point->character, point->character->specials.was_in_room);
+						point->character->specials.was_in_room = NOWHERE;
+						act("$n has returned.", TRUE, point->character, 0, 0, TO_ROOM);
+						point->character->specials.timer = 0;
+					}
+					if (point->character && IS_AFFECTED(point->character, AFF_WAITWHEEL)) 
+					{
+						point->character->delay.wait_value = 1;
+						point->character->specials.timer = 0;
+					}
+					if (point->character && IS_SET(PLR_FLAGS(point->character), PLR_WRITING))
+					{
+						string_add(point, comm);
+					}
+
+					point->prompt_mode = 1;
+					if (!point->connected)
+					{
+						if (point->showstr_point)
+						{
+							show_string(point, comm);
+						}
+						else
+						{
+							if (!IS_SET(PLR_FLAGS(point->character), PLR_WRITING))
+							{
+								replace_aliases(point->character, comm);
+								command_interpreter(point->character, comm, 0);
+							}
+						}
+					}
+					else
+					{
+						nanny(point, comm);
+					}
+				}
+			}
+		}
+
+		for (point = descriptor_list; point; point = next_point) 
+		{
+			next_point = point->next;
+			if (point->descriptor) 
+			{
+				if (FD_ISSET(point->descriptor, &output_set) && *(point->output))
+				{
+					if (process_output(point) < 0)
+					{
+						close_socket(point, FALSE);
+					}
+					else
+					{
+						point->prompt_mode = 1;
+					}
+				}
+			}
+		}
+
+		/* kick out the Phreaky Pholks II  -JE */
+		for (point = descriptor_list; point; point = next_to_process) 
+		{
+			next_to_process = point->next;
+			if (point->descriptor) 
+			{
+				if (STATE(point) == CON_CLOSE)
+				{
+					close_socket(point, FALSE);
+				}
+			}
+		}
+
+		/* give the people some prompts */
+		for (point = descriptor_list; point; point = point->next)
+			if (point->prompt_mode && point->descriptor) 
+			{
+				if (point->character)
+				{
+					tmp = (IS_SET(PLR_FLAGS(point->character), PLR_WRITING));
+				}
+				else
+				{
+					tmp = !(point->connected);
+				}
+				if (tmp)
+				{
+					write_to_descriptor(point->descriptor, "] ");
+				}
+				else if (!point->connected) 
+				{
+					if (point->showstr_point)
+						write_to_descriptor(point->descriptor,
+							"*** Press return to continue, q to quit ***");
+					else { /*if point->showstr_point */
+						struct char_data *opponent;
+						struct char_data *tank;
+
+						pptr = prompt;
+
+						if (GET_INVIS_LEV(point->character)) {
+							sprintf(prompt, "i%d", GET_INVIS_LEV(point->character));
+							disp = FALSE;
+						}
+						else
+							prompt[0] = 0;
+
+						if (IS_RIDING(point->character))
+							sprintf(prompt, "%s R", prompt);
+
+						if (((GET_HIT(point->character) < GET_MAX_HIT(point->character)) ||
+							point->character->specials.fighting) &&
+							PRF_FLAGGED(point->character, PRF_PROMPT))
+							sprintf(prompt, "%s HP:", prompt);
+
+						opponent = point->character->specials.fighting;
+
+						add_prompt(prompt, point->character,
+							PRF_FLAGGED(point->character, PRF_DISPTEXT) ?
+							PRF_DISPTEXT :
+							!PRF_FLAGGED(point->character, PRF_PROMPT) ? 0 :
+							PROMPT_ALL);
+
+						if (opponent && IS_MENTAL(opponent)) {
+							sprintf(prompt, "%s Mind:", prompt);
+							add_prompt(prompt, point->character, PROMPT_STAT);
+						}
+
+						if (IS_RIDING(point->character))
+							add_prompt(prompt, point->character->mount_data.mount,
+								PROMPT_MOVE);
+
+						if (point->character->specials.position == POSITION_FIGHTING) {
+							if (opponent) {
+								if (opponent->specials.fighting != point->character) {
+									tank = opponent->specials.fighting;
+									if (tank) {
+										sprintf(prompt, "%s, %s:",
+											prompt,
+											PERS(tank, point->character, FALSE, FALSE));
+										add_prompt(prompt, tank,
+											(IS_MENTAL(opponent)) ? PROMPT_STAT : PROMPT_HIT);
+									}
+								}
+								sprintf(prompt, "%s, %s:",
+									prompt,
+									PERS(opponent, point->character, FALSE, FALSE));
+
+								add_prompt(prompt, opponent, (IS_MENTAL(point->character)) ?
+									PROMPT_STAT : (IS_SHADOW(opponent) ? PROMPT_STAT :
+										PROMPT_HIT));
+							}
+						}
+
+						// Check for a blank space in the first position or the last
+						if (prompt[0] == ' ')
+							pptr++;
+						if (prompt[strlen(prompt) - 1] == ' ')
+							prompt[strlen(prompt) - 1] = '\0';
+
+						disp = TRUE;
+						if (point->character->specials.position == POSITION_SHAPING)
+							strcat(prompt, "]");
+						else
+							strcat(prompt, ">");
+
+						if (point->character)
+							tmpflag = !IS_AFFECTED(point->character, AFF_WAITWHEEL);
+						else tmpflag = 1;
+						if (tmpflag)
+							write_to_descriptor(point->descriptor, pptr);
+					}
+				}
+				point->prompt_mode = 0;
+			}
+
+
+		/* handle heartbeat stuff */
+		/* Note: pulse now changes every 1/4 sec  */
+
+		pulse++;
+		was_updated = 0;
+
+		if (!((pulse + 3) % PULSE_ZONE))
+		{
+			zone_update();
+		}
+		if (!((pulse + 9) % PULSE_MOBILE))
+		{
+			mobile_activity();
+			was_updated = 1;
+		}
+		perform_violence(pulse % (PULSE_VIOLENCE * 2));
+		/* parry is restored in 2 combat (PULSE_VIOLENCE) rounds */
+
+		if (!((pulse % (SECS_PER_MUD_HOUR * 4))))
+		{
+			weather_and_time(1);
+			point_update(); // putting affect_total call in point_update.
+			stat_update();
+			was_updated = 1;
+		}
+		if (!(pulse % (PULSE_FAST_UPDATE)) /*&& !was_updated*/)
+		{
+			//now increasing hp/mp/mana/spirit fast in fast_update.. 
+			fast_update();
+			affect_update();
+		}
+
+		if (!(pulse % (60 * 4))) /* one minute */
+		{
+			if (++mins_since_crashsave >= autosave_time)
+			{
+				mins_since_crashsave = 0;
+				Crash_save_all();
+			}
+		}
+
+		if (!(pulse % 1200))
+		{
+			sockets_connected = sockets_playing = 0;
+
+			for (point = descriptor_list; point; point = next_point)
+			{
+				next_point = point->next;
+				if (point->descriptor)
+				{
+					sockets_connected++;
+					if (!point->connected)
+					{
+						sockets_playing++;
+					}
+				}
+			}
+
+			sprintf(buf, "nusage: %-3d sockets connected, %-3d sockets playing",
+				sockets_connected, sockets_playing);
+			log(buf);
+
+#ifdef RUSAGE
+			{
+				struct rusage rusagedata;
+
+				getrusage(0, &rusagedata);
+				sprintf(buf, "rusage: %d %d %d %d %d %d %d",
+					rusagedata.ru_utime.tv_sec,
+					rusagedata.ru_stime.tv_sec,
+					rusagedata.ru_maxrss,
+					rusagedata.ru_ixrss,
+					rusagedata.ru_ismrss,
+					rusagedata.ru_idrss,
+					rusagedata.ru_isrss);
+				log(buf);
+			}
+#endif
+
+		}
+
+		if (pulse >= 2400)
+			pulse = 0;
+
+		tics++;        /* tics since last checkpoint signal */
+
+
+		// Save chars before a shutdown or reboot.  --S
+		if (circle_shutdown || circle_reboot) {
+			struct char_data *ch;
+
+			for (ch = character_list; ch; ch = ch->next) {
+				if (!IS_NPC(ch) && ch->desc) {
+					save_char(ch, NOWHERE, 0);
+					Crash_crashsave(ch);
+				}
+			}
+		}
+	}
 }
 
 
@@ -1318,132 +1397,132 @@ char process_input_buffer[MAX_INPUT_LENGTH + 60];
 int
 process_input(struct descriptor_data *t)
 {
-  int sofar, thisround, begin, squelch, i, k, flag, failed_subst = 0;
-  char *tmp = process_input_tmp;
-  char *buffer = process_input_buffer;
-  
-  if(!t->descriptor)
-    return(0);
+	int sofar, thisround, begin, squelch, i, k, flag, failed_subst = 0;
+	char *tmp = process_input_tmp;
+	char *buffer = process_input_buffer;
 
-  sofar = flag = 0;
-  begin = strlen(t->buf);
+	if (!t->descriptor)
+		return(0);
 
-  /* Read in some stuff */
-  do {
-    thisround = read(t->descriptor, t->buf + begin + sofar, 
-		     MAX_STRING_LENGTH - (begin + sofar) - 1);
-    if(thisround > 0) 
-      sofar += thisround;
-    else{
-      if(thisround < 0)
-	if(errno != EWOULDBLOCK) {
-	  perror("Read1 - ERROR");
-	  return(-1);
-	} 
-	else
-	  break;
-      else {
-	log("EOF encountered on socket read.");
-	return(-1);
-      }
-    }
-  } while(!ISNEWL(*(t->buf + begin + sofar - 1)));
+	sofar = flag = 0;
+	begin = strlen(t->buf);
 
-  if(t->character)
-    t->character->specials.timer = 0;
-   
-  *(t->buf + begin + sofar) = 0;
-  
-  /* if no pnewline is contained in input, return without proc'ing */
-  for(i = begin; !ISNEWL(*(t->buf + i)); i++)
-    if(!*(t->buf + i))
-      return(0);
+	/* Read in some stuff */
+	do {
+		thisround = read(t->descriptor, t->buf + begin + sofar,
+			MAX_STRING_LENGTH - (begin + sofar) - 1);
+		if (thisround > 0)
+			sofar += thisround;
+		else {
+			if (thisround < 0)
+				if (errno != EWOULDBLOCK) {
+					perror("Read1 - ERROR");
+					return(-1);
+				}
+				else
+					break;
+			else {
+				log("EOF encountered on socket read.");
+				return(-1);
+			}
+		}
+	} while (!ISNEWL(*(t->buf + begin + sofar - 1)));
 
-  /* input contains 1 or more pnewlines; process the stuff */
-  for(i = 0, k = 0; *(t->buf + i); ) {
-    if(!ISNEWL(*(t->buf + i)) && !(flag = (k >= (MAX_INPUT_LENGTH - 2))))
-      /* is this a backspace? */
-      if((*(t->buf + i) == '\b') || ((unsigned char) *(t->buf + i) == 177))
-	if(k) {  /* more than one char ? */
-	  if(*(tmp + --k) == '$')
-	    k--;
-	  i++;
-	} 
-	else
-	  i++;  /* no or just one char.. Skip backsp */
-      else if(isascii(unaccent(*(t->buf + i))) && 
-	      isprint(unaccent(*(t->buf + i)))) {
-	/* trans char, double for '$' (printf)	*/
-	if((*(tmp + k) = *(t->buf + i)) == '$')
-	  *(tmp + ++k) = '$';
-	k++;
-	i++;
-      } 
-      else
-	i++;
-    else {  /* the char pointed to IS a newline, or we've overflowed */
-      *(tmp + k) = 0;
-      /* is this a blank line? are they casting? end the cast if so */
-      if((*tmp == 0) && (STATE(t)==CON_PLYNG) && 
-	 IS_AFFECTED(t->character, AFF_WAITWHEEL))
-	break_spell(t->character);
+	if (t->character)
+		t->character->specials.timer = 0;
 
-      /* they entered a command, no? so we update their last_input_time */
-      t->last_input_time = time(0);
+	*(t->buf + begin + sofar) = 0;
 
-      /* if they input !, then we repeat the last input */
-      if(*tmp == '!')
-	strcpy(tmp, t->last_input);
-      else if (*tmp == '^') {
-	if(!(failed_subst = perform_subst(t, t->last_input, tmp)))
-	  strcpy(t->last_input, tmp);
-      } 
-      else if(*tmp > ' ')
-	strcpy(t->last_input, tmp);
-      
-      // COMMAND LOG
-      if(iCommands == 200) {
-	fclose(fpCommand);
-	fpCommand = fopen("last_cmds","w");
-	iCommands = 0;
-      }
-      
-      if((t->connected == CON_PLYNG)&&(t->character))
-	fprintf(fpCommand,"%3d %-16s: %s\n",t->descriptor,GET_NAME(t->character),tmp);
-      
-      iCommands++;
-      fflush(fpCommand);
-      
-      if(!failed_subst)
-	write_to_q(tmp, &t->input);
-      
-      if(t->snoop.snoop_by) {
-	SEND_TO_Q("% ", t->snoop.snoop_by->desc);
-	SEND_TO_Q(tmp, t->snoop.snoop_by->desc);
-	SEND_TO_Q("\n\r", t->snoop.snoop_by->desc);
-      }
-      
-      if(flag) {
-	sprintf(buffer, "Line too long.  Truncated to:\n\r%s\n\r", tmp);
-	if(write_to_descriptor(t->descriptor, buffer) < 0)
-	  return(-1);
-	
-	/* skip the rest of the line */
-	for(; !ISNEWL(*(t->buf + i)); i++);
-      }
-      
-      /* find end of entry */
-      for( ; ISNEWL(*(t->buf + i)); i++);
-      
-      /* squelch the entry from the buffer */
-      for(squelch = 0; ; squelch++)
-	if((*(t->buf + squelch) = *(t->buf + i + squelch)) == '\0')
-	  break;
-      k = 0;
-      i = 0;
-    }
-  }
-  return 1;
+	/* if no pnewline is contained in input, return without proc'ing */
+	for (i = begin; !ISNEWL(*(t->buf + i)); i++)
+		if (!*(t->buf + i))
+			return(0);
+
+	/* input contains 1 or more pnewlines; process the stuff */
+	for (i = 0, k = 0; *(t->buf + i); ) {
+		if (!ISNEWL(*(t->buf + i)) && !(flag = (k >= (MAX_INPUT_LENGTH - 2))))
+			/* is this a backspace? */
+			if ((*(t->buf + i) == '\b') || ((unsigned char) *(t->buf + i) == 177))
+				if (k) {  /* more than one char ? */
+					if (*(tmp + --k) == '$')
+						k--;
+					i++;
+				}
+				else
+					i++;  /* no or just one char.. Skip backsp */
+			else if (isascii(unaccent(*(t->buf + i))) &&
+				isprint(unaccent(*(t->buf + i)))) {
+				/* trans char, double for '$' (printf)	*/
+				if ((*(tmp + k) = *(t->buf + i)) == '$')
+					*(tmp + ++k) = '$';
+				k++;
+				i++;
+			}
+			else
+				i++;
+		else {  /* the char pointed to IS a newline, or we've overflowed */
+			*(tmp + k) = 0;
+			/* is this a blank line? are they casting? end the cast if so */
+			if ((*tmp == 0) && (STATE(t) == CON_PLYNG) &&
+				IS_AFFECTED(t->character, AFF_WAITWHEEL))
+				break_spell(t->character);
+
+			/* they entered a command, no? so we update their last_input_time */
+			t->last_input_time = time(0);
+
+			/* if they input !, then we repeat the last input */
+			if (*tmp == '!')
+				strcpy(tmp, t->last_input);
+			else if (*tmp == '^') {
+				if (!(failed_subst = perform_subst(t, t->last_input, tmp)))
+					strcpy(t->last_input, tmp);
+			}
+			else if (*tmp > ' ')
+				strcpy(t->last_input, tmp);
+
+			// COMMAND LOG
+			if (iCommands == 200) {
+				fclose(fpCommand);
+				fpCommand = fopen("last_cmds", "w");
+				iCommands = 0;
+			}
+
+			if ((t->connected == CON_PLYNG) && (t->character))
+				fprintf(fpCommand, "%3d %-16s: %s\n", t->descriptor, GET_NAME(t->character), tmp);
+
+			iCommands++;
+			fflush(fpCommand);
+
+			if (!failed_subst)
+				write_to_q(tmp, &t->input);
+
+			if (t->snoop.snoop_by) {
+				SEND_TO_Q("% ", t->snoop.snoop_by->desc);
+				SEND_TO_Q(tmp, t->snoop.snoop_by->desc);
+				SEND_TO_Q("\n\r", t->snoop.snoop_by->desc);
+			}
+
+			if (flag) {
+				sprintf(buffer, "Line too long.  Truncated to:\n\r%s\n\r", tmp);
+				if (write_to_descriptor(t->descriptor, buffer) < 0)
+					return(-1);
+
+				/* skip the rest of the line */
+				for (; !ISNEWL(*(t->buf + i)); i++);
+			}
+
+			/* find end of entry */
+			for (; ISNEWL(*(t->buf + i)); i++);
+
+			/* squelch the entry from the buffer */
+			for (squelch = 0; ; squelch++)
+				if ((*(t->buf + squelch) = *(t->buf + i + squelch)) == '\0')
+					break;
+			k = 0;
+			i = 0;
+		}
+	}
+	return 1;
 }
 
 
@@ -1480,165 +1559,191 @@ int	perform_subst(struct descriptor_data *t, char *orig, char *subst)
 
 
 
-void	close_sockets(SocketType s)
+void close_sockets(SocketType s)
 {
-   log("Closing all sockets.");
-   while (descriptor_list)
-     close_socket(descriptor_list);
-   
-   close(s);
+	log("Closing all sockets.");
+	while (descriptor_list)
+	{
+		close_socket(descriptor_list);
+	}
+
+	close(s);
 }
 
 
 
 
-void	close_socket(struct descriptor_data *d, int drop_all)
+void close_socket(descriptor_data* conn_descriptor, int drop_all)
 {
-  struct descriptor_data *tmp;
-  char	buf[100];
-  
-  if(d->descriptor) {
-    sprintf(buf,"Closing socket %d.",d->descriptor);
-    mudlog(buf, NRM, LEVEL_IMPL, TRUE);
-    
-    close(d->descriptor);
-    d->descriptor = 0;
-    d->desc_num = -1;
-  }
+	descriptor_data* tmp;
+	char buf[100];
 
-  flush_queues(d);
-  if (d->descriptor == maxdesc)
-    --maxdesc;
-  /* Forget snooping */
-  if (d->snoop.snooping)
-    d->snoop.snooping->desc->snoop.snoop_by = 0;
-  if (d->snoop.snoop_by) {
-    send_to_char("Your victim is no longer among us.\n\r", d->snoop.snoop_by);
-    d->snoop.snoop_by->desc->snoop.snooping = 0;
-  }
-  
-  if (d->character)
-    if (d->connected == CON_PLYNG) {
-      save_char(d->character, NOWHERE,0);
-      act("$n has lost $s link.", TRUE, d->character, 0, 0, TO_ROOM);
-      sprintf(buf, "Closing link to: %s [%s].", GET_NAME(d->character), d->host);
-      mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(d->character)), TRUE);
-      //	 d->character->desc = 0;
-      d->connected = CON_LINKLS;
-    }
-    else {
-      if(d->character->player.name)
-	sprintf(buf, "Losing player: %s [%s].", GET_NAME(d->character), d->host);
-      else
-	sprintf(buf,"Losing Unnamed player [%s].", d->host);
-      mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(d->character)), TRUE);
-      free_char(d->character);
-      drop_all = 1;
-    }
-  else{
-    mudlog("Losing descriptor without char.", NRM, LEVEL_IMMORT, TRUE);
-    drop_all = 1;
-  }
-  
-  if((d->connected != CON_LINKLS) || drop_all){
-    //    mudlog("Detaching descriptor.", NRM, LEVEL_IMPL, TRUE);     
-    if (next_to_process == d)  /* to avoid crashing the process loop */
-      next_to_process = next_to_process->next;
-    if (d == descriptor_list) /* this is the head of the list */
-      descriptor_list = descriptor_list->next;
-    else {  /* This is somewhere inside the list */
-      /* Locate the previous element */
-      for (tmp = descriptor_list; (tmp->next != d) && tmp; tmp = tmp->next)
-	;
-      if(tmp)
-	tmp->next = d->next;
-    }
-    RELEASE(d->showstr_head);
-    RELEASE(d);
-  }
-  
+	// Alert Big Brother that the character is leaving.
+	char_data* character = conn_descriptor->character;
+	if (character && utils::is_pc(*character))
+	{
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		bb_instance.on_character_disconnected(character);
+	}
+
+	if (conn_descriptor->descriptor) 
+	{
+		sprintf(buf, "Closing socket %d.", conn_descriptor->descriptor);
+		mudlog(buf, NRM, LEVEL_IMPL, TRUE);
+
+		close(conn_descriptor->descriptor);
+		conn_descriptor->descriptor = 0;
+		conn_descriptor->desc_num = -1;
+	}
+
+	flush_queues(conn_descriptor);
+	if (conn_descriptor->descriptor == maxdesc)
+	{
+		--maxdesc;
+	}
+	
+	/* Forget snooping */
+	if (conn_descriptor->snoop.snooping)
+	{
+		conn_descriptor->snoop.snooping->desc->snoop.snoop_by = 0;
+	}
+	if (conn_descriptor->snoop.snoop_by) 
+	{
+		send_to_char("Your victim is no longer among us.\n\r", conn_descriptor->snoop.snoop_by);
+		conn_descriptor->snoop.snoop_by->desc->snoop.snooping = 0;
+	}
+
+	if (conn_descriptor->character)
+	{
+		if (conn_descriptor->connected == CON_PLYNG)
+		{
+			save_char(conn_descriptor->character, NOWHERE, 0);
+			act("$n has lost $s link.", TRUE, conn_descriptor->character, 0, 0, TO_ROOM);
+			sprintf(buf, "Closing link to: %s [%s].", GET_NAME(conn_descriptor->character), conn_descriptor->host);
+			mudlog(buf, NRM, std::max(sh_int(LEVEL_IMMORT), GET_INVIS_LEV(conn_descriptor->character)), TRUE);
+			//	 d->character->desc = 0;
+			conn_descriptor->connected = CON_LINKLS;
+		}
+		else
+		{
+			if (conn_descriptor->character->player.name)
+			{
+				sprintf(buf, "Losing player: %s [%s].", GET_NAME(conn_descriptor->character), conn_descriptor->host);
+			}
+			else
+			{
+				sprintf(buf, "Losing Unnamed player [%s].", conn_descriptor->host);
+			}
+			mudlog(buf, NRM, std::max(sh_int(LEVEL_IMMORT), GET_INVIS_LEV(conn_descriptor->character)), TRUE);
+			free_char(conn_descriptor->character);
+			drop_all = 1;
+		}
+	}
+	else 
+	{
+		mudlog("Losing descriptor without char.", NRM, LEVEL_IMMORT, TRUE);
+		drop_all = 1;
+	}
+
+	if ((conn_descriptor->connected != CON_LINKLS) || drop_all) 
+	{
+		//    mudlog("Detaching descriptor.", NRM, LEVEL_IMPL, TRUE);     
+		if (next_to_process == conn_descriptor)  /* to avoid crashing the process loop */
+			next_to_process = next_to_process->next;
+		if (conn_descriptor == descriptor_list) /* this is the head of the list */
+			descriptor_list = descriptor_list->next;
+		else 
+		{  /* This is somewhere inside the list */
+		  /* Locate the previous element */
+			for (tmp = descriptor_list; (tmp->next != conn_descriptor) && tmp; tmp = tmp->next)
+				;
+			if (tmp)
+			{
+				tmp->next = conn_descriptor->next;
+			}
+		}
+		RELEASE(conn_descriptor->showstr_head);
+		RELEASE(conn_descriptor);
+	}
 }
 
 
 
 void nonblock(SocketType s)
 {
-   unsigned long flags = 0;
-   flags = fcntl(s, F_GETFL,flags);
-   flags |= O_NONBLOCK;
-   if (fcntl(s, F_SETFL, flags) < 0) {
-      perror("Fatal error executing nonblock (comm.c)");
-      exit(1);
-   }
+	unsigned long flags = 0;
+	flags = fcntl(s, F_GETFL, flags);
+	flags |= O_NONBLOCK;
+	if (fcntl(s, F_SETFL, flags) < 0) 
+	{
+		perror("Fatal error executing nonblock (comm.c)");
+		exit(1);
+	}
 }
 
 
 /* ****************************************************************
 *	Public routines for system-to-player-communication	  *
 *******************************************************************/
-
-
-
-void
-send_to_char(const char *messg, struct char_data *ch)
+void send_to_char(const char* message, char_data* character)
 {
-  if (ch->desc && messg)
-    SEND_TO_Q(messg, ch->desc);
+	if (character->desc && message)
+	{
+		SEND_TO_Q(message, character->desc);
+	}
 }
 
-
-
-void
-vsend_to_char(struct char_data *ch, char *format, ...)
+void vsend_to_char(char_data* character, char* format, ...)
 {
 #define BUFSIZE 2048
-  char buf[BUFSIZE];
-  va_list ap;
+	char buf[BUFSIZE];
+	va_list ap;
 
-  va_start(ap, format);
-  vsnprintf(buf, BUFSIZE - 1, format, ap);
-  buf[BUFSIZE - 1] = '\0';
-  va_end(ap);
+	va_start(ap, format);
+	vsnprintf(buf, BUFSIZE - 1, format, ap);
+	buf[BUFSIZE - 1] = '\0';
+	va_end(ap);
 
-  send_to_char(buf, ch);
+	send_to_char(buf, character);
 }
 
 
 
-void
-send_to_all(char *messg)
+void send_to_all(char* message)
 {
-  struct descriptor_data *i;
-  
-  if (messg)
-    for (i = descriptor_list; i; i = i->next)
-      if (!i->connected)
-	SEND_TO_Q(messg, i);
+	if (message)
+	{
+		for (descriptor_data* i = descriptor_list; i; i = i->next)
+		{
+			if (i->connected == CON_PLYNG)
+			{
+				SEND_TO_Q(message, i);
+			}
+		}
+	}
 }
 
 
 
-void
-send_to_outdoor(char *messg, int mode)
+void send_to_outdoor(char *messg, int mode)
 {
-  struct descriptor_data *i;
-  
-  if (messg)
-    for (i = descriptor_list; i; i = i->next)
-      if (!i->connected && (i->character->in_room != NOWHERE))
-	if((OUTSIDE(i->character) && 
-	    ((mode != OUTDOORS_LIGHT) || 
-	     !IS_SET(world[i->character->in_room].room_flags, DARK))) && 
-	   (i->character->specials.position > POSITION_SLEEPING) &&
-	   (!PLR_FLAGGED(i->character, PLR_WRITING)))
-	  SEND_TO_Q(messg, i);
+	struct descriptor_data *i;
+
+	if (messg)
+		for (i = descriptor_list; i; i = i->next)
+			if (!i->connected && (i->character->in_room != NOWHERE))
+				if ((OUTSIDE(i->character) &&
+					((mode != OUTDOORS_LIGHT) ||
+						!IS_SET(world[i->character->in_room].room_flags, DARK))) &&
+						(i->character->specials.position > POSITION_SLEEPING) &&
+					(!PLR_FLAGGED(i->character, PLR_WRITING)))
+					SEND_TO_Q(messg, i);
 }
 
 
 
 //  For weather messages - sends to outdoor sector
-void
-send_to_sector(char *messg, int sector_type)
+void send_to_sector(char *messg, int sector_type)
 {
   struct descriptor_data *i;
   
@@ -2001,29 +2106,39 @@ void abort_delay(char_data * wait_ch){
   }
 }
 
-void stat_update(){
-  descriptor_data * point;
+void stat_update() 
+{
+	stat_ticks_passed++;
 
-  stat_ticks_passed++;
+	for (descriptor_data* point = descriptor_list; point; point = point->next)
+	{
+		if (point->character && (STATE(point) == CON_PLYNG)) 
+		{
+			if (GET_LEVEL(point->character) < LEVEL_IMMORT) 
+			{
+				stat_mortals_counter++;
+				if (GET_RACE(point->character) < 10 && GET_RACE(point->character) != 0) 
+				{
+					stat_whitie_counter++;
+					if (GET_LEVEL(point->character) >= 30)
+					{
+						stat_whitie_legend_counter++;
+					}
+				}
+				if (GET_RACE(point->character) >= 10) 
+				{
+					stat_darkie_counter++;
+					if (GET_LEVEL(point->character) >= 30)
+					{
+						stat_darkie_legend_counter++;
+					}
+				}
 
-  for (point = descriptor_list; point; point = point->next) {
-    if(point->character && (STATE(point) == CON_PLYNG)){
-      if(GET_LEVEL(point->character) < LEVEL_IMMORT){
-	stat_mortals_counter++;
-        if(GET_RACE(point->character) < 10 && GET_RACE(point->character) != 0) {
-            stat_whitie_counter++;
-            if(GET_LEVEL(point->character) >= 30)
-               stat_whitie_legend_counter++;
-        }
-        if(GET_RACE(point->character) >= 10) {
-            stat_darkie_counter++;
-            if(GET_LEVEL(point->character) >= 30)
-               stat_darkie_legend_counter++;
-           }
-
-   }
-      else
-	stat_immortals_counter++;
-    }
-  }
+			}
+			else
+			{
+				stat_immortals_counter++;
+			}
+		}
+	}
 }

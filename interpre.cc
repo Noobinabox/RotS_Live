@@ -28,6 +28,8 @@
 #include "mail.h"
 #include "pkill.h"
 
+#include "big_brother.h"
+
 
 #define COMMANDO(number, min_pos, pointer, min_level,     \
                  retired, subcommand, targfl1, targfl2,   \
@@ -1259,15 +1261,21 @@ command_interpreter(struct char_data *ch, char *argument_chr,
     argument_raw = "";
     mode = 1;
   }
-  else {
-    argument_raw = argument_chr;
-    argument_info = &interp_argument_info;
-    mode = 0;
-    /* are they AFK? remove the flag */
-    if(IS_SET(PLR_FLAGS(ch), PLR_ISAFK)) {
-      REMOVE_BIT(PLR_FLAGS(ch), PLR_ISAFK);
-      send_to_char("You return to your keyboard.\n\r",ch);
-    }
+  else 
+  {
+	  argument_raw = argument_chr;
+	  argument_info = &interp_argument_info;
+	  mode = 0;
+	  /* are they AFK? remove the flag */
+	  if (IS_SET(PLR_FLAGS(ch), PLR_ISAFK))
+	  {
+		  REMOVE_BIT(PLR_FLAGS(ch), PLR_ISAFK);
+		  send_to_char("You return to your keyboard.\n\r", ch);
+
+		  // Let Big Brother know that the character is back.
+		  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		  bb_instance.on_character_returned(ch);
+	  }
   }
 
 

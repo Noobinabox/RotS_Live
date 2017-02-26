@@ -26,6 +26,7 @@
 
 #include "char_utils.h"
 #include "big_brother.h"
+#include <algorithm>
 
 extern char *pc_race_types[];
 
@@ -443,8 +444,8 @@ void	gain_condition(struct char_data *ch, int condition, int value)
 
    GET_COND(ch, condition)  += value;
 
-   GET_COND(ch, condition) = MAX(0, GET_COND(ch, condition));
-   GET_COND(ch, condition) = MIN(24, GET_COND(ch, condition));
+   GET_COND(ch, condition) = std::max(sh_int(0), GET_COND(ch, condition));
+   GET_COND(ch, condition) = std::min(sh_int(24), GET_COND(ch, condition));
 
    if (GET_COND(ch, condition) || PLR_FLAGGED(ch, PLR_WRITING))
       return;
@@ -468,64 +469,94 @@ void	gain_condition(struct char_data *ch, int condition, int value)
 
 void Crash_extract_objs(obj_data *);
 
-int	check_idling(struct char_data *ch)
-{       // returns 1 if the char was extracted, 0 otherwise
-  extern int r_mortal_idle_room[];
-  int j;
+//============================================================================
+// Returns 1 if the char was extracted, 0 otherwise
+//============================================================================
+int	check_idling(char_data* character)
+{
+	extern int r_mortal_idle_room[];
 
-  if((GET_LEVEL(ch) >= LEVEL_GOD) && (ch->desc) && (ch->desc->descriptor))
-    {
-      (ch->specials.timer)++;
-      if(ch->specials.timer > 15)
-	SET_BIT(PLR_FLAGS(ch), PLR_ISAFK);
-      return 0;
-    }
-  
-  if (++(ch->specials.timer) > 8)
-    if (ch->specials.was_in_room == NOWHERE && ch->in_room != NOWHERE) {
-      ch->specials.was_in_room = ch->in_room;
-      if (ch->specials.fighting) {
-		stop_fighting(ch->specials.fighting);
-		stop_fighting(ch);
-      }
-      if (IS_RIDING(ch))
-		stop_riding(ch);
-      act("$n disappears into the void.", TRUE, ch, 0, 0, TO_ROOM);
-      send_to_char("You have been idle, and are pulled into a void.\n\r", ch);
-      save_char(ch, NOWHERE, 0);
-      Crash_crashsave(ch);
-      char_from_room(ch);
-      char_to_room(ch, r_mortal_idle_room[GET_RACE(ch)]);
-      SET_BIT(PLR_FLAGS(ch), PLR_ISAFK);
-    } 
-    else if (ch->specials.timer > 28) {
-      if (ch && !IS_NPC(ch) && (ch->specials.was_in_room != NOWHERE)){
-		if (ch->in_room != NOWHERE)
-		  char_from_room(ch);
-		char_to_room(ch,  ch->specials.was_in_room);
-		save_char(ch, world[ch->specials.was_in_room].number, 0);
-		ch->specials.was_in_room = NOWHERE;
-      }
-      Crash_idlesave(ch);
-      sprintf(buf, "%s force-rented and extracted (idle).", GET_NAME(ch));
-      mudlog(buf, NRM, LEVEL_GOD, TRUE);
-
-      for (j = 0; j < MAX_WEAR; j++)
-		if (ch->equipment[j]){
-		  Crash_extract_objs(ch->equipment[j]);
-		  ch->equipment[j] = 0;
+	// Gods get their own checks, and are never auto-disconnected.
+	if ((GET_LEVEL(character) >= LEVEL_GOD) && (character->desc) && (character->desc->descriptor))
+	{
+		(character->specials.timer)++;
+		if (character->specials.timer > 15)
+		{
+			SET_BIT(PLR_FLAGS(character), PLR_ISAFK);
 		}
-      Crash_extract_objs(ch->carrying);
+		return 0;
+	}
 
-      if (ch->desc && ch->desc->descriptor){ 
-      	close_socket(ch->desc);
-		ch->desc = 0; // was commented out, now put back in by Fingolfin Jan 9
-	  }
+	if (character->specials.timer++ >= 1)
+	{
+		// Mark the character as AFK and give them AFK protection after 1 minute.
+		SET_BIT(PLR_FLAGS(character), PLR_ISAFK);
 
-      extract_char(ch);
-      return 1;
-    }
-  return 0;
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		bb_instance.on_character_afked(character);
+		send_to_char("You have been idle, and are now flagged as AFK.", character);
+	}
+	else if (character->specials.timer > 8)
+	{
+		// Pull a character into the void after 8 minutes.
+		if (character->specials.was_in_room == NOWHERE && character->in_room != NOWHERE)
+		{
+			character->specials.was_in_room = character->in_room;
+			if (character->specials.fighting) 
+			{
+				stop_fighting(character->specials.fighting);
+				stop_fighting(character);
+			}
+			if (IS_RIDING(character))
+			{
+				stop_riding(character);
+			}
+			act("$n disappears into the void.", TRUE, character, 0, 0, TO_ROOM);
+			send_to_char("You have been idle, and are pulled into a void.\n\r", character);
+			save_char(character, NOWHERE, 0);
+			Crash_crashsave(character);
+			char_from_room(character);
+			char_to_room(character, r_mortal_idle_room[GET_RACE(character)]);
+		}
+	}
+	// Disconnect a player after being idle for 28 minutes.
+	else if (character->specials.timer > 28)
+	{
+		if (character && !IS_NPC(character) && (character->specials.was_in_room != NOWHERE))
+		{
+			if (character->in_room != NOWHERE)
+			{
+				char_from_room(character);
+			}
+			char_to_room(character, character->specials.was_in_room);
+			save_char(character, world[character->specials.was_in_room].number, 0);
+			character->specials.was_in_room = NOWHERE;
+		}
+		Crash_idlesave(character);
+		sprintf(buf, "%s force-rented and extracted (idle).", GET_NAME(character));
+		mudlog(buf, NRM, LEVEL_GOD, TRUE);
+
+		for (int j = 0; j < MAX_WEAR; j++)
+		{
+			if (character->equipment[j])
+			{
+				Crash_extract_objs(character->equipment[j]);
+				character->equipment[j] = NULL;
+			}
+		}
+		Crash_extract_objs(character->carrying);
+
+		if (character->desc && character->desc->descriptor)
+		{
+			close_socket(character->desc);
+			character->desc = NULL; // was commented out, now put back in by Fingolfin Jan 9
+		}
+
+		extract_char(character);
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -659,13 +690,6 @@ void point_update(void)
 				//	recalc_abilities(i);
 				affect_total(i);
 			}
-			//Moving all this to fast effect
-			//     GET_HIT(i)  = MIN(GET_HIT(i)  + hit_gain(i),  GET_MAX_HIT(i));
-			//      GET_MANA(i) = MIN(GET_MANA(i) + mana_gain(i), GET_MAX_MANA(i));
-			//      GET_MOVE(i) = MIN(GET_MOVE(i) + move_gain(i), GET_MAX_MOVE(i));
-			//      //GET_SPIRIT(i) = MIN(GET_SPIRIT(i) + spirit_gain(i), GET_MAX_SPIRIT(i));
-			//      if(GET_SPIRIT(i) < GET_WILL(i)/3 + GET_PROF_LEVEL(PROF_CLERIC,i)/3)
-			//	GET_SPIRIT(i) += number(1,GET_WILL(i)+GET_PROF_LEVEL(PROF_CLERIC,i))/10;
 
 			if (IS_NPC(i) && i->specials.attacked_level) {
 

@@ -16,17 +16,18 @@
 #include "utils.h"  /* For the TRUE macro */
 
 /* comm.c */
-void	send_to_all(char *messg);
-void	send_to_char(const char *messg, struct char_data *ch);
-void	send_to_except(const char *messg, struct char_data *ch);
-void	send_to_room(const char *messg, int room);
-void	send_to_room_except(const char *messg, int room, struct char_data *ch);
-void	send_to_room_except_two(const char *messg, int room, struct char_data *ch1, struct char_data *ch2);
-void	send_to_outdoor(char *messg, int mode);
-void    send_to_sector(char *messg, int sector_type);
-void	perform_to_all(char *messg, struct char_data *ch);
-void	close_socket(struct descriptor_data *d, int drop_all = TRUE);
-void    break_spell(struct char_data * ch);
+void send_to_all(char *messg);
+void send_to_char(const char *messg, struct char_data *ch);
+void send_to_char(const char* message, int character_id);
+void send_to_except(const char *messg, struct char_data *ch);
+void send_to_room(const char *messg, int room);
+void send_to_room_except(const char *messg, int room, struct char_data *ch);
+void send_to_room_except_two(const char *messg, int room, struct char_data *ch1, struct char_data *ch2);
+void send_to_outdoor(char *messg, int mode);
+void send_to_sector(char *messg, int sector_type);
+void perform_to_all(char *messg, struct char_data *ch);
+void close_socket(struct descriptor_data *d, int drop_all = TRUE);
+void break_spell(struct char_data * ch);
 void abort_delay(char_data * wait_ch);
 void complete_delay(struct char_data * ch);
 struct txt_block * get_from_txt_block_pool(char * line = 0);

@@ -1693,6 +1693,22 @@ void send_to_char(const char* message, char_data* character)
 	}
 }
 
+void send_to_char(const char* message, int character_id)
+{
+	if (message && message[0] != 0)
+	{
+		for (descriptor_data* connection = descriptor_list; connection; connection = connection->next)
+		{
+			char_data* character = connection->character;
+			if (character && character->abs_number == character_id && connection->connected == CON_PLYNG)
+			{
+				SEND_TO_Q(message, connection);
+				break;
+			}
+		}
+	}
+}
+
 void vsend_to_char(char_data* character, char* format, ...)
 {
 #define BUFSIZE 2048

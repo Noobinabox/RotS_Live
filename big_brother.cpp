@@ -4,6 +4,7 @@
 #include "char_utils.h"
 #include "structs.h"
 #include "spells.h"
+#include "comm.h"
 
 #include <assert.h>
 
@@ -47,6 +48,7 @@ namespace game_rules
 			{
 				// This is the last item from the corpse.  Stop tracking the corpse.
 				remove_character_from_looting_set(corpse_data.player_id);
+				send_to_char("You feel the protection of the Gods fade from you...", corpse_data.player_id);
 				m_corpse_map.erase(corpse_iter);
 			}
 			return true;
@@ -67,6 +69,7 @@ namespace game_rules
 		{
 			// This is the last item from the corpse.  Stop tracking the corpse.
 			remove_character_from_looting_set(corpse_data.player_id);
+			send_to_char("You feel the protection of the Gods fade from you...", corpse_data.player_id);
 			m_corpse_map.erase(corpse_iter);
 		}
 

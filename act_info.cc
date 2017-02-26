@@ -29,6 +29,7 @@
 #include "zone.h"  /* For zone_table */
 #include "pkill.h"
 
+#include "big_brother.h"
 #include <cmath>
 
 /* extern variables */
@@ -401,31 +402,57 @@ get_char_position_line(struct char_data *ch, struct char_data *i, char *str)
   }
 }
 
-
-
-void
-get_char_flag_line(struct char_data *ch, struct char_data *i, char *str)
+void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_message)
 {
-  if(IS_AFFECTED(ch, AFF_DETECT_INVISIBLE)) {
-    if(IS_EVIL(i))
-      strcat(buf, " (red aura)");
-  }
-  if(IS_AFFECTED(i, AFF_HIDE))
-    strcat(str, " (hiding)");
-  if(IS_AFFECTED(i, AFF_WAITING))
-    strcat(str, " (busy)");
-  if(IS_AFFECTED(i, AFF_INVISIBLE))
-    strcat(str, " (invisible)");
-  if(!IS_NPC(i) && !(i->desc && i->desc->descriptor))
-    strcat(str, " (linkless)");
-  if(PLR_FLAGGED(i, PLR_WRITING))
-    strcat(str, " (writing)");
-  if(PLR_FLAGGED(i, PLR_ISAFK))
-    strcat(str, " (AFK)");
-  if(IS_AFFECTED(i, AFF_SANCTUARY))
-    strcat(str, " (glowing)");
-  if(IS_SHADOW(i))
-    strcat(str, " (shadow)");
+	if (IS_AFFECTED(viewer, AFF_DETECT_INVISIBLE)) 
+	{
+		if (IS_EVIL(viewed))
+		{
+			strcat(buf, " (red aura)");
+		}
+	}
+
+	if (IS_AFFECTED(viewed, AFF_HIDE))
+	{
+		strcat(character_message, " (hiding)");
+	}
+	if (IS_AFFECTED(viewed, AFF_WAITING))
+	{
+		strcat(character_message, " (busy)");
+	}
+	if (IS_AFFECTED(viewed, AFF_INVISIBLE))
+	{
+		strcat(character_message, " (invisible)");
+	}
+	if (!IS_NPC(viewed) && !(viewed->desc && viewed->desc->descriptor))
+	{
+		strcat(character_message, " (linkless)");
+	}
+	if (PLR_FLAGGED(viewed, PLR_WRITING))
+	{
+		strcat(character_message, " (writing)");
+	}
+	if (PLR_FLAGGED(viewed, PLR_ISAFK))
+	{
+		strcat(character_message, " (AFK)");
+	}
+	if (IS_AFFECTED(viewed, AFF_SANCTUARY))
+	{
+		strcat(character_message, " (glowing)");
+	}
+	if (IS_SHADOW(viewed))
+	{
+		strcat(character_message, " (shadow)");
+	}
+
+	if (!IS_NPC(viewed))
+	{
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		if (bb_instance.is_target_looting(viewed))
+		{
+			strcat(character_message, " (holy protection)");
+		}
+	}
 }
 
 
@@ -451,177 +478,181 @@ get_char_flag_line(struct char_data *ch, struct char_data *i, char *str)
  */
 void
 show_mount_to_char(struct char_data *i, struct char_data *ch,
-		   char *line1, char *line2, int color)
+	char *line1, char *line2, int color)
 {
-  int vis_count, tmpnum, you_are_riding, riderno;
-  int special_message;
-  struct char_data *tmpch, *last_rider;
+	int vis_count, tmpnum, you_are_riding, riderno;
+	int special_message;
+	struct char_data *tmpch, *last_rider;
 
-  you_are_riding = special_message = vis_count = 0;
-  *buf = 0;
+	you_are_riding = special_message = vis_count = 0;
+	*buf = 0;
 
-  if (color)
-    strcat(buf, CC_USE(ch, COLOR_CHAR));
-
-  /*
-   * We NEED to know if there are multiple people riding one mount and
-   * whether or not ANY of those riders will generate a special message
-   */
-  tmpch = i->mount_data.rider;
-  tmpnum = i->mount_data.rider_number;
-  for(riderno = 0; tmpch && char_exists(tmpnum);
-      tmpch = tmpch->mount_data.next_rider,
-	++riderno) {
-    if (CAN_SEE(ch, tmpch)) {
-      tmpnum = tmpch->mount_data.next_rider_number;
-      if(GET_POS(tmpch) == POSITION_FIGHTING ||
-	 GET_POS(tmpch) == POSITION_RESTING)
-	special_message = 1;
-    } else
-      --riderno;
-  }
-
-  tmpch = i->mount_data.rider;
-  tmpnum = i->mount_data.rider_number;
-  for( ; tmpch && char_exists(tmpnum); tmpch = tmpch->mount_data.next_rider) {
-    if(CAN_SEE(ch, tmpch)) {
-      /* This block facilitates the junctions between multiple riders */
-      if(vis_count == riderno - 1 && vis_count)
-	strcat(buf, " and ");
-      /* The special messages have commas */
-      else if(vis_count) {
-	if(!special_message)
-	  strcat(buf, ", ");
-	else  /* But they don't have spaces */
-	  strcat(buf, " ");
-      }
-
-      if(ch == tmpch) {
-	sprintf(buf + strlen(buf), "%cou", !vis_count ? 'Y' : 'y');
-	you_are_riding = 1;
-      } else {
-	/* Unfortunately, act can't take arbitrary numbers of riders */
-	strcat(buf, !vis_count ? PERS(tmpch, ch, TRUE, FALSE) :
-	       PERS(tmpch, ch, FALSE, FALSE));
 	if (color)
-	  strcat(buf, CC_USE(ch, COLOR_CHAR));
-      }
-
-      get_char_flag_line(ch, tmpch, buf + strlen(buf));
-
-      switch(GET_POS(tmpch)) {
-      case POSITION_RESTING:
-	/*
-	 * If special_message is 0, then the last person in the list
-	 * isn't doing anything, and thus we are seperated from them
-	 * by either " and " or ", ", so we need to use 'are', not
-	 * 'is'.  This is the is/are if block mentioned in the comment
-	 * heading this function.
-	 */
-	if(tmpch == ch || (!special_message && vis_count))
-	  strcat(buf, " are");
-	else  /* tmpch is not the viewer */
-	  strcat(buf, " is");
-	strcat(buf, " resting here,");
-	break;
-
-      case POSITION_FIGHTING:
-	/* Same is/are block as above */
-	if(tmpch == ch || (!special_message && vis_count))
-	  strcat(buf, " are");
-	else  /* tmpch is not the viewer */
-	  strcat(buf, " is");
-      	if(tmpch->specials.fighting) {
-	  strcat(buf, " here, fighting ");
-	  if(tmpch->specials.fighting == ch)
-	    strcat(buf, "YOU");
-	  else {
-	    if(tmpch->in_room == tmpch->specials.fighting->in_room) {
-	      strcat(buf, PERS(tmpch->specials.fighting, ch, FALSE, FALSE));
-	      if (color)
 		strcat(buf, CC_USE(ch, COLOR_CHAR));
-	    } else
-	      strcat(buf, "SOMEONE THAT ALREADY LEFT! *BUG*");
-	  }
+
+	/*
+	 * We NEED to know if there are multiple people riding one mount and
+	 * whether or not ANY of those riders will generate a special message
+	 */
+	tmpch = i->mount_data.rider;
+	tmpnum = i->mount_data.rider_number;
+	for (riderno = 0; tmpch && char_exists(tmpnum);
+		tmpch = tmpch->mount_data.next_rider,
+		++riderno) {
+		if (CAN_SEE(ch, tmpch)) {
+			tmpnum = tmpch->mount_data.next_rider_number;
+			if (GET_POS(tmpch) == POSITION_FIGHTING ||
+				GET_POS(tmpch) == POSITION_RESTING)
+				special_message = 1;
+		}
+		else
+			--riderno;
 	}
-	else /* NIL fighting pointer */
-	  strcat(buf, " here struggling with thin air");
-	strcat(buf, ",");
-      	break;
 
-      default:
-      /*
-       * If there's more than one rider, and at least one has a
-       * special message, we need to be sure that the message we
-       * generate does not imply that all of the other riders are
-       * affected by the same message, so they ALL get the special
-       * message "is here," if they didn't get one already.
-       */
-	if(riderno > 1 && special_message) {
-	  if(ch == tmpch)
-	    strcat(buf, " are");
-	  else
-	    strcat(buf, " is");
-	  strcat(buf, " here,");
+	tmpch = i->mount_data.rider;
+	tmpnum = i->mount_data.rider_number;
+	for (; tmpch && char_exists(tmpnum); tmpch = tmpch->mount_data.next_rider) {
+		if (CAN_SEE(ch, tmpch)) {
+			/* This block facilitates the junctions between multiple riders */
+			if (vis_count == riderno - 1 && vis_count)
+				strcat(buf, " and ");
+			/* The special messages have commas */
+			else if (vis_count) {
+				if (!special_message)
+					strcat(buf, ", ");
+				else  /* But they don't have spaces */
+					strcat(buf, " ");
+			}
+
+			if (ch == tmpch) {
+				sprintf(buf + strlen(buf), "%cou", !vis_count ? 'Y' : 'y');
+				you_are_riding = 1;
+			}
+			else {
+				/* Unfortunately, act can't take arbitrary numbers of riders */
+				strcat(buf, !vis_count ? PERS(tmpch, ch, TRUE, FALSE) :
+					PERS(tmpch, ch, FALSE, FALSE));
+				if (color)
+					strcat(buf, CC_USE(ch, COLOR_CHAR));
+			}
+
+			get_char_flag_line(ch, tmpch, buf + strlen(buf));
+
+			switch (GET_POS(tmpch)) {
+			case POSITION_RESTING:
+				/*
+				 * If special_message is 0, then the last person in the list
+				 * isn't doing anything, and thus we are seperated from them
+				 * by either " and " or ", ", so we need to use 'are', not
+				 * 'is'.  This is the is/are if block mentioned in the comment
+				 * heading this function.
+				 */
+				if (tmpch == ch || (!special_message && vis_count))
+					strcat(buf, " are");
+				else  /* tmpch is not the viewer */
+					strcat(buf, " is");
+				strcat(buf, " resting here,");
+				break;
+
+			case POSITION_FIGHTING:
+				/* Same is/are block as above */
+				if (tmpch == ch || (!special_message && vis_count))
+					strcat(buf, " are");
+				else  /* tmpch is not the viewer */
+					strcat(buf, " is");
+				if (tmpch->specials.fighting) {
+					strcat(buf, " here, fighting ");
+					if (tmpch->specials.fighting == ch)
+						strcat(buf, "YOU");
+					else {
+						if (tmpch->in_room == tmpch->specials.fighting->in_room) {
+							strcat(buf, PERS(tmpch->specials.fighting, ch, FALSE, FALSE));
+							if (color)
+								strcat(buf, CC_USE(ch, COLOR_CHAR));
+						}
+						else
+							strcat(buf, "SOMEONE THAT ALREADY LEFT! *BUG*");
+					}
+				}
+				else /* NIL fighting pointer */
+					strcat(buf, " here struggling with thin air");
+				strcat(buf, ",");
+				break;
+
+			default:
+				/*
+				 * If there's more than one rider, and at least one has a
+				 * special message, we need to be sure that the message we
+				 * generate does not imply that all of the other riders are
+				 * affected by the same message, so they ALL get the special
+				 * message "is here," if they didn't get one already.
+				 */
+				if (riderno > 1 && special_message) {
+					if (ch == tmpch)
+						strcat(buf, " are");
+					else
+						strcat(buf, " is");
+					strcat(buf, " here,");
+				}
+				break;
+			}
+			vis_count++;
+		}
+		last_rider = tmpch;
+		tmpnum = tmpch->mount_data.next_rider_number;
 	}
-	break;
-      }
-      vis_count++;
-    }
-    last_rider = tmpch;
-    tmpnum = tmpch->mount_data.next_rider_number;
-  }
 
-  /* It's just a mount, standing there, with no one on it */
-  if(!vis_count) {
-    tmpch = i->mount_data.rider;
-    tmpnum = i->mount_data.rider_number;
-    i->mount_data.rider = 0;
-    i->mount_data.rider_number = 0;
-    show_char_to_char(i, ch, 0);
-    i->mount_data.rider = tmpch;
-    i->mount_data.rider_number = tmpnum;
+	/* It's just a mount, standing there, with no one on it */
+	if (!vis_count) {
+		tmpch = i->mount_data.rider;
+		tmpnum = i->mount_data.rider_number;
+		i->mount_data.rider = 0;
+		i->mount_data.rider_number = 0;
+		show_char_to_char(i, ch, 0);
+		i->mount_data.rider = tmpch;
+		i->mount_data.rider_number = tmpnum;
 
-    return;
-  } else {  /* It's a ridden mount */
-    /* None of the riders had a special message */
-    if(!special_message) {
-      if(last_rider == ch || you_are_riding ||
-	 (!you_are_riding && riderno > 1))
-	strcat(buf, " are");
-      else if(vis_count == 1)
-	strcat(buf, " is");
-    }
+		return;
+	}
+	else {  /* It's a ridden mount */
+   /* None of the riders had a special message */
+		if (!special_message) {
+			if (last_rider == ch || you_are_riding ||
+				(!you_are_riding && riderno > 1))
+				strcat(buf, " are");
+			else if (vis_count == 1)
+				strcat(buf, " is");
+		}
 
-    /*
-     * Multiple riders only; if we didn't have this statement, it
-     * would seem as though only the last person in our list is
-     * actually riding on the mount
-     */
-    if(riderno > 1) {
-      if(riderno == 2)
-	strcat(buf, " both");
-      else if(riderno > 2)
-	strcat(buf, " all");
-      if(special_message) {
-	if(you_are_riding)
-	  strcat(buf, " of you");
-	else
-	  strcat(buf, " of them");
-      }
-    }
+		/*
+		 * Multiple riders only; if we didn't have this statement, it
+		 * would seem as though only the last person in our list is
+		 * actually riding on the mount
+		 */
+		if (riderno > 1) {
+			if (riderno == 2)
+				strcat(buf, " both");
+			else if (riderno > 2)
+				strcat(buf, " all");
+			if (special_message) {
+				if (you_are_riding)
+					strcat(buf, " of you");
+				else
+					strcat(buf, " of them");
+			}
+		}
 
-    if((vis_count == 1) && !you_are_riding)
-      strcat(buf, line1);
-    else
-      strcat(buf, line2);
-    strcat(buf, PERS(i, ch, FALSE, FALSE));
-    get_char_flag_line(ch, i, buf + strlen(buf));
-    strcat(buf, ".\n\r");
-    strcat(buf, CC_NORM(ch));
-    CAP(buf);
-    send_to_char(buf, ch);
-  }
+		if ((vis_count == 1) && !you_are_riding)
+			strcat(buf, line1);
+		else
+			strcat(buf, line2);
+		strcat(buf, PERS(i, ch, FALSE, FALSE));
+		get_char_flag_line(ch, i, buf + strlen(buf));
+		strcat(buf, ".\n\r");
+		strcat(buf, CC_NORM(ch));
+		CAP(buf);
+		send_to_char(buf, ch);
+	}
 }
 
 

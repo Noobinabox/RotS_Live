@@ -16,6 +16,7 @@
 
 #include "char_utils.h"
 #include "object_utils.h"
+#include "big_brother.h"
 #include <algorithm>
 
 const int MIN_SAFE_STAT = 3;
@@ -103,7 +104,7 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
 		 "cannot bring yourself to attack.\n\r", ch);
     return;
   }
-  
+
   if(GET_MENTAL_DELAY(ch) > 1)
     not_ready = 1;
   else
@@ -134,6 +135,14 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
   if(victim == ch) {
     send_to_char("You contemplate yourself for a little while.\n\r",ch);
     return;
+  }
+
+  // This isn't technically a curse, but it's close enough.
+  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+  if (!bb_instance.is_target_valid(ch, victim, SPELL_CURSE))
+  {
+	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.", ch);
+	  return;
   }
 
   /* Level check, level 9 and below can't kill each other */
@@ -291,6 +300,14 @@ int damage_stat(struct char_data *killer, struct char_data *ch, int stat_num, in
 	stop_fighting(killer);
       return 0;
     }
+  }
+
+  // This isn't technically a curse, but it's close enough.
+  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+  if (!bb_instance.is_target_valid(killer, ch, SPELL_CURSE))
+  {
+	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.", ch);
+	  return 0;
   }
 
   if(IS_AFFECTED(killer, AFF_SANCTUARY))

@@ -307,11 +307,6 @@ void get_from_container(struct char_data *ch, struct obj_data *cont, char *arg, 
 		 * for characters to use the get all corpse
 		 * command while looting their own corpse.
 		 */
-		if (cont->obj_flags.value[3] != 0 && GET_IDNUM(ch) != -(cont->obj_flags.value[2])) 
-		{
-			send_to_char("You'll have to be more specific about what you loot.\r\n", ch);
-			return;
-		}
 		for (obj = cont->contains; obj; obj = next_obj) 
 		{
 			next_obj = obj->next_content;

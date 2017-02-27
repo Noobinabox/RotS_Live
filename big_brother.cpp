@@ -74,8 +74,11 @@ namespace game_rules
 	void big_brother::on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& corpse_iter)
 	{
 		// This is the last item from the corpse.  Stop tracking the corpse.
-		remove_character_from_looting_set(char_id);
-		send_to_char("You feel the protection of the Gods fade from you...\r\n", char_id);
+		if (!corpse_iter->second.is_npc)
+		{
+			remove_character_from_looting_set(char_id);
+			send_to_char("You feel the protection of the Gods fade from you...\r\n", char_id);
+		}
 		m_corpse_map.erase(corpse_iter);
 	}
 
@@ -310,6 +313,10 @@ namespace game_rules
 		// Spirits don't leave corpses behind.  If we have 'shadow' mode for players again,
 		// this could create some issues.
 		if (corpse == NULL)
+			return;
+
+		// The corpse is empty.  No sense in adding loot protection.
+		if (corpse->contains == NULL)
 			return;
 
 		// Big Brother doesn't track NPC corpses that are not orc followers.

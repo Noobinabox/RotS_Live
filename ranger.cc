@@ -2750,7 +2750,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
 	bool has_quiver;
 	obj_data* quiver = character->equipment[WEAR_BACK];
-	if (!quiver || quiver->is_quiver())
+	if (!quiver || !quiver->is_quiver())
 	{
 		has_quiver = false;
 	}

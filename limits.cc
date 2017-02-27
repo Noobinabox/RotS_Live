@@ -501,7 +501,7 @@ int	check_idling(char_data* character)
 			send_to_char("You have been idle, and are now flagged as AFK.", character);
 		}
 	}
-	else if (character->specials.timer > 8)
+	if (character->specials.timer > 8)
 	{
 		// Pull a character into the void after 8 minutes.
 		if (character->specials.was_in_room == NOWHERE && character->in_room != NOWHERE)
@@ -525,7 +525,7 @@ int	check_idling(char_data* character)
 		}
 	}
 	// Disconnect a player after being idle for 28 minutes.
-	else if (character->specials.timer > 28)
+	if (character->specials.timer > 28)
 	{
 		if (character && !IS_NPC(character) && (character->specials.was_in_room != NOWHERE))
 		{

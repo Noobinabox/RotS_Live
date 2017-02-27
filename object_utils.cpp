@@ -306,7 +306,7 @@ bool obj_data::is_quiver() const
 {
 	if (obj_flags.type_flag == ITEM_CONTAINER)
 	{
-		return isname(name, "quiver");
+		return isname("quiver", name);
 	}
 	return false;
 }

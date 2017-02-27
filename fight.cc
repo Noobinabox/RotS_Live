@@ -1575,7 +1575,7 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 	// Don't allow damage to affect invalid targets.
 	if (!bb_instance.is_target_valid(attacker, victim, attacktype))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", attacker);
+		send_to_char("You feel the Gods looking down upon you and protecting your target.  Your hand is stayed.", attacker);
 		return 0;
 	}
 
@@ -2283,7 +2283,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 	if (!bb_instance.is_target_valid(ch, victim, w_type))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", ch);
+		send_to_char("You feel the Gods looking down upon you and protecting your target.  Your hand is stayed.", ch);
 		return;
 	}
 

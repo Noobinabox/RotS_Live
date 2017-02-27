@@ -22,8 +22,6 @@
 #include "limits.h"
 #include "color.h"
 
-#include "big_brother.h"
-
 /* extern variables */
 extern struct room_data world;
 extern struct descriptor_data *descriptor_list;
@@ -101,19 +99,12 @@ ACMD(do_hit)
 	  FALSE, ch, 0, victim, TO_CHAR);
       return;
     }
-	if (!IS_NPC(ch) && !IS_NPC(victim) &&
-		((GET_LEVEL(ch) + GET_LEVEL(victim)) < 8) && !other_side(ch, victim)) {
-		act("You can't do it now. Group with this person and get some levels "
-			"instead.\n\r", FALSE, ch, 0, victim, TO_CHAR);
-		return;
-	}
-
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_SLASH))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", ch);
-		return;
-	}
+    if(!IS_NPC(ch) && !IS_NPC(victim) && 
+       ((GET_LEVEL(ch) + GET_LEVEL(victim)) < 8) && !other_side(ch, victim)) {
+      act("You can't do it now. Group with this person and get some levels "
+	  "instead.\n\r", FALSE, ch, 0, victim, TO_CHAR);
+      return;
+    }
     
     if(!check_sanctuary(ch, victim))
       return;
@@ -151,61 +142,53 @@ ACMD(do_hit)
 
 ACMD(do_assist)
 {
-	struct char_data *helpee, *opponent;
-	struct waiting_type tmpwtl;
+  struct char_data *helpee, *opponent;
+  struct waiting_type tmpwtl;
+  
+  if(ch->specials.fighting) {
+    send_to_char("You're already fighting!  How can you assist someone else?\n\r", ch);
+    return;
+  }
+  
+   one_argument(argument, arg);
 
-	if (ch->specials.fighting) {
-		send_to_char("You're already fighting!  How can you assist someone else?\n\r", ch);
-		return;
-	}
+   if(!wtl) helpee = get_char_room_vis(ch, arg);
+   else if((wtl->targ1.type==TARGET_CHAR) && char_exists(wtl->targ1.ch_num)){
+     helpee = wtl->targ1.ptr.ch;
+     if(helpee && helpee->in_room != ch->in_room) helpee = 0;
+   }
+   else helpee = 0;
 
-	one_argument(argument, arg);
+   if (!helpee){
+     send_to_char("Whom do you wish to assist?\n\r", ch);
+     return;
+   }
 
-	if (!wtl) helpee = get_char_room_vis(ch, arg);
-	else if ((wtl->targ1.type == TARGET_CHAR) && char_exists(wtl->targ1.ch_num)) {
-		helpee = wtl->targ1.ptr.ch;
-		if (helpee && helpee->in_room != ch->in_room) helpee = 0;
-	}
-	else helpee = 0;
-
-	if (!helpee) {
-		send_to_char("Whom do you wish to assist?\n\r", ch);
-		return;
-	}
-
-	if (helpee == ch)
-		send_to_char("You can't help yourself any more than this!\n\r", ch);
-	else
-	{
-		//      for (opponent = world[ch->in_room].people; opponent && 
-		//	     (opponent->specials.fighting != helpee); 
-		//	   opponent = opponent->next_in_room)
-		//	;
-		opponent = helpee->specials.fighting;
-		if (!opponent)
-			act("But nobody is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
-		else if (!CAN_SEE(ch, opponent))
-			act("You can't see who is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
-		else {
-
-			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-			if (!bb_instance.is_target_valid(ch, opponent, SKILL_SLASH))
-			{
-				send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", ch);
-				return;
-			}
-
-			send_to_char("You join the fight!\n\r", ch);
-			act("$N assists you!", 0, helpee, 0, ch, TO_CHAR);
-			act("$n assists $N.", FALSE, ch, 0, helpee, TO_NOTVICT);
-			tmpwtl.targ1.type = TARGET_CHAR;
-			tmpwtl.targ1.ptr.ch = opponent;
-			tmpwtl.targ1.ch_num = opponent->abs_number;
-			tmpwtl.cmd = CMD_HIT;
-			tmpwtl.subcmd = 0;
-			do_hit(ch, argument, &tmpwtl, CMD_HIT, SCMD_MURDER);
-		}
-	}
+   if (helpee == ch)
+     send_to_char("You can't help yourself any more than this!\n\r", ch);
+   else
+     {
+       //      for (opponent = world[ch->in_room].people; opponent && 
+       //	     (opponent->specials.fighting != helpee); 
+       //	   opponent = opponent->next_in_room)
+       //	;
+       opponent = helpee->specials.fighting;
+       if (!opponent)
+	 act("But nobody is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
+       else if (!CAN_SEE(ch, opponent))
+	 act("You can't see who is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
+       else {
+	 send_to_char("You join the fight!\n\r", ch);
+	 act("$N assists you!", 0, helpee, 0, ch, TO_CHAR);
+	 act("$n assists $N.", FALSE, ch, 0, helpee, TO_NOTVICT);
+	 tmpwtl.targ1.type = TARGET_CHAR;
+	 tmpwtl.targ1.ptr.ch = opponent;
+	 tmpwtl.targ1.ch_num = opponent->abs_number;
+	 tmpwtl.cmd = CMD_HIT;
+	 tmpwtl.subcmd = 0;
+	 do_hit(ch, argument, &tmpwtl, CMD_HIT, SCMD_MURDER);
+      }
+   }
 }
 
 
@@ -414,276 +397,260 @@ ACMD(do_flee)
 
 ACMD(do_bash)
 {
-	struct char_data *victim;
-	int prob, door, next_mode, other_room, tmp;
-	struct room_direction_data *back;
-	char type[MAX_INPUT_LENGTH], dir[MAX_INPUT_LENGTH];
+  struct char_data *victim;
+  int prob, door, next_mode, other_room, tmp;
+  struct room_direction_data *back;
+  char type[MAX_INPUT_LENGTH], dir[MAX_INPUT_LENGTH];
+  
+  if(IS_SHADOW(ch)) {
+    send_to_char("You are too airy for that.\n\r",ch);
+    subcmd = -1;
+  }
+  
+  one_argument(argument, arg);
+  
+  switch(subcmd) {
+  case 0:
+    if(GET_POS(ch) < POSITION_FIGHTING) {
+      send_to_char("You need to stand up first.\n\r",ch);
+      return;
+    }
+    
+    door = -1;
+    if(!(victim = get_char_room_vis(ch, arg))) {
+      if(ch->specials.fighting)
+	victim = ch->specials.fighting;
+      else {
+	argument_interpreter(argument, type, dir);
+	door = find_door(ch, type, dir); 
+      }
+    }
+    
+    if(victim) {
+      if(IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+	send_to_char("A peaceful feeling overwhelms you, and you "
+		     "cannot bring yourself to attack.\n\r", ch);
+	return;
+      }
+      if(victim == ch) {
+	send_to_char("Aren't we funny today...\n\r", ch);
+	return;
+      }
+      if(!check_hallucinate(ch, victim))
+        return;
+      if(IS_SHADOW(victim)) {
+	send_to_char("Your bash encounters nothing but thin air.\n\r",ch);
+	return;
+      }
+      if(!GET_SKILL(ch, SKILL_BASH)) {
+	send_to_char("Learn how to bash properly first!\n\r", ch);
+	return;
+      }
+      
+      if(IS_SET(victim->specials.affected_by, AFF_BASH)) {
+	send_to_char("Your victim is already bashed!\n\r",ch);
+	return;
+      }
+      next_mode = 1;
+    }
+    else if(door >= 0) {
+      if(IS_RIDING(ch)) {
+	send_to_char("You cannot do it while riding.\n\r",ch);
+	return;
+      }
+      if(!IS_SET(EXIT(ch, door)->exit_info, EX_ISDOOR)) {
+	send_to_char("That's impossible, I'm afraid.\n\r", ch);
+	return;
+      }
+      else if(!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)) {
+	send_to_char("It's already open!\n\r", ch);
+	return;
+      }
+      next_mode = 3;
+      if(GET_MOVE(ch) < 10) {
+	send_to_char("You are too tired for that.\n\r",ch);
+	return;
+      }
+    }
+    else {
+      send_to_char("Bash who?\n\r", ch);
+      return;
+    }
+    if(door >= 0)
+      if(!check_overkill(victim)) {
+	send_to_char("You cannot get close enough to bash.\n\r", ch);
+	return;
+      }
+    
+    WAIT_STATE_FULL(ch, skills[SKILL_BASH].beats, CMD_BASH, 
+		    next_mode, 50, 0, (next_mode == 1) ? 
+		    GET_ABS_NUM(victim) : door, victim,
+		    AFF_WAITING | AFF_WAITWHEEL,
+		    (next_mode == 1) ? TARGET_CHAR : TARGET_OTHER);
+    return;
 
-	if (IS_SHADOW(ch)) {
-		send_to_char("You are too airy for that.\n\r", ch);
-		subcmd = -1;
+  case 1:
+    if(GET_POS(ch) < POSITION_FIGHTING) {
+      send_to_char("You need to stand up first.\n\r",ch);
+      return;
+    }
+    if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num)) {
+      send_to_char("Your victim is no longer among us.\n\r",ch);
+      return;
+    }
+    victim = (struct char_data *) wtl->targ1.ptr.ch;
+    if(!CAN_SEE(ch,victim)) {
+      send_to_char("Bash who?\n\r", ch);
+      return;
+    }
+    if(ch->in_room != victim->in_room) {
+      send_to_char("You target is not here any longer\n\r",ch);
+      return;
+    }
+    if(IS_NPC(victim) && MOB_FLAGGED(victim, MOB_NOBASH)) {
+      act("You try to bash $N, but only bruise yourself.",
+	  FALSE, ch, 0, victim, TO_CHAR);
+      act("$n tries to bash $N, but only bruises $mself.",
+	  FALSE, ch, 0, victim, TO_ROOM);
+      return;
+    }
+    if(IS_SET(victim->specials.affected_by, AFF_BASH)) {
+      send_to_char("Your victim is already bashed!\n\r",ch);
+      return;
+    }
+
+    /* 
+     * bash prob. is like a hit, except victim parry is halved,
+     * and OB = OB*3/2 -= (1d60-30)
+     */
+    prob = GET_SKILL(ch, SKILL_BASH);
+    prob += get_real_OB(ch) * 3 / 2;
+    prob -= get_real_dodge(victim);
+    prob -= get_real_parry(victim) / 2;
+    prob -= GET_LEVELA(victim) * 3;
+    prob += GET_PROF_LEVEL(PROF_WARRIOR, ch);
+    prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
+    prob += number(-40, 40);
+    prob -= 160;
+    if(prob < 0)
+      damage(ch, victim, 0, SKILL_BASH,0);
+    else {
+      WAIT_STATE_FULL(victim,
+		      PULSE_VIOLENCE * 3/2 + number(0, PULSE_VIOLENCE / 2),
+		      CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
+		      TARGET_IGNORE);
+      damage(ch, victim, 1, SKILL_BASH,0);
+    }
+    return;
+    
+  case 2:
+    abort_delay(ch);
+    REMOVE_BIT(ch->specials.affected_by, AFF_BASH);
+    if(GET_POS(ch) > POSITION_INCAP){
+      act("$n has recovered from a bash!", TRUE, ch, 0, 0, TO_ROOM);
+      act("You have regained your balance!", TRUE, ch, 0, 0, TO_CHAR);
+      if(GET_POS(ch) < POSITION_FIGHTING)
+	do_stand(ch,"",0,0,0);
+    }
+    break;
+
+
+  case 3:
+    if(wtl->targ1.type != TARGET_OTHER){
+      send_to_char("Something went wrong in your bashing.\n\r",ch);
+      return;
+    }
+    door = wtl->targ1.ch_num;
+    if(!EXIT(ch, door)){
+      //       abort_delay(ch);
+      return;
+    }
+    if (!IS_SET(EXIT(ch, door)->exit_info, EX_ISDOOR)){
+      send_to_char("That's impossible, I'm afraid.\n\r", ch);
+      return;
+    }
+    else if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)){
+      send_to_char("It's already open!\n\r", ch);
+      return;
+    }
+    
+    prob = (GET_SKILL(ch, SKILL_BASH)/10 + GET_STR(ch) - 20)*5;
+    
+    tmp = GET_RACE(ch);
+    if((tmp == RACE_WOOD) || (tmp == RACE_HIGH) || (tmp == RACE_HOBBIT)){
+      sprintf(buf,"You throw your light body on the %s.\n\r",
+	      EXIT(ch, door)->keyword);
+      send_to_char(buf, ch);
+      sprintf(buf,"$n throws $mself on the %s.\n\r",
+	      EXIT(ch, door)->keyword);
+      act(buf, TRUE, ch, 0, 0, TO_ROOM);
+      prob = -1;
+    }
+    else{
+      sprintf(buf,"You throw yourself on the %s.\n\r",
+	      EXIT(ch, door)->keyword);
+      send_to_char(buf, ch);
+      sprintf(buf,"$n throws $mself on the %s.\n\r",
+	      EXIT(ch, door)->keyword);
+      act(buf, TRUE, ch, 0, 0, TO_ROOM);
+    }
+    if((tmp == RACE_URUK) || (tmp == RACE_DWARF)) prob += 10;
+    
+    if(IS_SET(EXIT(ch, door)->exit_info,EX_DOORISHEAVY)) prob = -1;
+    if(IS_SET(EXIT(ch, door)->exit_info,EX_NOBREAK)) prob = -1;
+    
+    if(prob < 0){
+      sprintf(buf,"The %s would not budge.\n\r",
+	      EXIT(ch, door)->keyword);
+      send_to_char(buf, ch);
+      return;
+    }
+    if(number(0,99) > prob){ //failure
+      send_to_char("You only injure yourself.\n\r",ch);
+      GET_HIT(ch) -= number(1,20);
+      GET_MOVE(ch) -= 10;
+      update_pos(ch);
+      if(GET_POS(ch) == POSITION_STANDING) 
+	GET_POS(ch) = POSITION_RESTING;
+      return;
+    }
+    SET_BIT(EXIT(ch, door)->exit_info,EX_ISBROKEN);
+    REMOVE_BIT(EXIT(ch, door)->exit_info,EX_CLOSED|EX_LOCKED);
+    sprintf(buf,"The %s crashes open! You fall through it.\n\r",
+	    EXIT(ch, door)->keyword);
+    send_to_char(buf, ch);
+    sprintf(buf,"The %s crashes open! $n falls through it.\n\r",
+	    EXIT(ch, door)->keyword);
+    act(buf, TRUE, ch, 0, 0, TO_ROOM);
+    if ((other_room = EXIT(ch, door)->to_room) != NOWHERE){
+      if ((back = world[other_room].dir_option[rev_dir[door]]))
+	if (back->to_room == ch->in_room) {
+	  SET_BIT(back->exit_info, EX_ISBROKEN);
+	  REMOVE_BIT(back->exit_info, EX_CLOSED|EX_LOCKED);
+	  if (back->keyword) {
+	    sprintf(buf, "The %s suddenly crashes open.\n\r",
+		    fname(back->keyword));
+	    send_to_room(buf, EXIT(ch, door)->to_room);
+	  } else
+	    send_to_room("The door is opened from the other side.\n\r",
+			 EXIT(ch, door)->to_room);
 	}
-
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	one_argument(argument, arg);
-
-	switch (subcmd) {
-	case 0:
-		if (GET_POS(ch) < POSITION_FIGHTING) {
-			send_to_char("You need to stand up first.\n\r", ch);
-			return;
-		}
-
-		door = -1;
-		if (!(victim = get_char_room_vis(ch, arg))) {
-			if (ch->specials.fighting)
-				victim = ch->specials.fighting;
-			else {
-				argument_interpreter(argument, type, dir);
-				door = find_door(ch, type, dir);
-			}
-		}
-
-		if (victim) {
-			if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
-				send_to_char("A peaceful feeling overwhelms you, and you "
-					"cannot bring yourself to attack.\n\r", ch);
-				return;
-			}
-			if (victim == ch) {
-				send_to_char("Aren't we funny today...\n\r", ch);
-				return;
-			}
-
-			if (!bb_instance.is_target_valid(ch, victim, SKILL_BASH))
-			{
-				send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
-				return;
-			}
-
-			if (!check_hallucinate(ch, victim))
-				return;
-			if (IS_SHADOW(victim)) {
-				send_to_char("Your bash encounters nothing but thin air.\n\r", ch);
-				return;
-			}
-			if (!GET_SKILL(ch, SKILL_BASH)) {
-				send_to_char("Learn how to bash properly first!\n\r", ch);
-				return;
-			}
-
-			if (IS_SET(victim->specials.affected_by, AFF_BASH)) {
-				send_to_char("Your victim is already bashed!\n\r", ch);
-				return;
-			}
-			next_mode = 1;
-		}
-		else if (door >= 0) {
-			if (IS_RIDING(ch)) {
-				send_to_char("You cannot do it while riding.\n\r", ch);
-				return;
-			}
-			if (!IS_SET(EXIT(ch, door)->exit_info, EX_ISDOOR)) {
-				send_to_char("That's impossible, I'm afraid.\n\r", ch);
-				return;
-			}
-			else if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)) {
-				send_to_char("It's already open!\n\r", ch);
-				return;
-			}
-			next_mode = 3;
-			if (GET_MOVE(ch) < 10) {
-				send_to_char("You are too tired for that.\n\r", ch);
-				return;
-			}
-		}
-		else 
-		{
-			send_to_char("Bash who?\n\r", ch);
-			return;
-		}
-		if (door >= 0)
-			if (!check_overkill(victim)) {
-				send_to_char("You cannot get close enough to bash.\n\r", ch);
-				return;
-			}
-
-		WAIT_STATE_FULL(ch, skills[SKILL_BASH].beats, CMD_BASH,
-			next_mode, 50, 0, (next_mode == 1) ?
-			GET_ABS_NUM(victim) : door, victim,
-			AFF_WAITING | AFF_WAITWHEEL,
-			(next_mode == 1) ? TARGET_CHAR : TARGET_OTHER);
-		return;
-
-	case 1:
-		if (GET_POS(ch) < POSITION_FIGHTING) {
-			send_to_char("You need to stand up first.\n\r", ch);
-			return;
-		}
-		if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num)) {
-			send_to_char("Your victim is no longer among us.\n\r", ch);
-			return;
-		}
-		victim = (struct char_data *) wtl->targ1.ptr.ch;
-		if (!CAN_SEE(ch, victim)) {
-			send_to_char("Bash who?\n\r", ch);
-			return;
-		}
-		if (ch->in_room != victim->in_room) {
-			send_to_char("You target is not here any longer\n\r", ch);
-			return;
-		}
-		if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_NOBASH)) {
-			act("You try to bash $N, but only bruise yourself.",
-				FALSE, ch, 0, victim, TO_CHAR);
-			act("$n tries to bash $N, but only bruises $mself.",
-				FALSE, ch, 0, victim, TO_ROOM);
-			return;
-		}
-		if (IS_SET(victim->specials.affected_by, AFF_BASH)) {
-			send_to_char("Your victim is already bashed!\n\r", ch);
-			return;
-		}
-
-		if (!bb_instance.is_target_valid(ch, victim, SKILL_BASH))
-		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
-			return;
-		}
-
-		/*
-		 * bash prob. is like a hit, except victim parry is halved,
-		 * and OB = OB*3/2 -= (1d60-30)
-		 */
-		prob = GET_SKILL(ch, SKILL_BASH);
-		prob += get_real_OB(ch) * 3 / 2;
-		prob -= get_real_dodge(victim);
-		prob -= get_real_parry(victim) / 2;
-		prob -= GET_LEVELA(victim) * 3;
-		prob += GET_PROF_LEVEL(PROF_WARRIOR, ch);
-		prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
-		prob += number(-40, 40);
-		prob -= 160;
-		if (prob < 0)
-			damage(ch, victim, 0, SKILL_BASH, 0);
-		else {
-			WAIT_STATE_FULL(victim,
-				PULSE_VIOLENCE * 3 / 2 + number(0, PULSE_VIOLENCE / 2),
-				CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
-				TARGET_IGNORE);
-			damage(ch, victim, 1, SKILL_BASH, 0);
-		}
-		return;
-
-	case 2:
-		abort_delay(ch);
-		REMOVE_BIT(ch->specials.affected_by, AFF_BASH);
-		if (GET_POS(ch) > POSITION_INCAP) {
-			act("$n has recovered from a bash!", TRUE, ch, 0, 0, TO_ROOM);
-			act("You have regained your balance!", TRUE, ch, 0, 0, TO_CHAR);
-			if (GET_POS(ch) < POSITION_FIGHTING)
-				do_stand(ch, "", 0, 0, 0);
-		}
-		break;
-
-
-	case 3:
-		if (wtl->targ1.type != TARGET_OTHER) {
-			send_to_char("Something went wrong in your bashing.\n\r", ch);
-			return;
-		}
-		door = wtl->targ1.ch_num;
-		if (!EXIT(ch, door)) {
-			//       abort_delay(ch);
-			return;
-		}
-		if (!IS_SET(EXIT(ch, door)->exit_info, EX_ISDOOR)) {
-			send_to_char("That's impossible, I'm afraid.\n\r", ch);
-			return;
-		}
-		else if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)) {
-			send_to_char("It's already open!\n\r", ch);
-			return;
-		}
-
-		prob = (GET_SKILL(ch, SKILL_BASH) / 10 + GET_STR(ch) - 20) * 5;
-
-		tmp = GET_RACE(ch);
-		if ((tmp == RACE_WOOD) || (tmp == RACE_HIGH) || (tmp == RACE_HOBBIT)) {
-			sprintf(buf, "You throw your light body on the %s.\n\r",
-				EXIT(ch, door)->keyword);
-			send_to_char(buf, ch);
-			sprintf(buf, "$n throws $mself on the %s.\n\r",
-				EXIT(ch, door)->keyword);
-			act(buf, TRUE, ch, 0, 0, TO_ROOM);
-			prob = -1;
-		}
-		else {
-			sprintf(buf, "You throw yourself on the %s.\n\r",
-				EXIT(ch, door)->keyword);
-			send_to_char(buf, ch);
-			sprintf(buf, "$n throws $mself on the %s.\n\r",
-				EXIT(ch, door)->keyword);
-			act(buf, TRUE, ch, 0, 0, TO_ROOM);
-		}
-		if ((tmp == RACE_URUK) || (tmp == RACE_DWARF)) prob += 10;
-
-		if (IS_SET(EXIT(ch, door)->exit_info, EX_DOORISHEAVY)) prob = -1;
-		if (IS_SET(EXIT(ch, door)->exit_info, EX_NOBREAK)) prob = -1;
-
-		if (prob < 0) {
-			sprintf(buf, "The %s would not budge.\n\r",
-				EXIT(ch, door)->keyword);
-			send_to_char(buf, ch);
-			return;
-		}
-		if (number(0, 99) > prob) { //failure
-			send_to_char("You only injure yourself.\n\r", ch);
-			GET_HIT(ch) -= number(1, 20);
-			GET_MOVE(ch) -= 10;
-			update_pos(ch);
-			if (GET_POS(ch) == POSITION_STANDING)
-				GET_POS(ch) = POSITION_RESTING;
-			return;
-		}
-		SET_BIT(EXIT(ch, door)->exit_info, EX_ISBROKEN);
-		REMOVE_BIT(EXIT(ch, door)->exit_info, EX_CLOSED | EX_LOCKED);
-		sprintf(buf, "The %s crashes open! You fall through it.\n\r",
-			EXIT(ch, door)->keyword);
-		send_to_char(buf, ch);
-		sprintf(buf, "The %s crashes open! $n falls through it.\n\r",
-			EXIT(ch, door)->keyword);
-		act(buf, TRUE, ch, 0, 0, TO_ROOM);
-		if ((other_room = EXIT(ch, door)->to_room) != NOWHERE) {
-			if ((back = world[other_room].dir_option[rev_dir[door]]))
-				if (back->to_room == ch->in_room) {
-					SET_BIT(back->exit_info, EX_ISBROKEN);
-					REMOVE_BIT(back->exit_info, EX_CLOSED | EX_LOCKED);
-					if (back->keyword) {
-						sprintf(buf, "The %s suddenly crashes open.\n\r",
-							fname(back->keyword));
-						send_to_room(buf, EXIT(ch, door)->to_room);
-					}
-					else
-						send_to_room("The door is opened from the other side.\n\r",
-							EXIT(ch, door)->to_room);
-				}
-			stop_riding(ch);
-			char_from_room(ch);
-			char_to_room(ch, other_room);
-			do_look(ch, "\0", 0, 0, 0);
-			act("$n falls in.", TRUE, ch, 0, 0, TO_ROOM);
-		}
-		GET_POS(ch) = POSITION_SITTING;
-		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 3, CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH, TARGET_NONE);
-
-		break;
-	case -1:                 // emergency exit.
-	default:
-		REMOVE_BIT(ch->specials.affected_by, AFF_BASH);
-		abort_delay(ch);
-		return;
-	}
+      stop_riding(ch);
+      char_from_room(ch);
+      char_to_room(ch, other_room);
+      do_look(ch, "\0", 0, 0, 0);
+      act("$n falls in.", TRUE, ch, 0, 0, TO_ROOM);
+    }
+    GET_POS(ch) = POSITION_SITTING; 
+    WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 3, CMD_BASH, 2, 80, 0,0,0, AFF_WAITING | AFF_BASH, TARGET_NONE);
+    
+    break;
+  case -1:                 // emergency exit.
+  default:
+    REMOVE_BIT(ch->specials.affected_by, AFF_BASH);
+    abort_delay(ch);
+    return;
+  }
 }
 
 
@@ -800,161 +767,150 @@ ACMD(do_rescue)
  */
 ACMD(do_kick)
 {
-	struct char_data *victim;
-	struct char_data *t;
-	sh_int prob, num, dam;
-	int attacktype;
+  struct char_data *victim;
+  struct char_data *t;
+  sh_int prob, num, dam;
+  int attacktype;
 
-	if (IS_SHADOW(ch)) {
-		send_to_char("You are too insubstantial to do that.\n\r", ch);
-		return;
-	}
+  if (IS_SHADOW(ch)) {
+    send_to_char("You are too insubstantial to do that.\n\r", ch);
+    return;
+  }
+  
+  if (subcmd == SCMD_KICK)
+    attacktype = SKILL_KICK;
+  else if (subcmd == SCMD_SWING)
+    attacktype = SKILL_SWING;
+  else 
+    return;
+  
+  if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+    send_to_char("A peaceful feeling overwhelms you, "
+		 "and you cannot bring yourself to attack.\n\r", ch);
+    return;
+  }
+  
+  victim = NULL;
+  if (wtl && wtl->targ1.type == TARGET_CHAR && 
+      char_exists(wtl->targ1.ch_num)) {
+    victim = wtl->targ1.ptr.ch;
+  } else if (wtl && (wtl->targ1.type == TARGET_TEXT)) {
+    victim = get_char_room_vis(ch, wtl->targ1.ptr.text->text);
+  } else {
+    one_argument(argument, arg);
+    victim = get_char_room_vis(ch, arg);
+  }
 
-	if (subcmd == SCMD_KICK)
-		attacktype = SKILL_KICK;
-	else if (subcmd == SCMD_SWING)
-		attacktype = SKILL_SWING;
-	else
-		return;
+  if (!victim) {
+    if (ch->specials.fighting) {
+      victim = ch->specials.fighting;
+    } else {
+      if(attacktype == SKILL_KICK)
+	send_to_char("Kick who?\n\r", ch);
+      else
+	send_to_char("Swing at who?\n\r",ch);
+      
+      return;
+    }
+  }
 
-	if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
-		send_to_char("A peaceful feeling overwhelms you, "
-			"and you cannot bring yourself to attack.\n\r", ch);
-		return;
-	}
+  if (!check_overkill(victim)) {
+    send_to_char("You cannot get close enough!\n\r", ch);
+    return;
+  }
+  
+  if (victim->in_room != ch->in_room) {
+    if(attacktype == SKILL_KICK)
+      send_to_char("Kick who?\n\r", ch);
+    else
+      send_to_char("Swing at who?\n\r",ch);
+    
+    return;
+  }
+  
+  if (victim == ch) {
+    send_to_char("Aren't we funny today...\n\r", ch);
+    return;
+  }
+  
+  if (IS_SHADOW(victim)) {
+    if (attacktype == SKILL_KICK)
+      send_to_char("Your kick encounters nothing but thin air.\n\r", ch);
+    else
+      send_to_char("Your swing encounters nothing but thin air.\n\r", ch);
+    
+    return;
+  }
 
-	victim = NULL;
-	if (wtl && wtl->targ1.type == TARGET_CHAR &&
-		char_exists(wtl->targ1.ch_num)) {
-		victim = wtl->targ1.ptr.ch;
-	}
-	else if (wtl && (wtl->targ1.type == TARGET_TEXT)) {
-		victim = get_char_room_vis(ch, wtl->targ1.ptr.text->text);
-	}
-	else {
-		one_argument(argument, arg);
-		victim = get_char_room_vis(ch, arg);
-	}
+  if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_NOBASH)) {
+    if (attacktype == SKILL_KICK) {
+      act("You kick $N, but only bruise yourself.",
+	  FALSE, ch, 0, victim, TO_CHAR);
+      act("$n kicks $N, but only bruises $mself.",
+	  FALSE, ch, 0, victim, TO_ROOM);
+    } else {
+      act("You swing at $N, but only bruise yourself.",
+	  FALSE, ch, 0, victim, TO_CHAR);
+      act("$n swings at $N, but only bruises $mself.",
+	  FALSE, ch, 0, victim, TO_ROOM);
+    }
+    
+    return;
+  }
+  
+  if (!GET_SKILL(ch, attacktype)) {
+    send_to_char("Learn how to do it first!\n\r", ch);
+    return;
+  }
+  
+  /* %20 chance to swing the wrong person */
+  if (attacktype == SKILL_SWING && !number(0, 4)) {
+    num = 0;
+    for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
+      if (t != ch && t != victim)
+	num++;
+    
+    if (!num) {
+      damage(ch, victim, 0, attacktype, 0);
+      goto delay;
+    }
 
-	if (!victim) {
-		if (ch->specials.fighting) {
-			victim = ch->specials.fighting;
-		}
-		else {
-			if (attacktype == SKILL_KICK)
-				send_to_char("Kick who?\n\r", ch);
-			else
-				send_to_char("Swing at who?\n\r", ch);
+    num = number(1, num);
 
-			return;
-		}
-	}
+    for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
+      if (t != ch && t != victim) {
+	--num;
+	if (!num)
+	  break;
+      }
+    
+    damage(ch, victim, 0, attacktype, 0);
 
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim, attacktype))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
-		return;
-	}
+    victim = t;
+  }
+  
+  prob = GET_SKILL(ch, attacktype);
+  prob -= get_real_dodge(victim) / 2;
+  prob -= get_real_parry(victim) / 2;
+  prob += get_real_OB(ch) / 2;
+  prob += number(1, 100);
+  prob -= 120;
 
-	if (!check_overkill(victim)) {
-		send_to_char("You cannot get close enough!\n\r", ch);
-		return;
-	}
+  dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) *
+    (100 + prob) / 250;
+  
+  if (attacktype == SKILL_SWING)
+    dam = dam * 3/2;
+  
+  if (prob < 0)
+    damage(ch, victim, 0, attacktype, 0);
+  else
+    damage(ch, victim, dam, attacktype, 0);
 
-	if (victim->in_room != ch->in_room) {
-		if (attacktype == SKILL_KICK)
-			send_to_char("Kick who?\n\r", ch);
-		else
-			send_to_char("Swing at who?\n\r", ch);
-
-		return;
-	}
-
-	if (victim == ch) {
-		send_to_char("Aren't we funny today...\n\r", ch);
-		return;
-	}
-
-	if (IS_SHADOW(victim)) {
-		if (attacktype == SKILL_KICK)
-			send_to_char("Your kick encounters nothing but thin air.\n\r", ch);
-		else
-			send_to_char("Your swing encounters nothing but thin air.\n\r", ch);
-
-		return;
-	}
-
-	if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_NOBASH)) {
-		if (attacktype == SKILL_KICK) {
-			act("You kick $N, but only bruise yourself.",
-				FALSE, ch, 0, victim, TO_CHAR);
-			act("$n kicks $N, but only bruises $mself.",
-				FALSE, ch, 0, victim, TO_ROOM);
-		}
-		else {
-			act("You swing at $N, but only bruise yourself.",
-				FALSE, ch, 0, victim, TO_CHAR);
-			act("$n swings at $N, but only bruises $mself.",
-				FALSE, ch, 0, victim, TO_ROOM);
-		}
-
-		return;
-	}
-
-	if (!GET_SKILL(ch, attacktype)) {
-		send_to_char("Learn how to do it first!\n\r", ch);
-		return;
-	}
-
-	/* %20 chance to swing the wrong person */
-	if (attacktype == SKILL_SWING && !number(0, 4)) {
-		num = 0;
-		for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-			if (t != ch && t != victim)
-				num++;
-
-		if (!num) {
-			damage(ch, victim, 0, attacktype, 0);
-			goto delay;
-		}
-
-		num = number(1, num);
-
-		for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-			if (t != ch && t != victim) {
-				--num;
-				if (!num)
-					break;
-			}
-
-		damage(ch, victim, 0, attacktype, 0);
-
-		victim = t;
-	}
-
-	prob = GET_SKILL(ch, attacktype);
-	prob -= get_real_dodge(victim) / 2;
-	prob -= get_real_parry(victim) / 2;
-	prob += get_real_OB(ch) / 2;
-	prob += number(1, 100);
-	prob -= 120;
-
-	dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) *
-		(100 + prob) / 250;
-
-	if (attacktype == SKILL_SWING)
-		dam = dam * 3 / 2;
-
-	if (prob < 0)
-		damage(ch, victim, 0, attacktype, 0);
-	else
-		damage(ch, victim, dam, attacktype, 0);
-
-delay:
-	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
-		number(0, PULSE_VIOLENCE),
-		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+ delay:  
+  WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4/3 +
+		  number(0, PULSE_VIOLENCE),
+		  0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 
 

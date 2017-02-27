@@ -77,37 +77,36 @@ int	is_number(char *str);
 void virt_assignmob(struct char_data *);
 void virt_assignobj(struct obj_data * obj);
 
-typedef void(*command_func)(struct char_data *ch, char *argument, struct waiting_type *, int cmd, int subcmd);
-
 struct command_info {
-	command_func command_pointer;
-	byte minimum_position;
-	sh_int minimum_level;
-	char retired_allowed;
-	sh_int sort_pos;
-	int subcmd;
-	byte is_social;
+  void (*command_pointer)(struct char_data *ch, char *argument,
+			  struct waiting_type *, int cmd, int subcmd);
+  byte minimum_position;
+  sh_int minimum_level;
+  char retired_allowed;
+  sh_int sort_pos;
+  int subcmd;
+  byte is_social;
 
-	/* mask bits */
+  /* mask bits */
 #define CMD_MASK_MOVE_PENALTY    0x01  /* command has random move penalty */
 #define CMD_MASK_STAMINA_PENALTY 0x02  /* command has random stamina penalty */
 #define CMD_MASK_NO_UNHIDE       0x04  /* command doesn't unhide players */
-	unsigned char mask;
+  unsigned char mask;
 
-	int target_mask[32];
-	void add_target(int t1, int t2) {
-		for (int tmp = 0; tmp < 32; tmp++)
-			if ((1 << tmp) & t1)
-				target_mask[tmp] |= t2;
-	}
+  int target_mask[32];
+  void add_target(int t1, int t2) {
+    for(int tmp = 0; tmp < 32; tmp++)
+      if((1 << tmp) & t1)
+	target_mask[tmp] |= t2;
+  }
 
-	/* This is never used anywhere */
-	int valid_target(int t1, int t2) {
-		for (int tmp = 0; tmp < 32; tmp++)
-			if (((1 << tmp) & t1) && (target_mask[tmp] & t2));
-		return 1;
-		return 0;
-	}
+  /* This is never used anywhere */
+  int valid_target(int t1, int t2){
+    for(int tmp = 0; tmp < 32; tmp++)
+      if(((1 << tmp) & t1) && (target_mask[tmp] & t2));
+    return 1;
+    return 0;
+  }
 };
 
 

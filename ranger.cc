@@ -25,7 +25,6 @@
 
 #include "char_utils.h"
 #include "char_utils_combat.h"
-#include "big_brother.h"
 
 #include <algorithm>
 #include <sstream>
@@ -838,8 +837,6 @@ ACMD(do_ambush)
     return;
   }
 
-  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-
   switch (subcmd) {
   case -1:
     abort_delay(ch);
@@ -853,12 +850,6 @@ ACMD(do_ambush)
     victim = ambush_get_valid_victim(ch, wtl);
     if (victim == NULL)
       return;
-
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_AMBUSH))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.", ch);
-		return;
-	}
 
     /* TARGET_CHAR stores the victim, TARGET_TEXT stores the keyword */
     if (wtl->targ1.type == TARGET_CHAR)
@@ -883,12 +874,6 @@ ACMD(do_ambush)
     victim = ambush_get_valid_victim(ch, wtl);
     if (victim == NULL)
       return;
-
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_AMBUSH))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.", ch);
-		return;
-	}
 
     success = ambush_calculate_success(ch, victim);
     if (success > 0) {
@@ -1048,8 +1033,6 @@ ACMD(do_trap)
 	if (!is_valid_subcommand(*ch, subcmd, wtl))
 		return;
 
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-
 	/*
 	 * Subcommand callbacks:
 	 *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
@@ -1163,15 +1146,6 @@ ACMD(do_trap)
 		victim = trap_get_valid_victim(ch, wtl);
 		if (victim == NULL)
 		{
-			/* Reset the trap.  do_trap subcmd=1 does exactly this. */
-			do_trap(ch, "", wtl, CMD_TRAP, 1);
-			return;
-		}
-
-		if (!bb_instance.is_target_valid(ch, victim, SKILL_TRAP))
-		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You remain in wait...", ch);
-
 			/* Reset the trap.  do_trap subcmd=1 does exactly this. */
 			do_trap(ch, "", wtl, CMD_TRAP, 1);
 			return;
@@ -2506,6 +2480,7 @@ void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
  */
 ACMD(do_shoot)
 {
+	char_data *victim = NULL;
 	one_argument(argument, arg);
 
 	if (subcmd == -1)
@@ -2522,15 +2497,6 @@ ACMD(do_shoot)
 	if (!can_ch_shoot(ch))
 		return;
 
-	char_data* victim = is_targ_valid(ch, wtl);
-
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_ARCHERY))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.", ch);
-		return;
-	}
-
 	if (utils::is_affected_by(*ch, AFF_SANCTUARY))
 	{
 		appear(ch);
@@ -2542,6 +2508,7 @@ ACMD(do_shoot)
 	{
 	case 0:
 	{
+		victim = is_targ_valid(ch, wtl);
 		if (victim == NULL)
 		{
 			return;
@@ -2579,6 +2546,7 @@ ACMD(do_shoot)
 		break;
 	case 1:
 	{
+		victim = is_targ_valid(ch, wtl);
 		if (victim == NULL)
 		{
 			return;

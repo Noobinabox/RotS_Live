@@ -23,7 +23,6 @@
 #include "handler.h"
 
 #include "char_utils.h"
-#include "big_brother.h"
 
 extern struct descriptor_data *descriptor_list;
 extern struct char_data *fast_update_list;
@@ -645,17 +644,6 @@ ACMD(do_cast)
 				report_wrong_target(ch, skills[spell_index].targets, (*arg) ? 1 : 0);
 				return;
 			}
-
-			// The spell is targeting a character.  Ensure that it's valid before continuing.
-			if (tmpwtl.targ2.type == TARGET_CHAR && tmpwtl.targ2.ptr.ch)
-			{
-				game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-				if (!bb_instance.is_target_valid(ch, tmpwtl.targ2.ptr.ch, spell_index))
-				{
-					send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.", ch);
-					return;
-				}
-			}
 		}
 		/* supposedly, we have ch.delay formed now, except for delay value. */
 
@@ -700,14 +688,6 @@ ACMD(do_cast)
 	if (IS_SET(target_flag, TAR_CHAR_ROOM | TAR_CHAR_WORLD | TAR_FIGHT_VICT))
 	{
 		tar_char = wtl->targ2.ptr.ch;
-		
-		// The spell is targeting a character.  Ensure that it's valid before continuing.
-		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-		if (!bb_instance.is_target_valid(ch, tar_char, spell_index))
-		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.", ch);
-			return;
-		}
 
 		/* get rid of sanctuaries for any spell targetted on someone other
 		 * than themseles */

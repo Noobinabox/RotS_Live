@@ -558,45 +558,34 @@ search_block(char *arg, char **list, char exact)
 
 int old_search_block(char *argument, int begin, unsigned int length, const char **list, int mode)
 {
-	/* If the word contain 0 letters, then a match is already found */
-	unsigned int found = (length < 1);
+  unsigned int	guess, found, search;
 
-	unsigned int guess = 0;
+  /* If the word contain 0 letters, then a match is already found */
+  found = (length < 1);
 
-	/* Search for a match */
-	if (mode)
-	{
-		while (!found && *(list[guess]) != '\n')
-		{
-			found = (length == strlen(list[guess]));
-			for (unsigned int search = 0; (search < length) && found; search++)
-			{
-				found = (*(argument + begin + search) == *(list[guess] + search));
-			}
-			guess++;
-		}
-	}
-	else 
-	{
-		while (!found && *(list[guess]) != '\n') 
-		{
-			found = 1;
-			for (unsigned int search = 0; (search < length) && found; search++)
-			{
-				found = (*(argument + begin + search) == *(list[guess] + search));
-			}
-			guess++;
-		}
-	}
+  guess = 0;
 
-	if (found)
-	{
-		return guess;
-	}
-	else
-	{
-		return -1;
-	}
+  /* Search for a match */
+  if(mode)
+    while(!found && *(list[guess]) != '\n') {
+      found = (length == strlen(list[guess]));
+      for(search = 0; (search < length) && found; search++)
+	found = (*(argument + begin + search) == *(list[guess] + search));
+      guess++;
+    }
+  else {
+    while(!found && *(list[guess]) != '\n') {
+      found = 1;
+      for(search = 0; (search < length) && found; search++)
+	found = (*(argument + begin + search) == *(list[guess] + search));
+      guess++;
+    }
+  }
+
+  if(found)
+    return guess;
+  else
+    return -1;
 }
 
 
@@ -1247,293 +1236,253 @@ replace_aliases(struct char_data *ch, char *line)
 
 
 
-void command_interpreter(char_data* character, char* input_argument, waiting_type* argument_wait_info)
+void
+command_interpreter(struct char_data *ch, char *argument_chr,
+		    struct waiting_type *argument_wtl)
 {
-	int look_at, cmd, subcmd, begin, mode, may_not_perform;
-	char argument[MAX_INPUT_LENGTH];
-	char local_buf[MAX_INPUT_LENGTH];
-	char *argument_raw = "";
-	struct waiting_type *argument_info, interp_argument_info;
-	extern int no_specials;
+  int look_at, cmd, subcmd, begin, mode, may_not_perform;
+  char argument[MAX_INPUT_LENGTH];
+  char local_buf[MAX_INPUT_LENGTH];
+  char *argument_raw = "";
+  struct waiting_type *argument_info, interp_argument_info;
+  extern int no_specials;
 
-	bzero((char *)&interp_argument_info, sizeof(waiting_type));
-	look_at = begin = mode = subcmd = 0;
+  bzero((char *) &interp_argument_info, sizeof(waiting_type));
+  look_at = begin = mode = subcmd = 0;
 
-	/* should only happen if someone other than ch causes this function call */
-	if (character->delay.wait_value > 0) 
-	{
-		send_to_char("You are busy with something else.\n\r", character);
-		return;
-	}
+  /* should only happen if someone other than ch causes this function call */
+  if(ch->delay.wait_value > 0) {
+    send_to_char("You are busy with something else.\n\r", ch);
+    return;
+  }
 
-	if (argument_wait_info) 
-	{
-		argument_info = argument_wait_info;
-		argument_raw = "";
-		mode = 1;
-	}
-	else
-	{
-		argument_raw = input_argument;
-		argument_info = &interp_argument_info;
-		mode = 0;
-		/* are they AFK? remove the flag */
-		if (IS_SET(PLR_FLAGS(character), PLR_ISAFK))
-		{
-			REMOVE_BIT(PLR_FLAGS(character), PLR_ISAFK);
-			send_to_char("You return to your keyboard.\n\r", character);
+  if(argument_wtl) {
+    argument_info = argument_wtl;
+    argument_raw = "";
+    mode = 1;
+  }
+  else 
+  {
+	  argument_raw = argument_chr;
+	  argument_info = &interp_argument_info;
+	  mode = 0;
+	  /* are they AFK? remove the flag */
+	  if (IS_SET(PLR_FLAGS(ch), PLR_ISAFK))
+	  {
+		  REMOVE_BIT(PLR_FLAGS(ch), PLR_ISAFK);
+		  send_to_char("You return to your keyboard.\n\r", ch);
 
-			// Let Big Brother know that the character is back.
-			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-			bb_instance.on_character_returned(character);
-		}
-	}
+		  // Let Big Brother know that the character is back.
+		  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		  bb_instance.on_character_returned(ch);
+	  }
+  }
 
 
-	/* there's nothing special going on with this guy */
-	if (!mode) 
-	{
-		bzero(argument, MAX_INPUT_LENGTH);
+  /* there's nothing special going on with this guy */
+  if(!mode) {
+    bzero(argument, MAX_INPUT_LENGTH);
 
-		/* Find first non blank */
-		for (begin = 0; (*(argument_raw + begin) == ' '); begin++);
-		strcpy(argument, argument_raw + begin);
-		begin = 0;
+    /* Find first non blank */
+    for(begin = 0; (*(argument_raw + begin ) == ' ' ) ; begin++);
+    strcpy(argument, argument_raw + begin);
+    begin = 0;
 
-		/* Use do_shape level */
-		if ((*(argument + begin) == '/') &&
-			(GET_LEVEL(character) >= cmd_info[CMD_SHAPE].minimum_level) &&
-			!(RETIRED(character))) 
-		{
-			shape_center(character, argument + begin + 1);
-			return;
-		}
+    /* Use do_shape level */
+    if((*(argument + begin) == '/') &&
+       (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) &&
+       !(RETIRED(ch))) {
+      shape_center(ch, argument + begin + 1);
+      return;
+    }
 
-		/*
-		 * Already shaping.  Don't check for retirement.  If they're in here
-		 * somehow they have to be able to get out.
-		 */
-		if ((character->specials.position == POSITION_SHAPING) &&
-			(GET_LEVEL(character) >= cmd_info[CMD_SHAPE].minimum_level)) 
-		{ /* do_shape */
-			shape_center(character, argument_raw);
-			return;
-		}
+    /*
+     * Already shaping.  Don't check for retirement.  If they're in here
+     * somehow they have to be able to get out.
+     */
+    if((ch->specials.position == POSITION_SHAPING ) &&
+       (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level)) { /* do_shape */
+      shape_center(ch, argument_raw);
+      return;
+    }
 
-		/* special checks required for shortcut tokenized commands */
-		if (*(argument + begin) == '\'') 
-		{
-			cmd = CMD_SAY;
-			*(argument + begin) = ' ';
-			look_at = 0;
-		}
-		else if (*(argument + begin) == ';') 
-		{
-			cmd = CMD_WIZNET;
-			*(argument + begin) = ' ';
-			look_at = 0;
-		}
-		else if (*(argument + begin) == ',') 
-		{
-			cmd = CMD_EMOTE;
-			*(argument + begin) = ' ';
-			look_at = 0;
-		}
-		/* they entered a blank line */
-		else if (*(argument + begin) == 0)
-		{
-			return;
-		}
-		else 
-		{
-			/* get lower case letters and length */
-			for (look_at = 0; *(argument + begin + look_at) > ' '; look_at++)
-				*(argument + begin + look_at) = LOWER(*(argument + begin + look_at));
+    /* special checks required for shortcut tokenized commands */
+    if(*(argument + begin) == '\'') {
+      cmd = CMD_SAY;
+      *(argument + begin) = ' ';
+      look_at = 0;
+    }
+    else if(*(argument + begin) == ';') {
+      cmd = CMD_WIZNET;
+      *(argument + begin) = ' ';
+      look_at = 0;
+    }
+    else if(*(argument + begin) == ',') {
+      cmd = CMD_EMOTE;
+      *(argument + begin) = ' ';
+      look_at = 0;
+    }
+    /* they entered a blank line */
+    else if(*(argument + begin) == 0)
+      return;
+    else {
+      /* get lower case letters and length */
+      for(look_at = 0; *(argument + begin + look_at ) > ' '; look_at++)
+	*(argument + begin + look_at) = LOWER(*(argument + begin + look_at));
 
-			cmd = old_search_block(argument, begin, look_at, command, 0);
-		}
-	}
-	else 
-	{
-		/* if you're hazed, you have a 10% chance of forgetting targ1 */
-		if (IS_AFFECTED(character, AFF_HAZE))
-			if (!number(0, 9)) 
-			{
-				argument_info->targ1.cleanup();
-				argument_info->targ2.cleanup();
-			}
+      cmd = old_search_block(argument, begin, look_at, command, 0);
+    }
+  }
+  else {
+    /* if you're hazed, you have a 10% chance of forgetting targ1 */
+    if(IS_AFFECTED(ch, AFF_HAZE))
+      if(!number(0, 9)) {
+	argument_info->targ1.cleanup();
+	argument_info->targ2.cleanup();
+      }
 
-		cmd = argument_info->cmd;
-		subcmd = argument_info->subcmd;
-		if (!target_check(character, cmd, &argument_info->targ1, &argument_info->targ2))
-			return;
-	}
+    cmd = argument_info->cmd;
+    subcmd = argument_info->subcmd;
+    if(!target_check(ch, cmd, &argument_info->targ1, &argument_info->targ2))
+      return;
+  }
 
-	/* lacking minimum level requirement */
-	if (cmd > 0 && GET_LEVEL(character) < cmd_info[cmd].minimum_level)
-		cmd = -1;
+  /* lacking minimum level requirement */
+  if(cmd > 0 && GET_LEVEL(ch) < cmd_info[cmd].minimum_level)
+    cmd = -1;
 
-	/* retired players can't use this command */
-	if (cmd > 0 && !cmd_info[cmd].retired_allowed && RETIRED(character))
-		cmd = -1;
+  /* retired players can't use this command */
+  if(cmd > 0 && !cmd_info[cmd].retired_allowed && RETIRED(ch))
+    cmd = -1;
 
-	if (cmd <= 0) 
-	{
-		one_argument(argument + begin, local_buf);
-		subcmd = find_action(local_buf);
-		if (subcmd >= 0)
-			cmd = CMD_SOCIAL;
-		else
-			cmd = -1;
-	}
-	if (cmd <= 0) 
-	{
-		send_to_char("Unrecognized command.\n\r", character);
-		return;
-	}
+  if(cmd <= 0) {
+    one_argument(argument + begin, local_buf);
+    subcmd = find_action(local_buf);
+    if(subcmd >= 0)
+      cmd = CMD_SOCIAL;
+    else
+      cmd = -1;
+  }
+  if(cmd <= 0) {
+    send_to_char("Unrecognized command.\n\r",ch);
+    return;
+  }
 
-	/*
-	 * unhide hiders; commands with CMD_MASK_NO_UNHIDE shouldn't
-	 * unhide people.  If someone snuck into a room (and therefore
-	 * has the small hide value and SNUCK_IN hide_flag), they
-	 * should not be unhidden if they're:
-	 *  - still hidden from their initial entrance
-	 *  - they're using the hide command
-	 * Additionally, since practi{c,s}e can be used to either list
-	 * information (a case that shouldn't unhide you) or cause your
-	 * character to do very noticeable, physical activity (a case
-	 * that should unhide you), we check for it specially.
-	 */
-	if (cmd_info[cmd].minimum_position > POSITION_SLEEPING)
-		if (!IS_SET(cmd_info[cmd].mask, CMD_MASK_NO_UNHIDE) &&
-			!(cmd == CMD_HIDE &&
-				IS_SET(character->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-			!((cmd == CMD_PRACTICE || cmd == CMD_PRACTISE) &&
-				!*(argument + begin + look_at)))
-			stop_hiding(character, TRUE);
+  /*
+   * unhide hiders; commands with CMD_MASK_NO_UNHIDE shouldn't
+   * unhide people.  If someone snuck into a room (and therefore
+   * has the small hide value and SNUCK_IN hide_flag), they
+   * should not be unhidden if they're:
+   *  - still hidden from their initial entrance
+   *  - they're using the hide command
+   * Additionally, since practi{c,s}e can be used to either list
+   * information (a case that shouldn't unhide you) or cause your
+   * character to do very noticeable, physical activity (a case
+   * that should unhide you), we check for it specially.
+   */
+  if(cmd_info[cmd].minimum_position > POSITION_SLEEPING)
+    if(!IS_SET(cmd_info[cmd].mask, CMD_MASK_NO_UNHIDE) &&
+       !(cmd == CMD_HIDE &&
+	 IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+       !((cmd == CMD_PRACTICE || cmd == CMD_PRACTISE) &&
+	!*(argument + begin + look_at)))
+      stop_hiding(ch, TRUE);
 
-	/* is ch frozen? imps can't be frozen.. */
-	if (!IS_NPC(character) && PLR_FLAGGED(character, PLR_FROZEN) &&
-		GET_LEVEL(character) < LEVEL_IMPL) 
-	{
-		send_to_char("You try, but are restrained and cannot move...\n\r", character);
-		return;
-	}
+  /* is ch frozen? imps can't be frozen.. */
+  if(!IS_NPC(ch) && PLR_FLAGGED(ch, PLR_FROZEN) &&
+     GET_LEVEL(ch) < LEVEL_IMPL) {
+    send_to_char("You try, but are restrained and cannot move...\n\r", ch);
+    return;
+  }
 
-	/* now we execute the function */
-	if (cmd > 0 && (cmd_info[cmd].command_pointer)) {
-		/* are we in the right position? */
-		if (GET_POS(character) < cmd_info[cmd].minimum_position)
-		{
-			report_wrong_position(character);
-		}	
-		else 
-		{
-			may_not_perform = 0;
-			if (!mode) 
-			{   /* Parse the target into ch->delay */
-				argument_info->wait_value = 0;
-				argument_info->cmd = cmd;
-				argument_info->subcmd = (cmd == CMD_SOCIAL) ? subcmd : cmd_info[cmd].subcmd;
-				may_not_perform = target_parser(character, cmd, argument + begin + look_at,
+  /* now we execute the function */
+  if(cmd > 0 && (cmd_info[cmd].command_pointer)) {
+    /* are we in the right position? */
+    if(GET_POS(ch) < cmd_info[cmd].minimum_position)
+      report_wrong_position(ch);
+    else {
+      may_not_perform = 0;
+      if(!mode) {   /* Parse the target into ch->delay */
+	argument_info->wait_value = 0;
+	argument_info->cmd = cmd;
+	argument_info->subcmd = (cmd == CMD_SOCIAL) ? subcmd :
+	  cmd_info[cmd].subcmd;
+	may_not_perform = target_parser(ch, cmd, argument + begin + look_at,
 					&argument_info->targ1,
 					&argument_info->targ2);
-				may_not_perform = !may_not_perform;
-			}
-			if (!no_specials && !may_not_perform) 
-			{
-				may_not_perform |= special(character, cmd, argument + begin + look_at, SPECIAL_COMMAND, argument_info, NOWHERE);
-				if (cmd != CMD_SELL)  /* TEMPORARY, to keep CMD_SELL from crashing */
-				{
-					may_not_perform |= special(character, cmd, argument + begin + look_at, SPECIAL_TARGET, argument_info, NOWHERE);
-				}	
-				else                   /* also temp */
-				{
-					may_not_perform = 1;
-				}
-			}
+	may_not_perform = !may_not_perform;
+      }
+      if(!no_specials && !may_not_perform) {
+	may_not_perform |= special(ch, cmd, argument + begin + look_at,
+				   SPECIAL_COMMAND, argument_info, NOWHERE);
+	if(cmd != CMD_SELL)  /* TEMPORARY, to keep CMD_SELL from crashing */
+	  may_not_perform |= special(ch, cmd, argument + begin + look_at,
+				     SPECIAL_TARGET, argument_info, NOWHERE);
+	else                   /* also temp */
+	  may_not_perform = 1;
+      }
 
-			/*
-			 * if the command has a target of TAR_CHAR_ROOM, a
-			 * move penalty applies.  this is to keep people from
-			 * spamming things like 'kill uruk' or 'pat uruk'
-			 */
+      /*
+       * if the command has a target of TAR_CHAR_ROOM, a
+       * move penalty applies.  this is to keep people from
+       * spamming things like 'kill uruk' or 'pat uruk'
+       */
 
-			if (!may_not_perform) 
-			{
-				command_info& command = cmd_info[cmd];
-				command_func func_ptr = command.command_pointer;
-				if (func_ptr)
-				{
-					char* passed_arg = argument + begin + look_at;
-					int sub_cmd = 0;
-					if (mode != 0)
-					{
-						sub_cmd = subcmd;
-					}
-					else
-					{
-						subcmd = command.subcmd;
-					}
+      if(!may_not_perform) {
+	/* execute the command */
+	((*cmd_info[cmd].command_pointer)
+	 (ch, argument + begin + look_at, argument_info, cmd,
+	  mode ? subcmd : cmd_info[cmd].subcmd));
+      }
+    }
+    if(!mode) {
+      argument_info->targ1.cleanup();
+      argument_info->targ2.cleanup();
+    }
+    return;
+  }
 
-					/* execute the command */
-					func_ptr(character, passed_arg, argument_info, cmd, sub_cmd);
-				}
-			}
-		}
-		if (!mode) 
-		{
-			argument_info->targ1.cleanup();
-			argument_info->targ2.cleanup();
-		}
-		return;
-	}
-
-	if (cmd > 0 && (cmd_info[cmd].command_pointer == 0))
-	{
-		send_to_char("Sorry, but that command has yet to be implemented...\n\r", character);
-	}	
-	else
-	{
-		send_to_char("Huh?!?\n\r", character);
-	}	
+  if(cmd > 0 && (cmd_info[cmd].command_pointer == 0))
+    send_to_char("Sorry, but that command has yet to be implemented...\n\r", ch);
+  else
+    send_to_char("Huh?!?\n\r", ch);
 }
 
 
 
 void
-argument_interpreter(char *argument, char *first_arg, char *second_arg)
+argument_interpreter(char *argument, char *first_arg, char *second_arg )
 {
-	int look_at, found, begin;
+  int look_at, found, begin;
 
-	found = begin = 0;
+  found = begin = 0;
 
-	do {
-		/* Find first non blank */
-		for (; *(argument + begin) == ' '; begin++);
+  do {
+    /* Find first non blank */
+    for( ; *(argument + begin ) == ' ' ; begin++);
 
-		/* Find length of first word */
-		for (look_at = 0; *(argument + begin + look_at) > ' '; look_at++)
-			/* Make all letters lower case, AND copy them to first_arg */
-			*(first_arg + look_at) = LOWER(*(argument + begin + look_at));
+    /* Find length of first word */
+    for(look_at = 0; *(argument + begin + look_at) > ' ' ; look_at++)
+      /* Make all letters lower case, AND copy them to first_arg */
+      *(first_arg + look_at) = LOWER(*(argument + begin + look_at));
 
-		*(first_arg + look_at) = '\0';
-		begin += look_at;
-	} while (fill_word(first_arg));
+    *(first_arg + look_at) = '\0';
+    begin += look_at;
+  } while (fill_word(first_arg));
 
 
-	do {
-		/* Find first non blank */
-		for (; *(argument + begin) == ' '; begin++);
+  do {
+    /* Find first non blank */
+    for( ; *(argument + begin ) == ' ' ; begin++);
 
-		/* Find length of first word */
-		for (look_at = 0; *(argument + begin + look_at) > ' '; look_at++)
-			/* Make all letters lower case, AND copy them to second_arg */
-			*(second_arg + look_at) = LOWER(*(argument + begin + look_at));
+    /* Find length of first word */
+    for(look_at = 0; *(argument + begin + look_at) > ' ' ; look_at++)
+      /* Make all letters lower case, AND copy them to second_arg */
+      *(second_arg + look_at) = LOWER(*(argument + begin + look_at));
 
-		*(second_arg + look_at) = '\0';
-		begin += look_at;
-	} while (fill_word(second_arg));
+    *(second_arg + look_at) = '\0';
+    begin += look_at;
+  } while (fill_word(second_arg));
 }
 
 
@@ -1541,16 +1490,16 @@ argument_interpreter(char *argument, char *first_arg, char *second_arg)
 int
 is_number(char *str)
 {
-	int look_at;
+  int look_at;
 
-	if (*str == '\0')
-		return(0);
+  if(*str == '\0')
+    return(0);
 
-	for (look_at = 0; *(str + look_at) != '\0'; look_at++)
-		if ((*(str + look_at) < '0') || (*(str + look_at) > '9'))
-			return 0;
+  for(look_at = 0; *(str + look_at) != '\0'; look_at++)
+    if((*(str + look_at) < '0') || (*(str + look_at) > '9'))
+      return 0;
 
-	return 1;
+  return 1;
 }
 
 

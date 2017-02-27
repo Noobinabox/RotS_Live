@@ -112,6 +112,10 @@ namespace game_rules
 			{
 				return is_target_valid(attacker, victim->mount_data.rider, skill_id);
 			}
+			else if (utils::is_mob_flagged(*victim, AFF_CHARM))
+			{
+				return is_target_valid(attacker, victim->master, skill_id);
+			}
 			else
 			{
 				return true;

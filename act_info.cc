@@ -304,37 +304,48 @@ report_char_health(struct char_data *ch, struct char_data *i, char *str)
 
 
 
-void
-diag_char_to_char(struct char_data *i, struct char_data *ch)
+void diag_char_to_char(char_data* looked_at, char_data* viewer)
 {
-  char str[255], strname[255];
-  struct affected_type *tmpaff;
+	char str[255], strname[255];
+	struct affected_type *tmpaff;
 
-  strcpy(strname, PERS(i, ch, TRUE, FALSE));
+	strcpy(strname, PERS(looked_at, viewer, TRUE, FALSE));
 
-  *buf = 0;
-  report_char_health(ch, i, buf);
-  report_char_mentals(i,str,0);
-  sprintf(buf,"%s%s is %s.\n\r",buf, strname, str);
-  send_to_char(buf, ch);
-  if(IS_NPC(i))
-    report_mob_age(ch, i);
-  if(IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
-    if(!i->affected){
-      sprintf(buf,"%s is not affected by anything.\n\r", strname);
-      send_to_char(buf,ch);
-    }
-    else {
-      sprintf(buf,"%s is affected by:\n\r",strname);
-      for(tmpaff = i->affected; tmpaff; tmpaff = tmpaff->next) {
-	report_affection(tmpaff, str);
-	strcat(buf, str);
-      }
-      send_to_char(buf, ch);
-    }
-    report_perception(i, str);
-    send_to_char(str, ch);
-  }
+	*buf = 0;
+	report_char_health(viewer, looked_at, buf);
+	report_char_mentals(looked_at, str, 0);
+	sprintf(buf, "%s%s is %s.\n\r", buf, strname, str);
+	send_to_char(buf, viewer);
+	if (IS_NPC(looked_at))
+	{
+		report_mob_age(viewer, looked_at);
+	}
+	if (IS_AFFECTED(viewer, AFF_DETECT_MAGIC))
+	{
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		bool is_protected = bb_instance.is_target_looting(looked_at);
+		if (!looked_at->affected && !is_protected)
+		{
+			sprintf(buf, "%s is not affected by anything.\n\r", strname);
+			send_to_char(buf, viewer);
+		}
+		else
+		{
+			sprintf(buf, "%s is affected by:\n\r", strname);
+			if (is_protected)
+			{
+				sprintf(buf, "%-30s (special)\n\r", "holy protection");
+			}
+			for (tmpaff = looked_at->affected; tmpaff; tmpaff = tmpaff->next)
+			{
+				report_affection(tmpaff, str);
+				strcat(buf, str);
+			}
+			send_to_char(buf, viewer);
+		}
+		report_perception(looked_at, str);
+		send_to_char(str, viewer);
+	}
 }
 
 
@@ -3018,23 +3029,28 @@ ACMD(do_commands)
 
 ACMD(do_diagnose)
 {
-   struct char_data *vict;
+	struct char_data *vict;
 
-   one_argument(argument, buf);
+	one_argument(argument, buf);
 
-   if (*buf) {
-      if (!(vict = get_char_room_vis(ch, buf))) {
-	 send_to_char("No-one by that name here.\n\r", ch);
-	 return;
-      } else
-	 diag_char_to_char(vict, ch);
-   } else {
-      if (ch->specials.fighting)
-	 diag_char_to_char(ch->specials.fighting, ch);
-      else
-	 send_to_char("Diagnose who?\n\r", ch);
-   }
+	if (*buf) {
+		if (!(vict = get_char_room_vis(ch, buf))) 
+		{
+			send_to_char("No-one by that name here.\n\r", ch);
+			return;
+		}
+		else
+			diag_char_to_char(vict, ch);
+	}
+	else 
+	{
+		if (ch->specials.fighting)
+			diag_char_to_char(ch->specials.fighting, ch);
+		else
+			send_to_char("Diagnose who?\n\r", ch);
+	}
 }
+
 extern char  * prompt_text[];
 extern struct prompt_type prompt_hit[];
 extern struct prompt_type prompt_mana[];

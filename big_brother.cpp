@@ -142,7 +142,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
 	{
-		return is_target_valid(attacker, victim) && !is_skill_offensive(skill_id);
+		return is_target_valid(attacker, victim) || !is_skill_offensive(skill_id);
 	}
 
 	//============================================================================

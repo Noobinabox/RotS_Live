@@ -854,9 +854,9 @@ ACMD(do_ambush)
     if (victim == NULL)
       return;
 
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_AMBUSH))
+	if (!bb_instance.is_target_valid(ch, victim))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.", ch);
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.\r\n", ch);
 		return;
 	}
 
@@ -884,9 +884,9 @@ ACMD(do_ambush)
     if (victim == NULL)
       return;
 
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_AMBUSH))
+	if (!bb_instance.is_target_valid(ch, victim))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.", ch);
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.\r\n", ch);
 		return;
 	}
 
@@ -1168,9 +1168,9 @@ ACMD(do_trap)
 			return;
 		}
 
-		if (!bb_instance.is_target_valid(ch, victim, SKILL_TRAP))
+		if (!bb_instance.is_target_valid(ch, victim))
 		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You remain in wait...", ch);
+			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You remain in wait...\r\n", ch);
 
 			/* Reset the trap.  do_trap subcmd=1 does exactly this. */
 			do_trap(ch, "", wtl, CMD_TRAP, 1);
@@ -2525,9 +2525,9 @@ ACMD(do_shoot)
 	char_data* victim = is_targ_valid(ch, wtl);
 
 	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_ARCHERY))
+	if (!bb_instance.is_target_valid(ch, victim))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.", ch);
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
 		return;
 	}
 

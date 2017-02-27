@@ -24,6 +24,10 @@ namespace game_rules
 
 		// Called before any character attempts to damage or attack another character.
 		// This enforces our PK engagement rules.
+		bool is_target_valid(char_data* attacker, const char_data* victim) const;
+
+		// Called before any character attempts to damage or attack another character.
+		// This enforces our PK engagement rules.
 		bool is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const;
 
 		// Redirects in an attempt to find a suitable target for the attacker in the case
@@ -57,6 +61,24 @@ namespace game_rules
 
 		friend class world_singleton<big_brother>;
 
+		struct player_corpse_data
+		{
+			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0), is_npc(false) { };
+			player_corpse_data(char_data* dead_man);
+			player_corpse_data(char_data* dead_man, char_data* killer);
+
+			int num_items_looted;
+			int player_race;
+			int killer_id;
+			int player_id;
+			bool is_npc;
+		};
+
+		typedef std::map<obj_data*, player_corpse_data> corpse_map;
+		typedef std::set<const char_data*> character_set;
+		typedef std::set<int> character_id_set;
+		typedef std::map<const char_data*, tm> time_map;
+
 		// Private constructor that we friend with our parent to grant access.
 		big_brother(const weather_data* weather, const room_data* world)
 			: world_singleton<big_brother>(weather, world) { }
@@ -73,36 +95,21 @@ namespace game_rules
 		// Returns true if two targets are on the same side of the race war.
 		bool is_same_side_race_war(int attacker_race, int victim_race) const;
 
+		// Removed a character from our looting set, and removed their loot protection.
+		void on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& iter);
+
 		// Removes a character from our afk_characters set.
 		void remove_character_from_afk_set(const char_data* character);
 
 		// Removes a character from our looting characters set.
 		void remove_character_from_looting_set(int char_id);
 
-		struct player_corpse_data
-		{
-			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0), is_npc(false) { };
-			player_corpse_data(char_data* dead_man);
-			player_corpse_data(char_data* dead_man, char_data* killer);
-
-			int num_items_looted;
-			int player_race;
-			int killer_id;
-			int player_id;
-			bool is_npc;
-		};
-
-		typedef std::map<obj_data*, player_corpse_data> corpse_map;
+		
 		corpse_map m_corpse_map;
-
-		typedef std::set<const char_data*> character_set;
 		character_set m_afk_characters;
-
-		typedef std::set<int> character_id_set;
 		character_id_set m_looting_characters;
 		
 		// For tracking when people engaged in PK can get AFK protection.
-		typedef std::map<const char_data*, tm> time_map;
 		time_map m_last_engaged_pk_time;
 	};
 }

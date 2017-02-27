@@ -109,9 +109,9 @@ ACMD(do_hit)
 	}
 
 	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim, SKILL_SLASH))
+	if (!bb_instance.is_target_valid(ch, victim))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", ch);
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.\r\n", ch);
 		return;
 	}
     
@@ -189,9 +189,9 @@ ACMD(do_assist)
 		else {
 
 			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-			if (!bb_instance.is_target_valid(ch, opponent, SKILL_SLASH))
+			if (!bb_instance.is_target_valid(ch, opponent))
 			{
-				send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.", ch);
+				send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.\r\n", ch);
 				return;
 			}
 
@@ -457,7 +457,7 @@ ACMD(do_bash)
 
 			if (!bb_instance.is_target_valid(ch, victim, SKILL_BASH))
 			{
-				send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
+				send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.\r\n", ch);
 				return;
 			}
 
@@ -547,7 +547,7 @@ ACMD(do_bash)
 
 		if (!bb_instance.is_target_valid(ch, victim, SKILL_BASH))
 		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
+			send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.\r\n", ch);
 			return;
 		}
 
@@ -853,7 +853,7 @@ ACMD(do_kick)
 	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 	if (!bb_instance.is_target_valid(ch, victim, attacktype))
 	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.", ch);
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You freeze momentarily, and reconsider your action.\r\n", ch);
 		return;
 	}
 

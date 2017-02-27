@@ -652,7 +652,7 @@ ACMD(do_cast)
 				game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 				if (!bb_instance.is_target_valid(ch, tmpwtl.targ2.ptr.ch, spell_index))
 				{
-					send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.", ch);
+					send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.\r\n", ch);
 					return;
 				}
 			}
@@ -705,7 +705,7 @@ ACMD(do_cast)
 		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 		if (!bb_instance.is_target_valid(ch, tar_char, spell_index))
 		{
-			send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.", ch);
+			send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.\r\n", ch);
 			return;
 		}
 

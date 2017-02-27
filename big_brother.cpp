@@ -46,10 +46,7 @@ namespace game_rules
 		{
 			if (!item->next_content)
 			{
-				// This is the last item from the corpse.  Stop tracking the corpse.
-				remove_character_from_looting_set(corpse_data.player_id);
-				send_to_char("You feel the protection of the Gods fade from you...", corpse_data.player_id);
-				m_corpse_map.erase(corpse_iter);
+				on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
 			}
 			return true;
 		}
@@ -67,17 +64,23 @@ namespace game_rules
 
 		if (!item->next_content)
 		{
-			// This is the last item from the corpse.  Stop tracking the corpse.
-			remove_character_from_looting_set(corpse_data.player_id);
-			send_to_char("You feel the protection of the Gods fade from you...", corpse_data.player_id);
-			m_corpse_map.erase(corpse_iter);
+			on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
 		}
 
 		return true;
 	}
 
 	//============================================================================
-	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
+	void big_brother::on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& corpse_iter)
+	{
+		// This is the last item from the corpse.  Stop tracking the corpse.
+		remove_character_from_looting_set(char_id);
+		send_to_char("You feel the protection of the Gods fade from you...\r\n", char_id);
+		m_corpse_map.erase(corpse_iter);
+	}
+
+	//============================================================================
+	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim) const
 	{
 		// Not Big Brother's job to check these pointers.
 		if (!attacker || !victim)
@@ -88,17 +91,13 @@ namespace game_rules
 		{
 			if (utils::is_mob_flagged(*attacker, AFF_CHARM))
 			{
-				return is_target_valid(attacker->master, victim, skill_id);
+				return is_target_valid(attacker->master, victim);
 			}
 			else
 			{
 				return true;
 			}
 		}
-
-		// The ability being used isn't offensive - all good.
-		if (!is_skill_offensive(skill_id))
-			return true;
 
 		// You cannot attack a character that is writing.
 		if (utils::is_player_flagged(*victim, PLR_WRITING))
@@ -110,11 +109,11 @@ namespace game_rules
 			// The victim is a mount.  Test if his rider is a valid target.
 			if (utils::is_ridden(*victim))
 			{
-				return is_target_valid(attacker, victim->mount_data.rider, skill_id);
+				return is_target_valid(attacker, victim->mount_data.rider);
 			}
 			else if (utils::is_mob_flagged(*victim, AFF_CHARM))
 			{
-				return is_target_valid(attacker, victim->master, skill_id);
+				return is_target_valid(attacker, victim->master);
 			}
 			else
 			{
@@ -135,6 +134,12 @@ namespace game_rules
 			return false;
 
 		return true;
+	}
+
+	//============================================================================
+	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
+	{
+		return is_target_valid(attacker, victim) && !is_skill_offensive(skill_id);
 	}
 
 	//============================================================================

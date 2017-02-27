@@ -323,7 +323,7 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
 	if (IS_AFFECTED(viewer, AFF_DETECT_MAGIC))
 	{
 		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-		bool is_protected = bb_instance.is_target_looting(looked_at);
+		bool is_protected = !bb_instance.is_target_valid(viewer, looked_at);
 		if (!looked_at->affected && !is_protected)
 		{
 			sprintf(buf, "%s is not affected by anything.\n\r", strname);
@@ -459,7 +459,7 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
 	if (!IS_NPC(viewed))
 	{
 		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-		if (bb_instance.is_target_looting(viewed))
+		if (!bb_instance.is_target_valid(viewer, viewed))
 		{
 			strcat(character_message, " (holy protection)");
 		}

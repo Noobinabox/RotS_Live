@@ -139,9 +139,9 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
 
   // This isn't technically a curse, but it's close enough.
   game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-  if (!bb_instance.is_target_valid(ch, victim, SPELL_CURSE))
+  if (!bb_instance.is_target_valid(ch, victim))
   {
-	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.", ch);
+	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.\r\n", ch);
 	  return;
   }
 
@@ -304,9 +304,9 @@ int damage_stat(struct char_data *killer, struct char_data *ch, int stat_num, in
 
   // This isn't technically a curse, but it's close enough.
   game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-  if (!bb_instance.is_target_valid(killer, ch, SPELL_CURSE))
+  if (!bb_instance.is_target_valid(killer, ch))
   {
-	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.", ch);
+	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.\r\n", ch);
 	  return 0;
   }
 

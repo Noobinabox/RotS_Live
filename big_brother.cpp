@@ -29,7 +29,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* item)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		// Something's not right.  Go for it, we won't stop you.
 		if (looter == NULL || corpse == NULL || !item)
 			return true;
@@ -86,7 +86,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& corpse_iter)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		// This is the last item from the corpse.  Stop tracking the corpse.
 		if (!corpse_iter->second.is_npc)
 		{
@@ -100,7 +100,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim) const
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		// Not Big Brother's job to check these pointers.
 		if (!attacker || !victim)
 			return true;
@@ -161,7 +161,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		return is_target_valid(attacker, victim) || !is_skill_offensive(skill_id);
 #else
 		return true;
@@ -171,7 +171,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_skill_offensive(int skill_id) const
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		const int TYPE_END = 9999;
 
 		static int OFFENSIVE_SKILLS[] = { 
@@ -254,7 +254,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_afk(const char_data* victim) const
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		return m_afk_characters.find(victim) != m_afk_characters.end();
 #else
 		return false;
@@ -264,7 +264,7 @@ namespace game_rules
 	//============================================================================
 	bool big_brother::is_target_looting(const char_data* victim) const
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		return m_looting_characters.find(victim->abs_number) != m_looting_characters.end();
 #else
 		return false;
@@ -343,7 +343,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_died(char_data* character, char_data* killer, obj_data* corpse)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(character);
 
 		// Spirits don't leave corpses behind.  If we have 'shadow' mode for players again,
@@ -377,7 +377,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_attacked_player(const char_data* attacker, const char_data* victim)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(attacker);
 		assert(victim);
 
@@ -397,7 +397,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_afked(const char_data* character)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(character);
 
 		// This is one possible implementation.  Another is to do the time-check in the
@@ -439,7 +439,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_returned(const char_data* character)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(character);
 		remove_character_from_afk_set(character);
 #endif
@@ -448,7 +448,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_character_disconnected(const char_data* character)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(character);
 		remove_character_from_afk_set(character);
 		remove_character_from_looting_set(character->abs_number);
@@ -466,7 +466,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::remove_character_from_afk_set(const char_data* character)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(character);
 		typedef character_set::iterator iter;
 
@@ -481,7 +481,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::remove_character_from_looting_set(int char_id)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		typedef character_id_set::iterator iter;
 
 		iter char_iter = m_looting_characters.find(char_id);
@@ -495,7 +495,7 @@ namespace game_rules
 	//============================================================================
 	void big_brother::on_corpse_decayed(obj_data* corpse)
 	{
-#ifdef USE_BIG_BROTHER
+#if USE_BIG_BROTHER
 		assert(corpse);
 		typedef corpse_map::iterator map_iter;
 

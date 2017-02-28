@@ -484,7 +484,7 @@ namespace utils
 		{
 			return is_victim_player(victim->mount_data.rider);
 		}
-		else if (utils::is_affected_by(*victim, AFF_CHARM) && victim->master)
+		else if (victim->master)
 		{
 			return is_victim_player(victim->master);
 		}
@@ -507,7 +507,7 @@ namespace utils
 		{
 			return get_controlling_player(character->mount_data.rider);
 		}
-		else if (utils::is_affected_by(*character, AFF_CHARM) && character->master)
+		else if (character->master)
 		{
 			return get_controlling_player(character->master);
 		}

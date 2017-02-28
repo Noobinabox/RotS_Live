@@ -21,6 +21,7 @@
 #include "db.h"
 #include "color.h"
 #include "script.h"
+#include "big_brother.h"
 
 extern struct room_data world;
 extern struct descriptor_data *descriptor_list;
@@ -773,14 +774,18 @@ ACMD(do_alias)
   return;
 }
 
-ACMD(do_afk){
-  if(IS_NPC(ch)){
-    send_to_char("Mobiles have no keyboard!\n\r",ch);
-    return;
-  }
-  SET_BIT(PLR_FLAGS(ch), PLR_ISAFK);
-  act("$n goes away from keyboard.",TRUE, ch, 0, 0, TO_ROOM);
-  send_to_char("You go away from keyboard.\n\r",ch);
+ACMD(do_afk) {
+	if (IS_NPC(ch)) {
+		send_to_char("Mobiles have no keyboard!\n\r", ch);
+		return;
+	}
+
+	SET_BIT(PLR_FLAGS(ch), PLR_ISAFK);
+	act("$n goes away from keyboard.", TRUE, ch, 0, 0, TO_ROOM);
+	send_to_char("You go away from keyboard.\n\r", ch);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	bb_instance.on_character_afked(ch);
 }
 
 ACMD(do_pray){

@@ -251,7 +251,7 @@ void perform_get_from_container(char_data* character, obj_data* item, obj_data* 
 			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 			if (!bb_instance.on_loot_item(character, container, item))
 			{
-				sprintf(buf, "That corpse has already been looted enough.");
+				send_to_char("That corpse has been looted enough.\r\n", character);
 				return;
 			}
 		}

@@ -17,6 +17,7 @@
 #include "char_utils.h"
 #include "object_utils.h"
 #include "big_brother.h"
+#include "char_utils_combat.h"
 #include <algorithm>
 
 const int MIN_SAFE_STAT = 3;
@@ -320,22 +321,7 @@ int damage_stat(struct char_data *killer, struct char_data *ch, int stat_num, in
     return 0;
   
   /* Give anger */
-  if(ch && !IS_NPC(killer) && (ch != killer)) {
-    struct affected_type af;
-    struct affected_type *afptr;
-
-     afptr = affected_by_spell(killer, SPELL_ANGER);
-     if(afptr)
-       afptr->duration = (IS_NPC(ch))?2:5;       
-     else{
-       af.type      = SPELL_ANGER;
-       af.duration  = IS_NPC(ch) ? 2 : 5;
-       af.modifier  = 0;
-       af.location  = APPLY_NONE;
-       af.bitvector = 0;
-       affect_to_char(killer, &af);
-     }
-  }
+  utils::on_attacked_character(killer, ch);
   
   if(IS_NPC(ch) && (ch->specials.attacked_level < GET_LEVELB(killer)))
     ch->specials.attacked_level = GET_LEVELB(killer);

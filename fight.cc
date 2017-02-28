@@ -28,6 +28,7 @@
 #include "pkill.h"
 
 #include "char_utils.h"
+#include "char_utils_combat.h"
 #include "big_brother.h"
 
 #define IS_PHYSICAL(_at) \
@@ -1636,32 +1637,7 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 	if (!check_sanctuary(attacker, victim))
 		return 0;
 
-	/* Give the damager anger */
-	if (victim && !IS_NPC(attacker) && attacker != victim) 
-	{
-		struct affected_type af;
-		struct affected_type *afptr;
-		afptr = affected_by_spell(attacker, SPELL_ANGER);
-		if (afptr)
-		{
-			afptr->duration = IS_NPC(victim) ? 2 : 5;
-		}
-		else 
-		{
-			af.type = SPELL_ANGER;
-			af.duration = IS_NPC(victim) ? 2 : 5;
-			af.modifier = 0;
-			af.location = APPLY_NONE;
-			af.bitvector = 0;
-			affect_to_char(attacker, &af);
-		}
-
-		// Alert Big Brother that some PK is happening.
-		if (!IS_NPC(victim))
-		{
-			bb_instance.on_character_attacked_player(attacker, victim);
-		}
-	}
+	utils::on_attacked_character(attacker, victim);
 
 	/* If sanctuary wasn't broken, victim is NULL */
 	if (!victim) {

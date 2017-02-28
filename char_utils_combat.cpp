@@ -10,6 +10,8 @@
 #include "structs.h"
 #include <algorithm>
 #include <set>
+#include <assert.h>
+#include "big_brother.h"
 
 namespace utils
 {
@@ -467,6 +469,89 @@ namespace utils
 		}
 
 		return engaged_fighters;
+	}
+
+	//============================================================================
+	bool is_victim_player(const char_data* victim)
+	{
+		assert(victim);
+
+		if (utils::is_pc(*victim))
+		{
+			return true;
+		}
+		else if (utils::is_ridden(*victim))
+		{
+			return is_victim_player(victim->mount_data.rider);
+		}
+		else if (utils::is_affected_by(*victim, AFF_CHARM) && victim->master)
+		{
+			return is_victim_player(victim->master);
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	//============================================================================
+	char_data* get_controlling_player(char_data* character)
+	{
+		assert(character);
+
+		if (utils::is_pc(*character))
+		{
+			return character;
+		}
+		else if (utils::is_ridden(*character))
+		{
+			return get_controlling_player(character->mount_data.rider);
+		}
+		else if (utils::is_affected_by(*character, AFF_CHARM) && character->master)
+		{
+			return get_controlling_player(character->master);
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	//============================================================================
+	void on_attacked_character(char_data* attacker, char_data* victim)
+	{
+		/* Give anger */
+		if (victim && !IS_NPC(attacker) && (victim != attacker))
+		{
+			affected_type affect;
+			affected_type* existing_affect;
+
+			bool is_long_anger = is_victim_player(victim);
+			int duration = is_long_anger ? 5 : 2;
+			existing_affect = affected_by_spell(attacker, SPELL_ANGER);
+			if (existing_affect)
+			{
+				existing_affect->duration = duration;
+			}
+			else
+			{
+				affect.type = SPELL_ANGER;
+				affect.duration = duration;
+				affect.modifier = 0;
+				affect.location = APPLY_NONE;
+				affect.bitvector = 0;
+				affect_to_char(attacker, &affect);
+			}
+
+			// Alert Big Brother that some PK is happening.
+			if (is_long_anger)
+			{
+				char_data* attacked_player = get_controlling_player(victim);
+
+				game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+				bb_instance.on_character_attacked_player(attacker, attacked_player);
+			}
+		}
 	}
 }
 

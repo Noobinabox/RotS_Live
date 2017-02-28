@@ -51,6 +51,15 @@ namespace game_rules
 			return true;
 		}
 
+		if (item->obj_flags.type_flag == ITEM_MONEY)
+		{
+			if (!item->next_content)
+			{
+				on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
+			}
+			return true;
+		}
+
 		if (corpse_data.num_items_looted >= 2)
 			return false;
 
@@ -388,6 +397,10 @@ namespace game_rules
 		if (insert)
 		{
 			m_afk_characters.insert(character);
+		}
+		else
+		{
+			send_to_char("You have engaged in PK too recently to benefit from the Gods protection.\r\n", character->abs_number);
 		}
 	}
 

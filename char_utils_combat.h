@@ -19,5 +19,21 @@ namespace utils
 	// character passed in.
 	//============================================================================
 	std::vector<char_data*> get_engaged_characters(const char_data* character, const room_data& room);
+
+	//============================================================================
+	// Returns true if the victim is a player, a player's follower, a player's mount,
+	// or a player's follower's mount.
+	//============================================================================
+	bool is_victim_player(const char_data* victim);
+
+	//============================================================================
+	// Gets the controlling character of a character passed in.
+	//============================================================================
+	char_data* get_controlling_player(char_data* character);
+
+	//============================================================================
+	// Gives the attacker anger.  If the attack involved PK, alerts Big  Brother.
+	//============================================================================
+	void on_attacked_character(char_data* attacker, char_data* victim);
 }
 

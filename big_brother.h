@@ -7,6 +7,10 @@
 #include <set>
 #include <time.h>
 
+#ifndef USE_BIG_BROTHER
+#define USE_BIG_BROTHER 1
+#endif
+
 struct obj_data;
 struct char_data;
 
@@ -104,13 +108,16 @@ namespace game_rules
 		// Removes a character from our looting characters set.
 		void remove_character_from_looting_set(int char_id);
 
-		
+#ifdef USE_BIG_BROTHER
+
 		corpse_map m_corpse_map;
 		character_set m_afk_characters;
 		character_id_set m_looting_characters;
-		
+
 		// For tracking when people engaged in PK can get AFK protection.
 		time_map m_last_engaged_pk_time;
+
+#endif // USE_BIG_BROTHER
 	};
 }
 

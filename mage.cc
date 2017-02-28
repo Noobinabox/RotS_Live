@@ -1075,7 +1075,7 @@ ASPELL(spell_magic_missile)
 
 	if (saved)
 	{
-		act("$n ignores most of the impact.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N ignores most of the impact.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You ignore most of the impact.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1109,7 +1109,7 @@ ASPELL(spell_chill_ray)
 
 	if (saved)
 	{
-		act("$n shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1149,7 +1149,7 @@ ASPELL(spell_lightning_bolt)
 	damage(ch, victim, dam, SPELL_LIGHTNING_BOLT, 0);
 	if (saved)
 	{
-		act("$n dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
 		act("You dodge to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1185,7 +1185,7 @@ ASPELL(spell_dark_bolt)
 
 	if (saved)
 	{
-		act("$n seems unfazed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N seems unfazed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You are unfazed by the darkness.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1214,7 +1214,7 @@ ASPELL(spell_firebolt)
 
 	if (saved)
 	{
-		act("$n dodges off to the side, avoiding part of the bolt!", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N dodges off to the side, avoiding part of the bolt!", FALSE, ch, 0, victim, TO_CHAR);
 		act("You dodge to the side, avoiding part of the bolt!", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1245,7 +1245,7 @@ ASPELL(spell_cone_of_cold)
 		
 		if (saved)
 		{
-			act("$n shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
+			act("$N shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
 			act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, ch, 0, victim, TO_VICT);
 		}
 		return;
@@ -1361,7 +1361,7 @@ ASPELL(spell_earthquake) {
 			if (saves_spell(tmpch, level, 0))
 			{
 				damage(ch, tmpch, dam_value / 2, SPELL_EARTHQUAKE, 0);
-				act("$n withstands the vibrating earth.", FALSE, ch, 0, tmpch, TO_CHAR);
+				act("$N withstands the vibrating earth.", FALSE, ch, 0, tmpch, TO_CHAR);
 				act("You withstand the tremors shaking your body.", FALSE, ch, 0, tmpch, TO_VICT);
 			}
 			else
@@ -1428,7 +1428,7 @@ ASPELL(spell_earthquake) {
 				if (saves_spell(tmpch, level, 0))
 				{
 					damage(ch, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
-					act("$n manages to land on his feet!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("$N manages to land on his feet!", FALSE, ch, 0, tmpch, TO_CHAR);
 					act("You manage to land on your feet!", FALSE, ch, 0, tmpch, TO_VICT);
 				}
 				else
@@ -1477,7 +1477,7 @@ ASPELL(spell_lightning_strike)
 
 	if (saved)
 	{
-		act("$n dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
 		act("You dodge to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1521,7 +1521,7 @@ ASPELL(spell_searing_darkness)
 
 	if (saves_fire)
 	{
-		act("$n avoids most of the fire, but is still consumed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N avoids most of the fire, but is still consumed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You avoid most of the fire, but the darkness consumes you.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1558,7 +1558,7 @@ ASPELL(spell_fireball)
 	if (saves_spell(victim, level, 0))
 	{
 		damage(ch, victim, dam * 2 / 3, SPELL_FIREBALL, 0);
-		act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, victim, TO_CHAR);
 		act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, victim, TO_VICT);
 	}
 	else
@@ -1577,7 +1577,7 @@ ASPELL(spell_fireball)
 				if (saves_spell(victim, level, 0))
 				{
 					damage(ch, tmpch, dam / 6, SPELL_FIREBALL2, 0);
-					act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("$N dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
 					act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_VICT);
 				}
 				else
@@ -1590,7 +1590,7 @@ ASPELL(spell_fireball)
 				if (saves_spell(victim, level, 0))
 				{
 					damage(ch, tmpch, dam / 10, SPELL_FIREBALL2, 0);
-					act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("$N dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
 					act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_VICT);
 				}
 				else
@@ -1634,7 +1634,7 @@ ASPELL(spell_word_of_pain)
 
 	if (saved)
 	{
-		act("$n ignores some of your phantom words.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N ignores some of your phantom words.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You realize, almost too late, that the words are false.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1669,7 +1669,7 @@ ASPELL(spell_leach)
 
 	if (saved)
 	{
-		act("$n fights off the leeching energy.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N fights off the leeching energy.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You fight off the leeching energy.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1811,7 +1811,7 @@ ASPELL(spell_black_arrow)
 
 	if (saved)
 	{
-		act("$n seems to resist the effects of your black arrow.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N seems to resist the effects of your black arrow.", FALSE, ch, 0, victim, TO_CHAR);
 		act("You resist the dark energies of the black arrow.", FALSE, ch, 0, victim, TO_VICT);
 	}
 }
@@ -1829,7 +1829,7 @@ ASPELL(spell_word_of_agony)
 	if (saves_spell(victim, level, 0))
 	{
 		damage(ch, victim, dam * 2 / 3, SPELL_WORD_OF_AGONY, 0);
-		act("$n seems to resist some of the agony.", FALSE, ch, 0, victim, TO_CHAR);
+		act("$N seems to resist some of the agony.", FALSE, ch, 0, victim, TO_CHAR);
 		act("Your mind resists some of the agony.", FALSE, ch, 0, victim, TO_VICT);
 	}
 	else 
@@ -1864,7 +1864,7 @@ ASPELL(spell_shout_of_pain)
 			if (saves_spell(tmpch, level, 0))
 			{
 				damage(ch, tmpch, dam_value / 2, SPELL_SHOUT_OF_PAIN, 0);
-				act("$n seems to resist some of the agony.", FALSE, ch, 0, tmpch, TO_CHAR);
+				act("$N seems to resist some of the agony.", FALSE, ch, 0, tmpch, TO_CHAR);
 				act("Your mind resists some of the agony.", FALSE, ch, 0, tmpch, TO_VICT);
 			}
 			else

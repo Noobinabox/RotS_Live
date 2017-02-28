@@ -967,7 +967,7 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 			// Restore the character to full, and then set health to 1/4 and mana to 0
 			// to ensure that characters don't abuse this in town-siege situations.
 			cur_abils = max_abils;
-			cur_abils.hit = cur_abils.hit / 4;
+			cur_abils.hit = max_abils.hit / 4;
 			cur_abils.mana = 0;
 		}
 		else

@@ -13,6 +13,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <algorithm>
 #include "platdef.h"
 #include "structs.h"
 #include "utils.h"
@@ -1061,13 +1062,22 @@ ASPELL(spell_beacon){
 
 ASPELL(spell_magic_missile)
 {
-  int dam;
-  
-  dam = number(1, MAG_POWER(ch) / 6) + 12;
-  
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  damage(ch, victim, dam, SPELL_MAGIC_MISSILE,0);
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power / 6) + 12;
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam = dam >> 1;
+	}
+
+	damage(ch, victim, dam, SPELL_MAGIC_MISSILE, 0);
+
+	if (saved)
+	{
+		act("$n ignores most of the impact.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You ignore most of the impact.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1080,19 +1090,28 @@ ASPELL(spell_magic_missile)
  * This spell needs to be addresses ASAP AND CHANGED
  * Khronos 27/03/05
  */
-
 ASPELL(spell_chill_ray)
 {
-  int dam;
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power) / 2 + 20;
 
-  dam = number(1, MAG_POWER(ch)) / 2 + 20;
-  
-  if(!saves_spell(victim, level, 0))    
-    GET_ENERGY(victim) -= GET_ENERGY(victim) / 2 + 
-      2 * GET_ENE_REGEN(victim) * 2;
-  else
-    dam >>= 1;
-  damage(ch, victim, dam, SPELL_CHILL_RAY,0);
+	bool saved = saves_spell(victim, level, 0);
+	if (!saved)
+	{
+		GET_ENERGY(victim) -= GET_ENERGY(victim) / 2 + 2 * GET_ENE_REGEN(victim) * 2;
+	}
+	else
+	{
+		dam >>= 1;
+	}
+
+	damage(ch, victim, dam, SPELL_CHILL_RAY, 0);
+
+	if (saved)
+	{
+		act("$n shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 
@@ -1110,18 +1129,29 @@ ASPELL(spell_chill_ray)
 
 ASPELL(spell_lightning_bolt)
 {
-  int dam;
-  
-  dam = number(0, MAG_POWER(ch)) / 2 + 25;
+	int mag_power = MAG_POWER(ch);
+	int dam = number(0, mag_power) / 2 + 25;
 
-  if(OUTSIDE(ch))
-    dam += number(0, MAG_POWER(ch) / 4) + 2;
-  else  
-    send_to_char("Your lightning is weaker inside, as you can not "
-		 "call on nature's full force here.\n\r", ch);  
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  damage(ch, victim, dam, SPELL_LIGHTNING_BOLT,0);
+	if (OUTSIDE(ch))
+	{
+		dam += number(0, mag_power / 4) + 4;
+	}
+	else
+	{
+		send_to_char("Your lightning is weaker inside, as you can not call on nature's full force here.\n\r", ch);
+	}
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam >>= 1;
+	}
+	damage(ch, victim, dam, SPELL_LIGHTNING_BOLT, 0);
+	if (saved)
+	{
+		act("$n dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1134,19 +1164,30 @@ ASPELL(spell_lightning_bolt)
 
 ASPELL(spell_dark_bolt)
 {
-  int dam;
-  
-  dam = number(0, MAG_POWER(ch)) / 2 + 25;
-  
-  
-  if (!SUN_PENALTY(ch)) 
-    dam += number(0, MAG_POWER(ch) / 4) + 4;
-    else 
-      send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
-  
-    if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  damage(ch, victim, dam, SPELL_DARK_BOLT, 0);
+	int mag_power = MAG_POWER(ch);
+	int dam = number(0, mag_power) / 2 + 25;
+
+	if (!SUN_PENALTY(ch))
+	{
+		dam += number(0, mag_power / 4) + 4;
+	}
+	else
+	{
+		send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
+	}
+	
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam >>= 1;
+	}	
+	damage(ch, victim, dam, SPELL_DARK_BOLT, 0);
+
+	if (saved)
+	{
+		act("$n seems unfazed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You are unfazed by the darkness.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1158,23 +1199,24 @@ ASPELL(spell_dark_bolt)
 
 ASPELL(spell_firebolt)
 {
-  int dam;
-  
-  dam = number(1, MAG_POWER(ch)) / 4 + number(1, MAG_POWER(ch)) / 4 +
-    number(1, MAG_POWER(ch)) / 8 + number(1, MAG_POWER(ch)) / 8 +
-    number(1, MAG_POWER(ch)) / 16 + number(1, MAG_POWER(ch)) / 16 +
-    number(1, 65);
-  
-/*  if(RACE_SOME_ORC(ch) && !number(0, 9)) {
-    send_to_char("You fail to control the fire you invoke!\n\r", ch);
-    victim = ch;
-    dam = dam / 3;
-  }
-*/
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power) / 4 + number(1, mag_power) / 4 +
+		number(1, mag_power) / 8 + number(1, mag_power) / 8 +
+		number(1, mag_power) / 16 + number(1, mag_power) / 16 +
+		number(1, 65);
 
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  damage(ch, victim, dam, SPELL_FIREBOLT, 0);
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam >>= 1;
+	}
+	damage(ch, victim, dam, SPELL_FIREBOLT, 0);
+
+	if (saved)
+	{
+		act("$n dodges off to the side, avoiding part of the bolt!", FALSE, ch, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the bolt!", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1182,76 +1224,91 @@ ASPELL(spell_firebolt)
  * Spell cone of cold
  * Powerful upper end cold spell
  * not as popular as chill ray as it can't perma bash chars
- * Should we prehaps remove the directional stuff on this spell
+ * Should we perhaps remove the directional stuff on this spell
  * Will we ever use it??
  * Khronos 27/03/05
  */
 
 ASPELL(spell_cone_of_cold)
 {
-  int dam, tmp;
-  char buf1[255], buf2[255];
-  struct char_data *tmpch;
-  
-  dam = number(1, MAG_POWER(ch)) / 2 + MAG_POWER(ch) / 4 + 25;
-  
-  if(victim) {
-    if(saves_spell(victim, level, 0))
-      dam = dam * 2 / 3 ;    
-    damage(ch, victim, dam, SPELL_CONE_OF_COLD,0);
-    return;
-  }
-  
-  /* Directional part */
-  if((digit < 0) || (digit >= NUM_OF_DIRS))
-    return;
-  
-  if(!EXIT(ch, digit) || (EXIT(ch, digit)->to_room == NOWHERE)) {
-    send_to_char("There is nothing in that direction.\n\r", ch);
-    return;
-  }
-  if(IS_SET(EXIT(ch, digit)->exit_info, EX_CLOSED)) {
-    if(IS_SET(EXIT(ch, digit)->exit_info, EX_ISHIDDEN)) {
-      send_to_char("There is nothing in that direction.\n\r", ch);
-      return;
-    }
-    else {
-      sprintf(buf1,"Your cone of cold hit %s, to no real effect.\n\r",
-	      EXIT(ch, digit)->keyword);
-      send_to_char(buf1,ch);
-      return;
-    }
-  }
-  if(IS_SET(EXIT(ch, digit)->exit_info, EX_NO_LOOK)) {
-    send_to_char("Your cone of cold faded before reaching its' target.\n\r",
-		 ch);
-    return;
-  }
-  
-  sprintf(buf1,"You send a cone of cold to %s.\n\r", refer_dirs[digit]);
-  send_to_char(buf1,ch);
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power) / 2 + mag_power / 4 + 25;
 
-  sprintf(buf1,"A sudden wave of cold strikes you, coming from %s.\n\r",
-	  refer_dirs[rev_dir[digit]]);
-  sprintf(buf2,"You feel a sudden wave of cold coming from %s.\n\r",
-	  refer_dirs[rev_dir[digit]]);
+	if (victim) 
+	{
+		bool saved = saves_spell(victim, level, 0);
+		if (saved)
+		{
+			dam = dam * 2 / 3;
+		}
+		damage(ch, victim, dam, SPELL_CONE_OF_COLD, 0);
+		
+		if (saved)
+		{
+			act("$n shrugs off the cold, withstanding most of the chill.", FALSE, ch, 0, victim, TO_CHAR);
+			act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, ch, 0, victim, TO_VICT);
+		}
+		return;
+	}
 
-  for(tmpch = world[EXIT(ch, digit)->to_room].people;
-      tmpch;
-      tmpch = tmpch->next_in_room) {
-    if(saves_spell(tmpch,level,0)) {
-      tmp = GET_HIT(tmpch);
-      if(tmp < dam / 2)
-	tmp = 1;
-      else 
-	tmp = tmp - dam / 2;
+	/* Directional part */
+	if ((digit < 0) || (digit >= NUM_OF_DIRS))
+		return;
 
-      GET_HIT(tmpch) = tmp;
-      send_to_char(buf1, tmpch);
-    }
-    else
-      send_to_char(buf2, tmpch);
-  }
+	if (!EXIT(ch, digit) || (EXIT(ch, digit)->to_room == NOWHERE)) {
+		send_to_char("There is nothing in that direction.\n\r", ch);
+		return;
+	}
+
+	char buf1[255], buf2[255];
+	if (IS_SET(EXIT(ch, digit)->exit_info, EX_CLOSED)) {
+		if (IS_SET(EXIT(ch, digit)->exit_info, EX_ISHIDDEN)) {
+			send_to_char("There is nothing in that direction.\n\r", ch);
+			return;
+		}
+		else {
+			sprintf(buf1, "Your cone of cold hit %s, to no real effect.\n\r",
+				EXIT(ch, digit)->keyword);
+			send_to_char(buf1, ch);
+			return;
+		}
+	}
+	if (IS_SET(EXIT(ch, digit)->exit_info, EX_NO_LOOK)) {
+		send_to_char("Your cone of cold faded before reaching its' target.\n\r",
+			ch);
+		return;
+	}
+
+	sprintf(buf1, "You send a cone of cold to %s.\n\r", refer_dirs[digit]);
+	send_to_char(buf1, ch);
+
+	sprintf(buf1, "A sudden wave of cold strikes you, coming from %s.\n\r",
+		refer_dirs[rev_dir[digit]]);
+	sprintf(buf2, "You feel a sudden wave of cold coming from %s.\n\r",
+		refer_dirs[rev_dir[digit]]);
+
+
+	struct char_data *tmpch;
+	for (tmpch = world[EXIT(ch, digit)->to_room].people;
+		tmpch;
+		tmpch = tmpch->next_in_room)
+	{
+		if (saves_spell(tmpch, level, 0))
+		{
+			int tmp = GET_HIT(tmpch);
+			if (tmp < dam / 2)
+				tmp = 1;
+			else
+				tmp = tmp - dam / 2;
+
+			GET_HIT(tmpch) = tmp;
+			send_to_char(buf1, tmpch);
+		}
+		else
+		{
+			send_to_char(buf2, tmpch);
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1263,110 +1320,124 @@ ASPELL(spell_cone_of_cold)
  * Khronos 27/03/05
  */
 
-ASPELL(spell_earthquake){
-  int dam_value, crack_chance, tmp;
-  struct char_data * tmpch, * tmpch_next;
-  room_data * cur_room;
-  int crack;
+ASPELL(spell_earthquake) {
+	int dam_value, crack_chance, tmp;
+	struct char_data * tmpch, *tmpch_next;
+	room_data * cur_room;
+	int crack;
 
-  if(!ch) return;
-  if(ch->in_room == NOWHERE) return;
-  cur_room = &world[ch->in_room];
+	if (!ch) return;
+	if (ch->in_room == NOWHERE) return;
+	cur_room = &world[ch->in_room];
 
-  crack_chance = 1;
+	crack_chance = 1;
 
-  if((cur_room->sector_type == SECT_CITY) || 
-     (cur_room->sector_type == SECT_CRACK) ||
-     (cur_room->sector_type == SECT_WATER_SWIM) ||
-     (cur_room->sector_type == SECT_WATER_NOSWIM) ||
-     (cur_room->sector_type == SECT_UNDERWATER))
-    crack_chance = 0;
+	if ((cur_room->sector_type == SECT_CITY) ||
+		(cur_room->sector_type == SECT_CRACK) ||
+		(cur_room->sector_type == SECT_WATER_SWIM) ||
+		(cur_room->sector_type == SECT_WATER_NOSWIM) ||
+		(cur_room->sector_type == SECT_UNDERWATER))
+		crack_chance = 0;
 
-  if(IS_SET(cur_room->room_flags, INDOORS)) crack_chance = 0;
-  if(cur_room->dir_option[DOWN] && IS_SET(cur_room->dir_option[DOWN]->exit_info, EX_CLOSED|EX_DOORISHEAVY)) crack_chance = 0; 
+	if (IS_SET(cur_room->room_flags, INDOORS)) crack_chance = 0;
+	if (cur_room->dir_option[DOWN] && IS_SET(cur_room->dir_option[DOWN]->exit_info, EX_CLOSED | EX_DOORISHEAVY)) crack_chance = 0;
 
-  if(cur_room->dir_option[DOWN] && !cur_room->dir_option[DOWN]->exit_info) 
-    crack_chance = 1;  
-  else  
-    if(number(0,100) > level) crack_chance = 0;
-
-  /* Here goes normal earthquake */
-
-  dam_value = number(1,30) + level;
-  
-  if(crack_chance) dam_value /= 2;
-
-  for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next){
-    tmpch_next = tmpch->next_in_room;
-    if(tmpch != ch){
-      if ( saves_spell(tmpch,level,0) )
-	damage(ch, tmpch, dam_value / 2, SPELL_EARTHQUAKE, 0);
-      else
-	damage(ch, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
-    }
-  //  return;
-  }
-
-  if(crack_chance) {
-    if(cur_room->dir_option[DOWN] && 
-       (cur_room->dir_option[DOWN]->to_room != NOWHERE)) {
-      crack = cur_room->dir_option[DOWN]->to_room;
-      if(crack != NOWHERE) {
-	if(cur_room->dir_option[DOWN]->exit_info) {
-	  act("The way down crashes open!", FALSE, ch, 0, 0, TO_ROOM);
-	  send_to_char("The way down crashes open!\n\r",ch);
-	  cur_room->dir_option[DOWN]->exit_info = 0;
-	  if(world[crack].dir_option[UP] && 
-	     (world[crack].dir_option[UP]->to_room == ch->in_room) &&
-	     world[crack].dir_option[UP]->exit_info){
-	    tmp = ch->in_room;
-	    ch->in_room = crack;
-	    act("The way up crashes open!", FALSE, ch, 0, 0, TO_ROOM);
-	    world[crack].dir_option[UP]->exit_info = 0;
-	    ch->in_room = tmp;
-	  }
-	}
-      }
-    }
-    /* no room there, so create one */
-    else {
-      crack = world.create_room(world[ch->in_room].zone);
-      world[ch->in_room].create_exit(DOWN, crack);
-      
-      RELEASE(world[crack].name);
-      world[crack].name = str_dup("Deep Crevice");
-      RELEASE(world[crack].description);
-      world[crack].description = str_dup(
- "   The crevice is deep, dark and looks unsafe. The walls of fresh broken\n\r"
- "rock are uneven and still crumbling. Some powerful disaster must have \n\r"
- "torn the ground here recently.\n\r"); 
-      world[crack].sector_type = SECT_CRACK;
-      world[crack].room_flags = cur_room->room_flags;
-      act("The ground is cracked under your feet!", FALSE, ch, 0, 0, TO_ROOM);
-      send_to_char("Your spell cracks the ground open!\n\r",ch);
-    }
-    
-    /* deal out the damage */
-    for(tmpch = cur_room->people; tmpch; tmpch = tmpch_next) {
-      tmpch_next = tmpch->next_in_room;
-      if(!saves_spell(tmpch,level + 5 - GET_DEX(tmpch)/3,0) &&
-	 ((tmpch != ch) || (!number(0,1)))){
-
-	act("$n loses balance and falls down!", TRUE, tmpch, 0, 0, TO_ROOM);
-	send_to_char("The earthquake throws you down!\n\r",tmpch);
-	stop_riding(tmpch);
-	char_from_room(tmpch);
-	char_to_room(tmpch, crack);
-	act("$n falls in.", TRUE, tmpch, 0, 0, TO_ROOM);      
-	tmpch->specials.position = POSITION_SITTING;
-
-	if ( saves_spell(tmpch,level,0) )
-	  damage(ch, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
+	if (cur_room->dir_option[DOWN] && !cur_room->dir_option[DOWN]->exit_info)
+		crack_chance = 1;
 	else
-	  damage(ch, tmpch, dam_value * 2, SPELL_EARTHQUAKE, 0);
-      }
-    }
-  }
+		if (number(0, 100) > level) crack_chance = 0;
+
+	/* Here goes normal earthquake */
+
+	dam_value = number(1, 30) + level;
+
+	if (crack_chance) dam_value /= 2;
+
+	for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) 
+	{
+		tmpch_next = tmpch->next_in_room;
+		if (tmpch != ch) 
+		{
+			if (saves_spell(tmpch, level, 0))
+			{
+				damage(ch, tmpch, dam_value / 2, SPELL_EARTHQUAKE, 0);
+				act("$n withstands the vibrating earth.", FALSE, ch, 0, tmpch, TO_CHAR);
+				act("You withstand the tremors shaking your body.", FALSE, ch, 0, tmpch, TO_VICT);
+			}
+			else
+			{
+				damage(ch, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
+			}
+		}
+		//  return;
+	}
+
+	if (crack_chance) {
+		if (cur_room->dir_option[DOWN] &&
+			(cur_room->dir_option[DOWN]->to_room != NOWHERE)) {
+			crack = cur_room->dir_option[DOWN]->to_room;
+			if (crack != NOWHERE) {
+				if (cur_room->dir_option[DOWN]->exit_info) {
+					act("The way down crashes open!", FALSE, ch, 0, 0, TO_ROOM);
+					send_to_char("The way down crashes open!\n\r", ch);
+					cur_room->dir_option[DOWN]->exit_info = 0;
+					if (world[crack].dir_option[UP] &&
+						(world[crack].dir_option[UP]->to_room == ch->in_room) &&
+						world[crack].dir_option[UP]->exit_info) {
+						tmp = ch->in_room;
+						ch->in_room = crack;
+						act("The way up crashes open!", FALSE, ch, 0, 0, TO_ROOM);
+						world[crack].dir_option[UP]->exit_info = 0;
+						ch->in_room = tmp;
+					}
+				}
+			}
+		}
+		/* no room there, so create one */
+		else {
+			crack = world.create_room(world[ch->in_room].zone);
+			world[ch->in_room].create_exit(DOWN, crack);
+
+			RELEASE(world[crack].name);
+			world[crack].name = str_dup("Deep Crevice");
+			RELEASE(world[crack].description);
+			world[crack].description = str_dup(
+				"   The crevice is deep, dark and looks unsafe. The walls of fresh broken\n\r"
+				"rock are uneven and still crumbling. Some powerful disaster must have \n\r"
+				"torn the ground here recently.\n\r");
+			world[crack].sector_type = SECT_CRACK;
+			world[crack].room_flags = cur_room->room_flags;
+			act("The ground is cracked under your feet!", FALSE, ch, 0, 0, TO_ROOM);
+			send_to_char("Your spell cracks the ground open!\n\r", ch);
+		}
+
+		/* deal out the damage */
+		for (tmpch = cur_room->people; tmpch; tmpch = tmpch_next) 
+		{
+			tmpch_next = tmpch->next_in_room;
+			if (!saves_spell(tmpch, level + 5 - GET_DEX(tmpch) / 3, 0) && ((tmpch != ch) || (!number(0, 1)))) 
+			{
+				act("$n loses balance and falls down!", TRUE, tmpch, 0, 0, TO_ROOM);
+				send_to_char("The earthquake throws you down!\n\r", tmpch);
+				stop_riding(tmpch);
+				char_from_room(tmpch);
+				char_to_room(tmpch, crack);
+				act("$n falls in.", TRUE, tmpch, 0, 0, TO_ROOM);
+				tmpch->specials.position = POSITION_SITTING;
+
+				if (saves_spell(tmpch, level, 0))
+				{
+					damage(ch, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
+					act("$n manages to land on his feet!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("You manage to land on your feet!", FALSE, ch, 0, tmpch, TO_VICT);
+				}
+				else
+				{
+					damage(ch, tmpch, dam_value * 2, SPELL_EARTHQUAKE, 0);
+				}
+			}
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1382,22 +1453,33 @@ ASPELL(spell_earthquake){
 
 ASPELL(spell_lightning_strike)
 {
-  int dam;
+	int mag_power = MAG_POWER(ch);
+	int dam = number(0, mag_power) / 2 * 2 + number(0, mag_power) / 2 + 40;
 
-  dam = number(0, MAG_POWER(ch)) / 2 * 2 + number(0, MAG_POWER(ch)) / 2 + 40;
-  
-  if(!OUTSIDE(ch)) {
-    send_to_char("You can not call lightning inside!\n\r", ch);
-    return;
-  }
-  if(weather_info.sky[world[ch->in_room].sector_type] != SKY_LIGHTNING) {
-    send_to_char("The weather is not appropriate for this spell.\n\r", ch);
-    return;
-  }
-  
-  if(saves_spell(victim, level, 0))
-    dam = dam * 2 / 3;  
-  damage(ch, victim, dam, SPELL_LIGHTNING_STRIKE, 0);
+	if (!OUTSIDE(ch)) 
+	{
+		send_to_char("You can not call lightning inside!\n\r", ch);
+		return;
+	}
+
+	if (weather_info.sky[world[ch->in_room].sector_type] != SKY_LIGHTNING) 
+	{
+		send_to_char("The weather is not appropriate for this spell.\n\r", ch);
+		return;
+	}
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam = dam * 2 / 3;
+	}
+	damage(ch, victim, dam, SPELL_LIGHTNING_STRIKE, 0);
+
+	if (saved)
+	{
+		act("$n dodges off to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the lightning!", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 
@@ -1411,23 +1493,37 @@ ASPELL(spell_lightning_strike)
 
 ASPELL(spell_searing_darkness)
 {
-  int dam, damFIRE, damDARK;
+	int mag_power = MAG_POWER(ch);
+	int dam, damFIRE, damDARK;
 
-  damFIRE = number(0, MAG_POWER(ch)) / 2 + 15;
+	damFIRE = number(0, mag_power) / 2 + 15;
 
-  if(saves_spell(victim, level, 0))
-    damFIRE = damFIRE * 1/3;
+	bool saves_fire = saves_spell(victim, level, 0);
+	if (saves_fire)
+	{
+		damFIRE = damFIRE * 1 / 3;
+	}
 
-  damDARK = number(0, MAG_POWER(ch)) / 2 + 15;
-  
-  if(!SUN_PENALTY(ch))
-    damDARK += number(0, MAG_POWER(ch) / 4) + 5;
-  else
-    send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
+	damDARK = number(0, mag_power) / 2 + 15;
 
-  dam = damFIRE + damDARK;
-  
-  damage(ch, victim, dam, SPELL_SEARING_DARKNESS, 0);
+	if (!SUN_PENALTY(ch))
+	{
+		damDARK += number(0, mag_power / 4) + 5;
+	}
+	else
+	{
+		send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
+	}
+
+	dam = damFIRE + damDARK;
+
+	damage(ch, victim, dam, SPELL_SEARING_DARKNESS, 0);
+
+	if (saves_fire)
+	{
+		act("$n avoids most of the fire, but is still consumed by the darkness.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You avoid most of the fire, but the darkness consumes you.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 
@@ -1441,48 +1537,69 @@ ASPELL(spell_searing_darkness)
 
 ASPELL(spell_fireball)
 {
-  int dam, tmp;
-  struct char_data *tmpch;
-  struct char_data *tmpch_next;
-  
-  if(ch->in_room == NOWHERE) 
-    return;
-  
-  dam = number(1, MAG_POWER(ch)) / 2 + number(1, MAG_POWER(ch)) / 2 + 
-    number(1,MAG_POWER(ch)) / 2 + 30;
+	int dam, tmp;
+	struct char_data *tmpch;
+	struct char_data *tmpch_next;
 
-  if(RACE_SOME_ORC(ch))
-    dam -= 5;
-  if(RACE_SOME_ORC(ch) && !number(0, 9)) {
-    send_to_char("You fail to control the fire you invoke!\n\r", ch);
-    victim = ch;
-    dam = dam/3;
-  }
-  
-  if(saves_spell(victim, level, 0))
-    damage(ch, victim, dam * 2 / 3, SPELL_FIREBALL, 0);
-  else
-    damage(ch, victim, dam, SPELL_FIREBALL, 0);
-  
-  for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
-    tmpch_next = tmpch->next_in_room;
-    
-    tmp = number(0, 99);
-    if((tmpch != ch) && (tmpch != victim)) {
-      if((tmpch->specials.fighting == ch) && (tmp < 80)) {
-	if(saves_spell(victim, level, 0))
-	  damage(ch, tmpch, dam / 6, SPELL_FIREBALL2, 0);
+	if (ch->in_room == NOWHERE)
+		return;
+
+	int mag_power = MAG_POWER(ch);
+	dam = number(1, mag_power) / 2 + number(1, mag_power) / 2 + number(1, mag_power) / 2 + 30;
+
+	if (RACE_SOME_ORC(ch))
+		dam -= 5;
+	if (RACE_SOME_ORC(ch) && !number(0, 9)) {
+		send_to_char("You fail to control the fire you invoke!\n\r", ch);
+		victim = ch;
+		dam = dam / 3;
+	}
+
+	if (saves_spell(victim, level, 0))
+	{
+		damage(ch, victim, dam * 2 / 3, SPELL_FIREBALL, 0);
+		act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, victim, TO_VICT);
+	}
 	else
-	  damage(ch, tmpch, dam / 3, SPELL_FIREBALL2, 0);
-      }
-      if((tmpch->specials.fighting != ch) && (tmp < 20)) {
-	if(saves_spell(victim, level, 0))
-	  damage(ch, tmpch, dam / 10, SPELL_FIREBALL2, 0);
-	else
-	  damage(ch, tmpch, dam / 5, SPELL_FIREBALL2, 0);
-      }
-    }
-  }
+	{
+		damage(ch, victim, dam, SPELL_FIREBALL, 0);
+	}
+
+	for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
+		tmpch_next = tmpch->next_in_room;
+
+		tmp = number(0, 99);
+		if ((tmpch != ch) && (tmpch != victim)) 
+		{
+			if ((tmpch->specials.fighting == ch) && (tmp < 80)) 
+			{
+				if (saves_spell(victim, level, 0))
+				{
+					damage(ch, tmpch, dam / 6, SPELL_FIREBALL2, 0);
+					act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_VICT);
+				}
+				else
+				{
+					damage(ch, tmpch, dam / 3, SPELL_FIREBALL2, 0);
+				}
+			}
+			if ((tmpch->specials.fighting != ch) && (tmp < 20)) 
+			{
+				if (saves_spell(victim, level, 0))
+				{
+					damage(ch, tmpch, dam / 10, SPELL_FIREBALL2, 0);
+					act("$n dodges off to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_CHAR);
+					act("You dodge to the side, avoiding part of the blast!", FALSE, ch, 0, tmpch, TO_VICT);
+				}
+				else
+				{
+					damage(ch, tmpch, dam / 5, SPELL_FIREBALL2, 0);
+				}
+			}
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1505,19 +1622,25 @@ ASPELL(spell_fireball)
  */
 ASPELL(spell_word_of_pain)
 {
-  int dam;
-  
-  dam = number(1, MAG_POWER(ch) / 6) + 15;
-  
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  
-  damage(ch, victim, dam, SPELL_WORD_OF_PAIN, 0);
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power / 6) + 12;
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam = dam >> 1;
+	}
+	damage(ch, victim, dam, SPELL_WORD_OF_PAIN, 0);
+
+	if (saved)
+	{
+		act("$n ignores some of your phantom words.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You realize, almost too late, that the words are false.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 
 /*----------------------------------------------------------------------------------------------------------*/
-
 /*
  * leach: replaces chill ray; a bit less damage, but half of
  * the damage done goes to the caster.  There is also a small
@@ -1525,21 +1648,30 @@ ASPELL(spell_word_of_pain)
  */
 ASPELL(spell_leach)
 {
-  int moves, dam;
-  
-  dam = number(1, MAG_POWER(ch) / 4) + 18;
-  
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  else {
-    moves = MIN(GET_MOVE(victim), number(0, 5));
-    GET_MOVE(victim) += -moves;
-    GET_MOVE(ch) = MIN(GET_MAX_MOVE(ch), GET_MOVE(ch) + moves);
-    GET_HIT(ch) = MIN(GET_MAX_HIT(ch), GET_HIT(ch) + dam / 2);
-    send_to_char("Your life's ichor is drained!\n\r", victim);
-  }
-  
-  damage(ch, victim, dam, SPELL_LEACH, 0);
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power / 4) + 18;
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam >>= 1;
+	}
+	else 
+	{
+		int moves = std::min((int)GET_MOVE(victim), number(0, 5));
+		GET_MOVE(victim) += -moves;
+		GET_MOVE(ch) = std::min((int)GET_MAX_MOVE(ch), GET_MOVE(ch) + moves);
+		GET_HIT(ch) = std::min(GET_MAX_HIT(ch), GET_HIT(ch) + dam / 2);
+		send_to_char("Your life's ichor is drained!\n\r", victim);
+	}
+
+	damage(ch, victim, dam, SPELL_LEACH, 0);
+
+	if (saved)
+	{
+		act("$n fights off the leeching energy.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You fight off the leeching energy.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1643,32 +1775,45 @@ ASPELL(spell_word_of_shock)
  */
 ASPELL(spell_black_arrow)
 {
-  int dam, min_poison_dam;
-  struct affected_type af;
-  
-  min_poison_dam = 5;
-  dam = number(1, MAG_POWER(ch)) / 2 + number(1, MAG_POWER(ch)) / 2 + 13;
+	int mag_power = MAG_POWER(ch);
+	int min_poison_dam = 5;
+	int dam = number(1, mag_power) / 2 + number(1, mag_power) / 2 + 13;
 
-  if(!SUN_PENALTY(ch))
-    dam += number(0, MAG_POWER(ch) / 6) + 2;
-  else  
-    send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
-  
-  if(saves_spell(victim, level, 0))
-    dam >>= 1;
-  else if(number(1, 50) < level && GET_HIT(victim) > min_poison_dam) {
-    af.type = SPELL_POISON;
-    af.duration = level + 1;
-    af.modifier = -2;
-    af.location = APPLY_STR;
-    af.bitvector = AFF_POISON;
-    affect_join(victim, &af, FALSE, FALSE);
-    
-    send_to_char("The vile magic poisons you!\n\r", victim);
-    damage((ch) ? ch : victim, victim, 5, SPELL_POISON, 0);
-  }
-  
-  damage(ch, victim, dam, SPELL_BLACK_ARROW,0);
+	if (!SUN_PENALTY(ch))
+	{
+		dam += number(0, mag_power / 6) + 2;
+	}
+	else
+	{
+		send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
+	}	
+
+	bool saved = saves_spell(victim, level, 0);
+	if (saved)
+	{
+		dam >>= 1;
+	}
+	else if (number(1, 50) < level && GET_HIT(victim) > min_poison_dam) 
+	{
+		affected_type af;
+		af.type = SPELL_POISON;
+		af.duration = level + 1;
+		af.modifier = -2;
+		af.location = APPLY_STR;
+		af.bitvector = AFF_POISON;
+		affect_join(victim, &af, FALSE, FALSE);
+
+		send_to_char("The vile magic poisons you!\n\r", victim);
+		damage((ch) ? ch : victim, victim, min_poison_dam, SPELL_POISON, 0);
+	}
+
+	damage(ch, victim, dam, SPELL_BLACK_ARROW, 0);
+
+	if (saved)
+	{
+		act("$n seems to resist the effects of your black arrow.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You resist the dark energies of the black arrow.", FALSE, ch, 0, victim, TO_VICT);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1678,16 +1823,20 @@ ASPELL(spell_black_arrow)
  */
 ASPELL(spell_word_of_agony)
 {
-   int  dam;
+	int mag_power = MAG_POWER(ch);
+	int dam = number(1, mag_power) / 2 + number(1, mag_power) / 2 + 20;
 
-   dam = number(1, MAG_POWER(ch)) / 2 + number(1, MAG_POWER(ch)) / 2 + 20;
-
-   if(saves_spell(victim, level, 0))
-     damage(ch, victim, dam * 2 / 3, SPELL_WORD_OF_AGONY, 0);
-   else{
-     GET_ENERGY(victim) -= GET_ENERGY(victim) / 2 + 4 * GET_ENE_REGEN(victim);
-     damage(ch, victim, dam, SPELL_WORD_OF_AGONY, 0);
-   }  
+	if (saves_spell(victim, level, 0))
+	{
+		damage(ch, victim, dam * 2 / 3, SPELL_WORD_OF_AGONY, 0);
+		act("$n seems to resist some of the agony.", FALSE, ch, 0, victim, TO_CHAR);
+		act("Your mind resists some of the agony.", FALSE, ch, 0, victim, TO_VICT);
+	}
+	else 
+	{
+		GET_ENERGY(victim) -= GET_ENERGY(victim) / 2 + 4 * GET_ENE_REGEN(victim); 
+		damage(ch, victim, dam, SPELL_WORD_OF_AGONY, 0);
+	}
 }
 
 
@@ -1698,27 +1847,32 @@ ASPELL(spell_word_of_agony)
  */
 ASPELL(spell_shout_of_pain)
 {
-  int dam_value;
-  struct char_data *tmpch, *tmpch_next;
-  struct room_data *cur_room;
-  
-  if(!ch)
-    return;
-  if(ch->in_room == NOWHERE)
-    return;
-  cur_room = &world[ch->in_room];
+	if (!ch || ch->in_room == NOWHERE)
+		return;
+	
+	room_data *cur_room = &world[ch->in_room];
 
-  dam_value = number(1, 50) + MAG_POWER(ch) / 2;
+	int mag_power = MAG_POWER(ch);
+	int dam_value = number(1, 50) + mag_power / 2;
 
-  for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
-    tmpch_next = tmpch->next_in_room;
-    if(tmpch != ch) {
-      if(saves_spell(tmpch, level, 0))
-	damage(ch, tmpch, dam_value / 2, SPELL_SHOUT_OF_PAIN, 0);
-      else
-	damage(ch, tmpch, dam_value, SPELL_SHOUT_OF_PAIN, 0);
-    }
-  }
+	char_data* tmpch_next = NULL;
+	for (char_data* tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) 
+	{
+		tmpch_next = tmpch->next_in_room;
+		if (tmpch != ch) 
+		{
+			if (saves_spell(tmpch, level, 0))
+			{
+				damage(ch, tmpch, dam_value / 2, SPELL_SHOUT_OF_PAIN, 0);
+				act("$n seems to resist some of the agony.", FALSE, ch, 0, tmpch, TO_CHAR);
+				act("Your mind resists some of the agony.", FALSE, ch, 0, tmpch, TO_VICT);
+			}
+			else
+			{
+				damage(ch, tmpch, dam_value, SPELL_SHOUT_OF_PAIN, 0);
+			}
+		}
+	}
 }
 
 
@@ -1731,17 +1885,23 @@ ASPELL(spell_shout_of_pain)
  */
 ASPELL(spell_spear_of_darkness)
 {
-  int dam;
+	int mag_power = MAG_POWER(ch);
+	int dam = number(0, mag_power) / 5 + number(8, mag_power) / 2 + number(8, mag_power) / 2;
 
-  dam = number(0, MAG_POWER(ch)) / 5 + number(8, MAG_POWER(ch)) / 2
-    + number(8, MAG_POWER(ch)) / 2;
+	if (!SUN_PENALTY(ch))
+	{
+		dam += number(8, mag_power) / 2 + 20;
+	}
+	else
+	{
+		send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
+	}
 
-  if(!SUN_PENALTY(ch))
-    dam += number(8, MAG_POWER(ch))/2 + 20;
-  else  
-    send_to_char("Your spell is weakened by the intensity of light.\n\r", ch);
-   
-  damage(ch, victim, dam, SPELL_SPEAR_OF_DARKNESS, 0);
+	if (saves_spell(victim, level, -200))
+	{
+		// characters can't save vs spear
+	}
+	damage(ch, victim, dam, SPELL_SPEAR_OF_DARKNESS, 0);
 }
 
 

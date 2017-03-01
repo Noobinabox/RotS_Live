@@ -1,4 +1,6 @@
 #pragma once
+#ifndef BIG_BROTHER_H
+#define BIG_BROTHER_H
 
 #include "base_utils.h"
 #include "singleton.h"
@@ -120,4 +122,6 @@ namespace game_rules
 #endif // USE_BIG_BROTHER
 	};
 }
+
+#endif // Header Protection
 

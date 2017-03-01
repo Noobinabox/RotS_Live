@@ -391,6 +391,7 @@ namespace game_rules
 
 		// If you attack someone in PK, you are no longer considered looting.
 		remove_character_from_looting_set(attacker->abs_number);
+		remove_character_from_looting_set(victim->abs_number);
 #endif
 	}
 

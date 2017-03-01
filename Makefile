@@ -7,9 +7,6 @@ MYFLAGS = -fstrict-aliasing -Wall -funsigned-char
 #flags for profiling (see hacker.doc for more information)
 PROFILE = -g
 
-#flags for controlling program behavior
-USER_DEFINES="-DUSE_BIG_BROTHER=1"
-
 #remove the hash marks below if compiling under AIX
 #CC = g++
 #COMMFLAGS = -D_BSD
@@ -184,4 +181,4 @@ pkill.o: pkill.c pkill.h
 	if [ -f ../bin/ageland ]; \
 	  then mv -f ../bin/ageland ../bin/ageland~; \
 	fi
-	$(CC) $(USER_DEFINES) -o ../bin/ageland $(PROFILE) $(OBJFILES) $(LIBS)
+	$(CC) -o ../bin/ageland $(PROFILE) $(OBJFILES) $(LIBS)

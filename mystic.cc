@@ -31,6 +31,7 @@
 #include "interpre.h"
 #include "db.h"
 #include "limits.h"
+#include "char_utils.h"
 
 #include <algorithm>
 #include <sstream>
@@ -840,29 +841,80 @@ ASPELL(spell_vitality)
 
 ASPELL(spell_dispel_regeneration)
 {
-  if(!victim) {
-    send_to_char("Whom do you want to dispel?\n\r", ch);
-    return;
-  }
-  
-  if(victim == ch) {
-    affect_from_char(victim, SPELL_RESTLESSNESS);
-    affect_from_char(victim, SPELL_CURING);
-    affect_from_char(victim, SPELL_REGENERATION);
-    affect_from_char(victim, SPELL_VITALITY);
-    return;  
-  }
+	if (!victim) 
+	{
+		send_to_char("Whom do you want to dispel?\n\r", ch);
+		return;
+	}
 
-  if(victim != ch && !saves_mystic(victim))
-    affect_from_char(victim, SPELL_RESTLESSNESS);
-  if(victim != ch && !saves_mystic(victim))
-    affect_from_char(victim, SPELL_CURING);
-  if(victim != ch && !saves_mystic(victim))
-    affect_from_char(victim, SPELL_REGENERATION);
-  if(victim != ch && !saves_mystic(victim))
-    affect_from_char(victim, SPELL_VITALITY);
+	if (victim == ch) 
+	{
+		affect_from_char(victim, SPELL_RESTLESSNESS);
+		affect_from_char(victim, SPELL_CURING);
+		affect_from_char(victim, SPELL_REGENERATION);
+		affect_from_char(victim, SPELL_VITALITY);
+		return;
+	}
+	else
+	{
+		affected_type* spell = utils::is_affected_by_spell(*victim, SPELL_RESTLESSNESS);
+		if(spell)
+		{
+			if (saves_mystic(victim))
+			{
+				act("$N resists your attempt to dispel Restlessness.", FALSE, ch, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Restlessness from you.", FALSE, ch, 0, victim, TO_VICT);
+			}
+			else
+			{
+				affect_remove(victim, spell);
+			}
+		}
 
-  return;
+		spell = utils::is_affected_by_spell(*victim, SPELL_CURING);
+		if (spell)
+		{
+			if (saves_mystic(victim))
+			{
+				act("$N resists your attempt to dispel Curing Saturation.", FALSE, ch, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Curing Saturation from you.", FALSE, ch, 0, victim, TO_VICT);
+			}
+			else
+			{
+				affect_remove(victim, spell);
+			}
+		}
+
+		spell = utils::is_affected_by_spell(*victim, SPELL_REGENERATION);
+		if (spell)
+		{
+			if (saves_mystic(victim))
+			{
+				act("$N resists your attempt to dispel Regeneration.", FALSE, ch, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Regeneration from you.", FALSE, ch, 0, victim, TO_VICT);
+			}
+			else
+			{
+				affect_remove(victim, spell);
+			}
+		}
+
+		spell = utils::is_affected_by_spell(*victim, SPELL_VITALITY);
+		if (spell)
+		{
+			if (saves_mystic(victim))
+			{
+				act("$N resists your attempt to dispel Vitality.", FALSE, ch, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Vitality from you.", FALSE, ch, 0, victim, TO_VICT);
+			}
+			else
+			{
+				affect_remove(victim, spell);
+			}
+		}
+	}
+
+	return;
 }
 
 
@@ -1064,62 +1116,74 @@ ASPELL(spell_fear)
 
 ASPELL(spell_poison)
 {
-  struct affected_type af;
-  struct affected_type * oldaf;
-  int magus_save = 0;
+	struct affected_type af;
+	struct affected_type * oldaf;
+	int magus_save = 0;
 
-  if(!victim && !obj && !(ch->specials.fighting)){ /*poisoning the room*/
+	if (!victim && !obj && !(ch->specials.fighting)) 
+	{ /*poisoning the room*/
 
-    if(!ch) return;
+		if (!ch) return;
 
-    af.type = ROOMAFF_SPELL;
-    af.duration = (level)/3;
-    af.modifier = level/2;
-    af.location = SPELL_POISON;
-    af.bitvector = 0;
-    
-    if ((oldaf = room_affected_by_spell(&world[ch->in_room], SPELL_POISON))) {
-      
-      if(oldaf->duration < af.duration)
-	oldaf->duration = af.duration;
-      
-      if(oldaf->modifier < af.modifier)
-	oldaf->modifier = af.modifier;
-    }
-    else{
-      affect_to_room(&world[ch->in_room], &af);
-    }
+		af.type = ROOMAFF_SPELL;
+		af.duration = (level) / 3;
+		af.modifier = level / 2;
+		af.location = SPELL_POISON;
+		af.bitvector = 0;
 
-    act("$n breathes out a cloud of smoke.",TRUE, ch,0,0, TO_ROOM);
-    send_to_char("You breathe out poison.\n\r",ch);
+		if ((oldaf = room_affected_by_spell(&world[ch->in_room], SPELL_POISON))) 
+		{
+			if (oldaf->duration < af.duration)
+				oldaf->duration = af.duration;
 
-    return;
-  }
+			if (oldaf->modifier < af.modifier)
+				oldaf->modifier = af.modifier;
+		}
+		else 
+		{
+			affect_to_room(&world[ch->in_room], &af);
+		}
 
-  if (GET_POSITION(ch) == POSITION_FIGHTING) victim = ch->specials.fighting;
+		act("$n breathes out a cloud of smoke.", TRUE, ch, 0, 0, TO_ROOM);
+		send_to_char("You breathe out poison.\n\r", ch);
 
-  if (victim) {
+		return;
+	}
 
-    if (!saves_poison(victim, ch) && (number(0, magus_save) < 50)) {
-      af.type = SPELL_POISON;
-      af.duration = level + 1;
-      af.modifier = -2;
-      af.location = APPLY_STR;
-      af.bitvector = AFF_POISON;
-      
-      affect_join(victim, &af, FALSE, FALSE);
-      
-      send_to_char("You feel very sick.\n\r", victim);
-      damage((ch)?ch:victim, victim, 5, SPELL_POISON,0);
-    }
-    
-  } else { /* Object poison */
-    if ((obj->obj_flags.type_flag == ITEM_DRINKCON) || 
-	(obj->obj_flags.type_flag == ITEM_FOUNTAIN) || 
-	(obj->obj_flags.type_flag == ITEM_FOOD)) {
-      obj->obj_flags.value[3] = 1;
-    }
-  }
+	if (GET_POSITION(ch) == POSITION_FIGHTING) 
+		victim = ch->specials.fighting;
+
+	if (victim)
+	{
+		if (!saves_poison(victim, ch) && (number(0, magus_save) < 50))
+		{
+			af.type = SPELL_POISON;
+			af.duration = level + 1;
+			af.modifier = -2;
+			af.location = APPLY_STR;
+			af.bitvector = AFF_POISON;
+
+			affect_join(victim, &af, FALSE, FALSE);
+
+			send_to_char("You feel very sick.\n\r", victim);
+			damage((ch) ? ch : victim, victim, 5, SPELL_POISON, 0);
+		}
+		else
+		{
+			act("You feel your body fend off the poison.", TRUE, ch, 0, victim, TO_VICT);
+			act("$N shrugs off your poison with ease.", FALSE, ch, 0, victim, TO_CHAR);
+		}
+
+	}
+	else 
+	{ /* Object poison */
+		if ((obj->obj_flags.type_flag == ITEM_DRINKCON) ||
+			(obj->obj_flags.type_flag == ITEM_FOUNTAIN) ||
+			(obj->obj_flags.type_flag == ITEM_FOOD)) 
+		{
+			obj->obj_flags.value[3] = 1;
+		}
+	}
 }
 
 
@@ -1205,7 +1269,7 @@ ASPELL(spell_sanctuary)
   if (ch == victim)
     loc_level = GET_PROF_LEVEL(PROF_CLERIC, ch);
   else
-    loc_level = (MAX(6, GET_PROF_LEVEL(PROF_CLERIC, victim)));
+    loc_level = (std::max(6, GET_PROF_LEVEL(PROF_CLERIC, victim)));
   
   if (!affected_by_spell(victim, SPELL_SANCTUARY)) {
     af.type      = SPELL_SANCTUARY;
@@ -1335,70 +1399,70 @@ ASPELL(spell_confuse){
   }
 }
 
-ASPELL(spell_guardian){
-  /* 
-   * Guardian now takes an extra
-   * argument from the character on cast
-   * The argument determines the type of
-   * Guardian mob cast by the user
-   */ 
- 
- static char *guardian_type[] = {
-    "aggressive",
-    "defensive",
-    "mystic",
-    "\n"
- };
-  char_data * tmpch;
-  char_data * guardian;
-  char first_word[255];
-  int guardian_to_load;
-  int guardian_num = 1110;
-  
- if (GET_SPEC(ch) != PLRSPEC_GRDN) {
-    send_to_char ("You are not dedicated enough to cast this.\r\n",ch);
-    return;
-  }
+ASPELL(spell_guardian) {
+	/*
+	 * Guardian now takes an extra
+	 * argument from the character on cast
+	 * The argument determines the type of
+	 * Guardian mob cast by the user
+	 */
 
-  /*
-   * Takes the extra arguement from the user
-   * Checks if its a valid arguement
-   * Loads appropriate guardian number according
-   * to race/type.
-   */ 
-   
- one_argument(arg, first_word);
- guardian_to_load = search_block(first_word, guardian_type, 0);
-   
- if (guardian_to_load == -1) {
-    send_to_char ("You'll have to be more specific about "
-                  "which guardian you wish to summon.\n",ch);
-    GET_SPIRIT(ch) +=  30;
-    return;
-   }
- else
-   guardian_num = guardian_mob[GET_RACE(ch)][guardian_to_load];
-  
- if (ch->in_room == NOWHERE) return;
-    for (tmpch = character_list; tmpch; tmpch = tmpch->next)
-        if ((tmpch->master == ch) && IS_GUARDIAN(tmpch))
-        break;
- 
- if (tmpch) {
-    send_to_char("You already have a guardian.\n\r",ch);
-    return;
-   }
+	static char *guardian_type[] = {
+	   "aggressive",
+	   "defensive",
+	   "mystic",
+	   "\n"
+	};
+	char_data * tmpch;
+	char_data * guardian;
+	char first_word[255];
+	int guardian_to_load;
+	int guardian_num = 1110;
 
- if (!(guardian = read_mobile(guardian_num, VIRT))) {
-    send_to_char("Could not find a guardian for you, please report.\n\r",ch);
-    return;
-  }
+	if (GET_SPEC(ch) != PLRSPEC_GRDN) {
+		send_to_char("You are not dedicated enough to cast this.\r\n", ch);
+		return;
+	}
 
- char_to_room(guardian, ch->in_room);
- act("$n appears with a flash.",FALSE, guardian, 0, 0, TO_ROOM);
- add_follower(guardian, ch, FOLLOW_MOVE);
- SET_BIT(guardian->specials.affected_by, AFF_CHARM);
- SET_BIT(MOB_FLAGS(guardian), MOB_PET);
+	/*
+	 * Takes the extra arguement from the user
+	 * Checks if its a valid arguement
+	 * Loads appropriate guardian number according
+	 * to race/type.
+	 */
+
+	one_argument(arg, first_word);
+	guardian_to_load = search_block(first_word, guardian_type, 0);
+
+	if (guardian_to_load == -1) {
+		send_to_char("You'll have to be more specific about "
+			"which guardian you wish to summon.\n", ch);
+		GET_SPIRIT(ch) += 30;
+		return;
+	}
+	else
+		guardian_num = guardian_mob[GET_RACE(ch)][guardian_to_load];
+
+	if (ch->in_room == NOWHERE) return;
+	for (tmpch = character_list; tmpch; tmpch = tmpch->next)
+		if ((tmpch->master == ch) && IS_GUARDIAN(tmpch))
+			break;
+
+	if (tmpch) {
+		send_to_char("You already have a guardian.\n\r", ch);
+		return;
+	}
+
+	if (!(guardian = read_mobile(guardian_num, VIRT))) {
+		send_to_char("Could not find a guardian for you, please report.\n\r", ch);
+		return;
+	}
+
+	char_to_room(guardian, ch->in_room);
+	act("$n appears with a flash.", FALSE, guardian, 0, 0, TO_ROOM);
+	add_follower(guardian, ch, FOLLOW_MOVE);
+	SET_BIT(guardian->specials.affected_by, AFF_CHARM);
+	SET_BIT(MOB_FLAGS(guardian), MOB_PET);
 }
 
 

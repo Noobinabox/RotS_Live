@@ -69,11 +69,12 @@ namespace game_rules
 
 		struct player_corpse_data
 		{
-			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0), is_npc(false) { };
+			player_corpse_data() : num_items_looted(0), player_race(0), killer_id(-1), player_id(0), is_npc(false), max_num_items_looted(2) { };
 			player_corpse_data(char_data* dead_man);
 			player_corpse_data(char_data* dead_man, char_data* killer);
 
 			int num_items_looted;
+			int max_num_items_looted;
 			int player_race;
 			int killer_id;
 			int player_id;

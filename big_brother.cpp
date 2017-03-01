@@ -61,14 +61,14 @@ namespace game_rules
 			return true;
 		}
 
-		if (corpse_data.num_items_looted >= 2)
+		if (corpse_data.num_items_looted >= corpse_data.max_num_items_looted)
 			return false;
 
 		// Containers (other than quivers) can't be looted.
 		if (item->obj_flags.type_flag == ITEM_CONTAINER && !item->is_quiver())
 			return false;
 
-		// The corpse has had less than 2-items looted from it.  Return that the
+		// The corpse has had less than the max number of items looted from it.  Return that the
 		// item can be looted and increment the counter.
 		++corpse_data.num_items_looted;
 
@@ -520,6 +520,9 @@ namespace game_rules
 		player_id = dead_man->abs_number;
 
 		is_npc = utils::is_npc(*dead_man);
+
+		// Moved here so that we can change it to grant different corpses different protection if we so choose.
+		max_num_items_looted = 2;
 	}
 
 	//============================================================================
@@ -539,6 +542,9 @@ namespace game_rules
 		{
 			killer_id = -1;
 		}
+
+		// Moved here so that we can change it to grant different corpses different protection if we so choose.
+		max_num_items_looted = 2;
 	}
 }
 

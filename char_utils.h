@@ -22,7 +22,7 @@ namespace utils
 	bool is_preference_flagged(const char_data& character, long flag);
 	bool is_player_mode_on(const char_data& character, long flag);
 	bool is_affected_by(const char_data& character, long skill_id);
-	affected_type* is_affected_by_spell(const char_data& character, int skill_id);
+	affected_type* is_affected_by_spell(char_data& character, int skill_id);
 
 	const char* his_or_her(const char_data& character);
 	const char* he_or_she(const char_data& character);

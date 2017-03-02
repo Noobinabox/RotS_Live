@@ -74,14 +74,16 @@ namespace utils
 	}
 
 	//============================================================================
-	affected_type* is_affected_by_spell(const char_data& character, int skill_id)
+	affected_type* is_affected_by_spell(char_data& character, int skill_id)
 	{
-		for (affected_type* affect = character.affected, int count = 0; affect && count < MAX_AFFECT; affect = affect->next, count++)
+		int count = 0;
+		for (affected_type* affect = character.affected; affect && count < MAX_AFFECT; affect = affect->next)
 		{
 			if (affect->type == skill_id)
 			{
 				return affect;
 			}
+			++count;
 		}
 
 		return NULL;

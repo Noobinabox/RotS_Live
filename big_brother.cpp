@@ -23,13 +23,6 @@ namespace game_rules
 	// Construction Code:  For building Big Brother.
 	//============================================================================ 
 
-	big_brother(const weather_data* weather, const room_data* world) : world_singleton<big_brother>(weather, world)
-	{
-#if USE_BIG_BROTHER
-		populate_skill_sets();
-#endif
-	}
-
 #if USE_BIG_BROTHER
 	void big_brother::populate_skill_sets()
 	{
@@ -119,6 +112,7 @@ namespace game_rules
 			return true;
 
 		// Once a player loots an item from his corpse, his looting protection fades.
+		player_corpse_data& corpse_data = corpse_iter->second;
 		if (looter->abs_number == corpse_iter->second.player_id)
 		{
 			on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
@@ -126,7 +120,6 @@ namespace game_rules
 		}
 
 		// Players on the same side as the race war as you can loot your corpse.
-		player_corpse_data& corpse_data = corpse_iter->second;
 		if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
 		{
 			if (!item->next_content)

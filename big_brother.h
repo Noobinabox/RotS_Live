@@ -88,7 +88,12 @@ namespace game_rules
 		typedef std::set<int> skill_id_set;
 
 		// Private constructor that we friend with our parent to grant access.
-		big_brother(const weather_data* weather, const room_data* world);
+		big_brother(const weather_data* weather, const room_data* world) : world_singleton<big_brother>(weather, world)
+		{
+#if USE_BIG_BROTHER
+			populate_skill_sets();
+#endif
+		}
 
 		// Is the spell being cast or skill being used offensive in nature.
 		bool is_skill_offensive(int skill_id) const;

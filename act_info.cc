@@ -31,6 +31,7 @@
 
 #include "big_brother.h"
 #include <cmath>
+#include "char_utils.h"
 
 /* extern variables */
 extern struct room_data world;
@@ -456,7 +457,7 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
 		strcat(character_message, " (shadow)");
 	}
 
-	if (!IS_NPC(viewed))
+	if ((MOB_FLAGGED(viewed, MOB_PET) || MOB_FLAGGED(viewed, MOB_ORC_FRIEND)) || !IS_NPC(viewed))
 	{
 		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 		if (!bb_instance.is_target_valid(viewer, viewed))

@@ -108,7 +108,7 @@ namespace game_rules
 		// Big Brother does not protect against NPC that aren't charmed.
 		if (utils::is_npc(*attacker))
 		{
-			if (utils::is_mob_flagged(*attacker, AFF_CHARM))
+			if (utils::is_mob_flagged(*attacker, MOB_PET) || utils::is_mob_flagged(*attacker, MOB_ORC_FRIEND))
 			{
 				return is_target_valid(attacker->master, victim);
 			}
@@ -130,7 +130,7 @@ namespace game_rules
 			{
 				return is_target_valid(attacker, victim->mount_data.rider);
 			}
-			else if (utils::is_mob_flagged(*victim, AFF_CHARM))
+			else if (utils::is_mob_flagged(*victim, MOB_PET) || utils::is_mob_flagged(*victim, MOB_ORC_FRIEND))
 			{
 				return is_target_valid(attacker, victim->master);
 			}
@@ -215,6 +215,7 @@ namespace game_rules
 			SPELL_LIGHTNING_STRIKE,
 			SPELL_WORD_OF_PAIN,
 			SPELL_WORD_OF_AGONY,
+			SPELL_SHOUT_OF_PAIN,
 			SPELL_WORD_OF_SHOCK,
 			SPELL_LEACH,
 			SPELL_BLACK_ARROW,
@@ -358,10 +359,11 @@ namespace game_rules
 		// Big Brother doesn't track NPC corpses that are not orc followers.
 		if (utils::is_npc(*character))
 		{
-			if (utils::is_affected_by(*character, AFF_CHARM))
+			if (utils::is_mob_flagged(*character, MOB_ORC_FRIEND))
 			{
 				// Protect the mob in the corpse map, but don't give anyone looting protection.
 				m_corpse_map[corpse] = player_corpse_data(character, killer);
+				m_looting_characters.insert(character->master->abs_number);
 			}
 
 			return;

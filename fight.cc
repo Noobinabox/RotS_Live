@@ -948,6 +948,10 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 	death_cry(dead_man);
 	obj_data* corpse = make_corpse(dead_man, killer, attack_type);
 
+	// Let big brother know that the player died.
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	bb_instance.on_character_died(dead_man, killer, corpse);
+
 	if (!IS_NPC(dead_man))
 	{
 		int race = GET_RACE(dead_man);
@@ -999,10 +1003,6 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
 		}
 
 		REMOVE_BIT(PLR_FLAGS(dead_man), PLR_WAS_KITTED);
-		
-		// Let big brother know that the player died.
-		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-		bb_instance.on_character_died(dead_man, killer, corpse);
 	}
 	else
 	{

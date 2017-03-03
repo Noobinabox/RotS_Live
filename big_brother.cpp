@@ -363,7 +363,6 @@ namespace game_rules
 			{
 				// Protect the mob in the corpse map, but don't give anyone looting protection.
 				m_corpse_map[corpse] = player_corpse_data(character, killer);
-				m_looting_characters.insert(character->master->abs_number);
 			}
 
 			return;

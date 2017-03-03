@@ -4387,6 +4387,8 @@ char *weapon_types [] = {
   "stabbing",
   "piercing",
   "smiting",
+  "shooting",
+  "shooting",
 };
 
 /*

@@ -20,6 +20,83 @@ bool world_singleton<game_rules::big_brother>::m_bDestroyed(false);
 namespace game_rules
 {
 	//============================================================================
+	// Construction Code:  For building Big Brother.
+	//============================================================================ 
+
+	big_brother(const weather_data* weather, const room_data* world) : world_singleton<big_brother>(weather, world)
+	{
+#if USE_BIG_BROTHER
+		populate_skill_sets();
+#endif
+	}
+
+#if USE_BIG_BROTHER
+	void big_brother::populate_skill_sets()
+	{
+		m_can_be_helpful_skills.insert(SPELL_CURING);
+		m_can_be_helpful_skills.insert(SPELL_RESTLESSNESS);
+		m_can_be_helpful_skills.insert(SPELL_INSIGHT);
+		m_can_be_helpful_skills.insert(SPELL_PRAGMATISM);
+		m_can_be_helpful_skills.insert(SPELL_DISPEL_REGENERATION);
+
+		m_harmful_skills.insert(SKILL_BAREHANDED);
+		m_harmful_skills.insert(SKILL_SLASH);
+		m_harmful_skills.insert(SKILL_CONCUSSION);
+		m_harmful_skills.insert(SKILL_WHIP);
+		m_harmful_skills.insert(SKILL_PIERCE);
+		m_harmful_skills.insert(SKILL_SPEARS);
+		m_harmful_skills.insert(SKILL_AXE);
+		m_harmful_skills.insert(SKILL_TWOHANDED);
+		m_harmful_skills.insert(SKILL_KICK);
+		m_harmful_skills.insert(SKILL_BASH);
+		m_harmful_skills.insert(SKILL_SWING);
+		m_harmful_skills.insert(SKILL_RIPOSTE);
+		m_harmful_skills.insert(SKILL_AMBUSH);
+		m_harmful_skills.insert(SPELL_HAZE);
+		m_harmful_skills.insert(SPELL_FEAR);
+		m_harmful_skills.insert(SPELL_POISON);
+		m_harmful_skills.insert(SPELL_TERROR);
+		m_harmful_skills.insert(SKILL_ARCHERY);
+		m_harmful_skills.insert(SPELL_HALLUCINATE);
+		m_harmful_skills.insert(SPELL_CURSE);
+		m_harmful_skills.insert(SPELL_MAGIC_MISSILE);
+		m_harmful_skills.insert(SPELL_CHILL_RAY);
+		m_harmful_skills.insert(SPELL_FREEZE);
+		m_harmful_skills.insert(SPELL_LIGHTNING_BOLT);
+		m_harmful_skills.insert(SPELL_EARTHQUAKE);
+		m_harmful_skills.insert(SPELL_DARK_BOLT);
+		m_harmful_skills.insert(SPELL_MIST_OF_BAAZUNGA);
+		m_harmful_skills.insert(SPELL_BLAZE);
+		m_harmful_skills.insert(SPELL_FIREBOLT);
+		m_harmful_skills.insert(SPELL_CONE_OF_COLD);
+		m_harmful_skills.insert(SPELL_FIREBALL);
+		m_harmful_skills.insert(SPELL_FIREBALL2);
+		m_harmful_skills.insert(SPELL_SEARING_DARKNESS);
+		m_harmful_skills.insert(SPELL_LIGHTNING_STRIKE);
+		m_harmful_skills.insert(SPELL_WORD_OF_PAIN);
+		m_harmful_skills.insert(SPELL_WORD_OF_AGONY);
+		m_harmful_skills.insert(SPELL_SHOUT_OF_PAIN);
+		m_harmful_skills.insert(SPELL_WORD_OF_SHOCK);
+		m_harmful_skills.insert(SPELL_LEACH);
+		m_harmful_skills.insert(SPELL_BLACK_ARROW);
+		m_harmful_skills.insert(SPELL_CONFUSE);
+		m_harmful_skills.insert(SKILL_TRAP);
+		m_harmful_skills.insert(TYPE_HIT);
+		m_harmful_skills.insert(TYPE_BLUDGEON);
+		m_harmful_skills.insert(TYPE_PIERCE);
+		m_harmful_skills.insert(TYPE_SLASH);
+		m_harmful_skills.insert(TYPE_STAB);
+		m_harmful_skills.insert(TYPE_WHIP);
+		m_harmful_skills.insert(TYPE_SPEARS);
+		m_harmful_skills.insert(TYPE_CLEAVE);
+		m_harmful_skills.insert(TYPE_FLAIL);
+		m_harmful_skills.insert(TYPE_SMITE);
+		m_harmful_skills.insert(TYPE_CRUSH);
+		m_harmful_skills.insert(TYPE_SUFFERING);
+	}
+#endif
+
+	//============================================================================
 	// Query Code:
 	//   This code is responsible for answering yes/no to questions.
 	//============================================================================ 
@@ -140,9 +217,13 @@ namespace game_rules
 			}
 		}
 
-		// Targets on the same side of the race war as you are always valid.
-		if (is_same_side_race_war(attacker->player.race, victim->player.race))
-			return true;
+		// Whities can never attack each other.
+		if (is_same_side_race_war(attacker->player.race, victim->player.race) && utils::is_race_good(*attacker))
+			return false;
+
+		// Players cannot attack Gods.
+		if (victim->player.level >= LEVEL_MINIMM)
+			return false;
 
 		// Can't attack AFK targets.
 		if (is_target_afk(victim))
@@ -166,7 +247,24 @@ namespace game_rules
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
 	{
 #if USE_BIG_BROTHER
-		return is_target_valid(attacker, victim) || !is_skill_offensive(skill_id);
+		// If the target isn't protected, just return true.
+		if (is_target_valid(attacker, victim))
+			return true;
+
+		// The target isn't valid and the skill is offensive.  No go.
+		if (is_skill_offensive(skill_id))
+			return false;
+
+		// Some skills can be helpful, and are considered to be if cast on a player of the same side.
+		// If cast on a player of the opposite side, they are considered harmful.
+		bool potentially_helpful = m_can_be_helpful_skills.find(skill_id) != m_can_be_helpful_skills.end();
+		if (potentially_helpful)
+		{
+			return is_same_side_race_war(attacker->player.race, victim->player.race);
+		}
+
+		// Skill isn't flagged at all.  It's all good.
+		return true;
 #else
 		return true;
 #endif
@@ -176,81 +274,7 @@ namespace game_rules
 	bool big_brother::is_skill_offensive(int skill_id) const
 	{
 #if USE_BIG_BROTHER
-		const int TYPE_END = 9999;
-
-		static int OFFENSIVE_SKILLS[] = { 
-			SKILL_BAREHANDED,
-			SKILL_SLASH,
-			SKILL_CONCUSSION,
-			SKILL_WHIP,
-			SKILL_PIERCE,
-			SKILL_SPEARS,
-			SKILL_AXE,
-			SKILL_TWOHANDED,
-			SKILL_KICK,
-			SKILL_BASH,
-			SKILL_SWING,
-			SKILL_RIPOSTE,
-			SKILL_AMBUSH,
-			SPELL_CURING,
-			SPELL_RESTLESSNESS,
-			SPELL_INSIGHT,
-			SPELL_PRAGMATISM,
-			SPELL_HAZE,
-			SPELL_FEAR,
-			SPELL_POISON,
-			SPELL_TERROR,
-			SKILL_ARCHERY,
-			SPELL_HALLUCINATE,
-			SPELL_CURSE,
-			SPELL_MAGIC_MISSILE,
-			SPELL_CHILL_RAY,
-			SPELL_FREEZE,
-			SPELL_LIGHTNING_BOLT,
-			SPELL_EARTHQUAKE,
-			SPELL_DARK_BOLT,
-			SPELL_MIST_OF_BAAZUNGA,
-			SPELL_BLAZE,
-			SPELL_FIREBOLT,
-			SPELL_CONE_OF_COLD,
-			SPELL_FIREBALL,
-			SPELL_FIREBALL2,
-			SPELL_SEARING_DARKNESS,
-			SPELL_LIGHTNING_STRIKE,
-			SPELL_WORD_OF_PAIN,
-			SPELL_WORD_OF_AGONY,
-			SPELL_SHOUT_OF_PAIN,
-			SPELL_WORD_OF_SHOCK,
-			SPELL_LEACH,
-			SPELL_BLACK_ARROW,
-			SPELL_CONFUSE,
-			SKILL_TRAP,
-			TYPE_HIT,
-			TYPE_BLUDGEON,
-			TYPE_PIERCE,
-			TYPE_SLASH,
-			TYPE_STAB,
-			TYPE_WHIP,
-			TYPE_SPEARS,
-			TYPE_CLEAVE,
-			TYPE_FLAIL,
-			TYPE_SMITE,
-			TYPE_CRUSH,
-			TYPE_SUFFERING,
-			TYPE_END
-		};
-
-		int skill_index = 0;
-		while (OFFENSIVE_SKILLS[skill_index] != TYPE_END)
-		{
-			if (OFFENSIVE_SKILLS[skill_index] == skill_id)
-			{
-				return true;
-			}
-			++skill_index;
-		}
-
-		return false;
+		return m_harmful_skills.find(skill_id) != m_harmful_skills.end();
 #else
 		return false;
 #endif

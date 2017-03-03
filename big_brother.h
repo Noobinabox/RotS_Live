@@ -85,10 +85,10 @@ namespace game_rules
 		typedef std::set<const char_data*> character_set;
 		typedef std::set<int> character_id_set;
 		typedef std::map<const char_data*, tm> time_map;
+		typedef std::set<int> skill_id_set;
 
 		// Private constructor that we friend with our parent to grant access.
-		big_brother(const weather_data* weather, const room_data* world)
-			: world_singleton<big_brother>(weather, world) { }
+		big_brother(const weather_data* weather, const room_data* world);
 
 		// Is the spell being cast or skill being used offensive in nature.
 		bool is_skill_offensive(int skill_id) const;
@@ -113,12 +113,18 @@ namespace game_rules
 
 #ifdef USE_BIG_BROTHER
 
+		void populate_skill_sets();
+
 		corpse_map m_corpse_map;
 		character_set m_afk_characters;
 		character_id_set m_looting_characters;
 
 		// For tracking when people engaged in PK can get AFK protection.
 		time_map m_last_engaged_pk_time;
+
+		// For tracking which spells are harmful.
+		skill_id_set m_can_be_helpful_skills;
+		skill_id_set m_harmful_skills;
 
 #endif // USE_BIG_BROTHER
 	};

@@ -182,6 +182,10 @@ namespace game_rules
 		if (!attacker || !victim)
 			return true;
 
+		// Casting something on yourself is always valid to BB.
+		if (attacker == victim)
+			return true;
+
 		// Big Brother does not protect against NPC that aren't charmed.
 		if (utils::is_npc(*attacker))
 		{
@@ -216,10 +220,6 @@ namespace game_rules
 				return true;
 			}
 		}
-
-		// Whities can never attack each other.
-		if (is_same_side_race_war(attacker->player.race, victim->player.race) && utils::is_race_good(*attacker))
-			return false;
 
 		// Players cannot attack Gods.
 		if (victim->player.level >= LEVEL_MINIMM)

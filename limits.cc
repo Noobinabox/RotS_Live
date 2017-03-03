@@ -487,18 +487,21 @@ int	check_idling(char_data* character)
 		return 0;
 	}
 
-	if (character->specials.timer++ >= 1)
+	if (character->specials.timer++ >= 2)
 	{
-		bool was_afk = IS_SET(PLR_FLAGS(character), PLR_ISAFK);
-
-		// Mark the character as AFK and give them AFK protection after 1 minute.
-		SET_BIT(PLR_FLAGS(character), PLR_ISAFK);
-
-		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-		bb_instance.on_character_afked(character);
-		if (!was_afk)
+		if (!character->specials.fighting)
 		{
-			send_to_char("You have been idle, and are now flagged as AFK.", character);
+			bool was_afk = IS_SET(PLR_FLAGS(character), PLR_ISAFK);
+
+			// Mark the character as AFK and give them AFK protection after 3 minute.
+			SET_BIT(PLR_FLAGS(character), PLR_ISAFK);
+
+			game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+			bb_instance.on_character_afked(character);
+			if (!was_afk)
+			{
+				send_to_char("You have been idle, and are now flagged as AFK.", character);
+			}
 		}
 	}
 	if (character->specials.timer > 8)

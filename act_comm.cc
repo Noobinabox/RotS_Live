@@ -783,9 +783,6 @@ ACMD(do_afk) {
 	SET_BIT(PLR_FLAGS(ch), PLR_ISAFK);
 	act("$n goes away from keyboard.", TRUE, ch, 0, 0, TO_ROOM);
 	send_to_char("You go away from keyboard.\n\r", ch);
-
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	bb_instance.on_character_afked(ch);
 }
 
 ACMD(do_pray){

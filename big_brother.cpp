@@ -140,6 +140,10 @@ namespace game_rules
 			}
 		}
 
+		// Targets on the same side of the race war as you are always valid.
+		if (is_same_side_race_war(attacker->player.race, victim->player.race))
+			return true;
+
 		// Can't attack AFK targets.
 		if (is_target_afk(victim))
 			return false;

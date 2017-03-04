@@ -261,7 +261,7 @@ int check_gather_conditions (struct char_data *ch, int percent, int gather_type)
    * using the same variable to switch is a bad idea. . .
    */
   if (gather_type == 0) {
-    send_to_char("You can gather food, healing, energy or light.\n\r", ch);
+    send_to_char("You can gather food, healing, energy, bows, arrows, or light.\n\r", ch);
     return FALSE;
   }
   if (affected_by_spell(ch, SKILL_GATHER_FOOD) && gather_type > 2) {
@@ -309,6 +309,7 @@ int check_gather_conditions (struct char_data *ch, int percent, int gather_type)
     else
       return TRUE;
   }
+  
   return TRUE;
 }
 
@@ -977,7 +978,7 @@ trap_cleanup_quiet(struct char_data *ch)
 		ch->specials.store_prog_number = 0;
 }
 
-bool can_do_trap(char_data& character)
+bool can_do_trap(char_data& character, int subcmd)
 {
 	const int max_trap_weapon_bulk = 2;
 
@@ -1002,14 +1003,40 @@ bool can_do_trap(char_data& character)
 	const obj_data* weapon = character.equipment[WIELD];
 	if (!weapon)
 	{
-		send_to_char("You cannot trap without equipping a weapon.\r\n", &character);
+		if (subcmd != 0)
+		{
+			if (subcmd == -1)
+				send_to_char("You abandon your trap.\r\n", &character);
+
+			if(subcmd > 0)
+				send_to_char("Your lack of weapon causes your trap to fail.\r\n", &character);
+
+			trap_cleanup_quiet(&character);
+		}
+		else
+		{
+			send_to_char("You cannot trap without equipping a weapon.\r\n", &character);
+		}
 		return false;
 	}
 
 	int weapon_bulk = weapon->obj_flags.value[2];
 	if (weapon_bulk > max_trap_weapon_bulk)
 	{
-		send_to_char("You must be using a lighter weapon to set a trap.\r\n", &character);
+		if (subcmd != 0)
+		{
+			if (subcmd == -1)
+				send_to_char("You abandon your trap.\r\n", &character);
+
+			if (subcmd > 0)
+				send_to_char("Your heavy weapon causes your trap to fail.\r\n", &character);
+
+			trap_cleanup_quiet(&character);
+		}
+		else
+		{
+			send_to_char("You must be using a lighter weapon to set a trap.\r\n", &character);
+		}
 		return false;
 	}
 
@@ -1041,7 +1068,7 @@ ACMD(do_trap)
 	int success;
 
 	// Early out if some preconditions aren't met.
-	if (!can_do_trap(*ch))
+	if (!can_do_trap(*ch, subcmd))
 		return;
 
 	// Perform a command sanity check.

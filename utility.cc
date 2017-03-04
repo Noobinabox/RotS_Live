@@ -868,7 +868,8 @@ int get_followers_level(char_data *ch)  /* summ of levels of mobs/players charme
 	{
 		if ((tmpch->master == ch) && IS_AFFECTED(tmpch, AFF_CHARM))
 		{
-			levels += std::max(2, tmpch->get_level());
+			if(!IS_GUARDIAN(tmpch))
+				levels += std::max(2, tmpch->get_level());
 		}
 	}
 

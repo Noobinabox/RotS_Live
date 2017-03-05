@@ -1936,7 +1936,7 @@ int shoot_calculate_success(const char_data* archer, const char_data* victim, co
 
 	// TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
 	// here for shooting quickly and a bonus for shooting slowly.
-	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 3) + (accuracy_skill / 3) + arrow_tohit;
+	int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 10) + arrow_tohit;
 
 	return success_chance;
 }
@@ -2056,7 +2056,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 
 	int ranger_level = get_prof_level(PROF_RANGER, *archer);
 	double ranger_level_factor = (ranger_level * 0.5)  * number_d(0.5, 1.0);
-	double strength_factor = (archer->get_cur_str() - 10) * 0.75;
+	double strength_factor = (archer->get_cur_str() - 10) * 0.5;
 	
 	int arrow_todam = arrow->obj_flags.value[1];
 

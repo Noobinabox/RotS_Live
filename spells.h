@@ -442,4 +442,6 @@ ASPELL(spell_resist_poison);
 ASPELL(spell_attune);
 ASPELL(spell_confuse);
 
+bool is_strong_enough_to_tame(struct char_data* tamer, struct char_data* animal, bool include_current_followers);
+
 #endif /* SPELLS_H */

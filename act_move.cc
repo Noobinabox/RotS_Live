@@ -1638,43 +1638,44 @@ ACMD(do_refollow)
 
 
 ACMD(do_lead){  //Added by Loman.
-  char_data * tmpch;
-  char_data * mountch;
+  char_data * potential_mount;
+  char_data * mount;
 
   while(*argument && (*argument <= ' ')) argument++;
-  mountch = 0;
+  mount = 0;
 
   if(!*argument){  // default mount
     do_dismount(ch, "", 0, 0, 0);
   } else {
-    tmpch = get_char_room_vis(ch, argument);
-    if(!tmpch){
+    potential_mount = get_char_room_vis(ch, argument);
+    if(!potential_mount){
       send_to_char("There is nobody by that name.\n\r",ch);
       return;
     }
-    if(IS_NPC(tmpch) && !IS_SET(tmpch->specials2.act,MOB_MOUNT) || !IS_NPC(tmpch)){
+    if(IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act,MOB_MOUNT) || !IS_NPC(potential_mount)){
       send_to_char("You can not lead this.\n\r",ch);
       return;
     }
-    if(IS_AGGR_TO(tmpch, ch)){
-      act("$N doesn't want you to lead $M.",FALSE, ch, 0, tmpch, TO_CHAR);
+    if(IS_AGGR_TO(potential_mount, ch)){
+      act("$N doesn't want you to lead $M.",FALSE, ch, 0, potential_mount, TO_CHAR);
       return;
     }
-    if(tmpch->mount_data.mount){
-      act("$N is not in a position for you to lead $M.",FALSE, ch, 0, tmpch, TO_CHAR);
+    if(potential_mount->mount_data.mount){
+      act("$N is not in a position for you to lead $M.",FALSE, ch, 0, potential_mount, TO_CHAR);
       return;
     }
-    mountch = tmpch;
+    mount = potential_mount;
   }
 
-  if(!mountch) return;
+  if(!mount) 
+	  return;
 
-  if(mountch == ch){
+  if(mount == ch){
     send_to_char("You tried to lead yourself, but failed.\n\r",ch);
     return;
   }
 
-  if(IS_RIDING(ch) && ch->mount_data.mount == mountch) {
+  if(IS_RIDING(ch) && ch->mount_data.mount == mount) {
     do_dismount(ch, "", 0, 0, 0);
     return;
   }
@@ -1684,21 +1685,32 @@ ACMD(do_lead){  //Added by Loman.
     return;
   }
 
-  if (mountch->master) {
-     if (mountch->master == ch)
-       act("$N is already following you.", FALSE, ch, 0, mountch, TO_CHAR);
+  if (mount->master) {
+     if (mount->master == ch)
+       act("$N is already following you.", FALSE, ch, 0, mount, TO_CHAR);
      else
-       act("$N is already following someone.", FALSE, ch, 0, mountch, TO_CHAR);
+       act("$N is already following someone.", FALSE, ch, 0, mount, TO_CHAR);
      return;
   }
 
-  if (IS_RIDDEN(mountch)) {
-     act("$N is already being ridden!", FALSE, ch, 0, mountch, TO_CHAR);
-     return;  }
+  if (IS_RIDDEN(mount)) 
+  {
+     act("$N is already being ridden!", FALSE, ch, 0, mount, TO_CHAR);
+     return;  
+  }
 
-  act("You grab $N and start leading $m.",FALSE,ch,0, mountch,TO_CHAR);
-  act("$n grabs $N and starts leading $m.",FALSE,ch,0, mountch,TO_ROOM);
-  add_follower(mountch, ch, FOLLOW_MOVE);
+  if (affected_by_spell(mount, SKILL_CALM))
+  {
+	  if (!is_strong_enough_to_tame(ch, mount, false))
+	  {
+		  send_to_char("Your skill with animals is insufficient to lead that beast.\r\n", ch);
+		  return;
+	  }
+  }
+
+  act("You grab $N and start leading $m.",FALSE,ch,0, mount,TO_CHAR);
+  act("$n grabs $N and starts leading $m.",FALSE,ch,0, mount,TO_ROOM);
+  add_follower(mount, ch, FOLLOW_MOVE);
 }
 
 ACMD(do_pull){

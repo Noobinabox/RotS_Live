@@ -61,8 +61,6 @@ ACMD (do_move);
 ACMD (do_hit);
 ACMD (do_gen_com);
 
-bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_followers);
-
 ACMD(do_ride) 
 {
 
@@ -146,15 +144,12 @@ ACMD(do_ride)
 			return;
 		}
 
-		if (potential_mount->master != ch)
+		if (affected_by_spell(potential_mount, SKILL_CALM))
 		{
-			if (affected_by_spell(potential_mount, SKILL_CALM))
+			if (!is_strong_enough_to_tame(ch, potential_mount, false))
 			{
-				if (!is_strong_enough_to_tame(ch, potential_mount, false))
-				{
-					send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
-					return;
-				}
+				send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
+				return;
 			}
 		}
 

@@ -61,7 +61,7 @@ ACMD (do_move);
 ACMD (do_hit);
 ACMD (do_gen_com);
 
-
+bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_followers);
 
 ACMD(do_ride) 
 {

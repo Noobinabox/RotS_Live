@@ -1050,8 +1050,6 @@ check_death_ward(struct char_data *ch)
 
 void die(char_data* dead_man, char_data* killer, int attack_type)
 {
-	int poison_death = SPELL_POISON;
-
 	/* Character doesn't die if call_trigger returns FALSE */
 	if (call_trigger(ON_DIE, dead_man, killer, 0) == FALSE) 
 	{
@@ -1064,18 +1062,23 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	/* the following piece is moved here, might cause problems... */
 	if (killer) 
 	{
+		// Only grant gains for kills on NPCs and connected players.
 		if (IS_NPC(dead_man) || dead_man->desc)
+		{
 			group_gain(killer, dead_man);
+		}
 
 		if (!IS_NPC(dead_man)) 
 		{
+			const room_data& death_room = world[dead_man->in_room];
+			const char* room_name = death_room.name;
 			if (MOB_FLAGGED(killer, MOB_PET))
 			{
-				vmudlog(BRF, "%s killed by %s (%s) at %s", GET_NAME(dead_man), GET_NAME(killer), GET_NAME(killer->master), world[dead_man->in_room].name);
+				vmudlog(BRF, "%s killed by %s (%s) at %s", GET_NAME(dead_man), GET_NAME(killer), GET_NAME(killer->master), room_name);
 			}
 			else
 			{
-				vmudlog(BRF, "%s killed by %s at %s", GET_NAME(dead_man), GET_NAME(killer), world[dead_man->in_room].name);
+				vmudlog(BRF, "%s killed by %s at %s", GET_NAME(dead_man), GET_NAME(killer), room_name);
 			}
 		}
 
@@ -1105,19 +1108,24 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 		add_exploit_record(EXPLOIT_MOBDEATH, dead_man, GET_IDNUM(killer), GET_NAME(killer));
 	}
 
+	int base_xp_gain = -(dead_man->points.exp - 3000) / (dead_man->player.level + 2);
+
 	/* A player died: DT/poison/incap/etc. death. */
 	if (!killer)
 	{
-		gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2) / 10));
+		gain_exp_regardless(dead_man, std::min(0, base_xp_gain / 10));
 	}
 	else 
 	{
-		if (attack_type == poison_death) 
+		if (attack_type == SPELL_POISON)
 		{
 			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
 			raw_kill(dead_man, killer, attack_type);
 			return;
 		}
+
+		// PK records are created regardless of death cause, but then early out if it's
+		// all NPCs killing the character.  Heh...
 		pkill_create(dead_man);
 		add_exploit_record(EXPLOIT_PK, dead_man, 0, NULL);  /* pk records to killers */
 
@@ -1130,173 +1138,204 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 
 		if (IS_NPC(killer) && !(MOB_FLAGGED(killer, MOB_ORC_FRIEND) && MOB_FLAGGED(killer, MOB_PET)))
 		{
-			gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2)));
+			gain_exp_regardless(dead_man, std::min(0, base_xp_gain));
 		}
-		else if (attack_type == 43)
+		else if (attack_type == SPELL_POISON)
 		{
 			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
 		}
-		gain_exp_regardless(dead_man, std::min(0, -(GET_EXP(dead_man) - 3000) / (GET_LEVEL(dead_man) + 2) / 10));
+		gain_exp_regardless(dead_man, std::min(0, base_xp_gain / 10));
 	}
 
 	GET_COND(dead_man, FULL) = 24;
 	GET_COND(dead_man, THIRST) = 24;
 	GET_COND(dead_man, DRUNK) = 0;
 
-	raw_kill(dead_man, killer, attack_type);
+	raw_kill(dead_man, killer, attack_type); 
 }
 
 
 
-int
-exp_with_modifiers(struct char_data *ch, struct char_data *victim,
-		   int base_exp)
+int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 {
-  int exp, age;
+	int exp, age;
 
-  /* Orcs get no experience for orc-friends */
-  if (GET_RACE(ch) == RACE_ORC && IS_NPC(victim) &&
-      MOB_FLAGGED(victim, MOB_ORC_FRIEND))
-    return 0;
+	/* Orcs get no experience for orc-friends */
+	if (GET_RACE(character) == RACE_ORC && IS_NPC(dead_man) && MOB_FLAGGED(dead_man, MOB_ORC_FRIEND))
+		return 0;
 
-  base_exp /= MAX(GET_LEVEL(ch) + 1, GET_LEVEL(victim) - 2);
+	base_exp /= std::max(GET_LEVEL(character) + 1, GET_LEVEL(dead_man) - 2);
 
-  if (!IS_NPC(victim))
-    return base_exp;
+	if (!IS_NPC(dead_man))
+		return base_exp;
 
-  if (GET_LEVEL(victim) + 6 <  GET_LEVEL(ch))
-    base_exp = 6 * base_exp / (GET_LEVEL(ch) - GET_LEVEL(victim));
+	if (GET_LEVEL(dead_man) + 6 < GET_LEVEL(character))
+		base_exp = 6 * base_exp / (GET_LEVEL(character) - GET_LEVEL(dead_man));
 
-  exp = base_exp;
-  age = MOB_AGE_TICKS(victim, time(0)) * 40 / (GET_LEVEL(victim) + 20);
+	exp = base_exp;
+	age = MOB_AGE_TICKS(dead_man, time(0)) * 40 / (GET_LEVEL(dead_man) + 20);
 
-  if (GET_LEVEL(victim) > 5) {
-    if (age < average_mob_life)
-      exp = exp * (average_mob_life * 60 + age * 40) /
-	(average_mob_life * 100);
-    else
-      exp = exp * (140 - 40 * average_mob_life / age) / 100;
-  }
+	if (GET_LEVEL(dead_man) > 5) 
+	{
+		if (age < average_mob_life)
+		{
+			exp = exp * (average_mob_life * 60 + age * 40) / (average_mob_life * 100);
+		}
+		else
+		{
+			exp = exp * (140 - 40 * average_mob_life / age) / 100;
+		}
+	}
 
-  if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) ||
-      IS_AGGR_TO(victim, ch))
-    exp += base_exp / 5;
+	if (MOB_FLAGGED(dead_man, MOB_AGGRESSIVE) || IS_AGGR_TO(dead_man, character))
+	{
+		exp += base_exp / 5;
+	}
 
-  if (MOB_FLAGGED(victim, MOB_FAST))
-    exp += base_exp / 10;
+	if (MOB_FLAGGED(dead_man, MOB_FAST))
+	{
+		exp += base_exp / 10;
+	}
 
-  if (MOB_FLAGGED(victim, MOB_SWITCHING))
-    exp += base_exp / 10;
+	if (MOB_FLAGGED(dead_man, MOB_SWITCHING))
+	{
+		exp += base_exp / 10;
+	}
 
-  if (MOB_FLAGGED(victim, MOB_MEMORY))
-    exp += base_exp / 20;
+	if (MOB_FLAGGED(dead_man, MOB_MEMORY))
+	{
+		exp += base_exp / 20;
+	}
 
-  if (victim->specials.default_pos < POSITION_STANDING)
-    exp -= base_exp / 20;
+	if (dead_man->specials.default_pos < POSITION_STANDING)
+	{
+		exp -= base_exp / 20;
+	}
 
-  if (IS_GOOD(ch) && IS_GOOD(victim))
-    exp = exp * 2/3;
+	if (IS_GOOD(character) && IS_GOOD(dead_man))
+	{
+		exp = exp * 2 / 3;
+	}
 
-  if (MOB_FLAGGED(victim, MOB_SPEC) && victim->nr >= 0 &&
-      (mob_index[victim->nr].func || victim->specials.store_prog_number))
-    exp += base_exp / 10;
+	if (MOB_FLAGGED(dead_man, MOB_SPEC) && dead_man->nr >= 0 &&
+		(mob_index[dead_man->nr].func || dead_man->specials.store_prog_number))
+	{
+		exp += base_exp / 10;
+	}
 
-  if (GET_DIFFICULTY(victim))
-    exp = exp * GET_DIFFICULTY(victim) / 100;
+	if (GET_DIFFICULTY(dead_man))
+	{
+		exp = exp * GET_DIFFICULTY(dead_man) / 100;
+	}
 
-  /* east exp bonus:  8 is the river */
-  if (RACE_GOOD(ch) && zone_table[world[ch->in_room].zone].x > 8)
-    exp += exp * MIN(zone_table[world[ch->in_room].zone].x - 8, 5) * 3/100;
+	/* east exp bonus:  8 is the river */
+	const room_data& char_room = world[character->in_room];
+	if (RACE_GOOD(character) && zone_table[world[character->in_room].zone].x > 8)
+	{
+		exp += exp * std::min(zone_table[world[character->in_room].zone].x - 8, 5) * 3 / 100;
+	}
 
-  /* TEMPORARY: */
-  exp += 2 * exp / MAX(1, GET_LEVEL(ch) - 1);
+	/* TEMPORARY: */
+	exp += 2 * exp / std::max(1, GET_LEVEL(character) - 1);
 
-  return exp;
-
+	return exp;
 }
 
-
-
-void
-group_gain(struct char_data *ch, struct char_data *victim)
+void group_gain(char_data* killer, char_data* dead_man)
 {
-  int n_members, share, level_total, perc_total, spirit_gain, tmp;
-  int group_bonus, npc_level_malus;
-  struct char_data *k;
-  struct char_data *t;
+	if (killer->in_room == NOWHERE)
+		return;
 
-  if (ch->in_room == NOWHERE)
-    return;
-  if (ch->in_room != victim->in_room)
-    return;
+	if (killer->in_room != dead_man->in_room)
+		return;
 
-  k = ch->group_leader;
-  if (k == NULL)
-    k = ch;
+	int n_members, share, level_total, perc_total, spirit_gain, tmp;
+	int group_bonus, npc_level_malus;
 
-  n_members = 0;
-  level_total = 0;
-  perc_total = 0;
+	char_data* group_leader = killer->group_leader;
+	if (group_leader == NULL)
+		group_leader = killer;
 
-  /* Find how many group members/levels and how much perception */
-  for (t = world[ch->in_room].people; t; t = t->next_in_room)
-    if (!IS_NPC(t) && (t->specials.fighting == victim ||
-		       t->group_leader == k)) {
-      n_members++;
-      level_total += GET_LEVELB(t);
-      perc_total += GET_PERCEPTION(t);
-    }
+	n_members = 0;
+	level_total = 0;
+	perc_total = 0;
 
-  if (n_members >= 1) {
-    share = GET_EXP(victim)/10;
-    npc_level_malus = 0;
+	/* Find how many group members/levels and how much perception */
+	for (char_data* t = world[killer->in_room].people; t; t = t->next_in_room)
+	{
+		if (!IS_NPC(t) && (t->specials.fighting == dead_man || t->group_leader == group_leader))
+		{
+			n_members++;
+			level_total += GET_LEVELB(t);
+			perc_total += GET_PERCEPTION(t);
+		}
+	}
 
-    if (IS_NPC(victim)) {
-      spirit_gain = GET_LEVEL(victim) * get_naked_perception(victim);
-      npc_level_malus = victim->specials.attacked_level;
-      level_total += npc_level_malus;
+	if (n_members >= 1) 
+	{
+		share = GET_EXP(dead_man) / 10;
+		npc_level_malus = 0;
 
-      share =  share * (n_members + 1) / n_members;
-    } else
-      spirit_gain = GET_SPIRIT(victim)*100/4;
+		if (IS_NPC(dead_man)) 
+		{
+			spirit_gain = GET_LEVEL(dead_man) * get_naked_perception(dead_man);
+			npc_level_malus = dead_man->specials.attacked_level;
+			level_total += npc_level_malus;
 
-    share = share / level_total;
-  } else {
-    share = 0;
-    return;
-  }
+			share = share * (n_members + 1) / n_members;
+		}
+		else
+		{
+			spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
+		}
 
-  for (t = world[ch->in_room].people; t; t = t->next_in_room) {
-    if (t != victim && GET_LEVEL(t) < LEVEL_IMMORT && !IS_NPC(t))
-      if (t->specials.fighting == victim || t->group_leader == k) {
-	if (perc_total)
-	  tmp = spirit_gain * GET_PERCEPTION(t) / perc_total / 100;
-	else
-	  tmp = 0;
+		share = share / level_total;
+	}
+	else 
+	{
+		share = 0;
+		return;
+	}
 
-	if (tmp)
-	  if (GET_ALIGNMENT(t) * GET_ALIGNMENT(victim) <= 0 ||
-	      RACE_EVIL(t)) {
-	    vsend_to_char(t, "Your spirit increases by %d.\n\r", tmp);
-	    GET_SPIRIT(t) += tmp;
-	  }
+	for (char_data* t = world[killer->in_room].people; t; t = t->next_in_room)
+	{
+		if (t != dead_man && GET_LEVEL(t) < LEVEL_IMMORT && !IS_NPC(t))
+		{
+			if (t->specials.fighting == dead_man || t->group_leader == group_leader)
+			{
+				if (perc_total)
+				{
+					tmp = spirit_gain * GET_PERCEPTION(t) / perc_total / 100;
+				}
+				else
+				{
+					tmp = 0;
+				}
 
-	group_bonus = MIN(share * GET_LEVELB(t) / 2,
-			  (level_total - npc_level_malus - GET_LEVELB(t)) *
-			  share / 4);
-	tmp = exp_with_modifiers(t, victim,
-				 share * GET_LEVELB(t) + group_bonus);
+				if (tmp)
+				{
+					if (GET_ALIGNMENT(t) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(t))
+					{
+						vsend_to_char(t, "Your spirit increases by %d.\n\r", tmp);
+						GET_SPIRIT(t) += tmp;
+					}
+				}
 
-	vsend_to_char(t, "You receive your share of experience -- "
-		      "%d points.\r\n", tmp);
-	gain_exp(t, tmp);
-	change_alignment(t, victim);
+				group_bonus = std::min(share * GET_LEVELB(t) / 2, (level_total - npc_level_malus - GET_LEVELB(t)) * share / 4);
+				tmp = exp_with_modifiers(t, dead_man, share * GET_LEVELB(t) + group_bonus);
 
-	/* save only 10% of the time to avoid lag in big groups */
-	if (!number(0, 9))
-	  save_char(t, NOWHERE, 1);
-      }
-  }
+				vsend_to_char(t, "You receive your share of experience -- %d points.\r\n", tmp);
+				gain_exp(t, tmp);
+				change_alignment(t, dead_man);
+
+				/* save only 10% of the time to avoid lag in big groups */
+				if (number(0, 9) == 0)
+				{
+					save_char(t, NOWHERE, 1);
+				}
+			}
+		}
+	}
 }
 
 

@@ -63,99 +63,148 @@ ACMD (do_gen_com);
 
 
 
-ACMD (do_ride) {
+ACMD(do_ride) 
+{
 
-  follow_type * tmpfol;
-  char_data * tmpch;
-  char_data * mountch;
+	follow_type * tmpfol;
+	char_data * potential_mount;
+	char_data * mountch;
 
-  if (char_exists(ch->mount_data.mount_number) && ch->mount_data.mount) {
-    send_to_char("You are riding already.\n\r", ch);
-    return;
-  }
-  /* only people can ride (bodytype 1) */
-  if (GET_BODYTYPE(ch)!=1)
-    return;
+	if (char_exists(ch->mount_data.mount_number) && ch->mount_data.mount) 
+	{
+		send_to_char("You are riding already.\n\r", ch);
+		return;
+	}
+	/* only people can ride (bodytype 1) */
+	if (GET_BODYTYPE(ch) != 1)
+		return;
 
-  if (IS_SHADOW(ch)) {
-    send_to_char("You cannot ride whilst inhabiting the shadow world.\n\r", ch);
-    return;
-  }
+	if (IS_SHADOW(ch)) 
+	{
+		send_to_char("You cannot ride whilst inhabiting the shadow world.\n\r", ch);
+		return;
+	}
 
-  while (*argument && (*argument <= ' ')) argument++;
-  mountch = 0;
-  if (!*argument) {
-    for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next)
-      if (char_exists(tmpfol->fol_number) &&
-	  tmpfol->follower->in_room == ch->in_room &&
-	  IS_NPC(tmpfol->follower) &&
-	  IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT))
-	break;
+	while (*argument && (*argument <= ' ')) argument++;
+	
+	mountch = 0;
+	if (!*argument) 
+	{
+		for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next)
+		{
+			if (char_exists(tmpfol->fol_number) &&
+				tmpfol->follower->in_room == ch->in_room &&
+				IS_NPC(tmpfol->follower) &&
+				IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT))
+			{
+				break;
+			}
+		}
 
-    if (tmpfol) {
-      mountch = tmpfol->follower;
-      stop_follower(mountch, FOLLOW_MOVE);
-    } else {
-      send_to_char("What do you want to ride?\n\r",ch);
-      return;
-    }
-  } else {
-    tmpch = get_char_room_vis(ch, argument);
-    if (!tmpch) {
-      send_to_char("There is nobody by that name.\n\r",ch);
-      return;
-    }
-    if (IS_NPC(tmpch) && !IS_SET(tmpch->specials2.act, MOB_MOUNT) ||
-        !IS_NPC(tmpch)) {
-      send_to_char("You can not ride this.\n\r",ch);
-      return;
-    }
-    if (IS_AGGR_TO(tmpch, ch)) {
-      act("$N doesn't want you to ride $M.",FALSE, ch, 0, tmpch, TO_CHAR);
-      return;
-    }
-    if (tmpch->mount_data.mount) {
-      act("$N is not in a position for you to ride.",FALSE, ch, 0, tmpch, TO_CHAR);
-      return;
-    }
-    mountch = tmpch;
-  }
+		if (tmpfol) 
+		{
+			mountch = tmpfol->follower;
+			stop_follower(mountch, FOLLOW_MOVE);
+		}
+		else 
+		{
+			send_to_char("What do you want to ride?\n\r", ch);
+			return;
+		}
+	}
+	else 
+	{
+		potential_mount = get_char_room_vis(ch, argument);
+		if (!potential_mount) 
+		{
+			send_to_char("There is nobody by that name.\n\r", ch);
+			return;
+		}
 
-  if (!mountch)
-    return;
-  if (mountch == ch) {
-    send_to_char("You tried to mount yourself, but failed.\n\r",ch);
-    return;
-  }
-  if (IS_RIDING(mountch)) {
-    mountch = mountch->mount_data.mount;
-  } else
-    stop_follower(mountch, FOLLOW_MOVE);
+		if (IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act, MOB_MOUNT) || !IS_NPC(potential_mount)) 
+		{
+			send_to_char("You can not ride this.\n\r", ch);
+			return;
+		}
 
-  /* Mounting a horse now */
-  ch->mount_data.mount = mountch;
-  ch->mount_data.mount_number = mountch->abs_number;
-  ch->mount_data.next_rider = 0;
-  ch->mount_data.next_rider_number = -1;
+		if (IS_AGGR_TO(potential_mount, ch)) 
+		{
+			act("$N doesn't want you to ride $M.", FALSE, ch, 0, potential_mount, TO_CHAR);
+			return;
+		}
 
-  if (!IS_RIDDEN(mountch)) {
-    act("You mount $N and start riding $m.", FALSE, ch, 0, mountch, TO_CHAR);
-    act("$n mounts $N and starts riding $m.", FALSE, ch, 0, mountch, TO_ROOM);
-    mountch->mount_data.rider = ch;
-    mountch->mount_data.rider_number = ch->abs_number;
-  } else {
-    act("You mount $N.", FALSE, ch, 0, mountch, TO_CHAR);
-    act("$n mounts $N.", FALSE, ch, 0, mountch, TO_ROOM);
+		if (potential_mount->mount_data.mount) 
+		{
+			act("$N is not in a position for you to ride.", FALSE, ch, 0, potential_mount, TO_CHAR);
+			return;
+		}
 
-    for (tmpch = mountch->mount_data.rider;
-	 tmpch->mount_data.next_rider &&
-	   char_exists(tmpch->mount_data.next_rider_number);
-	 tmpch = tmpch->mount_data.next_rider);
 
-    tmpch->mount_data.next_rider = ch;
-    tmpch->mount_data.next_rider_number = ch->abs_number;
-  }
-  IS_CARRYING_W(mountch) += GET_WEIGHT(ch) + IS_CARRYING_W(ch);
+		if (potential_mount->master != ch)
+		{
+			send_to_char("That mount is already following someone else.", ch);
+			return;
+		}
+
+		if (potential_mount->master != ch)
+		{
+			if (affected_by_spell(potential_mount, SKILL_CALM))
+			{
+				if (!is_strong_enough_to_tame(ch, potential_mount, false))
+				{
+					send_to_char("Your skill with animals is insufficient to ride that beast.", ch);
+					return;
+				}
+			}
+		}
+
+		mountch = potential_mount;
+	}
+
+	if (!mountch)
+		return;
+
+	if (mountch == ch) 
+	{
+		send_to_char("You tried to mount yourself, but failed.\n\r", ch);
+		return;
+	}
+	if (IS_RIDING(mountch)) 
+	{
+		mountch = mountch->mount_data.mount;
+	}
+	else
+	{
+		stop_follower(mountch, FOLLOW_MOVE);
+	}
+
+	/* Mounting a horse now */
+	ch->mount_data.mount = mountch;
+	ch->mount_data.mount_number = mountch->abs_number;
+	ch->mount_data.next_rider = 0;
+	ch->mount_data.next_rider_number = -1;
+
+	if (!IS_RIDDEN(mountch)) 
+	{
+		act("You mount $N and start riding $m.", FALSE, ch, 0, mountch, TO_CHAR);
+		act("$n mounts $N and starts riding $m.", FALSE, ch, 0, mountch, TO_ROOM);
+		mountch->mount_data.rider = ch;
+		mountch->mount_data.rider_number = ch->abs_number;
+	}
+	else 
+	{
+		act("You mount $N.", FALSE, ch, 0, mountch, TO_CHAR);
+		act("$n mounts $N.", FALSE, ch, 0, mountch, TO_ROOM);
+
+		for (potential_mount = mountch->mount_data.rider;
+			potential_mount->mount_data.next_rider &&
+			char_exists(potential_mount->mount_data.next_rider_number);
+			potential_mount = potential_mount->mount_data.next_rider);
+
+		potential_mount->mount_data.next_rider = ch;
+		potential_mount->mount_data.next_rider_number = ch->abs_number;
+	}
+	IS_CARRYING_W(mountch) += GET_WEIGHT(ch) + IS_CARRYING_W(ch);
 }
 
 ACMD (do_dismount) {
@@ -1362,7 +1411,24 @@ ACMD (do_calm) {
   }
 }
 
+bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_followers)
+{
+	int tame_skill = GET_SKILL(tamer, SKILL_TAME) + GET_RAW_SKILL(tamer, SKILL_ANIMALS) / 2;
 
+	int levels_over_required = (GET_PROF_LEVEL(PROF_RANGER, tamer) / 3 + tame_skill / 30 - GET_LEVEL(animal));
+	if (include_current_followers)
+	{
+		levels_over_required - get_followers_level(tamer);
+	}
+
+	if (affected_by_spell(animal, SKILL_CALM))
+		levels_over_required += 1;
+
+	if (GET_SPEC(tamer) == PLRSPEC_PETS)
+		levels_over_required += 1;
+
+	return levels_over_required >= 0;
+}
 
 ACMD (do_tame) {
   int tame_skill, levels_over_required;

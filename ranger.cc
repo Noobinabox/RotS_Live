@@ -140,9 +140,9 @@ ACMD(do_ride)
 		}
 
 
-		if (potential_mount->master != ch)
+		if (potential_mount->master && potential_mount->master != ch)
 		{
-			send_to_char("That mount is already following someone else.", ch);
+			send_to_char("That mount is already following someone else.\r\n", ch);
 			return;
 		}
 
@@ -152,7 +152,7 @@ ACMD(do_ride)
 			{
 				if (!is_strong_enough_to_tame(ch, potential_mount, false))
 				{
-					send_to_char("Your skill with animals is insufficient to ride that beast.", ch);
+					send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
 					return;
 				}
 			}

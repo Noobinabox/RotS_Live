@@ -2295,748 +2295,774 @@ void
 nanny(struct descriptor_data *d, char *arg)
 /* deal with newcomers and other non-playing sockets */
 {
-  char buf[1000];
-  int player_i, load_result;
-  char tmp_name[20];
-  struct char_file_u tmp_store;
-  struct char_data *tmp_ch;
-  int i, tmp;
-  long s;
+	char buf[1000];
+	int player_i, load_result;
+	char tmp_name[20];
+	struct char_file_u tmp_store;
+	struct char_data *tmp_ch;
+	int i, tmp;
+	long s;
 
-  extern long secs_to_unretire(struct char_data *);
-  int load_char(char *name, struct char_file_u *char_element);
-  void load_character(struct char_data *ch);  //new function in objsave
+	extern long secs_to_unretire(struct char_data *);
+	int load_char(char *name, struct char_file_u *char_element);
+	void load_character(struct char_data *ch);  //new function in objsave
 
-  switch (STATE(d)) {
-  case CON_NME:  /* wait for input of name */
-    if (!d->character) {
-      CREATE(d->character, struct char_data, 1);
-      clear_char(d->character, MOB_VOID);
-      register_pc_char(d->character);
-      d->character->desc = d;
-      SET_BIT(PRF_FLAGS(d->character), PRF_LATIN1);
-    }
+	switch (STATE(d)) {
+	case CON_NME:  /* wait for input of name */
+		if (!d->character) {
+			CREATE(d->character, struct char_data, 1);
+			clear_char(d->character, MOB_VOID);
+			register_pc_char(d->character);
+			d->character->desc = d;
+			SET_BIT(PRF_FLAGS(d->character), PRF_LATIN1);
+		}
 
-    for ( ; isspace(*arg); arg++)
-      continue;
+		for (; isspace(*arg); arg++)
+			continue;
 
-    /* blank input = we disconnect you */
-    if (!*arg)
-      close_socket(d);
+		/* blank input = we disconnect you */
+		if (!*arg)
+			close_socket(d);
 
-    if ((_parse_name(arg, tmp_name))) {
-      SEND_TO_Q("Invalid name, please try another.\n\r", d);
-      SEND_TO_Q("Name: ", d);
-      return;
-    }
+		if ((_parse_name(arg, tmp_name))) {
+			SEND_TO_Q("Invalid name, please try another.\n\r", d);
+			SEND_TO_Q("Name: ", d);
+			return;
+		}
 
-    if ((player_i = load_char(tmp_name, &tmp_store)) > -1) {
-      d->pos = player_i;
-      store_to_char(&tmp_store, d->character);
+		if ((player_i = load_char(tmp_name, &tmp_store)) > -1) {
+			d->pos = player_i;
+			store_to_char(&tmp_store, d->character);
 
-      if (isbanned(d->host) > 0 &&
-	  !PLR_FLAGGED(d->character, PLR_SITEOK)) {
-	SEND_TO_Q("Sorry, your site has been banned.\r\n", d);
-	close_socket(d);
-	log("(Siteban)");
-	return;
-      }
+			if (isbanned(d->host) > 0 &&
+				!PLR_FLAGGED(d->character, PLR_SITEOK)) {
+				SEND_TO_Q("Sorry, your site has been banned.\r\n", d);
+				close_socket(d);
+				log("(Siteban)");
+				return;
+			}
 
-      if (PLR_FLAGGED(d->character, PLR_DELETED)) {
-	free_char(d->character);
-	CREATE(d->character, struct char_data, 1);
-	clear_char(d->character, MOB_VOID);
-	register_pc_char(d->character);
-	d->character->desc = d;
-	CREATE(d->character->player.name, char, strlen(tmp_name) + 1);
-	CAP(tmp_name);
-	strcpy(d->character->player.name, tmp_name);
-	sprintf(buf, "\n\rNot found in the player database.\n\r"
-		"A new character will be created if you enter 'Y'.\n\r"
-		"Is %s a suitable name for roleplay in Middle-earth (Y/N)? ",
-		tmp_name);
-	SEND_TO_Q(buf, d);
-	STATE(d) = CON_NMECNF;
-      } else {
-	strncpy(d->pwd, tmp_store.pwd,MAX_PWD_LENGTH);
-	d->pwd[MAX_PWD_LENGTH] = 0;
+			if (PLR_FLAGGED(d->character, PLR_DELETED)) {
+				free_char(d->character);
+				CREATE(d->character, struct char_data, 1);
+				clear_char(d->character, MOB_VOID);
+				register_pc_char(d->character);
+				d->character->desc = d;
+				CREATE(d->character->player.name, char, strlen(tmp_name) + 1);
+				CAP(tmp_name);
+				strcpy(d->character->player.name, tmp_name);
+				sprintf(buf, "\n\rNot found in the player database.\n\r"
+					"A new character will be created if you enter 'Y'.\n\r"
+					"Is %s a suitable name for roleplay in Middle-earth (Y/N)? ",
+					tmp_name);
+				SEND_TO_Q(buf, d);
+				STATE(d) = CON_NMECNF;
+			}
+			else {
+				strncpy(d->pwd, tmp_store.pwd, MAX_PWD_LENGTH);
+				d->pwd[MAX_PWD_LENGTH] = 0;
 
-	/* undo it just in case they are set */
-	REMOVE_BIT(PLR_FLAGS(d->character), PLR_WRITING | PLR_MAILING);
+				/* undo it just in case they are set */
+				REMOVE_BIT(PLR_FLAGS(d->character), PLR_WRITING | PLR_MAILING);
 
-	SEND_TO_Q("Password: ", d);
-	echo_off(d->descriptor);
+				SEND_TO_Q("Password: ", d);
+				echo_off(d->descriptor);
 
-	STATE(d) = CON_PWDNRM;
-      }
-    } else {
-      /* player unknown gotta make a new */
-      d->pos = -1;
+				STATE(d) = CON_PWDNRM;
+			}
+		}
+		else {
+			/* player unknown gotta make a new */
+			d->pos = -1;
 
-      CREATE(d->character->player.name, char, strlen(tmp_name) + 1);
-      CAP(tmp_name);
-      strcpy(d->character->player.name, tmp_name);
-      sprintf(buf, "\n\rNot found in the player database.\n\r"
-	      "A new character will be created if you enter 'Y'.\n\r"
-	      "Is %s a suitable name for roleplay in Middle-earth (Y/N)? ",
-	      tmp_name);
-      SEND_TO_Q(buf, d);
-      STATE(d) = CON_NMECNF;
-    }
-    break;
-  case CON_NMECNF: /* wait for conf. of new name */
-    for (; isspace(*arg); arg++)
-      continue;
+			CREATE(d->character->player.name, char, strlen(tmp_name) + 1);
+			CAP(tmp_name);
+			strcpy(d->character->player.name, tmp_name);
+			sprintf(buf, "\n\rNot found in the player database.\n\r"
+				"A new character will be created if you enter 'Y'.\n\r"
+				"Is %s a suitable name for roleplay in Middle-earth (Y/N)? ",
+				tmp_name);
+			SEND_TO_Q(buf, d);
+			STATE(d) = CON_NMECNF;
+		}
+		break;
+	case CON_NMECNF: /* wait for conf. of new name */
+		for (; isspace(*arg); arg++)
+			continue;
 
-    if (is_abbrev(arg, "yes")) {
-      /* they're banned */
-      if(isbanned(d->host) >= BAN_NEW) {
-	vmudlog(NRM, "Request for new char %s denied from [%s] (siteban)",
-		GET_NAME(d->character), d->host);
-	SEND_TO_Q("Sorry, new characters not allowed from your site!\n\r", d);
-	STATE(d) = CON_CLOSE;
-	return;
-      }
+		if (is_abbrev(arg, "yes")) {
+			/* they're banned */
+			if (isbanned(d->host) >= BAN_NEW) {
+				vmudlog(NRM, "Request for new char %s denied from [%s] (siteban)",
+					GET_NAME(d->character), d->host);
+				SEND_TO_Q("Sorry, new characters not allowed from your site!\n\r", d);
+				STATE(d) = CON_CLOSE;
+				return;
+			}
 
-      /* we're wizlocked */
-      if (restrict) {
-	SEND_TO_Q("Sorry, new players can't be created at the moment.\r\n",
-		  d);
-	SEND_TO_Q(wizlock_msg, d);
-	SEND_TO_Q("\n\r", d);
-	vmudlog(NRM, "Request for new char %s denied from %s (wizlock)",
-		GET_NAME(d->character), d->host);
-	STATE(d) = CON_CLOSE;
-	return;
-      }
+			/* we're wizlocked */
+			if (restrict) {
+				SEND_TO_Q("Sorry, new players can't be created at the moment.\r\n",
+					d);
+				SEND_TO_Q(wizlock_msg, d);
+				SEND_TO_Q("\n\r", d);
+				vmudlog(NRM, "Request for new char %s denied from %s (wizlock)",
+					GET_NAME(d->character), d->host);
+				STATE(d) = CON_CLOSE;
+				return;
+			}
 
-      /* is joker trying to pull a dipshit name? */
-      if (fill_word(strcpy(buf,GET_NAME(d->character))) ||
-	 !valid_name(GET_NAME(d->character))) {
-	SEND_TO_Q("Illegal name, please try another: ", d);
-	RELEASE(GET_NAME(d->character));
-	d->character->player.name = 0;
-	STATE(d) = CON_NME;
-	break;
-      }
+			/* is joker trying to pull a dipshit name? */
+			if (fill_word(strcpy(buf, GET_NAME(d->character))) ||
+				!valid_name(GET_NAME(d->character))) {
+				SEND_TO_Q("Illegal name, please try another: ", d);
+				RELEASE(GET_NAME(d->character));
+				d->character->player.name = 0;
+				STATE(d) = CON_NME;
+				break;
+			}
 
-      SEND_TO_Q("New character.\n\r", d);
-      sprintf(buf, "Please enter a password for %s: ",
-	      GET_NAME(d->character));
-      SEND_TO_Q(buf, d);
-      echo_off(d->descriptor);
-      STATE(d) = CON_PWDGET;
+			SEND_TO_Q("New character.\n\r", d);
+			sprintf(buf, "Please enter a password for %s: ",
+				GET_NAME(d->character));
+			SEND_TO_Q(buf, d);
+			echo_off(d->descriptor);
+			STATE(d) = CON_PWDGET;
 
-      vmudlog(BRF, "%s [%s] has connected (new character).",
-	      GET_NAME(d->character), d->host);
-    } else if (is_abbrev(arg, "no")) {
-      SEND_TO_Q("\n\rOk, what name would you like to use, then? ", d);
-      RELEASE(GET_NAME(d->character));
-      d->character->player.name = 0;
-      STATE(d) = CON_NME;
-    } else
-      SEND_TO_Q("Please type yes or no: ", d);
-    break;
-  case CON_PWDNRM:	/* get pwd for known player	*/
-    /* turn echo back on */
-    echo_on(d->descriptor);
+			vmudlog(BRF, "%s [%s] has connected (new character).",
+				GET_NAME(d->character), d->host);
+		}
+		else if (is_abbrev(arg, "no")) {
+			SEND_TO_Q("\n\rOk, what name would you like to use, then? ", d);
+			RELEASE(GET_NAME(d->character));
+			d->character->player.name = 0;
+			STATE(d) = CON_NME;
+		}
+		else
+			SEND_TO_Q("Please type yes or no: ", d);
+		break;
+	case CON_PWDNRM:	/* get pwd for known player	*/
+	  /* turn echo back on */
+		echo_on(d->descriptor);
 
-    for ( ; isspace(*arg); arg++)
-      continue;
+		for (; isspace(*arg); arg++)
+			continue;
 
-    if (!*arg)
-      close_socket(d);
-    else {
-      if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
-	vmudlog(BRF, "Bad PW: %s [%s]",
-		GET_NAME(d->character), d->host);
-	d->character->specials2.bad_pws++;
-	save_char(d->character, d->character->specials2.load_room, 0);
+		if (!*arg)
+			close_socket(d);
+		else {
+			if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
+				vmudlog(BRF, "Bad PW: %s [%s]",
+					GET_NAME(d->character), d->host);
+				d->character->specials2.bad_pws++;
+				save_char(d->character, d->character->specials2.load_room, 0);
 
-	if (++(d->bad_pws) >= 5) { /* 5 strikes and you're out. */
-	  SEND_TO_Q("Wrong password... disconnecting.\n\r", d);
-	  STATE(d) = CON_CLOSE;
-	} else {
-	  SEND_TO_Q("Wrong password.\n\rPassword: ", d);
-	  echo_off(d->descriptor);
+				if (++(d->bad_pws) >= 5) { /* 5 strikes and you're out. */
+					SEND_TO_Q("Wrong password... disconnecting.\n\r", d);
+					STATE(d) = CON_CLOSE;
+				}
+				else {
+					SEND_TO_Q("Wrong password.\n\rPassword: ", d);
+					echo_off(d->descriptor);
+				}
+				return;
+			}
+
+			load_result = d->character->specials2.bad_pws;
+			d->character->specials2.bad_pws = 0;
+			save_char(d->character, d->character->specials2.load_room, 0);
+
+			if (isbanned(d->host) == BAN_SELECT &&
+				!PLR_FLAGGED(d->character, PLR_SITEOK)) {
+				SEND_TO_Q("Sorry, this character has not been "
+					"cleared for login from your site!\n\r", d);
+				STATE(d) = CON_CLOSE;
+				vmudlog(NRM, "Connection attempt for %s denied from %s",
+					GET_NAME(d->character), d->host);
+				return;
+			}
+
+			if (GET_LEVEL(d->character) < restrict) {
+				SEND_TO_Q("The game is temporarily restricted.\r\n"
+					"Try again later.", d);
+				SEND_TO_Q(wizlock_msg, d);
+				SEND_TO_Q("\n\r", d);
+				STATE(d) = CON_CLOSE;
+				vmudlog(NRM, "Request for login denied for %s [%s] (wizlock)",
+					GET_NAME(d->character), d->host);
+				return;
+			}
+
+			/* first, check for switched characters */
+			for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
+				if (IS_NPC(tmp_ch) && tmp_ch->desc && tmp_ch->desc->original &&
+					GET_IDNUM(tmp_ch->desc->original) == GET_IDNUM(d->character)) {
+					SEND_TO_Q("Disconnecting.", tmp_ch->desc);
+					free_char(d->character);
+					d->character = tmp_ch->desc->original;
+					d->character->desc = d;
+					tmp_ch->desc->character = 0;
+					tmp_ch->desc->original = 0;
+					STATE(tmp_ch->desc) = CON_CLOSE;
+					d->character->specials.timer = 0;
+					SEND_TO_Q("Reconnecting to unswitched char.", d);
+					REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
+					STATE(d) = CON_PLYNG;
+					vmudlog(NRM, "%s [%s] has reconnected.",
+						GET_NAME(d->character), d->host);
+					return;
+				}
+
+			/* now check for linkless and usurpable */
+			for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
+				if (!IS_NPC(tmp_ch) &&
+					GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
+					if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
+						SEND_TO_Q("Reconnecting.\n\r", d);
+						act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
+						vmudlog(NRM, "%s [%s] has reconnected.",
+							GET_NAME(d->character), d->host);
+
+						if (tmp_ch->desc) {
+							tmp_ch->desc->character = 0;
+							close_socket(tmp_ch->desc, TRUE);
+						}
+					}
+					else {
+						vmudlog(NRM, "%s [%s] has re-logged in; disconnecting old socket.",
+							GET_NAME(tmp_ch), d->host);
+						SEND_TO_Q("This body has been usurped!\n\r", tmp_ch->desc);
+						STATE(tmp_ch->desc) = CON_CLOSE;
+						tmp_ch->desc->character = 0;
+						tmp_ch->desc = 0;
+						SEND_TO_Q("You take over your own body, already in use!\n\r", d);
+						act("$n has reconnected.\n\r"
+							"$n's body has been taken over by a new spirit!",
+							TRUE, tmp_ch, 0, 0, TO_ROOM);
+					}
+
+					free_char(d->character);
+					tmp_ch->desc = d;
+					d->character = tmp_ch;
+					tmp_ch->specials.timer = 0;
+					REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
+					STATE(d) = CON_PLYNG;
+					return;
+				}
+
+			vmudlog(BRF, "%s [%s] has connected.",
+				GET_NAME(d->character), d->host);
+
+			if (GET_LEVEL(d->character) >= LEVEL_IMMORT)
+				SEND_TO_Q(imotd, d);
+			else
+				SEND_TO_Q(motd, d);
+
+			if (load_result) {
+				sprintf(buf, "\n\r\n\r"
+					"%s%d LOGIN FAILURE%s SINCE LAST SUCCESSFUL LOGIN.%s\n\r",
+					CC_FIX(d->character, CRED), load_result,
+					(load_result > 1) ? "S" : "", CC_NORM(d->character));
+				SEND_TO_Q(buf, d);
+			}
+
+			SEND_TO_Q(MENU, d);
+			STATE(d) = CON_SLCT;
+		}
+		break;
+	case CON_PWDGET:  /* get pwd for new player */
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
+			!str_cmp(arg, GET_NAME(d->character))) {
+			SEND_TO_Q("\n\rIllegal password.\n\r", d);
+			SEND_TO_Q("Password: ", d);
+			return;
+		}
+
+		strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
+		*(d->pwd + MAX_PWD_LENGTH) = '\0';
+
+		SEND_TO_Q("Please retype your password: ", d);
+		STATE(d) = CON_PWDCNF;
+		break;
+	case CON_PWDCNF:  /* get confirmation of new pwd */
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
+			SEND_TO_Q("\n\rPasswords don't match... start over.\n\r", d);
+			SEND_TO_Q("Password: ", d);
+			STATE(d) = CON_PWDGET;
+			return;
+		}
+
+		/* turn echo back on */
+		echo_on(d->descriptor);
+
+		SEND_TO_Q("What is your sex (M/F)? ", d);
+		STATE(d) = CON_QSEX;
+		break;
+	case CON_QSEX:  /* query sex of new user */
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (is_abbrev(arg, "male"))
+			d->character->player.sex = SEX_MALE;
+		else if (is_abbrev(arg, "female"))
+			d->character->player.sex = SEX_FEMALE;
+		else {
+			SEND_TO_Q("\r\nThat's not a sex.\n\r"
+				"What is your sex? ", d);
+			return;
+		}
+
+		SEND_TO_Q("\r\n"
+			"Please choose a race:\r\n"
+			"\r\n"
+			"One of RotS' major features is the ongoing war between the\r\n"
+			"good and evil races of Middle-earth.  Players on opposing\r\n"
+			"sides of the war will not be able to see each other in the\r\n"
+			"'who' listings or communicate over global or private\r\n"
+			"channels: players of opposing races are sworn enemies and\r\n"
+			"will attempt to kill each other on sight.\r\n"
+			"\r\n"
+			"If you are a new player, it is highly recommended that you\r\n"
+			"begin as a member of the free peoples of Middle-earth.\r\n"
+			"\r\n"
+			"  Free peoples           Evil Races      \n\r"
+			"  ------------           ----------------\n\r"
+			"  [H]uman                * [U]ruk-hai Orc\n\r"
+			"  [D]warf                # [C]ommon Orc  \n\r"
+			"  [W]ood Elf             # Uruk-[L]huth  \n\r"
+			"  Ho[B]bit\n\r"
+			"\n\r"
+			"Races marked with a * are hard to play.\n\r"
+			"Races marked with a # are very hard to play.\n\r"
+			"\r\n"
+			"Type '? <race>' for help.\r\n"
+			"\r\n"
+			"Race: ", d);
+		STATE(d) = CON_QRACE;
+		break;
+	case CON_QRACE:
+		for (; isspace(*arg); arg++)
+			continue;
+
+		*arg = LOWER(*arg);
+
+		switch (*arg) {
+		case 'h':
+			GET_RACE(d->character) = RACE_HUMAN;
+			break;
+		case 'd':
+			GET_RACE(d->character) = RACE_DWARF;
+			break;
+		case 'w':
+			GET_RACE(d->character) = RACE_WOOD;
+			break;
+		case 'b':
+			GET_RACE(d->character) = RACE_HOBBIT;
+			break;
+		case 'u':
+			GET_RACE(d->character) = RACE_URUK;
+			break;
+		case 'c':
+			GET_RACE(d->character) = RACE_ORC;
+			break;
+		case 'l':
+			GET_RACE(d->character) = RACE_MAGUS;
+			break;
+		case '?':
+			do_help(d->character, arg + 1, 0, 0, 0);
+			SEND_TO_Q("\n\rRace: ", d);
+			STATE(d) = CON_QRACE;
+			return;
+		default:
+			SEND_TO_Q("\r\nThat's not a race.\r\n"
+				"Race: ", d);
+			return;
+		}
+
+		/* end race */
+		SEND_TO_Q("\n\r"
+			"Please choose a class:\n\r"
+			"\r\n"
+			"It is possible to create your own, custom class; however,\r\n"
+			"we do not recommend this for new players, and even seasoned\r\n"
+			"players should take caution when designing their own class.\r\n"
+			"\r\n"
+			"If you wish to create a custom class, enter 'o'. Otherwise,\r\n"
+			"we invite you to choose amongst the following standard\r\n"
+			"classes:\r\n"
+			"\r\n"
+			"  Mys[T]ic     [R]anger     [W]arrior     [M]age\r\n"
+			"  Co[N]jurer   W[I]zard     [H]ealer      [S]washbuckler\r\n"
+			"  [B]arbarian  [A]dventurer\r\n"
+			"\r\n"
+			"Enter '? <class>' for help on a class\r\n"
+			"\r\n"
+			"Class: ", d);
+		STATE(d) = CON_QPROF;
+		break;
+	case CON_QPROF:
+		for (; isspace(*arg); arg++)
+			continue;
+
+		*arg = LOWER(*arg);
+
+		if (*arg != 'm' && *arg != 't' && *arg != 'w' && *arg != 'r' &&
+			*arg != 'n' && *arg != 'i' && *arg != 'h' && *arg != 's' &&
+			*arg != 'b' && *arg != 'a' && *arg != 'o' && *arg != '?') {
+			SEND_TO_Q("\n\rThat's not a class\n\rClass: ", d);
+			return;
+		}
+
+		if (*arg == '?') {
+			do_help(d->character, arg + 1, 0, 0, 0);
+			SEND_TO_Q("\n\rClass: ", d);
+			STATE(d) = CON_QPROF;
+			return;
+		}
+
+		/* chose custom class */
+		if (*arg == 'o') {
+			SEND_TO_Q("\n\r"
+				"You are given 150 points to work with, and you can split\r\n"
+				"them however you choose between the four classes.  But be\r\n"
+				"warned: the more points you spend on any class, the less\r\n"
+				"each following point will benefit you.\r\n"
+				"\r\n"
+				"Enter 'l' to list your choices or '=' to finalize your\r\n"
+				"class selection\r\n\r\n"
+				"Your choice: ", d);
+			STATE(d) = CON_CREATE;
+			return;
+		}
+
+		for (tmp = 0; tmp < DEFAULT_PROFS; tmp++)
+			if (*arg == existing_profs[tmp].letter)
+				for (i = 0; i < 5; i++)
+					GET_PROF_POINTS(i, d->character) =
+					existing_profs[tmp].Class_points[i];
+		SEND_TO_Q("\r\n"
+			"On RotS, you are allowed to create your own colour scheme.\r\n"
+			"However, many new players find this burdensome, and prefer\r\n"
+			"a quick way to enable colours; thus, we have made available\r\n"
+			"a default set of colours to satisfy those players who rather\r\n"
+			"dive into the game than muck around in the RotS manual pages.\r\n"
+			"\r\n"
+			"Please note that you may disable ANSI colours at any time by\r\n"
+			"typing 'colour off'; furthermore, we encourage you to read\r\n"
+			"our manual entry on how to define your own, personalized set\r\n"
+			"of colours via the 'help colour' or 'manual general colour'\r\n"
+			"commands.\r\n"
+			"\r\n"
+			"Do you wish to enable the default colour set (Y/N)? ", d);
+		STATE(d) = CON_COLOR;
+		break;
+	case CON_COLOR:
+		if (is_abbrev(arg, "yes")) {
+			set_colors_default(d->character);
+			SEND_TO_Q("Ok, you have enabled the default colour set.\r\n", d);
+		}
+		else if (!is_abbrev(arg, "no")) {
+			SEND_TO_Q("\r\nThat's not an option.\r\n"
+				"Please type yes or no: ", d);
+			break;
+		}
+
+		sprintf(buf, "\r\n"
+			"We allow players to use the latin-1 character set to better\r\n"
+			"represent the alphabet common in Tolkien's works.  You may\r\n"
+			"want to enable latin-1 encoding here if your terminal passes\r\n"
+			"the test below--but remember that you can change your latin-1\r\n"
+			"preferences at any time during normal game play via the\r\n"
+			"'set latin-1' command.\r\n"
+			"\r\nDo you see an 'a' with "
+			"a pair of dots above it: %c (Y/N)? ",
+			228);
+		SEND_TO_Q(buf, d);
+		STATE(d) = CON_LATIN;
+		break;
+	case CON_LATIN:
+		if (is_abbrev(arg, "no")) {
+			REMOVE_BIT(PRF_FLAGS(d->character), PRF_LATIN1);
+			SEND_TO_Q("Ok, you will not use the latin-1 character set.\r\n", d);
+		}
+		else if (!is_abbrev(arg, "yes")) {
+			SEND_TO_Q("\r\nThat's not an option.\r\n"
+				"Please type yes or no: ", d);
+			break;
+		}
+		else
+			SEND_TO_Q("\r\nOk, you will use the latin-1 character set.\r\n", d);
+
+		/* Give them an autowimpy of 10 */
+		WIMP_LEVEL(d->character) = 10;
+		introduce_char(d);
+		SEND_TO_Q(MENU, d);
+		STATE(d) = CON_SLCT;
+		vmudlog(NRM, "%s [%s] new player.",
+			GET_NAME(d->character), d->host);
+		break;
+	case CON_QOWN:
+		break;
+	case CON_QOWN2:
+		break;
+	case CON_RMOTD:		/* read CR after printing motd	*/
+		SEND_TO_Q(MENU, d);
+		STATE(d) = CON_SLCT;
+		break;
+	case CON_SLCT:		/* get selection from main menu */
+		for (; isspace(*arg); arg++)
+			continue;
+
+		switch (*arg) {
+		case '0':
+			close_socket(d);
+			break;
+		case '1':
+			//new
+			for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
+			{
+				if (!IS_NPC(tmp_ch) && GET_IDNUM(d->character) == GET_IDNUM(tmp_ch))
+				{
+					if (!tmp_ch->desc || (!tmp_ch->desc->descriptor))
+					{
+						SEND_TO_Q("Reconnecting.\n\r", d);
+						act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
+						vmudlog(NRM, "%s [%s] has reconnected.", GET_NAME(d->character), d->host);
+
+						if (tmp_ch->desc)
+						{
+							tmp_ch->desc->character = 0;
+							close_socket(tmp_ch->desc, TRUE);
+						}
+					}
+					else
+					{
+						vmudlog(NRM, "%s [%s] has re-logged in; disconnecting old socket.", GET_NAME(tmp_ch), d->host);
+						SEND_TO_Q("This body has been usurped!\n\r", tmp_ch->desc);
+						STATE(tmp_ch->desc) = CON_CLOSE;
+						tmp_ch->desc->character = 0;
+						tmp_ch->desc = 0;
+						SEND_TO_Q("You take over your own body, already in use!\n\r", d);
+						act("$n has reconnected.\n\r$n's body has been taken over by a new spirit!", TRUE, tmp_ch, 0, 0, TO_ROOM);
+					}
+
+					free_char(d->character);
+					tmp_ch->desc = d;
+					d->character = tmp_ch;
+					tmp_ch->specials.timer = 0;
+					REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
+					STATE(d) = CON_PLYNG;
+					return;
+				}
+			}
+
+			//endnew
+			reset_char(d->character);
+			load_character(d->character);  //new function in objsave
+			save_char(d->character, d->character->in_room, 0);
+			report_news(d->character);
+			report_mail(d->character);
+			send_to_char(WELC_MESSG, d->character);
+			send_to_char("\n\r", d->character);
+
+			STATE(d) = CON_PLYNG;
+
+			/* if level 0, start out the new character */
+			if (!GET_LEVEL(d->character)) 
+			{
+				do_start(d->character);
+				send_to_char(START_MESSG, d->character);
+			}
+			do_look(d->character, "", 0, 0, 0);
+
+			/* report how long they must wait until unretire */
+			if (IS_SET(PLR_FLAGS(d->character), PLR_RETIRED)) 
+			{
+				if ((s = secs_to_unretire(d->character)) > 0) 
+				{
+					sprintf(buf, "You may unretire in ");
+					if ((tmp = (int)(s / 86400)))
+						sprintf(buf + strlen(buf), "%d day%s.\r\n", tmp,
+							tmp == 1 ? "" : "s");
+					else if ((tmp = (int)(s / 3600)))
+						sprintf(buf + strlen(buf), "%d hour%s.\r\n", tmp,
+							tmp == 1 ? "" : "s");
+					else if ((tmp = (int)(s / 60)))
+						sprintf(buf + strlen(buf), "%d minute%s.\r\n", tmp,
+							tmp == 1 ? "" : "s");
+					else
+						sprintf(buf + strlen(buf), "%ld second%s.\r\n", s,
+							s == 1 ? "" : "s");
+				}
+				else
+				{
+					sprintf(buf, "You may unretire now.\r\nType leave to leave the retirement home.\r\n");
+				}
+
+				send_to_char(buf, d->character);
+			}
+			d->prompt_mode = 1;
+			REMOVE_BIT(PRF_FLAGS(d->character), PRF_DISPTEXT);
+			d->character->temp = 0;
+			update_memory_list(d->character);
+			break;
+		case '3':
+			SEND_TO_Q(background, d);
+			SEND_TO_Q("\n\r\n\r*** PRESS RETURN:", d);
+			STATE(d) = CON_RMOTD;
+			break;
+		case '4':
+			SEND_TO_Q("Enter your old password: ", d);
+			echo_off(d->descriptor);
+			STATE(d) = CON_PWDNQO;
+			break;
+		case '5':
+			if (GET_LEVEL(d->character) >= LEVEL_GOD) 
+			{
+				SEND_TO_Q("\n\rYou are immortal. Forget it.\n\r", d);
+				break;
+			}
+			else if (GET_LEVEL(d->character) > 20) 
+			{
+				SEND_TO_Q("\n\rPlease ask an Arata or higher to delete you.\n\r", d);
+				break;
+			}
+			SEND_TO_Q("\n\rEnter your password for verification: ", d);
+			echo_off(d->descriptor);
+			STATE(d) = CON_DELCNF1;
+			break;
+		case '6':
+			draw_coofs(buf, d->character);
+			SEND_TO_Q(buf, d);
+			SEND_TO_Q("   PRESS RETURN:\n\r", d);
+			STATE(d) = CON_RMOTD;
+			break;
+		default:
+			SEND_TO_Q("\n\rThat's not a menu choice!\n\r", d);
+			SEND_TO_Q(MENU, d);
+			break;
+		}
+		break;
+	case CON_PWDNQO:
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
+			SEND_TO_Q("\n\rIncorrect password.\n\r", d);
+			SEND_TO_Q(MENU, d);
+			STATE(d) = CON_SLCT;
+			echo_on(d->descriptor);
+			return;
+		}
+		else {
+			SEND_TO_Q("\n\rEnter a new password: ", d);
+			STATE(d) = CON_PWDNEW;
+			return;
+		}
+		break;
+	case CON_PWDNEW:
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
+			!str_cmp(arg, GET_NAME(d->character))) {
+			SEND_TO_Q("\n\rIllegal password.\n\r", d);
+			SEND_TO_Q("Password: ", d);
+			return;
+		}
+
+		strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
+		*(d->pwd + MAX_PWD_LENGTH) = '\0';
+		SEND_TO_Q("\n\rPlease retype password: ", d);
+		STATE(d) = CON_PWDNCNF;
+		break;
+	case CON_PWDNCNF:
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
+			SEND_TO_Q("\n\rPasswords don't match; start over.\n\r", d);
+			SEND_TO_Q("Password: ", d);
+			STATE(d) = CON_PWDNEW;
+			return;
+		}
+
+		SEND_TO_Q("\n\rDone.\r\n"
+			"You must enter the game to make the change final.\n\r",
+			d);
+		SEND_TO_Q(MENU, d);
+		echo_on(d->descriptor);
+		STATE(d) = CON_SLCT;
+		break;
+	case CON_DELCNF1:
+		echo_on(d->descriptor);
+		for (; isspace(*arg); arg++)
+			continue;
+
+		if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
+			SEND_TO_Q("\n\rIncorrect password.\n\r", d);
+			SEND_TO_Q(MENU, d);
+			STATE(d) = CON_SLCT;
+		}
+		else {
+			SEND_TO_Q("\n\rYOU ARE ABOUT TO DELETE THIS CHARACTER PERMANENTLY.\n\r"
+				"ARE YOU ABSOLUTELY SURE?\n\r\n\r"
+				"Please type \"yes\" to confirm: ", d);
+			STATE(d) = CON_DELCNF2;
+		}
+		break;
+	case CON_DELCNF2:
+		if (!strcmp(arg, "yes") || !strcmp(arg, "YES")) 
+		{
+			if (PLR_FLAGGED(d->character, PLR_FROZEN)) 
+			{
+				SEND_TO_Q("You try to kill yourself, but the ice stops you.\n\r", d);
+				SEND_TO_Q("Character not deleted.\n\r\n\r", d);
+				STATE(d) = CON_CLOSE;
+				return;
+			}
+
+			SET_BIT(PLR_FLAGS(d->character), PLR_DELETED);
+
+			pkill_unref_character(d->character);
+
+			save_char(d->character, NOWHERE, 0);
+			Crash_delete_file(GET_NAME(d->character));
+			delete_exploits_file(GET_NAME(d->character));
+			delete_character_file(d->character);
+			sprintf(buf, "Character '%s' deleted!\n\rGoodbye.\n\r",
+				GET_NAME(d->character));
+			SEND_TO_Q(buf, d);
+			vmudlog(NRM, "%s (lev %d) has self-deleted.",
+				GET_NAME(d->character), GET_LEVEL(d->character));
+			STATE(d) = CON_CLOSE;
+			return;
+		}
+		else 
+		{
+			SEND_TO_Q("Character not deleted.\n\r\n\r", d);
+			SEND_TO_Q(MENU, d);
+			STATE(d) = CON_SLCT;
+		}
+		break;
+	case CON_CREATE:
+	case CON_CREATE2:
+		STATE(d) = new_player_select(d, arg);
+		break;
+	case CON_CLOSE:
+		close_socket(d);
+		break;
+	default:
+		log("SYSERR: Nanny: illegal state of con'ness");
+		abort();
+		break;
 	}
-	return;
-      }
-
-      load_result = d->character->specials2.bad_pws;
-      d->character->specials2.bad_pws = 0;
-      save_char(d->character, d->character->specials2.load_room, 0);
-
-      if (isbanned(d->host) == BAN_SELECT &&
-	  !PLR_FLAGGED(d->character, PLR_SITEOK)) {
-	SEND_TO_Q("Sorry, this character has not been "
-		  "cleared for login from your site!\n\r", d);
-	STATE(d) = CON_CLOSE;
-	vmudlog(NRM, "Connection attempt for %s denied from %s",
-		GET_NAME(d->character), d->host);
-	return;
-      }
-
-      if (GET_LEVEL(d->character) < restrict) {
-	SEND_TO_Q("The game is temporarily restricted.\r\n"
-		  "Try again later.", d);
-	SEND_TO_Q(wizlock_msg, d);
-	SEND_TO_Q("\n\r", d);
-	STATE(d) = CON_CLOSE;
-	vmudlog(NRM, "Request for login denied for %s [%s] (wizlock)",
-		GET_NAME(d->character), d->host);
-	return;
-      }
-
-      /* first, check for switched characters */
-      for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
-	if (IS_NPC(tmp_ch) && tmp_ch->desc && tmp_ch->desc->original &&
-	    GET_IDNUM(tmp_ch->desc->original) == GET_IDNUM(d->character)) {
-	  SEND_TO_Q("Disconnecting.", tmp_ch->desc);
-	  free_char(d->character);
-	  d->character = tmp_ch->desc->original;
-	  d->character->desc = d;
-	  tmp_ch->desc->character = 0;
-	  tmp_ch->desc->original = 0;
-	  STATE(tmp_ch->desc) = CON_CLOSE;
-	  d->character->specials.timer = 0;
-	  SEND_TO_Q("Reconnecting to unswitched char.", d);
-	  REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
-	  STATE(d) = CON_PLYNG;
-	  vmudlog(NRM, "%s [%s] has reconnected.",
-		  GET_NAME(d->character), d->host);
-	  return;
-	}
-
-      /* now check for linkless and usurpable */
-      for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
-	if (!IS_NPC(tmp_ch) &&
-	    GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
-	  if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
-	    SEND_TO_Q("Reconnecting.\n\r", d);
-	    act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
-	    vmudlog(NRM, "%s [%s] has reconnected.",
-		    GET_NAME(d->character), d->host);
-
-	    if (tmp_ch->desc) {
-	      tmp_ch->desc->character = 0;
-	      close_socket(tmp_ch->desc,TRUE);
-	    }
-	  } else {
-	    vmudlog(NRM, "%s [%s] has re-logged in; disconnecting old socket.",
-		    GET_NAME(tmp_ch), d->host);
-	    SEND_TO_Q("This body has been usurped!\n\r", tmp_ch->desc);
-	    STATE(tmp_ch->desc) = CON_CLOSE;
-	    tmp_ch->desc->character = 0;
-	    tmp_ch->desc = 0;
-	    SEND_TO_Q("You take over your own body, already in use!\n\r", d);
-	    act("$n has reconnected.\n\r"
-		"$n's body has been taken over by a new spirit!",
-		TRUE, tmp_ch, 0, 0, TO_ROOM);
-	  }
-
-	  free_char(d->character);
-	  tmp_ch->desc = d;
-	  d->character = tmp_ch;
-	  tmp_ch->specials.timer = 0;
-	  REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
-	  STATE(d) = CON_PLYNG;
-	  return;
-	}
-
-      vmudlog(BRF, "%s [%s] has connected.",
-	      GET_NAME(d->character), d->host);
-
-      if (GET_LEVEL(d->character) >= LEVEL_IMMORT)
-	SEND_TO_Q(imotd, d);
-      else
-	SEND_TO_Q(motd, d);
-
-      if (load_result) {
-	sprintf(buf, "\n\r\n\r"
-		"%s%d LOGIN FAILURE%s SINCE LAST SUCCESSFUL LOGIN.%s\n\r",
-		CC_FIX(d->character, CRED), load_result,
-		(load_result > 1) ? "S" : "", CC_NORM(d->character));
-	SEND_TO_Q(buf, d);
-      }
-
-      SEND_TO_Q(MENU, d);
-      STATE(d) = CON_SLCT;
-    }
-    break;
-  case CON_PWDGET:  /* get pwd for new player */
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
-	!str_cmp(arg, GET_NAME(d->character))) {
-      SEND_TO_Q("\n\rIllegal password.\n\r", d);
-      SEND_TO_Q("Password: ", d);
-      return;
-    }
-
-    strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
-    *(d->pwd + MAX_PWD_LENGTH) = '\0';
-
-    SEND_TO_Q("Please retype your password: ", d);
-    STATE(d) = CON_PWDCNF;
-    break;
-  case CON_PWDCNF:  /* get confirmation of new pwd */
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
-      SEND_TO_Q("\n\rPasswords don't match... start over.\n\r", d);
-      SEND_TO_Q("Password: ", d);
-      STATE(d) = CON_PWDGET;
-      return;
-    }
-
-    /* turn echo back on */
-    echo_on(d->descriptor);
-
-    SEND_TO_Q("What is your sex (M/F)? ", d);
-    STATE(d) = CON_QSEX;
-    break;
-  case CON_QSEX:  /* query sex of new user */
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (is_abbrev(arg, "male"))
-      d->character->player.sex = SEX_MALE;
-    else if (is_abbrev(arg, "female"))
-      d->character->player.sex = SEX_FEMALE;
-    else {
-      SEND_TO_Q("\r\nThat's not a sex.\n\r"
-		"What is your sex? ", d);
-      return;
-    }
-
-    SEND_TO_Q("\r\n"
-	      "Please choose a race:\r\n"
-	      "\r\n"
-	      "One of RotS' major features is the ongoing war between the\r\n"
-	      "good and evil races of Middle-earth.  Players on opposing\r\n"
-	      "sides of the war will not be able to see each other in the\r\n"
-	      "'who' listings or communicate over global or private\r\n"
-	      "channels: players of opposing races are sworn enemies and\r\n"
-	      "will attempt to kill each other on sight.\r\n"
-	      "\r\n"
-	      "If you are a new player, it is highly recommended that you\r\n"
-	      "begin as a member of the free peoples of Middle-earth.\r\n"
-	      "\r\n"
-	      "  Free peoples           Evil Races      \n\r"
-	      "  ------------           ----------------\n\r"
-	      "  [H]uman                * [U]ruk-hai Orc\n\r"
-	      "  [D]warf                # [C]ommon Orc  \n\r"
-	      "  [W]ood Elf             # Uruk-[L]huth  \n\r"
-	      "  Ho[B]bit\n\r"
-	      "\n\r"
-	      "Races marked with a * are hard to play.\n\r"
-	      "Races marked with a # are very hard to play.\n\r"
-	      "\r\n"
-	      "Type '? <race>' for help.\r\n"
-	      "\r\n"
-	      "Race: ", d);
-    STATE(d) = CON_QRACE;
-    break;
-  case CON_QRACE:
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    *arg = LOWER(*arg);
-
-    switch (*arg) {
-    case 'h':
-      GET_RACE(d->character) = RACE_HUMAN;
-      break;
-    case 'd':
-      GET_RACE(d->character) = RACE_DWARF;
-      break;
-    case 'w':
-      GET_RACE(d->character) = RACE_WOOD;
-      break;
-    case 'b':
-      GET_RACE(d->character) = RACE_HOBBIT;
-      break;
-    case 'u':
-      GET_RACE(d->character) = RACE_URUK;
-      break;
-    case 'c':
-      GET_RACE(d->character) = RACE_ORC;
-      break;
-    case 'l':
-      GET_RACE(d->character) = RACE_MAGUS;
-      break;
-    case '?':
-      do_help(d->character, arg + 1, 0, 0, 0);
-      SEND_TO_Q("\n\rRace: ", d);
-      STATE(d) = CON_QRACE;
-      return;
-    default:
-      SEND_TO_Q("\r\nThat's not a race.\r\n"
-		"Race: ", d);
-      return;
-    }
-
-    /* end race */
-    SEND_TO_Q("\n\r"
-	      "Please choose a class:\n\r"
-	      "\r\n"
-	      "It is possible to create your own, custom class; however,\r\n"
-	      "we do not recommend this for new players, and even seasoned\r\n"
-	      "players should take caution when designing their own class.\r\n"
-	      "\r\n"
-	      "If you wish to create a custom class, enter 'o'. Otherwise,\r\n"
-	      "we invite you to choose amongst the following standard\r\n"
-	      "classes:\r\n"
-	      "\r\n"
-	      "  Mys[T]ic     [R]anger     [W]arrior     [M]age\r\n"
-	      "  Co[N]jurer   W[I]zard     [H]ealer      [S]washbuckler\r\n"
-	      "  [B]arbarian  [A]dventurer\r\n"
-	      "\r\n"
-	      "Enter '? <class>' for help on a class\r\n"
-	      "\r\n"
-	      "Class: ", d);
-    STATE(d) = CON_QPROF;
-    break;
-  case CON_QPROF:
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    *arg = LOWER(*arg);
-
-    if (*arg != 'm' && *arg != 't' && *arg != 'w' && *arg != 'r' &&
-       *arg != 'n' && *arg != 'i' && *arg != 'h' && *arg != 's' &&
-       *arg != 'b' && *arg != 'a' && *arg != 'o' && *arg != '?') {
-      SEND_TO_Q("\n\rThat's not a class\n\rClass: ", d);
-      return;
-    }
-
-    if (*arg == '?') {
-      do_help(d->character, arg + 1, 0, 0, 0);
-      SEND_TO_Q("\n\rClass: ", d);
-      STATE(d) = CON_QPROF;
-      return;
-    }
-
-    /* chose custom class */
-    if (*arg == 'o') {
-      SEND_TO_Q("\n\r"
-		"You are given 150 points to work with, and you can split\r\n"
-		"them however you choose between the four classes.  But be\r\n"
-		"warned: the more points you spend on any class, the less\r\n"
-		"each following point will benefit you.\r\n"
-		"\r\n"
-		"Enter 'l' to list your choices or '=' to finalize your\r\n"
-		"class selection\r\n\r\n"
-		"Your choice: ", d);
-      STATE(d) = CON_CREATE;
-      return;
-    }
-
-    for (tmp = 0; tmp < DEFAULT_PROFS; tmp++)
-      if (*arg == existing_profs[tmp].letter)
-	for (i = 0; i < 5; i++)
-	  GET_PROF_POINTS(i, d->character) =
-	    existing_profs[tmp].Class_points[i];
-    SEND_TO_Q("\r\n"
-	    "On RotS, you are allowed to create your own colour scheme.\r\n"
-	    "However, many new players find this burdensome, and prefer\r\n"
-	    "a quick way to enable colours; thus, we have made available\r\n"
-	    "a default set of colours to satisfy those players who rather\r\n"
-	    "dive into the game than muck around in the RotS manual pages.\r\n"
-	    "\r\n"
-	    "Please note that you may disable ANSI colours at any time by\r\n"
-	    "typing 'colour off'; furthermore, we encourage you to read\r\n"
-	    "our manual entry on how to define your own, personalized set\r\n"
-	    "of colours via the 'help colour' or 'manual general colour'\r\n"
-	    "commands.\r\n"
-	    "\r\n"
-	    "Do you wish to enable the default colour set (Y/N)? ", d);
-    STATE(d) = CON_COLOR;
-    break;
-  case CON_COLOR:
-    if (is_abbrev(arg, "yes")) {
-      set_colors_default(d->character);
-      SEND_TO_Q("Ok, you have enabled the default colour set.\r\n", d);
-    } else if (!is_abbrev(arg, "no")) {
-      SEND_TO_Q("\r\nThat's not an option.\r\n"
-		"Please type yes or no: ", d);
-      break;
-    }
-
-    sprintf(buf, "\r\n"
-	    "We allow players to use the latin-1 character set to better\r\n"
-	    "represent the alphabet common in Tolkien's works.  You may\r\n"
-	    "want to enable latin-1 encoding here if your terminal passes\r\n"
-	    "the test below--but remember that you can change your latin-1\r\n"
-	    "preferences at any time during normal game play via the\r\n"
-	    "'set latin-1' command.\r\n"
-	    "\r\nDo you see an 'a' with "
-	    "a pair of dots above it: %c (Y/N)? ",
-	    228);
-    SEND_TO_Q(buf, d);
-    STATE(d) = CON_LATIN;
-    break;
-  case CON_LATIN:
-    if (is_abbrev(arg, "no")) {
-      REMOVE_BIT(PRF_FLAGS(d->character), PRF_LATIN1);
-      SEND_TO_Q("Ok, you will not use the latin-1 character set.\r\n", d);
-    } else if(!is_abbrev(arg, "yes")) {
-      SEND_TO_Q("\r\nThat's not an option.\r\n"
-		"Please type yes or no: ", d);
-      break;
-    } else
-      SEND_TO_Q("\r\nOk, you will use the latin-1 character set.\r\n", d);
-
-    /* Give them an autowimpy of 10 */
-    WIMP_LEVEL(d->character) = 10;
-    introduce_char(d);
-    SEND_TO_Q(MENU, d);
-    STATE(d) = CON_SLCT;
-    vmudlog(NRM, "%s [%s] new player.",
-	    GET_NAME(d->character), d->host);
-    break;
-  case CON_QOWN:
-    break;
-  case CON_QOWN2:
-    break;
-  case CON_RMOTD:		/* read CR after printing motd	*/
-    SEND_TO_Q(MENU, d);
-    STATE(d) = CON_SLCT;
-    break;
-  case CON_SLCT:		/* get selection from main menu */
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    switch (*arg) {
-    case '0':
-      close_socket(d);
-      break;
-    case '1':
-//new
-	    for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next)
-	if (!IS_NPC(tmp_ch) &&
-	    GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
-	  if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
-	    SEND_TO_Q("Reconnecting.\n\r", d);
-	    act("$n has reconnected.", TRUE, tmp_ch, 0, 0, TO_ROOM);
-	    vmudlog(NRM, "%s [%s] has reconnected.",
-		    GET_NAME(d->character), d->host);
-
-	    if (tmp_ch->desc) {
-	      tmp_ch->desc->character = 0;
-	      close_socket(tmp_ch->desc,TRUE);
-	    }
-	  } else {
-	    vmudlog(NRM, "%s [%s] has re-logged in; disconnecting old socket.",
-		    GET_NAME(tmp_ch), d->host);
-	    SEND_TO_Q("This body has been usurped!\n\r", tmp_ch->desc);
-	    STATE(tmp_ch->desc) = CON_CLOSE;
-	    tmp_ch->desc->character = 0;
-	    tmp_ch->desc = 0;
-	    SEND_TO_Q("You take over your own body, already in use!\n\r", d);
-	    act("$n has reconnected.\n\r"
-		"$n's body has been taken over by a new spirit!",
-		TRUE, tmp_ch, 0, 0, TO_ROOM);
-	  }
-
-	  free_char(d->character);
-	  tmp_ch->desc = d;
-	  d->character = tmp_ch;
-	  tmp_ch->specials.timer = 0;
-	  REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
-	  STATE(d) = CON_PLYNG;
-	  return;
-	}
-//endnew
-      reset_char(d->character);
-      load_character(d->character);  //new function in objsave
-      save_char(d->character, d->character->in_room,0);
-      report_news(d->character);
-      report_mail(d->character);
-      send_to_char(WELC_MESSG, d->character);
-      send_to_char("\n\r", d->character);
-
-      STATE(d) = CON_PLYNG;
-
-      /* if level 0, start out the new character */
-      if (!GET_LEVEL(d->character)) {
-	do_start(d->character);
-	send_to_char(START_MESSG, d->character);
-      }
-      do_look(d->character, "", 0, 0, 0);
-
-      /* report how long they must wait until unretire */
-      if (IS_SET(PLR_FLAGS(d->character), PLR_RETIRED)) {
-	if ((s = secs_to_unretire(d->character)) > 0) {
-	  sprintf(buf, "You may unretire in ");
-	  if ((tmp = (int) (s / 86400)))
-	    sprintf(buf + strlen(buf), "%d day%s.\r\n", tmp,
-		    tmp == 1 ? "" : "s");
-	  else if ((tmp = (int) (s / 3600)))
-	    sprintf(buf + strlen(buf), "%d hour%s.\r\n", tmp,
-		    tmp == 1 ? "" : "s");
-	  else if ((tmp = (int) (s / 60)))
-	    sprintf(buf + strlen(buf), "%d minute%s.\r\n", tmp,
-		    tmp == 1 ? "" : "s");
-	  else
-	    sprintf(buf + strlen(buf), "%ld second%s.\r\n", s,
-		    s == 1 ? "" : "s");
-	} else
-	  sprintf(buf, "You may unretire now.\r\n"
-		  "Type leave to leave the retirement home.\r\n");
-
-	send_to_char(buf, d->character);
-      }
-      d->prompt_mode = 1;
-      REMOVE_BIT(PRF_FLAGS(d->character),PRF_DISPTEXT);
-      d->character->temp = 0;
-      update_memory_list(d->character);
-      break;
-    case '3':
-      SEND_TO_Q(background, d);
-      SEND_TO_Q("\n\r\n\r*** PRESS RETURN:", d);
-      STATE(d) = CON_RMOTD;
-      break;
-    case '4':
-      SEND_TO_Q("Enter your old password: ", d);
-      echo_off(d->descriptor);
-      STATE(d) = CON_PWDNQO;
-      break;
-    case '5':
-      if (GET_LEVEL(d->character) >= LEVEL_GOD) {
-	SEND_TO_Q("\n\rYou are immortal. Forget it.\n\r", d);
-	break;
-      } else if (GET_LEVEL(d->character) > 10) {
-	SEND_TO_Q("\n\rPlease ask an Arata or higher to delete you.\n\r", d);
-	break;
-      }
-      SEND_TO_Q("\n\rEnter your password for verification: ", d);
-      echo_off(d->descriptor);
-      STATE(d) = CON_DELCNF1;
-      break;
-    case '6':
-      draw_coofs(buf, d->character);
-      SEND_TO_Q(buf,d);
-      SEND_TO_Q("   PRESS RETURN:\n\r",d);
-      STATE(d) = CON_RMOTD;
-      break;
-    default:
-      SEND_TO_Q("\n\rThat's not a menu choice!\n\r", d);
-      SEND_TO_Q(MENU, d);
-      break;
-    }
-    break;
-  case CON_PWDNQO:
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
-      SEND_TO_Q("\n\rIncorrect password.\n\r", d);
-      SEND_TO_Q(MENU, d);
-      STATE(d) = CON_SLCT;
-      echo_on(d->descriptor);
-      return;
-    } else {
-      SEND_TO_Q("\n\rEnter a new password: ", d);
-      STATE(d) = CON_PWDNEW;
-      return;
-    }
-    break;
-  case CON_PWDNEW:
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (!*arg || strlen(arg) > MAX_PWD_LENGTH || strlen(arg) < 3 ||
-	!str_cmp(arg, GET_NAME(d->character))) {
-      SEND_TO_Q("\n\rIllegal password.\n\r", d);
-      SEND_TO_Q("Password: ", d);
-      return;
-    }
-
-    strncpy(d->pwd, CRYPT(arg, d->character->player.name), MAX_PWD_LENGTH);
-    *(d->pwd + MAX_PWD_LENGTH) = '\0';
-    SEND_TO_Q("\n\rPlease retype password: ", d);
-    STATE(d) = CON_PWDNCNF;
-    break;
-  case CON_PWDNCNF:
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (strncmp(CRYPT(arg, d->pwd), d->pwd, MAX_PWD_LENGTH)) {
-      SEND_TO_Q("\n\rPasswords don't match; start over.\n\r", d);
-      SEND_TO_Q("Password: ", d);
-      STATE(d) = CON_PWDNEW;
-      return;
-    }
-
-    SEND_TO_Q("\n\rDone.\r\n"
-	      "You must enter the game to make the change final.\n\r",
-	      d);
-    SEND_TO_Q(MENU, d);
-    echo_on(d->descriptor);
-    STATE(d) = CON_SLCT;
-    break;
-  case CON_DELCNF1:
-    echo_on(d->descriptor);
-    for ( ; isspace(*arg); arg++)
-      continue;
-
-    if (strncmp(CRYPT(arg,d->pwd), d->pwd, MAX_PWD_LENGTH)) {
-      SEND_TO_Q("\n\rIncorrect password.\n\r", d);
-      SEND_TO_Q(MENU, d);
-      STATE(d) = CON_SLCT;
-    } else {
-      SEND_TO_Q("\n\rYOU ARE ABOUT TO DELETE THIS CHARACTER PERMANENTLY.\n\r"
-		"ARE YOU ABSOLUTELY SURE?\n\r\n\r"
-		"Please type \"yes\" to confirm: ", d);
-      STATE(d) = CON_DELCNF2;
-    }
-    break;
-  case CON_DELCNF2:
-    if (!strcmp(arg, "yes") || !strcmp(arg, "YES")) {
-      if (PLR_FLAGGED(d->character, PLR_FROZEN)) {
-	SEND_TO_Q("You try to kill yourself, but the ice stops you.\n\r",d);
-	SEND_TO_Q("Character not deleted.\n\r\n\r",d);
-	STATE(d) = CON_CLOSE;
-	return;
-      }
-
-      SET_BIT(PLR_FLAGS(d->character), PLR_DELETED);
-
-      pkill_unref_character(d->character);
-
-      save_char(d->character, NOWHERE, 0);
-      Crash_delete_file(GET_NAME(d->character));
-      delete_exploits_file(GET_NAME(d->character));
-      delete_character_file(d->character);
-      sprintf(buf, "Character '%s' deleted!\n\rGoodbye.\n\r",
-	      GET_NAME(d->character));
-      SEND_TO_Q(buf, d);
-      vmudlog(NRM, "%s (lev %d) has self-deleted.",
-	      GET_NAME(d->character), GET_LEVEL(d->character));
-      STATE(d) = CON_CLOSE;
-      return;
-    } else {
-      SEND_TO_Q("Character not deleted.\n\r\n\r", d);
-      SEND_TO_Q(MENU, d);
-      STATE(d) = CON_SLCT;
-    }
-    break;
-  case CON_CREATE:
-  case CON_CREATE2:
-    STATE(d) = new_player_select(d, arg);
-    break;
-  case CON_CLOSE :
-    close_socket(d);
-    break;
-  default:
-    log("SYSERR: Nanny: illegal state of con'ness");
-    abort();
-    break;
-  }
 }
 
 

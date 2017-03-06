@@ -3551,45 +3551,96 @@ add_exploit_record(int recordtype, struct char_data *victim, int iIntParam,
   
 
   // It's a PK record
-  switch (recordtype) {
+  switch (recordtype) 
+  {
   case EXPLOIT_PK:
-    for(killer = combat_list; killer; killer = killer->next_fighting)
-      if(!IS_NPC(killer) && (killer->specials.fighting == victim)) {	
-	// only trophies for chars
-	// CREATE A TROPHY RECORD
-	exploitrec.type = EXPLOIT_PK;
-	sprintf(exploitrec.chtime, "%s", tmstr);
-	exploitrec.shintVictimID = GET_IDNUM(victim);
-	sprintf(exploitrec.chVictimName, "%s", GET_NAME(victim));
-	exploitrec.iVictimLevel = GET_LEVEL(victim);
-	exploitrec.iKillerLevel = GET_LEVEL(killer);
-	
-	// player to write to, structure
-	write_exploits(killer, &exploitrec);
-      }
+  {
+	  std::set<char_data*> seen_chars;
+	  for (killer = combat_list; killer; killer = killer->next_fighting)
+	  {
+		  if (killer->specials.fighting == victim)
+		  {
+			  char_data* cur_killer = NULL;
+			  if (!IS_NPC(killer))
+			  {
+				  cur_killer = killer;
+			  }
+			  else
+			  {
+				  if (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND))
+				  {
+					  cur_killer = killer->master;
+				  }
+			  }
+
+			  // If we have a killer and he's unique, add it to the exploits.
+			  if (cur_killer && seen_chars.insert(cur_killer).second)
+			  {
+				  // only trophies for chars
+				  // CREATE A TROPHY RECORD
+				  exploitrec.type = EXPLOIT_PK;
+				  sprintf(exploitrec.chtime, "%s", tmstr);
+				  exploitrec.shintVictimID = GET_IDNUM(victim);
+				  sprintf(exploitrec.chVictimName, "%s", GET_NAME(victim));
+				  exploitrec.iVictimLevel = GET_LEVEL(victim);
+				  exploitrec.iKillerLevel = GET_LEVEL(cur_killer);
+
+				  // player to write to, structure
+				  write_exploits(cur_killer, &exploitrec);
+			  }
+		  }
+	  }
+  }
     break;
 
 
   case EXPLOIT_DEATH:
-    for(killer = combat_list; killer; killer = killer->next_fighting)
-      if(!IS_NPC(killer) && (killer->specials.fighting == victim)) {	
-	// only trophies for chars
-	exploitrec.type = EXPLOIT_DEATH;
-	exploitrec.shintVictimID = GET_IDNUM(killer);
-	// killed by..
-	sprintf(exploitrec.chVictimName, "%s", GET_NAME(killer));
-	exploitrec.iVictimLevel = GET_LEVEL(victim);
-	exploitrec.iKillerLevel = GET_LEVEL(killer);
-	// used to indicate separators between subsequent deaths.
-	if(iFirstDeath == 0) {
-	  exploitrec.iIntParam = 1;
-	  iFirstDeath++;
-	}
-	else
-	  exploitrec.iIntParam = 0;
-      }
-    // write this death line
-    write_exploits(victim, &exploitrec);
+  {
+	  std::set<char_data*> seen_chars;
+	  for (killer = combat_list; killer; killer = killer->next_fighting)
+	  {
+		  if (killer->specials.fighting == victim)
+		  {
+			  char_data* cur_killer = NULL;
+			  if (!IS_NPC(killer))
+			  {
+				  cur_killer = killer;
+			  }
+			  else
+			  {
+				  if (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND))
+				  {
+					  cur_killer = killer->master;
+				  }
+			  }
+
+			  // If we have a killer and he's unique, add it to the exploits.
+			  if (cur_killer && seen_chars.insert(cur_killer).second)
+			  {
+				  // only trophies for chars
+				  exploitrec.type = EXPLOIT_DEATH;
+				  exploitrec.shintVictimID = GET_IDNUM(cur_killer);
+				  // killed by..
+				  sprintf(exploitrec.chVictimName, "%s", GET_NAME(cur_killer));
+				  exploitrec.iVictimLevel = GET_LEVEL(victim);
+				  exploitrec.iKillerLevel = GET_LEVEL(cur_killer);
+				  // used to indicate separators between subsequent deaths.
+				  if (iFirstDeath == 0) 
+				  {
+					  exploitrec.iIntParam = 1;
+					  iFirstDeath++;
+				  }
+				  else
+				  {
+					  exploitrec.iIntParam = 0;
+				  }
+
+				  // player to write to, structure
+				  write_exploits(cur_killer, &exploitrec);
+			  }
+		  }
+	  }
+  }
     break;
 
 

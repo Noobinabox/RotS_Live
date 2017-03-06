@@ -30,6 +30,11 @@
 #include "char_utils.h"
 #include "char_utils_combat.h"
 #include "big_brother.h"
+#include <set>
+
+#include <string>
+#include <sstream>
+#include <iostream>
 
 #define IS_PHYSICAL(_at) \
   ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)
@@ -1117,11 +1122,21 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	}
 	else 
 	{
+		gain_exp_regardless(dead_man, std::min(0, base_xp_gain / 10));
+
+		// TODO(drelidan):  I am unsure why this early out is here, but figure it out and potentially
+		// fix it... 'cause this could have all sorts of problems.
 		if (attack_type == SPELL_POISON)
 		{
 			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
-			raw_kill(dead_man, killer, attack_type);
-			return;
+
+			// TODO(drelidan):  Only early-out if the dead man isn't in combat.  Otherwise continue
+			// so that proper exploits are given out.
+			if (dead_man->specials.fighting == NULL)
+			{
+				raw_kill(dead_man, killer, attack_type);
+				return;
+			}
 		}
 
 		// PK records are created regardless of death cause, but then early out if it's
@@ -1136,15 +1151,15 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 			add_exploit_record(EXPLOIT_DEATH, dead_man, 0, NULL);
 		}
 
-		if (IS_NPC(killer) && !(MOB_FLAGGED(killer, MOB_ORC_FRIEND) && MOB_FLAGGED(killer, MOB_PET)))
+		if (IS_NPC(killer))
 		{
-			gain_exp_regardless(dead_man, std::min(0, base_xp_gain));
+			// Only grant mob_death XP if the player died to a mob that is not controlled
+			// by a player.
+			if (!MOB_FLAGGED(killer, MOB_ORC_FRIEND) && !MOB_FLAGGED(killer, MOB_PET))
+			{
+				gain_exp_regardless(dead_man, std::min(0, base_xp_gain));
+			}
 		}
-		else if (attack_type == SPELL_POISON)
-		{
-			add_exploit_record(EXPLOIT_POISON, dead_man, 0, NULL);
-		}
-		gain_exp_regardless(dead_man, std::min(0, base_xp_gain / 10));
 	}
 
 	GET_COND(dead_man, FULL) = 24;
@@ -1249,90 +1264,109 @@ void group_gain(char_data* killer, char_data* dead_man)
 	if (killer->in_room != dead_man->in_room)
 		return;
 
-	int n_members, share, level_total, perc_total, spirit_gain, tmp;
-	int group_bonus, npc_level_malus;
-
 	char_data* group_leader = killer->group_leader;
 	if (group_leader == NULL)
-		group_leader = killer;
-
-	n_members = 0;
-	level_total = 0;
-	perc_total = 0;
-
-	/* Find how many group members/levels and how much perception */
-	for (char_data* t = world[killer->in_room].people; t; t = t->next_in_room)
 	{
-		if (!IS_NPC(t) && (t->specials.fighting == dead_man || t->group_leader == group_leader))
+		// Treat followers as their master for determining group priority.
+		if (IS_NPC(killer) && (MOB_FLAGGED(killer, MOB_ORC_FRIEND) || MOB_FLAGGED(killer, MOB_PET)))
 		{
-			n_members++;
-			level_total += GET_LEVELB(t);
-			perc_total += GET_PERCEPTION(t);
+			group_leader = killer->master->group_leader;
+		}
+		if (group_leader == NULL)
+		{
+			group_leader = killer;
 		}
 	}
 
-	if (n_members >= 1) 
+	// Build a set of all characters that contributed to the kill.
+	// and Find how many group members/levels and how much perception.
+	std::set<char_data*> killing_characters;
+	int level_total = 0;
+	int perc_total = 0;
+	const room_data& death_room = world[dead_man->in_room];
+	for (char_data* character = death_room.people; character; character = character->next_in_room)
 	{
-		share = GET_EXP(dead_man) / 10;
-		npc_level_malus = 0;
-
-		if (IS_NPC(dead_man)) 
+		// If an orc follower or pet contributed to the kill, give his master credit.
+		char_data* cur_killer = NULL;
+		if (IS_NPC(character))
 		{
-			spirit_gain = GET_LEVEL(dead_man) * get_naked_perception(dead_man);
-			npc_level_malus = dead_man->specials.attacked_level;
-			level_total += npc_level_malus;
-
-			share = share * (n_members + 1) / n_members;
+			if (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET))
+			{
+				cur_killer = character->master;
+			}
 		}
 		else
 		{
-			spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
+			cur_killer = character;
 		}
 
-		share = share / level_total;
-	}
-	else 
-	{
-		share = 0;
-		return;
-	}
-
-	for (char_data* t = world[killer->in_room].people; t; t = t->next_in_room)
-	{
-		if (t != dead_man && GET_LEVEL(t) < LEVEL_IMMORT && !IS_NPC(t))
+		// Split XP between all members of the group (including the leader).
+		if (cur_killer && cur_killer->in_room == dead_man->in_room &&
+			(cur_killer->specials.fighting == dead_man || cur_killer->group_leader == group_leader || cur_killer == group_leader || cur_killer == character->master))
 		{
-			if (t->specials.fighting == dead_man || t->group_leader == group_leader)
+			if (!IS_NPC(cur_killer))
 			{
-				if (perc_total)
+				if (killing_characters.insert(cur_killer).second)
 				{
-					tmp = spirit_gain * GET_PERCEPTION(t) / perc_total / 100;
+					level_total += GET_LEVELB(cur_killer);
+					perc_total += GET_PERCEPTION(cur_killer);
 				}
-				else
-				{
-					tmp = 0;
-				}
+			}
+		}
+	}
 
-				if (tmp)
-				{
-					if (GET_ALIGNMENT(t) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(t))
-					{
-						vsend_to_char(t, "Your spirit increases by %d.\n\r", tmp);
-						GET_SPIRIT(t) += tmp;
-					}
-				}
+	if (killing_characters.empty())
+		return;
 
-				group_bonus = std::min(share * GET_LEVELB(t) / 2, (level_total - npc_level_malus - GET_LEVELB(t)) * share / 4);
-				tmp = exp_with_modifiers(t, dead_man, share * GET_LEVELB(t) + group_bonus);
+	int share = GET_EXP(dead_man) / 10;
+	int npc_level_malus = 0;
+	int spirit_gain = 0;
 
-				vsend_to_char(t, "You receive your share of experience -- %d points.\r\n", tmp);
-				gain_exp(t, tmp);
-				change_alignment(t, dead_man);
+	if (IS_NPC(dead_man))
+	{
+		spirit_gain = GET_LEVEL(dead_man) * get_naked_perception(dead_man);
+		npc_level_malus = dead_man->specials.attacked_level;
+		level_total += npc_level_malus;
 
-				/* save only 10% of the time to avoid lag in big groups */
-				if (number(0, 9) == 0)
-				{
-					save_char(t, NOWHERE, 1);
-				}
+		int num_killers = (int)killing_characters.size();
+		share = share * (num_killers + 1) / num_killers;
+	}
+	else
+	{
+		spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
+	}
+
+	share = share / level_total;
+
+	typedef std::set<char_data*>::iterator iter;
+	for (iter killer_iter = killing_characters.begin(); killer_iter != killing_characters.end(); ++killer_iter)
+	{
+		char_data* character = *killer_iter;
+		if(character->player.level >= LEVEL_IMMORT)
+			continue;
+
+		// Do spirit gain.
+		if (perc_total > 0)
+		{
+			int gain = spirit_gain * GET_PERCEPTION(character) / perc_total / 100;
+			if (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))
+			{
+				vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
+				GET_SPIRIT(character) += gain;
+			}
+
+			int capped_level = GET_LEVELB(character);
+			int group_bonus = std::min(share * capped_level / 2, (level_total - npc_level_malus - capped_level) * share / 4);
+			int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus);
+
+			vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);
+			gain_exp(character, tmp);
+			change_alignment(character, dead_man);
+
+			/* save only 10% of the time to avoid lag in big groups */
+			if (number(0, 9) == 0)
+			{
+				save_char(character, NOWHERE, 1);
 			}
 		}
 	}

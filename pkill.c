@@ -107,39 +107,6 @@ pkill_expired(PKILL *p)
 	return 0;
 }
 
-
-
-/*
- * Determine the weight of this kill.  If the victim has many
- * high level opponents contributing to his death, then the
- * weight will be small; if the victim has relatively few
- * opponents and levels (relative to his own level), then the
- * weight will be large.
- */
-int
-pkill_weight(struct char_data *victim)
-{
-	int total_levels;
-	struct char_data *c;
-	extern struct char_data *combat_list;
-
-	total_levels = 0;
-	for (c = combat_list; c != NULL; c = c->next_fighting)
-		if (c->specials.fighting == victim)
-			total_levels += GET_LEVEL(c);
-
-	/* Get the larger of the two */
-	total_levels = MAX(victim->specials.attacked_level, total_levels);
-
-	/* Don't divide by zero */
-	if (total_levels == 0)
-		return 0;
-
-	return GET_LEVEL(victim) * 1000 / (total_levels * total_levels);
-}
-
-
-
 /*
  * Return 0 if 'c' is not a valid player killer.  Otherwise,
  * return 1.
@@ -173,18 +140,18 @@ pkill_valid_killer(struct char_data *killer, struct char_data *victim)
 
 
 
-int
-pkill_opponents(struct char_data *victim)
+int pkill_opponents(struct char_data *victim)
 {
-	int total_opponents;
-	struct char_data *c;
+	int total_opponents = 0;
 	extern struct char_data *combat_list;
 
-	total_opponents = 0;
-	for (c = combat_list; c != NULL; c = c->next_fighting)
-		if (c->specials.fighting == victim &&
-		    pkill_valid_killer(c, victim))
+	for (struct char_data* c = combat_list; c != NULL; c = c->next_fighting)
+	{
+		if (c->specials.fighting == victim && pkill_valid_killer(c, victim))
+		{
 			++total_opponents;
+		}
+	}
 
 	return total_opponents;
 }
@@ -539,8 +506,79 @@ pkill_update_player_tab(PKILL pkills[], int nkills)
  * to this pkill.
  */
 int
-pkill_update_pkill_tab(struct char_data *victim, int w, int n)
+pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 {
+	int cur_room;
+	int seen_chars_count;
+	int total_levels;
+	extern struct char_data *combat_list;
+
+	struct char_data* seen_chars[16];
+	for (int i = 0; i < 16; i++)
+	{
+		seen_chars[i] = NULL;
+	}
+
+	seen_chars_count = 0;
+	total_levels = 0;
+	cur_room = victim->in_room;
+	for (struct char_data *c = combat_list; c != NULL; c = c->next_fighting)
+	{
+		struct char_data *cur_char = NULL;
+		if (c->specials.fighting == victim)
+		{
+			if (!IS_NPC(c))
+			{
+				cur_char = c;
+			}
+			else
+			{
+				if (MOB_FLAGGED(c, MOB_PET) || MOB_FLAGGED(c, MOB_ORC_FRIEND))
+				{
+					cur_char = c->master;
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			// Only count characters in the same room as the victim.
+			if (cur_char == NULL || cur_char->in_room != cur_room)
+				continue;
+
+			int is_unique = 1;
+			if (seen_chars_count < 16)
+			{
+				for (int i = 0; i < seen_chars_count; i++)
+				{
+					if (seen_chars[i] == cur_char)
+					{
+						is_unique = 0;
+						break;
+					}
+				}
+
+				if (is_unique != 0)
+				{
+					seen_chars[seen_chars_count++] = c;
+					total_levels += GET_LEVEL(c);
+				}
+			}
+		}
+	}
+
+	/* Get the larger of the two */
+	total_levels = MAX(victim->specials.attacked_level, total_levels);
+
+	/* Don't divide by zero */
+	if (total_levels == 0)
+	{
+		return 0;
+	}
+
+	int weight = GET_LEVEL(victim) * 1000 / (total_levels * total_levels);
+
 	int i, start;
 	int points;
 	time_t t;
@@ -551,52 +589,49 @@ pkill_update_pkill_tab(struct char_data *victim, int w, int n)
 	start = pkill_tab_len;
 
 	/* Make room for the new PKILLs */
-	__pkill_extend_tab(n);
+	__pkill_extend_tab(seen_chars_count);
 
 	i = 0;
 	t = time(0);
-	for (c = combat_list; c != NULL; c = c->next_fighting) {
-		if (c->specials.fighting == victim &&
-		    pkill_valid_killer(c, victim)) {
-			vmudlog(CMP, "Creating pkill: %s killed %s.",
-			        GET_NAME(c), GET_NAME(victim));
 
-			pkill_tab[start + i].kill_time = t;
-			pkill_tab[start + i].killer = c->specials2.idnum;
-			pkill_tab[start + i].victim = victim->specials2.idnum;
-			pkill_tab[start + i].killer_level = pkill_level(c);
-			pkill_tab[start + i].victim_level = pkill_level(victim);
+	for (int i = 0; i < seen_chars_count; i++)
+	{
+		struct char_data *cur_char = seen_chars[i];
 
-			points = pkill_points(victim, c, w);
-			pkill_tab[start + i].killer_points = points;
-			pkill_tab[start + i].victim_points = -1 * points;
-			++i;
-		}
+		vmudlog(CMP, "Creating pkill: %s killed %s.", GET_NAME(cur_char), GET_NAME(victim));
+
+		pkill_tab[start + i].kill_time = t;
+		pkill_tab[start + i].killer = cur_char->specials2.idnum;
+		pkill_tab[start + i].victim = victim->specials2.idnum;
+		pkill_tab[start + i].killer_level = pkill_level(cur_char);
+		pkill_tab[start + i].victim_level = pkill_level(victim);
+
+		points = pkill_points(victim, cur_char, weight);
+		pkill_tab[start + i].killer_points = points;
+		pkill_tab[start + i].victim_points = -1 * points;
 	}
+
+	*opponent_count = seen_chars_count;
 
 	return start;
 }
 
 
 
-void
-pkill_create(struct char_data *victim)
+void pkill_create(struct char_data *victim)
 {
-	int weight;
-	int opponents;
-	int start;
-
 	/* We don't record pkills for NPCs or immortals */
 	if (IS_NPC(victim) || GET_LEVEL(victim) >= LEVEL_IMMORT)
 		return;
 
 	/* Get the kill statistics */
-	weight = pkill_weight(victim);
-	opponents = pkill_opponents(victim);
-
-	start = pkill_update_pkill_tab(victim, weight, opponents);
-	pkill_update_player_tab(&pkill_tab[start], opponents);
-	pkill_update_file(PKILL_FILE, &pkill_tab[start], opponents);
+	int opponents = 0;
+	int start = pkill_update_pkill_tab(victim, &opponents);
+	if (start != 0)
+	{
+		pkill_update_player_tab(&pkill_tab[start], opponents);
+		pkill_update_file(PKILL_FILE, &pkill_tab[start], opponents);
+	}
 }
 
 

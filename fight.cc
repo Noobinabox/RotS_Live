@@ -1268,7 +1268,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 	if (group_leader == NULL)
 	{
 		// Treat followers as their master for determining group priority.
-		if (IS_NPC(killer) && (MOB_FLAGGED(killer, MOB_ORC_FRIEND) || MOB_FLAGGED(killer, MOB_PET)))
+		if (IS_NPC(killer) && (MOB_FLAGGED(killer, MOB_ORC_FRIEND) || MOB_FLAGGED(killer, MOB_PET)) && killer->master)
 		{
 			group_leader = killer->master->group_leader;
 		}
@@ -1286,18 +1286,14 @@ void group_gain(char_data* killer, char_data* dead_man)
 	const room_data& death_room = world[dead_man->in_room];
 	for (char_data* character = death_room.people; character; character = character->next_in_room)
 	{
-		// If an orc follower or pet contributed to the kill, give his master credit.
-		char_data* cur_killer = NULL;
+		// If an orc follower or pet contributed to the kill, give his master credit if he is in the same room.
+		char_data* cur_killer = character;
 		if (IS_NPC(character))
 		{
-			if (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET))
+			if (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET) && character->master && character->master->in_room == character->in_room)
 			{
 				cur_killer = character->master;
 			}
-		}
-		else
-		{
-			cur_killer = character;
 		}
 
 		// Split XP between all members of the group (including the leader).
@@ -1976,10 +1972,10 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 
 	if (GET_POS(victim) == POSITION_DEAD) 
 	{
-		// Redirect the attacker as the pet's master.
+		// Redirect the attacker as the pet's master if the master is in the same room as the pet.
 		if (IS_NPC(attacker))
 		{
-			if (attacker->master && MOB_FLAGGED(attacker, MOB_PET) || MOB_FLAGGED(attacker, MOB_ORC_FRIEND))
+			if (attacker->master && MOB_FLAGGED(attacker, MOB_PET) || MOB_FLAGGED(attacker, MOB_ORC_FRIEND) && attacker->master->in_room == attacker->in_room)
 			{
 				attacker = attacker->master;
 			}

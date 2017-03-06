@@ -24,6 +24,9 @@
 #include "pkill.h"
 
 #include "big_brother.h"
+#include <string>
+#include <sstream>
+#include <iostream>
 
 
 /**************************************************************************
@@ -3558,21 +3561,17 @@ void add_exploit_record(int recordtype, char_data* victim, int iIntParam, char *
 	  {
 		  if (killer->specials.fighting == victim)
 		  {
-			  char_data* cur_killer = NULL;
-			  if (!IS_NPC(killer))
+			  char_data* cur_killer = killer;
+			  if (IS_NPC(killer))
 			  {
-				  cur_killer = killer;
-			  }
-			  else
-			  {
-				  if (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND))
+				  if (killer->master && (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND)))
 				  {
 					  cur_killer = killer->master;
 				  }
 			  }
 
 			  // If we have a killer and he's unique, add it to the exploits.
-			  if (cur_killer && seen_chars.insert(cur_killer).second)
+			  if (cur_killer && !IS_NPC(cur_killer) && seen_chars.insert(cur_killer).second)
 			  {
 				  // only trophies for chars
 				  // CREATE A TROPHY RECORD
@@ -3599,21 +3598,17 @@ void add_exploit_record(int recordtype, char_data* victim, int iIntParam, char *
 	  {
 		  if (killer->specials.fighting == victim)
 		  {
-			  char_data* cur_killer = NULL;
-			  if (!IS_NPC(killer))
+			  char_data* cur_killer = killer;
+			  if (IS_NPC(killer))
 			  {
-				  cur_killer = killer;
-			  }
-			  else
-			  {
-				  if (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND))
+				  if (killer->master && (MOB_FLAGGED(killer, MOB_PET) || MOB_FLAGGED(killer, MOB_ORC_FRIEND)))
 				  {
 					  cur_killer = killer->master;
 				  }
 			  }
 
 			  // If we have a killer and he's unique, add it to the exploits.
-			  if (cur_killer && seen_chars.insert(cur_killer).second)
+			  if (cur_killer && !IS_NPC(cur_killer) && seen_chars.insert(cur_killer).second)
 			  {
 				  // only trophies for chars
 				  exploitrec.type = EXPLOIT_DEATH;
@@ -3634,7 +3629,7 @@ void add_exploit_record(int recordtype, char_data* victim, int iIntParam, char *
 				  }
 
 				  // player to write to, structure
-				  write_exploits(cur_killer, &exploitrec);
+				  write_exploits(victim, &exploitrec);
 			  }
 		  }
 	  }

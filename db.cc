@@ -3530,9 +3530,7 @@ void write_exploits(char_data *ch, exploit_record * record) {
 	return;
 }
 
-void
-add_exploit_record(int recordtype, struct char_data *victim, int iIntParam,
-		   char *chParam) 
+void add_exploit_record(int recordtype, char_data* victim, int iIntParam, char *chParam) 
 {
   struct char_data *killer;
   struct exploit_record exploitrec;

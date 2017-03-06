@@ -1108,7 +1108,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	}
 
 	/* log mobdeaths */
-	if (IS_NPC(killer))
+	if (IS_NPC(killer) && !(MOB_FLAGGED(killer, MOB_ORC_FRIEND) || MOB_FLAGGED(killer, MOB_PET)))
 	{
 		add_exploit_record(EXPLOIT_MOBDEATH, dead_man, GET_IDNUM(killer), GET_NAME(killer));
 	}
@@ -1974,12 +1974,24 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 		if (victim->specials.fighting)
 			stop_fighting(victim);
 
-	if (GET_POS(victim) == POSITION_DEAD) {
+	if (GET_POS(victim) == POSITION_DEAD) 
+	{
+		// Redirect the attacker as the pet's master.
+		if (IS_NPC(attacker))
+		{
+			if (attacker->master && MOB_FLAGGED(attacker, MOB_PET) || MOB_FLAGGED(attacker, MOB_ORC_FRIEND))
+			{
+				attacker = attacker->master;
+			}
+		}
+
 		die(victim, attacker, attacktype);
 		return 1;
 	}
 	else
+	{
 		return 0;
+	}
 }
 
 

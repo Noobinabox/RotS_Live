@@ -2217,7 +2217,10 @@ bool does_arrow_break(const char_data* victim, const obj_data* arrow)
 bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 {
 	// Remove object from the character.
-	obj_from_obj(arrow);
+	if (arrow->in_obj)
+	{
+		obj_from_obj(arrow);
+	}
 	obj_to_char(arrow, archer); // Move it into his inventory.
 	if (does_arrow_break(victim, arrow))
 	{
@@ -2262,7 +2265,11 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
 	// Remove object from the character.
-	obj_from_obj(arrow);
+	if (arrow->in_obj)
+	{
+		obj_from_obj(arrow);
+	}
+
 	obj_to_char(arrow, archer); // Move it into his inventory.
 	if (does_arrow_break(NULL, arrow))
 	{

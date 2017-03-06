@@ -524,42 +524,34 @@ pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 	cur_room = victim->in_room;
 	for (struct char_data *c = combat_list; c != NULL; c = c->next_fighting)
 	{
-		struct char_data *cur_char = NULL;
+		struct char_data *cur_char = c;
 		if (c->specials.fighting == victim)
 		{
-			if (!IS_NPC(c))
+			if (IS_NPC(c))
 			{
-				cur_char = c;
-			}
-			else
-			{
-				if (MOB_FLAGGED(c, MOB_PET) || MOB_FLAGGED(c, MOB_ORC_FRIEND))
+				if ((MOB_FLAGGED(c, MOB_PET) || MOB_FLAGGED(c, MOB_ORC_FRIEND)) && c->master)
 				{
 					cur_char = c->master;
 				}
-				else
-				{
-					continue;
-				}
 			}
 
-			// Only count characters in the same room as the victim.
-			if (cur_char == NULL || cur_char->in_room != cur_room)
+			// Only count characters in the same room as the victim, and characters that are not NPCs.
+			if (cur_char == NULL || cur_char->in_room != cur_room || IS_NPC(c))
 				continue;
 
 			int is_unique = 1;
 			if (seen_chars_count < 16)
 			{
-				for (int i = 0; i < seen_chars_count; i++)
+				for (int index = 0; index < seen_chars_count; index++)
 				{
-					if (seen_chars[i] == cur_char)
+					if (seen_chars[index] == cur_char)
 					{
 						is_unique = 0;
 						break;
 					}
 				}
 
-				if (is_unique != 0)
+				if (is_unique)
 				{
 					seen_chars[seen_chars_count++] = c;
 					total_levels += GET_LEVEL(c);
@@ -582,7 +574,6 @@ pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 	int i, start;
 	int points;
 	time_t t;
-	struct char_data *c;
 	extern struct char_data *combat_list;
 
 	/* Record where the list of new PKILL records start */

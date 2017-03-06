@@ -2991,28 +2991,28 @@ long race_affect[] = {
 };
 
 int max_race_str[MAX_RACES] ={
-  20,            // IMM
-  20,            // HUMAN
-  20,            // DWARF
-  18,            // WOOD
-  16,            // HOBBIT
-  18,            // HIGH ELF
-  20,
-  20,
-  20,
-  20,
-  20,
-  20,           // URUK
-  20,           // HARAD
-  18,	   	// COMMON ORC
-  20,	  	// EASTERLING
-  18,	  	// LHUTH
-  20,
-  20,
-  20,
-  20,
-  20,   // TROLL
-  20
+  22,            // IMM
+  22,            // HUMAN
+  22,            // DWARF
+  22,            // WOOD
+  20,            // HOBBIT
+  22,            // HIGH ELF
+  22,
+  22,
+  22,
+  22,
+  22,
+  22,           // URUK
+  22,           // HARAD
+  22,	   	// COMMON ORC
+  22,	  	// EASTERLING
+  22,	  	// LHUTH
+  22,
+  22,
+  22,
+  22,
+  22,   // TROLL
+  22
 };
 
 int mortal_start_room[MAX_RACES] = {

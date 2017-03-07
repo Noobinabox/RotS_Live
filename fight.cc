@@ -1975,7 +1975,7 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 		// Redirect the attacker as the pet's master if the master is in the same room as the pet.
 		if (IS_NPC(attacker))
 		{
-			if (attacker->master && MOB_FLAGGED(attacker, MOB_PET) || MOB_FLAGGED(attacker, MOB_ORC_FRIEND) && attacker->master->in_room == attacker->in_room)
+			if (attacker->master && (MOB_FLAGGED(attacker, MOB_PET) || MOB_FLAGGED(attacker, MOB_ORC_FRIEND)) && attacker->master->in_room == attacker->in_room)
 			{
 				attacker = attacker->master;
 			}

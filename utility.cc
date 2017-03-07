@@ -683,11 +683,14 @@ get_real_OB(struct char_data *ch)
     return tmpob + bonus;
 
   tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(wpn->get_weapon_type()));
+
+  if (isname("bow", wpn->name))
+	  tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
   
   if(IS_TWOHANDED(ch)) {
     tmpob += wpn->obj_flags.value[2] * 
-      (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
-    tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+      (200 + isname("bow", wpn->name)? GET_RAW_SKILL(ch, SKILL_ARCHERY) : GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
+    tmpskill = (tmpskill + isname("bow", wpn->name)? GET_RAW_SKILL(ch, SKILL_ARCHERY) : GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
   }
   else
     tmpob -= (wpn->obj_flags.value[2] * 2 - 6);
@@ -764,9 +767,15 @@ get_real_parry(struct char_data *ch)
   weapon_bonus = weapon->obj_flags.value[1];
 
   tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(weapon->obj_flags.value[3]));
+  if (isname("bow", weapon->name))
+	  tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
 
-  if(IS_TWOHANDED(ch))
-    tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch,SKILL_TWOHANDED))/2;
+  if (IS_TWOHANDED(ch))
+  {
+	  tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+	  if (isname("bow", weapon->name))
+		  tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+  }
   
   tmpskill = (tmpskill + 3*GET_RAW_KNOWLEDGE(ch,SKILL_PARRY))/4;
   if(GET_TACTICS(ch) == TACTICS_BERSERK)

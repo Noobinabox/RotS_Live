@@ -486,7 +486,7 @@ recalc_abilities(struct char_data *ch)
 
 				tmp2 = (ch->specials.str_speed * bulk / 5) + (dex_speed * (5 - bulk) / 5);
 
-				ch->specials.str_speed = ch->specials.str_speed > tmp2 ? tmp2 : ch->specials.str_speed;
+				ch->specials.str_speed = std::max(ch->specials.str_speed, tmp2);
 			}
 
 			tmp = 1000000;

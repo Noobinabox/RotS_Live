@@ -1275,7 +1275,8 @@ void group_gain(char_data* killer, char_data* dead_man)
 
 		// Split XP between all members of the group (including the leader).
 		if (cur_killer && cur_killer->in_room == dead_man->in_room &&
-			(cur_killer->specials.fighting == dead_man || cur_killer->group_leader == group_leader || cur_killer == group_leader || cur_killer == character->master))
+			(cur_killer->specials.fighting == dead_man || cur_killer->group_leader == group_leader 
+				|| cur_killer == group_leader || cur_killer == character->master))
 		{
 			if (!IS_NPC(cur_killer))
 			{
@@ -1327,20 +1328,20 @@ void group_gain(char_data* killer, char_data* dead_man)
 				vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
 				GET_SPIRIT(character) += gain;
 			}
+		}
 
-			int capped_level = GET_LEVELB(character);
-			int group_bonus = std::min(share * capped_level / 2, (level_total - npc_level_malus - capped_level) * share / 4);
-			int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus);
+		int capped_level = GET_LEVELB(character);
+		int group_bonus = std::min(share * capped_level / 2, (level_total - npc_level_malus - capped_level) * share / 4);
+		int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus);
 
-			vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);
-			gain_exp(character, tmp);
-			change_alignment(character, dead_man);
+		vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);
+		gain_exp(character, tmp);
+		change_alignment(character, dead_man);
 
-			/* save only 10% of the time to avoid lag in big groups */
-			if (number(0, 9) == 0)
-			{
-				save_char(character, NOWHERE, 1);
-			}
+		/* save only 10% of the time to avoid lag in big groups */
+		if (number(0, 9) == 0)
+		{
+			save_char(character, NOWHERE, 1);
 		}
 	}
 }

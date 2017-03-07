@@ -524,7 +524,7 @@ pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 	cur_room = victim->in_room;
 	for (struct char_data *c = combat_list; c != NULL; c = c->next_fighting)
 	{
-		struct char_data *cur_char = c;
+		struct char_data* cur_char = c;
 		if (c->specials.fighting == victim)
 		{
 			if (IS_NPC(c))
@@ -536,7 +536,7 @@ pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 			}
 
 			// Only count characters in the same room as the victim, and characters that are not NPCs.
-			if (cur_char == NULL || cur_char->in_room != cur_room || IS_NPC(c))
+			if (cur_char == NULL || cur_char->in_room != cur_room || IS_NPC(cur_char))
 				continue;
 
 			int is_unique = 1;
@@ -553,8 +553,8 @@ pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
 
 				if (is_unique)
 				{
-					seen_chars[seen_chars_count++] = c;
-					total_levels += GET_LEVEL(c);
+					seen_chars[seen_chars_count++] = cur_char;
+					total_levels += GET_LEVEL(cur_char);
 				}
 			}
 		}

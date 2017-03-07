@@ -1169,8 +1169,6 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 	raw_kill(dead_man, killer, attack_type); 
 }
 
-
-
 int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 {
 	int exp, age;
@@ -1190,70 +1188,49 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 	exp = base_exp;
 	age = MOB_AGE_TICKS(dead_man, time(0)) * 40 / (GET_LEVEL(dead_man) + 20);
 
-	if (GET_LEVEL(dead_man) > 5) 
-	{
+	if (GET_LEVEL(dead_man) > 5) {
 		if (age < average_mob_life)
-		{
-			exp = exp * (average_mob_life * 60 + age * 40) / (average_mob_life * 100);
-		}
+			exp = exp * (average_mob_life * 60 + age * 40) /
+			(average_mob_life * 100);
 		else
-		{
 			exp = exp * (140 - 40 * average_mob_life / age) / 100;
-		}
 	}
 
-	if (MOB_FLAGGED(dead_man, MOB_AGGRESSIVE) || IS_AGGR_TO(dead_man, character))
-	{
+	if (MOB_FLAGGED(dead_man, MOB_AGGRESSIVE) ||
+		IS_AGGR_TO(dead_man, character))
 		exp += base_exp / 5;
-	}
 
 	if (MOB_FLAGGED(dead_man, MOB_FAST))
-	{
 		exp += base_exp / 10;
-	}
 
 	if (MOB_FLAGGED(dead_man, MOB_SWITCHING))
-	{
 		exp += base_exp / 10;
-	}
 
 	if (MOB_FLAGGED(dead_man, MOB_MEMORY))
-	{
 		exp += base_exp / 20;
-	}
 
 	if (dead_man->specials.default_pos < POSITION_STANDING)
-	{
 		exp -= base_exp / 20;
-	}
 
 	if (IS_GOOD(character) && IS_GOOD(dead_man))
-	{
 		exp = exp * 2 / 3;
-	}
 
 	if (MOB_FLAGGED(dead_man, MOB_SPEC) && dead_man->nr >= 0 &&
 		(mob_index[dead_man->nr].func || dead_man->specials.store_prog_number))
-	{
 		exp += base_exp / 10;
-	}
 
 	if (GET_DIFFICULTY(dead_man))
-	{
 		exp = exp * GET_DIFFICULTY(dead_man) / 100;
-	}
 
 	/* east exp bonus:  8 is the river */
-	const room_data& char_room = world[character->in_room];
 	if (RACE_GOOD(character) && zone_table[world[character->in_room].zone].x > 8)
-	{
 		exp += exp * std::min(zone_table[world[character->in_room].zone].x - 8, 5) * 3 / 100;
-	}
 
 	/* TEMPORARY: */
 	exp += 2 * exp / std::max(1, GET_LEVEL(character) - 1);
 
 	return exp;
+
 }
 
 void group_gain(char_data* killer, char_data* dead_man)

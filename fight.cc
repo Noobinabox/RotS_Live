@@ -1320,7 +1320,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 			continue;
 
 		// Do spirit gain.
-		if (perc_total > 0)
+		if (perc_total > 0 && spirit_gain > 0)
 		{
 			int gain = spirit_gain * GET_PERCEPTION(character) / perc_total / 100;
 			if (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))

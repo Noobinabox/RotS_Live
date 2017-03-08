@@ -689,8 +689,14 @@ get_real_OB(struct char_data *ch)
   
   if(IS_TWOHANDED(ch)) {
     tmpob += wpn->obj_flags.value[2] * 
-      (200 + isname("bow", wpn->name)? GET_RAW_SKILL(ch, SKILL_ARCHERY) : GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
-    tmpskill = (tmpskill + isname("bow", wpn->name)? GET_RAW_SKILL(ch, SKILL_ARCHERY) : GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+      (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
+    tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+	if (isname("bow", wpn->name))
+	{
+		tmpob += wpn->obj_flags.value[2] *
+			(200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
+		tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+	}
   }
   else
     tmpob -= (wpn->obj_flags.value[2] * 2 - 6);

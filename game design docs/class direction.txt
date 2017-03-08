@@ -2,77 +2,98 @@ Design Direction Update:
 ----------------------------------
 Hey guys,
 
-We're excited that archery just launched, and that we were able to get some
-number tweaks in that should make the solo, leveling, and hitting experiences
-a bit more enjoyable for all involved (unless you're on the receiving end).
+We're excited that archery just launched, and that we were
+able to get some number tweaks in that should make the solo,
+leveling, and hitting experiences a bit more enjoyable for
+all involved (unless you're on the receiving end).
 
-I'm just going to take a moment and give a general direction as to where we
-plan on heading moving forward.  There's a lot up for discussion currently, and
-numbers and details all need to be worked out still, but in general, we want to
-make choosing a specialization feel more impactful and important than it 
-currently does.  However, in order to do this, we're going to have to trim some
-excess generic power from different characters (otherwise we end up in a world
-where people hit harder, have more defense, and have more utility than they
-currently do, which is a snowball effect that is hard to escape from).
+I'm just going to take a moment and give a general
+direction as to where we plan on heading moving forward.
+There's a lot up for discussion currently, and numbers and
+details all need to be worked out still, but in general, we
+want to make choosing a specialization feel more impactful
+and important than it  currently does.  However, in order 
+to do this, we're going to have to trim some excess generic
+power from different characters (otherwise we end up in a 
+world where people hit harder, have more defense, and have
+more utility than they currently do, which is a snowball
+effect that is hard to escape from).
 
-I think that mystics, in general, are a good baseline moving foward.  Mystics
-have four specs, and two of them grant access to unique powers that feel good
-to use and are impactful.  Ideally, we want all classes/characters to have a
-choice amongst viable specs, and for all of these specs to grant unique power
-to that character or impact the way the character feels and plays.
+I think that mystics, in general, are a good baseline 
+moving foward.  Mystics have four specs, and two of them 
+grant access to unique powers that feel good to use and are
+impactful.  Ideally, we want all classes/characters to have
+a choice amongst viable specs, and for all of these specs to
+grant unique power to that character or impact the way the
+character feels and plays.
 
-For warriors, we are planning tweaks to Wild Fighting to make it feel more like
-a raging berserker, as opposed to something that every warrior takes because
-it's the only option.  We also plan on adding a Defender specialization that
-utilizes shields better than other characters (and in interesting ways), and an
-Armor specialization that allows warriors to feel like, well, knights in 
-shining armor that can ride into battle without ever having to remove that
+For warriors, we are planning tweaks to Wild Fighting to 
+make it feel more like a raging berserker, as opposed to
+something that every warrior takes because it's the only
+option.  We also plan on adding a Defender specialization 
+that utilizes shields better than other characters (and in 
+interesting ways), and an Armor specialization that allows
+warriors to feel like, well, knights in  shining armor that
+can ride into battle without ever having to remove that
 glorious platemail that they are accustomed to.
 
-For rangers, we are planning tweaks to the Stealth and Animals specializations.
-For stealthy rangers, this means staying on foot for longer and more easily 
-moving around the battlefield unseen, choosing their time to strike
-wisely.  For animal rangers, it means more choices (that mean something) when
-it comes to choosing a tame, and tankier/harder-hitting/more versatile tames
-in general (depending on which animal you tame).  We also plan to add an
-archery specialization that allows rangers to shoot at different cadences with
-greater precision, and to allow archers to ready a shot and loose it at an
-opportune time.
+For rangers, we are planning tweaks to the Stealth and 
+Animals specializations. For stealthy rangers, this means
+staying on foot for longer and more easily  moving around
+the battlefield unseen, choosing their time to strike wisely.
+For animal rangers, it means more choices (that mean 
+something) when it comes to choosing a tame, and tankier/
+harder-hitting/more versatile tames in general (depending 
+on which animal you tame).  We also plan to add an archery
+specialization that allows rangers to shoot at different
+cadences with greater precision, and to allow archers to 
+ready a shot and loose it at an opportune time.
 
-For mages, we are planning on removing the invisible power that the elemental
-specializations provide, and replace it with tangible and thematic benefits for
-choosing that spec.  Fire mages are good at catching things on fire, cold mages
-are good at slowing down and controlling their enemies, lightning mages have
-learned how to tap into this most fickle element more frequently, and to more
-stunning effect than others, and dark mages have learned how to take the 
-darkness that they fling at enemies and make it both more pervasive and more
-widespread.
+For mages, we are planning on removing the invisible power
+that the elemental specializations provide, and replace it 
+with tangible and thematic benefits for choosing that spec.
+Fire mages are good at catching things on fire, cold mages
+are good at slowing down and controlling their enemies, 
+lightning mages have learned how to tap into this most fickle
+element more frequently, and to more stunning effect than 
+others, and dark mages have learned how to take the 
+darkness that they fling at enemies and make it both
+more pervasive and more widespread.
 
-For mystics, illusion specialists will have access to confuse (as they 
-currently) do, and a more powerful hallucinate than a traditional mystic.
-Aggressive guardians will be a bit smarter (and not throw themselves) in
-danger, and will learn a new trick for hitting enemies harder.  Protective
-guardians may get some adjustment as well, if necessary.  Regeneration and
-protection specialists are the least defined, but these characters should have
-abilities that allow them to heal or protect both themselves and their allies
-more effectively.
+For mystics, illusion specialists will have access to 
+confuse (as they  currently) do, and a more powerful 
+hallucinate than a traditional mystic. Aggressive 
+guardians will be a bit smarter (and not throw themselves)
+in danger, and will learn a new trick for hitting enemies 
+harder.  Protective guardians may get some adjustment as 
+well, if necessary.  Regeneration and protection specialists
+are the least defined, but these characters should have 
+abilities that allow them to heal or protect both themselves
+and their allies more effectively.
 
-For all of these changes to happen, some base power will end up getting removed
-from classes so that we end up in a balanced state at the end.  Some existing
-abilities will be get numbers changed, others will get functionality changes,
-and others may end up being gated behind specializations.  There isn't any
-intent to nerf existing characters, but characters that are currently "good at
-everything" will probably end up being better at one thing and worse at the
+For all of these changes to happen, some base power will end
+up getting removed from classes so that we end up in a 
+balanced state at the end.  Some existing abilities will be
+get numbers changed, others will get functionality changes,
+and others may end up being gated behind specializations.
+There isn't any intent to nerf existing characters, but 
+characters that are currently "good at everything" will 
+probably end up being better at one thing and worse at the
 others after the patch.
 
-At the end of the day, however, we still want RotS to feel like RotS, and to
-essentially be the same game that it currently is.  We'll be prudent with the
-changes that we make, ensuring that we keep the existing identity behind
-changed abilities as much as possible.  Where that isn't possible, we'll make
-sure that we have a good reason why, and a good alternative in place.
+At the end of the day, however, we still want RotS to feel
+like RotS, and to essentially be the same game that it 
+currently is.  We'll be prudent with the changes that we 
+make, ensuring that we keep the existing identity behind
+changed abilities as much as possible.  Where that isn't
+possible, we'll make sure that we have a good reason why,
+and a good alternative in place.
 
-We'd love to answer any questions or get any feedback that you guys have about
-these proposals.  At the end of the day, the game belongs to you.  We're just
-trying to steer it into a more awesome direction moving forward.
+We'd love to answer any questions or get any feedback that
+you guys have about these proposals.  At the end of the day,
+the game belongs to you.  We're just trying to steer it into
+a more awesome direction moving forward.  I'll take a look
+at the responses to this post tomorrow (and continuously),
+and I am sure that Matt and Seth will as well.
 
 - Dave

@@ -361,12 +361,16 @@ void get_from_container(struct char_data *ch, struct obj_data *cont, char *arg, 
 int	perform_get_from_room(char_data* character, obj_data* item)
 {
 	// Player corpses have negative values on their ID.
-	// TODO(drelidan):  Make it so that you can pick up friendly player corpses
-	// if they died to a mob.
 	if (is_corpse(item) && item->obj_flags.value[2] < 0)
 	{
-		send_to_char("You should leave the dead where they lay...", character);
-		return 0;
+		// Corpses can be moved if the player died to a mob, but not if the player
+		// died to another player.
+		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+		if (bb_instance.is_corpse_protected(character, item))
+		{
+			send_to_char("You should leave the dead where they lay...", character);
+			return 0;
+		}
 	}
 
 	if (can_take_obj(character, item))

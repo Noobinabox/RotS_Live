@@ -487,7 +487,7 @@ int	check_idling(char_data* character)
 		return 0;
 	}
 
-	if (character->specials.timer++ >= 2)
+	if (character->specials.timer++ >= 3)
 	{
 		if (!character->specials.fighting)
 		{
@@ -500,7 +500,7 @@ int	check_idling(char_data* character)
 			bb_instance.on_character_afked(character);
 			if (!was_afk)
 			{
-				send_to_char("You have been idle, and are now flagged as AFK.", character);
+				send_to_char("You have been idle, and are now flagged as AFK.\r\n", character);
 			}
 		}
 	}
@@ -520,7 +520,7 @@ int	check_idling(char_data* character)
 				stop_riding(character);
 			}
 			act("$n disappears into the void.", TRUE, character, 0, 0, TO_ROOM);
-			send_to_char("You have been idle, and are pulled into a void.\n\r", character);
+			send_to_char("You have been idle, and are pulled into a void.\r\n", character);
 			save_char(character, NOWHERE, 0);
 			Crash_crashsave(character);
 			char_from_room(character);

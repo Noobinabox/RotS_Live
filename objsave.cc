@@ -23,6 +23,10 @@
 #include "db.h"
 #include "spells.h"
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 /* these factors should be unique integers */
 #define RENT_FACTOR 	1
 #define CRYO_FACTOR 	4
@@ -310,6 +314,47 @@ int	Crash_write_rentcode(struct char_data *ch, FILE *fl, struct rent_info *rent)
    return 1;
 }
 
+//============================================================================
+// This function fixes the fact that we add containers to characters before we
+// add items to them, so the item is being added to the character at 0 weight.
+// This allows characters to get infinite dodge.
+//============================================================================
+void recalc_worn_weight(char_data* character)
+{
+	extern sh_int encumb_table[MAX_WEAR];
+	extern sh_int leg_encumb_table[MAX_WEAR];
+
+	character->specials.worn_weight = 0;
+	character->points.encumb = 0;
+	character->specials.encumb_weight = 0;
+	character->specials2.leg_encumb = 0;
+
+	for (int item_slot = 0; item_slot < MAX_WEAR; ++item_slot)
+	{
+		obj_data* item = character->equipment[item_slot];
+		if (item)
+		{
+			int item_weight = item->get_weight();
+			sh_int encumb_value = encumb_table[item_slot];
+			sh_int leg_encumb_value = leg_encumb_table[item_slot];
+
+			character->points.encumb += item->obj_flags.value[2] * encumb_value;
+			character->specials2.leg_encumb += item->obj_flags.value[2] * leg_encumb_value;
+			
+			if (encumb_value > 0)
+			{
+				character->specials.encumb_weight += item_weight * encumb_value;
+			}
+			else
+			{
+				character->specials.encumb_weight += item_weight / 2;
+			}
+			
+			character->specials.worn_weight += item_weight;
+		}
+	}
+}
+
 FILE* Crash_load(char_data* character)
 {
 	FILE *fl;
@@ -458,6 +503,8 @@ FILE* Crash_load(char_data* character)
 		if (!(character->specials2.load_room))
 			character->specials2.load_room = calc_load_room(character, RENT_UNDEF);
 	}
+
+	recalc_worn_weight(character);
 
 	character->specials2.load_room = calc_load_room(character, rent.rentcode);
 

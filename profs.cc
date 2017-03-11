@@ -293,7 +293,7 @@ namespace
 		if (!character)
 			return;
 
-		if (character->player.level < 6)
+		if (character->player.level <= 6)
 			return;
 
 		int statsum = get_statsum(*character);
@@ -347,7 +347,7 @@ namespace
 		roll -= get_hike_bonus(*character, PROF_CLERIC);
 		if (roll < 0)
 		{
-			send_to_char("You feel your mental resolve strengthen!\n", character);
+			send_to_char("You feel your mental resolve harden!\n", character);
 			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 will");
 			character->constabilities.wil++;
 			character->tmpabilities.wil++;

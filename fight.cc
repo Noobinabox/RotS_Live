@@ -1233,6 +1233,44 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 
 }
 
+bool master_gets_credit(const char_data* character)
+{
+	assert(character);
+	assert(character->master);
+	
+	return (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET)) && character->in_room == character->master->in_room;
+}
+
+bool gets_kill_credit(const char_data* character, const char_data* dead_man, const char_data* group_leader)
+{
+	assert(character);
+	assert(dead_man);
+	assert(group_leader);
+
+	// NPCs don't get kill credit.
+	if (IS_NPC(character))
+		return false;
+
+	// You can only get kill credit if you're in the same room as the kill.
+	if (character->in_room != dead_man->in_room)
+		return false;
+
+	// You get XP if you're fighting the victim.
+	if (character->specials.fighting == dead_man)
+		return true;
+
+	// The group leader of the killer gets kill credit.
+	if (character == group_leader)
+		return true;
+
+	// If you're in the same group as the killer, you get kill credit.
+	if (character->group_leader == group_leader)
+		return true;
+
+	// No one else gets kill credit.
+	return false;
+}
+
 void group_gain(char_data* killer, char_data* dead_man)
 {
 	if (killer->in_room == NOWHERE)
@@ -1265,20 +1303,18 @@ void group_gain(char_data* killer, char_data* dead_man)
 	{
 		// If an orc follower or pet contributed to the kill, give his master credit if he is in the same room.
 		char_data* cur_killer = character;
-		if (IS_NPC(character))
+		if (IS_NPC(character) && character->master)
 		{
-			if (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET) && character->master && character->master->in_room == character->in_room)
+			if (master_gets_credit(character))
 			{
 				cur_killer = character->master;
 			}
 		}
 
 		// Split XP between all members of the group (including the leader).
-		if (cur_killer && cur_killer->in_room == dead_man->in_room &&
-			(cur_killer->specials.fighting == dead_man || cur_killer->group_leader == group_leader 
-				|| cur_killer == group_leader || cur_killer == character->master))
+		if (cur_killer)
 		{
-			if (!IS_NPC(cur_killer))
+			if (gets_kill_credit(cur_killer, dead_man, group_leader))
 			{
 				if (killing_characters.insert(cur_killer).second)
 				{

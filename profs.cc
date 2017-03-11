@@ -17,9 +17,17 @@
 
 #include "char_utils.h"
 #include <cmath>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <assert.h>
+
+#include <string>
+#include <sstream>
+#include <iostream>
 
 #define MAX_STATSUM 99
-
+#define NUM_STATS 6
 
 extern struct char_data *character_list;
 extern int max_race_str[];
@@ -57,21 +65,66 @@ sh_int race_modifiers[MAX_RACES][8] = {
   {-1,-1,-3, 0, 1,-2, 0, 0}
 };
 
-/*
- * This function, when given i < 170*4, returns 200*sqrt(i).
- * CH is only needed to send overflow to.
- */
-inline
-int do_squareroot(int i, struct char_data *ch)
+sh_int get_str_mod(int race)
 {
-  if(i/4 > 170) {
-    if(ch)
-      send_to_char("NON_FATAL OVERFLOW, Dim error 1 in do_squareroot.\r\n"
-		   "Please notify imps.\n\r", ch);
-    i = 170*4;
-  }
-  
-  return (4 - i%4)*square_root[i/4] + (i%4)*square_root[i/4+1];
+	const int mod_index = 0;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+sh_int get_int_mod(int race)
+{
+	const int mod_index = 1;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+sh_int get_wil_mod(int race)
+{
+	const int mod_index = 2;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+sh_int get_dex_mod(int race)
+{
+	const int mod_index = 3;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+sh_int get_con_mod(int race)
+{
+	const int mod_index = 4;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+sh_int get_lea_mod(int race)
+{
+	const int mod_index = 5;
+	if (race > MAX_RACES)
+		return 0;
+
+	return race_modifiers[race][mod_index];
+}
+
+/*
+ * This function returns 200 * sqrt(i).
+ */
+inline int do_squareroot(int i, char_data* character)
+{
+	return int(std::sqrt(i) * 200.0);
 }
 
 inline int class_HP(const char_data* character)
@@ -92,373 +145,655 @@ inline int class_HP(const char_data* character)
 
 void draw_line(char *buf, int length)
 {
-  int k;
-  char buff[81];
-  
-  for( k=0 ; k < length ; k++)
-    buff[k] = '*';
-  buff[k] = 0;
-  strcat(buf , buff);
+	int k;
+	char buff[81];
+
+	for (k = 0; k < length; k++)
+		buff[k] = '*';
+	buff[k] = 0;
+	strcat(buf, buff);
 }
 
 
 
-void
-draw_coofs(char *buf, struct char_data *ch)
+void draw_coofs(char *buf, struct char_data *ch)
 {
-  char buf2[80];
-  
-  sprintf(buf, "\r\n"
-          "    0%%,      20%%,      40%%,      60%%,      80%%,      100%%"
-	  "\n\r"
-	  "    |         |         |         |         |         |\n\r");
-  
-  sprintf(buf2,"Mag: ");
-  draw_line(buf2, GET_PROF_COOF(1,ch)/20);
-  strcat(buf,buf2);
-  
-  sprintf(buf2,"\n\rMys: ");
-  draw_line(buf2, GET_PROF_COOF(2,ch)/20);
-  strcat(buf,buf2);
-  
-  sprintf(buf2,"\n\rRan: ");
-  draw_line(buf2, GET_PROF_COOF(3,ch)/20);
-  strcat(buf,buf2);
-  
-  sprintf(buf2,"\n\rWar: ");
-  draw_line(buf2, GET_PROF_COOF(4,ch)/20);
-  strcat(buf,buf2);
-  strcat(buf,"\n\r\0");
+	char buf2[80];
+
+	sprintf(buf, "\r\n"
+		"    0%%,      20%%,      40%%,      60%%,      80%%,      100%%"
+		"\n\r"
+		"    |         |         |         |         |         |\n\r");
+
+	sprintf(buf2, "Mag: ");
+	draw_line(buf2, GET_PROF_COOF(1, ch) / 20);
+	strcat(buf, buf2);
+
+	sprintf(buf2, "\n\rMys: ");
+	draw_line(buf2, GET_PROF_COOF(2, ch) / 20);
+	strcat(buf, buf2);
+
+	sprintf(buf2, "\n\rRan: ");
+	draw_line(buf2, GET_PROF_COOF(3, ch) / 20);
+	strcat(buf, buf2);
+
+	sprintf(buf2, "\n\rWar: ");
+	draw_line(buf2, GET_PROF_COOF(4, ch) / 20);
+	strcat(buf, buf2);
+	strcat(buf, "\n\r\0");
 }
 
 
 
-int
-points_used(struct char_data *ch)
+int points_used(char_data* character)
 {  
-  return GET_PROF_POINTS(PROF_MAGE, ch) + GET_PROF_POINTS(PROF_CLERIC, ch) + 
-	 GET_PROF_POINTS(PROF_RANGER, ch) + GET_PROF_POINTS(PROF_WARRIOR, ch);
+  return GET_PROF_POINTS(PROF_MAGE, character) + GET_PROF_POINTS(PROF_CLERIC, character) + 
+	 GET_PROF_POINTS(PROF_RANGER, character) + GET_PROF_POINTS(PROF_WARRIOR, character);
 }
 
 
 
-void
-advance_level_prof(int prof, struct char_data *ch)
+void advance_level_prof(int prof, char_data* character)
 {
-  SET_PROF_LEVEL(prof,ch,GET_PROF_LEVEL(prof ,ch) + 1);
-  switch(prof){
-  case PROF_MAGE:
-    GET_MAX_MANA(ch) += 2;
-    send_to_char("You feel more adept in magic!\n\r",ch);
-    break;
-  case PROF_CLERIC:
-    send_to_char("Your spirit grows stronger!\n\r",ch);
-    break;
-  case PROF_RANGER:
-    send_to_char("You feel more agile!\n\r",ch);
-    break;
-  case PROF_WARRIOR:
-    send_to_char("You have become better at combat!\n\r",ch);
-    break;
-  }
+	SET_PROF_LEVEL(prof, character, GET_PROF_LEVEL(prof, character) + 1);
+	switch (prof) 
+	{
+	case PROF_MAGE:
+		GET_MAX_MANA(character) += 2;
+		send_to_char("You feel more adept in magic!\n\r", character);
+		break;
+	case PROF_CLERIC:
+		send_to_char("Your spirit grows stronger!\n\r", character);
+		break;
+	case PROF_RANGER:
+		send_to_char("You feel more agile!\n\r", character);
+		break;
+	case PROF_WARRIOR:
+		send_to_char("You have become better at combat!\n\r", character);
+		break;
+	}
 }
 
 
-
-/* Gain maximum in various points */
-void
-check_stat_increase(struct char_data *ch)
+namespace
 {
-  int statsum, i, j;
-  ush_int order[6]={0, 0, 0, 0, 0, 0};
-  
-  statsum = ch->constabilities.con + ch->constabilities.intel +
-    ch->constabilities.wil + ch->constabilities.dex + 
-    ch->constabilities.str + ch->constabilities.lea;
+	int get_statsum(const char_data& character)
+	{
+		return character.constabilities.con + character.constabilities.intel +
+			character.constabilities.wil + character.constabilities.dex +
+			character.constabilities.str + character.constabilities.lea;
+	}
 
-  for(i = 0; i < 6; i++)
-    statsum -= race_modifiers[GET_RACE(ch)][i];
-  
-  /* First, no stat increases if you haven't statted yet. */
-  if(GET_LEVEL(ch) < 6)
-    return;
-  if(statsum > MAX_STATSUM)
-    return;
-  if(statsum > 97) {
-    if(number(0, 99) > (7 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else if(statsum > 96) {
-    if(number(0, 99) > (10 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else if(statsum > 95) {
-    if(number(0, 99) > (13 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else if(statsum > 93) {
-    if(number(0, 99) > (16 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else if(statsum > 91) {
-    if(number(0, 99) > (19 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else if(statsum > 86) {
-    if(number(0, 99) > (22 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  } else {
-    if(number(0, 99) > (25 + (MAX_STATSUM - statsum) * 3/2))
-      return;
-  }
-  /* so now decide which stat to add */
-  for(i = 1; i < 5; i++)
-    for(j = 1; j < i; j++) {
-      if(GET_PROF_COOF(i, ch) >= GET_PROF_COOF(j,ch))
-	order[j]++;
-      else  
-	order[i]++;
-    }
-  
-#define STAT_CHANCE       14
-#define PRIME_STAT_BONUS  16
+	int get_statsum_probability_modifier(int current_statsum)
+	{
+		if (current_statsum > 97)
+		{
+			return 7;
+		}
+		else if (current_statsum > 96)
+		{
+			return 10;
+		}
+		else if (current_statsum > 95)
+		{
+			return 13;
+		}
+		else if (current_statsum > 93)
+		{
+			return 16;
+		}
+		else if (current_statsum > 91)
+		{
+			return 19;
+		}
+		else if (current_statsum > 86)
+		{
+			return 22;
+		}
+		else
+		{
+			return 25;
+		}
+	}
+	
+	// Determines if/how much additional chance a character has to get a strength
+	// hike.
+	int get_hike_bonus(const char_data& character, int profession)
+	{
+		const int LEFTOVER_POINTS = 16;
 
-  i = number(0, 99);
+		bool is_primary_prof = true;
+		int num_equal_prof = 0;
 
-  i-= STAT_CHANCE;
-  if(order[PROF_WARRIOR] == 0)
-    i -= PRIME_STAT_BONUS;
-  if(i < 0) {
-    send_to_char("Great strength flows through you!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 str");
-    ch->constabilities.str++;
-    ch->tmpabilities.str++;
-    return;
-  }
-  
-  i-= STAT_CHANCE;
-  if(order[PROF_RANGER] == 0)
-    i -= PRIME_STAT_BONUS;
-  if(i < 0) {
-    send_to_char("Your hands feel quicker!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 dex");
-    ch->constabilities.dex++;
-    ch->tmpabilities.dex++;
-    return;
-  }
-  
-  i-= STAT_CHANCE;
-  if(order[PROF_CLERIC] == 0)
-    i -= PRIME_STAT_BONUS;
-  if(i < 0) {
-    send_to_char("You feel more wilful!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 will");
-    ch->constabilities.wil++;
-    ch->tmpabilities.wil++;
-    return;
-  }
-  
-  i-= STAT_CHANCE;
-  if(order[PROF_MAGE] == 0)
-    i -= PRIME_STAT_BONUS;
-  if(i < 0) {
-    send_to_char("Your intelligence has improved!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 int");
-    ch->constabilities.intel++;
-    ch->tmpabilities.intel++;
-    return;
-  }
-  
-  i-= STAT_CHANCE;
-  if(i < 0) {
-    send_to_char("You feel much more health!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 con");
-    ch->constabilities.con++;
-    ch->tmpabilities.con++;
-    return;
-  }
-  
-  i-= STAT_CHANCE;
-  if(i < 0) {
-    send_to_char("You seem more learned!\n",ch);
-    add_exploit_record(EXPLOIT_STAT, ch, GET_LEVEL(ch), "+1 learn");
-    ch->constabilities.lea++;
-    ch->tmpabilities.lea++;
-    return;
-  }   
-}
+		int prof_coofs = utils::get_prof_coof(profession, character);
+		for (int prof_index = PROF_MAGIC_USER; prof_index <= MAX_PROFS; ++prof_index)
+		{
+			int cur_prof_points = utils::get_prof_coof(prof_index, character);
+			if (cur_prof_points > prof_coofs)
+			{
+				is_primary_prof = false;
+				break;
+			}
+			else if (cur_prof_points == prof_coofs)
+			{
+				num_equal_prof++;
+			}
+		}
+
+		// Only our primary profession gets a hike bonus.
+		if (!is_primary_prof)
+			return 0;
+
+		return LEFTOVER_POINTS / num_equal_prof;
+	}
+
+	/* Gain maximum in various points */
+	void check_stat_increase(char_data* character)
+	{
+		if (!character)
+			return;
+
+		if (character->player.level < 6)
+			return;
+
+		int statsum = get_statsum(*character);
+		int race_index = character->player.race;
+		for (int i = 0; i < 6; i++)
+		{
+			statsum -= race_modifiers[race_index][i];
+		}
+
+		// Since this is a > check, and not >=, players can get statsums of MAX_STATSUM + 1
+		if (statsum > MAX_STATSUM)
+			return;
+
+		int statsum_roll = number(0, 99);
+		int statsum_difference = MAX_STATSUM - statsum;
+		int triple_difference = statsum_difference * 3;
+		int target_number = triple_difference / 2;
+
+		target_number += get_statsum_probability_modifier(statsum);
+		if (statsum_roll > target_number)
+			return;
+
+		/* so now decide which stat to add */
+		const int STAT_CHANCE = 14;
+
+		int roll = number(0, 99);
+
+		roll -= STAT_CHANCE;
+		roll -= get_hike_bonus(*character, PROF_WARRIOR);
+		if (roll < 0)
+		{
+			send_to_char("Great strength flows through you!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 str");
+			character->constabilities.str++;
+			character->tmpabilities.str++;
+			return;
+		}
+
+		roll -= STAT_CHANCE;
+		roll -= get_hike_bonus(*character, PROF_RANGER);
+		if (roll < 0)
+		{
+			send_to_char("Your hands feel quicker!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 dex");
+			character->constabilities.dex++;
+			character->tmpabilities.dex++;
+			return;
+		}
+
+		roll -= STAT_CHANCE;
+		roll -= get_hike_bonus(*character, PROF_CLERIC);
+		if (roll < 0)
+		{
+			send_to_char("You feel your mental resolve strengthen!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 will");
+			character->constabilities.wil++;
+			character->tmpabilities.wil++;
+			return;
+		}
+
+		roll -= STAT_CHANCE;
+		roll -= get_hike_bonus(*character, PROF_MAGE);
+		if (roll < 0)
+		{
+			send_to_char("Your intelligence has improved!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 int");
+			character->constabilities.intel++;
+			character->tmpabilities.intel++;
+			return;
+		}
+
+		roll -= STAT_CHANCE;
+		if (roll < 0)
+		{
+			send_to_char("You feel much more health!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 con");
+			character->constabilities.con++;
+			character->tmpabilities.con++;
+			return;
+		}
+
+		roll -= STAT_CHANCE;
+		if (roll < 0)
+		{
+			send_to_char("You seem more learned!\n", character);
+			add_exploit_record(EXPLOIT_STAT, character, GET_LEVEL(character), "+1 learn");
+			character->constabilities.lea++;
+			character->tmpabilities.lea++;
+			return;
+		}
+	}
+} // end anonymous helper namespace
 
 
-
-void
-advance_level(struct char_data *ch)
+void advance_level(char_data* character)
 {
-  int i;
-  
-  send_to_char("You feel more powerful!\n\r",ch);
-  
-  SPELLS_TO_LEARN(ch) += PRACS_PER_LEVEL + 
-    (GET_LEA_BASE(ch) + GET_LEVEL(ch) % LEA_PRAC_FACTOR) / LEA_PRAC_FACTOR;
+	send_to_char("You feel more powerful!\n\r", character);
 
-  if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
-    for(i = 0; i < 3; i++)
-      GET_COND(ch, i) = (unsigned char) -1;
-    GET_RACE(ch) = RACE_GOD;
-  }
-  
-  sprintf(buf, "%s advanced to level %d", GET_NAME(ch), GET_LEVEL(ch));
-  mudlog(buf, BRF, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-  
-  /* log following levels in exploits */
-  if((GET_LEVEL(ch) == 6) || (GET_LEVEL(ch) == 10) || (GET_LEVEL(ch) == 15) ||
-     (GET_LEVEL(ch) == 20) || (GET_LEVEL(ch) == 25) || (GET_LEVEL(ch) == 30) ||
-     (GET_LEVEL(ch) == 35) || (GET_LEVEL(ch) == 40) || (GET_LEVEL(ch) == 45) ||
-     (GET_LEVEL(ch) == 50) || (GET_LEVEL(ch) == 55) || (GET_LEVEL(ch) > 89))
-    add_exploit_record(EXPLOIT_LEVEL, ch, GET_LEVEL(ch), NULL);
-  
-  /* add birth exploit */
-  if(GET_LEVEL(ch) == 1)
-    add_exploit_record(EXPLOIT_BIRTH, ch, 0, NULL);
-  
-  if(GET_LEVEL(ch) > 5 && GET_MAX_MINI_LEVEL(ch) < 600) {
-    GET_REROLLS(ch)++;
-    roll_abilities(ch, 80, 93);
-  }
+	if (GET_LEVEL(character) >= LEVEL_IMMORT) 
+	{
+		for (int condition_index = 0; condition_index < 3; condition_index++)
+		{
+			GET_COND(character, condition_index) = (unsigned char)-1;
+		}
+		GET_RACE(character) = RACE_GOD;
+	}
 
-  if(GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
-    check_stat_increase(ch);
-  
-  save_char(ch, NOWHERE, 0);
+	sprintf(buf, "%s advanced to level %d", GET_NAME(character), GET_LEVEL(character));
+	mudlog(buf, BRF, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+
+	/* log following levels in exploits */
+	if ((GET_LEVEL(character) == 6) || (GET_LEVEL(character) == 10) || (GET_LEVEL(character) == 15) ||
+		(GET_LEVEL(character) == 20) || (GET_LEVEL(character) == 25) || (GET_LEVEL(character) == 30) ||
+		(GET_LEVEL(character) == 35) || (GET_LEVEL(character) == 40) || (GET_LEVEL(character) == 45) ||
+		(GET_LEVEL(character) == 50) || (GET_LEVEL(character) == 55) || (GET_LEVEL(character) > 89))
+		add_exploit_record(EXPLOIT_LEVEL, character, GET_LEVEL(character), NULL);
+
+	/* add birth exploit */
+	if (GET_LEVEL(character) == 1)
+	{
+		add_exploit_record(EXPLOIT_BIRTH, character, 0, NULL);
+	}
+
+	if (GET_LEVEL(character) > 5 && GET_MAX_MINI_LEVEL(character) < 600) 
+	{
+		GET_REROLLS(character)++;
+		roll_abilities(character, 80, 93);
+	}
+
+	if (GET_MAX_MINI_LEVEL(character) < GET_MINI_LEVEL(character))
+	{
+		check_stat_increase(character);
+	}
+
+	// TODO(drelidan):  Recalculate how many pracs a character should have given
+	// their LEA and the skills that they know.
+	SPELLS_TO_LEARN(character) += PRACS_PER_LEVEL +
+		(GET_LEA_BASE(character) + GET_LEVEL(character) % LEA_PRAC_FACTOR) / LEA_PRAC_FACTOR;
+
+	save_char(character, NOWHERE, 0);
 }
 
+namespace
+{
+	// Returns a value between 3 and 18 for a stat roll.
+	int roll_stat()
+	{
+		// Roll 4d6's, and drop the lowest to determine the stat.
+		int roll_sum = 0;
+		int lowest_roll = 6;
+		for (int i = 0; i < 4; i++)
+		{
+			int roll = number(1, 6);
+			roll_sum += roll;
 
+			lowest_roll = std::min(lowest_roll, roll);
+		}
+
+		int stat_value = roll_sum - lowest_roll;
+		return stat_value;
+	}
+
+	// Returns a list with num_stats stats (ranging from 3-18).
+	void roll_stats(int num_stats, std::vector<int>& stat_array)
+	{
+		for (int i = 0; i < num_stats; i++)
+		{
+			int roll = roll_stat();
+			stat_array[i] = roll;
+		}
+	}
+
+	// Returns a valid stat array, ordered from lowest-to-highest.
+	// All stats will be between 3 and 18.  The stat sum will be between
+	// min and max (inclusive).
+	std::vector<int> get_stat_array(int num_stats, int sum_min, int sum_max, int num_tries)
+	{
+		assert(sum_min <= sum_max);
+
+		std::vector<int> rolled_stats;
+		rolled_stats.resize(NUM_STATS);
+		roll_stats(num_stats, rolled_stats);
+
+		int stat_sum = std::accumulate(rolled_stats.begin(), rolled_stats.end(), 0);
+		while (stat_sum > sum_max || stat_sum < sum_min)
+		{
+			roll_stats(num_stats, rolled_stats);
+			stat_sum = std::accumulate(rolled_stats.begin(), rolled_stats.end(), 0);
+		}
+
+		std::sort(rolled_stats.begin(), rolled_stats.end());
+
+		return rolled_stats;
+	}
+	
+	// Struct for associating a prof with the number of points spent in it.
+	struct prof_coof_pair
+	{
+		prof_coof_pair() : prof(0), prof_coof(0) { };
+		prof_coof_pair(int in_prof, int coof) : prof(in_prof), prof_coof(coof) { };
+
+		int prof;
+		int prof_coof;
+	};
+
+	// Operator overrides for std::sort algorithm.
+	bool operator<(const prof_coof_pair& a, const prof_coof_pair& b)
+	{
+		return a.prof_coof < b.prof_coof;
+	}
+
+	bool operator<=(const prof_coof_pair& a, const prof_coof_pair& b)
+	{
+		return a.prof_coof <= b.prof_coof;
+	}
+
+	bool operator==(const prof_coof_pair& a, const prof_coof_pair& b)
+	{
+		return a.prof_coof == b.prof_coof;
+	}
+
+} // end anonymous helper namespace
+
+namespace _INTERNAL
+{
+	const int HEALTH_PROF_CUTOFF = 3000;
+
+	enum RotS_Stats
+	{
+		Strength,
+		Intelligence,
+		Will,
+		Dexterity,
+		Constitution,
+		Learning,
+		Invalid,
+	};
+
+	const char* get_stat_name(RotS_Stats stat)
+	{
+		switch (stat)
+		{
+		case _INTERNAL::Strength:
+			return "Strength";
+		case _INTERNAL::Intelligence:
+			return "Intelligence";
+		case _INTERNAL::Will:
+			return "Will";
+		case _INTERNAL::Dexterity:
+			return "Dexterity";
+		case _INTERNAL::Constitution:
+			return "Constitution";
+		case _INTERNAL::Learning:
+			return "Learning";
+		case _INTERNAL::Invalid:
+			return "Invalid";
+		default:
+			assert(false);
+			return "";
+		}
+	}
+
+	RotS_Stats get_primary_stat(int class_prof)
+	{
+		switch (class_prof)
+		{
+		case PROF_MAGE:
+			return _INTERNAL::Intelligence;
+		case PROF_CLERIC:
+			return _INTERNAL::Will;
+		case PROF_RANGER:
+			return _INTERNAL::Dexterity;
+		case PROF_WARRIOR:
+			return _INTERNAL::Strength;
+		default:
+			return _INTERNAL::Invalid;
+		}
+	}
+
+	const char* get_prof_name(int class_prof)
+	{
+		switch (class_prof)
+		{
+		case PROF_MAGE:
+			return "Mage";
+		case PROF_CLERIC:
+			return "Mystic";
+		case PROF_RANGER:
+			return "Ranger";
+		case PROF_WARRIOR:
+			return "Warrior";
+		default:
+			return "Invalid";
+		}
+	}
+
+	struct stat_assigner
+	{
+	public:
+
+		// Constructor for the stat_assigner.  This creates the order that
+		// stats will be assigned in for a character.
+		stat_assigner(char_data& character) : m_character(character)
+		{
+			// Array that contains the profs and their points for a character.
+			prof_coof_pair profs[MAX_PROFS];
+			for (int prof = PROF_MAGE, i = 0; prof <= MAX_PROFS && i < MAX_PROFS; ++prof, ++i)
+			{
+				profs[i] = prof_coof_pair(prof, utils::get_prof_coof(prof, character));
+			}
+
+			// Sort profs in order from least to greatest.
+			std::sort(profs, profs + MAX_PROFS);
+
+			int cur_stat_index = 0;
+			const int CON_STAT_INDEX = 1;
+			const int LEA_STAT_INDEX = 3;
+
+			// Organize stat order based on class order.
+			for (int i = 0; i < MAX_PROFS; ++i)
+			{
+				// Look-ahead search to see how many equal profs we have.
+				int equal_profs = 0;
+				for (int j = i; j < MAX_PROFS; ++j)
+				{
+					if (profs[i] == profs[j])
+					{
+						equal_profs++;
+					}
+				}
+
+				// If there's more than one class with the same coofs, randomly determine
+				// which class will be assigned now.  The swap and look-ahead nature 
+				// ensure that each stat will only be assigned once.
+				if (equal_profs > 1)
+				{
+					int prof_to_assign = number(0, equal_profs - 1);
+					std::swap(profs[i], profs[i + prof_to_assign]);
+				}
+
+				// Don't assign anything to these indices.
+				if (cur_stat_index == CON_STAT_INDEX || cur_stat_index == LEA_STAT_INDEX)
+					++cur_stat_index;
+
+				RotS_Stats class_primary_stat = get_primary_stat(profs[i].prof);
+
+				m_stat_order[cur_stat_index++] = class_primary_stat;
+			}
+
+			// Constitution and Learning Ability are not the primary stats for any class.
+			m_stat_order[CON_STAT_INDEX] = _INTERNAL::Constitution;
+			m_stat_order[LEA_STAT_INDEX] = _INTERNAL::Learning;
+
+			// Constitution and learning ability will be the 3rd and 5th highest stats.
+			// Which is third and which is fifth depends on the character's "class_HP" value.
+			// NOTE:  m_stat_pointers is sorted lowest to highest.
+			bool prefersCon = class_HP(&character) >= HEALTH_PROF_CUTOFF;
+			if (prefersCon)
+			{
+				std::swap(m_stat_order[CON_STAT_INDEX], m_stat_order[LEA_STAT_INDEX]);
+			}
+		}
+
+		void assign_stats(int sum_min, int sum_max, int num_tries)
+		{
+			int race = m_character.player.race;
+
+			// Stats are assigned in order from lowest to highest based on the
+			// preferences of the character.
+			std::vector<int> stat_rolls = get_stat_array(NUM_STATS, sum_min, sum_max, num_tries);
+			for (int stat_index = 0; stat_index < NUM_STATS; stat_index++)
+			{
+				int stat_roll = stat_rolls[stat_index];
+				RotS_Stats stat_type = m_stat_order[stat_index];
+
+				signed char stat_value = (signed char)(stat_roll + 1);
+				switch (stat_type)
+				{
+				case _INTERNAL::Strength:
+				{
+					int stat_mod = get_str_mod(race);
+					m_character.constabilities.str = (signed char)std::max(stat_value + stat_mod, 1);
+				}
+					break;
+				case _INTERNAL::Intelligence:
+				{
+					int stat_mod = get_int_mod(race);
+					m_character.constabilities.intel = (signed char)std::max(stat_value + stat_mod, 1);
+				}	
+					break;
+				case _INTERNAL::Will:
+				{
+					int stat_mod = get_wil_mod(race);
+					m_character.constabilities.wil = (signed char)std::max(stat_value + stat_mod, 1);
+				}
+					break;
+				case _INTERNAL::Dexterity:
+				{
+					int stat_mod = get_dex_mod(race);
+					m_character.constabilities.dex = (signed char)std::max(stat_value + stat_mod, 1);
+				}
+					break;
+				case _INTERNAL::Constitution:
+				{
+					int stat_mod = get_con_mod(race);
+					m_character.constabilities.con = (signed char)std::max(stat_value + stat_mod, 1);
+				}
+					break;
+				case _INTERNAL::Learning:
+				{
+					int stat_mod = get_lea_mod(race);
+					m_character.constabilities.lea = (signed char)std::max(stat_value + stat_mod, 1);
+				}
+					break;
+				case _INTERNAL::Invalid:
+					assert(false);
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
+	private:
+		RotS_Stats m_stat_order[NUM_STATS];
+		char_data& m_character;
+	};
+} // end _INTERNAL namespace
 
 /* Give pointers to the six abilities */
-void
-roll_abilities(struct char_data *ch, int min, int max)
+void roll_abilities(char_data* character, int min_sum, int max_sum)
 {
-  int i, j, k, order[6], repeat = 1000;
-  ush_int table[6];
-  ush_int rools[4];
-  char stats[256];
-  
-  while(repeat--) {
-    for(i = 0; i < 6; i++)
-      table[i] = order[i] = 0;
-    
-    /* generate first 4 stats */
-    for(i = 0; i < 6; i++) {
-      for(j = 0; j < 4; j++)
-	rools[j] = number(1, 6);
-      
-      table[i] = rools[0] + rools[1] + rools[2] + rools[3] - 
-	MIN(rools[0], MIN(rools[1], MIN(rools[2], rools[3])));
-    }
-    
-    /* order first 6 stats */
-    for(k = 0; k < 6; k++)
-      for(i = 0; i < k; i++)
-	if(table[i] < table[k])
-	  SWITCH(table[i], table[k]);
-    
-    /* select order */  
-    for(i = 1; i < 5; i++)
-      for(j = 1; j < i; j++) {
-	if(GET_PROF_COOF(i, ch) > GET_PROF_COOF(j,ch))
-	  order[j]++;
-	else  
-	  order[i]++;
-      }
-    
-    /* making room for, and inserting con+lea, into pos. 2 and 4 */
-    for(i = 0; i < 5; i++) {
-      if(order[i] == 3)
-	order[i] = 5;
-      if(order[i] == 2)
-	order[i] = 3;
-    }
-    
-    order[0] = 2;
-    order[5] = 4;
-    
-    if(class_HP(ch) < 3000)
-      SWITCH(order[0], order[5]);
-    
-    /* assign stats, adjusted for race */
-    ch->constabilities.con = 1 + table[order[0]] + 
-      race_modifiers[GET_RACE(ch)][4];
-    ch->constabilities.intel = 1 + table[order[1]] + 
-      race_modifiers[GET_RACE(ch)][1];
-    ch->constabilities.wil = 1 + table[order[2]] +
-      race_modifiers[GET_RACE(ch)][2];
-    ch->constabilities.dex = 1 + table[order[3]] +
-      race_modifiers[GET_RACE(ch)][3];
-    ch->constabilities.str = 1 + table[order[4]] +
-      race_modifiers[GET_RACE(ch)][0];
-    ch->constabilities.lea = 1 + table[order[5]] +
-      race_modifiers[GET_RACE(ch)][5];
-    
-    if(GET_LEVEL(ch) > 1) {
-      sprintf(stats,"STATS: %s rolled  %d %d %d %d %d %d", 
-	      GET_NAME(ch), ch->constabilities.str, ch->constabilities.intel, 
-	      ch->constabilities.wil, ch->constabilities.dex, 
-	      ch->constabilities.con, ch->constabilities.lea);
-      log(stats);
-    }
-    
-    recalc_abilities(ch);
-    
-    ch->tmpabilities = ch->abilities;
-    i = table[0] + table[1] + table[2] + table[3] + table[4] + table[5];
-    if(repeat == 1)
-      mudlog("Couldn't roll abilities on 1000th try!", NRM, LEVEL_GOD, TRUE);
-    
-    if(i < min || i > max);
-    else 
-      repeat = 0;     
-  }
+	char stats[256];
+
+	_INTERNAL::stat_assigner statter(*character);
+	statter.assign_stats(min_sum, max_sum, 1000);
+
+	if (character->player.level > 1)
+	{
+		const char_ability_data& abils = character->constabilities;
+		const char* character_name = utils::get_name(*character);
+		std::sprintf(stats, "STATS: %s rolled  %d %d %d %d %d %d",
+			character_name, abils.str, abils.intel,
+			abils.wil, abils.dex,
+			abils.con, abils.lea);
+		log(stats);
+	}
+
+	recalc_abilities(character);
+
+	character->tmpabilities = character->abilities;
 }
 
+
+
 /* This is called whenever some of person's stats/level change */
-void
-recalc_abilities(struct char_data *ch)
+void recalc_abilities(char_data* character)
 {
 	int tmp, tmp2, dex_speed;
 	struct obj_data *weapon;
 
-	if (!IS_NPC(ch)) {
-		ch->abilities.str = ch->constabilities.str;
-		ch->abilities.lea = ch->constabilities.lea;
-		ch->abilities.intel = ch->constabilities.intel;
-		ch->abilities.wil = ch->constabilities.wil;
-		ch->abilities.dex = ch->constabilities.dex;
-		ch->abilities.con = ch->constabilities.con;
+	if (!IS_NPC(character)) 
+	{
+		character->abilities.str = character->constabilities.str;
+		character->abilities.lea = character->constabilities.lea;
+		character->abilities.intel = character->constabilities.intel;
+		character->abilities.wil = character->constabilities.wil;
+		character->abilities.dex = character->constabilities.dex;
+		character->abilities.con = character->constabilities.con;
 
-		ch->abilities.hit = 10 + std::min(LEVEL_MAX, GET_LEVEL(ch)) +
-			ch->constabilities.hit * GET_CON(ch) / 20 +
-			(class_HP(ch) * (GET_CON(ch) + 20) / 14) *
-			std::min(LEVEL_MAX * 100, (int)GET_MINI_LEVEL(ch)) / 100000;
+		character->abilities.hit = 10 + std::min(LEVEL_MAX, GET_LEVEL(character)) +
+			character->constabilities.hit * GET_CON(character) / 20 +
+			(class_HP(character) * (GET_CON(character) + 20) / 14) *
+			std::min(LEVEL_MAX * 100, (int)GET_MINI_LEVEL(character)) / 100000;
 
 		// dirty test to see if this ranger change can work
-		ch->abilities.hit = std::max(ch->abilities.hit -
-			(GET_RAW_SKILL(ch, SKILL_STEALTH) *
-				GET_LEVELA(ch) +
-				GET_RAW_SKILL(ch, SKILL_STEALTH) * 3) / 33, 10);
+		character->abilities.hit = std::max(character->abilities.hit -
+			(GET_RAW_SKILL(character, SKILL_STEALTH) *
+				GET_LEVELA(character) +
+				GET_RAW_SKILL(character, SKILL_STEALTH) * 3) / 33, 10);
 
-		if (ch->tmpabilities.hit > ch->abilities.hit)
-			ch->tmpabilities.hit = ch->abilities.hit;
+		if (character->tmpabilities.hit > character->abilities.hit)
+			character->tmpabilities.hit = character->abilities.hit;
 
-		ch->abilities.mana = ch->constabilities.mana + GET_INT(ch) +
-			GET_WILL(ch) / 2 + GET_PROF_LEVEL(PROF_MAGE, ch) * 2;
+		character->abilities.mana = character->constabilities.mana + GET_INT(character) +
+			GET_WILL(character) / 2 + GET_PROF_LEVEL(PROF_MAGE, character) * 2;
 
-		if (ch->tmpabilities.mana > ch->abilities.mana)
-			ch->tmpabilities.mana = ch->abilities.mana;
+		if (character->tmpabilities.mana > character->abilities.mana)
+			character->tmpabilities.mana = character->abilities.mana;
 
-		ch->abilities.move = ch->constabilities.move + GET_CON(ch) +
-			20 + GET_PROF_LEVEL(PROF_RANGER, ch) +
-			GET_RAW_KNOWLEDGE(ch, SKILL_TRAVELLING) / 4;
-		if ((GET_RACE(ch) == RACE_WOOD) || GET_RACE(ch) == RACE_HIGH)
-			ch->abilities.move += 15;
+		character->abilities.move = character->constabilities.move + GET_CON(character) +
+			20 + GET_PROF_LEVEL(PROF_RANGER, character) +
+			GET_RAW_KNOWLEDGE(character, SKILL_TRAVELLING) / 4;
+		if ((GET_RACE(character) == RACE_WOOD) || GET_RACE(character) == RACE_HIGH)
+			character->abilities.move += 15;
 
-		if (ch->tmpabilities.move > ch->abilities.move)
-			ch->tmpabilities.move = ch->abilities.move;
+		if (character->tmpabilities.move > character->abilities.move)
+			character->tmpabilities.move = character->abilities.move;
 
-		if ((weapon = ch->equipment[WIELD])) 
+		if ((weapon = character->equipment[WIELD]))
 		{
 			if (!GET_OBJ_WEIGHT(weapon)) {
 				/*UPDATE*, temporary check for 0 weight weapons*/
@@ -468,41 +803,41 @@ recalc_abilities(struct char_data *ch)
 			}
 
 			int bulk = weapon->get_bulk();
-			ch->specials.null_speed = 3 * GET_DEX(ch) + 2 * (GET_RAW_SKILL(ch, SKILL_ATTACK) +
-					GET_RAW_SKILL(ch, SKILL_STEALTH) / 2) / 3 + 100;
+			character->specials.null_speed = 3 * GET_DEX(character) + 2 * (GET_RAW_SKILL(character, SKILL_ATTACK) +
+				GET_RAW_SKILL(character, SKILL_STEALTH) / 2) / 3 + 100;
 
-			ch->specials.str_speed = GET_BAL_STR(ch) * 2500000 /
+			character->specials.str_speed = GET_BAL_STR(character) * 2500000 /
 				(GET_OBJ_WEIGHT(weapon) * (bulk + 3));
 
-			if (IS_TWOHANDED(ch))
+			if (IS_TWOHANDED(character))
 			{
-				ch->specials.str_speed *= 2;
+				character->specials.str_speed *= 2;
 			}
 
 			/* Dex adjustment by Fingol */
 			if (bulk < 4)
 			{
-				dex_speed = GET_DEX(ch) * 2500000 / (GET_OBJ_WEIGHT(weapon) * (bulk + 3));
+				dex_speed = GET_DEX(character) * 2500000 / (GET_OBJ_WEIGHT(weapon) * (bulk + 3));
 
-				tmp2 = (ch->specials.str_speed * bulk / 5) + (dex_speed * (5 - bulk) / 5);
+				tmp2 = (character->specials.str_speed * bulk / 5) + (dex_speed * (5 - bulk) / 5);
 
-				ch->specials.str_speed = std::max(ch->specials.str_speed, tmp2);
+				character->specials.str_speed = std::max(character->specials.str_speed, tmp2);
 			}
 
 			tmp = 1000000;
-			tmp /= 1000000 / ch->specials.str_speed +
-				1000000 / (ch->specials.null_speed * ch->specials.null_speed);
+			tmp /= 1000000 / character->specials.str_speed +
+				1000000 / (character->specials.null_speed * character->specials.null_speed);
 
 			game_types::weapon_type w_type = weapon->get_weapon_type();
-			GET_ENE_REGEN(ch) = do_squareroot(tmp / 100, ch) / 20;
-			if (GET_RACE(ch) == RACE_DWARF && weapon_skill_num(w_type) == SKILL_AXE)
+			GET_ENE_REGEN(character) = do_squareroot(tmp / 100, character) / 20;
+			if (GET_RACE(character) == RACE_DWARF && weapon_skill_num(w_type) == SKILL_AXE)
 			{
-				GET_ENE_REGEN(ch) += std::min(GET_ENE_REGEN(ch) / 10, 10);
+				GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
 			}
 		}
 		else
 		{
-			GET_ENE_REGEN(ch) = 60 + 5 * GET_DEX(ch);
+			GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);
 		}
 	}
 }

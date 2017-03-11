@@ -1056,24 +1056,29 @@ ACMD(do_close)
   }
 }
 
+bool is_corpse(obj_data* container)
+{
+	return container && container->obj_flags.type_flag == ITEM_CONTAINER && container->obj_flags.value[3] == 1;
+}
 
-/* returns 0 if the character does not have the key (or it is broken),
-		   1 if the character does have the key  */
+/* returns NULL if the character does not have the key (or it is broken),
+		   a pointer to the key if the character does have the key  */
 
-struct obj_data * has_key(struct char_data *ch, int key){
-
-   struct obj_data *o;
-
-   for (o = ch->carrying; o; o = o->next_content)
+obj_data* has_key(struct char_data *ch, int key)
+{
+   for (obj_data* o = ch->carrying; o; o = o->next_content)
       if (obj_index[o->item_number].virt == key)
 		if (!(IS_SET(o->obj_flags.extra_flags, ITEM_BROKEN)))
-		  return(o);
+			if (!is_corpse(o))
+				return(o);
 
    if (ch->equipment[HOLD])
       if (obj_index[ch->equipment[HOLD]->item_number].virt == key)
 		if (!(IS_SET(ch->equipment[HOLD]->obj_flags.extra_flags, ITEM_BROKEN)))
-		  return(o);
-  return(0);
+			if (!is_corpse(ch->equipment[HOLD]))
+				return(ch->equipment[HOLD]);
+
+  return NULL;
 }
 
 

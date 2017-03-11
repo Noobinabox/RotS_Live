@@ -310,160 +310,158 @@ int	Crash_write_rentcode(struct char_data *ch, FILE *fl, struct rent_info *rent)
    return 1;
 }
 
-FILE * 
-Crash_load(struct char_data *ch)
+FILE* Crash_load(char_data* character)
 {
+	FILE *fl;
+	struct obj_data *equip_array[11];
+	struct obj_data *obj;
+	struct obj_file_elem object;
+	struct rent_info rent;
+	int cost, orig_rent_code, equip_lost;
+	int num_of_hours, tmp, equip_counter;
+	struct obj_data dummy_sack;
 
-   FILE *fl;
-   struct obj_data *equip_array[11];
-   struct obj_data *obj;
-   struct obj_file_elem object;
-   struct rent_info rent;
-   int cost, orig_rent_code, equip_lost;
-   int num_of_hours, tmp, equip_counter;
-   struct obj_data dummy_sack;
-   
-   clear_object(&dummy_sack);
+	clear_object(&dummy_sack);
 
-   equip_lost = 0;
-
-   /* zero out our equipment array */
-   for(tmp = 0; tmp < 11; tmp++) 
-     equip_array[tmp] = 0;
-
-   /* ok. is their rent file intact? */
-   if(!(fl = Crash_get_file_by_name(GET_NAME(ch), "r+b"))) {
-     send_to_char("*** Your equipment was lost! Please contact an immortal. ***\n\r", ch);
-     sprintf(buf, "%s entering game with no equipment.", GET_NAME(ch));
-     GET_ALIAS(ch) = 0;
-     mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-     ch->specials2.load_room = calc_load_room(ch, RENT_UNDEF);
-     return fl;
-   }
-   if(!feof(fl))
-     fread(&rent, sizeof(struct rent_info), 1, fl);
-
-
-   /* ok, we have a file. now we find out how much to charge them */
-   cost = (rent.net_cost_per_hour * RENT_HALFTIME * num_of_hours / 
-	   (RENT_HALFTIME + num_of_hours));
-   
-   /* now we're finding out how long we need to charge them */
-   if((rent.rentcode == RENT_RENTED)|| (rent.rentcode == RENT_TIMEDOUT) ||
-      (rent.rentcode == RENT_FORCED)) {
-      num_of_hours = (time(0) - rent.time) / SECS_PER_REAL_HOUR;
-      /* RENT FORMULA */
-      cost = (rent.net_cost_per_hour * RENT_HALFTIME* num_of_hours / (RENT_HALFTIME + num_of_hours));
-      
-      /* extra charging for timeouts and link-renters */
-      if((rent.rentcode == RENT_TIMEDOUT) || (rent.rentcode == RENT_FORCED))
-	cost *= FORCERENT_FACTOR;
-
-      cost /= 100; /* TEMPORARY fix for high rent. should be looked into */
-      
-
-      /* can they pay for their rent? */
-      if(cost > GET_GOLD(ch)) {
-	equip_lost = 1;
-	sprintf(buf, "%s entering game, rented equipment lost (no $).",
-		GET_NAME(ch));
-	mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      } 
-      else {
 	equip_lost = 0;
-	GET_GOLD(ch) = MAX(GET_GOLD(ch) - cost, 0);
-      }
-   }
-   
-   switch(orig_rent_code = rent.rentcode) {
-   case RENT_RENTED:
-      sprintf(buf, "%s un-renting and entering game.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   case RENT_CRASH:
-      sprintf(buf, "%s retrieving crash-saved items and entering game.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   case RENT_CAMP:
-      sprintf(buf, "%s un-camping and entering game.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   case RENT_FORCED:
-   case RENT_TIMEDOUT:
-      sprintf(buf, "%s retrieving force-saved items and entering game.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   case RENT_QUIT:
-      sprintf(buf, "%s un-quit and entering game.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   default:
-      sprintf(buf, "WARNING: %s entering game with undefined rent code.", GET_NAME(ch));
-      mudlog(buf, NRM, (sh_int) MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
-      break;
-   }
 
-   equip_counter = 1;
-   while(!feof(fl)) {
-     fread(&object, sizeof(struct obj_file_elem), 1, fl);
-     if(ferror(fl)) {
-       perror("Reading crash file: Crash_load.");
-       fclose(fl);
-       return fl;
-     }
-      
-     if(object.item_number == -17) /* the alias marker */
-       break;
+	/* zero out our equipment array */
+	for (tmp = 0; tmp < 11; tmp++)
+		equip_array[tmp] = 0;
 
-     if(!feof(fl) && !equip_lost) {
-       if(object.item_number < 0 )
-	 obj = &dummy_sack;
-       else
-	 obj = Crash_obj2char(ch, &object);
-       
-       if(!obj) {
-	 sprintf(buf, "LOAD ERROR, equipment lost for %s.",GET_NAME(ch));
-	 log(buf);
-	 obj = &dummy_sack;
-       }
+	/* ok. is their rent file intact? */
+	if (!(fl = Crash_get_file_by_name(GET_NAME(character), "r+b"))) {
+		send_to_char("*** Your equipment was lost! Please contact an immortal. ***\n\r", character);
+		sprintf(buf, "%s entering game with no equipment.", GET_NAME(character));
+		GET_ALIAS(character) = 0;
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		character->specials2.load_room = calc_load_room(character, RENT_UNDEF);
+		return fl;
+	}
+	if (!feof(fl))
+		fread(&rent, sizeof(struct rent_info), 1, fl);
 
-       // We have an object, set the "player touched this" variable to 1.
-       obj->touched = 1;
 
-       if(object.wear_pos < 0)
-	 object.wear_pos = MAX_WEAR;
-       if(object.wear_pos < MAX_WEAR) {
-	 if(obj != &dummy_sack)
-	   equip_char(ch, obj, object.wear_pos);
-	 equip_array[0] = obj;
-       }
-       else if((object.wear_pos == MAX_WEAR) || !equip_array[0]) {
-	 if(obj != &dummy_sack)
-	   obj_to_char(obj, ch);
-	 equip_array[0] = obj;
-       } 
-       else {
-	 if(obj != &dummy_sack)
-	   obj_to_obj(obj, equip_array[object.wear_pos - MAX_WEAR - 1], TRUE);
-	 equip_array[object.wear_pos - MAX_WEAR] = obj;
-       }
-     }
-   }
-   while(dummy_sack.contains) {
-     obj = dummy_sack.contains;
-     obj_from_obj(obj);
-     obj_to_char(obj, ch);
-   }
-   if(equip_lost) {
-     send_to_char("\n\rYou could not afford your rent.\n\r"
-                  "Your possesions have been sold to pay your debt!\n\r", ch);
-     if(!(ch->specials2.load_room))
-       ch->specials2.load_room = calc_load_room(ch, RENT_UNDEF);
-   }
+	/* ok, we have a file. now we find out how much to charge them */
+	cost = (rent.net_cost_per_hour * RENT_HALFTIME * num_of_hours /
+		(RENT_HALFTIME + num_of_hours));
 
-   ch->specials2.load_room = calc_load_room(ch, rent.rentcode);
+	/* now we're finding out how long we need to charge them */
+	if ((rent.rentcode == RENT_RENTED) || (rent.rentcode == RENT_TIMEDOUT) ||
+		(rent.rentcode == RENT_FORCED)) {
+		num_of_hours = (time(0) - rent.time) / SECS_PER_REAL_HOUR;
+		/* RENT FORMULA */
+		cost = (rent.net_cost_per_hour * RENT_HALFTIME* num_of_hours / (RENT_HALFTIME + num_of_hours));
 
-   return fl;
+		/* extra charging for timeouts and link-renters */
+		if ((rent.rentcode == RENT_TIMEDOUT) || (rent.rentcode == RENT_FORCED))
+			cost *= FORCERENT_FACTOR;
+
+		cost /= 100; /* TEMPORARY fix for high rent. should be looked into */
+
+
+		/* can they pay for their rent? */
+		if (cost > GET_GOLD(character)) {
+			equip_lost = 1;
+			sprintf(buf, "%s entering game, rented equipment lost (no $).",
+				GET_NAME(character));
+			mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		}
+		else {
+			equip_lost = 0;
+			GET_GOLD(character) = std::max(GET_GOLD(character) - cost, 0);
+		}
+	}
+
+	switch (orig_rent_code = rent.rentcode) {
+	case RENT_RENTED:
+		sprintf(buf, "%s un-renting and entering game.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	case RENT_CRASH:
+		sprintf(buf, "%s retrieving crash-saved items and entering game.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	case RENT_CAMP:
+		sprintf(buf, "%s un-camping and entering game.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	case RENT_FORCED:
+	case RENT_TIMEDOUT:
+		sprintf(buf, "%s retrieving force-saved items and entering game.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	case RENT_QUIT:
+		sprintf(buf, "%s un-quit and entering game.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	default:
+		sprintf(buf, "WARNING: %s entering game with undefined rent code.", GET_NAME(character));
+		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		break;
+	}
+
+	equip_counter = 1;
+	while (!feof(fl)) {
+		fread(&object, sizeof(struct obj_file_elem), 1, fl);
+		if (ferror(fl)) {
+			perror("Reading crash file: Crash_load.");
+			fclose(fl);
+			return fl;
+		}
+
+		if (object.item_number == -17) /* the alias marker */
+			break;
+
+		if (!feof(fl) && !equip_lost) {
+			if (object.item_number < 0)
+				obj = &dummy_sack;
+			else
+				obj = Crash_obj2char(character, &object);
+
+			if (!obj) {
+				sprintf(buf, "LOAD ERROR, equipment lost for %s.", GET_NAME(character));
+				log(buf);
+				obj = &dummy_sack;
+			}
+
+			// We have an object, set the "player touched this" variable to 1.
+			obj->touched = 1;
+
+			if (object.wear_pos < 0)
+				object.wear_pos = MAX_WEAR;
+			if (object.wear_pos < MAX_WEAR) {
+				if (obj != &dummy_sack)
+					equip_char(character, obj, object.wear_pos);
+				equip_array[0] = obj;
+			}
+			else if ((object.wear_pos == MAX_WEAR) || !equip_array[0]) {
+				if (obj != &dummy_sack)
+					obj_to_char(obj, character);
+				equip_array[0] = obj;
+			}
+			else {
+				if (obj != &dummy_sack)
+					obj_to_obj(obj, equip_array[object.wear_pos - MAX_WEAR - 1], TRUE);
+				equip_array[object.wear_pos - MAX_WEAR] = obj;
+			}
+		}
+	}
+	while (dummy_sack.contains) {
+		obj = dummy_sack.contains;
+		obj_from_obj(obj);
+		obj_to_char(obj, character);
+	}
+	if (equip_lost) {
+		send_to_char("\n\rYou could not afford your rent.\n\r"
+			"Your possesions have been sold to pay your debt!\n\r", character);
+		if (!(character->specials2.load_room))
+			character->specials2.load_room = calc_load_room(character, RENT_UNDEF);
+	}
+
+	character->specials2.load_room = calc_load_room(character, rent.rentcode);
+
+	return fl;
 }
 
 

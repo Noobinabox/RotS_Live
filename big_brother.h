@@ -28,6 +28,9 @@ namespace game_rules
 		// Returns true if the victim has the 'looting' flag.
 		bool is_target_looting(const char_data* victim) const;
 
+		// Returns true if Big Brother protection applies to this corpse.
+		bool is_corpse_protected(const char_data* looter, obj_data* corpse) const;
+
 		// Called before any character attempts to damage or attack another character.
 		// This enforces our PK engagement rules.
 		bool is_target_valid(char_data* attacker, const char_data* victim) const;
@@ -69,7 +72,8 @@ namespace game_rules
 
 		struct player_corpse_data
 		{
-			player_corpse_data() : num_items_looted(0), max_num_items_looted(2), player_race(0), killer_id(-1), player_id(0), is_npc(false) { };
+			player_corpse_data() : num_items_looted(0), max_num_items_looted(2), player_race(0), killer_id(-1),
+				player_id(0), is_npc(false), is_killer_pc(false) { };
 			player_corpse_data(char_data* dead_man);
 			player_corpse_data(char_data* dead_man, char_data* killer);
 
@@ -79,6 +83,7 @@ namespace game_rules
 			int killer_id;
 			int player_id;
 			bool is_npc;
+			bool is_killer_pc;
 		};
 
 		typedef std::map<obj_data*, player_corpse_data> corpse_map;

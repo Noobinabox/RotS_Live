@@ -577,10 +577,9 @@ void	wear_message(struct char_data *ch, struct obj_data *obj, int where)
 
 
 
-void
-perform_wear(struct char_data *ch, struct obj_data *obj, int where)
+void perform_wear(char_data* character, obj_data* item, int item_slot)
 {
-  int wear_bitvectors[] = {
+  static int item_slots[] = {
     ITEM_TAKE, ITEM_WEAR_FINGER, ITEM_WEAR_FINGER, ITEM_WEAR_NECK,
     ITEM_WEAR_NECK, ITEM_WEAR_BODY, ITEM_WEAR_HEAD, ITEM_WEAR_LEGS,
     ITEM_WEAR_FEET, ITEM_WEAR_HANDS, ITEM_WEAR_ARMS, ITEM_WEAR_SHIELD,
@@ -589,7 +588,7 @@ perform_wear(struct char_data *ch, struct obj_data *obj, int where)
     ITEM_WEAR_BELT 
   };
   
-  char *already_wearing[] = {
+  static const char* already_wearing_messages[] = {
     "You're already using a light.\n\r",
     "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
     "You're already wearing something on both of your ring fingers.\n\r",
@@ -615,49 +614,48 @@ perform_wear(struct char_data *ch, struct obj_data *obj, int where)
   };
   
   /* see if this is shield, and weapon is in two hands */
-  if((GET_ITEM_TYPE(obj) == ITEM_SHIELD) && 
-     IS_TWOHANDED(ch)&&ch->equipment[WIELD]) {
-    send_to_char("You cannot wear a shield while wielding a weapon in two hands\n\r", ch);
+  if((GET_ITEM_TYPE(item) == ITEM_SHIELD) && 
+     IS_TWOHANDED(character)&&character->equipment[WIELD]) {
+    send_to_char("You cannot wear a shield while wielding a weapon in two hands\n\r", character);
     return;
   }
   
   /* first, make sure that the wear position is valid. */
-  if(!CAN_WEAR(obj, wear_bitvectors[where])) {
-    act("You can't wear $p there.", FALSE, ch, obj, 0, TO_CHAR);
+  if(!CAN_WEAR(item, item_slots[item_slot])) {
+    act("You can't wear $p there.", FALSE, character, item, 0, TO_CHAR);
     return;
   }
   
   /* if this is a belt item, make sure the person is wearing a belt */
-  if((where == WEAR_BELT_1) && (!ch->equipment[WEAR_WAISTE])) {
-    send_to_char("You are not wearing a belt to put that on.\n\r",ch);
+  if((item_slot == WEAR_BELT_1) && (!character->equipment[WEAR_WAISTE])) {
+    send_to_char("You are not wearing a belt to put that on.\n\r",character);
     return;
   }
   
-  if(!call_trigger(ON_WEAR, obj, ch, 0))
+  if(!call_trigger(ON_WEAR, item, character, 0))
     return;
   
   /* for neck, finger, and wrist, try pos 2 if pos 1 is already full */
-  if((where == WEAR_FINGER_R) || (where == WEAR_NECK_1) || 
-     (where == WEAR_WRIST_R))
-    if(ch->equipment[where])
-      where++;
+  if((item_slot == WEAR_FINGER_R) || (item_slot == WEAR_NECK_1) || (item_slot == WEAR_WRIST_R))
+    if(character->equipment[item_slot])
+		item_slot++;
 
   /* for belt, try positions 2 and 3 if pos 1 is already full */
-  if(where == WEAR_BELT_1)
-    if(ch->equipment[where])
-      where++;
-  if(where == WEAR_BELT_2)
-    if(ch->equipment[where])
-      where++;
+  if(item_slot == WEAR_BELT_1)
+    if(character->equipment[item_slot])
+		item_slot++;
+  if(item_slot == WEAR_BELT_2)
+    if(character->equipment[item_slot])
+		item_slot++;
   
-  if(ch->equipment[where]) {
-    send_to_char(already_wearing[where], ch);
+  if(character->equipment[item_slot]) {
+    send_to_char(already_wearing_messages[item_slot], character);
     return;
   }
   
-  obj_from_char(obj);
-  wear_message(ch, obj, where);
-  equip_char(ch, obj, where);
+  obj_from_char(item);
+  wear_message(character, item, item_slot);
+  equip_char(character, item, item_slot);
 }
 
 

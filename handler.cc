@@ -47,6 +47,10 @@
 #include "spells.h"
 #include "zone.h"  /* For zone_table */
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 /* external vars */
 extern struct room_data world;
 extern struct obj_data *object_list;
@@ -1300,107 +1304,103 @@ void	obj_from_char(struct obj_data *object)
 
 
 
-void
-equip_char(struct char_data *ch, struct obj_data *obj, int pos)
+void equip_char(char_data* character, obj_data* item, int item_slot)
 {
-  int j;
-  int was_poisoned = 0;
+  int was_poisoned = IS_AFFECTED(character, AFF_POISON);
   
-  was_poisoned = IS_AFFECTED(ch, AFF_POISON);
+  assert(item_slot >= 0 && item_slot < MAX_WEAR);
   
-  assert(pos >= 0 && pos < MAX_WEAR);
-  
-  if(ch->equipment[pos]) {
-    sprintf(buf, "SYSERR: Char is already equipped: %s, %s", GET_NAME(ch),
-	    obj->short_description);
+  if(character->equipment[item_slot]) {
+    sprintf(buf, "SYSERR: Char is already equipped: %s, %s", GET_NAME(character),
+	    item->short_description);
     log(buf);
     return;
   }
   
-  if(obj->in_room != NOWHERE) {
+  if(item->in_room != NOWHERE) {
     log("SYSERR: EQUIP: Obj is in_room when equip.");
     return;
   }
   
-  if((IS_OBJ_STAT(obj, ITEM_ANTI_EVIL) && IS_EVIL(ch)) || 
-     (IS_OBJ_STAT(obj, ITEM_ANTI_GOOD) && IS_GOOD(ch)) || 
-     (IS_OBJ_STAT(obj, ITEM_ANTI_NEUTRAL) && IS_NEUTRAL(ch))) {
-    if(ch->in_room != NOWHERE) {
+  if((IS_OBJ_STAT(item, ITEM_ANTI_EVIL) && IS_EVIL(character)) || 
+     (IS_OBJ_STAT(item, ITEM_ANTI_GOOD) && IS_GOOD(character)) || 
+     (IS_OBJ_STAT(item, ITEM_ANTI_NEUTRAL) && IS_NEUTRAL(character))) {
+    if(character->in_room != NOWHERE) {
       
-      act("You are zapped by $p and instantly drop it.", FALSE, ch, obj, 0, TO_CHAR);
-      act("$n is zapped by $p and instantly drops it.", FALSE, ch, obj, 0, TO_ROOM);
-      obj_to_char(obj, ch); /* changed to drop in inventory instead of ground */
+      act("You are zapped by $p and instantly drop it.", FALSE, character, item, 0, TO_CHAR);
+      act("$n is zapped by $p and instantly drops it.", FALSE, character, item, 0, TO_ROOM);
+      obj_to_char(item, character); /* changed to drop in inventory instead of ground */
       return;
     } 
     else
       log("SYSERR: ch->in_room = NOWHERE when equipping char.");
   }
   
-  ch->equipment[pos] = obj;
-  obj->carried_by = ch;
-  obj->obj_flags.timer = -1;
+  character->equipment[item_slot] = item;
+  item->carried_by = character;
+  item->obj_flags.timer = -1;
   
   // Encumb and weight update:
-  GET_ENCUMB(ch) += obj->obj_flags.value[2] * encumb_table[pos];
-  GET_LEG_ENCUMB(ch) += obj->obj_flags.value[2] * leg_encumb_table[pos];
-  if(encumb_table[pos])
-    GET_ENCUMB_WEIGHT(ch) += GET_OBJ_WEIGHT(obj) * encumb_table[pos];
+  GET_ENCUMB(character) += item->obj_flags.value[2] * encumb_table[item_slot];
+  GET_LEG_ENCUMB(character) += item->obj_flags.value[2] * leg_encumb_table[item_slot];
+  if(encumb_table[item_slot])
+    GET_ENCUMB_WEIGHT(character) += GET_OBJ_WEIGHT(item) * encumb_table[item_slot];
   else
-    GET_ENCUMB_WEIGHT(ch) += GET_OBJ_WEIGHT(obj) / 2;
-  GET_WORN_WEIGHT(ch) += GET_OBJ_WEIGHT(obj);
+    GET_ENCUMB_WEIGHT(character) += GET_OBJ_WEIGHT(item) / 2;
+  GET_WORN_WEIGHT(character) += GET_OBJ_WEIGHT(item);
   
-  IS_CARRYING_W(ch) += GET_OBJ_WEIGHT(obj);
+  IS_CARRYING_W(character) += GET_OBJ_WEIGHT(item);
 
-  if((pos == HOLD) && !CAN_WEAR(obj, ITEM_HOLD)) 
+  if((item_slot == HOLD) && !CAN_WEAR(item, ITEM_HOLD)) 
     return;
   
-  if(GET_ITEM_TYPE(obj) == ITEM_ARMOR)
-     SET_DODGE(ch) += obj->obj_flags.value[3];
+  if(GET_ITEM_TYPE(item) == ITEM_ARMOR)
+     SET_DODGE(character) += item->obj_flags.value[3];
 
-   else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {
-     SET_OB(ch) += obj->obj_flags.value[0];
-     SET_PARRY(ch) += obj->obj_flags.value[1];
+   else if (GET_ITEM_TYPE(item) == ITEM_WEAPON) {
+     SET_OB(character) += item->obj_flags.value[0];
+     SET_PARRY(character) += item->obj_flags.value[1];
      
-     if(GET_OBJ_WEIGHT(obj) > (GET_BAL_STR(ch) * 50) && !IS_TWOHANDED(ch))
-       send_to_char("This weapon seems too heavy for one hand.\n\r",ch);
+     if(GET_OBJ_WEIGHT(item) > (GET_BAL_STR(character) * 50) && !IS_TWOHANDED(character))
+       send_to_char("This weapon seems too heavy for one hand.\n\r",character);
      else
-       if(GET_OBJ_WEIGHT(obj)>(GET_BAL_STR(ch) * 100))
-	 send_to_char("This weapon seems too heavy for you!\n\r",ch);
+       if(GET_OBJ_WEIGHT(item)>(GET_BAL_STR(character) * 100))
+	 send_to_char("This weapon seems too heavy for you!\n\r",character);
      
    }
-  else if (GET_ITEM_TYPE(obj) == ITEM_SHIELD) {
-    SET_DODGE(ch) += obj->obj_flags.value[0];
-    SET_PARRY(ch) += obj->obj_flags.value[1];
+  else if (GET_ITEM_TYPE(item) == ITEM_SHIELD) {
+    SET_DODGE(character) += item->obj_flags.value[0];
+    SET_PARRY(character) += item->obj_flags.value[1];
   } 
-  else if (GET_ITEM_TYPE(obj) == ITEM_LIGHT) {
-    if((ch->in_room != NOWHERE) &&
-       (obj->obj_flags.value[2] != 0)){
-      if(obj->obj_flags.value[3] == 0)
-	obj->obj_flags.value[3] = 1;
-      world[ch->in_room].light++;
+  else if (GET_ITEM_TYPE(item) == ITEM_LIGHT) {
+    if((character->in_room != NOWHERE) &&
+       (item->obj_flags.value[2] != 0)){
+      if(item->obj_flags.value[3] == 0)
+	item->obj_flags.value[3] = 1;
+      world[character->in_room].light++;
     }
   }
   
    
-  for(j = 0; j < MAX_OBJ_AFFECT; j++)
-    affect_modify(ch, obj->affected[j].location,
-		  obj->affected[j].modifier,
-		  obj->obj_flags.bitvector, AFFECT_MODIFY_SET);
+  for(int j = 0; j < MAX_OBJ_AFFECT; j++)
+    affect_modify(character, item->affected[j].location,
+		  item->affected[j].modifier,
+		  item->obj_flags.bitvector, AFFECT_MODIFY_SET);
   
-  affect_total(ch);
+  affect_total(character);
   
   // Special case for poisoned objects.  The wearer should get poison damage
   // when wearing/removing something poisoned.
-  if(was_poisoned == 0 && IS_AFFECTED(ch, AFF_POISON)) { 
-    extern void raw_kill(struct char_data *ch, char_data* killer, int attacktype);
+  if(was_poisoned == 0 && IS_AFFECTED(character, AFF_POISON)) { 
+    extern void raw_kill(struct char_data *character, char_data* killer, int attacktype);
     
-    damage(ch, ch, 5, SPELL_POISON, 0);
+    damage(character, character, 5, SPELL_POISON, 0);
     
-    if(GET_HIT(ch) <= 0){  
+    if(GET_HIT(character) <= 0){  
       act("$n suddenly collapses on the ground.",
-	  TRUE, ch, 0, 0, TO_ROOM);
-      send_to_char("Your body failed to the magic.\n\r", ch);
-      raw_kill(ch, NULL, 0);
+	  TRUE, character, 0, 0, TO_ROOM);
+      send_to_char("Your body failed to the magic.\n\r", character);
+      raw_kill(character, NULL, 0);
     }
   } 
 }

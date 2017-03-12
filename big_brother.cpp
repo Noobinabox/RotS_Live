@@ -175,6 +175,33 @@ namespace game_rules
 	}
 
 	//============================================================================
+	bool big_brother::is_corpse_protected(const char_data* looter, obj_data* corpse) const
+	{
+#if USE_BIG_BROTHER
+		// Can't protect null corpses.  :)
+		if (corpse == NULL)
+			return false;
+
+		typedef corpse_map::const_iterator iter;
+		iter corpse_iter = m_corpse_map.find(corpse);
+
+		// If we aren't tracking this corpse - it's not protected.
+		if (corpse_iter == m_corpse_map.end())
+			return false;
+
+		// If the person that killed the corpse is a player, protect the corpse from
+		// being moved by players.
+		if (corpse_iter->second.is_killer_pc)
+			return true;
+
+		// You can never move the corpse of someone on a different side of the race war.
+		return !is_same_side_race_war(corpse_iter->second.player_race, looter->player.race);
+#else
+		return false
+#endif
+	}
+
+	//============================================================================
 	bool big_brother::is_target_valid(char_data* attacker, const char_data* victim) const
 	{
 #if USE_BIG_BROTHER
@@ -542,7 +569,7 @@ namespace game_rules
 	// Private Data Structure implementation
 	//============================================================================ 
 	//============================================================================
-	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man) : num_items_looted(0), killer_id(-1)
+	big_brother::player_corpse_data::player_corpse_data(char_data* dead_man) : num_items_looted(0), killer_id(-1), is_killer_pc(false)
 	{
 		assert(dead_man);
 		player_race = dead_man->player.race;
@@ -566,10 +593,12 @@ namespace game_rules
 		if (killer)
 		{
 			killer_id = killer->abs_number;
+			is_killer_pc = utils::is_pc(*killer);
 		}
 		else
 		{
 			killer_id = -1;
+			is_killer_pc = false;
 		}
 
 		// Moved here so that we can change it to grant different corpses different protection if we so choose.

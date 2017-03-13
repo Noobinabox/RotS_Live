@@ -111,6 +111,12 @@ namespace game_rules
 		if (corpse_iter == m_corpse_map.end())
 			return true;
 
+		// Redirect NPCs to their master if they have one.
+		if (utils::is_npc(*looter) && looter->master)
+		{
+			return on_loot_item(looter->master, corpse, item);
+		}
+
 		// Once a player loots an item from his corpse, his looting protection fades.
 		player_corpse_data& corpse_data = corpse_iter->second;
 		if (looter->abs_number == corpse_iter->second.player_id)
@@ -169,6 +175,14 @@ namespace game_rules
 		{
 			remove_character_from_looting_set(char_id);
 			send_to_char("You feel the protection of the Gods fade from you...\r\n", char_id);
+
+			const char* char_name = get_char_name(char_id);
+			if (char_name != NULL)
+			{
+				char local_buf[80];
+				sprintf(local_buf, "%s no longer has looting protection.  Corpse is empty.", char_name);
+				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+			}
 		}
 		m_corpse_map.erase(corpse_iter);
 #endif
@@ -516,6 +530,20 @@ namespace game_rules
 		if (char_map_iter != m_last_engaged_pk_time.end())
 		{
 			m_last_engaged_pk_time.erase(char_map_iter);
+		}
+
+		typedef corpse_map::iterator corpse_iter;
+		for (corpse_iter iter = m_corpse_map.begin(); iter != m_corpse_map.end(); ++iter)
+		{
+			if (!iter->second.is_npc && iter->second.player_id == character->abs_number)
+			{
+				char local_buf[80];
+				sprintf(local_buf, "%s no longer has looting protection.  Player disconnected.", character->player.name);
+				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+
+				m_corpse_map.erase(iter);
+				break;
+			}
 		}
 #endif
 	}

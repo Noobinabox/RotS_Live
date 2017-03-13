@@ -1709,6 +1709,20 @@ void send_to_char(const char* message, int character_id)
 	}
 }
 
+const char* get_char_name(int character_id)
+{
+	for (descriptor_data* connection = descriptor_list; connection; connection = connection->next)
+	{
+		char_data* character = connection->character;
+		if (character && character->abs_number == character_id && connection->connected == CON_PLYNG)
+		{
+			return character->player.name;
+		}
+	}
+
+	return NULL;
+}
+
 void vsend_to_char(char_data* character, char* format, ...)
 {
 #define BUFSIZE 2048

@@ -91,41 +91,56 @@ void say_spell(char_data* caster, int spell_index)
  * zone (though not the same room) by an opposite race, we send
  * them a 'sensing' message.
  */
-void
-do_sense_magic(struct char_data *ch, int spell_number)
+void do_sense_magic(char_data* caster, int spell_number)
 {
-  struct descriptor_data *i;
-  
-  if(skills[spell_number].type != PROF_MAGE)
-    return;
-  
-  for(i = descriptor_list; i; i = i->next)
-    if(!i->connected && i != ch->desc && 
-       !PLR_FLAGGED(i->character, PLR_WRITING) &&
-       GET_POS(i->character) > POSITION_SLEEPING) {
-      if((world[ch->in_room].zone != world[i->character->in_room].zone))
-	continue;
-      if(other_side(i->character, ch) && 
-	 (GET_PROF_LEVEL(PROF_MAGE, i->character) > 11) &&
-	 (ch->in_room != i->character->in_room))
-	send_to_char("You sense a surge of unknown magic from nearby...\n\r",
-		     i->character);   
-    }
+	const int MIN_MAGE_LEVEL_TO_SENSE = 12;
+
+	if (skills[spell_number].type != PROF_MAGE || caster == NULL)
+		return;
+
+	for (descriptor_data* player = descriptor_list; player; player = player->next)
+	{
+		// Ignore disconnected players.
+		if (player->connected == CON_PLYNG)
+		{
+			char_data* character = player->character;
+			if (other_side(character, caster))
+			{
+				// Players that are writing or asleep can't sense anything.
+				if (!utils::is_player_flagged(*character, PLR_WRITING) && character->specials.position > POSITION_SLEEPING)
+				{
+					if (utils::get_prof_level(PROF_MAGE, *character) >= MIN_MAGE_LEVEL_TO_SENSE)
+					{
+						int caster_room = caster->in_room;
+						int character_room = character->in_room;
+
+						// Only send the message if characters are in different rooms within the same zone.
+						if (caster_room != character_room && world[caster_room].zone == world[character_room].zone)
+						{
+							send_to_char("You sense a surge of unknown magic from nearby...\n\r", character);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
-
-
-char
-saves_power(struct char_data *ch, sh_int power, sh_int bonus)
+char saves_power(const char_data* victim, sh_int casting_power, sh_int save_bonus)
 {
-  sh_int ch_power;
-  
-  ch_power = GET_WILLPOWER(ch) + bonus;
-  
-  if(number(0, ch_power * ch_power) > number(0, power * power)) 
-    return 1;
-  else 
-    return 0;
+	sh_int victim_save_bonus = victim->points.willpower + save_bonus;
+
+	int saving_throw_roll = number(0, victim_save_bonus * victim_save_bonus);
+	int saving_throw_dc = number(0, casting_power * casting_power);
+
+	if (saving_throw_roll > saving_throw_dc)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 
@@ -499,12 +514,6 @@ namespace
 		};
 
 		/* checking specializations here */
-		if (spell.skill_spec == GET_SPEC(&character))
-		{
-			int tmp = 40 - spell_prof;
-			spell_prof += (tmp + number(0, tmp % 3)) / 3;
-		}
-
 		if (spell_prof == -1 || !spell.spell_pointer)
 		{
 			send_to_char("You can not cast this!!\n\r", &character);

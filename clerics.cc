@@ -36,7 +36,7 @@ extern struct index_data *mob_index;
 extern int armor_absorb(struct obj_data *obj);
 
 void group_gain(struct char_data *, struct char_data *);
-char saves_power(struct char_data *, sh_int power, sh_int bonus);
+char saves_power(const char_data *, sh_int power, sh_int bonus);
 int check_overkill(struct char_data *);
 int check_hallucinate(struct char_data *, struct char_data *);
 

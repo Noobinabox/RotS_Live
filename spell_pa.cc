@@ -187,6 +187,73 @@ saves_spell(struct char_data *ch, sh_int level, int bonus)
   return (spllog_saves = (save > number(1, 20)));
 }
 
+//============================================================================
+// Calculates the saving throw bonus of a character vs. Mage spells.
+//============================================================================
+int get_character_saving_throw(const char_data* victim)
+{
+	int saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
+
+	int level_bonus = utils::get_prof_level(PROF_MAGE, *victim);
+	
+	// Possible additional effect of the "Resist Magic" power.
+	if (affected_by_spell(victim, SPELL_RESIST_MAGIC))
+	{
+		level_bonus = std::max(level_bonus, utils::get_prof_level(PROF_CLERIC, *victim));
+	}
+
+	saving_throw += level_bonus / 3; // Add 1/3 level to save bonus, no rounding.
+	saving_throw += (victim->tmpabilities.intel - 10) / 4;
+	if (victim->player.race == RACE_HOBBIT)
+	{
+		saving_throw += 1;
+	}
+
+	return saving_throw;
+}
+
+//============================================================================
+// Calculates the saving throw DC of a caster.
+//   Spell_id is not currently used, but may be used in the future to make
+//   it harder to save against spells from specialized mages.
+//============================================================================
+int get_saving_throw_dc(const char_data* caster, int spell_id)
+{
+	int caster_dc = 10;
+	caster_dc += utils::get_prof_level(PROF_MAGE, *caster) / 3;
+	caster_dc += (caster->tmpabilities.intel - 10) / 4;
+	return caster_dc;
+}
+
+//============================================================================
+// Returns true if the victim saves against the spell, false otherwise.
+//   Save bonus is added to the victim's base save value.
+//============================================================================
+bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus, int spell_id)
+{
+	int save_value = get_character_saving_throw(victim) + save_bonus;
+	int casting_dc = get_saving_throw_dc(caster, spell_id);
+
+	int roll = number(1, 20);
+	bool saved = roll + save_value > casting_dc;
+
+	// Auto success on a 20, auto fail on a 1, D&D style.
+	if (roll == 1)
+	{
+		saved = false;
+	}
+	else if (roll == 20)
+	{
+		saved = true;
+	}
+
+	spllog_mage_level = utils::get_prof_level(PROF_MAGE, *caster);
+	spllog_save = (short)save_value;
+	spllog_saves = saved;
+
+	return saved;
+}
+
 
 
 void

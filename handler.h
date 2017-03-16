@@ -39,11 +39,8 @@ void    affect_from_char_notify(struct char_data *, byte);
 void	affect_from_char(struct char_data *ch, byte skill);
 
 
-struct affected_type * affected_by_spell(struct char_data *ch, byte skill,
-					 affected_type * firstaf = 0);
-
-struct affected_type * room_affected_by_spell(struct room_data * room,
-					      int spell);
+affected_type* affected_by_spell(const char_data* character, byte skill, affected_type* firstaf = 0);
+affected_type* room_affected_by_spell(const room_data* room, int spell);
 
 void	affect_join(struct char_data *ch, struct affected_type *af,
 char avg_dur, char avg_mod );

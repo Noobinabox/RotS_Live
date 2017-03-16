@@ -73,9 +73,10 @@ ACMD(do_quit)
     return;
   }
 
-  if(affected_by_spell(ch, SPELL_ANGER)){
-    send_to_char("You may not quit yet.\n\r",ch);
-    return;
+  if (affected_by_spell(ch, SPELL_ANGER) && GET_LEVEL(ch) < LEVEL_IMMORT)
+  {
+	  send_to_char("You may not quit yet.\n\r", ch);
+	  return;
   }
 
   if(GET_POS(ch) < POSITION_STUNNED) {

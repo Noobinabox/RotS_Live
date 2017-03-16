@@ -2926,3 +2926,81 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	act("$n recovers some arrows.\r\n", FALSE, character, NULL, NULL, TO_ROOM);
 }
 
+void do_scan(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
+{
+	struct char_data *i;
+	int is_in, dir, dis, maxdis, found = 0;
+
+	const char *distance[] = {
+		"right here",
+		"immediately ",
+		"nearby ",
+		"a ways ",
+		"far ",
+		"very far ",
+		"extremely far ",
+		"impossibly far ",
+	};
+
+	if (character == NULL)
+		return;
+
+	if (!CAN_SEE(character))
+	{
+		send_to_char("You can't see anything in this darkness!", character);
+		return;
+	}
+
+	if (utils::is_shadow(*character))
+	{
+		send_to_char("Try rejoining the corporal world first...", character);
+		return;
+	}
+
+	if ((GET_MOVE(character) < 3) && (GET_LEVEL(character) < LEVEL_IMMORT))
+	{
+		act("You are too exhausted.", TRUE, character, 0, 0, TO_CHAR);
+		return;
+	}
+
+	maxdis = (1 + ((GET_PROF_LEVEL(PROF_RANGER, character) / 3))) / 2;
+	maxdis = std::max(1, maxdis);
+	if (GET_LEVEL(character) >= LEVEL_IMMORT)
+		maxdis = 7;
+
+	act("You quickly scan the area and see:", TRUE, character, 0, 0, TO_CHAR);
+	act("$n quickly scans the area.", FALSE, character, 0, 0, TO_ROOM);
+	if (GET_LEVEL(character) < LEVEL_IMMORT)
+		GET_MOVE(character) -= 3;
+
+	is_in = character->in_room;
+	for (dir = 0; dir < NUM_OF_DIRS; dir++)
+	{
+		character->in_room = is_in;
+		for (dis = 0; dis <= maxdis; dis++)
+		{
+			if (((dis == 0) && (dir == 0)) || (dis > 0))
+			{
+				for (i = world[character->in_room].people; i; i = i->next_in_room)
+				{
+					if ((!((character == i) && (dis == 0))) && CAN_SEE(character, i))
+					{
+						sprintf(buf, "%33s: %s%s%s%s", (IS_NPC(i)?GET_NAME(i):pc_star_types[i->player.race]), distance[dis],
+							((dis > 0) && (dir < (NUM_OF_DIRS - 2))) ? "to the " : "",
+							(dis > 0) ? dirs[dir] : "",
+							((dis > 0) && (dir > (NUM_OF_DIRS - 3))) ? "wards" : "");
+						act(buf, TRUE, character, 0, 0, TO_CHAR);
+						found++;
+					}
+				}
+			}
+			if (!CAN_GO(character, dir) || (world[character->in_room].dir_option[dir]->to_room == is_in))
+				break;
+			else
+				character->in_room = world[character->in_room].dir_option[dir]->to_room;
+		}
+	}
+	if (found == 0)
+		act("Nobody anywhere near you.", TRUE, character, 0, 0, TO_CHAR);
+	character->in_room = is_in;
+}

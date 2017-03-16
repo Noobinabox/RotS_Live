@@ -112,8 +112,8 @@ namespace game_rules
 		// Returns true if two targets are on the same side of the race war.
 		bool is_same_side_race_war(int attacker_race, int victim_race) const;
 
-		// Removed a character from our looting set, and removed their loot protection.
-		void on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& iter);
+		// Logs when an item is looted from a protected corpse.
+		void log_item_looted(const char_data* looter, corpse_map::iterator& iter, obj_data* item) const;
 
 		// Removes a character from our afk_characters set.
 		void remove_character_from_afk_set(const char_data* character);

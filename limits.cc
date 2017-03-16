@@ -91,7 +91,7 @@ inline void advance_mini_level(struct char_data *ch)
 	/* add on average 2 HP/level */
 	if (GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
 	{
-		if (number(0, 50) == 0)
+		if (number() >= 0.98)
 		{
 			ch->constabilities.hit++;
 		}

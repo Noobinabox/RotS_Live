@@ -213,7 +213,6 @@ struct command_info {
 #define SCMD_CARRIED 4
 #define SCMD_STALK  5
 
-
 #define SCMD_LOOK_NORM 0
 #define SCMD_LOOK_EXAM 1
 #define SCMD_LOOK_BRIEF 2

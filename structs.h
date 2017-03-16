@@ -699,10 +699,9 @@ struct room_data {
 
 struct prof_type
 {
-  char letter;
-  sh_int Class_points[5];
+	char letter;
+	sh_int Class_points[5];
 };
-
 
 #define PLRSPEC_NONE    0
 #define PLRSPEC_FIRE    1
@@ -1050,22 +1049,20 @@ struct char_special2_data {
   int hide_flags;    /* flag set for hide info */
 };
 
-
-
-/* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
+/* Used in CHAR_FILE_U Change with the utmost care */
 struct affected_type
 {
-   sh_int type;           /* The type of spell that caused this      */
+	sh_int type;     /* The type of spell that caused this      */
 
-   int duration;      /* For how long its effects will last      */
-   char time_phase;   /* when exactly in the tick it was cast  */
-                       /*  is set in affect_to_char, room */
+	int duration;    /* For how long its effects will last      */
+	char time_phase; /* when exactly in the tick it was cast  */
+					 /*  is set in affect_to_char, room */
 
-   sh_int modifier;       /* This is added to apropriate ability     */
-   sh_int location;  /* Tells which ability to change(APPLY_XXX)*/
-   long	bitvector;       /* Tells which bits to set (AFF_XXX)       */
+	sh_int modifier; /* This is added to apropriate ability     */
+	sh_int location; /* Tells which ability to change(APPLY_XXX)*/
+	long bitvector;  /* Tells which bits to set (AFF_XXX)       */
 
-   struct affected_type *next;
+	struct affected_type* next;
 };
 
 struct follow_type {
@@ -1092,15 +1089,16 @@ struct alias_list {
   struct alias_list *next;
 };
 
-struct char_prof_data  {
-  sh_int prof_coof[MAX_PROFS + 1];   /* 100 would mean 100% in that class */
-  sh_int prof_level[MAX_PROFS + 1];
-  long    prof_exp[MAX_PROFS + 1];
-  sh_int specializations[5];
-  
-  long color_mask;
-  char colors[16];
-  int specialization;
+struct char_prof_data
+{
+	sh_int prof_coof[MAX_PROFS + 1];   /* 100 would mean 100% in that class */
+	sh_int prof_level[MAX_PROFS + 1];
+	long prof_exp[MAX_PROFS + 1];
+	sh_int specializations[5];
+
+	long color_mask;
+	char colors[16];
+	int specialization;
 };
 
 

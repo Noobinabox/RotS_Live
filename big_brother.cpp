@@ -5,7 +5,9 @@
 #include "structs.h"
 #include "spells.h"
 #include "comm.h"
+#include "handler.h"
 
+#include <string>
 #include <assert.h>
 
 /********************************************************************
@@ -93,7 +95,7 @@ namespace game_rules
 	// Query Code:
 	//   This code is responsible for answering yes/no to questions.
 	//============================================================================ 
-	
+
 	//============================================================================
 	// Returns true if the item can be looted from the corpse.
 	//============================================================================
@@ -101,7 +103,7 @@ namespace game_rules
 	{
 #if USE_BIG_BROTHER
 		// Something's not right.  Go for it, we won't stop you.
-		if (looter == NULL || corpse == NULL || !item)
+		if (looter == NULL || corpse == NULL || item == NULL)
 			return true;
 
 		typedef corpse_map::iterator iter;
@@ -111,69 +113,137 @@ namespace game_rules
 		if (corpse_iter == m_corpse_map.end())
 			return true;
 
-		// Once a player loots an item from his corpse, his looting protection fades.
+		// Redirect NPCs to their master if they have one.
+		if (utils::is_npc(*looter) && looter->master)
+		{
+			return on_loot_item(looter->master, corpse, item);
+		}
+
 		player_corpse_data& corpse_data = corpse_iter->second;
-		if (looter->abs_number == corpse_iter->second.player_id)
+
+		bool can_loot_item = false;
+		bool remove_corpse_from_map = false;
+		bool remove_player_protection = false;
+
+		// The player can always loot himself.
+		if (looter->abs_number == corpse_data.player_id)
 		{
-			on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
-			return true;
+			can_loot_item = true;
+			remove_player_protection = true;
+		}
+		// And so can allies in the race war.
+		else if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
+		{
+			can_loot_item = true;
+		}
+		// And money doesn't count as an item.
+		else if (item->obj_flags.type_flag == ITEM_MONEY)
+		{
+			can_loot_item = true;
 		}
 
-		// Players on the same side as the race war as you can loot your corpse.
-		if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
+		// An enemy is trying to loot protected gear of some variety.
+		if (!can_loot_item)
 		{
-			if (!item->next_content)
+			if (corpse_data.num_items_looted < corpse_data.max_num_items_looted)
 			{
-				on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
+				if (item->obj_flags.type_flag != ITEM_CONTAINER || item->is_quiver())
+				{
+					// The enemy can loot this item.  Increase the items looted count.
+					can_loot_item = true;
+					++corpse_data.num_items_looted;
+				}
 			}
-			return true;
 		}
 
-		if (item->obj_flags.type_flag == ITEM_MONEY)
+		if (can_loot_item)
 		{
-			if (!item->next_content)
+			// This is the last item in the corpse.  Remove player and corpse protection.
+			if (item->next_content == NULL)
 			{
-				on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
+				remove_corpse_from_map = true;
+				remove_player_protection = true;
 			}
-			return true;
+
+			log_item_looted(looter, corpse_iter, item);
+			if (remove_player_protection && !corpse_data.is_npc)
+			{
+				send_to_char("You feel the protection of the Gods fade from you...\r\n", corpse_data.player_id);
+
+				const char* char_name = get_char_name(corpse_data.player_id);
+				if (char_name != NULL)
+				{
+					char local_buf[128];
+					sprintf(local_buf, "%s no longer has looting protection.  Corpse is empty or player looted.", char_name);
+					mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+				}
+
+				typedef character_id_set::iterator char_iter;
+				char_iter protected_character = m_looting_characters.find(corpse_data.player_id);
+				if (m_looting_characters.end() != protected_character)
+				{
+					m_looting_characters.erase(protected_character);
+				}
+			}
+
+			if (remove_corpse_from_map)
+			{
+				m_corpse_map.erase(corpse_iter);
+			}
 		}
 
-		if (corpse_data.num_items_looted >= corpse_data.max_num_items_looted)
-			return false;
-
-		// Containers (other than quivers) can't be looted.
-		if (item->obj_flags.type_flag == ITEM_CONTAINER && !item->is_quiver())
-			return false;
-
-		// The corpse has had less than the max number of items looted from it.  Return that the
-		// item can be looted and increment the counter.
-		++corpse_data.num_items_looted;
-
-		if (!item->next_content)
-		{
-			on_last_item_removed_from_corpse(corpse_data.player_id, corpse_iter);
-		}
-
-		return true;
+		return can_loot_item;
 #else
 		return true;
 #endif
 	}
 
 	//============================================================================
-	void big_brother::on_last_item_removed_from_corpse(int char_id, corpse_map::iterator& corpse_iter)
+	void big_brother::log_item_looted(const char_data* looter, corpse_map::iterator& corpse_iter, obj_data* item) const
 	{
 #if USE_BIG_BROTHER
 		// This is the last item from the corpse.  Stop tracking the corpse.
-		if (!corpse_iter->second.is_npc)
+		const player_corpse_data& corpse_data = corpse_iter->second;
+		if (!corpse_data.is_npc)
 		{
-			remove_character_from_looting_set(char_id);
-			send_to_char("You feel the protection of the Gods fade from you...\r\n", char_id);
+			const char* looter_name = utils::get_name(*looter);
+			
+			int looter_id = looter->abs_number;
+			if (looter_id == corpse_data.player_id)
+			{
+				char local_buf[128];
+				sprintf(local_buf, "%s looted item %s from their own corpse.", looter_name, item->short_description);
+				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+			}
+			else
+			{
+				const char* corpse_name = get_char_name(corpse_data.player_id);
+				if (corpse_name)
+				{
+					char local_buf[128];
+					sprintf(local_buf, "%s looted item %s from the corpse of %s.", looter_name, item->short_description, corpse_name);
+					mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+				}
+
+				// Alert the player that an item was been looted from their body.
+				// If they are on the same side of the war - let them know who
+				// took it.
+				char to_player_buf[128];
+				if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
+				{
+					sprintf(to_player_buf, "%s looted the item '%s' from your corpse.\r\n", looter_name, item->short_description);
+				}
+				else
+				{
+					sprintf(to_player_buf, "An enemy looted the item '%s' from your corpse.\r\n", item->short_description);
+				}
+
+				send_to_char(to_player_buf, corpse_data.player_id);
+			}
 		}
-		m_corpse_map.erase(corpse_iter);
 #endif
 	}
-
+	
 	//============================================================================
 	bool big_brother::is_corpse_protected(const char_data* looter, obj_data* corpse) const
 	{
@@ -484,7 +554,10 @@ namespace game_rules
 
 		if (insert)
 		{
-			m_afk_characters.insert(character);
+			if (m_afk_characters.insert(character).second)
+			{
+				send_to_char("You feel the protection of the Gods bestowed upon you.\r\n", character->abs_number);
+			}
 		}
 		else
 		{
@@ -516,6 +589,20 @@ namespace game_rules
 		if (char_map_iter != m_last_engaged_pk_time.end())
 		{
 			m_last_engaged_pk_time.erase(char_map_iter);
+		}
+
+		typedef corpse_map::iterator corpse_iter;
+		for (corpse_iter iter = m_corpse_map.begin(); iter != m_corpse_map.end(); ++iter)
+		{
+			if (!iter->second.is_npc && iter->second.player_id == character->abs_number)
+			{
+				char local_buf[80];
+				sprintf(local_buf, "%s no longer has looting protection.  Player disconnected.", character->player.name);
+				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+
+				m_corpse_map.erase(iter);
+				break;
+			}
 		}
 #endif
 	}

@@ -277,6 +277,8 @@ ACMD(do_shoot);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
+void do_scan(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
+
 const char *command[] = {
    "north", 		               /* 1 */
    "east",
@@ -509,6 +511,7 @@ const char *command[] = {
    "shoot",
    "recover",
    "retrieve",
+   "scan",
    "\n"
 };
 
@@ -2242,6 +2245,8 @@ assign_command_pointers(void)
   COMMANDO(230, POSITION_STANDING, do_recover, 0, TRUE, 0,
 	  FULL_TARGET, TAR_IGNORE, 0);
   COMMANDO(231, POSITION_STANDING, do_recover, 0, TRUE, 0,
+	  FULL_TARGET, TAR_IGNORE, 0);
+  COMMANDO(232, POSITION_STANDING, do_scan, 0, TRUE, 0,
 	  FULL_TARGET, TAR_IGNORE, 0);
 }
 

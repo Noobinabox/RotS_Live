@@ -1033,11 +1033,18 @@ void	log_death_trap(struct char_data *ch)
 /* writes a string to the log */
 void log(char *str)
 {
-	time_t ct(0);
-	char* time_string = asctime(localtime(&ct));
+	//time_t ct(0);
+	//char* time_string = asctime(localtime(&ct));
 
-	*(time_string + std::strlen(time_string) - 1) = '\0';
-	fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
+	//*(time_string + std::strlen(time_string) - 1) = '\0';
+	//fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
+
+	long	ct;
+	char	*tmstr;
+	ct = time(0);
+	tmstr = asctime(localtime(&ct));
+	*(tmstr + strlen(tmstr) - 1) = '\0';
+	fprintf(stderr, "%-19.19s :: %s\n", tmstr, str);
 }
 
 
@@ -1047,10 +1054,14 @@ void mudlog(char *str, char type, sh_int level, byte file)
   char buf[8000];
   extern struct descriptor_data *descriptor_list;
   struct descriptor_data *i;
+  char *tmp;
+  long ct;
   char tp;
   
-  time_t ct(0);
-  char* tmp = asctime(localtime(&ct));
+  ct = time(0);
+  tmp = asctime(localtime(&ct));
+  //time_t ct(0);
+  //char* tmp = asctime(localtime(&ct));
   
   if(file)
     fprintf(stderr, "%d, %-19.19s :: %s\n", type, tmp, str);

@@ -559,6 +559,24 @@ namespace
 
 		return true;
 	}
+
+	//============================================================================
+	// Returns the effective casting level for this caster and spell.
+	//============================================================================
+	double get_casting_level(const char_data* caster, int casting_level, int casting_stat, int spec_number)
+	{
+		double final_level(casting_level);
+
+		/* a bonus for anyone who is specialized in this spell's spec */
+		if (utils::get_specialization(*caster) == spec_number)
+		{
+			final_level += (40.0 - final_level) * utils::get_level_legend_cap(*caster) / 150.0;
+		}
+
+		/* we give one level bonus for each 5 int */
+		final_level += casting_stat / 5.0;
+		return final_level;
+	}
 } // End anonymous helper namespace
 
 /* Assumes that *argument does start with first letter of chopped string */

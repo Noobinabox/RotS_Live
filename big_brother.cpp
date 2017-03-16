@@ -174,7 +174,7 @@ namespace game_rules
 				if (char_name != NULL)
 				{
 					char local_buf[128];
-					sprintf(local_buf, "%s no longer has looting protection.  Corpse is empty or player looted.", char_name);
+					sprintf(local_buf, "Big Brother:  %s no longer has looting protection.  Corpse is empty or player looted.", char_name);
 					mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
 				}
 
@@ -212,7 +212,7 @@ namespace game_rules
 			if (looter_id == corpse_data.player_id)
 			{
 				char local_buf[128];
-				sprintf(local_buf, "%s looted item %s from their own corpse.", looter_name, item->short_description);
+				sprintf(local_buf, "Big Brother:  %s looted item %s from their own corpse.", looter_name, item->short_description);
 				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
 			}
 			else
@@ -221,7 +221,7 @@ namespace game_rules
 				if (corpse_name)
 				{
 					char local_buf[128];
-					sprintf(local_buf, "%s looted item %s from the corpse of %s.", looter_name, item->short_description, corpse_name);
+					sprintf(local_buf, "Big Brother:  %s looted item %s from the corpse of %s.", looter_name, item->short_description, corpse_name);
 					mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
 				}
 
@@ -231,11 +231,11 @@ namespace game_rules
 				char to_player_buf[128];
 				if (is_same_side_race_war(looter->player.race, corpse_data.player_race))
 				{
-					sprintf(to_player_buf, "%s looted the item '%s' from your corpse.\r\n", looter_name, item->short_description);
+					sprintf(to_player_buf, "Big Brother Alert: %s looted the item '%s' from your corpse.\r\n", looter_name, item->short_description);
 				}
 				else
 				{
-					sprintf(to_player_buf, "An enemy looted the item '%s' from your corpse.\r\n", item->short_description);
+					sprintf(to_player_buf, "Big Brother Alert: An enemy looted the item '%s' from your corpse.\r\n", item->short_description);
 				}
 
 				send_to_char(to_player_buf, corpse_data.player_id);
@@ -631,6 +631,16 @@ namespace game_rules
 		iter char_iter = m_looting_characters.find(char_id);
 		if (char_iter != m_looting_characters.end())
 		{
+			send_to_char("You feel the protection of the Gods fade from you...\r\n", *char_iter);
+
+			const char* char_name = get_char_name(*char_iter);
+			if (char_name != NULL)
+			{
+				char local_buf[128];
+				sprintf(local_buf, "Big Brother:  %s no longer has looting protection.", char_name);
+				mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
+			}
+
 			m_looting_characters.erase(char_iter);
 		}
 #endif

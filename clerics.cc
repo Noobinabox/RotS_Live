@@ -138,14 +138,6 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
     return;
   }
 
-  // This isn't technically a curse, but it's close enough.
-  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-  if (!bb_instance.is_target_valid(ch, victim))
-  {
-	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.\r\n", ch);
-	  return;
-  }
-
   /* Level check, level 9 and below can't kill each other */
   if(!IS_NPC(ch) && GET_LEVEL(ch) < 10 && !IS_NPC(victim) && 
       RACE_GOOD(ch) && RACE_GOOD(victim)) {
@@ -164,6 +156,13 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
     send_to_char("Your victim disappeared!\n\r", ch);
     stop_fighting(ch);
     return;
+  }
+
+  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+  if (!bb_instance.is_target_valid(ch, victim))
+  {
+	  send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your mind falters.\r\n", ch);
+	  return;
   }
 
   if(not_ready) {

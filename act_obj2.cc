@@ -793,33 +793,57 @@ ACMD(do_wear)
 
 ACMD(do_wield)
 {
-  struct obj_data *obj;
-  
-  one_argument(argument, arg);
-  
-  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) && !(MOB_FLAGGED(ch, MOB_ORC_FRIEND))) {
-    send_to_char("Sorry, tamed mobiles can't wear anything.\n\r",ch);
-    return;
-  }
+	struct obj_data *obj;
 
-  if(!*arg)
-    send_to_char("Wield what?\n\r", ch);
-  else if(!(obj = get_obj_in_list(arg, ch->carrying))) {
-    sprintf(buf, "You don't seem to have %s %s.\n\r", AN(arg), arg);
-    send_to_char(buf, ch);
-  } 
-  else {
-    if(!CAN_WEAR(obj, ITEM_WIELD)) 
-      send_to_char("You can't wield that.\n\r", ch);
-    else if (GET_OBJ_WEIGHT(obj) > 150 * GET_STR(ch))
-      send_to_char("It's way too heavy for you to use.\n\r", ch);
-    else {
-      REMOVE_BIT(ch->specials.affected_by, AFF_TWOHANDED);
-      perform_wear(ch, obj, WIELD);
-      if (obj->obj_flags.value[2] > 4 && !ch->equipment[WEAR_SHIELD])
-	do_twohand(ch, 0, 0, 0, SCMD_TWOHANDED);
-    }
-  }
+	one_argument(argument, arg);
+
+	if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) && !(MOB_FLAGGED(ch, MOB_ORC_FRIEND)))
+	{
+		send_to_char("Sorry, tamed mobiles can't wear anything.\n\r", ch);
+		return;
+	}
+
+	if (!*arg)
+	{
+		send_to_char("Wield what?\n\r", ch);
+	}
+	else if (!(obj = get_obj_in_list(arg, ch->carrying))) 
+	{
+		sprintf(buf, "You don't seem to have %s %s.\n\r", AN(arg), arg);
+		send_to_char(buf, ch);
+	}
+	else 
+	{
+		if (!CAN_WEAR(obj, ITEM_WIELD))
+		{
+			char_data* message_receiver = ch;
+			if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master)
+			{
+				message_receiver = ch->master;
+			}
+			send_to_char("That item cannot be wielded.\n\r", message_receiver);
+		}
+		else if (GET_OBJ_WEIGHT(obj) > 150 * GET_STR(ch))
+		{
+			if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master)
+			{
+				send_to_char("Your puny follower is far too weak to wield that.\r\n", ch->master);
+			}
+			else
+			{
+				send_to_char("It's way too heavy for you to use.\n\r", ch);
+			}
+		}	
+		else 
+		{
+			REMOVE_BIT(ch->specials.affected_by, AFF_TWOHANDED);
+			perform_wear(ch, obj, WIELD);
+			if (obj->obj_flags.value[2] > 4 && !ch->equipment[WEAR_SHIELD])
+			{
+				do_twohand(ch, 0, 0, 0, SCMD_TWOHANDED);
+			}
+		}
+	}
 }
 
    

@@ -200,6 +200,15 @@
 #define CONT_CLOSED         4
 #define CONT_LOCKED         8
 
+struct combat_result_struct
+{
+	combat_result_struct() : wants_to_flee(false), will_die(false) { };
+	combat_result_struct(bool wimpy, bool dead) : wants_to_flee(wimpy), will_die(dead) { };
+
+	bool wants_to_flee;
+	bool will_die;
+};
+
 namespace game_types
 {
 	enum weapon_type

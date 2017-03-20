@@ -103,67 +103,101 @@ ACMD(do_look);
  * - Pragmatism 
  */
 
-int damage_stat(char_data * killer, char_data * ch, int stat_num, int amount);
+ACMD(do_flee);
+combat_result_struct damage_stat(char_data * killer, char_data * ch, int stat_num, int amount);
 
-ASPELL(spell_curse){
-  int damage_table[7];
-  int i, count, last_stat, num, actual_count;
+ASPELL(spell_curse) 
+{
+	const int DAMAGE_TABLE_SIZE = 7;
+	const int NUM_STATS = 6;
 
-  if(GET_MENTAL_DELAY(ch) > PULSE_MENTAL_FIGHT+1){
-    send_to_char("Your mind is not ready yet.\n\r",ch);
-    return;
-  }
+	if (GET_MENTAL_DELAY(ch) > PULSE_MENTAL_FIGHT + 1) 
+	{
+		send_to_char("Your mind is not ready yet.\n\r", ch);
+		return;
+	}
 
-  count = (level + 2*10)*GET_PERCEPTION(victim)/100/10;
-  if(!count){
-    act("You try to curse $N, but can't reach $S mind.",FALSE, ch, 0, victim,
-	TO_CHAR);
-    return;
-  }
+	int count = (level + 2 * 10) * GET_PERCEPTION(victim) / 100 / 10;
+	if (!count) 
+	{
+		act("You try to curse $N, but can't reach $S mind.", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
 
-  if (affected_by_spell(ch, SPELL_MIND_BLOCK)){
-	act("You cannot curse with a blocked mind.",FALSE, ch, 0, victim, TO_CHAR);
-	return;
-  }
-  
-  if (GET_BODYTYPE(victim) != 1 && !IS_SHADOW(victim)) {
-    act("You try to curse $N, but could not fathom its mind.", FALSE, ch, 0, victim, TO_CHAR);
-    return;
-  }
+	if (affected_by_spell(ch, SPELL_MIND_BLOCK)) 
+	{
+		act("You cannot curse with a blocked mind.", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
 
-  for(i=0; i<6; i++) damage_table[i] = 0;
+	if (GET_BODYTYPE(victim) != 1 && !IS_SHADOW(victim)) 
+	{
+		act("You try to curse $N, but could not fathom its mind.", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
 
-  /* choosing the first stat to damage */
-  last_stat = num = number(0,6);
+	int damage_table[DAMAGE_TABLE_SIZE];
+	for (int stat_index = 0; stat_index < DAMAGE_TABLE_SIZE; stat_index++)
+	{
+		damage_table[stat_index] = 0;
+	}
 
-  damage_table[num] = 1;
-  count--;
+	/* choosing the first stat to damage */
+	int last_stat, num = number(0, NUM_STATS);
 
-  for(i=0; i<count; i++){
-    num = number(0,9);
-    if(num > 6) num = last_stat;
-    else last_stat = num;
-    
-    damage_table[num]++;
-  }
-  
-  act("$n points ominously at $N and curses.",TRUE, ch, 0, victim, TO_NOTVICT);
-  act("$n points ominously at you and curses.",TRUE, ch, 0, victim, TO_VICT);
-  act("You point at $N and curse.",FALSE, ch, 0, victim, TO_CHAR);
+	damage_table[num] = 1;
+	count--;
 
-  actual_count = 0;
-  for(i=0; i<6; i++){
-    if(damage_table[i]){
-      GET_SPIRIT(ch) -= number(0,damage_table[i]);
-      actual_count += damage_table[i];
-      if(GET_SPIRIT(ch) < 0){
-	GET_SPIRIT(ch) = 0;
-	break;
-      }
-      if(damage_stat(ch, victim, i, damage_table[i])) break;;
-    }
-  }
-  set_mental_delay(ch, actual_count*PULSE_MENTAL_FIGHT);
+	for (int stat_index = 0; stat_index < count; stat_index++) 
+	{
+		num = number(0, 9);
+		if (num > NUM_STATS)
+		{
+			num = last_stat;
+		}
+		else
+		{
+			last_stat = num;
+		}
+
+		damage_table[num]++;
+	}
+
+	act("$n points ominously at $N and curses.", TRUE, ch, 0, victim, TO_NOTVICT);
+	act("$n points ominously at you and curses.", TRUE, ch, 0, victim, TO_VICT);
+	act("You point at $N and curse.", FALSE, ch, 0, victim, TO_CHAR);
+
+	bool victim_flees = false;
+	bool victim_died = false;
+	
+	int actual_count = 0;
+	int stat_index = 0;
+	
+	while (stat_index < NUM_STATS && !victim_died && ch->points.spirit > 0)
+	{
+		int stat_damage = damage_table[stat_index];
+		if (stat_damage > 0)
+		{
+			ch->points.spirit -= number(0, stat_damage);
+			ch->points.spirit = std::max(ch->points.spirit, 0);
+			
+			combat_result_struct curse_result = damage_stat(ch, victim, stat_index, stat_damage);
+			victim_flees |= curse_result.wants_to_flee;
+			victim_died |= curse_result.will_die;
+
+			actual_count += stat_damage;
+		}
+
+		++stat_index;
+	}
+
+	// Only flee after the curse has completed attacking all of its stats.
+	if (!victim_died && victim_flees)
+	{
+		do_flee(victim, "", NULL, 0, 0);
+	}
+
+	set_mental_delay(ch, actual_count * PULSE_MENTAL_FIGHT);
 }
 
 int restore_stat(char_data * ch,int stat_num, int amount);

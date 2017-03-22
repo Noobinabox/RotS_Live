@@ -123,8 +123,8 @@ double adjust_regen_for_level(int character_level, double regen_amount)
 	if (character_level > 10)
 		return regen_amount;
 
-	const double flat_multiplier = 3.0;
-	const double level_penalty = 0.2;
+	const double flat_multiplier = 2.0;
+	const double level_penalty = 0.1;
 
 	double adjusted_amount = regen_amount * (flat_multiplier - (character_level * level_penalty));
 	return adjusted_amount;

@@ -2543,7 +2543,36 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	}
 }
 
+bool can_double_hit(const char_data* character)
+{
+	assert(character);
 
+	// Only characters with light-fighting can double-hit.
+	if (utils::get_specialization(*character) != (int)game_types::LightFighting)
+		return false;
+
+	// Characters must be wielding a weapon with a bulk of 3 or less to double hit.
+	obj_data* weapon = character->equipment[WIELD];
+	if (!weapon || weapon->get_bulk() > 3)
+		return false;
+
+	// The character is no longer fighting anyone.  Can't double-hit.
+	if (character->specials.fighting == NULL)
+		return false;
+
+	// The character's enemy is no longer in the room (probably wimpied out).  Can't
+	// attack an enemy that isn't there.
+	if (character->specials.fighting->in_room != character->in_room)
+		return false;
+
+	return true;
+}
+
+bool does_double_hit_proc(const char_data* character)
+{
+	// Double-hit has a 10% proc chance.
+	return number() >= 0.90;
+}
 
 /*
  * Control all of the fights going on; works on PULSE_VIOLENCE
@@ -2578,20 +2607,28 @@ void perform_violence(int mini_tics)
 
 		if (!IS_AFFECTED(ch, AFF_WAITING) || (GET_WAIT_PRIORITY(ch) == 29) || (GET_WAIT_PRIORITY(ch) == 59)) 
 		{
-			if ((GET_POS(ch) >= POSITION_FIGHTING) && (GET_ENERGY(ch) <= ENE_TO_HIT))
+			if ((GET_POS(ch) >= POSITION_FIGHTING) && (ch->specials.ENERGY <= ENE_TO_HIT))
 			{
-				GET_ENERGY(ch) += GET_ENE_REGEN(ch);
+				ch->specials.ENERGY += ch->points.ENE_regen;
 			}
 			else if (IS_NPC(ch) && !ch->delay.wait_value)
 			{
 				do_stand(ch, "", 0, 0, 0);
 			}
 
-			if ((GET_ENERGY(ch) > ENE_TO_HIT)) 
+			if (ch->specials.ENERGY > ENE_TO_HIT)
 			{
 				if (AWAKE(ch) && ch->specials.fighting && (ch->in_room == ch->specials.fighting->in_room))
 				{
+					// Note:  Calling hit reduces the character's current energy.
+					sh_int current_energy = ch->specials.ENERGY;
 					hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+
+					if (can_double_hit(ch) && does_double_hit_proc(ch))
+					{
+						ch->specials.ENERGY = current_energy;
+						hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+					}
 				}
 				else /* Not in same room */
 				{

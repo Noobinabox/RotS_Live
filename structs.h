@@ -21,7 +21,7 @@
 #include <algorithm>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
-#define ENE_TO_HIT 1200
+const int ENE_TO_HIT = 1200;
 #define BAREHANDED_DAMAGE 2
 #define PRACS_PER_LEVEL 3
 #define LEA_PRAC_FACTOR 5
@@ -708,26 +708,27 @@ namespace game_types
 {
 	enum player_specs
 	{
-		PLRSPEC_NONE, // None
-		PLRSPEC_FIRE, // Fire Mage
-		PLRSPEC_COLD, // Cold Mage
-		PLRSPEC_REGN, // Regeneration
-		PLRSPEC_PROT, // Protection
-		PLRSPEC_PETS, // Pets/Animals
-		PLRSPEC_STLH, // Stealth
-		PLRSPEC_WILD, // Wild Fighting
-		PLRSPEC_TELE, // Teleport
-		PLRSPEC_ILLU, // Illusion
-		PLRSPEC_LGHT, // Lightning Mage
-		PLRSPEC_GRDN, // Guardian
-		PLRSPEC_MIND, // Mind
-		PLRSPEC_HFHT, // Heavy Fighter
-		PLRSPEC_LFHT, // Light Fighter
-		PLRSPEC_DEFD, // Defender
-		PLRSPEC_ARCH, // Archery
-		PLRSPEC_DARK, // Dark Mage
+		None, // None
+		Fire, // Fire Mage
+		Cold, // Cold Mage
+		Regen, // Regeneration
+		Protection, // Protection
+		Animals, // Pets/Animals
+		Stealth, // Stealth
+		Wild, // Wild Fighting
+		Teleport, // Teleport
+		Illusion, // Illusion
+		Lightning, // Lightning Mage
+		Guardian, // Guardian
+		Mind, // Mind
+		HeavyFighting, // Heavy Fighter
+		LightFighting, // Light Fighter
+		Defender, // Defender
+		Archery, // Archery
+		Darkness, // Dark Mage
 	};
 }
+
 
 #define PLRSPEC_NONE    0
 #define PLRSPEC_FIRE    1

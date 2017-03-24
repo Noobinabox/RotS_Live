@@ -23,6 +23,7 @@
 #include "color.h"
 
 #include "big_brother.h"
+#include "char_utils.h"
 
 /* extern variables */
 extern struct room_data world;
@@ -949,7 +950,14 @@ ACMD(do_kick)
 	if (prob < 0)
 		damage(ch, victim, 0, attacktype, 0);
 	else
+	{
+		// Heavy fighters kick 20% harder.
+		if (utils::get_specialization(*ch) == (int)game_types::HeavyFighting)
+		{
+			dam += dam / 5;
+		}
 		damage(ch, victim, dam, attacktype, 0);
+	}
 
 delay:
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +

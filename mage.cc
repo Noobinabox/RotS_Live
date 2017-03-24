@@ -24,6 +24,7 @@
 #include "db.h"
 #include "limits.h"
 #include "zone.h"  /* For zone_table */
+#include "char_utils.h"
 /*
  * Mage level for offensive spell damage (not saves).
  * Note that here you get 3 levels per 10 int, rather than 2 for saves
@@ -1464,8 +1465,16 @@ ASPELL(spell_lightning_strike)
 
 	if (weather_info.sky[world[ch->in_room].sector_type] != SKY_LIGHTNING) 
 	{
-		send_to_char("The weather is not appropriate for this spell.\n\r", ch);
-		return;
+		if (utils::get_specialization(*ch) == (int)game_types::Lightning)
+		{
+			send_to_char("You manage to create some lightning, but the effect is reduced.\n\r", ch);
+			dam = dam * 4 / 5;
+		}
+		else
+		{
+			send_to_char("The weather is not appropriate for this spell.\n\r", ch);
+			return;
+		}
 	}
 
 	bool saved = saves_spell(victim, level, 0);

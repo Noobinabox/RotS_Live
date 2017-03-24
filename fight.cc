@@ -2291,6 +2291,27 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 }
 
 //============================================================================
+int defender_effect(const char_data& attacker, const char_data& victim, int damage)
+{
+	// Defender specialized characters have a 10% chance to cut damage in half from
+	// hits.
+	if (utils::get_specialization(victim) == (int)game_types::Defender)
+	{
+		obj_data* shield = victim.equipment[WEAR_SHIELD];
+		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
+		{
+			if (number() >= 0.90)
+			{
+				// TODO(drelidan):  Add a message here to indicate what's going on.
+				return damage >> 1;
+			}
+		}
+	}
+
+	return damage;
+}
+
+//============================================================================
 int get_evasion_malus(const char_data& attacker, const char_data& victim)
 {
 	if (!utils::is_affected_by(victim, AFF_EVASION))
@@ -2458,7 +2479,9 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 				if (GET_POS(victim) < POSITION_FIGHTING)
 					dam += dam / 2;
 
+				dam = defender_effect(*ch, *victim, dam);
 				dam = std::max(0, dam);  /* Not less than 0 damage */
+
 				damage(ch, victim, dam, w_type, location);
 
 				if (dam > 0)
@@ -2626,6 +2649,7 @@ void perform_violence(int mini_tics)
 
 					if (can_double_hit(ch) && does_double_hit_proc(ch))
 					{
+						// TODO(drelidan):  Add a message here to indicate what's going on.
 						ch->specials.ENERGY = current_energy;
 						hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
 					}

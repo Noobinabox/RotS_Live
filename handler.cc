@@ -998,27 +998,37 @@ void	stop_follower(struct char_data *ch, int mode)
 {
    struct follow_type *j, *k;
 
-   if(mode == FOLLOW_MOVE){
-     if(!ch->master) return;
-     
-     forget(ch, ch->master); // in case we were "hunting" him
+   if (mode == FOLLOW_MOVE) {
+	   if (!ch->master) return;
 
-     if (IS_AFFECTED(ch, AFF_CHARM)) {
-       act("You realize that $N is a jerk!", FALSE, ch, 0, ch->master, TO_CHAR);
-       act("$n realizes that $N is a jerk!", FALSE, ch, 0, ch->master, TO_NOTVICT);
-       act("$n hates your guts!", FALSE, ch, 0, ch->master, TO_VICT);
-         if (affected_by_spell(ch, SKILL_TAME))
-       	 affect_from_char(ch, SKILL_TAME);
-	 if (affected_by_spell(ch,SKILL_RECRUIT))
-	 affect_from_char(ch, SKILL_RECRUIT);
-       REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
-       GET_MAX_MOVE(ch) -= 50;     // move bonus for being tamed
-     } else {
-       act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
-       if(ch->in_room == ch->master->in_room)
-	 act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
-       act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
-     }
+	   forget(ch, ch->master); // in case we were "hunting" him
+
+	   if (IS_AFFECTED(ch, AFF_CHARM))
+	   {
+		   act("You realize that $N is a jerk!", FALSE, ch, 0, ch->master, TO_CHAR);
+		   act("$n realizes that $N is a jerk!", FALSE, ch, 0, ch->master, TO_NOTVICT);
+		   act("$n hates your guts!", FALSE, ch, 0, ch->master, TO_VICT);
+		   if (affected_by_spell(ch, SKILL_TAME))
+		   {
+			   affect_from_char(ch, SKILL_TAME);
+			   GET_MAX_MOVE(ch) -= 50;     // move bonus for being tamed
+		   }   
+		   if (affected_by_spell(ch, SKILL_RECRUIT))
+		   {
+			   affect_from_char(ch, SKILL_RECRUIT);
+		   }
+		   REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
+	   }
+   }
+	 else 
+	 {
+		 act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
+		 if (ch->in_room == ch->master->in_room)
+		 {
+			 act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
+		 }
+		 act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
+	 }
 
      if (ch->master->followers->follower == ch) { /* Head of follower-list? */
        k = ch->master->followers;

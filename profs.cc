@@ -793,12 +793,14 @@ void recalc_abilities(char_data* character)
 		if (character->tmpabilities.move > character->abilities.move)
 			character->tmpabilities.move = character->abilities.move;
 
-		if ((weapon = character->equipment[WIELD]))
+		weapon = character->equipment[WIELD];
+		if (weapon)
 		{
-			if (!GET_OBJ_WEIGHT(weapon)) {
+			if (GET_OBJ_WEIGHT(weapon) == 0)
+			{
 				/*UPDATE*, temporary check for 0 weight weapons*/
 				GET_OBJ_WEIGHT(weapon) = 1;
-				sprintf(buf, "SYSERR: 0 wegith weapon");
+				sprintf(buf, "SYSERR: 0 weight weapon");
 				mudlog(buf, NRM, LEVEL_GOD, TRUE);
 			}
 
@@ -806,8 +808,7 @@ void recalc_abilities(char_data* character)
 			character->specials.null_speed = 3 * GET_DEX(character) + 2 * (GET_RAW_SKILL(character, SKILL_ATTACK) +
 				GET_RAW_SKILL(character, SKILL_STEALTH) / 2) / 3 + 100;
 
-			character->specials.str_speed = GET_BAL_STR(character) * 2500000 /
-				(GET_OBJ_WEIGHT(weapon) * (bulk + 3));
+			character->specials.str_speed = GET_BAL_STR(character) * 2500000 / (GET_OBJ_WEIGHT(weapon) * (bulk + 3));
 
 			if (IS_TWOHANDED(character))
 			{
@@ -836,7 +837,7 @@ void recalc_abilities(char_data* character)
 			}
 
 			// Heavy fighters get +5% speed with bulk 4 or 5 weapons.
-			if (utils::get_specialization(*character) == (int)game_types::PS_HeavyFighting)
+			if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
 			{
 				if (bulk == 4 || bulk == 5)
 				{

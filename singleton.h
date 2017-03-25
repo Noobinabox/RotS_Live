@@ -80,8 +80,8 @@ protected:
 
 	virtual ~world_singleton() { }
 
-	const weather_data& get_weather() { return *m_weather; }
-	const room_data* get_world() { return m_world; }
+	const weather_data& get_weather() const { return *m_weather; }
+	const room_data* get_world() const { return m_world; }
 
 	virtual void on_instance_destroyed() { };
 	virtual void on_instance_not_created() { };

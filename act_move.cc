@@ -1531,117 +1531,104 @@ ACMD(do_lose){
 
 ACMD(do_follow)
 {
-   struct char_data *leader;
+	char_data* leader = NULL;
 
-   /*   void	stop_follower(struct char_data *ch);
-	void	add_follower(struct char_data *ch, struct char_data *leader);*/
+	one_argument(argument, buf);
 
-   one_argument(argument, buf);
+	if (*buf) 
+	{
+		if (!str_cmp(buf, "self"))
+		{
+			leader = ch;
+		}
+		else
+		{
+			leader = get_char_room_vis(ch, buf);
+			if (leader == NULL)
+			{
+				send_to_char("I see no person by that name here!\n\r", ch);
+				return;
+			}
+		}
+	}
+	else 
+	{
+		send_to_char("Whom do you wish to follow?\n\r", ch);
+		return;
+	}
+	if (other_side(ch, leader) || (IS_NPC(leader) && MOB_FLAGGED(leader, MOB_MOUNT) && IS_AGGR_TO(leader, ch))) 
+	{
+		sprintf(buf, "It doesn't want you to follow it.\n\r");
+		send_to_char(buf, ch);
+		return;
+	}
 
-   if (*buf) {
-      if (!str_cmp(buf, "self"))
-	 leader = ch;
-      else if (!(leader = get_char_room_vis(ch, buf))) {
-	 send_to_char("I see no person by that name here!\n\r", ch);
-	 return;
-      }
-   } else {
-      send_to_char("Whom do you wish to follow?\n\r", ch);
-      return;
-   }
-   if(other_side(ch, leader) ||
-      (IS_NPC(leader) && MOB_FLAGGED(leader, MOB_MOUNT) &&
-       IS_AGGR_TO(leader, ch))) {
-     sprintf(buf,"It doesn't want you to follow it.\n\r");
-     send_to_char(buf, ch);
-     return;
-   }
- 
-  if (IS_SHADOW(ch)){
-	 send_to_char("You cannot follow anything whilst being a shadow.\n\r", ch);
-	 return;
-   }
-   /*
-   * Orc players cannot follow others. *
-   if (GET_RACE(ch) == RACE_ORC) {
-     send_to_char("You're an Orcish commander, you follow "
-		  "nobody.\r\n", ch);
-     return;
-   }
+	if (IS_SHADOW(ch)) 
+	{
+		send_to_char("You cannot follow anything whilst being a shadow.\n\r", ch);
+		return;
+	}
 
-   * Furthermore, players cannot follow Orcs *
-   if (GET_RACE(leader) == RACE_ORC) {
-     sprintf(buf, "Follow %s %s?  Certainly not.\r\n",
-	     strchr("aeiouyAEIOUY", *pc_races[RACE_ORC]) ?
-	     "an" : "a", pc_races[RACE_ORC]);
-     send_to_char(buf, ch);
-     return;
-   }
+	if (ch->master == leader) 
+	{
+		sprintf(buf, "You are already following %s.\n\r", HMHR(leader));
+		send_to_char(buf, ch);
+		return;
+	}
 
-    * 
-    * No race on the same side of the war as RACE_ORC is
-    * allowed to follow mounts.  This is to keep people
-    * from circumventing the rule that players cannot
-    * follow Orc players.
-    *
-   if (!other_side_num(GET_RACE(ch), RACE_ORC) &&
-       MOB_FLAGGED(leader, MOB_MOUNT) ||
-       MOB_FLAGGED(leader, MOB_ORC_FRIEND)) {
-     sprintf(buf, "You wouldn't stoop low enough to follow %s.\r\n",
-	     GET_NAME(leader));
-     send_to_char(buf, ch);
-     return;
-   }
-   */
-   if (ch->master == leader) {
-      sprintf(buf, "Your are already following %s.\n\r", HMHR(leader));
-      send_to_char(buf, ch);
-      return;
-   }
+	if (ch->master && (MOB_FLAGGED(ch, MOB_ORC_FRIEND) || MOB_FLAGGED(ch, MOB_PET)))
+	{
+		act("But you only feel like following $N!", FALSE, ch, 0, ch->master, TO_CHAR);
+		act("$n only feels like following you!", FALSE, ch, 0, ch->master, TO_VICT);
+	}
+	else 
+	{ /* Not Charmed follow person */
+		if (leader == ch)
+		{
+			if (!ch->master) 
+			{
+				send_to_char("You are already following yourself.\n\r", ch);
+				return;
+			}
+			stop_follower(ch, FOLLOW_MOVE);
+		}
+		else 
+		{
+			if (circle_follow(ch, leader, FOLLOW_MOVE)) 
+			{
+				act("Sorry, but following in loops is not allowed.", FALSE, ch, 0, 0, TO_CHAR);
+				return;
+			}
 
-   if (IS_AFFECTED(ch, AFF_CHARM) && (ch->master)) {
-      act("But you only feel like following $N!", FALSE, ch, 0, ch->master, TO_CHAR);
-   } else { /* Not Charmed follow person */
-      if (leader == ch) {
-	 if (!ch->master) {
-	    send_to_char("You are already following yourself.\n\r", ch);
-	    return;
-	 }
-	 stop_follower(ch, FOLLOW_MOVE);
-      } else {
-	 if (circle_follow(ch, leader, FOLLOW_MOVE)) {
-	    act("Sorry, but following in loops is not allowed.", FALSE, ch, 0, 0, TO_CHAR);
-	    return;
-	 }
+			if (ch->master) 
+			{
+				stop_follower(ch, FOLLOW_MOVE);
+			}
 
-	 if (ch->master){
-	   stop_follower(ch, FOLLOW_MOVE);
-	 }
-
-	 add_follower(ch, leader, FOLLOW_MOVE);
-      }
-   }
+			add_follower(ch, leader, FOLLOW_MOVE);
+		}
+	}
 }
 
 
 ACMD(do_refollow)
 {
-  struct char_data *leader;
+	if (ch->master == NULL)
+	{
+		send_to_char("But, you aren't following anyone!\n\r", ch);
+		return;
+	}
 
-  if (!(ch->master)) {
-    send_to_char("But, you aren't following anyone!\n\r", ch);
-    return;
-  }
-  
-  leader = ch->master;
+	char_data* leader = ch->master;
 
-  stop_follower(ch, FOLLOW_REFOL);
-  add_follower(ch, leader, FOLLOW_MOVE);
+	stop_follower(ch, FOLLOW_REFOL);
+	add_follower(ch, leader, FOLLOW_MOVE);
 }
 
 
 
-ACMD(do_lead){  //Added by Loman.
+ACMD(do_lead)
+{  //Added by Loman.
   char_data * potential_mount;
   char_data * mount;
 

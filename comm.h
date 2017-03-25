@@ -20,6 +20,7 @@ void send_to_all(char *messg);
 void send_to_char(const char *messg, struct char_data *ch);
 void send_to_char(const char* message, int character_id);
 const char* get_char_name(int character_id);
+struct char_data* get_character(int character_id);
 void send_to_except(const char *messg, struct char_data *ch);
 void send_to_room(const char *messg, int room);
 void send_to_room_except(const char *messg, int room, struct char_data *ch);

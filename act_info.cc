@@ -3553,11 +3553,19 @@ ACMD(do_affections){
 
     }
   }
+
+  game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+  if (bb_instance.is_target_looting(ch))
+  {
+	  sprintf(buf, "%sYou are under the protection of the Gods.\n\r", buf);
+  }
+
   /* checking for a prepared spell */
   if((ch->delay.cmd == CMD_PREPARE) && (ch->delay.targ1.type==TARGET_IGNORE)) {
     sprintf(buf,"%sYou have prepared the '%s' spell.\n\r", buf,
 	    skills[ch->delay.targ1.ch_num].name);
-  }else if (ch->delay.cmd == CMD_TRAP)
+  }
+else if (ch->delay.cmd == CMD_TRAP)
     sprintf(buf, "%sYou lay in wait to trap an unsuspecting victim.\r\n", buf);
   if(SUN_PENALTY(ch))
     strcat(buf, "You feel weak under the intensity of light.\n\r");

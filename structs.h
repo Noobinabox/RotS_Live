@@ -200,6 +200,15 @@ const int ENE_TO_HIT = 1200;
 #define CONT_CLOSED         4
 #define CONT_LOCKED         8
 
+struct combat_result_struct
+{
+	combat_result_struct() : wants_to_flee(false), will_die(false) { };
+	combat_result_struct(bool wimpy, bool dead) : wants_to_flee(wimpy), will_die(dead) { };
+
+	bool wants_to_flee;
+	bool will_die;
+};
+
 namespace game_types
 {
 	enum weapon_type
@@ -703,7 +712,6 @@ struct prof_type
 	sh_int Class_points[5];
 };
 
-
 namespace game_types
 {
 	enum player_specs
@@ -728,7 +736,6 @@ namespace game_types
 		Darkness, // Dark Mage
 	};
 }
-
 
 #define PLRSPEC_NONE    0
 #define PLRSPEC_FIRE    1

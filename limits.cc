@@ -91,7 +91,7 @@ inline void advance_mini_level(struct char_data *ch)
 	/* add on average 2 HP/level */
 	if (GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
 	{
-		if (number(0, 50) == 0)
+		if (number() >= 0.98)
 		{
 			ch->constabilities.hit++;
 		}
@@ -123,8 +123,8 @@ double adjust_regen_for_level(int character_level, double regen_amount)
 	if (character_level > 10)
 		return regen_amount;
 
-	const double flat_multiplier = 3.0;
-	const double level_penalty = 0.2;
+	const double flat_multiplier = 2.0;
+	const double level_penalty = 0.1;
 
 	double adjusted_amount = regen_amount * (flat_multiplier - (character_level * level_penalty));
 	return adjusted_amount;

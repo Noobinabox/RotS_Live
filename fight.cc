@@ -2320,18 +2320,20 @@ int heavy_fighting_effect(const char_data& attacker, int damage)
 }
 
 //============================================================================
-int defender_effect(const char_data& attacker, const char_data& victim, int damage)
+int defender_effect(char_data* attacker, char_data* victim, int damage)
 {
 	// Defender specialized characters have a 10% chance to cut damage in half from
 	// hits.
-	if (utils::get_specialization(victim) == (int)game_types::PS_Defender)
+	if (utils::get_specialization(*victim) == game_types::PS_Defender)
 	{
-		obj_data* shield = victim.equipment[WEAR_SHIELD];
+		obj_data* shield = victim->equipment[WEAR_SHIELD];
 		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
 		{
 			if (number() >= 0.90)
 			{
-				// TODO(drelidan):  Add a message here to indicate what's going on.
+				act("You block $N's attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_CHAR);
+				act("$n blocks your attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_VICT);
+				act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
 				return damage >> 1;
 			}
 		}
@@ -2509,7 +2511,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 					dam += dam / 2;
 
 				dam = heavy_fighting_effect(*ch, dam);
-				dam = defender_effect(*ch, *victim, dam);
+				dam = defender_effect(ch, victim, dam);
 				dam = std::max(0, dam);  /* Not less than 0 damage */
 
 				damage(ch, victim, dam, w_type, location);
@@ -2601,7 +2603,7 @@ bool can_double_hit(const char_data* character)
 	assert(character);
 
 	// Only characters with light-fighting can double-hit.
-	if (utils::get_specialization(*character) != (int)game_types::PS_LightFighting)
+	if (utils::get_specialization(*character) != game_types::PS_LightFighting)
 		return false;
 
 	// Characters must be wielding a weapon with a bulk of 3 or less to double hit.
@@ -2679,9 +2681,13 @@ void perform_violence(int mini_tics)
 
 					if (can_double_hit(ch) && does_double_hit_proc(ch))
 					{
-						// TODO(drelidan):  Add a message here to indicate what's going on.
+						char_data* victim = ch->specials.fighting;
+						act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, ch, NULL, victim, TO_CHAR);
+						act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, ch, NULL, victim, TO_VICT);
+						act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, ch, 0, victim, TO_NOTVICT, FALSE);
+
 						ch->specials.ENERGY = current_energy;
-						hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+						hit(ch, victim, TYPE_UNDEFINED);
 					}
 				}
 				else /* Not in same room */

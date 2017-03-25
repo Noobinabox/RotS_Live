@@ -1659,8 +1659,7 @@ ACMD(do_info)
   struct time_info_data playing_time;
   int room_move_cost(struct char_data *, struct room_data *);
   struct time_info_data real_time_passed(time_t, time_t);
-  extern char *specialize_name[];
-  extern int num_of_specializations;
+  extern const char* specialize_name[];
 
   bufpt = buf;
 
@@ -1685,12 +1684,15 @@ ACMD(do_info)
 		   GET_PROF_LEVEL(PROF_MAGE, ch));
 
   /* `ch's specialization */
-  tmp = GET_SPEC(ch);
-  if(!tmp || tmp >= num_of_specializations)
-    bufpt += sprintf(bufpt, "You are not specialized in anything.\n\r");
+  game_types::player_specs spec = utils::get_specialization(*ch);
+  if (spec == game_types::PS_None || spec == game_types::PS_Count)
+  {
+	  bufpt += sprintf(bufpt, "You are not specialized in anything.\n\r");
+  }
   else
-    bufpt += sprintf(bufpt, "You are specialized in %s.\n\r",
-		     specialize_name[tmp]);
+  {
+	  bufpt += sprintf(bufpt, "You are specialized in %s.\n\r", specialize_name[spec]);
+  }
 
   /* `ch's age */
   playing_time = real_time_passed((time(0) - ch->player.time.logon) +

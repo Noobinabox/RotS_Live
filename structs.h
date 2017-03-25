@@ -716,24 +716,24 @@ namespace game_types
 {
 	enum player_specs
 	{
-		None, // None
-		Fire, // Fire Mage
-		Cold, // Cold Mage
-		Regen, // Regeneration
-		Protection, // Protection
-		Animals, // Pets/Animals
-		Stealth, // Stealth
-		Wild, // Wild Fighting
-		Teleport, // Teleport
-		Illusion, // Illusion
-		Lightning, // Lightning Mage
-		Guardian, // Guardian
-		Mind, // Mind
-		HeavyFighting, // Heavy Fighter
-		LightFighting, // Light Fighter
-		Defender, // Defender
-		Archery, // Archery
-		Darkness, // Dark Mage
+		PS_None,
+		PS_Fire,
+		PS_Cold,
+		PS_Regeneration,
+		PS_Protection,
+		PS_Animals,
+		PS_Stealth,
+		PS_WildFighting,
+		PS_Teleportation,
+		PS_Illusion,
+		PS_Lightning,
+		PS_Guardian,
+		PS_HeavyFighting,
+		PS_LightFighting,
+		PS_Defender,
+		PS_Archery,
+		PS_Darkness,
+		PS_Count,
 	};
 }
 

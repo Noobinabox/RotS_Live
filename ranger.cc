@@ -2170,7 +2170,7 @@ int shoot_calculate_wait(const char_data* archer)
 		total_beats = total_beats - 1;
 	}
 
-	if (utils::get_specialization(*archer) == (int)game_types::Archery)
+	if (utils::get_specialization(*archer) == (int)game_types::PS_Archery)
 	{
 		total_beats = total_beats - 1;
 	}

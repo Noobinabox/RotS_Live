@@ -25,6 +25,7 @@
 #include "color.h"
 #include "limits.h"
 #include "profs.h"
+#include "char_utils.h"
 
 /* extern variables */
 extern struct descriptor_data *descriptor_list;
@@ -1715,62 +1716,73 @@ ACMD(do_block)
 
 ACMD(do_specialize)
 {
-  int tmp, len;
+	extern const char* specialize_name[];
 
-  extern char *specialize_name[];
-  extern int num_of_specializations;
-
-
-  if(GET_LEVEL(ch) < 20) {
-    send_to_char("You are too young to specialize.\n\r", ch);
-    return;
-  }
-
-  if(wtl && (wtl->targ1.type == TARGET_TEXT)) {
-    tmp = GET_SPEC(ch);
-    if(tmp && (tmp < num_of_specializations)) {
-      sprintf(buf, "You are already specialized in %s.\n\r",
-	      specialize_name[tmp]);
-      send_to_char(buf, ch);
-      return;
-    }
-
-    if(!(len = strlen(wtl->targ1.ptr.text->text)))
-      return;
-
-    for(tmp = 1; tmp < num_of_specializations; tmp++)
-      if(!strncmp(specialize_name[tmp], wtl->targ1.ptr.text->text, len))
-	break;
-
-    if(GET_RACE(ch) == RACE_ORC && tmp == PLRSPEC_GRDN) {
-		send_to_char("Snagas can't specialize in guardian!\n\r", ch);
+	if (GET_LEVEL(ch) < 20) 
+	{
+		send_to_char("You are too young to specialize.\n\r", ch);
 		return;
 	}
 
-    if(tmp < num_of_specializations) {
-      SET_SPEC(ch, tmp);
-      sprintf(buf, "You are now specialized in %s.\n\r", specialize_name[tmp]);
-      send_to_char(buf, ch);
-      return;
-    }
-  }
+	int num_of_specializations = (int)game_types::PS_Count;
+	if (wtl && (wtl->targ1.type == TARGET_TEXT)) 
+	{
+		game_types::player_specs current_spec = utils::get_specialization(*ch);
+		if (current_spec != game_types::PS_None && current_spec != game_types::PS_Count)
+		{
+			sprintf(buf, "You are already specialized in %s.\n\r", specialize_name[current_spec]);
+			send_to_char(buf, ch);
+			return;
+		}
 
-  tmp = GET_SPEC(ch);
-  if(!tmp || (tmp >= num_of_specializations)) {
-    strcpy(buf, "You can specialize in ");
-    for(tmp = 1; tmp < num_of_specializations; tmp++) {
-      strcat(buf, specialize_name[tmp]);
-      strcat(buf, ", ");
-    }
-    buf[strlen(buf)-2] = 0;
-    strcat(buf,".\n\r");
-    send_to_char(buf, ch);
-  }
-  else {
-    sprintf(buf, "You are specialized in %s.\n\r", specialize_name[tmp]);
-    send_to_char(buf, ch);
-    return;
-  }
+		const char* spec_argument = wtl->targ1.ptr.text->text;
+		int len = strlen(spec_argument);
+		if (len == 0)
+			return;
+
+		for (int index = 1; index < num_of_specializations; index++)
+		{
+			// If the strings are equal.
+			if (strncmp(specialize_name[index], spec_argument, len) == 0)
+			{
+				game_types::player_specs spec = game_types::player_specs(index);
+				if (spec == game_types::PS_Count)
+					return;
+
+				if (ch->player.race == RACE_ORC && spec == game_types::PS_Guardian)
+				{
+					send_to_char("Snagas can't specialize in guardian!\n\r", ch);
+					return;
+				}
+
+				utils::set_specialization(*ch, spec);
+				sprintf(buf, "You are now specialized in %s.\n\r", specialize_name[index]);
+				send_to_char(buf, ch);
+				return;
+			}
+		}
+	}
+
+	int tmp = GET_SPEC(ch);
+	if (tmp == 0 || (tmp >= num_of_specializations)) 
+	{
+		strcpy(buf, "You can specialize in ");
+		for (tmp = 1; tmp < num_of_specializations; tmp++) 
+		{
+			strcat(buf, specialize_name[tmp]);
+			strcat(buf, ", ");
+		}
+
+		buf[strlen(buf) - 2] = 0;
+		strcat(buf, ".\n\r");
+		send_to_char(buf, ch);
+	}
+	else 
+	{
+		sprintf(buf, "You are specialized in %s.\n\r", specialize_name[tmp]);
+		send_to_char(buf, ch);
+		return;
+	}
 }
 
 

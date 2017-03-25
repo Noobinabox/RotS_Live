@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base_utils.h"
+#include "structs.h"
 
 struct char_data;
 struct obj_data;
@@ -108,8 +109,8 @@ namespace utils
 	int get_perception(const char_data& character);
 	bool is_mental(const char_data& character);
 
-	int get_specialization(const char_data& character);
-	void set_specialization(char_data& character, int value);
+	game_types::player_specs get_specialization(const char_data& character);
+	void set_specialization(char_data& character, game_types::player_specs value);
 
 	bool is_resistant(const char_data& character, int attack_group);
 	bool is_vulnerable(const char_data& character, int attack_group);

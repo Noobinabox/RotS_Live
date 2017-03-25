@@ -2261,7 +2261,7 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 		}
 
 		/* Heavy fighters get an extra 5% damage absorption. */
-		if (utils::get_specialization(*victim) == (int)game_types::HeavyFighting)
+		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
 		{
 			damage_reduction += damage_reduction / 20;
 		}
@@ -2306,7 +2306,7 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 int heavy_fighting_effect(const char_data& attacker, int damage)
 {
 	// Heavy fighters deal 5% more damage with heavy weapons.
-	if (utils::get_specialization(attacker) == (int)game_types::HeavyFighting)
+	if (utils::get_specialization(attacker) == (int)game_types::PS_HeavyFighting)
 	{
 		obj_data* weapon = attacker.equipment[WIELD];
 		if (weapon && weapon->get_bulk() >= 6)
@@ -2324,7 +2324,7 @@ int defender_effect(const char_data& attacker, const char_data& victim, int dama
 {
 	// Defender specialized characters have a 10% chance to cut damage in half from
 	// hits.
-	if (utils::get_specialization(victim) == (int)game_types::Defender)
+	if (utils::get_specialization(victim) == (int)game_types::PS_Defender)
 	{
 		obj_data* shield = victim.equipment[WEAR_SHIELD];
 		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
@@ -2601,7 +2601,7 @@ bool can_double_hit(const char_data* character)
 	assert(character);
 
 	// Only characters with light-fighting can double-hit.
-	if (utils::get_specialization(*character) != (int)game_types::LightFighting)
+	if (utils::get_specialization(*character) != (int)game_types::PS_LightFighting)
 		return false;
 
 	// Characters must be wielding a weapon with a bulk of 3 or less to double hit.

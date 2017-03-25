@@ -741,7 +741,7 @@ void do_stat_character(struct char_data *ch, struct char_data *k)
    struct affected_type *aff;
    struct memory_rec *tmprec;
 
-   extern char * specialize_name[];
+   extern const char* specialize_name[];
 
    if((GET_LEVEL(ch) < LEVEL_AREAGOD) && (!IS_NPC(k)))
      {

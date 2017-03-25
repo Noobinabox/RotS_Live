@@ -836,7 +836,7 @@ void recalc_abilities(char_data* character)
 			}
 
 			// Heavy fighters get +5% speed with bulk 4 or 5 weapons.
-			if (utils::get_specialization(*character) == (int)game_types::HeavyFighting)
+			if (utils::get_specialization(*character) == (int)game_types::PS_HeavyFighting)
 			{
 				if (bulk == 4 || bulk == 5)
 				{

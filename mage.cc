@@ -1465,7 +1465,7 @@ ASPELL(spell_lightning_strike)
 
 	if (weather_info.sky[world[ch->in_room].sector_type] != SKY_LIGHTNING) 
 	{
-		if (utils::get_specialization(*ch) == (int)game_types::Lightning)
+		if (utils::get_specialization(*ch) == (int)game_types::PS_Lightning)
 		{
 			send_to_char("You manage to create some lightning, but the effect is reduced.\n\r", ch);
 			dam = dam * 4 / 5;

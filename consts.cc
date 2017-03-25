@@ -3162,9 +3162,7 @@ int min_race_align[MAX_RACES]={
   0
 };
 
-int num_of_specializations = 13;
-
-char * specialize_name[]={
+const char* specialize_name[game_types::PS_Count]= {
   "nothing",
   "fire",
   "cold",
@@ -3177,9 +3175,12 @@ char * specialize_name[]={
   "illusion",
   "lightning",
   "guardian",
-  "\n"
+  "heavy fighting",
+  "light fighting",
+  "defending",
+  "archery",
+  "darkness"
 };
-
 
 char * resistance_name[]={
   "UNGROUPED",   /* 0 */
@@ -3200,6 +3201,7 @@ char * resistance_name[]={
   "",           /* 15*/
   "\n"
 };
+
 char * vulnerability_name[]={
   "V-UNGROUPED",   /* 0 */
   "V-FIRE",

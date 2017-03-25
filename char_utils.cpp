@@ -871,21 +871,21 @@ namespace utils
 	}
 
 	//============================================================================
-	int get_specialization(const char_data& character)
+	game_types::player_specs get_specialization(const char_data& character)
 	{
 		if (is_npc(character) || character.profs == NULL)
-			return 0;
+			return game_types::PS_None;
 
-		return character.profs->specialization;
+		return game_types::player_specs(character.profs->specialization);
 	}
 	
 	//============================================================================
-	void set_specialization(char_data& character, int value)
+	void set_specialization(char_data& character, game_types::player_specs value)
 	{
 		if (is_npc(character) || character.profs == NULL)
 			return;
 
-		character.profs->specialization = value;
+		character.profs->specialization = (int)value;
 	}
 
 	//============================================================================

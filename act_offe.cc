@@ -952,7 +952,7 @@ ACMD(do_kick)
 	else
 	{
 		// Heavy fighters kick 20% harder.
-		if (utils::get_specialization(*ch) == (int)game_types::HeavyFighting)
+		if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting)
 		{
 			dam += dam / 5;
 		}

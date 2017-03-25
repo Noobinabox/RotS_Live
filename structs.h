@@ -21,7 +21,7 @@
 #include <algorithm>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
-#define ENE_TO_HIT 1200
+const int ENE_TO_HIT = 1200;
 #define BAREHANDED_DAMAGE 2
 #define PRACS_PER_LEVEL 3
 #define LEA_PRAC_FACTOR 5
@@ -712,6 +712,31 @@ struct prof_type
 	sh_int Class_points[5];
 };
 
+namespace game_types
+{
+	enum player_specs
+	{
+		None, // None
+		Fire, // Fire Mage
+		Cold, // Cold Mage
+		Regen, // Regeneration
+		Protection, // Protection
+		Animals, // Pets/Animals
+		Stealth, // Stealth
+		Wild, // Wild Fighting
+		Teleport, // Teleport
+		Illusion, // Illusion
+		Lightning, // Lightning Mage
+		Guardian, // Guardian
+		Mind, // Mind
+		HeavyFighting, // Heavy Fighter
+		LightFighting, // Light Fighter
+		Defender, // Defender
+		Archery, // Archery
+		Darkness, // Dark Mage
+	};
+}
+
 #define PLRSPEC_NONE    0
 #define PLRSPEC_FIRE    1
 #define PLRSPEC_COLD    2
@@ -1056,6 +1081,23 @@ struct char_special2_data {
                      /* NPC (bitvector) */
   int retiredon;     /* time of retirement */
   int hide_flags;    /* flag set for hide info */
+};
+
+enum source_type
+{
+	SOURCE_PLAYER,
+	SOURCE_MOB,
+	SOURCE_ROOM,
+	SOURCE_ITEM,
+	SOURCE_OTHER,
+	SOURCE_INVALID,
+};
+
+struct affection_source
+{
+	source_type type;
+	int source_id;
+	void* source;
 };
 
 /* Used in CHAR_FILE_U Change with the utmost care */

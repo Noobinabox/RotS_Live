@@ -853,35 +853,37 @@ affect_from_char(struct char_data *ch, byte skill)
 }
 
 /* Return if a char is affected by a spell (SPELL_XXX), NULL indicates not affected.
-   firstaf is not used anywhere in the mud...*/
-   
-affected_type * affected_by_spell( struct char_data *ch, byte skill, struct affected_type * firstaf )
+   start_affect is not used anywhere in the mud...*/
+affected_type* affected_by_spell(const char_data *ch, byte skill, affected_type* start_affect)
 {
-   struct affected_type *hjp;
-   int tmp;
+	if (!start_affect)
+		start_affect = ch->affected;
 
-   if(!firstaf) firstaf = ch->affected;
+	int count = 0;
+	for (affected_type* status_affect = start_affect; status_affect && (count < MAX_AFFECT); status_affect = status_affect->next, count++)
+	{
+		if (status_affect->type == skill)
+		{
+			return status_affect;
+		}
+	}
 
-   for (hjp = firstaf, tmp=0; hjp && (tmp < MAX_AFFECT); 
-	hjp = hjp->next, tmp++){
-      if (hjp->type == skill)
-	 return(hjp);
-   }
-   return(0);
+	return NULL;
 }
 
 /* Return a pointer to an affection if the room is affected by the spell.
    Otherwise return null. */
-
-affected_type * room_affected_by_spell(room_data * room, int spell)
+affected_type * room_affected_by_spell(const room_data* room, int spell)
 {
-  affected_type * tmpaf;
-  
-  for(tmpaf = room->affected; tmpaf; tmpaf = tmpaf->next){
-    if((tmpaf->type == ROOMAFF_SPELL) && (tmpaf->location == spell)) break;
-  }
+	for (affected_type* status_effect = room->affected; status_effect; status_effect = status_effect->next)
+	{
+		if (status_effect->type == ROOMAFF_SPELL && status_effect->location == spell)
+		{
+			return status_effect;
+		}
+	}
 
-  return tmpaf;
+	return NULL;
 }
 
 

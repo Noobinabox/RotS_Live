@@ -2170,6 +2170,11 @@ int shoot_calculate_wait(const char_data* archer)
 		total_beats = total_beats - 1;
 	}
 
+	if (utils::get_specialization(*archer) == (int)game_types::Archery)
+	{
+		total_beats = total_beats - 1;
+	}
+
 	total_beats = std::max(total_beats, min_beats);
 	total_beats = std::min(total_beats, base_beats);
 	return total_beats;

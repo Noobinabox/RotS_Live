@@ -2234,60 +2234,110 @@ check_riposte(struct char_data *ch, struct char_data *victim)
  */
 int
 armor_effect(struct char_data *ch, struct char_data *victim,
-	     int damage, int location, int w_type)
+	int damage, int location, int w_type)
 {
-  int base_damage;
-  struct obj_data *armor;
+	struct obj_data *armor;
 
-  /* Bogus hit location */
-  if (location < 0 || location > MAX_WEAR)
-    return 0;
+	/* Bogus hit location */
+	if (location < 0 || location > MAX_WEAR)
+		return 0;
 
-  /* If they've got armor, let's let it do its thing */
-  if (victim->equipment[location] != NULL) {
-    armor = victim->equipment[location];
-    base_damage = damage;
+	/* If they've got armor, let's let it do its thing */
+	if (victim->equipment[location] != NULL) 
+	{
+		armor = victim->equipment[location];
 
-    /* First, remove minimum absorb */
-    damage -= armor->obj_flags.value[1];
+		/* First, remove minimum absorb */
+		int damage_reduction = armor->obj_flags.value[1];
 
-    /* Spears hit the armor, but then go right through it */
-    if (w_type != TYPE_SPEARS)
-      damage -= (damage * armor_absorb(armor) + 50) / 100;
-    else
-      damage -= (damage * armor_absorb(armor) + 50) / 200;
+		/* Spears hit the armor, but then go right through it */
+		if (w_type == TYPE_SPEARS)
+		{
+			damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 200;
+		}
+		else
+		{
+			damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
+		}
 
-    /*
-     * Smiting weapons can sometimes crush an opponent's bones
-     * under the armor; wearing armor will actually INCREASE
-     * the amount of damage taken, since the bodypart cannot
-     * recoil under the disfigured metal.  Additionally, one's
-     * head can hit the armor from the inside and add extra
-     * damage.
-     *
-     * Based on a real life program on the discovery channel.
-     *
-     * Alright, now smiting only works on rigid metal armor,
-     * not chain or leather.  Unfortunately, it won't work on
-     * armor made of mithril, even if the description says the
-     * armor is made of mithril plats.  Perhaps mithril should
-     * never appear in plates? Or perhaps we should have some
-     * other flag to define rigidity? Or perhaps smiting should
-     * not exist? :)
-     */
-    if (w_type == TYPE_SMITE && armor->obj_flags.material == 4)
-      if (!number(0, 4)) {
-	send_to_char("Your opponent's bones crunch loudly.\n\r",
-		     ch);
-	send_to_char("OUCH! You hear a crunching sound and feel "
-		     "a sharp pain.\n\r", victim);
-	send_to_room_except_two("You hear a crunching sound.\n\r",
-				ch->in_room, ch, victim);
-	damage = base_damage + (base_damage - damage);
-      }
-  }
+		/* Heavy fighters get an extra 5% damage absorption. */
+		if (utils::get_specialization(*victim) == (int)game_types::HeavyFighting)
+		{
+			damage_reduction += damage_reduction / 20;
+		}
 
-  return damage;
+		damage -= damage_reduction;
+
+		/*
+		 * Smiting weapons can sometimes crush an opponent's bones
+		 * under the armor; wearing armor will actually INCREASE
+		 * the amount of damage taken, since the bodypart cannot
+		 * recoil under the disfigured metal.  Additionally, one's
+		 * head can hit the armor from the inside and add extra
+		 * damage.
+		 *
+		 * Based on a real life program on the discovery channel.
+		 *
+		 * Alright, now smiting only works on rigid metal armor,
+		 * not chain or leather.  Unfortunately, it won't work on
+		 * armor made of mithril, even if the description says the
+		 * armor is made of mithril plats.  Perhaps mithril should
+		 * never appear in plates? Or perhaps we should have some
+		 * other flag to define rigidity? Or perhaps smiting should
+		 * not exist? :)
+		 */
+		if (w_type == TYPE_SMITE && armor->obj_flags.material == 4)
+		{
+			if (number() >= 0.80)
+			{
+				send_to_char("Your opponent's bones crunch loudly.\n\r", ch);
+				send_to_char("OUCH! You hear a crunching sound and feel " "a sharp pain.\n\r", victim);
+				send_to_room_except_two("You hear a crunching sound.\n\r", ch->in_room, ch, victim);
+
+				damage += damage_reduction * 2;
+			}
+		}
+	}
+
+	return damage;
+}
+
+//============================================================================
+int heavy_fighting_effect(const char_data& attacker, int damage)
+{
+	// Heavy fighters deal 5% more damage with heavy weapons.
+	if (utils::get_specialization(attacker) == (int)game_types::HeavyFighting)
+	{
+		obj_data* weapon = attacker.equipment[WIELD];
+		if (weapon && weapon->get_bulk() >= 6)
+		{
+			int modified_damage = damage + damage / 20;
+			return modified_damage;
+		}
+	}
+
+	return damage;
+}
+
+//============================================================================
+int defender_effect(const char_data& attacker, const char_data& victim, int damage)
+{
+	// Defender specialized characters have a 10% chance to cut damage in half from
+	// hits.
+	if (utils::get_specialization(victim) == (int)game_types::Defender)
+	{
+		obj_data* shield = victim.equipment[WEAR_SHIELD];
+		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
+		{
+			if (number() >= 0.90)
+			{
+				// TODO(drelidan):  Add a message here to indicate what's going on.
+				return damage >> 1;
+			}
+		}
+	}
+
+	return damage;
 }
 
 //============================================================================
@@ -2458,7 +2508,10 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 				if (GET_POS(victim) < POSITION_FIGHTING)
 					dam += dam / 2;
 
+				dam = heavy_fighting_effect(*ch, dam);
+				dam = defender_effect(*ch, *victim, dam);
 				dam = std::max(0, dam);  /* Not less than 0 damage */
+
 				damage(ch, victim, dam, w_type, location);
 
 				if (dam > 0)
@@ -2543,7 +2596,36 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	}
 }
 
+bool can_double_hit(const char_data* character)
+{
+	assert(character);
 
+	// Only characters with light-fighting can double-hit.
+	if (utils::get_specialization(*character) != (int)game_types::LightFighting)
+		return false;
+
+	// Characters must be wielding a weapon with a bulk of 3 or less to double hit.
+	obj_data* weapon = character->equipment[WIELD];
+	if (!weapon || weapon->get_bulk() > 3)
+		return false;
+
+	// The character is no longer fighting anyone.  Can't double-hit.
+	if (character->specials.fighting == NULL)
+		return false;
+
+	// The character's enemy is no longer in the room (probably wimpied out).  Can't
+	// attack an enemy that isn't there.
+	if (character->specials.fighting->in_room != character->in_room)
+		return false;
+
+	return true;
+}
+
+bool does_double_hit_proc(const char_data* character)
+{
+	// Double-hit has a 10% proc chance.
+	return number() >= 0.90;
+}
 
 /*
  * Control all of the fights going on; works on PULSE_VIOLENCE
@@ -2578,20 +2660,29 @@ void perform_violence(int mini_tics)
 
 		if (!IS_AFFECTED(ch, AFF_WAITING) || (GET_WAIT_PRIORITY(ch) == 29) || (GET_WAIT_PRIORITY(ch) == 59)) 
 		{
-			if ((GET_POS(ch) >= POSITION_FIGHTING) && (GET_ENERGY(ch) <= ENE_TO_HIT))
+			if ((GET_POS(ch) >= POSITION_FIGHTING) && (ch->specials.ENERGY <= ENE_TO_HIT))
 			{
-				GET_ENERGY(ch) += GET_ENE_REGEN(ch);
+				ch->specials.ENERGY += ch->points.ENE_regen;
 			}
 			else if (IS_NPC(ch) && !ch->delay.wait_value)
 			{
 				do_stand(ch, "", 0, 0, 0);
 			}
 
-			if ((GET_ENERGY(ch) > ENE_TO_HIT)) 
+			if (ch->specials.ENERGY > ENE_TO_HIT)
 			{
 				if (AWAKE(ch) && ch->specials.fighting && (ch->in_room == ch->specials.fighting->in_room))
 				{
+					// Note:  Calling hit reduces the character's current energy.
+					sh_int current_energy = ch->specials.ENERGY;
 					hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+
+					if (can_double_hit(ch) && does_double_hit_proc(ch))
+					{
+						// TODO(drelidan):  Add a message here to indicate what's going on.
+						ch->specials.ENERGY = current_energy;
+						hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+					}
 				}
 				else /* Not in same room */
 				{

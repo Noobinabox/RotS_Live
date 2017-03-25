@@ -834,6 +834,15 @@ void recalc_abilities(char_data* character)
 			{
 				GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
 			}
+
+			// Heavy fighters get +5% speed with bulk 4 or 5 weapons.
+			if (utils::get_specialization(*character) == (int)game_types::HeavyFighting)
+			{
+				if (bulk == 4 || bulk == 5)
+				{
+					character->points.ENE_regen += character->points.ENE_regen / 20;
+				}
+			}
 		}
 		else
 		{

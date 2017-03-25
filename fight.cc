@@ -1812,15 +1812,6 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 		dam = dam * 3 / 2;
 	}
 
-	/* 10% chance for wild fighters to rush when they hit */
-	if (IS_PHYSICAL(attacktype) && GET_SPEC(attacker) == PLRSPEC_WILD && number(0, 9) == 0)
-	{
-		dam = dam * 3 / 2;
-
-		send_to_char("You rush forward wildly.\n\r", attacker);
-		act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
-	}
-
 	if (dam > 200 && attacktype != SKILL_AMBUSH)
 	{
 		vmudlog(NRM, "Damage overflow for %s (%dhit).", GET_NAME(attacker), dam);
@@ -2320,6 +2311,21 @@ int heavy_fighting_effect(const char_data& attacker, int damage)
 }
 
 //============================================================================
+int wild_fighting_effect(char_data* attacker, int damage)
+{
+	/* 10% chance for wild fighters to rush when they hit */
+	if (utils::get_specialization(*attacker) == game_types::PS_WildFighting && number() >= 0.9)
+	{
+		send_to_char("You rush forward wildly.\n\r", attacker);
+		act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
+
+		return int(damage * 1.5);
+	}
+
+	return damage;
+}
+
+//============================================================================
 int defender_effect(char_data* attacker, char_data* victim, int damage)
 {
 	// Defender specialized characters have a 10% chance to cut damage in half from
@@ -2502,7 +2508,11 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 					(IS_TWOHANDED(ch) ? 2 : 1) * 133 *
 					GET_BAL_STR(ch))) / 13300000;
 
+				// Add in "specialization" damage before armor.
 				dam = check_find_weakness(ch, victim, dam);
+				dam = wild_fighting_effect(ch, dam);
+				dam = heavy_fighting_effect(*ch, dam);
+				dam = defender_effect(ch, victim, dam);
 
 				tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
 				dam = armor_effect(ch, victim, dam, tmp, w_type);
@@ -2510,8 +2520,6 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 				if (GET_POS(victim) < POSITION_FIGHTING)
 					dam += dam / 2;
 
-				dam = heavy_fighting_effect(*ch, dam);
-				dam = defender_effect(ch, victim, dam);
 				dam = std::max(0, dam);  /* Not less than 0 damage */
 
 				damage(ch, victim, dam, w_type, location);

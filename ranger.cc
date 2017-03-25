@@ -3009,3 +3009,4 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
 		act("Nobody anywhere near you.", TRUE, character, 0, 0, TO_CHAR);
 	character->in_room = is_in;
 }
+

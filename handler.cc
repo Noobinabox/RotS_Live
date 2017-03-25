@@ -996,120 +996,123 @@ void	add_follower(struct char_data *ch, struct char_data *leader, int mode)
 
 void put_to_memory_rec_pool(struct memory_rec *oldaf);
 
-void	stop_follower(struct char_data *ch, int mode)
+void stop_follower(struct char_data *ch, int mode)
 {
-   struct follow_type *j, *k;
+	struct follow_type *j, *k;
 
-   if (mode == FOLLOW_MOVE) {
-	   if (!ch->master) return;
+	if (mode == FOLLOW_MOVE)
+	{
+		if (!ch->master)
+			return;
 
-	   forget(ch, ch->master); // in case we were "hunting" him
+		forget(ch, ch->master); // in case we were "hunting" him
 
-	   if (IS_AFFECTED(ch, AFF_CHARM))
-	   {
-		   act("You realize that $N is a jerk!", FALSE, ch, 0, ch->master, TO_CHAR);
-		   act("$n realizes that $N is a jerk!", FALSE, ch, 0, ch->master, TO_NOTVICT);
-		   act("$n hates your guts!", FALSE, ch, 0, ch->master, TO_VICT);
-		   if (affected_by_spell(ch, SKILL_TAME))
-		   {
-			   affect_from_char(ch, SKILL_TAME);
-			   GET_MAX_MOVE(ch) -= 50;     // move bonus for being tamed
-		   }   
-		   if (affected_by_spell(ch, SKILL_RECRUIT))
-		   {
-			   affect_from_char(ch, SKILL_RECRUIT);
-		   }
-		   REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
-	   }
-   }
-	 else 
-	 {
-		 act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
-		 if (ch->in_room == ch->master->in_room)
-		 {
-			 act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
-		 }
-		 act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
-	 }
+		if (IS_AFFECTED(ch, AFF_CHARM))
+		{
+			act("You realize that $N is a jerk!", FALSE, ch, 0, ch->master, TO_CHAR);
+			act("$n realizes that $N is a jerk!", FALSE, ch, 0, ch->master, TO_NOTVICT);
+			act("$n hates your guts!", FALSE, ch, 0, ch->master, TO_VICT);
+			if (affected_by_spell(ch, SKILL_TAME))
+			{
+				affect_from_char(ch, SKILL_TAME);
+				GET_MAX_MOVE(ch) -= 50;     // move bonus for being tamed
+			}
+			if (affected_by_spell(ch, SKILL_RECRUIT))
+			{
+				affect_from_char(ch, SKILL_RECRUIT);
+			}
+			REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
+		}
+		else
+		{
+			act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
+			if (ch->in_room == ch->master->in_room)
+			{
+				act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
+			}
+			act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
+		}
 
-     if (ch->master->followers->follower == ch) { /* Head of follower-list? */
-       k = ch->master->followers;
-       ch->master->followers = k->next;
-       //       RELEASE(k);
-       put_to_follow_type_pool(k);
-     } else { /* locate follower who is not head of list */
-       for (k = ch->master->followers; k->next->follower != ch; k = k->next)
-	 ;
-       
-       j = k->next;
-       k->next = j->next;
-       //       RELEASE(j);
-       put_to_follow_type_pool(j);
-     }
-     
-     ch->master = 0;
-       if (affected_by_spell(ch, SKILL_TAME))
-         affect_from_char(ch, SKILL_TAME);
+		if (ch->master->followers->follower == ch) { /* Head of follower-list? */
+			k = ch->master->followers;
+			ch->master->followers = k->next;
+			put_to_follow_type_pool(k);
+		}
+		else
+		{ /* locate follower who is not head of list */
+			for (k = ch->master->followers; k->next->follower != ch; k = k->next)
+				;
 
-     REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
+			j = k->next;
+			k->next = j->next;
+			put_to_follow_type_pool(j);
+		}
 
-     // Recursive call to rid ourselves of our group if we were a pet.
-     if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET)) {
-       REMOVE_BIT(MOB_FLAGS(ch), MOB_PET);
-       stop_follower(ch, FOLLOW_GROUP);
-     }
+		ch->master = 0;
+		if (affected_by_spell(ch, SKILL_TAME))
+			affect_from_char(ch, SKILL_TAME);
 
-   }
+		REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
 
-   else if (mode == FOLLOW_REFOL) {
-     if(!ch->master) return;
+		// Recursive call to rid ourselves of our group if we were a pet.
+		if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET))
+		{
+			REMOVE_BIT(MOB_FLAGS(ch), MOB_PET);
+			stop_follower(ch, FOLLOW_GROUP);
+		}
+	}
 
-     act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
-     if(ch->in_room == ch->master->in_room)
-       act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
-     act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
+	else if (mode == FOLLOW_REFOL) {
+		if (!ch->master) return;
 
-     if (ch->master->followers->follower == ch) { /* Head of follower-list? */
-       k = ch->master->followers;
-       ch->master->followers = k->next;
-       put_to_follow_type_pool(k);
-     } else { /* locate follower who is not head of list */
-       for (k = ch->master->followers; k->next->follower != ch; k = k->next)
-         ;
+		act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
+		if (ch->in_room == ch->master->in_room)
+			act("$n stops following $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
+		act("$n stops following you.", FALSE, ch, 0, ch->master, TO_VICT);
 
-       j = k->next;
-       k->next = j->next;
-       put_to_follow_type_pool(j);
-     }
+		if (ch->master->followers->follower == ch) { /* Head of follower-list? */
+			k = ch->master->followers;
+			ch->master->followers = k->next;
+			put_to_follow_type_pool(k);
+		}
+		else { /* locate follower who is not head of list */
+			for (k = ch->master->followers; k->next->follower != ch; k = k->next)
+				;
 
-     ch->master = 0;
-   }
+			j = k->next;
+			k->next = j->next;
+			put_to_follow_type_pool(j);
+		}
 
-   else {
-     if(!ch->group_leader) return;
-     
-     act("You leave the group of $N.", FALSE, ch, 0, ch->group_leader, TO_CHAR);
-     act("$n leaves the group of $N.", FALSE, ch, 0, ch->group_leader, TO_NOTVICT);
-     act("$n leaves your group.", FALSE, ch, 0, ch->group_leader, TO_VICT);
-     
+		ch->master = 0;
+	}
 
-     if (ch->group_leader->group->follower == ch) { /* Head of follower-list? */
-       k = ch->group_leader->group;
-       ch->group_leader->group = k->next;
-       //       RELEASE(k);
-       put_to_follow_type_pool(k);
-     } else { /* locate follower who is not head of list */
-       for (k = ch->group_leader->group; k->next->follower != ch; k = k->next)
-	 ;
-       
-       j = k->next;
-       k->next = j->next;
-       //       RELEASE(j);
-       put_to_follow_type_pool(j);
-     }
-     
-     ch->group_leader = 0;
-   }
+	else {
+		if (!ch->group_leader) return;
+
+		act("You leave the group of $N.", FALSE, ch, 0, ch->group_leader, TO_CHAR);
+		act("$n leaves the group of $N.", FALSE, ch, 0, ch->group_leader, TO_NOTVICT);
+		act("$n leaves your group.", FALSE, ch, 0, ch->group_leader, TO_VICT);
+
+
+		if (ch->group_leader->group->follower == ch) { /* Head of follower-list? */
+			k = ch->group_leader->group;
+			ch->group_leader->group = k->next;
+			//       RELEASE(k);
+			put_to_follow_type_pool(k);
+		}
+		else { /* locate follower who is not head of list */
+			for (k = ch->group_leader->group; k->next->follower != ch; k = k->next)
+				;
+
+			j = k->next;
+			k->next = j->next;
+			//       RELEASE(j);
+			put_to_follow_type_pool(j);
+		}
+
+		ch->group_leader = 0;
+	}
 }
 
 

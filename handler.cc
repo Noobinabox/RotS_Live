@@ -423,11 +423,9 @@ affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
       break;
     
     if(add)
-      skills[tmp].spell_pointer(tmp2, ch, "", SPELL_TYPE_SPELL,
-				ch, 0, 0, 1);
+      skills[tmp].spell_pointer(ch, "", SPELL_TYPE_SPELL, ch, 0, 0, 1);
     else
-      skills[tmp].spell_pointer(0, ch, "", SPELL_TYPE_ANTI,
-				ch, 0, 0, 1);
+      skills[tmp].spell_pointer(ch, "", SPELL_TYPE_ANTI, ch, 0, 0, 1);
     break;
     
   case APPLY_BITVECTOR:

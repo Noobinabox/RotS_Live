@@ -1,6 +1,7 @@
 #include "char_utils.h"
 #include "object_utils.h"
 #include "environment_utils.h"
+#include "spells.h"
 
 #include "handler.h" // for fname and other_side
 
@@ -451,9 +452,6 @@ namespace utils
 	//============================================================================
 	namespace TEMPORARY
 	{
-
-#include "spells.h"
-
 		int ch_get_confuse_modifier(const char_data& character)
 		{
 			int modifier = 0;

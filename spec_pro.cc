@@ -674,11 +674,10 @@ SPECIAL(snake) {
   
   if (host->specials.fighting && 
       (host->specials.fighting->in_room == host->in_room) && 
-      (number(0, 42 - GET_LEVEL(host)) < MIN(1+GET_LEVEL(host)/4, 4))) {
+      (number(0, 42 - GET_LEVEL(host)) < std::min(1+GET_LEVEL(host)/4, 4))) {
     act("$n bites $N!", 1, host, 0, host->specials.fighting, TO_NOTVICT);
     act("$n bites you!", 1, host, 0, host->specials.fighting, TO_VICT);
-    spell_poison( GET_LEVEL(host), host, "", SPELL_TYPE_SPELL,
-		  host->specials.fighting, 0, 0, 0);
+    spell_poison( host, "", SPELL_TYPE_SPELL, host->specials.fighting, 0, 0, 0);
     return TRUE;
   }
   return FALSE;

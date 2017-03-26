@@ -64,10 +64,23 @@ char saves_confuse(struct char_data *, char_data *);
 char saves_leadership(struct char_data *);
 char saves_insight(struct char_data *, struct char_data *);
 bool check_mind_block(char_data *, char_data *, int, int);
-void list_char_to_char(struct char_data *list, struct char_data *ch,
+void list_char_to_char(struct char_data *list, struct char_data *caster,
 		       int mode);
 ACMD(do_look);
 
+int get_mystic_caster_level(const char_data* caster)
+{
+	int mystic_level = utils::get_prof_level(PROF_CLERIC, *caster);
+
+	// Factor in will values not divisible by 5.
+	int will_factor = caster->tmpabilities.wil / 5;
+	if (number(0, will_factor % 5) > 0)
+	{
+		++will_factor;
+	}
+
+	return mystic_level + will_factor;
+}
 
 /*
  * Use this macro to cause objects to override any affections
@@ -104,35 +117,36 @@ ACMD(do_look);
  */
 
 ACMD(do_flee);
-combat_result_struct damage_stat(char_data * killer, char_data * ch, int stat_num, int amount);
+combat_result_struct damage_stat(char_data * killer, char_data * caster, int stat_num, int amount);
 
 ASPELL(spell_curse) 
 {
 	const int DAMAGE_TABLE_SIZE = 7;
 	const int NUM_STATS = 6;
 
-	if (GET_MENTAL_DELAY(ch) > PULSE_MENTAL_FIGHT + 1) 
+	if (GET_MENTAL_DELAY(caster) > PULSE_MENTAL_FIGHT + 1) 
 	{
-		send_to_char("Your mind is not ready yet.\n\r", ch);
+		send_to_char("Your mind is not ready yet.\n\r", caster);
 		return;
 	}
 
+	int level = get_mystic_caster_level(caster);
 	int count = (level + 2 * 10) * GET_PERCEPTION(victim) / 100 / 10;
 	if (!count) 
 	{
-		act("You try to curse $N, but can't reach $S mind.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You try to curse $N, but can't reach $S mind.", FALSE, caster, 0, victim, TO_CHAR);
 		return;
 	}
 
-	if (affected_by_spell(ch, SPELL_MIND_BLOCK)) 
+	if (affected_by_spell(caster, SPELL_MIND_BLOCK)) 
 	{
-		act("You cannot curse with a blocked mind.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You cannot curse with a blocked mind.", FALSE, caster, 0, victim, TO_CHAR);
 		return;
 	}
 
 	if (GET_BODYTYPE(victim) != 1 && !IS_SHADOW(victim)) 
 	{
-		act("You try to curse $N, but could not fathom its mind.", FALSE, ch, 0, victim, TO_CHAR);
+		act("You try to curse $N, but could not fathom its mind.", FALSE, caster, 0, victim, TO_CHAR);
 		return;
 	}
 
@@ -163,9 +177,9 @@ ASPELL(spell_curse)
 		damage_table[num]++;
 	}
 
-	act("$n points ominously at $N and curses.", TRUE, ch, 0, victim, TO_NOTVICT);
-	act("$n points ominously at you and curses.", TRUE, ch, 0, victim, TO_VICT);
-	act("You point at $N and curse.", FALSE, ch, 0, victim, TO_CHAR);
+	act("$n points ominously at $N and curses.", TRUE, caster, 0, victim, TO_NOTVICT);
+	act("$n points ominously at you and curses.", TRUE, caster, 0, victim, TO_VICT);
+	act("You point at $N and curse.", FALSE, caster, 0, victim, TO_CHAR);
 
 	bool victim_flees = false;
 	bool victim_died = false;
@@ -173,15 +187,15 @@ ASPELL(spell_curse)
 	int actual_count = 0;
 	int stat_index = 0;
 	
-	while (stat_index < NUM_STATS && !victim_died && ch->points.spirit > 0)
+	while (stat_index < NUM_STATS && !victim_died && caster->points.spirit > 0)
 	{
 		int stat_damage = damage_table[stat_index];
 		if (stat_damage > 0)
 		{
-			ch->points.spirit -= number(0, stat_damage);
-			ch->points.spirit = std::max(ch->points.spirit, 0);
+			caster->points.spirit -= number(0, stat_damage);
+			caster->points.spirit = std::max(caster->points.spirit, 0);
 			
-			combat_result_struct curse_result = damage_stat(ch, victim, stat_index, stat_damage);
+			combat_result_struct curse_result = damage_stat(caster, victim, stat_index, stat_damage);
 			victim_flees |= curse_result.wants_to_flee;
 			victim_died |= curse_result.will_die;
 
@@ -197,95 +211,96 @@ ASPELL(spell_curse)
 		do_flee(victim, "", NULL, 0, 0);
 	}
 
-	set_mental_delay(ch, actual_count * PULSE_MENTAL_FIGHT);
+	set_mental_delay(caster, actual_count * PULSE_MENTAL_FIGHT);
 }
 
-int restore_stat(char_data * ch,int stat_num, int amount);
+int restore_stat(char_data * caster,int stat_num, int amount);
 
-ASPELL(spell_revive){
-  int i, i2, num, count, actual_count, stat_dam, stat_dam2;
-  int revive_table[7];
+ASPELL(spell_revive) {
+	int i, i2, num, count, actual_count, stat_dam, stat_dam2;
+	int revive_table[7];
 
-  if(GET_MENTAL_DELAY(ch) > PULSE_MENTAL_FIGHT+1){
-    send_to_char("Your mind is not ready yet.\n\r",ch);
-    return;
-  }
+	if (GET_MENTAL_DELAY(caster) > PULSE_MENTAL_FIGHT + 1) {
+		send_to_char("Your mind is not ready yet.\n\r", caster);
+		return;
+	}
 
-  count = (3*9 + level)*GET_PERCEPTION(victim)/100/9;
+	int level = get_mystic_caster_level(caster);
+	count = (3 * 9 + level) * GET_PERCEPTION(victim) / 100 / 9;
 
-  if(count*2 > GET_SPIRIT(ch)) count = GET_SPIRIT(ch)/2;
+	if (count * 2 > GET_SPIRIT(caster)) count = GET_SPIRIT(caster) / 2;
 
-  if(count <= 0){
-    send_to_char("You couldn't gather enough spirit to heal.\n\r",ch);
-    return;
-  }
+	if (count <= 0) {
+		send_to_char("You couldn't gather enough spirit to heal.\n\r", caster);
+		return;
+	}
 
-  stat_dam = 100;
-  i = -1;
+	stat_dam = 100;
+	i = -1;
 
-  stat_dam2 = GET_STR(victim) / GET_STR_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 0;
-  }
-  stat_dam2 = GET_INT(victim) / GET_INT_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 1;
-  }
-  stat_dam2 = GET_WILL(victim) / GET_WILL_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 2;
-  }
-  stat_dam2 = GET_DEX(victim) / GET_DEX_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 3;
-  }
-  stat_dam2 = GET_CON(victim) / GET_CON_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 4;
-  }
-  stat_dam2 = GET_LEA(victim) / GET_LEA_BASE(victim);
-  if(stat_dam2 < stat_dam){
-    stat_dam = stat_dam2;
-    i = 5;
-  }
-  
-  if(i < 0){
-    send_to_char("No healing was needed there.\n\r",ch);
-    return;
-  }
-  num = i;
+	stat_dam2 = GET_STR(victim) / GET_STR_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 0;
+	}
+	stat_dam2 = GET_INT(victim) / GET_INT_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 1;
+	}
+	stat_dam2 = GET_WILL(victim) / GET_WILL_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 2;
+	}
+	stat_dam2 = GET_DEX(victim) / GET_DEX_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 3;
+	}
+	stat_dam2 = GET_CON(victim) / GET_CON_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 4;
+	}
+	stat_dam2 = GET_LEA(victim) / GET_LEA_BASE(victim);
+	if (stat_dam2 < stat_dam) {
+		stat_dam = stat_dam2;
+		i = 5;
+	}
 
-  for(i = 0; i<7; i++) revive_table[i] = 0;
+	if (i < 0) {
+		send_to_char("No healing was needed there.\n\r", caster);
+		return;
+	}
+	num = i;
 
-  for(i=0; i < count; i++){
-    i2 = number(0,10);
-    if(i2 <= 6) num = i2;
-    revive_table[num]++;
-  }
-  act("$n tries to revive $N.",FALSE, ch, 0, victim, TO_NOTVICT);
-  act("$n tries to revive you.",FALSE, ch, 0, victim, TO_VICT);
-  act("You try to revive $N.",TRUE, ch, 0, victim, TO_CHAR);
+	for (i = 0; i < 7; i++) revive_table[i] = 0;
 
-  actual_count = 0;
-  for(i=0; i<6; i++){
-    num = restore_stat(victim, i, revive_table[i]);
-    actual_count += num;
-    GET_SPIRIT(ch) -= num;
-    if(GET_SPIRIT(ch) <= 0) break;
-  }
-  if(!actual_count){
-    act("Your spell does no good to $M.",FALSE, ch, 0, victim, TO_CHAR);
-    act("$n tries to revive you, but does little good.", FALSE, ch, 0, 
-	victim, TO_VICT);
-  }
-  else{
-    set_mental_delay(ch, actual_count*PULSE_MENTAL_FIGHT);
-  }
+	for (i = 0; i < count; i++) {
+		i2 = number(0, 10);
+		if (i2 <= 6) num = i2;
+		revive_table[num]++;
+	}
+	act("$n tries to revive $N.", FALSE, caster, 0, victim, TO_NOTVICT);
+	act("$n tries to revive you.", FALSE, caster, 0, victim, TO_VICT);
+	act("You try to revive $N.", TRUE, caster, 0, victim, TO_CHAR);
+
+	actual_count = 0;
+	for (i = 0; i < 6; i++) {
+		num = restore_stat(victim, i, revive_table[i]);
+		actual_count += num;
+		GET_SPIRIT(caster) -= num;
+		if (GET_SPIRIT(caster) <= 0) break;
+	}
+	if (!actual_count) {
+		act("Your spell does no good to $M.", FALSE, caster, 0, victim, TO_CHAR);
+		act("$n tries to revive you, but does little good.", FALSE, caster, 0,
+			victim, TO_VICT);
+	}
+	else {
+		set_mental_delay(caster, actual_count*PULSE_MENTAL_FIGHT);
+	}
 
 }
 
@@ -293,123 +308,128 @@ ASPELL(spell_revive){
 ASPELL(spell_mind_block){
   struct affected_type af;
   
-  if (victim != ch){
-    send_to_char("You can only protect your own mind.\n\r",ch);
+  if (victim != caster){
+    send_to_char("You can only protect your own mind.\n\r",caster);
     return;
   }
-  if (affected_by_spell(ch,SPELL_MIND_BLOCK)){
-    send_to_char("Your mind is protected already.\n\r",ch);
+  if (affected_by_spell(caster,SPELL_MIND_BLOCK)){
+    send_to_char("Your mind is protected already.\n\r",caster);
     return;
   }
   af.type = SPELL_MIND_BLOCK;
-  af.duration  = 15 + GET_PROF_LEVEL(PROF_CLERIC,ch) * 2;
+  af.duration  = 15 + GET_PROF_LEVEL(PROF_CLERIC,caster) * 2;
   af.modifier  = 0;
   af.location  = APPLY_NONE;
   af.bitvector = 0;
   
-  affect_to_char(ch, &af);
+  affect_to_char(caster, &af);
   send_to_char("You create a magical barrier around your mind.\n\r", victim);
 }
 
 
 
-ASPELL(spell_insight){
-  affected_type af;
-  affected_type * afptr;
-  int my_duration;
+ASPELL(spell_insight) {
+	affected_type af;
+	affected_type * afptr;
+	int my_duration;
 
-  
-  if((type == SPELL_TYPE_ANTI) || is_object){
-    
-    affect_from_char(victim, SPELL_INSIGHT);
-    
-    if(type == SPELL_TYPE_ANTI) return;
-  }
 
-  if((victim != ch) && !is_object){
-    //if(GET_PERCEPTION(victim)*2 < number(0,100)){
-    if(saves_insight(victim, ch)) {
-      act("You failed to affect $S mind.",FALSE, ch, 0, victim, TO_CHAR);
-      return;
-    }
-  }
-  if(is_object)
-    my_duration = -1;
-  else
-    my_duration = 10 + level;
+	if ((type == SPELL_TYPE_ANTI) || is_object) {
 
-  if ((afptr = affected_by_spell(victim, SPELL_PRAGMATISM))) {
-    if(!is_object && (number(0, afptr->duration) > number (0, my_duration))){
-      act("You failed to break $S pragmatism.",FALSE, ch, 0, victim, TO_CHAR);
-      return;      
-    }
-    else{
-      act("You break $S pragmatism.",FALSE, ch, 0, victim, TO_CHAR);
-      affect_from_char(victim, SPELL_PRAGMATISM);
-    }
-  }
+		affect_from_char(victim, SPELL_INSIGHT);
 
-  if (!affected_by_spell(victim, SPELL_INSIGHT)) {
-    af.type      = SPELL_INSIGHT;
-    af.duration  = my_duration;
-    af.modifier  =  50;
-    af.location  = APPLY_PERCEPTION;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("The world seems to gain a few edges for you.\n\r", victim);
-  }
-  else{
-      act("$E has insight already.",FALSE, ch, 0, victim, TO_CHAR);
-      return;      
-  }
+		if (type == SPELL_TYPE_ANTI) return;
+	}
+
+	if ((victim != caster) && !is_object) {
+		//if(GET_PERCEPTION(victim)*2 < number(0,100)){
+		if (saves_insight(victim, caster)) {
+			act("You failed to affect $S mind.", FALSE, caster, 0, victim, TO_CHAR);
+			return;
+		}
+	}
+
+	int level = get_mystic_caster_level(caster);
+	if (is_object)
+		my_duration = -1;
+	else
+		my_duration = 10 + level;
+
+	if ((afptr = affected_by_spell(victim, SPELL_PRAGMATISM))) {
+		if (!is_object && (number(0, afptr->duration) > number(0, my_duration))) {
+			act("You failed to break $S pragmatism.", FALSE, caster, 0, victim, TO_CHAR);
+			return;
+		}
+		else {
+			act("You break $S pragmatism.", FALSE, caster, 0, victim, TO_CHAR);
+			affect_from_char(victim, SPELL_PRAGMATISM);
+		}
+	}
+
+	if (!affected_by_spell(victim, SPELL_INSIGHT)) {
+		af.type = SPELL_INSIGHT;
+		af.duration = my_duration;
+		af.modifier = 50;
+		af.location = APPLY_PERCEPTION;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("The world seems to gain a few edges for you.\n\r", victim);
+	}
+	else {
+		act("$E has insight already.", FALSE, caster, 0, victim, TO_CHAR);
+		return;
+	}
 }
 
 
-ASPELL(spell_pragmatism){
-  affected_type af;
-  affected_type * afptr;
-  int my_duration;
+ASPELL(spell_pragmatism) {
+	affected_type af;
+	affected_type * afptr;
+	int my_duration;
 
-  if(victim != ch){
-    if(GET_PERCEPTION(victim) < number(0,100)){
-      act("You failed to affect $S mind.",FALSE, ch, 0, victim, TO_CHAR);
-      return;
-    }
-  }
-  if(is_object)
-    my_duration = -1;
-  else
-    my_duration = 10 + level;
+	if (victim != caster) {
+		if (GET_PERCEPTION(victim) < number(0, 100)) {
+			act("You failed to affect $S mind.", FALSE, caster, 0, victim, TO_CHAR);
+			return;
+		}
+	}
 
-  if ((afptr = affected_by_spell(victim, SPELL_INSIGHT))) {
-    if(number(0, afptr->duration) > number (0, my_duration)){
-      act("You failed to break $S insight.",FALSE, ch, 0, victim, TO_CHAR);
-      return;      
-    }
-    else{
-      act("You break $S insight.",FALSE, ch, 0, victim, TO_CHAR);
-      affect_from_char(victim, SPELL_INSIGHT);
-    }
-  }
-    
-  if (!affected_by_spell(victim, SPELL_PRAGMATISM)) {
-    af.type      = SPELL_PRAGMATISM;
-    af.duration  = 10 + level;
-    if (GET_RACE(victim) != RACE_WOOD)
-      af.modifier  =  -50;
-    else
-      af.modifier = - 100;
-    af.location  = APPLY_PERCEPTION;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("The world seems much duller..\n\r", victim);
-  }
-  else{
-      act("$E is quite pragmatic already.",FALSE, ch, 0, victim, TO_CHAR);
-      return;
-  }
+	int level = get_mystic_caster_level(caster);
+
+	if (is_object)
+		my_duration = -1;
+	else
+		my_duration = 10 + level;
+
+	if ((afptr = affected_by_spell(victim, SPELL_INSIGHT))) {
+		if (number(0, afptr->duration) > number(0, my_duration)) {
+			act("You failed to break $S insight.", FALSE, caster, 0, victim, TO_CHAR);
+			return;
+		}
+		else {
+			act("You break $S insight.", FALSE, caster, 0, victim, TO_CHAR);
+			affect_from_char(victim, SPELL_INSIGHT);
+		}
+	}
+
+	if (!affected_by_spell(victim, SPELL_PRAGMATISM)) {
+		af.type = SPELL_PRAGMATISM;
+		af.duration = 10 + level;
+		if (GET_RACE(victim) != RACE_WOOD)
+			af.modifier = -50;
+		else
+			af.modifier = -100;
+		af.location = APPLY_PERCEPTION;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("The world seems much duller..\n\r", victim);
+	}
+	else {
+		act("$E is quite pragmatic already.", FALSE, caster, 0, victim, TO_CHAR);
+		return;
+	}
 }
 
 /*
@@ -425,173 +445,200 @@ ASPELL(spell_pragmatism){
 
 ASPELL(spell_detect_hidden)
 {
-  struct affected_type af;
-  int loc_level, my_duration;
-  
-  if(!victim)
-    return;
-  
-  if((type == SPELL_TYPE_ANTI) || is_object) {
-    affect_from_char(victim, SPELL_DETECT_HIDDEN);
-    if(type == SPELL_TYPE_ANTI) 
-      return;
-  }
-  
-  if(victim != ch)
-    loc_level = GET_PROF_LEVEL(PROF_CLERIC, victim) + level;
-  else 
-    loc_level = level;
-  
-  if(is_object)
-    my_duration = -1;
-  else 
-    my_duration = 3 * loc_level;
-  
-  if(!affected_by_spell(victim, SPELL_DETECT_HIDDEN)) {
-    send_to_char("You feel your awareness improve.\n\r", victim);
-    
-    af.type      = SPELL_DETECT_HIDDEN;
-    af.duration  = my_duration;
-    af.modifier  = 0;
-    af.location  = APPLY_NONE;
-    af.bitvector = AFF_DETECT_HIDDEN;
-    affect_to_char(victim, &af);
-  }
+	struct affected_type af;
+	int loc_level, my_duration;
+
+	if (!victim)
+		return;
+
+	if ((type == SPELL_TYPE_ANTI) || is_object) {
+		affect_from_char(victim, SPELL_DETECT_HIDDEN);
+		if (type == SPELL_TYPE_ANTI)
+			return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = GET_PROF_LEVEL(PROF_CLERIC, victim) + level;
+	else
+		loc_level = level;
+
+	if (is_object)
+		my_duration = -1;
+	else
+		my_duration = 3 * loc_level;
+
+	if (!affected_by_spell(victim, SPELL_DETECT_HIDDEN)) {
+		send_to_char("You feel your awareness improve.\n\r", victim);
+
+		af.type = SPELL_DETECT_HIDDEN;
+		af.duration = my_duration;
+		af.modifier = 0;
+		af.location = APPLY_NONE;
+		af.bitvector = AFF_DETECT_HIDDEN;
+		affect_to_char(victim, &af);
+	}
 }
 
 
 
 ASPELL(spell_detect_magic)
 {
-  struct affected_type af;
-  
-  if(!victim) 
-    victim = ch;
+	struct affected_type af;
 
-  if(affected_by_spell(victim, SPELL_DETECT_MAGIC) ) {
-    if(victim == ch)
-      send_to_char("You already can sense magic.\n\r",ch);
-    else
-      act("$E already can sense magic.\n\r", TRUE, ch, 0, victim, TO_CHAR);
-    return;
-  }
+	if (!victim)
+		victim = caster;
 
-  af.type      = SPELL_DETECT_MAGIC;
-  af.duration  = level * 5;
-  af.modifier  = 0;
-  af.location  = APPLY_NONE;
-  af.bitvector = AFF_DETECT_MAGIC;
-  
-  affect_to_char(victim, &af);
-  send_to_char("Your eyes tingle.\n\r", victim);
+	if (affected_by_spell(victim, SPELL_DETECT_MAGIC)) {
+		if (victim == caster)
+			send_to_char("You already can sense magic.\n\r", caster);
+		else
+			act("$E already can sense magic.\n\r", TRUE, caster, 0, victim, TO_CHAR);
+		return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	af.type = SPELL_DETECT_MAGIC;
+	af.duration = level * 5;
+	af.modifier = 0;
+	af.location = APPLY_NONE;
+	af.bitvector = AFF_DETECT_MAGIC;
+
+	affect_to_char(victim, &af);
+	send_to_char("Your eyes tingle.\n\r", victim);
 }
 
 
 
 ASPELL(spell_evasion)
 {
-   struct affected_type af;
-   int loc_level, my_duration;
+	struct affected_type af;
+	int loc_level, my_duration;
 
-   if(!victim) 
-     return;
-   
-   if((type == SPELL_TYPE_ANTI) || is_object){
-     affect_from_char(victim, SPELL_ARMOR);
-     if(type == SPELL_TYPE_ANTI) return;
-   }
-   
-   if(victim != ch)
-     loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 4;
-   else 
-     loc_level = (level + 5) / 2;
-   
-   if(is_object) 
-     my_duration = -1;
-   else
-     my_duration = 12 + loc_level;
-   
-   if(!affected_by_spell(victim, SPELL_ARMOR)) {
-     af.type      = SPELL_ARMOR;
-     af.duration  = my_duration;
-     af.modifier  =  loc_level;
-     af.location  = APPLY_ARMOR;
-     af.bitvector = AFF_EVASION;
-     
-     affect_to_char(victim, &af);
-     send_to_char("You feel someone protecting you.\n\r", victim);
-   }
+	if (!victim)
+		return;
+
+	if ((type == SPELL_TYPE_ANTI) || is_object) {
+		affect_from_char(victim, SPELL_ARMOR);
+		if (type == SPELL_TYPE_ANTI) return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 4;
+	else
+		loc_level = (level + 5) / 2;
+
+	if (is_object)
+		my_duration = -1;
+	else
+		my_duration = 12 + loc_level;
+
+	if (!affected_by_spell(victim, SPELL_ARMOR)) {
+		af.type = SPELL_ARMOR;
+		af.duration = my_duration;
+		af.modifier = loc_level;
+		af.location = APPLY_ARMOR;
+		af.bitvector = AFF_EVASION;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel someone protecting you.\n\r", victim);
+	}
 }
 
 
 
 ASPELL(spell_resist_magic)
 {
-  struct affected_type af;
-  int loc_level;
-  
-  if(!victim)
-    return;
-  
-  if(victim != ch)
-    loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level) / 2;
-  else
-    loc_level = level;
-    
-  if(!affected_by_spell(victim, SPELL_RESIST_MAGIC)) {
-    af.type      = SPELL_RESIST_MAGIC;
-    af.duration  = loc_level;
-    af.modifier  = number(0, 1) + (loc_level / 5);
-    af.location  = APPLY_SAVING_SPELL;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You feel yourself resistant to magic.\n\r", victim);
-  }
+	if (!victim)
+		return;
+
+	// drelidan: New formula.  +1 save per 3 mage levels.  With resist magic 
+	// up, add half of your cleric levels to your mage levels first.
+	int level = get_mystic_caster_level(caster);
+	int modifier = level / 6;
+
+	affected_type af;
+	af.type = SPELL_RESIST_MAGIC;
+	af.duration = level;
+	af.modifier = modifier;
+	af.location = APPLY_SAVING_SPELL;
+	af.bitvector = 0;
+
+	affected_type* resist_magic_effect = affected_by_spell(victim, SPELL_RESIST_MAGIC);
+	if (resist_magic_effect)
+	{
+		// Refresh resist magic.
+		if (resist_magic_effect->modifier <= modifier && resist_magic_effect->duration <= level && resist_magic_effect->duration > 0)
+		{
+			// Remove the old affect from the victim.
+			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_REMOVE);
+			affect_total(victim);
+
+			resist_magic_effect->modifier = modifier;
+			resist_magic_effect->duration = level;
+
+			// And add the new affect to the victim.
+			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_SET);
+			affect_total(victim);
+
+			send_to_char("You refresh your resistance to magic.\n\r", victim);
+		}
+		else
+		{
+			send_to_char("You are already benefiting from greater resistance.\n\r", victim);
+		}
+	}
+	else
+	{
+		affect_to_char(victim, &af);
+		send_to_char("You feel yourself resistant to magic.\n\r", victim);
+	}
 }
 
 
 
 ASPELL(spell_slow_digestion)
 {
-  struct affected_type af;
-  int loc_level;
+	struct affected_type af;
+	int loc_level;
 
-  if(!victim)
-    return;
-  
-  if(victim != ch)
-    loc_level = GET_PROF_LEVEL(PROF_CLERIC, victim) + level;
-  else
-    loc_level = level;
-  
-  if(!affected_by_spell(victim, SPELL_SLOW_DIGESTION)) {
-    af.type      = SPELL_SLOW_DIGESTION;
-    af.duration  = loc_level + 12;
-    af.modifier  = loc_level;
-    af.location  = APPLY_NONE;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You feel your stomach shrinking.\n\r", victim);
-  }
+	if (!victim)
+		return;
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = GET_PROF_LEVEL(PROF_CLERIC, victim) + level;
+	else
+		loc_level = level;
+
+	if (!affected_by_spell(victim, SPELL_SLOW_DIGESTION)) {
+		af.type = SPELL_SLOW_DIGESTION;
+		af.duration = loc_level + 12;
+		af.modifier = loc_level;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel your stomach shrinking.\n\r", victim);
+	}
 }
 
 
 ASPELL(spell_divination)
 {
 	// Ensure that we have a valid caster and location.
-	if (ch == NULL || ch->in_room == NOWHERE)
+	if (caster == NULL || caster->in_room == NOWHERE)
 		return;
 
 	char buff[1000];
 	
-	const room_data& cur_room = world[ch->in_room];
+	const room_data& cur_room = world[caster->in_room];
 
 	sprintf(buff, "You feel confident about your location.\n\r");
 	sprintbit(cur_room.room_flags, room_bits, buf, 0);
 	sprintf(buff, "%s (#%d) [ %s, %s], Exits are:\n\r", buff, cur_room.number, sector_types[cur_room.sector_type], buf);
-	send_to_char(buff, ch);
+	send_to_char(buff, caster);
 
 	bool found = false;
 	for (int dir = 0; dir < NUM_OF_DIRS; dir++)
@@ -621,18 +668,18 @@ ASPELL(spell_divination)
 						error_log << "Found a room with an invalid key.  Room Number: " << exit_room.number << " and Room Name: " << exit_room.name << std::endl;
 						std::string msg = error_log.str();
 						log(const_cast<char*>(msg.c_str()));
-						send_to_char("You found a key that shouldn't exist!  Please notify the imm group immediately at rots.management3791@gmail.com with your room name.", ch);
+						send_to_char("You found a key that shouldn't exist!  Please notify the imm group immediately at rots.management3791@gmail.com with your room name.", caster);
 					}
 				}
 
 				sprintf(buff, "%s     door '%s', key '%s'.\n\r", buff, keyword, key_name);
 			}
-			send_to_char(buff, ch);
+			send_to_char(buff, caster);
 		}
 	}
 	if (!found)
 	{
-		send_to_char("None.\n\r", ch);
+		send_to_char("None.\n\r", caster);
 	}
 
 	sprintf(buff, "Living beings in the room:\n\r");
@@ -650,11 +697,11 @@ ASPELL(spell_divination)
 				strcat(buff, ".\n\r");
 			}
 		}
-		send_to_char(buff, ch);
+		send_to_char(buff, caster);
 	}
 	else
 	{
-		send_to_char("Living beings in the room:\n\r None.\n\r", ch);
+		send_to_char("Living beings in the room:\n\r None.\n\r", caster);
 	}
 
 	if (cur_room.contents)
@@ -672,38 +719,39 @@ ASPELL(spell_divination)
 				strcat(buff, ".\n\r");
 			}
 		}
-		send_to_char(buff, ch);
+		send_to_char(buff, caster);
 	}
 	else
 	{
-		send_to_char("Objects in the room:\n\r None.\n\r", ch);
+		send_to_char("Objects in the room:\n\r None.\n\r", caster);
 	}
 }
 
 
 
-ASPELL(spell_infravision){
-  
-struct affected_type af;
-  
-  
-  if(!victim) victim = ch;
+ASPELL(spell_infravision) 
+{
+	if (!victim)
+		victim = caster;
 
-  if ( affected_by_spell(victim, SPELL_INFRAVISION) ){
-    if(victim == ch)
-      send_to_char("You already can see in the dark.\n\r",ch);
-    else
-      act("$E already can see in the dark.\n\r",TRUE, ch, 0, victim, TO_CHAR);
-    return;
-  }
-  af.type      = SPELL_INFRAVISION;
-  af.duration  = level ;
-  af.modifier  = 0;
-  af.location  = APPLY_NONE;
-  af.bitvector = AFF_INFRARED;
-  
-  affect_to_char(victim, &af);
-  send_to_char("Your eyes burn.\n\r", victim);
+	if (affected_by_spell(victim, SPELL_INFRAVISION)) {
+		if (victim == caster)
+			send_to_char("You already can see in the dark.\n\r", caster);
+		else
+			act("$E already can see in the dark.\n\r", TRUE, caster, 0, victim, TO_CHAR);
+		return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	affected_type af;
+	af.type = SPELL_INFRAVISION;
+	af.duration = level;
+	af.modifier = 0;
+	af.location = APPLY_NONE;
+	af.bitvector = AFF_INFRARED;
+
+	affect_to_char(victim, &af);
+	send_to_char("Your eyes burn.\n\r", victim);
 
 }
 
@@ -722,154 +770,160 @@ struct affected_type af;
 
 ASPELL(spell_resist_poison)
 {
-  affected_type *af;
-  affected_type newaf;
-  
-  if (!victim)
-	victim = ch;
-  af = affected_by_spell(victim, SPELL_POISON);
-  if (af){
-	if (affected_by_spell(victim, SPELL_RESIST_POISON)){
-	  send_to_char("The poison is already being resisted.\n\r", ch);
-	} else {
-	  newaf.type = SPELL_RESIST_POISON;
-	  newaf.duration = af->duration;
-	  newaf.modifier = GET_PROF_LEVEL(PROF_CLERIC, ch);
-	  newaf.location = APPLY_NONE;
-	  newaf.bitvector = 0;
-	  affect_to_char(victim, &newaf);
-	  send_to_char("You begin to resist the poison.\n\r", victim);
-	  if (victim != ch)
-		send_to_char("They begin to resist the poison.\n\r", ch);
+	affected_type *af;
+	affected_type newaf;
+
+	if (!victim)
+		victim = caster;
+	af = affected_by_spell(victim, SPELL_POISON);
+	if (af) {
+		if (affected_by_spell(victim, SPELL_RESIST_POISON)) {
+			send_to_char("The poison is already being resisted.\n\r", caster);
+		}
+		else {
+			newaf.type = SPELL_RESIST_POISON;
+			newaf.duration = af->duration;
+			newaf.modifier = GET_PROF_LEVEL(PROF_CLERIC, caster);
+			newaf.location = APPLY_NONE;
+			newaf.bitvector = 0;
+			affect_to_char(victim, &newaf);
+			send_to_char("You begin to resist the poison.\n\r", victim);
+			if (victim != caster)
+				send_to_char("They begin to resist the poison.\n\r", caster);
+		}
 	}
-  } else
-	if (victim == ch)
-	  send_to_char("But you have not been poisoned!\n\r", ch);
 	else
-	  send_to_char("But they are not poisoned!\n\r", ch);
+		if (victim == caster)
+			send_to_char("But you have not been poisoned!\n\r", caster);
+		else
+			send_to_char("But they are not poisoned!\n\r", caster);
 }
 
 
 
 ASPELL(spell_curing)
 {
-  struct affected_type af;
-  int loc_level;
+	struct affected_type af;
+	int loc_level;
 
-  if(!victim)
-    return;
-  
-  if(victim != ch)
-    loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 2;
-  else
-    loc_level = level+5;
-    
-  if(!affected_by_spell(victim, SPELL_CURING)) {
-    af.type      = SPELL_CURING;
-    af.duration  = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE/2;
-    af.modifier  = -loc_level;
-    af.location  = APPLY_NONE;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You feel yourself becoming healthier.\n\r", victim);
-  }
+	if (!victim)
+		return;
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 2;
+	else
+		loc_level = level + 5;
+
+	if (!affected_by_spell(victim, SPELL_CURING)) {
+		af.type = SPELL_CURING;
+		af.duration = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
+		af.modifier = -loc_level;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel yourself becoming healthier.\n\r", victim);
+	}
 }
 
 
 
 ASPELL(spell_restlessness)
 {
-  struct affected_type af;
-  int loc_level;
-  
-  if(!victim)
-    return;
+	struct affected_type af;
+	int loc_level;
 
-  if(victim != ch)
-    loc_level = (GET_PROF_LEVEL(PROF_CLERIC,victim) + level + 5) / 2;
-  else 
-    loc_level = level+5;
-  
-  if(!affected_by_spell(victim, SPELL_RESTLESSNESS)) {
-    af.type      = SPELL_RESTLESSNESS;
-    af.duration  = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE/2;
-    af.modifier  = loc_level;
-    af.location  = APPLY_NONE;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You feel yourself lighter.\n\r", victim);
-  }
+	if (!victim)
+		return;
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 2;
+	else
+		loc_level = level + 5;
+
+	if (!affected_by_spell(victim, SPELL_RESTLESSNESS)) {
+		af.type = SPELL_RESTLESSNESS;
+		af.duration = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
+		af.modifier = loc_level;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel yourself lighter.\n\r", victim);
+	}
 }
 
 
 
 ASPELL(spell_remove_poison)
 {
-  
-  if(!ch  || (!victim && !obj)){
-    mudlog("remove_poison without all arguments.", NRM, 0, 0);
-    return;
-  }
-  
-  if (victim) {
-    if (affected_by_spell(victim, SPELL_POISON)) {
-      affect_from_char(victim, SPELL_POISON);
-      act("A warm feeling runs through your body.", FALSE, victim, 0, 0, TO_CHAR);
-      act("$N looks better.", FALSE, ch, 0, victim, TO_ROOM);
-    }
-  } else {
-    if ((obj->obj_flags.type_flag == ITEM_DRINKCON) || 
-	(obj->obj_flags.type_flag == ITEM_FOUNTAIN) || 
-	(obj->obj_flags.type_flag == ITEM_FOOD)) {
-      obj->obj_flags.value[3] = 0;
-      act("The $p steams briefly.", FALSE, ch, obj, 0, TO_CHAR);
-    }
-  }
+
+	if (!caster || (!victim && !obj)) {
+		mudlog("remove_poison without all arguments.", NRM, 0, 0);
+		return;
+	}
+
+	if (victim) {
+		if (affected_by_spell(victim, SPELL_POISON)) {
+			affect_from_char(victim, SPELL_POISON);
+			act("A warm feeling runs through your body.", FALSE, victim, 0, 0, TO_CHAR);
+			act("$N looks better.", FALSE, caster, 0, victim, TO_ROOM);
+		}
+	}
+	else {
+		if ((obj->obj_flags.type_flag == ITEM_DRINKCON) ||
+			(obj->obj_flags.type_flag == ITEM_FOUNTAIN) ||
+			(obj->obj_flags.type_flag == ITEM_FOOD)) {
+			obj->obj_flags.value[3] = 0;
+			act("The $p steams briefly.", FALSE, caster, obj, 0, TO_CHAR);
+		}
+	}
 }
 
 
 ASPELL(spell_vitality)
 {
-  struct affected_type af;
-  struct affected_type *hjp;
-  int loc_level;
-  
-  if(!victim)
-    return;
-  
-  if(victim != ch)
-    loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level) / 2;
-  else
-    loc_level = level;
-  
-  loc_level = level;
-  loc_level = loc_level/3 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
-  
-  hjp = affected_by_spell(victim, SPELL_VITALITY);
-  if(!hjp) {
-    af.type      = SPELL_VITALITY;
-    af.duration  = loc_level;
-    af.modifier  = 1;
-    af.location  = APPLY_NONE;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You feel yourself becoming much lighter.\n\r", victim);
-  }
-  else if(hjp->duration < loc_level / 2) {
-    hjp->duration = loc_level;
-    send_to_char("You feel another surge of lightness.\n\r", victim);
-    act("You renew $N's vitality.",FALSE, ch, 0, victim, TO_CHAR);
-  }
-  else {
-    if(victim == ch)
-      send_to_char("You are still as light as can be.\n\r",ch);
-    else
-      act("You could not improve $N's vitality.",
-	  FALSE, ch, 0, victim, TO_CHAR);
-  }
+	struct affected_type af;
+	struct affected_type *hjp;
+	int loc_level;
+
+	if (!victim)
+		return;
+
+	int level = get_mystic_caster_level(caster);
+	if (victim != caster)
+		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level) / 2;
+	else
+		loc_level = level;
+
+	loc_level = level;
+	loc_level = loc_level / 3 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+
+	hjp = affected_by_spell(victim, SPELL_VITALITY);
+	if (!hjp) {
+		af.type = SPELL_VITALITY;
+		af.duration = loc_level;
+		af.modifier = 1;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel yourself becoming much lighter.\n\r", victim);
+	}
+	else if (hjp->duration < loc_level / 2) {
+		hjp->duration = loc_level;
+		send_to_char("You feel another surge of lightness.\n\r", victim);
+		act("You renew $N's vitality.", FALSE, caster, 0, victim, TO_CHAR);
+	}
+	else {
+		if (victim == caster)
+			send_to_char("You are still as light as can be.\n\r", caster);
+		else
+			act("You could not improve $N's vitality.",
+				FALSE, caster, 0, victim, TO_CHAR);
+	}
 }
 
 
@@ -877,11 +931,11 @@ ASPELL(spell_dispel_regeneration)
 {
 	if (!victim) 
 	{
-		send_to_char("Whom do you want to dispel?\n\r", ch);
+		send_to_char("Whom do you want to dispel?\n\r", caster);
 		return;
 	}
 
-	if (victim == ch) 
+	if (victim == caster) 
 	{
 		affect_from_char(victim, SPELL_RESTLESSNESS);
 		affect_from_char(victim, SPELL_CURING);
@@ -896,8 +950,8 @@ ASPELL(spell_dispel_regeneration)
 		{
 			if (saves_mystic(victim))
 			{
-				act("$N resists your attempt to dispel Restlessness.", FALSE, ch, 0, victim, TO_CHAR);
-				act("You resist $n's attempts to dispel Restlessness from you.", FALSE, ch, 0, victim, TO_VICT);
+				act("$N resists your attempt to dispel Restlessness.", FALSE, caster, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Restlessness from you.", FALSE, caster, 0, victim, TO_VICT);
 			}
 			else
 			{
@@ -910,8 +964,8 @@ ASPELL(spell_dispel_regeneration)
 		{
 			if (saves_mystic(victim))
 			{
-				act("$N resists your attempt to dispel Curing Saturation.", FALSE, ch, 0, victim, TO_CHAR);
-				act("You resist $n's attempts to dispel Curing Saturation from you.", FALSE, ch, 0, victim, TO_VICT);
+				act("$N resists your attempt to dispel Curing Saturation.", FALSE, caster, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Curing Saturation from you.", FALSE, caster, 0, victim, TO_VICT);
 			}
 			else
 			{
@@ -924,8 +978,8 @@ ASPELL(spell_dispel_regeneration)
 		{
 			if (saves_mystic(victim))
 			{
-				act("$N resists your attempt to dispel Regeneration.", FALSE, ch, 0, victim, TO_CHAR);
-				act("You resist $n's attempts to dispel Regeneration from you.", FALSE, ch, 0, victim, TO_VICT);
+				act("$N resists your attempt to dispel Regeneration.", FALSE, caster, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Regeneration from you.", FALSE, caster, 0, victim, TO_VICT);
 			}
 			else
 			{
@@ -938,8 +992,8 @@ ASPELL(spell_dispel_regeneration)
 		{
 			if (saves_mystic(victim))
 			{
-				act("$N resists your attempt to dispel Vitality.", FALSE, ch, 0, victim, TO_CHAR);
-				act("You resist $n's attempts to dispel Vitality from you.", FALSE, ch, 0, victim, TO_VICT);
+				act("$N resists your attempt to dispel Vitality.", FALSE, caster, 0, victim, TO_CHAR);
+				act("You resist $n's attempts to dispel Vitality from you.", FALSE, caster, 0, victim, TO_VICT);
 			}
 			else
 			{
@@ -953,40 +1007,41 @@ ASPELL(spell_dispel_regeneration)
 
 
 
-ASPELL(spell_regeneration){
-   struct affected_type af;
-   struct affected_type * hjp;
-    int loc_level;
+ASPELL(spell_regeneration) {
+	struct affected_type af;
+	struct affected_type * hjp;
+	int loc_level;
 
-    if(!victim) return;
-    
-    loc_level = level - 10;
+	if (!victim) return;
 
-    loc_level = loc_level/2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	int level = get_mystic_caster_level(caster);
+	loc_level = level - 10;
 
-    hjp = affected_by_spell(victim, SPELL_REGENERATION);
-    if(!hjp) {
-      af.type      = SPELL_REGENERATION;
-      af.duration  = loc_level;
-      af.modifier  = 1;
-      af.location  = APPLY_NONE;
-      af.bitvector = 0;
-      
-      affect_to_char(victim, &af);
-      send_to_char("You feel yourself becoming much healthier.\n\r", victim);
-    }
-    else if(hjp->duration < loc_level/2){
-      hjp->duration = loc_level;
-      send_to_char("You feel another surge of energy.\n\r",victim);
-      act("You renew $N's regeneration.",FALSE, ch, 0, victim, TO_CHAR);
-    }
-    else{
-      if(victim == ch)
-	send_to_char("You are still regenerating fast enough.\n\r",ch);
-      else
-	act("You could not improve $N's regeneration.",
-	    FALSE, ch, 0, victim, TO_CHAR);
-    }
+	loc_level = loc_level / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+
+	hjp = affected_by_spell(victim, SPELL_REGENERATION);
+	if (!hjp) {
+		af.type = SPELL_REGENERATION;
+		af.duration = loc_level;
+		af.modifier = 1;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel yourself becoming much healthier.\n\r", victim);
+	}
+	else if (hjp->duration < loc_level / 2) {
+		hjp->duration = loc_level;
+		send_to_char("You feel another surge of energy.\n\r", victim);
+		act("You renew $N's regeneration.", FALSE, caster, 0, victim, TO_CHAR);
+	}
+	else {
+		if (victim == caster)
+			send_to_char("You are still regenerating fast enough.\n\r", caster);
+		else
+			act("You could not improve $N's regeneration.",
+				FALSE, caster, 0, victim, TO_CHAR);
+	}
 }
 
 
@@ -1000,150 +1055,153 @@ ASPELL(spell_regeneration){
  */
 
 
-ASPELL(spell_hallucinate) 
+ASPELL(spell_hallucinate)
 {
-  struct affected_type af;
-  int loc_level, my_duration;
-  int modifier;
-  
-  if(!victim) 
-    return;
-  
-  loc_level = level;
-  if(affected_by_spell(victim, SPELL_HALLUCINATE))
-    send_to_char("They are already hallucinating!\n\r", ch);
-  
- /*
-  *  The modifier represents the number of times that the affected character
-  * can "miss" the illusions of the characters/mobiles they're trying to hit.
-  * Once they've "missed" this number of times, the effect will be removed.
-  * If they hit the player before the modifier is 0, the effect will also be
-  * removed.  A player of mystic level 31 or higher gets an additional +1
-  * modifier.  A player specialization of Illusion give the player an
-  * additional +1 modifier.
-  */
+	struct affected_type af;
+	int loc_level, my_duration;
+	int modifier;
 
- modifier = ((GET_PROF_LEVEL(PROF_CLERIC, ch) / 10) + 2)
-           + ((GET_PROF_LEVEL(PROF_CLERIC, ch) > 30) ? 1 : 0)
-           + ((GET_SPEC(ch) == PLRSPEC_ILLU) ? 1 : 0);
-  my_duration = modifier * 4;
+	if (!victim)
+		return;
 
-  if (!affected_by_spell(victim, SPELL_HALLUCINATE) &&
-      (is_object || !saves_confuse(victim, ch))) {
-    af.type      = SPELL_HALLUCINATE;
-    af.duration  = my_duration;
-    af.modifier  = modifier;
-    af.location  = APPLY_NONE;
-    af.bitvector = AFF_HALLUCINATE;
-    
-    affect_to_char(victim, &af);
-    act("The world around you blurs and fades.\n\r", TRUE, victim, 0, ch, TO_CHAR);
-    act("$n nervously glances around in confusion!",FALSE, victim, 0, 0, TO_ROOM);
+	int level = get_mystic_caster_level(caster);
+	loc_level = level;
+	if (affected_by_spell(victim, SPELL_HALLUCINATE))
+		send_to_char("They are already hallucinating!\n\r", caster);
 
-    damage(ch, victim, 0, SPELL_HALLUCINATE, 0);
-  }
+	/*
+	 *  The modifier represents the number of times that the affected character
+	 * can "miss" the illusions of the characters/mobiles they're trying to hit.
+	 * Once they've "missed" this number of times, the effect will be removed.
+	 * If they hit the player before the modifier is 0, the effect will also be
+	 * removed.  A player of mystic level 31 or higher gets an additional +1
+	 * modifier.  A player specialization of Illusion give the player an
+	 * additional +1 modifier.
+	 */
+
+	modifier = ((GET_PROF_LEVEL(PROF_CLERIC, caster) / 10) + 2)
+		+ ((GET_PROF_LEVEL(PROF_CLERIC, caster) > 30) ? 1 : 0)
+		+ ((GET_SPEC(caster) == PLRSPEC_ILLU) ? 1 : 0);
+	my_duration = modifier * 4;
+
+	if (!affected_by_spell(victim, SPELL_HALLUCINATE) &&
+		(is_object || !saves_confuse(victim, caster))) {
+		af.type = SPELL_HALLUCINATE;
+		af.duration = my_duration;
+		af.modifier = modifier;
+		af.location = APPLY_NONE;
+		af.bitvector = AFF_HALLUCINATE;
+
+		affect_to_char(victim, &af);
+		act("The world around you blurs and fades.\n\r", TRUE, victim, 0, caster, TO_CHAR);
+		act("$n nervously glances around in confusion!", FALSE, victim, 0, 0, TO_ROOM);
+
+		damage(caster, victim, 0, SPELL_HALLUCINATE, 0);
+	}
 }
 
 
 
-ASPELL(spell_haze){
-  struct affected_type af;
-  int loc_level, my_duration, tmp;
-  affected_type * tmpaf;
+ASPELL(spell_haze) {
+	struct affected_type af;
+	int loc_level, my_duration, tmp;
+	affected_type * tmpaf;
 
-  if(!victim) return;
+	if (!victim) return;
 
-  if((type == SPELL_TYPE_ANTI) && is_object){
-    for(tmpaf = ch->affected, tmp = 0;(tmp<MAX_AFFECT) && tmpaf;
-	tmpaf = tmpaf->next, tmp++)
-      if((tmpaf->type == SPELL_HAZE) && (tmpaf->duration == -1)) break;
+	if ((type == SPELL_TYPE_ANTI) && is_object) {
+		for (tmpaf = caster->affected, tmp = 0; (tmp < MAX_AFFECT) && tmpaf;
+			tmpaf = tmpaf->next, tmp++)
+			if ((tmpaf->type == SPELL_HAZE) && (tmpaf->duration == -1)) break;
 
-    if(tmpaf) affect_remove(ch, tmpaf);
+		if (tmpaf) affect_remove(caster, tmpaf);
 
-    return;
-  }
-  else if(type == SPELL_TYPE_ANTI){
-    affect_from_char(victim, SPELL_HAZE);
-    return;
-  }
+		return;
+	}
+	else if (type == SPELL_TYPE_ANTI) {
+		affect_from_char(victim, SPELL_HAZE);
+		return;
+	}
 
-  loc_level = level;
+	int level = get_mystic_caster_level(caster);
+	loc_level = level;
 
-  if(is_object) my_duration = -1;
-    else my_duration = number(0,1); 
+	if (is_object) my_duration = -1;
+	else my_duration = number(0, 1);
 
-  if (!affected_by_spell(victim, SPELL_HAZE) &&
-      (is_object || !saves_mystic(victim))) {
-    af.type      = SPELL_HAZE;
-    af.duration  = my_duration;
-    af.modifier  = loc_level;
-    af.location  = APPLY_NONE;
-    af.bitvector = AFF_HAZE;
+	if (!affected_by_spell(victim, SPELL_HAZE) &&
+		(is_object || !saves_mystic(victim))) {
+		af.type = SPELL_HAZE;
+		af.duration = my_duration;
+		af.modifier = loc_level;
+		af.location = APPLY_NONE;
+		af.bitvector = AFF_HAZE;
 
-    affect_to_char(victim, &af);
-    act("You feel dizzy as your surroundings seem to blur and twist.\n\r", TRUE, victim, 0, ch, TO_CHAR);
-    act("$n staggers, overcome by dizziness!",FALSE, victim, 0, 0, TO_ROOM);
-  }
+		affect_to_char(victim, &af);
+		act("You feel dizzy as your surroundings seem to blur and twist.\n\r", TRUE, victim, 0, caster, TO_CHAR);
+		act("$n staggers, overcome by dizziness!", FALSE, victim, 0, 0, TO_ROOM);
+	}
 }
 
 
 
 ASPELL(spell_fear)
 {
-  struct affected_type af;
-  
-  if(!victim) {
-    send_to_char("Whom do you want to scare?\n\r",ch);
-    return;
-  }
+	struct affected_type af;
 
-  if(victim == ch) {
-    send_to_char("You look upon yourself.\n\rYou are scared to death.\n\r",ch);
-    return;
-  }
+	if (!victim) {
+		send_to_char("Whom do you want to scare?\n\r", caster);
+		return;
+	}
 
-  if(!IS_NPC(ch) && !IS_NPC(victim) && RACE_GOOD(ch) && RACE_GOOD(victim) &&
-     GET_LEVEL(ch) < LEVEL_IMMORT && GET_LEVEL(victim) < LEVEL_IMMORT &&
-     ch != victim) {
-    act("$N is not scared by your spell.",
-	FALSE, ch, 0, victim, TO_CHAR);
-    act("You are not scared by $n's spell.", 
-	FALSE, ch, 0, victim, TO_VICT);
-    act("$n attempts to scare $N but fails.",
-	FALSE, ch, 0, victim, TO_NOTVICT);
-    return;
-  }
-  
-  if(!affected_by_spell(victim, SPELL_FEAR) && 
-     !saves_mystic(victim) && !saves_leadership(victim)) {
-    af.type      = SPELL_FEAR;
-    af.duration  = level;
-    af.modifier  = level+10;
-    af.location  = APPLY_NONE;
-    af.bitvector = 0;
-    
-    affect_to_char(victim, &af);
-    if((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC)) {
-      act("$n breathes a vile, putrid breath onto you. "
-	  "Fear races through your heart!",
-	  FALSE, ch, 0, victim, TO_VICT);
-      act("$n breathes a vile, putrid breath at $N. $N is scared!",
-	  TRUE, ch,0, victim, TO_NOTVICT);
-    }
-    else {
-      act("$n breathes an icy, cold breath onto you. "
-	  "Fear races through your heart!",
-	  FALSE, ch, 0, victim, TO_VICT);
-      act("$n breathes an icy, cold breath at $N; $N is scared!", 
-	  TRUE, ch, 0, victim, TO_NOTVICT);
-    }
-    act("$N looks shocked for a brief moment before the panic sets in.",
-	FALSE, ch, 0, victim, TO_CHAR);
-  }
-  else
-    act("$N ignores your breath.", FALSE, ch, 0, victim, TO_CHAR);
+	if (victim == caster) {
+		send_to_char("You look upon yourself.\n\rYou are scared to death.\n\r", caster);
+		return;
+	}
 
-  return;
+	if (!IS_NPC(caster) && !IS_NPC(victim) && RACE_GOOD(caster) && RACE_GOOD(victim) &&
+		GET_LEVEL(caster) < LEVEL_IMMORT && GET_LEVEL(victim) < LEVEL_IMMORT &&
+		caster != victim) {
+		act("$N is not scared by your spell.",
+			FALSE, caster, 0, victim, TO_CHAR);
+		act("You are not scared by $n's spell.",
+			FALSE, caster, 0, victim, TO_VICT);
+		act("$n attempts to scare $N but fails.",
+			FALSE, caster, 0, victim, TO_NOTVICT);
+		return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	if (!affected_by_spell(victim, SPELL_FEAR) &&
+		!saves_mystic(victim) && !saves_leadership(victim)) {
+		af.type = SPELL_FEAR;
+		af.duration = level;
+		af.modifier = level + 10;
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		if ((GET_RACE(caster) == RACE_URUK) || (GET_RACE(caster) == RACE_ORC)) {
+			act("$n breathes a vile, putrid breath onto you. "
+				"Fear races through your heart!",
+				FALSE, caster, 0, victim, TO_VICT);
+			act("$n breathes a vile, putrid breath at $N. $N is scared!",
+				TRUE, caster, 0, victim, TO_NOTVICT);
+		}
+		else {
+			act("$n breathes an icy, cold breath onto you. "
+				"Fear races through your heart!",
+				FALSE, caster, 0, victim, TO_VICT);
+			act("$n breathes an icy, cold breath at $N; $N is scared!",
+				TRUE, caster, 0, victim, TO_NOTVICT);
+		}
+		act("$N looks shocked for a brief moment before the panic sets in.",
+			FALSE, caster, 0, victim, TO_CHAR);
+	}
+	else
+		act("$N ignores your breath.", FALSE, caster, 0, victim, TO_CHAR);
+
+	return;
 }
 
 
@@ -1154,18 +1212,20 @@ ASPELL(spell_poison)
 	struct affected_type * oldaf;
 	int magus_save = 0;
 
-	if (!victim && !obj && !(ch->specials.fighting)) 
+
+	if (!victim && !obj && !(caster->specials.fighting)) 
 	{ /*poisoning the room*/
 
-		if (!ch) return;
+		if (!caster) return;
 
+		int level = get_mystic_caster_level(caster);
 		af.type = ROOMAFF_SPELL;
 		af.duration = (level) / 3;
 		af.modifier = level / 2;
 		af.location = SPELL_POISON;
 		af.bitvector = 0;
 
-		if ((oldaf = room_affected_by_spell(&world[ch->in_room], SPELL_POISON))) 
+		if ((oldaf = room_affected_by_spell(&world[caster->in_room], SPELL_POISON))) 
 		{
 			if (oldaf->duration < af.duration)
 				oldaf->duration = af.duration;
@@ -1175,22 +1235,23 @@ ASPELL(spell_poison)
 		}
 		else 
 		{
-			affect_to_room(&world[ch->in_room], &af);
+			affect_to_room(&world[caster->in_room], &af);
 		}
 
-		act("$n breathes out a cloud of smoke.", TRUE, ch, 0, 0, TO_ROOM);
-		send_to_char("You breathe out poison.\n\r", ch);
+		act("$n breathes out a cloud of smoke.", TRUE, caster, 0, 0, TO_ROOM);
+		send_to_char("You breathe out poison.\n\r", caster);
 
 		return;
 	}
 
-	if (GET_POSITION(ch) == POSITION_FIGHTING) 
-		victim = ch->specials.fighting;
+	if (GET_POSITION(caster) == POSITION_FIGHTING) 
+		victim = caster->specials.fighting;
 
 	if (victim)
 	{
-		if (!saves_poison(victim, ch) && (number(0, magus_save) < 50))
+		if (!saves_poison(victim, caster) && (number(0, magus_save) < 50))
 		{
+			int level = get_mystic_caster_level(caster);
 			af.type = SPELL_POISON;
 			af.duration = level + 1;
 			af.modifier = -2;
@@ -1200,12 +1261,12 @@ ASPELL(spell_poison)
 			affect_join(victim, &af, FALSE, FALSE);
 
 			send_to_char("You feel very sick.\n\r", victim);
-			damage((ch) ? ch : victim, victim, 5, SPELL_POISON, 0);
+			damage((caster) ? caster : victim, victim, 5, SPELL_POISON, 0);
 		}
 		else
 		{
-			act("You feel your body fend off the poison.", TRUE, ch, 0, victim, TO_VICT);
-			act("$N shrugs off your poison with ease.", FALSE, ch, 0, victim, TO_CHAR);
+			act("You feel your body fend off the poison.", TRUE, caster, 0, victim, TO_VICT);
+			act("$N shrugs off your poison with ease.", FALSE, caster, 0, victim, TO_CHAR);
 		}
 
 	}
@@ -1223,33 +1284,34 @@ ASPELL(spell_poison)
 
 ASPELL(spell_terror)
 {
-  struct char_data *tmpch;
-  struct affected_type af;
-  
-  if(!ch || (ch->in_room == NOWHERE)) 
-    return;
+	struct char_data *tmpch;
+	struct affected_type af;
 
-  send_to_char("You breathe an icy, cold breath across the room.\n\r",
-	       ch);
-  
-  for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-    if((tmpch != ch) && !affected_by_spell(tmpch, SPELL_FEAR)) {
-      if(!saves_mystic(tmpch) && !saves_leadership(tmpch)) {
-	af.type      = SPELL_FEAR;
-	af.duration  = level;
-	af.modifier  = level+10;
-	af.location  = APPLY_NONE;
-	af.bitvector = 0;
-	
-	affect_to_char(tmpch, &af);
-	act("$n suddenly breathes an icy, cold breath everywhere. "
-	    "Terror overcomes you.", FALSE, ch, 0, tmpch, TO_VICT);
-      }
-      else
-	act("$n suddenly breathes an icy, cold breath. You ignore it.",
-	    FALSE, ch, 0, tmpch, TO_VICT);
-    }
-  }
+	if (!caster || (caster->in_room == NOWHERE))
+		return;
+
+	send_to_char("You breathe an icy, cold breath across the room.\n\r",
+		caster);
+
+	int level = get_mystic_caster_level(caster);
+	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+		if ((tmpch != caster) && !affected_by_spell(tmpch, SPELL_FEAR)) {
+			if (!saves_mystic(tmpch) && !saves_leadership(tmpch)) {
+				af.type = SPELL_FEAR;
+				af.duration = level;
+				af.modifier = level + 10;
+				af.location = APPLY_NONE;
+				af.bitvector = 0;
+
+				affect_to_char(tmpch, &af);
+				act("$n suddenly breathes an icy, cold breath everywhere. "
+					"Terror overcomes you.", FALSE, caster, 0, tmpch, TO_VICT);
+			}
+			else
+				act("$n suddenly breathes an icy, cold breath. You ignore it.",
+					FALSE, caster, 0, tmpch, TO_VICT);
+		}
+	}
 }
 
 
@@ -1267,55 +1329,55 @@ ASPELL(spell_terror)
 
 ASPELL(spell_attune)
 {
-  struct obj_data *object;
-  
-  object = ch->equipment[WIELD];
-  if(!(object)) {
-    send_to_char("But you are not wielding a weapon!\n\r", ch);
-    return;
-  }
-  
-  SET_BIT(object->obj_flags.extra_flags, ITEM_WILLPOWER);
-  object->obj_flags.prog_number = 1;
-  send_to_char("You attune your mind to your weapon.\n\r", ch);
+	struct obj_data *object;
+
+	object = caster->equipment[WIELD];
+	if (!(object)) {
+		send_to_char("But you are not wielding a weapon!\n\r", caster);
+		return;
+	}
+
+	SET_BIT(object->obj_flags.extra_flags, ITEM_WILLPOWER);
+	object->obj_flags.prog_number = 1;
+	send_to_char("You attune your mind to your weapon.\n\r", caster);
 }
 
 
 ASPELL(spell_sanctuary)
 {
-  struct affected_type af;
-  int loc_level;
-  
-  if (!victim) 
-    return;
+	struct affected_type af;
+	int loc_level;
 
-  if (affected_by_spell(ch, SPELL_ANGER)) {
-    send_to_char("Your mind is blinded by anger. "
-		 "Try again when you have cooled down.\n\r", ch);
-    return;
-  }
-  if (affected_by_spell(victim, SPELL_ANGER)) {
-    send_to_char("Your victim's negative energy resists your"
-		 " attempts to form your spell.\r\n", ch);
-    return;
-  }
-   
-  if (ch == victim)
-    loc_level = GET_PROF_LEVEL(PROF_CLERIC, ch);
-  else
-    loc_level = (std::max(6, GET_PROF_LEVEL(PROF_CLERIC, victim)));
-  
-  if (!affected_by_spell(victim, SPELL_SANCTUARY)) {
-    af.type      = SPELL_SANCTUARY;
-    af.duration  = loc_level;
-    af.modifier  = GET_ALIGNMENT(ch);
-    af.location  = APPLY_NONE;
-    af.bitvector = AFF_SANCTUARY;
-    
-    affect_to_char(victim, &af);
-    send_to_char("You are surrounded by a bright aura.\n\r", victim);
-    act("$n is surrounded by a bright aura.",FALSE, victim, 0, 0, TO_ROOM);
-  }
+	if (!victim)
+		return;
+
+	if (affected_by_spell(caster, SPELL_ANGER)) {
+		send_to_char("Your mind is blinded by anger. "
+			"Try again when you have cooled down.\n\r", caster);
+		return;
+	}
+	if (affected_by_spell(victim, SPELL_ANGER)) {
+		send_to_char("Your victim's negative energy resists your"
+			" attempts to form your spell.\r\n", caster);
+		return;
+	}
+
+	if (caster == victim)
+		loc_level = GET_PROF_LEVEL(PROF_CLERIC, caster);
+	else
+		loc_level = (std::max(6, GET_PROF_LEVEL(PROF_CLERIC, victim)));
+
+	if (!affected_by_spell(victim, SPELL_SANCTUARY)) {
+		af.type = SPELL_SANCTUARY;
+		af.duration = loc_level;
+		af.modifier = GET_ALIGNMENT(caster);
+		af.location = APPLY_NONE;
+		af.bitvector = AFF_SANCTUARY;
+
+		affect_to_char(victim, &af);
+		send_to_char("You are surrounded by a bright aura.\n\r", victim);
+		act("$n is surrounded by a bright aura.", FALSE, victim, 0, 0, TO_ROOM);
+	}
 }
 
 
@@ -1324,113 +1386,115 @@ ASPELL(spell_sanctuary)
 
 ASPELL(spell_enchant_weapon)
 {
-  int i, bonus = 0;
-  
-  if(!ch || !obj)
-    return;
-  
-  assert(MAX_OBJ_AFFECT >= 2);
-  
-  if((GET_ITEM_TYPE(obj) == ITEM_WEAPON) && 
-     !IS_SET(obj->obj_flags.extra_flags, ITEM_MAGIC)) {
-    
-    for(i = 0; i < MAX_OBJ_AFFECT; i++)
-      if(obj->affected[i].location != APPLY_NONE) {
-	send_to_char("There is too much magic in it already.\n\r", ch);
+	int i, bonus = 0;
+
+	if (!caster || !obj)
+		return;
+
+	assert(MAX_OBJ_AFFECT >= 2);
+
+	if ((GET_ITEM_TYPE(obj) == ITEM_WEAPON) &&
+		!IS_SET(obj->obj_flags.extra_flags, ITEM_MAGIC)) {
+
+		for (i = 0; i < MAX_OBJ_AFFECT; i++)
+			if (obj->affected[i].location != APPLY_NONE) {
+				send_to_char("There is too much magic in it already.\n\r", caster);
+				return;
+			}
+
+		SET_BIT(obj->obj_flags.extra_flags, ITEM_MAGIC);
+		bonus = 6;
+		obj->affected[0].location = APPLY_OB;
+		obj->affected[0].modifier = bonus;
+
+		if (IS_GOOD(caster)) {
+			SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_EVIL);
+			act("$p glows blue.", FALSE, caster, obj, 0, TO_CHAR);
+		}
+		else if (IS_EVIL(caster)) {
+			SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_GOOD);
+			act("$p glows red.", FALSE, caster, obj, 0, TO_CHAR);
+		}
+		else
+			act("$p glows yellow.", FALSE, caster, obj, 0, TO_CHAR);
+	}
+}
+
+
+ASPELL(spell_death_ward) {
+	affected_type af;
+
+	if ((type == SPELL_TYPE_ANTI) || is_object) {
+
+		/* XXX: What the fuck? */
+		affect_from_char(victim, SPELL_INSIGHT);
+
+		if (type == SPELL_TYPE_ANTI) return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	if (!affected_by_spell(victim, SPELL_DEATH_WARD)) {
+		af.type = SPELL_DEATH_WARD;
+		af.duration = (is_object) ? -1 : level * 2;
+		af.modifier = level / 2;
+		af.location = 0;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+		send_to_char("You feel a ward being woven around you.\n\r", caster);
+	}
+	else {
+		send_to_char("You are warded already!\n\r", caster);
+	}
 	return;
-      }
-    
-    SET_BIT(obj->obj_flags.extra_flags, ITEM_MAGIC);
-    bonus = 6;
-    obj->affected[0].location = APPLY_OB;
-    obj->affected[0].modifier = bonus;
-    
-    if(IS_GOOD(ch)) {
-      SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_EVIL);
-      act("$p glows blue.", FALSE, ch, obj, 0, TO_CHAR);
-    } 
-    else if(IS_EVIL(ch)) {
-      SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_GOOD);
-      act("$p glows red.", FALSE, ch, obj, 0, TO_CHAR);
-    } 
-    else
-      act("$p glows yellow.", FALSE, ch, obj, 0, TO_CHAR);
-  }
-}
-
-
-ASPELL(spell_death_ward){
-  affected_type af;
-  
-  if((type == SPELL_TYPE_ANTI) || is_object){
- 
-    /* XXX: What the fuck? */
-    affect_from_char(victim, SPELL_INSIGHT);
- 
-    if(type == SPELL_TYPE_ANTI) return;
-  }
-
-  if (!affected_by_spell(victim, SPELL_DEATH_WARD)) {
-    af.type      = SPELL_DEATH_WARD;
-    af.duration  = (is_object)? -1 : level*2;
-    af.modifier  =  level/2;
-    af.location  = 0;
-    af.bitvector = 0;
- 
-    affect_to_char(victim, &af);
-    send_to_char("You feel a ward being woven around you.\n\r", ch);
-  }
-  else{
-    send_to_char("You are warded already!\n\r", ch);
-  }
-  return;
 }
 
 
 
 
-ASPELL(spell_confuse){
-  struct affected_type af;
-  int loc_level, my_duration, tmp;
-  affected_type * tmpaf;
-  int modifier;
-  
-  if(!victim) return;
-  
-  if((type == SPELL_TYPE_ANTI) && is_object){
-    for(tmpaf = ch->affected, tmp = 0;(tmp<MAX_AFFECT) && tmpaf;
-	tmpaf = tmpaf->next, tmp++)
-      if((tmpaf->type == SPELL_CONFUSE) && (tmpaf->duration == -1)) break;
-    
-    if(tmpaf) affect_remove(ch, tmpaf);
-    
-    return;
-  }
-  else if(type == SPELL_TYPE_ANTI){
-    affect_from_char(victim, SPELL_CONFUSE);
-    return;
-  }
-  
-  loc_level = level;
-  
-  if(is_object) my_duration = -1;
-    my_duration = 10 + level;
-   
-    modifier = 1; 
+ASPELL(spell_confuse) {
+	struct affected_type af;
+	int loc_level, my_duration, tmp;
+	affected_type * tmpaf;
+	int modifier;
 
-  if (!affected_by_spell(victim, SPELL_CONFUSE) &&
-      (is_object || !saves_confuse(victim, ch))) {
-    af.type      = SPELL_CONFUSE;
-    af.duration  = my_duration;
-    af.modifier  = modifier;
-    af.location  = APPLY_NONE;
-    af.bitvector = AFF_CONFUSE;
-    
-    affect_to_char(victim, &af);
-    act("Strange thoughts stream through your mind, making it hard to concentrate.\n\r", TRUE,
-	victim,0, ch, TO_CHAR);
-    act("$n appears to be confused!",FALSE, victim, 0, 0, TO_ROOM);
-  }
+	if (!victim) return;
+
+	if ((type == SPELL_TYPE_ANTI) && is_object) {
+		for (tmpaf = caster->affected, tmp = 0; (tmp < MAX_AFFECT) && tmpaf;
+			tmpaf = tmpaf->next, tmp++)
+			if ((tmpaf->type == SPELL_CONFUSE) && (tmpaf->duration == -1)) break;
+
+		if (tmpaf) affect_remove(caster, tmpaf);
+
+		return;
+	}
+	else if (type == SPELL_TYPE_ANTI) {
+		affect_from_char(victim, SPELL_CONFUSE);
+		return;
+	}
+
+	int level = get_mystic_caster_level(caster);
+	loc_level = level;
+
+	if (is_object) my_duration = -1;
+	my_duration = 10 + level;
+
+	modifier = 1;
+
+	if (!affected_by_spell(victim, SPELL_CONFUSE) &&
+		(is_object || !saves_confuse(victim, caster))) {
+		af.type = SPELL_CONFUSE;
+		af.duration = my_duration;
+		af.modifier = modifier;
+		af.location = APPLY_NONE;
+		af.bitvector = AFF_CONFUSE;
+
+		affect_to_char(victim, &af);
+		act("Strange thoughts stream through your mind, making it hard to concentrate.\n\r", TRUE,
+			victim, 0, caster, TO_CHAR);
+		act("$n appears to be confused!", FALSE, victim, 0, 0, TO_ROOM);
+	}
 }
 
 ASPELL(spell_guardian) {
@@ -1453,8 +1517,8 @@ ASPELL(spell_guardian) {
 	int guardian_to_load;
 	int guardian_num = 1110;
 
-	if (GET_SPEC(ch) != PLRSPEC_GRDN) {
-		send_to_char("You are not dedicated enough to cast this.\r\n", ch);
+	if (GET_SPEC(caster) != PLRSPEC_GRDN) {
+		send_to_char("You are not dedicated enough to cast this.\r\n", caster);
 		return;
 	}
 
@@ -1470,195 +1534,195 @@ ASPELL(spell_guardian) {
 
 	if (guardian_to_load == -1) {
 		send_to_char("You'll have to be more specific about "
-			"which guardian you wish to summon.\n", ch);
-		GET_SPIRIT(ch) += 30;
+			"which guardian you wish to summon.\n", caster);
+		GET_SPIRIT(caster) += 30;
 		return;
 	}
 	else
-		guardian_num = guardian_mob[GET_RACE(ch)][guardian_to_load];
+		guardian_num = guardian_mob[GET_RACE(caster)][guardian_to_load];
 
-	if (ch->in_room == NOWHERE) return;
+	if (caster->in_room == NOWHERE) return;
 	for (tmpch = character_list; tmpch; tmpch = tmpch->next)
-		if ((tmpch->master == ch) && IS_GUARDIAN(tmpch))
+		if ((tmpch->master == caster) && IS_GUARDIAN(tmpch))
 			break;
 
 	if (tmpch) {
-		send_to_char("You already have a guardian.\n\r", ch);
+		send_to_char("You already have a guardian.\n\r", caster);
 		return;
 	}
 
 	if (!(guardian = read_mobile(guardian_num, VIRT))) {
-		send_to_char("Could not find a guardian for you, please report.\n\r", ch);
+		send_to_char("Could not find a guardian for you, please report.\n\r", caster);
 		return;
 	}
 
-	char_to_room(guardian, ch->in_room);
+	char_to_room(guardian, caster->in_room);
 	act("$n appears with a flash.", FALSE, guardian, 0, 0, TO_ROOM);
-	add_follower(guardian, ch, FOLLOW_MOVE);
+	add_follower(guardian, caster, FOLLOW_MOVE);
 	SET_BIT(guardian->specials.affected_by, AFF_CHARM);
 	SET_BIT(MOB_FLAGS(guardian), MOB_PET);
 }
 
 
-ASPELL(spell_shift){
-  follow_type * tmpfol;
+ASPELL(spell_shift) {
+	follow_type * tmpfol;
 
-  if (GET_LEVEL(ch) < LEVEL_IMMORT)
-  {
-    send_to_char("You try to shift, but only give yourself a headache.\n\r", ch);
-    return;
-  }
+	if (GET_LEVEL(caster) < LEVEL_IMMORT)
+	{
+		send_to_char("You try to shift, but only give yourself a headache.\n\r", caster);
+		return;
+	}
 
-  if (ch->specials.fighting){
-	send_to_char("You need to be still to cast this!\n\r", ch);
-	return;
-  }
+	if (caster->specials.fighting) {
+		send_to_char("You need to be still to cast this!\n\r", caster);
+		return;
+	}
 
-  if ((GET_LEVEL(ch) < LEVEL_IMMORT) && (victim))
-  {
-    send_to_char("You can only cast this on yourself!\n\r", ch);
-    return;
-  }
+	if ((GET_LEVEL(caster) < LEVEL_IMMORT) && (victim))
+	{
+		send_to_char("You can only cast this on yourself!\n\r", caster);
+		return;
+	}
 
-  if (IS_SET(PLR_FLAGS(victim), PLR_ISSHADOW)){
-	REMOVE_BIT(PLR_FLAGS(victim), PLR_ISSHADOW);
-	GET_COND(victim, FULL) = 1;
-	GET_COND(victim, THIRST) = 1;
-  } else {
-	SET_BIT(PLR_FLAGS(victim), PLR_ISSHADOW);
-	if (IS_RIDING(victim))
-	  stop_riding(victim);
-	if (affected_by_spell(victim, SPELL_MIND_BLOCK))
-	  affect_from_char(victim, SPELL_MIND_BLOCK);
-	if (affected_by_spell(victim, SPELL_SANCTUARY))
-	  affect_from_char(victim, SPELL_SANCTUARY);
-	for (tmpfol = victim->followers; tmpfol; tmpfol = victim->followers)
-      stop_follower(tmpfol->follower, FOLLOW_MOVE);
-	if(victim->group_leader)
-       stop_follower(victim, FOLLOW_GROUP);
-	if(IS_AFFECTED(victim,AFF_HUNT))
-	  REMOVE_BIT(victim->specials.affected_by, AFF_HUNT);
-	if(IS_AFFECTED(victim,AFF_SNEAK))
-	  REMOVE_BIT(victim->specials.affected_by, AFF_SNEAK); 
-  }
+	if (IS_SET(PLR_FLAGS(victim), PLR_ISSHADOW)) {
+		REMOVE_BIT(PLR_FLAGS(victim), PLR_ISSHADOW);
+		GET_COND(victim, FULL) = 1;
+		GET_COND(victim, THIRST) = 1;
+	}
+	else {
+		SET_BIT(PLR_FLAGS(victim), PLR_ISSHADOW);
+		if (IS_RIDING(victim))
+			stop_riding(victim);
+		if (affected_by_spell(victim, SPELL_MIND_BLOCK))
+			affect_from_char(victim, SPELL_MIND_BLOCK);
+		if (affected_by_spell(victim, SPELL_SANCTUARY))
+			affect_from_char(victim, SPELL_SANCTUARY);
+		for (tmpfol = victim->followers; tmpfol; tmpfol = victim->followers)
+			stop_follower(tmpfol->follower, FOLLOW_MOVE);
+		if (victim->group_leader)
+			stop_follower(victim, FOLLOW_GROUP);
+		if (IS_AFFECTED(victim, AFF_HUNT))
+			REMOVE_BIT(victim->specials.affected_by, AFF_HUNT);
+		if (IS_AFFECTED(victim, AFF_SNEAK))
+			REMOVE_BIT(victim->specials.affected_by, AFF_SNEAK);
+	}
 }
 
 
 
 
-ASPELL(spell_protection){
-  static char * protection_sphere[]={
-    "fire",
-    "cold",
-    "lightning",
-    "physical",
-    "\n"
-  };
-  
-  char_data * loc_victim;
-  int res;
-  char first_word[255], second_word[255];
-  affected_type newaf;
+ASPELL(spell_protection) {
+	static char * protection_sphere[] = {
+	  "fire",
+	  "cold",
+	  "lightning",
+	  "physical",
+	  "\n"
+	};
 
-  if(strlen(arg) >= 255) arg[254] = 0;
+	char_data * loc_victim;
+	int res;
+	char first_word[255], second_word[255];
+	affected_type newaf;
 
-  half_chop(arg, first_word, second_word);
-  fprintf(stderr, "protection: %s, %s\n", first_word, second_word);
+	if (strlen(arg) >= 255) arg[254] = 0;
 
-  res = search_block(first_word, protection_sphere, 0);
+	half_chop(arg, first_word, second_word);
+	fprintf(stderr, "protection: %s, %s\n", first_word, second_word);
 
-  one_argument(second_word, first_word); // first_word now has the victim
+	res = search_block(first_word, protection_sphere, 0);
 
-  if(!*first_word)
-    loc_victim = ch;
-  else
-    loc_victim = get_char_room_vis(ch, first_word, 0);
+	one_argument(second_word, first_word); // first_word now has the victim
 
-  if(!loc_victim){
-    send_to_char("Nobody here by that name.\n\r",ch);
-    return;
-  }
+	if (!*first_word)
+		loc_victim = caster;
+	else
+		loc_victim = get_char_room_vis(caster, first_word, 0);
 
-  if(affected_by_spell(loc_victim, SPELL_PROTECTION, 0)){
-    if(loc_victim == ch)
-      send_to_char("You have protection already.\n\r",ch);
-    else
-      act("$N has $S protection already.",FALSE, ch, 0, loc_victim, TO_CHAR);
+	if (!loc_victim) {
+		send_to_char("Nobody here by that name.\n\r", caster);
+		return;
+	}
 
-    return;
-  }
+	if (affected_by_spell(loc_victim, SPELL_PROTECTION, 0)) {
+		if (loc_victim == caster)
+			send_to_char("You have protection already.\n\r", caster);
+		else
+			act("$N has $S protection already.", FALSE, caster, 0, loc_victim, TO_CHAR);
 
-  
-
-  switch(res){
-  case -1:
-    send_to_char("You can master protection from fire, cold, lightning or physical only.\n\r", ch);
-    break;
-
-  case 0: /* fire */
-
-    newaf.type      = SPELL_PROTECTION;
-    newaf.duration  = (is_object)? -1 : level*2;
-    newaf.modifier  = PLRSPEC_FIRE;
-    newaf.location  = APPLY_RESIST;
-    newaf.bitvector = 0;
-
-    affect_to_char(loc_victim, &newaf);
-    send_to_char("You feel resistant to fire!\n\r", loc_victim);
-
-    if(ch != loc_victim)
-      act("You grant $N resistance to fire.", FALSE, ch, 0, loc_victim, TO_CHAR);
-
-    break;
-  case 1: /* cold */
-
-    newaf.type      = SPELL_PROTECTION;
-    newaf.duration  = (is_object)? -1 : level*2;
-    newaf.modifier  = PLRSPEC_COLD;
-    newaf.location  = APPLY_RESIST;
-    newaf.bitvector = 0;
-
-    affect_to_char(loc_victim, &newaf);
-    send_to_char("You feel resistant to cold!\n\r", loc_victim);
-
-    if(ch != loc_victim)
-      act("You grant $N resistance to cold.", FALSE, ch, 0, loc_victim, TO_CHAR);
-  
-    break;
-
-  case 2:  /*lightning*/
-    newaf.type      = SPELL_PROTECTION;
-    newaf.duration  = (is_object)? -1 : level*2;
-    newaf.modifier  = PLRSPEC_LGHT;
-    newaf.location  = APPLY_RESIST;
-    newaf.bitvector = 0;
-
-    affect_to_char(loc_victim, &newaf);
-    send_to_char("You feel resistant to lightning!\n\r", loc_victim);
-
-    if(ch != loc_victim)
-      act("You grant $N resistance to lightning.", FALSE, ch, 0, loc_victim, TO_CHAR);
-
-    break;
-  
-  case 3: /* physical */
-    newaf.type      = SPELL_PROTECTION;
-    newaf.duration  = (is_object)? -1 : level*2;
-    newaf.modifier  = PLRSPEC_WILD;
-    newaf.location  = APPLY_RESIST;
-    newaf.bitvector = 0;
-
-    affect_to_char(loc_victim, &newaf);
-    send_to_char("You feel resistant to physical harm!\n\r", loc_victim);
-
-    if(ch != loc_victim)
-      act("You grant $N resistance to physical harm.", FALSE, ch, 0, loc_victim, TO_CHAR);
-
-    break;
-
-  default: return;
-  };
+		return;
+	}
 
 
+	int level = get_mystic_caster_level(caster);
+	switch (res) {
+	case -1:
+		send_to_char("You can master protection from fire, cold, lightning or physical only.\n\r", caster);
+		break;
+
+	case 0: /* fire */
+
+		newaf.type = SPELL_PROTECTION;
+		newaf.duration = (is_object) ? -1 : level * 2;
+		newaf.modifier = PLRSPEC_FIRE;
+		newaf.location = APPLY_RESIST;
+		newaf.bitvector = 0;
+
+		affect_to_char(loc_victim, &newaf);
+		send_to_char("You feel resistant to fire!\n\r", loc_victim);
+
+		if (caster != loc_victim)
+			act("You grant $N resistance to fire.", FALSE, caster, 0, loc_victim, TO_CHAR);
+
+		break;
+	case 1: /* cold */
+
+		newaf.type = SPELL_PROTECTION;
+		newaf.duration = (is_object) ? -1 : level * 2;
+		newaf.modifier = PLRSPEC_COLD;
+		newaf.location = APPLY_RESIST;
+		newaf.bitvector = 0;
+
+		affect_to_char(loc_victim, &newaf);
+		send_to_char("You feel resistant to cold!\n\r", loc_victim);
+
+		if (caster != loc_victim)
+			act("You grant $N resistance to cold.", FALSE, caster, 0, loc_victim, TO_CHAR);
+
+		break;
+
+	case 2:  /*lightning*/
+		newaf.type = SPELL_PROTECTION;
+		newaf.duration = (is_object) ? -1 : level * 2;
+		newaf.modifier = PLRSPEC_LGHT;
+		newaf.location = APPLY_RESIST;
+		newaf.bitvector = 0;
+
+		affect_to_char(loc_victim, &newaf);
+		send_to_char("You feel resistant to lightning!\n\r", loc_victim);
+
+		if (caster != loc_victim)
+			act("You grant $N resistance to lightning.", FALSE, caster, 0, loc_victim, TO_CHAR);
+
+		break;
+
+	case 3: /* physical */
+		newaf.type = SPELL_PROTECTION;
+		newaf.duration = (is_object) ? -1 : level * 2;
+		newaf.modifier = PLRSPEC_WILD;
+		newaf.location = APPLY_RESIST;
+		newaf.bitvector = 0;
+
+		affect_to_char(loc_victim, &newaf);
+		send_to_char("You feel resistant to physical harm!\n\r", loc_victim);
+
+		if (caster != loc_victim)
+			act("You grant $N resistance to physical harm.", FALSE, caster, 0, loc_victim, TO_CHAR);
+
+		break;
+
+	default: 
+		return;
+	};
 }
 

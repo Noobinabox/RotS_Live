@@ -295,7 +295,8 @@ inline int weapon_skill_num(game_types::weapon_type weapon_type)
 #define CASTING_TIME(ch, sn)  \
   ((skills[sn].beats * 30) / (30 + GET_PROF_LEVEL((int) skills[sn].type, ch)))
 
-
+struct char_data;
+struct obj_data;
 
 /*
  * For the 'target' member, possible targets are:
@@ -317,9 +318,9 @@ struct skill_data {
   char name[50];
   char type;
   char level;
-  void (*spell_pointer)(byte level, struct char_data *ch, char *arg,
-			int type, struct char_data *tar_ch,
-			struct obj_data *tar_obj, int digit, int is_object);
+  void (*spell_pointer)(char_data* caster, char *arg,
+			int type, char_data* tar_ch,
+			obj_data* tar_obj, int digit, int is_object);
   byte minimum_position;  /* Position for caster */
   int min_usesmana;       /* Amount of mana used by a spell */
   byte beats;             /* Heartbeats until ready for next */
@@ -350,7 +351,7 @@ struct skill_teach_data {
 #define SPELL_TYPE_ANTI    5  /* The spell is asked to self-destruct */
 
 
-/* Attacktypes with grammar */
+/* Attack types with grammar */
 struct attack_hit_type {
    char	*singular;
    char	*plural;
@@ -359,10 +360,10 @@ struct attack_hit_type {
 
 void recalc_skills(struct char_data *);
 
-#define ASPELL(castname)                                            \
-void                                                                \
-castname(byte level, struct char_data *ch, char *arg, int type,     \
-         struct char_data *victim, struct obj_data *obj, int digit, \
+#define ASPELL(castname)                              \
+void                                                  \
+castname(char_data* caster, char* arg, int type,      \
+         char_data* victim, obj_data *obj, int digit, \
          int is_object)
 
 /* Mage spell prototypes */
@@ -443,5 +444,8 @@ ASPELL(spell_attune);
 ASPELL(spell_confuse);
 
 bool is_strong_enough_to_tame(struct char_data* tamer, struct char_data* animal, bool include_current_followers);
+
+int get_mage_caster_level(const char_data* caster);
+int get_mystic_caster_level(const char_data* caster);
 
 #endif /* SPELLS_H */

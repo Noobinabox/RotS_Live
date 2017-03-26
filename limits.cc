@@ -1167,8 +1167,7 @@ affect_update_room(struct room_data *room)
 	    if(!(tmp = number(0, 12)) ||
 	       (skills[tmpaf->location].is_fast && !number(0, 2))) {
 	      (skills[tmpaf->location].spell_pointer)
-		(tmpaf->modifier, tmpch, "", SPELL_TYPE_SPELL,
-		 tmpch, 0, 0, 0);
+		(tmpch, "", SPELL_TYPE_SPELL, tmpch, 0, 0, 0);
 	    }
 	  } 
 	}

@@ -40,6 +40,7 @@ int check_hallucinate(struct char_data *, struct char_data *);
 void report_wrong_target(struct char_data *, int, char);
 void affect_update_person(struct char_data *, int);
 char saves_spell(struct char_data *, sh_int, int);
+bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus);
 void one_mobile_activity(struct char_data *);
 void do_sense_magic(struct char_data *, int);
 char saves_mystic(struct char_data *);
@@ -211,14 +212,8 @@ int get_character_saving_throw(const char_data* victim)
 
 	int level_bonus = utils::get_prof_level(PROF_MAGE, *victim);
 	
-	// Possible additional effect of the "Resist Magic" power.
-	if (affected_by_spell(victim, SPELL_RESIST_MAGIC))
-	{
-		level_bonus = std::max(level_bonus, utils::get_prof_level(PROF_CLERIC, *victim));
-	}
-
 	saving_throw += level_bonus / 3; // Add 1/3 level to save bonus, no rounding.
-	saving_throw += (victim->tmpabilities.intel - 10) / 4;
+	saving_throw += (victim->tmpabilities.intel - 8) / 4;
 	if (victim->player.race == RACE_HOBBIT)
 	{
 		saving_throw += 1;
@@ -232,11 +227,11 @@ int get_character_saving_throw(const char_data* victim)
 //   Spell_id is not currently used, but may be used in the future to make
 //   it harder to save against spells from specialized mages.
 //============================================================================
-int get_saving_throw_dc(const char_data* caster, int spell_id)
+int get_saving_throw_dc(const char_data* caster)
 {
 	int caster_dc = 10;
 	caster_dc += utils::get_prof_level(PROF_MAGE, *caster) / 3;
-	caster_dc += (caster->tmpabilities.intel - 10) / 4;
+	caster_dc += (caster->tmpabilities.intel - 8) / 4;
 	return caster_dc;
 }
 
@@ -244,10 +239,10 @@ int get_saving_throw_dc(const char_data* caster, int spell_id)
 // Returns true if the victim saves against the spell, false otherwise.
 //   Save bonus is added to the victim's base save value.
 //============================================================================
-bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus, int spell_id)
+bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus)
 {
 	int save_value = get_character_saving_throw(victim) + save_bonus;
-	int casting_dc = get_saving_throw_dc(caster, spell_id);
+	int casting_dc = get_saving_throw_dc(caster);
 
 	int roll = number(1, 20);
 	bool saved = roll + save_value > casting_dc;
@@ -265,6 +260,14 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
 	spllog_mage_level = utils::get_prof_level(PROF_MAGE, *caster);
 	spllog_save = (short)save_value;
 	spllog_saves = saved;
+
+	// If these save bonus values are passed in, return a set result.
+	// Do it down here so that the variables above can get set properly.
+	if (save_bonus <= -20)
+		return false;
+
+	if (save_bonus >= 20)
+		return true;
 
 	return saved;
 }
@@ -590,7 +593,6 @@ ACMD(do_cast)
 	char *arg;
 	int spell_prof, prepared_spell;
 	int target_flag;
-	int tmplevel;
 	struct waiting_type tmpwtl;
 
 	tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
@@ -963,46 +965,11 @@ ACMD(do_cast)
 
 		if (skills[spell_index].type == PROF_MAGE) 
 		{
-			tmplevel = GET_PROF_LEVEL(PROF_MAGE, ch);
-
-			/* a bonus for anyone who is specialized in this spell's spec */
-			if (GET_SPEC(ch) == skills[spell_index].skill_spec)
-			{
-				tmplevel += (40 - tmplevel) * GET_LEVELA(ch) / 150;
-			}
-
-			/* we give one level bonus for each 5 int */
-			tmplevel += GET_INT(ch) / 5;
-
-			/* this is a trick to randomly bonus people with int not
-			 * cleanly divisible by five.  and the more int over 5 they
-			 * have, the better chance you have of getting the bonus */
-			if (GET_INT(ch) % 5)
-			{
-				tmplevel += (number(0, GET_INT(ch) % 5)) ? 1 : 0;
-			}
-
 			GET_MANA(ch) -= (USE_MANA(ch, spell_index));
 		}
 		/* it's a cleric spell */
 		else 
 		{
-			/* the procedure is the same as above, substituting myst
-			 * level for mage level and wil for int */
-			tmplevel = GET_PROF_LEVEL(PROF_CLERIC, ch);
-
-			if (GET_SPEC(ch) == skills[spell_index].skill_spec)
-			{
-				tmplevel += (40 - tmplevel) * GET_LEVELA(ch) / 150;
-			}
-
-			tmplevel += GET_WILL(ch) / 5;
-
-			if (GET_WILL(ch) % 5)
-			{
-				tmplevel += (number(0, GET_WILL(ch) % 5)) ? 1 : 0;
-			}
-
 			GET_SPIRIT(ch) -= USE_SPIRIT(ch, spell_index);
 		}
 
@@ -1019,8 +986,7 @@ ACMD(do_cast)
 		}
 
 		/* execute the spell */
-		((*skills[spell_index].spell_pointer)(tmplevel, ch, arg, SPELL_TYPE_SPELL,
-			tar_char, tar_obj, tar_dig, 0));
+		((*skills[spell_index].spell_pointer)(ch, arg, SPELL_TYPE_SPELL, tar_char, tar_obj, tar_dig, 0));
 
 		/*
 		 * Casting a prepared spell now causes a short after-spell

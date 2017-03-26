@@ -679,63 +679,63 @@ ACMD(do_split)
 
 ACMD(do_use)
 {
-  int bits;
-  struct char_data *tmp_char;
-  struct obj_data *tmp_object, *stick;
+	int bits;
+	struct char_data *tmp_char;
+	struct obj_data *tmp_object, *stick;
 
-  argument = one_argument(argument, buf);
+	argument = one_argument(argument, buf);
 
-  if(ch->equipment[HOLD] == 0 || !isname(buf, ch->equipment[HOLD]->name)) {
-    act("You do not hold that item in your hand.", FALSE, ch, 0, 0, TO_CHAR);
-    return;
-  }
+	if (ch->equipment[HOLD] == 0 || !isname(buf, ch->equipment[HOLD]->name)) {
+		act("You do not hold that item in your hand.", FALSE, ch, 0, 0, TO_CHAR);
+		return;
+	}
 
-  stick = ch->equipment[HOLD];
+	stick = ch->equipment[HOLD];
 
-  if(stick->obj_flags.type_flag == ITEM_STAFF) {
-    act("$n taps $p three times on the ground.", TRUE, ch, stick, 0, TO_ROOM);
-    act("You tap $p three times on the ground.", FALSE, ch, stick, 0, TO_CHAR);
+	if (stick->obj_flags.type_flag == ITEM_STAFF) {
+		act("$n taps $p three times on the ground.", TRUE, ch, stick, 0, TO_ROOM);
+		act("You tap $p three times on the ground.", FALSE, ch, stick, 0, TO_CHAR);
 
-    if(stick->obj_flags.value[2] > 0) {  /* Is there any charges left? */
-      stick->obj_flags.value[2]--;
-      if(*skills[stick->obj_flags.value[3]].spell_pointer)
-	((*skills[stick->obj_flags.value[3]].spell_pointer)
-	 ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_STAFF,
-	  0, 0, 0, 0));
+		if (stick->obj_flags.value[2] > 0) {  /* Is there any charges left? */
+			stick->obj_flags.value[2]--;
+			if (*skills[stick->obj_flags.value[3]].spell_pointer)
+				((*skills[stick->obj_flags.value[3]].spell_pointer)
+				(ch, "", SPELL_TYPE_STAFF,
+					0, 0, 0, 0));
 
-    }
-    else
-      send_to_char("The staff seems powerless.\n\r", ch);
-  }
-  else if(stick->obj_flags.type_flag == ITEM_WAND) {
-    bits = generic_find(argument, FIND_CHAR_ROOM | FIND_OBJ_INV |
+		}
+		else
+			send_to_char("The staff seems powerless.\n\r", ch);
+	}
+	else if (stick->obj_flags.type_flag == ITEM_WAND) {
+		bits = generic_find(argument, FIND_CHAR_ROOM | FIND_OBJ_INV |
 			FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tmp_char,
 			&tmp_object);
-    if(bits) {
-      if(bits == FIND_CHAR_ROOM) {
-	act("$n points $p at $N.", TRUE, ch, stick, tmp_char, TO_ROOM);
-	act("You point $p at $N.", FALSE, ch, stick, tmp_char, TO_CHAR);
-      }
-      else {
-	act("$n points $p at $P.", TRUE, ch, stick, tmp_object, TO_ROOM);
-	act("You point $p at $P.", FALSE, ch, stick, tmp_object, TO_CHAR);
-      }
+		if (bits) {
+			if (bits == FIND_CHAR_ROOM) {
+				act("$n points $p at $N.", TRUE, ch, stick, tmp_char, TO_ROOM);
+				act("You point $p at $N.", FALSE, ch, stick, tmp_char, TO_CHAR);
+			}
+			else {
+				act("$n points $p at $P.", TRUE, ch, stick, tmp_object, TO_ROOM);
+				act("You point $p at $P.", FALSE, ch, stick, tmp_object, TO_CHAR);
+			}
 
-      if(stick->obj_flags.value[2] > 0) { /* Is there any charges left? */
-	stick->obj_flags.value[2]--;
-	if(*skills[stick->obj_flags.value[3]].spell_pointer)
-	  ((*skills[stick->obj_flags.value[3]].spell_pointer)
-	   ((byte) stick->obj_flags.value[0], ch, "", SPELL_TYPE_WAND,
-	    tmp_char, tmp_object, 0, 0));
-      }
-      else
-	send_to_char("The wand seems powerless.\n\r", ch);
-    }
-    else
-      send_to_char("What should the wand be pointed at?\n\r", ch);
-  }
-  else
-    send_to_char("Use is normally only for wands and staffs.\n\r", ch);
+			if (stick->obj_flags.value[2] > 0) { /* Is there any charges left? */
+				stick->obj_flags.value[2]--;
+				if (*skills[stick->obj_flags.value[3]].spell_pointer)
+					((*skills[stick->obj_flags.value[3]].spell_pointer)
+					(ch, "", SPELL_TYPE_WAND,
+						tmp_char, tmp_object, 0, 0));
+			}
+			else
+				send_to_char("The wand seems powerless.\n\r", ch);
+		}
+		else
+			send_to_char("What should the wand be pointed at?\n\r", ch);
+	}
+	else
+		send_to_char("Use is normally only for wands and staffs.\n\r", ch);
 }
 
 

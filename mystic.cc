@@ -803,27 +803,35 @@ ASPELL(spell_resist_poison)
 
 ASPELL(spell_curing)
 {
-	struct affected_type af;
-	int loc_level;
-
 	if (!victim)
 		return;
 
-	int level = get_mystic_caster_level(caster);
+	int healing_level = get_mystic_caster_level(caster) + 5;
 	if (victim != caster)
-		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 2;
-	else
-		loc_level = level + 5;
+	{
+		healing_level = (healing_level + get_mystic_caster_level(victim)) / 2;
+	}
 
-	if (!affected_by_spell(victim, SPELL_CURING)) {
-		af.type = SPELL_CURING;
-		af.duration = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
-		af.modifier = -loc_level;
-		af.location = APPLY_NONE;
-		af.bitvector = 0;
+	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)
+	{
+		healing_level += 6;
+	}
 
-		affect_to_char(victim, &af);
+	if (!affected_by_spell(victim, SPELL_CURING)) 
+	{
+		affected_type effect;
+		effect.type = SPELL_CURING;
+		effect.duration = healing_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
+		effect.modifier = -healing_level;
+		effect.location = APPLY_NONE;
+		effect.bitvector = 0;
+
+		affect_to_char(victim, &effect);
 		send_to_char("You feel yourself becoming healthier.\n\r", victim);
+	}
+	else
+	{
+		act("You could not improve $N's healing.", FALSE, caster, 0, victim, TO_CHAR);
 	}
 }
 
@@ -831,31 +839,37 @@ ASPELL(spell_curing)
 
 ASPELL(spell_restlessness)
 {
-	struct affected_type af;
-	int loc_level;
-
 	if (!victim)
 		return;
 
-	int level = get_mystic_caster_level(caster);
+	int healing_level = get_mystic_caster_level(caster) + 5;
 	if (victim != caster)
-		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level + 5) / 2;
-	else
-		loc_level = level + 5;
+	{
+		healing_level = (healing_level + get_mystic_caster_level(victim)) / 2;
+	}
 
-	if (!affected_by_spell(victim, SPELL_RESTLESSNESS)) {
-		af.type = SPELL_RESTLESSNESS;
-		af.duration = loc_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
-		af.modifier = loc_level;
-		af.location = APPLY_NONE;
-		af.bitvector = 0;
+	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)
+	{
+		healing_level += 6;
+	}
 
-		affect_to_char(victim, &af);
+	if (!affected_by_spell(victim, SPELL_RESTLESSNESS)) 
+	{
+		affected_type effect;
+		effect.type = SPELL_RESTLESSNESS;
+		effect.duration = healing_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
+		effect.modifier = healing_level;
+		effect.location = APPLY_NONE;
+		effect.bitvector = 0;
+
+		affect_to_char(victim, &effect);
 		send_to_char("You feel yourself lighter.\n\r", victim);
 	}
+	else
+	{
+		act("You could not ease $N's movement.", FALSE, caster, 0, victim, TO_CHAR);
+	}
 }
-
-
 
 ASPELL(spell_remove_poison)
 {
@@ -885,44 +899,45 @@ ASPELL(spell_remove_poison)
 
 ASPELL(spell_vitality)
 {
-	struct affected_type af;
-	struct affected_type *hjp;
-	int loc_level;
-
 	if (!victim)
 		return;
 
-	int level = get_mystic_caster_level(caster);
-	if (victim != caster)
-		loc_level = (GET_PROF_LEVEL(PROF_CLERIC, victim) + level) / 2;
-	else
-		loc_level = level;
+	int healing_level = get_mystic_caster_level(caster);
+	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)
+	{
+		healing_level += 6;
+	}
 
-	loc_level = level;
-	loc_level = loc_level / 3 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	healing_level = healing_level / 3 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	affected_type* current_vitality_effect = affected_by_spell(victim, SPELL_VITALITY);
+	if (!current_vitality_effect) 
+	{
+		affected_type vitality_effect;
+		vitality_effect.type = SPELL_VITALITY;
+		vitality_effect.duration = healing_level;
+		vitality_effect.modifier = 1;
+		vitality_effect.location = APPLY_NONE;
+		vitality_effect.bitvector = 0;
 
-	hjp = affected_by_spell(victim, SPELL_VITALITY);
-	if (!hjp) {
-		af.type = SPELL_VITALITY;
-		af.duration = loc_level;
-		af.modifier = 1;
-		af.location = APPLY_NONE;
-		af.bitvector = 0;
-
-		affect_to_char(victim, &af);
+		affect_to_char(victim, &vitality_effect);
 		send_to_char("You feel yourself becoming much lighter.\n\r", victim);
 	}
-	else if (hjp->duration < loc_level / 2) {
-		hjp->duration = loc_level;
+	else if (current_vitality_effect->duration < healing_level / 2)
+	{
+		current_vitality_effect->duration = healing_level;
 		send_to_char("You feel another surge of lightness.\n\r", victim);
 		act("You renew $N's vitality.", FALSE, caster, 0, victim, TO_CHAR);
 	}
-	else {
+	else 
+	{
 		if (victim == caster)
+		{
 			send_to_char("You are still as light as can be.\n\r", caster);
+		}
 		else
-			act("You could not improve $N's vitality.",
-				FALSE, caster, 0, victim, TO_CHAR);
+		{
+			act("You could not improve $N's vitality.", FALSE, caster, 0, victim, TO_CHAR);
+		}
 	}
 }
 
@@ -1007,40 +1022,48 @@ ASPELL(spell_dispel_regeneration)
 
 
 
-ASPELL(spell_regeneration) {
-	struct affected_type af;
-	struct affected_type * hjp;
-	int loc_level;
+ASPELL(spell_regeneration) 
+{
+	if (!victim)
+		return;
 
-	if (!victim) return;
+	int regen_level = get_mystic_caster_level(caster) - 10;
+	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)
+	{
+		regen_level += 6;
+	}
 
-	int level = get_mystic_caster_level(caster);
-	loc_level = level - 10;
+	regen_level = regen_level / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
 
-	loc_level = loc_level / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	affected_type* current_regen_effect = affected_by_spell(victim, SPELL_REGENERATION);
+	if (!current_regen_effect) 
+	{
+		affected_type regen_effect;
+		regen_effect.type = SPELL_REGENERATION;
+		regen_effect.duration = regen_level;
+		regen_effect.modifier = 1;
+		regen_effect.location = APPLY_NONE;
+		regen_effect.bitvector = 0;
 
-	hjp = affected_by_spell(victim, SPELL_REGENERATION);
-	if (!hjp) {
-		af.type = SPELL_REGENERATION;
-		af.duration = loc_level;
-		af.modifier = 1;
-		af.location = APPLY_NONE;
-		af.bitvector = 0;
-
-		affect_to_char(victim, &af);
+		affect_to_char(victim, &regen_effect);
 		send_to_char("You feel yourself becoming much healthier.\n\r", victim);
 	}
-	else if (hjp->duration < loc_level / 2) {
-		hjp->duration = loc_level;
+	else if (current_regen_effect->duration < regen_level / 2) 
+	{
+		current_regen_effect->duration = regen_level;
 		send_to_char("You feel another surge of energy.\n\r", victim);
 		act("You renew $N's regeneration.", FALSE, caster, 0, victim, TO_CHAR);
 	}
-	else {
+	else 
+	{
 		if (victim == caster)
+		{
 			send_to_char("You are still regenerating fast enough.\n\r", caster);
+		}
 		else
-			act("You could not improve $N's regeneration.",
-				FALSE, caster, 0, victim, TO_CHAR);
+		{
+			act("You could not improve $N's regeneration.", FALSE, caster, 0, victim, TO_CHAR);
+		}
 	}
 }
 

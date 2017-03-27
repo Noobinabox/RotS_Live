@@ -1178,7 +1178,7 @@ void apply_chilled_effect(char_data* victim)
 {
 	// Cap energy lost to 1/4 of a swing.
 	int energy_lost = victim->specials.ENERGY / 2 + victim->points.ENE_regen * 4;
-	energy_lost = std::min(energy_lost, 300);
+	energy_lost = std::min(energy_lost, 400);
 
 	victim->specials.ENERGY -= energy_lost;
 

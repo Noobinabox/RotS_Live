@@ -3173,10 +3173,10 @@ const char* specialize_name[game_types::PS_Count]= {
   "wild fighting",
   "teleportation",
   "illusion",
-  "light fighting",
+  "lightning",
   "guardian",
   "heavy fighting",
-  "lightning",
+  "light fighting",
   "defending",
   "archery",
   "darkness"

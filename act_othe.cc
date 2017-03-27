@@ -1735,7 +1735,8 @@ ACMD(do_specialize)
 			return;
 		}
 
-		const char* spec_argument = wtl->targ1.ptr.text->text;
+		const char* spec_argument = argument + 1;
+
 		int len = strlen(spec_argument);
 		if (len == 0)
 			return;

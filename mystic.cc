@@ -108,7 +108,7 @@ int get_mystic_caster_level(const char_data* caster)
  *  - Everything Else 
  */
 
-/* Percaption and Mental skills ordered by level
+/* Perception and Mental skills ordered by level
  * - Curse
  * - Revive
  * - Mind Block
@@ -1130,7 +1130,8 @@ ASPELL(spell_haze) {
 	int loc_level, my_duration, tmp;
 	affected_type * tmpaf;
 
-	if (!victim) return;
+	if (!victim)
+		return;
 
 	if ((type == SPELL_TYPE_ANTI) && is_object) {
 		for (tmpaf = caster->affected, tmp = 0; (tmp < MAX_AFFECT) && tmpaf;
@@ -1147,6 +1148,10 @@ ASPELL(spell_haze) {
 	}
 
 	int level = get_mystic_caster_level(caster);
+	if (utils::get_specialization(*caster) == game_types::PS_Illusion)
+	{
+		level += 6;
+	}
 	loc_level = level;
 
 	if (is_object) my_duration = -1;
@@ -1195,6 +1200,10 @@ ASPELL(spell_fear)
 	}
 
 	int level = get_mystic_caster_level(caster);
+	if (utils::get_specialization(*caster) == game_types::PS_Illusion)
+	{
+		level += 6;
+	}
 	if (!affected_by_spell(victim, SPELL_FEAR) &&
 		!saves_mystic(victim) && !saves_leadership(victim)) {
 		af.type = SPELL_FEAR;
@@ -1317,6 +1326,10 @@ ASPELL(spell_terror)
 		caster);
 
 	int level = get_mystic_caster_level(caster);
+	if (utils::get_specialization(*caster) == game_types::PS_Illusion)
+	{
+		level += 6;
+	}
 	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
 		if ((tmpch != caster) && !affected_by_spell(tmpch, SPELL_FEAR)) {
 			if (!saves_mystic(tmpch) && !saves_leadership(tmpch)) {

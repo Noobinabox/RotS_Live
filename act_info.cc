@@ -3505,25 +3505,43 @@ void report_perception(char_data * ch, char * str){
   str[0]=UPPER(str[0]);
 }
 
-void report_affection(affected_type * aff, char * str){
-  static char * durations[]={
-    "permanent",
-    "short",
-    "medium",
-    "long",
-    "fast-acting"
-  };
-  int dur_index;
+void report_affection(affected_type * aff, char * str)
+{
+	static const char* durations[] =
+	{
+	  "permanent",
+	  "short",
+	  "medium",
+	  "long",
+	  "fast-acting"
+	};
 
-  if(aff->duration < 0) dur_index = 0;
-  else if(aff->duration < 3) dur_index = 1;
-  else if(aff->duration < 12) dur_index = 2;
-  else dur_index = 3;
+	int dur_index = 0;
 
-  if(skills[aff->type].is_fast) dur_index = 4;
+	if (aff->duration < 0)
+		dur_index = 0;
+	else if (aff->duration < 3)
+		dur_index = 1;
+	else if (aff->duration < 12)
+		dur_index = 2;
+	else
+		dur_index = 3;
 
-  sprintf(str,"%-30s (%s)\n\r",
-	  skills[aff->type].name,durations[dur_index]);
+	const skill_data& skill = skills[aff->type];
+	const char* skill_name = skill.name;
+	const char* duration = durations[dur_index];
+
+	char duration_text[32];
+	if (skill.is_fast)
+	{
+		sprintf(duration_text, "%s, %s", duration, durations[4]);
+	}
+	else
+	{
+		sprintf(duration_text, "%s", duration);
+	}
+
+	sprintf(str, "%-30s (%s)\n\r", skill_name, duration_text);
 }
 
 ACMD(do_affections){

@@ -2364,11 +2364,18 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 		attacker_offset /= 2;
 	}
 
+	int spec_bonus = 0;
+	// Protection specialization gets additional defenses against magic.
+	if (utils::get_specialization(victim) == game_types::PS_Protection)
+	{
+		spec_bonus += 3;
+	}
+
 	// Always return at least the base value.
 	if (attacker_offset > defender_bonus)
-		return BASE_VALUE;
+		return BASE_VALUE + spec_bonus;
 
-	return BASE_VALUE + defender_bonus - attacker_offset;
+	return BASE_VALUE + spec_bonus + defender_bonus - attacker_offset;
 }
 
 //============================================================================

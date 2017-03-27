@@ -558,6 +558,12 @@ ASPELL(spell_resist_magic)
 	int level = get_mystic_caster_level(caster);
 	int modifier = level / 6;
 
+	// Protection specialization gets additional defenses against magic.
+	if (utils::get_specialization(*caster) == game_types::PS_Protection)
+	{
+		modifier += 2;
+	}
+
 	affected_type af;
 	af.type = SPELL_RESIST_MAGIC;
 	af.duration = level;

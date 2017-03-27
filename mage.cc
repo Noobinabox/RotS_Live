@@ -1286,6 +1286,12 @@ ASPELL(spell_dark_bolt)
 	{
 		send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
 	}
+
+	// Dark spec deals an extra 10% damage with dark bolt.
+	if (utils::get_specialization(*caster) == game_types::PS_Darkness)
+	{
+		dam += dam / 10;
+	}
 	
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Darkness, game_types::PS_Lightning);
 	bool saved = new_saves_spell(caster, victim, save_bonus);
@@ -1629,29 +1635,43 @@ ASPELL(spell_lightning_strike)
 
 ASPELL(spell_searing_darkness)
 {
-	int damFIRE = number(0, get_magic_power(caster)) / 2 + 15;
+	game_types::player_specs caster_spec = utils::get_specialization(*caster);
+
+	int fire_damage = number(0, get_magic_power(caster)) / 2 + 15;
+
+	// Fire spec adds an additional 10% fire damage.
+	if (caster_spec == game_types::PS_Fire)
+	{
+		fire_damage += fire_damage / 10;
+	}
 
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
 	bool saves_fire = new_saves_spell(caster, victim, save_bonus);
 	if (saves_fire)
 	{
-		damFIRE = damFIRE * 1 / 3;
+		fire_damage = fire_damage * 1 / 3;
 	}
 
-	int damDARK = number(0, get_magic_power(caster)) / 2 + 15;
+	int darkness_damage = number(0, get_magic_power(caster)) / 2 + 15;
 
 	if (!SUN_PENALTY(caster))
 	{
-		damDARK += number(0, get_magic_power(caster) / 4) + 5;
+		darkness_damage += number(0, get_magic_power(caster) / 4) + 5;
 	}
 	else
 	{
 		send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
 	}
 
-	int dam = damFIRE + damDARK;
+	// Lightning spec adds an additional 10% darkness damage.
+	if (caster_spec == game_types::PS_Darkness)
+	{
+		darkness_damage += darkness_damage / 10;
+	}
 
-	damage(caster, victim, dam, SPELL_SEARING_DARKNESS, 0);
+	int damage_dealt = fire_damage + darkness_damage;
+
+	damage(caster, victim, damage_dealt, SPELL_SEARING_DARKNESS, 0);
 
 	if (saves_fire)
 	{
@@ -1936,7 +1956,8 @@ ASPELL(spell_black_arrow)
 		send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
 	}	
 
-	bool saved = new_saves_spell(caster, victim, 0);
+	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Darkness, game_types::PS_Lightning);
+	bool saved = new_saves_spell(caster, victim, save_bonus);
 	if (saved)
 	{
 		dam >>= 1;

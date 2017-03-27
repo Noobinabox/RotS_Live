@@ -470,38 +470,57 @@ affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
 /* This updates a character by subtracting everything he is affected by */
 /* restoring original abilities, and then affecting all again     ?????      */
 
-void	affect_total_room(struct room_data * room, int mode){
+void affect_total_room(struct room_data * room, int mode)
+{
+
 }
 
 
-void affect_naked(char_data * ch){ 
-  // sets some intrinsic parameters
-  // assumes that the char is naked and has no affections.
-  
-  SET_PERCEPTION(ch, get_naked_perception(ch));
-  GET_WILLPOWER(ch) = get_naked_willpower(ch);
-  ch->specials.affected_by |= race_affect[GET_RACE(ch)];
-  
-  switch(GET_SPEC(ch)){
+void affect_naked(char_data * ch) 
+{
+	// sets some intrinsic parameters
+	// assumes that the char is naked and has no affections.
 
-  case PLRSPEC_FIRE:
-    GET_RESISTANCES(ch) = 1 << PLRSPEC_FIRE;
-    GET_VULNERABILITIES(ch) = 1 << PLRSPEC_COLD;
-    break;
+	SET_PERCEPTION(ch, get_naked_perception(ch));
+	GET_WILLPOWER(ch) = get_naked_willpower(ch);
+	ch->specials.affected_by |= race_affect[GET_RACE(ch)];
 
-  case PLRSPEC_COLD:
-    GET_RESISTANCES(ch) = 1 << PLRSPEC_COLD;
-    GET_VULNERABILITIES(ch) = 1 << PLRSPEC_FIRE;
-    break;
-
-  default:
-    if(!IS_NPC(ch)){
-      GET_RESISTANCES(ch) = 0;
-      GET_VULNERABILITIES(ch) = 0;
-    }
-    break;
-
-  }
+	switch (GET_SPEC(ch)) 
+	{
+	case PLRSPEC_FIRE:
+	{
+		GET_RESISTANCES(ch) = 1 << PLRSPEC_FIRE;
+		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_COLD;
+		break;
+	}
+	case PLRSPEC_COLD:
+	{
+		GET_RESISTANCES(ch) = 1 << PLRSPEC_COLD;
+		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_FIRE;
+		break;
+	}
+	case PLRSPEC_LGHT:
+	{
+		GET_RESISTANCES(ch) = 1 << PLRSPEC_LGHT;
+		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_DARK;
+		break;
+	}
+	case PLRSPEC_DARK:
+	{
+		GET_RESISTANCES(ch) = 1 << PLRSPEC_DARK;
+		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_LGHT;
+		break;
+	}
+	default:
+	{
+		if (!IS_NPC(ch))
+		{
+			GET_RESISTANCES(ch) = 0;
+			GET_VULNERABILITIES(ch) = 0;
+		}
+		break;
+	}
+	}
 }
 
 void	affect_total(struct char_data *ch, int mode)

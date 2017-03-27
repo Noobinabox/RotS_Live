@@ -2063,6 +2063,12 @@ ASPELL(spell_spear_of_darkness)
 		send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
 	}
 
+	// Dark spec deals an extra 5% damage with spear of darkness.
+	if (utils::get_specialization(*caster) == game_types::PS_Darkness)
+	{
+		dam += dam / 20;
+	}
+
 	bool saved = new_saves_spell(caster, victim, -20);
 	if (saved)
 	{

@@ -749,8 +749,11 @@ namespace game_types
 #define PLRSPEC_ILLU    9
 #define PLRSPEC_LGHT   10
 #define PLRSPEC_GRDN   11
-#define PLRSPEC_MIND   12
-
+#define PLRSPEC_HFGT   12
+#define PLRSPEC_LFGT   13
+#define PLRSPEC_DFND   14
+#define PLRSPEC_ARCH   15
+#define PLRSPEC_DARK   16
 
 /* race for PCs */
 #define RACE_GOD  	0

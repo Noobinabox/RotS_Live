@@ -1201,6 +1201,12 @@ ASPELL(spell_chill_ray)
 	int mag_power = get_magic_power(caster);
 	int dam = number(1, mag_power) / 2 + 20;
 
+	// Cold spec makes chill ray hit 10% harder.
+	if (utils::get_specialization(*caster) == game_types::PS_Cold)
+	{
+		dam += dam / 10;
+	}
+
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
 	bool saved = new_saves_spell(caster, victim, save_bonus);
 	if (!saved)

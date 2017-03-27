@@ -403,14 +403,12 @@ namespace game_rules
 		int attacker_level = utils::get_level_legend_cap(*attacker);
 		int defender_level = utils::get_level_legend_cap(*victim);
 
-		// Attacker is 50% higher than defender; no go.
-		if (attacker_level > (defender_level * 3 / 2))
+		if (attacker_level >= defender_level * 3)
 		{
 			return false;
 		}
 
-		// Defender is 50% higher than attacker; no go.  This is to prevent abuse.
-		if (defender_level > (attacker_level * 3 / 2))
+		if (defender_level >= attacker_level * 3)
 		{
 			return false;
 		}

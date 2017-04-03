@@ -2141,8 +2141,6 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 	int armor_location = body_data.armor_location[arrow_hit_location];
 	damage = apply_armor_to_arrow_damage(*archer, *victim, damage, armor_location);
 
-	sprintf(buf,"%s archery damage of %3d to %s.", GET_NAME(archer), damage, GET_NAME(victim));
-	mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 	hit_location = arrow_hit_location;
 	return damage;
 }
@@ -2160,7 +2158,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 int shoot_calculate_wait(const char_data* archer)
 {
 	const int base_beats = 12;
-	const int min_beats = 4;
+	const int min_beats = 3;
 
 	int total_beats = base_beats - ((archer->points.ENE_regen / base_beats) - base_beats);
 	total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / base_beats);
@@ -2170,13 +2168,20 @@ int shoot_calculate_wait(const char_data* archer)
 		total_beats = total_beats - 1;
 	}
 
-	if (utils::get_specialization(*archer) == (int)game_types::PS_Archery)
+	//if (utils::get_specialization(*archer) == (int)game_types::PS_Archery)
+	//{
+	//	total_beats = total_beats - 1;
+	//}
+	if (GET_SHOOTING(archer) == SHOOTING_FAST)
 	{
-		total_beats = total_beats - 1;
+		total_beats = total_beats / 2;
 	}
-
+	else if (GET_SHOOTING(archer) == SHOOTING_SLOW)
+	{
+		total_beats = total_beats * 2;
+	}
 	total_beats = std::max(total_beats, min_beats);
-	total_beats = std::min(total_beats, base_beats);
+	/*total_beats = std::min(total_beats, base_beats);*/
 	return total_beats;
 
 }
@@ -2474,6 +2479,16 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
 	int hit_location = 0;
 	int damage_dealt = shoot_calculate_damage(archer, victim, arrow, hit_location);
 	move_arrow_to_victim(archer, victim, arrow);
+	if (GET_SHOOTING(archer) == SHOOTING_FAST)
+	{
+		damage_dealt = damage_dealt / 2;
+	}
+	else if (GET_SHOOTING(archer) == SHOOTING_SLOW)
+	{
+		damage_dealt = damage_dealt * 2;
+	}
+	sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
+	mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 	damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
 }
 
@@ -2644,9 +2659,6 @@ ACMD(do_shoot)
 		{
 			return;
 		}
-		sprintf(buf,"(%s) subcmd first target of %s.", GET_NAME(ch), GET_NAME(victim));
-		mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
-
 		send_to_char("You draw back your bow and prepare to fire...\r\n", ch);
 
 		// Only send a message to the room if the character isn't hiding.
@@ -2681,9 +2693,6 @@ ACMD(do_shoot)
 		{
 			return;
 		}
-		
-		sprintf(buf,"(%s) subcmd return target of %s.", GET_NAME(ch), GET_NAME(victim));
-		mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 		
 		if (!CAN_SEE(ch, victim))
 		{
@@ -2990,11 +2999,14 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
 				{
 					if ((!((character == i) && (dis == 0))) && CAN_SEE(character, i))
 					{
-						sprintf(buf, "%33s: %s%s%s%s", (IS_NPC(i)?GET_NAME(i):pc_star_types[i->player.race]), distance[dis],
-							((dis > 0) && (dir < (NUM_OF_DIRS - 2))) ? "to the " : "",
-							(dis > 0) ? dirs[dir] : "",
-							((dis > 0) && (dir > (NUM_OF_DIRS - 3))) ? "wards" : "");
-						act(buf, TRUE, character, 0, 0, TO_CHAR);
+						if (dis > 0)
+						{
+							sprintf(buf, "%33s: %s%s%s%s", (IS_NPC(i) ? GET_NAME(i) : pc_star_types[i->player.race]), distance[dis],
+								((dis > 0) && (dir < (NUM_OF_DIRS - 2))) ? "to the " : "",
+								(dis > 0) ? dirs[dir] : "",
+								((dis > 0) && (dir > (NUM_OF_DIRS - 3))) ? "wards" : "");
+							act(buf, TRUE, character, 0, 0, TO_CHAR);
+						}
 						found++;
 					}
 				}

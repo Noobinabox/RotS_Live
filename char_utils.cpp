@@ -162,10 +162,41 @@ namespace utils
 	//============================================================================
 	void set_tactics(char_data& character, int value)
 	{
-		if (is_npc(character))
+		if (!is_npc(character))
 		{
 			character.specials.tactics = value;
 		}
+	}
+
+	//============================================================================
+	int get_shooting(const char_data& character)
+	{
+		if (is_npc(character))
+			return 0;
+
+		return character.specials.shooting;
+	}
+
+	//============================================================================
+	void set_shooting(char_data& character, int value)
+	{
+		if (!is_npc(character))
+			character.specials.shooting = value;
+	}
+
+	//============================================================================
+	int get_casting(const char_data& character)
+	{
+		if (is_npc(character))
+			return 0;
+
+		return character.specials.casting;
+	}
+
+	void set_casting(char_data& character, int value)
+	{
+		if (!is_npc(character))
+			character.specials.casting = value;
 	}
 
 	//============================================================================

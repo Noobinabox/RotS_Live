@@ -1050,6 +1050,8 @@ struct char_special_data {
   sh_int mental_delay;
   sh_int trap_number;	/* used to determine #s in trap */
   char * recite_lines; /* For reciters, how far read? */
+  ubyte shooting; /* shooting speed for archery spec*/
+  ubyte casting; /*  casting speed for spell casters*/
 };
 
 

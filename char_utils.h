@@ -32,6 +32,12 @@ namespace utils
 	int get_tactics(const char_data& character);
 	void set_tactics(char_data& character, int value);
 
+	int get_shooting(const char_data& character);
+	void set_shooting(char_data& character, int value);
+
+	int get_casting(const char_data& character);
+	void set_casting(char_data& character, int value);
+
 	int get_condition(const char_data& character, int index);
 	void set_condition(char_data& character, int index, sh_int value);
 	

@@ -103,8 +103,15 @@ struct time_info_data age(struct char_data *ch);
 #define TACTICS_AGGRESSIVE  4
 #define TACTICS_BERSERK     5
 
+/* defines for shooting speeds*/
+#define SHOOTING_SLOW   1
+#define SHOOTING_NORMAL 2
+#define SHOOTING_FAST   3
 
-
+/* defines for casting speeds*/
+#define CASTING_SLOW    1
+#define CASTING_NORMAL  2
+#define CASTING_FAST    3
 
 /* defines for mudlog() */
 
@@ -245,6 +252,12 @@ struct time_info_data age(struct char_data *ch);
 
 #define GET_TACTICS(ch)    ((IS_NPC(ch))?0:(ch)->specials.tactics)
 #define SET_TACTICS(ch, value)    do{if(!IS_NPC(ch)) (ch)->specials.tactics = value;}while(0)
+
+#define GET_SHOOTING(ch)  ((IS_NPC(ch))?0:(ch)->specials.shooting)
+#define SET_SHOOTING(ch, value)  do{if(!IS_NPC(ch)) (ch)->specials.shooting = value;}while(0)
+
+#define GET_CASTING(ch)   ((IS_NPC(ch))?0:(ch)->specials.casting)
+#define SET_CASTING(ch, value)   do{if(!IS_NPC(ch)) (ch)->specials.casting = value;}while(0)
 
 #define GET_POS(ch)     ((ch)->specials.position)
 #define SET_POS(ch)     ((ch)->specials.position)

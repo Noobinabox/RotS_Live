@@ -2954,6 +2954,20 @@ char *tactics[] = {
   "\n"
 };
 
+char *shooting[] = {
+	"slow",
+	"normal",
+	"fast",
+	"\n"
+};
+
+char *casting[] = {
+	"slow",
+	"normal",
+	"fast",
+	"\n"
+};
+
 char *moon_phase[8] = {
   "new",
   "new-born",

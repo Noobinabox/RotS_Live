@@ -1177,6 +1177,152 @@ ACMD(do_gen_tog)
   }
 }
 
+extern char *casting[];
+ACMD(do_casting)
+{
+	char *s1 = "You are presently using";
+	char *s2 = "You are now using";
+	char *s;
+	int tmp, len;
+	if (!*argument)
+	{
+		s = s1;
+	}
+	else
+	{
+		s = s2;
+		len = strlen(argument);
+
+		for (tmp = 0; casting[tmp][0] != '\n'; tmp++)
+		{
+			if (!strncmp(casting[tmp], argument, len))
+			{
+				break;
+			}
+		}
+
+		if (casting[tmp][0] == '\n')
+		{
+			sprintf(buf, "Possible casting modes are:\n\r   ");
+			for (tmp = 0; casting[tmp][0] != '\n'; tmp++)
+			{
+				strcat(buf, casting[tmp]);
+				strcat(buf, " casting.");
+				strcat(buf, "\n\r    ");
+			}
+			send_to_char(buf, ch);
+			return;
+		}
+
+		switch (tmp)
+		{
+		case 0:
+			SET_CASTING(ch, CASTING_FAST);
+			break;
+		case 1:
+			SET_CASTING(ch, CASTING_NORMAL);
+			break;
+		case 2:
+			SET_CASTING(ch, CASTING_SLOW);
+			break;
+		default:
+			SET_CASTING(ch, 99);
+			break;
+		}
+	}
+	switch (GET_CASTING(ch))
+	{
+	case CASTING_SLOW:
+		sprintf(buf, "%s %s casting.\n\r", s, casting[0]);
+		break;
+	case CASTING_NORMAL:
+		sprintf(buf, "%s %s casting.\n\r", s, casting[1]);
+		break;
+	case CASTING_FAST:
+		sprintf(buf, "%s %s casting.\n\r", s, casting[2]);
+		break;
+	default:
+		sprintf(buf, "%s weird.\n\r", s);
+		break;
+	}
+	send_to_char(buf, ch);
+}
+
+extern char *shooting[];
+ACMD(do_shooting)
+{
+	if (GET_SPEC(ch) != PLRSPEC_ARCH)
+	{
+		send_to_char("Only players specialized in archery may set their speed.\n\r", ch);
+		return;
+	}
+	char *s1 = "You are presently using";
+	char *s2 = "You are now using";
+
+	char *s;
+	int tmp, len;
+	if (!*argument)
+		s = s1;
+	else
+	{
+		s = s2;
+		len = strlen(argument);
+		
+		for (tmp = 0; shooting[tmp][0] != '\n'; tmp++)
+		{
+			if (!strncmp(shooting[tmp], argument, len))
+			{
+				break;
+			}
+		}
+
+		if (shooting[tmp][0] == '\n')
+		{
+			sprintf(buf, "Possible shoot modes are:\n\r   ");
+			for (tmp = 0; shooting[tmp][0] != '\n'; tmp++)
+			{
+				strcat(buf, shooting[tmp]);
+				strcat(buf, " shooting.");
+				strcat(buf, "\n\r    ");
+			}
+			send_to_char(buf, ch);
+			return;
+		}
+
+		switch (tmp)
+		{
+		case 0:
+			SET_SHOOTING(ch, SHOOTING_SLOW);
+			break;
+		case 1:
+			SET_SHOOTING(ch, SHOOTING_NORMAL);
+			break;
+		case 2:
+			SET_SHOOTING(ch, SHOOTING_FAST);
+			break;
+		default:
+			SET_SHOOTING(ch, 99);
+			break;
+		}
+	}
+
+	switch (GET_SHOOTING(ch))
+	{
+	case SHOOTING_SLOW:
+		sprintf(buf, "%s %s shooting.\n\r", s, shooting[0]);
+		break;
+	case SHOOTING_NORMAL:
+		sprintf(buf, "%s %s shooting.\n\r", s, shooting[1]);
+		break;
+	case SHOOTING_FAST:
+		sprintf(buf, "%s %s shooting.\n\r", s, shooting[2]);
+		break;
+	default:
+		sprintf(buf, "%s weird.\n\r", s);
+		break;
+	}
+	send_to_char(buf, ch);
+}
 
 
 extern char *tactics[];
@@ -1345,6 +1491,8 @@ char *change_comm[]={
   "nohassle",
   "holylight",        /* 25 */
   "slowns",
+  "shooting",
+  "casting",
   "\n"
 };
 
@@ -1533,6 +1681,14 @@ ACMD(do_set)
     else
       goto no_set;
     break;
+
+  case 28:
+	  do_shooting(ch, arg, wtl, 0, 0);
+	  break;
+
+  case 29:
+	  do_casting(ch, arg, wtl, 0, 0);
+	  break;
 
   default:
     send_to_char("Undefined response to this argument.\n\r",ch);

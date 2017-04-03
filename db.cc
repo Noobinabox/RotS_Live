@@ -2876,6 +2876,8 @@ void	clear_char(struct char_data *ch, int mode)
   ch->specials.position = POSITION_STANDING;
   ch->specials.default_pos = POSITION_STANDING;
   SET_TACTICS(ch,TACTICS_NORMAL);
+  SET_SHOOTING(ch, SHOOTING_NORMAL);
+  SET_CASTING(ch, CASTING_NORMAL);
   ch->specials.script_info = 0;
   ch->specials.script_number = 0;
   ch->specials2.rp_flag = 0;

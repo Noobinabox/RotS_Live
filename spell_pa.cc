@@ -594,6 +594,7 @@ ACMD(do_cast)
 	int spell_prof, prepared_spell;
 	int target_flag;
 	struct waiting_type tmpwtl;
+	int casting_time;
 
 	tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
 
@@ -758,7 +759,14 @@ ACMD(do_cast)
 		if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING))
 		{
 			/* putting the player into waiting list */
-			WAIT_STATE_BRIEF(ch, CASTING_TIME(ch, spell_index), cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
+			if ((GET_CASTING(ch) == CASTING_FAST) && (spell_prof == PROF_MAGE))
+				casting_time = CASTING_TIME(ch, spell_index) / 2;
+			else if ((GET_CASTING(ch) == CASTING_SLOW) && (spell_prof == PROF_MAGE))
+				casting_time = CASTING_TIME(ch, spell_index) * 2;
+			else
+				casting_time = CASTING_TIME(ch, spell_index);
+
+			WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
 			ch->delay.targ1 = tmpwtl.targ1;
 			ch->delay.targ2 = tmpwtl.targ2;
 			tmpwtl.targ1.cleanup();
@@ -965,7 +973,18 @@ ACMD(do_cast)
 
 		if (skills[spell_index].type == PROF_MAGE) 
 		{
-			GET_MANA(ch) -= (USE_MANA(ch, spell_index));
+			if (GET_CASTING(ch) == CASTING_FAST)
+			{
+				GET_MANA(ch) -= (USE_MANA(ch, spell_index)) / 0.75;
+			}
+			else if (GET_CASTING(ch) == CASTING_SLOW)
+			{
+				GET_MANA(ch) -= (USE_MANA(ch, spell_index)) * 0.75;
+			}
+			else
+			{
+				GET_MANA(ch) -= (USE_MANA(ch, spell_index));
+			}
 		}
 		/* it's a cleric spell */
 		else 

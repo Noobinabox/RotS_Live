@@ -389,6 +389,7 @@ ACMD(do_pracreset)
   } 
   
   SET_SPEC(vict, 0);
+  SET_SHOOTING(vict, SHOOTING_NORMAL);
   
   recalc_skills(vict);
   send_to_char("You reset his/her learning abilities.\n\r",ch);

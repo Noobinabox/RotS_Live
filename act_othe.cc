@@ -1217,13 +1217,13 @@ ACMD(do_casting)
 		switch (tmp)
 		{
 		case 0:
-			SET_CASTING(ch, CASTING_FAST);
+			SET_CASTING(ch, CASTING_SLOW);
 			break;
 		case 1:
 			SET_CASTING(ch, CASTING_NORMAL);
 			break;
 		case 2:
-			SET_CASTING(ch, CASTING_SLOW);
+			SET_CASTING(ch, CASTING_FAST);
 			break;
 		default:
 			SET_CASTING(ch, 99);

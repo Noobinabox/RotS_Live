@@ -2841,6 +2841,7 @@ ACMD(do_toggle)
 {
   char buf3[100];
   extern char *tactics[];
+  extern char *shooting[];
 
   if(IS_NPC(ch))
     return;
@@ -2927,6 +2928,26 @@ ACMD(do_toggle)
 	  buf3, ch->player.language ? skills[ch->player.language].name :
 	  "common tongue");
   send_to_char(buf, ch);
+  if (GET_SPEC(ch) == PLRSPEC_ARCH)
+  {
+	  switch (GET_SHOOTING(ch))
+	  {
+	  case SHOOTING_SLOW:
+		  sprintf(buf3, "%s", shooting[0]);
+		  break;
+	  case SHOOTING_NORMAL:
+		  sprintf(buf3, "%s", shooting[1]);
+		  break;
+	  case SHOOTING_FAST:
+		  sprintf(buf3, "%s", shooting[2]);
+		  break;
+	  default:
+		  sprintf(buf3, "shooting error, please notify IMMs!");
+		  break;
+	  }
+	  sprintf(buf, "You are using %s shooting speed.\r\n", buf3);
+	  send_to_char(buf, ch);
+  }
 }
 
 

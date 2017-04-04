@@ -40,6 +40,8 @@
 #include "spells.h"
 #include "db.h"
 
+#include "char_utils.h"
+
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
@@ -656,97 +658,99 @@ get_real_stealth(struct char_data *ch)
 	   
 
 
-int
-get_real_OB(struct char_data *ch)
+int get_real_OB(char_data* ch)
 {
-  int sun_mod = 0;
-  int bonus, tmpob, tmpskill, tactics = 0;
-  struct obj_data *wpn;
+	int sun_mod = 0;
+	int bonus, tmpob, tactics = 0;
+	struct obj_data *wpn;
 
-  if(IS_NPC(ch))
-    if(IS_AFFECTED(ch, AFF_CONFUSE))
-      return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) +
-	      GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);
-    else
-      return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) + 
-	      GET_LEVEL(ch) / 2);
-  
-  bonus = (GET_PROF_LEVEL(PROF_WARRIOR,ch) * 3 + 
-	   3 * GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch) * 
-	   GET_LEVELA(ch) / 30) / 2 + GET_BAL_STR(ch);
+	if (IS_NPC(ch))
+		if (IS_AFFECTED(ch, AFF_CONFUSE))
+			return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) +
+				GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);
+		else
+			return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) +
+				GET_LEVEL(ch) / 2);
 
-  tmpob= GET_OB(ch);
-  tmpob -= GET_SKILL_PENALTY(ch);
-  
-  wpn = ch->equipment[WIELD];
-  if(!wpn) 
-    return tmpob + bonus;
+	bonus = (GET_PROF_LEVEL(PROF_WARRIOR, ch) * 3 +
+		3 * GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch) *
+		GET_LEVELA(ch) / 30) / 2 + GET_BAL_STR(ch);
 
-  tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(wpn->get_weapon_type()));
+	tmpob = GET_OB(ch);
+	tmpob -= utils::get_skill_penalty(*ch);
 
-  if (isname("bow", wpn->name))
-	  tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
-  
-  if(IS_TWOHANDED(ch)) {
-    tmpob += wpn->obj_flags.value[2] * 
-      (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
-    tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
-	if (isname("bow", wpn->name))
+	wpn = ch->equipment[WIELD];
+	if (!wpn)
 	{
-		tmpob += wpn->obj_flags.value[2] *
-			(200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
-		tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+		return tmpob + bonus;
 	}
-  }
-  else
-    tmpob -= (wpn->obj_flags.value[2] * 2 - 6);
-      
-  switch (GET_TACTICS(ch)) {
-    case TACTICS_DEFENSIVE:
-      tmpob += bonus - bonus/4 - 8;
-      tactics = 4;
-      break;
-    case TACTICS_CAREFUL:
-      tmpob += bonus - bonus/8 - 4;
-      tactics = 6;
-      break;
-    case TACTICS_NORMAL:
-      tmpob +=  bonus;
-      tactics = 8;
-      break;
-    case TACTICS_AGGRESSIVE:
-      tmpob += bonus + bonus/16 + 2;
-      tactics = 10;
-      break;
-    case TACTICS_BERSERK:
-      tmpob +=  bonus + bonus/16 + 5 + GET_RAW_SKILL(ch, SKILL_BERSERK) / 8;
-      tactics = 10;
-      break;
-    default:
-      tmpob += bonus + GET_BAL_STR(ch);
-      break;
-    };
 
-  if(IS_AFFECTED(ch, AFF_CONFUSE))
-    tmpob -= (get_confuse_modifier(ch) * 2 / 3);
-  
-  /* to get the pre-power of arda malus, substitute 10 for sun_mod */
-  sun_mod = get_power_of_arda(ch);
-  if(sun_mod) {
-    if(GET_RACE(ch) == RACE_URUK)
-      tmpob = tmpob * 4 / 5 - sun_mod;
-    if(GET_RACE(ch) == RACE_ORC)
-      tmpob = tmpob * 3 / 4 - sun_mod;
-    if(GET_RACE(ch) == RACE_MAGUS)
-      tmpob = tmpob * 4 / 5 - sun_mod;
-  }
+	int weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(wpn->get_weapon_type()));
 
-  if(!CAN_SEE(ch))
-    tmpob -= 10;
+	if (IS_TWOHANDED(ch)) 
+	{
+		if (wpn->is_ranged_weapon())
+		{
+			tmpob += wpn->obj_flags.value[2] * (200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
+			weapon_skill = (weapon_skill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+		}
+		else
+		{
+			tmpob += wpn->obj_flags.value[2] * (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
+			weapon_skill = (weapon_skill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+		}
+	}
+	else
+	{
+		tmpob -= (wpn->obj_flags.value[2] * 2 - 6);
+	}
 
-  tmpob += tmpskill * (wpn->obj_flags.value[2] + 20) * tactics / 1000;
+	switch (GET_TACTICS(ch)) {
+	case TACTICS_DEFENSIVE:
+		tmpob += bonus - bonus / 4 - 8;
+		tactics = 4;
+		break;
+	case TACTICS_CAREFUL:
+		tmpob += bonus - bonus / 8 - 4;
+		tactics = 6;
+		break;
+	case TACTICS_NORMAL:
+		tmpob += bonus;
+		tactics = 8;
+		break;
+	case TACTICS_AGGRESSIVE:
+		tmpob += bonus + bonus / 16 + 2;
+		tactics = 10;
+		break;
+	case TACTICS_BERSERK:
+		tmpob += bonus + bonus / 16 + 5 + GET_RAW_SKILL(ch, SKILL_BERSERK) / 8;
+		tactics = 10;
+		break;
+	default:
+		tmpob += bonus + GET_BAL_STR(ch);
+		break;
+	};
 
-  return tmpob;
+	if (IS_AFFECTED(ch, AFF_CONFUSE))
+		tmpob -= (get_confuse_modifier(ch) * 2 / 3);
+
+	/* to get the pre-power of arda malus, substitute 10 for sun_mod */
+	sun_mod = get_power_of_arda(ch);
+	if (sun_mod) {
+		if (GET_RACE(ch) == RACE_URUK)
+			tmpob = tmpob * 4 / 5 - sun_mod;
+		if (GET_RACE(ch) == RACE_ORC)
+			tmpob = tmpob * 3 / 4 - sun_mod;
+		if (GET_RACE(ch) == RACE_MAGUS)
+			tmpob = tmpob * 4 / 5 - sun_mod;
+	}
+
+	if (!CAN_SEE(ch))
+		tmpob -= 10;
+
+	tmpob += weapon_skill * (wpn->obj_flags.value[2] + 20) * tactics / 1000;
+
+	return tmpob;
 }
 
 
@@ -754,125 +758,129 @@ get_real_OB(struct char_data *ch)
 int
 get_real_parry(struct char_data *ch)
 {
-  int sun_mod = 0;
-  
-  if(IS_NPC(ch))
-    if(IS_AFFECTED(ch, AFF_CONFUSE))
-      return (GET_PARRY(ch) + GET_LEVEL(ch) / 2 + 15) - (get_confuse_modifier(ch) * 2 / 3);
-    else
-      return (GET_PARRY(ch) + GET_LEVEL(ch) / 2 + 15);
-  
-  int tmpparry, tmpskill, tactics, bonus, weapon_bonus;
-  struct obj_data * weapon;
-  
-  tmpparry=GET_PARRY(ch);
-  bonus =  GET_PROF_LEVEL(PROF_WARRIOR,ch)*2 + MIN(30,GET_LEVEL(ch)) + GET_BAL_STR(ch);
+	int sun_mod = 0;
 
-  weapon = ch->equipment[WIELD];
-  if(!weapon) return tmpparry + bonus/2;
-  weapon_bonus = weapon->obj_flags.value[1];
+	if (IS_NPC(ch))
+		if (IS_AFFECTED(ch, AFF_CONFUSE))
+			return (GET_PARRY(ch) + GET_LEVEL(ch) / 2 + 15) - (get_confuse_modifier(ch) * 2 / 3);
+		else
+			return (GET_PARRY(ch) + GET_LEVEL(ch) / 2 + 15);
 
-  tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(weapon->obj_flags.value[3]));
-  if (isname("bow", weapon->name))
-	  tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
+	int tmpparry, tmpskill, tactics, bonus, weapon_bonus;
+	struct obj_data * weapon;
 
-  if (IS_TWOHANDED(ch))
-  {
-	  tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
-	  if (isname("bow", weapon->name))
-		  tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
-  }
-  
-  tmpskill = (tmpskill + 3*GET_RAW_KNOWLEDGE(ch,SKILL_PARRY))/4;
-  if(GET_TACTICS(ch) == TACTICS_BERSERK)
-    tmpskill /= 2;
-  switch (GET_TACTICS(ch))
-    {
-    case TACTICS_DEFENSIVE : tmpparry +=  bonus/2 + 3*bonus/16;
-      tactics = 4;
-      break;
-    case TACTICS_CAREFUL   : tmpparry +=  bonus/2 + bonus/8;
-      tactics = 6;
-      break;
-    case TACTICS_NORMAL    : tmpparry += bonus/2;
-      tactics = 8;
-      break;
-    case TACTICS_AGGRESSIVE: tmpparry +=  bonus/2 - bonus/8;
-      tactics = 10;
-      break;
-    case TACTICS_BERSERK   : tmpparry +=  bonus/2 - bonus/8;
-      tactics = 12;
-      break;
-    default             : tmpparry += bonus/2;
-      tactics = 10;
-      break;
-    };
-  tmpparry += tmpskill * (weapon_bonus + 20) * (14 - tactics)/ 1000;
-  // Parry should now have bigger effect on two-handers:
-  if(IS_AFFECTED(ch, AFF_TWOHANDED)) tmpparry += weapon_bonus/2;
+	tmpparry = GET_PARRY(ch);
+	bonus = GET_PROF_LEVEL(PROF_WARRIOR, ch) * 2 + std::min(30, GET_LEVEL(ch)) + GET_BAL_STR(ch);
 
-  if(IS_AFFECTED(ch, AFF_CONFUSE))
-    tmpparry -= (get_confuse_modifier(ch) * 2 / 3);
+	weapon = ch->equipment[WIELD];
+	if (!weapon)
+	{
+		return tmpparry + bonus / 2;
+	}
+	weapon_bonus = weapon->obj_flags.value[1];
 
-/*  if(SUN_PENALTY(ch)) {
-    if (GET_RACE(ch) == RACE_URUK) tmpparry = tmpparry * 9 / 10 - 5;
-    if (GET_RACE(ch) == RACE_ORC) tmpparry = tmpparry * 8 / 9 - 5;
-    if (GET_RACE(ch) == RACE_MAGUS) tmpparry = tmpparry * 9 / 10 - 5;
-  }
- */
-  sun_mod = get_power_of_arda(ch);
-  if(sun_mod){
-    if (GET_RACE(ch) == RACE_URUK) tmpparry = tmpparry * 9 / 10 - sun_mod;
-    if (GET_RACE(ch) == RACE_ORC) tmpparry = tmpparry * 8 / 9 - sun_mod;
-    if (GET_RACE(ch) == RACE_MAGUS) tmpparry = tmpparry * 9 / 10 - sun_mod;
-  }
+	tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(weapon->obj_flags.value[3]));
+	if (isname("bow", weapon->name))
+	{
+		tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
+	}
 
-  if(!CAN_SEE(ch)) { tmpparry -= 10; }
+	if (IS_TWOHANDED(ch))
+	{
+		tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+		if (isname("bow", weapon->name))
+		{
+			tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+		}
+	}
 
-  return tmpparry;
+	tmpskill = (tmpskill + 3 * GET_RAW_KNOWLEDGE(ch, SKILL_PARRY)) / 4;
+	if (GET_TACTICS(ch) == TACTICS_BERSERK)
+	{
+		tmpskill /= 2;
+	}
+		
+	switch (GET_TACTICS(ch))
+	{
+	case TACTICS_DEFENSIVE: tmpparry += bonus / 2 + 3 * bonus / 16;
+		tactics = 4;
+		break;
+	case TACTICS_CAREFUL: tmpparry += bonus / 2 + bonus / 8;
+		tactics = 6;
+		break;
+	case TACTICS_NORMAL: tmpparry += bonus / 2;
+		tactics = 8;
+		break;
+	case TACTICS_AGGRESSIVE: tmpparry += bonus / 2 - bonus / 8;
+		tactics = 10;
+		break;
+	case TACTICS_BERSERK: tmpparry += bonus / 2 - bonus / 8;
+		tactics = 12;
+		break;
+	default: tmpparry += bonus / 2;
+		tactics = 10;
+		break;
+	};
+	
+	tmpparry += tmpskill * (weapon_bonus + 20) * (14 - tactics) / 1000;
+	// Parry should now have bigger effect on two-handers:
+	if (IS_AFFECTED(ch, AFF_TWOHANDED)) tmpparry += weapon_bonus / 2;
+
+	if (IS_AFFECTED(ch, AFF_CONFUSE))
+		tmpparry -= (get_confuse_modifier(ch) * 2 / 3);
+
+	sun_mod = get_power_of_arda(ch);
+	if (sun_mod) 
+	{
+		if (GET_RACE(ch) == RACE_URUK) tmpparry = tmpparry * 9 / 10 - sun_mod;
+		if (GET_RACE(ch) == RACE_ORC) tmpparry = tmpparry * 8 / 9 - sun_mod;
+		if (GET_RACE(ch) == RACE_MAGUS) tmpparry = tmpparry * 9 / 10 - sun_mod;
+	}
+
+	if (!CAN_SEE(ch)) 
+	{ 
+		tmpparry -= 10; 
+	}
+
+	return tmpparry;
 }
 
 int get_real_dodge(struct char_data *ch)
 {
-  int sun_mod = 0;
+	int sun_mod = 0;
 
-  if(IS_NPC(ch))
-    if (IS_AFFECTED(ch, AFF_CONFUSE))
-      return(GET_DODGE(ch) + GET_DEX(ch)-5 + GET_LEVEL(ch)/2) - (get_confuse_modifier(ch) * 2 / 3);
-    else
-      return(GET_DODGE(ch) + GET_DEX(ch)-5 + GET_LEVEL(ch)/2);
+	if (IS_NPC(ch))
+		if (IS_AFFECTED(ch, AFF_CONFUSE))
+			return(GET_DODGE(ch) + GET_DEX(ch) - 5 + GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);
+		else
+			return(GET_DODGE(ch) + GET_DEX(ch) - 5 + GET_LEVEL(ch) / 2);
 
-  int dodge;
-  dodge = ((GET_SKILL(ch,SKILL_DODGE)+GET_SKILL(ch,SKILL_STEALTH)/2+60) * GET_PROF_LEVEL(PROF_RANGER,ch)/200+(GET_SKILL(ch,SKILL_DODGE) + GET_SKILL(ch,SKILL_STEALTH)/4)/20) ;
-  dodge -= GET_DODGE_PENALTY(ch);
-  dodge += 3;
-  if(GET_TACTICS(ch) == TACTICS_BERSERK)
-    dodge /= 2;
+	int dodge = ((GET_SKILL(ch, SKILL_DODGE) + GET_SKILL(ch, SKILL_STEALTH) / 2 + 60) * GET_PROF_LEVEL(PROF_RANGER, ch) / 200 + (GET_SKILL(ch, SKILL_DODGE) + GET_SKILL(ch, SKILL_STEALTH) / 4) / 20);
+	dodge -= utils::get_dodge_penalty(*ch);
+	dodge += 3;
+	
+	if (GET_TACTICS(ch) == TACTICS_BERSERK)
+		dodge /= 2;
 
-  if(IS_AFFECTED(ch, AFF_CONFUSE))
-    dodge -= (get_confuse_modifier(ch) * 2 / 3);
+	if (IS_AFFECTED(ch, AFF_CONFUSE))
+		dodge -= (get_confuse_modifier(ch) * 2 / 3);
 
-/*  if(SUN_PENALTY(ch)) {
-    if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - 5;
-    if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - 5;
-    if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - 5;
-  } */
-  sun_mod = get_power_of_arda(ch);
-  if(sun_mod){
-    if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - sun_mod;
-    if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - sun_mod;
-    if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - sun_mod;
-  }
-  
-  switch (GET_TACTICS(ch))
-    {
-    case TACTICS_DEFENSIVE : return(dodge + GET_DODGE(ch) + 6) + GET_DEX(ch);
-    case TACTICS_CAREFUL   : return(dodge + GET_DODGE(ch) + 4) + GET_DEX(ch);
-    case TACTICS_NORMAL    : return(dodge + GET_DODGE(ch)) + GET_DEX(ch);
-    case TACTICS_AGGRESSIVE: return(dodge + GET_DODGE(ch) - 4) + GET_DEX(ch);
-    case TACTICS_BERSERK   : return(dodge + GET_DODGE(ch) - 4) + GET_DEX(ch)/2;
-    default             : return(dodge + GET_DODGE(ch) + GET_DEX(ch));
-    };
+	sun_mod = get_power_of_arda(ch);
+	if (sun_mod) {
+		if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - sun_mod;
+		if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - sun_mod;
+		if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - sun_mod;
+	}
+
+	switch (GET_TACTICS(ch))
+	{
+	case TACTICS_DEFENSIVE: return(dodge + GET_DODGE(ch) + 6) + GET_DEX(ch);
+	case TACTICS_CAREFUL: return(dodge + GET_DODGE(ch) + 4) + GET_DEX(ch);
+	case TACTICS_NORMAL: return(dodge + GET_DODGE(ch)) + GET_DEX(ch);
+	case TACTICS_AGGRESSIVE: return(dodge + GET_DODGE(ch) - 4) + GET_DEX(ch);
+	case TACTICS_BERSERK: return(dodge + GET_DODGE(ch) - 4) + GET_DEX(ch) / 2;
+	default: return(dodge + GET_DODGE(ch) + GET_DEX(ch));
+	};
 }
 
 int get_followers_level(char_data *ch)  /* summ of levels of mobs/players charmed by ch */

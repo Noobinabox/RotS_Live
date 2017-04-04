@@ -402,6 +402,9 @@ public:
 	// Returns true if the object is a quiver.
 	bool is_quiver() const;
 
+	// Returns true if the weapon is a ranged weapon.
+	bool is_ranged_weapon() const;
+
 public:
 	sh_int item_number;            /* Where in data-base               */
 	int in_room;                /* In what room -1 when conta/carr  */

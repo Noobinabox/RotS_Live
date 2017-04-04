@@ -951,11 +951,14 @@ ACMD(do_kick)
 		damage(ch, victim, 0, attacktype, 0);
 	else
 	{
+		//TODO(drelidan):  If heavy fighting needs any additional bonuses, start here.
 		// Heavy fighters kick 20% harder.
+		/*
 		if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting)
 		{
 			dam += dam / 5;
 		}
+		*/
 		damage(ch, victim, dam, attacktype, 0);
 	}
 

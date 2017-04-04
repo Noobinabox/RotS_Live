@@ -2251,10 +2251,10 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 			damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
 		}
 
-		/* Heavy fighters get an extra 5% damage absorption. */
+		/* Heavy fighters get an extra 10% damage absorption. */
 		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
 		{
-			damage_reduction += damage_reduction / 20;
+			damage_reduction += damage_reduction / 10;
 		}
 
 		damage -= damage_reduction;
@@ -2296,7 +2296,9 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 //============================================================================
 int heavy_fighting_effect(const char_data& attacker, int damage)
 {
+	//TODO(drelidan):  If heavy fighters need any more buffs, start here.
 	// Heavy fighters deal 5% more damage with heavy weapons.
+	/*
 	if (utils::get_specialization(attacker) == (int)game_types::PS_HeavyFighting)
 	{
 		obj_data* weapon = attacker.equipment[WIELD];
@@ -2306,6 +2308,7 @@ int heavy_fighting_effect(const char_data& attacker, int damage)
 			return modified_damage;
 		}
 	}
+	*/
 
 	return damage;
 }

@@ -236,7 +236,6 @@ inline int weapon_skill_num(game_types::weapon_type weapon_type)
 		return SKILL_WEAPONS;
 	case game_types::WT_WHIPPING:
 	case game_types::WT_FLAILING:
-	case game_types::WT_BOW:
 		return SKILL_WHIP;
 		break;
 	case game_types::WT_SLASHING:
@@ -246,7 +245,6 @@ inline int weapon_skill_num(game_types::weapon_type weapon_type)
 	case game_types::WT_BLUDGEONING:
 	case game_types::WT_BLUDGEONING_TWO:
 	case game_types::WT_SMITING:
-	case game_types::WT_CROSSBOW:
 		return SKILL_CONCUSSION;
 		break;
 	case game_types::WT_CLEAVING:
@@ -261,6 +259,10 @@ inline int weapon_skill_num(game_types::weapon_type weapon_type)
 		break;
 	case game_types::WT_COUNT:
 		return SKILL_BAREHANDED;
+		break;
+	case game_types::WT_CROSSBOW:
+	case game_types::WT_BOW:
+		return SKILL_ARCHERY;
 		break;
 	default:
 		return SKILL_BAREHANDED;

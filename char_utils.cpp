@@ -439,8 +439,11 @@ namespace utils
 		const int encumb_multiplier = 25;
 		const int encumb_weight_divisor = 50;
 
-		// TODO(dgurley):  See comment about get_bal_strength here.
 		int character_strength = get_bal_strength(character);
+		if (get_specialization(character) == game_types::PS_HeavyFighting)
+		{
+			character_strength *= 2;
+		}
 
 		int raw_encumb_factor = character.points.encumb * encumb_multiplier;
 		int encumb_weight_factor = character.specials.encumb_weight / character_strength / encumb_weight_divisor;
@@ -453,8 +456,11 @@ namespace utils
 	{
 		const int dodge_multiplier = 20;
 
-		// TODO(dgurley):  See comment about get_bal_strength here.
 		int character_strength = get_bal_strength(character);
+		if (get_specialization(character) == game_types::PS_HeavyFighting)
+		{
+			character_strength *= 2;
+		}
 
 		int raw_encumb_factor = character.specials2.leg_encumb * dodge_multiplier;
 		int worn_weight_factor = character.specials.worn_weight / character_strength / dodge_multiplier;

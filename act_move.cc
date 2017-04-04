@@ -20,6 +20,9 @@
 #include "db.h"
 #include "spells.h"
 #include "script.h"
+#include "char_utils.h"
+
+#include <assert.h>
 
 typedef char * string;
 
@@ -63,43 +66,89 @@ string reverse_direction (int dir)
 
 ACMD(do_look);
 
-int room_move_cost(char_data * ch, room_data * rm){
-  int tmp;
-  tmp = MAX(20 + IS_CARRYING_W(ch) / GET_STR(ch) / 10, 70 + IS_CARRYING_W(ch) / GET_STR(ch) / 20); // here was weight/str/2, then /10
-  // Now can carry str*6 pounds without penalty, penalty becomes heavy at str*10.
-  if(MOB_FLAGGED(ch, MOB_MOUNT))
-    tmp = IS_CARRYING_W(ch) / GET_STR(ch) / 20; // Mounts have less str penalty
-  
-  //  if(tmp < 100) tmp = 100;
-  if(tmp < 100 && !MOB_FLAGGED(ch,MOB_MOUNT)) tmp = 100;
-  if(tmp < 100 && MOB_FLAGGED(ch,MOB_MOUNT)) tmp = MAX(75, 50+tmp/2);
-  // And make rider lose more moves?
+bool should_double_strength(char_data* character)
+{
+	char_data* master = NULL;
+	if (utils::is_pc(*character))
+	{
+		master = character;
+	}
+	else
+	{
+		if (MOB_FLAGGED(character, MOB_MOUNT))
+		{
+			master = character->mount_data.rider;
+		}
+	}
 
-  tmp += GET_LEG_ENCUMB(ch)*2;
-  
-  if(!MOB_FLAGGED(ch, MOB_MOUNT))
-    tmp = (movement_loss[rm->sector_type]) * (tmp + number(0,99))/2; 
-  else
-    tmp = (movement_loss[rm->sector_type]) * (tmp + number(0,99))*2/5; 
-  
-  // TMP is still move cost * 100
+	if (master)
+	{
+		return utils::get_specialization(*master) == game_types::PS_HeavyFighting;
+	}
 
+	return false;
+}
 
-  //  if(MOB_FLAGGED(ch, MOB_MOUNT)) tmp /= 2;
+int room_move_cost(char_data* character, room_data* new_room) 
+{
+	assert(character);
+	assert(new_room);
 
-  if(IS_RIDING(ch)){
-    //    tmp = tmp * (125 - GET_RAW_KNOWLEDGE(ch, SKILL_RIDE) - GET_RAW_KNOWLEDGE(ch, SKILL_ANIMALS)/10 - number(0,50))/100 + 1;
-    
-    tmp = tmp / (120 + GET_RAW_KNOWLEDGE(ch, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(ch, SKILL_ANIMALS) / 2);
-    
-    if(tmp < 1) tmp = 1;
-  }
-  else
-    tmp = tmp / 100;
-  //   if(!IS_NPC(ch))
-  //     printf("move cost for %s, %d\n",GET_NAME(ch), tmp);
-  
-  return tmp;
+	int character_strength = character->tmpabilities.str;
+	if (should_double_strength(character))
+	{
+		character_strength = character_strength * 2;
+	}
+
+	int move_cost = std::max(20 + IS_CARRYING_W(character) / character_strength / 10, 70 + IS_CARRYING_W(character) / character_strength / 20);
+	
+	// Now can carry str*6 pounds without penalty, penalty becomes heavy at str*10.
+	if (MOB_FLAGGED(character, MOB_MOUNT))
+	{
+		move_cost = IS_CARRYING_W(character) / GET_STR(character) / 20; // Mounts have less str penalty
+	}
+
+	if (move_cost < 100)
+	{
+		if (MOB_FLAGGED(character, MOB_MOUNT))
+		{
+			move_cost = std::max(75, 50 + move_cost / 2);
+		}
+		else
+		{
+			move_cost = 100;
+		}
+	}
+
+	int leg_encumb = GET_LEG_ENCUMB(character) * 2;
+	if (utils::get_skill_penalty(*character) == game_types::PS_HeavyFighting)
+	{
+		leg_encumb = leg_encumb / 2;
+	}
+
+	move_cost += leg_encumb;
+	int room_move_penalty = movement_loss[new_room->sector_type];
+
+	if (!MOB_FLAGGED(character, MOB_MOUNT))
+	{
+		move_cost = room_move_penalty * (move_cost + number(0, 99)) / 2;
+	}
+	else
+	{
+		move_cost = room_move_penalty * (move_cost + number(0, 99)) * 2 / 5;
+	}
+
+	if (IS_RIDING(character)) 
+	{
+		move_cost = move_cost / (120 + GET_RAW_KNOWLEDGE(character, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(character, SKILL_ANIMALS) / 2);
+	}
+	else
+	{
+		move_cost = move_cost / 100;
+	}
+
+	// Rooms always cost at least one to move.
+	return std::max(move_cost, 1);
 }
 
 //***********************************************************************

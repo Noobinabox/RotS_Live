@@ -334,3 +334,15 @@ bool obj_flag_data::is_wearable() const
 
 	return false;
 }
+
+//============================================================================
+bool obj_data::is_ranged_weapon() const
+{
+	if (obj_flags.type_flag == ITEM_WEAPON)
+	{
+		game_types::weapon_type w_type = get_weapon_type();
+		return w_type == game_types::WT_BOW || w_type == game_types::WT_CROSSBOW;
+	}
+
+	return false;
+}

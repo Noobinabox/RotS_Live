@@ -3193,7 +3193,8 @@ const char* specialize_name[game_types::PS_Count]= {
   "light fighting",
   "defending",
   "archery",
-  "darkness"
+  "darkness",
+  "arcane"
 };
 
 char * resistance_name[]={

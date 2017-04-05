@@ -736,6 +736,7 @@ namespace game_types
 		PS_Defender,
 		PS_Archery,
 		PS_Darkness,
+		PS_Arcane,
 		PS_Count,
 	};
 }
@@ -757,6 +758,7 @@ namespace game_types
 #define PLRSPEC_DFND   14
 #define PLRSPEC_ARCH   15
 #define PLRSPEC_DARK   16
+#define PLRSPEC_ARCANE   17
 
 /* race for PCs */
 #define RACE_GOD  	0

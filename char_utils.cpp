@@ -9,6 +9,7 @@
 #include "structs.h"
 #include <algorithm>
 #include <assert.h>
+#include <cmath>
 
 struct race_bodypart_data;
 

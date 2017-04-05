@@ -455,7 +455,7 @@ namespace utils
 			assert(encumb_table[WIELD] == 1);
 			assert(encumb_table[WEAR_SHIELD] == 1);
 
-			if (encumbrance_weight > ENCUMB_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
+			if (encumbrance_weight > ENCUMB_WEIGHT_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
 			{
 				int remaining_encumb = encumbrance_weight;
 				int new_encumb_weight = 0;
@@ -507,10 +507,10 @@ namespace utils
 
 				remaining_encumb -= armor_encumb_weight;
 
-				if (armor_encumb_weight > ENCUMB_OF_CHAIN)
+				if (armor_encumb_weight > ENCUMB_WEIGHT_OF_CHAIN)
 				{
-					int encumb_difference = armor_encumb_weight - ENCUMB_OF_CHAIN;
-					new_encumb_weight += ENCUMB_OF_CHAIN + int(std::sqrt(encumb_difference));
+					int encumb_difference = armor_encumb_weight - ENCUMB_WEIGHT_OF_CHAIN;
+					new_encumb_weight += ENCUMB_WEIGHT_OF_CHAIN + int(std::sqrt(encumb_difference));
 				}
 
 				new_encumb_weight += remaining_encumb;
@@ -596,8 +596,13 @@ namespace utils
 
 		int character_strength = get_bal_strength(character);
 		int encumb_weight = calculate_encumbrance_weight(character);
+		int base_encumb = character.points.encumb;
+		if (get_specialization(character) == game_types::PS_HeavyFighting)
+		{
+			base_encumb = std::max(base_encumb, ENCUMB_OF_CHAIN + 2);
+		}
 
-		int raw_encumb_factor = character.points.encumb * encumb_multiplier;
+		int raw_encumb_factor = base_encumb * encumb_multiplier;
 		int encumb_weight_factor = encumb_weight / character_strength;
 		int skill_penalty = raw_encumb_factor + encumb_weight_factor;
 		skill_penalty /=  encumb_divisor;

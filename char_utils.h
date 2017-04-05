@@ -11,7 +11,8 @@ struct affected_type;
 
 namespace utils
 {
-	const int ENCUMB_OF_CHAIN = 3000;
+	const int ENCUMB_OF_CHAIN = 12;
+	const int ENCUMB_WEIGHT_OF_CHAIN = 3000;
 	const int WEIGHT_OF_CHAIN = 3350;
 	const int HEAVY_WEAPON_WEIGHT = 500;
 	const int HEAVY_SHIELD_WEIGHT = 800;

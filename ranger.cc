@@ -1576,6 +1576,13 @@ ACMD (do_tame) {
 	 */
 	GET_MOVE(ch) -= 60;
 	GET_MOVE(victim) = GET_MAX_MOVE(victim) += 50;
+	if (GET_SPEC(ch) == PLRSPEC_PETS)
+	{
+		victim->constabilities.str += 2;
+		victim->tmpabilities.str += 2;
+		victim->abilities.str += 2;
+		victim->points.ENE_regen += 40;
+	}
       } else {
 	send_to_char("You fail to tame your target.\r\n", ch);
 	sscanf(ch->player.name,"%s", buf);

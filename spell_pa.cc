@@ -247,7 +247,7 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
 	int roll = number(1, 20);
 	bool saved = roll + save_value > casting_dc;
 
-	spllog_mage_level = utils::get_prof_level(PROF_MAGE, *caster);
+	spllog_mage_level = casting_dc;
 	spllog_save = (short)save_value;
 	spllog_saves = saved;
 

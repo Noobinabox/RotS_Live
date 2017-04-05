@@ -1180,6 +1180,11 @@ ACMD(do_gen_tog)
 extern char *casting[];
 ACMD(do_casting)
 {
+	if (GET_SPEC(ch) != PLRSPEC_ARCANE)
+	{
+		send_to_char("Only players specialized in arcane may set their casting speed.\n\r", ch);
+		return;
+	}
 	char *s1 = "You are presently using";
 	char *s2 = "You are now using";
 	char *s;

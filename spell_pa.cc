@@ -750,9 +750,9 @@ ACMD(do_cast)
 		{
 			/* putting the player into waiting list */
 			if ((GET_CASTING(ch) == CASTING_FAST) && (spell_prof == PROF_MAGE))
-				casting_time = CASTING_TIME(ch, spell_index) / 2;
+				casting_time = CASTING_TIME(ch, spell_index) * .75;
 			else if ((GET_CASTING(ch) == CASTING_SLOW) && (spell_prof == PROF_MAGE))
-				casting_time = CASTING_TIME(ch, spell_index) * 2;
+				casting_time = CASTING_TIME(ch, spell_index) / .75;
 			else
 				casting_time = CASTING_TIME(ch, spell_index);
 

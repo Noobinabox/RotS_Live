@@ -2851,6 +2851,7 @@ ACMD(do_toggle)
   char buf3[100];
   extern char *tactics[];
   extern char *shooting[];
+  extern char *casting[];
 
   if(IS_NPC(ch))
     return;
@@ -2955,6 +2956,26 @@ ACMD(do_toggle)
 		  break;
 	  }
 	  sprintf(buf, "You are using %s shooting speed.\r\n", buf3);
+	  send_to_char(buf, ch);
+  }
+  if (GET_SPEC(ch) == PLRSPEC_ARCANE)
+  {
+	  switch (GET_CASTING(ch))
+	  {
+	  case CASTING_SLOW:
+		  sprintf(buf3, "%s", casting[0]);
+		  break;
+	  case CASTING_NORMAL:
+		  sprintf(buf3, "%s", casting[1]);
+		  break;
+	  case CASTING_FAST:
+		  sprintf(buf3, "%s", casting[2]);
+		  break;
+	  default:
+		  sprintf(buf3, "casting error, please notify IMMs!");
+		  break;
+	  }
+	  sprintf(buf, "You are using %s casting speed.\r\n", buf3);
 	  send_to_char(buf, ch);
   }
 }

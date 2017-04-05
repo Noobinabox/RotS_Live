@@ -247,16 +247,6 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
 	int roll = number(1, 20);
 	bool saved = roll + save_value > casting_dc;
 
-	// Auto success on a 20, auto fail on a 1, D&D style.
-	if (roll == 1)
-	{
-		saved = false;
-	}
-	else if (roll == 20)
-	{
-		saved = true;
-	}
-
 	spllog_mage_level = utils::get_prof_level(PROF_MAGE, *caster);
 	spllog_save = (short)save_value;
 	spllog_saves = saved;

@@ -1599,28 +1599,34 @@ ACMD(do_exits)
 
 
 
-int
-get_percent_absorb(struct char_data *ch)
+int get_percent_absorb(char_data* character)
 {
-  int absorb, hit_location, tmp, dam; /* up to max. of 10000 */
+	int absorb, hit_location, tmp, dam; /* up to max. of 10000 */
 
-  absorb = 0;
-  for(hit_location = 0; hit_location < MAX_BODYPARTS ; hit_location++) {
-    tmp = bodyparts[GET_BODYTYPE(ch)].armor_location[hit_location];
-    dam = 10; /* armour absorb % on 10 HP damage */
-    if(tmp) {
-      struct obj_data *armor;
+	absorb = 0;
+	for (hit_location = 0; hit_location < MAX_BODYPARTS; hit_location++) 
+	{
+		tmp = bodyparts[GET_BODYTYPE(character)].armor_location[hit_location];
+		dam = 10; /* armour absorb % on 10 HP damage */
+		if (tmp) 
+		{
+			if (character->equipment[tmp]) 
+			{
+				obj_data* armor = character->equipment[tmp];
+				dam -= armor->obj_flags.value[1];
+				dam -= (dam * armor_absorb(armor) + 50) / 100;
+			}
+		}
+		absorb += (10 - dam) * bodyparts[GET_BODYTYPE(character)].percent[hit_location];
+	}
 
-      if(ch->equipment[tmp]) {
-	armor = ch->equipment[tmp];
-	dam -= armor->obj_flags.value[1];
-	dam -= (dam * armor_absorb(armor) + 50) / 100;
-      }
-    }
-    absorb += (10 - dam) * bodyparts[GET_BODYTYPE(ch)].percent[hit_location];
-  }
+	// Characters specialized in heavy fighting absorb 10% more damage.
+	if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
+	{
+		absorb += absorb / 10;
+	}
 
-  return absorb / 10;
+	return absorb / 10;
 }
 
 

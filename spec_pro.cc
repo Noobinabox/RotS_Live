@@ -306,6 +306,7 @@ SPECIAL(guild) {
     ch->skills[request]++;
     ch->specials2.spells_to_learn--;
     recalc_skills(ch);
+	recalc_abilities(ch);
     
     act(guildmasters[prog].practice_message, FALSE, host, 0, ch, TO_NOTVICT);
     act(guildmasters[prog].practice_msg_to_char, FALSE, host, 0, ch, TO_VICT);

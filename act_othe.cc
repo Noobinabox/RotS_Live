@@ -1915,6 +1915,9 @@ ACMD(do_specialize)
 				utils::set_specialization(*ch, spec);
 				sprintf(buf, "You are now specialized in %s.\n\r", specialize_name[index]);
 				send_to_char(buf, ch);
+
+				// Some abilities may have been changed.  Recalc.
+				recalc_abilities(ch);
 				return;
 			}
 		}

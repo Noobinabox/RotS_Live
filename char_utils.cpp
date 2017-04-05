@@ -437,7 +437,7 @@ namespace utils
 	int get_skill_penalty(const char_data& character)
 	{
 		const int encumb_multiplier = 25;
-		const int encumb_weight_divisor = 50;
+		const int penalty_divisor = 50;
 
 		int character_strength = get_bal_strength(character);
 		if (get_specialization(character) == game_types::PS_HeavyFighting)
@@ -446,8 +446,9 @@ namespace utils
 		}
 
 		int raw_encumb_factor = character.points.encumb * encumb_multiplier;
-		int encumb_weight_factor = character.specials.encumb_weight / character_strength / encumb_weight_divisor;
+		int encumb_weight_factor = character.specials.encumb_weight / character_strength;
 		int skill_penalty = raw_encumb_factor + encumb_weight_factor;
+		skill_penalty /=  penalty_divisor;
 		return skill_penalty;
 	}
 
@@ -463,8 +464,9 @@ namespace utils
 		}
 
 		int raw_encumb_factor = character.specials2.leg_encumb * dodge_multiplier;
-		int worn_weight_factor = character.specials.worn_weight / character_strength / dodge_multiplier;
+		int worn_weight_factor = character.specials.worn_weight / character_strength;
 		int dodge_penalty = raw_encumb_factor + worn_weight_factor;
+		dodge_penalty /= dodge_multiplier;
 		return dodge_penalty;
 	}
 

@@ -130,6 +130,9 @@ void move_char_deleted(int);
 int get_char_directory(char *, char *);
 int load_player(char *, struct char_file_u *);
 
+// Implemented in consts.cc
+sh_int* get_encumb_table();
+
 #define REAL 0
 #define VIRT 1
 

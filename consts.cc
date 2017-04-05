@@ -2150,6 +2150,11 @@ sh_int encumb_table[MAX_WEAR] = {
   0/*belt*/
 };
 
+sh_int* get_encumb_table()
+{
+	return encumb_table;
+}
+
 sh_int leg_encumb_table[MAX_WEAR] = {
   0,
   0,

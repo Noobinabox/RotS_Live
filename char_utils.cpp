@@ -3,10 +3,12 @@
 #include "environment_utils.h"
 #include "spells.h"
 
+#include "db.h" // for get_encumb_table
 #include "handler.h" // for fname and other_side
 
 #include "structs.h"
 #include <algorithm>
+#include <assert.h>
 
 struct race_bodypart_data;
 
@@ -433,22 +435,172 @@ namespace utils
 		return race == RACE_URUK || race == RACE_ORC || race == RACE_MAGUS;
 	}
 
+
+	namespace
+	{
+		//============================================================================
+		// Calculates the new worn weight for a character if they are wearing heavy armor
+		// and have heavy fighting specialization.
+		//============================================================================
+		int calculate_encumbrance_weight(const char_data& character)
+		{
+			// This is an array of size MAX_WEAR
+			sh_int* encumb_table = get_encumb_table();
+
+			int encumbrance_weight = character.specials.encumb_weight;
+			if (get_specialization(character) != game_types::PS_HeavyFighting)
+				return encumbrance_weight;
+
+			// Assumptions for the following calculation.
+			assert(encumb_table[WIELD] == 1);
+			assert(encumb_table[WEAR_SHIELD] == 1);
+
+			if (encumbrance_weight > ENCUMB_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
+			{
+				int remaining_encumb = encumbrance_weight;
+				int new_encumb_weight = 0;
+
+				const obj_data* weapon = character.equipment[WIELD];
+				if (weapon)
+				{
+					int weapon_weight = weapon->get_weight();
+					if (weapon_weight > HEAVY_WEAPON_WEIGHT)
+					{
+						int encumb_difference = weapon_weight - HEAVY_WEAPON_WEIGHT;
+						new_encumb_weight += HEAVY_WEAPON_WEIGHT + int(std::sqrt(encumb_difference));
+					}
+
+					remaining_encumb -= weapon_weight;
+				}
+
+				const obj_data* shield = character.equipment[WEAR_SHIELD];
+				if (shield)
+				{
+					int shield_weight = shield->get_weight();
+					if (shield_weight > HEAVY_SHIELD_WEIGHT)
+					{
+						int encumb_difference = shield_weight - HEAVY_SHIELD_WEIGHT;
+						new_encumb_weight += HEAVY_SHIELD_WEIGHT + int(std::sqrt(encumb_difference));
+					}
+
+					remaining_encumb -= shield_weight;
+				}
+
+				int armor_encumb_weight = 0;
+				for (int armor_index = WEAR_BODY; armor_index <= WEAR_ARMS; ++armor_index)
+				{
+					const obj_data* armor = character.equipment[armor_index];
+					if (armor)
+					{
+						int armor_weight = armor->get_weight();
+						int encumb_value = encumb_table[armor_index];
+						if (encumb_value > 0)
+						{
+							armor_encumb_weight += armor_weight * encumb_value;
+						}
+						else
+						{
+							armor_encumb_weight += armor_weight / 2;
+						}
+					}
+				}
+
+				remaining_encumb -= armor_encumb_weight;
+
+				if (armor_encumb_weight > ENCUMB_OF_CHAIN)
+				{
+					int encumb_difference = armor_encumb_weight - ENCUMB_OF_CHAIN;
+					new_encumb_weight += ENCUMB_OF_CHAIN + int(std::sqrt(encumb_difference));
+				}
+
+				new_encumb_weight += remaining_encumb;
+				return new_encumb_weight;
+			}
+
+			return encumbrance_weight;
+		}
+
+		//============================================================================
+		// Calculates the new worn weight for a character if they are wearing heavy armor
+		// and have heavy fighting specialization.
+		//============================================================================
+		int calculate_worn_weight(const char_data& character)
+		{
+			int worn_weight = character.specials.worn_weight;
+			if (get_specialization(character) != game_types::PS_HeavyFighting)
+				return worn_weight;
+
+			if (worn_weight > WEIGHT_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
+			{
+				int remaining_weight = worn_weight;
+				int new_worn_weight = 0;
+
+				const obj_data* weapon = character.equipment[WIELD];
+				if (weapon)
+				{
+					int weapon_weight = weapon->get_weight();
+					if (weapon_weight > HEAVY_WEAPON_WEIGHT)
+					{
+						int weight_difference = weapon_weight - HEAVY_WEAPON_WEIGHT;
+						new_worn_weight += HEAVY_WEAPON_WEIGHT + int(std::sqrt(weight_difference));
+					}
+
+					remaining_weight -= weapon_weight;
+				}
+
+				const obj_data* shield = character.equipment[WEAR_SHIELD];
+				if (shield)
+				{
+					int shield_weight = shield->get_weight();
+					if (shield_weight > HEAVY_SHIELD_WEIGHT)
+					{
+						int weight_difference = shield_weight - HEAVY_SHIELD_WEIGHT;
+						new_worn_weight += HEAVY_SHIELD_WEIGHT + int(std::sqrt(weight_difference));
+					}
+
+					remaining_weight -= shield_weight;
+				}
+
+				int armor_weight = 0;
+				for (int armor_index = WEAR_BODY; armor_index <= WEAR_ARMS; ++armor_index)
+				{
+					const obj_data* armor = character.equipment[armor_index];
+					if (armor)
+					{
+						armor_weight += armor->get_weight();
+					}
+				}
+
+				remaining_weight -= armor_weight;
+
+				if (armor_weight > WEIGHT_OF_CHAIN)
+				{
+					int weight_difference = armor_weight - WEIGHT_OF_CHAIN;
+					new_worn_weight += WEIGHT_OF_CHAIN + int(std::sqrt(weight_difference));
+				}
+
+				new_worn_weight += remaining_weight;
+				return new_worn_weight;
+			}
+
+			return worn_weight;
+		}
+	}
+
+
 	//============================================================================
 	int get_skill_penalty(const char_data& character)
 	{
 		const int encumb_multiplier = 25;
-		const int penalty_divisor = 50;
+		const int encumb_divisor = 50;
 
 		int character_strength = get_bal_strength(character);
-		if (get_specialization(character) == game_types::PS_HeavyFighting)
-		{
-			character_strength *= 2;
-		}
+		int encumb_weight = calculate_encumbrance_weight(character);
 
 		int raw_encumb_factor = character.points.encumb * encumb_multiplier;
-		int encumb_weight_factor = character.specials.encumb_weight / character_strength;
+		int encumb_weight_factor = encumb_weight / character_strength;
 		int skill_penalty = raw_encumb_factor + encumb_weight_factor;
-		skill_penalty /=  penalty_divisor;
+		skill_penalty /=  encumb_divisor;
 		return skill_penalty;
 	}
 
@@ -458,13 +610,10 @@ namespace utils
 		const int dodge_multiplier = 20;
 
 		int character_strength = get_bal_strength(character);
-		if (get_specialization(character) == game_types::PS_HeavyFighting)
-		{
-			character_strength *= 2;
-		}
+		int worn_weight = calculate_worn_weight(character);
 
 		int raw_encumb_factor = character.specials2.leg_encumb * dodge_multiplier;
-		int worn_weight_factor = character.specials.worn_weight / character_strength;
+		int worn_weight_factor = worn_weight / character_strength;
 		int dodge_penalty = raw_encumb_factor + worn_weight_factor;
 		dodge_penalty /= dodge_multiplier;
 		return dodge_penalty;

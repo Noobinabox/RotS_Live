@@ -1620,11 +1620,14 @@ int get_percent_absorb(char_data* character)
 		absorb += (10 - dam) * bodyparts[GET_BODYTYPE(character)].percent[hit_location];
 	}
 
+	// TODO(drelidan):  If heavy fighters need a buff, consider adding this.
 	// Characters specialized in heavy fighting absorb 10% more damage.
+	/*
 	if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
 	{
 		absorb += absorb / 10;
 	}
+	*/
 
 	return absorb / 10;
 }

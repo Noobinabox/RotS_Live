@@ -798,6 +798,14 @@ void Crash_follower_load(struct char_data *ch, FILE *fp){
 			  calm_affect.bitvector = 0;
 			  affect_to_char(mob, &calm_affect);
 		  }
+		  if (GET_SPEC(ch) == PLRSPEC_PETS)
+		  {
+			  mob->abilities.str += 2;
+			  mob->tmpabilities.str += 2;
+			  mob->constabilities.str += 2;
+			  mob->points.ENE_regen += 40;
+			  mob->points.damage += 2;
+		  }
 
 	  }
         break;

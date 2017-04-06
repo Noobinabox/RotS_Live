@@ -1582,6 +1582,7 @@ ACMD (do_tame) {
 		victim->tmpabilities.str += 2;
 		victim->abilities.str += 2;
 		victim->points.ENE_regen += 40;
+		victim->points.damage += 2;
 	}
       } else {
 	send_to_char("You fail to tame your target.\r\n", ch);

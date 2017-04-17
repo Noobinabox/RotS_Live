@@ -2334,19 +2334,19 @@ int wild_fighting_effect(char_data* attacker, int damage)
 //============================================================================
 int defender_effect(char_data* attacker, char_data* victim, int damage)
 {
-	// Defender specialized characters have a 10% chance to cut damage in half from
+	// Defender specialized characters have a 30% chance to reduce damage by 30% from
 	// hits.
 	if (utils::get_specialization(*victim) == game_types::PS_Defender)
 	{
 		obj_data* shield = victim->equipment[WEAR_SHIELD];
 		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
 		{
-			if (number() >= 0.90)
+			if (number() >= 0.70)
 			{
 				act("You block $N's attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_CHAR);
 				act("$n blocks your attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_VICT);
 				act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
-				return damage >> 1;
+				return int(damage * 0.7);
 			}
 		}
 	}

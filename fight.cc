@@ -1335,6 +1335,11 @@ void group_gain(char_data* killer, char_data* dead_man)
 	if (IS_NPC(dead_man))
 	{
 		spirit_gain = GET_LEVEL(dead_man) * get_naked_perception(dead_man);
+		if (IS_SET(MOB_FLAGS(dead_man), MOB_SHADOW))
+		{
+			spirit_gain *= 3;
+		}
+		
 		npc_level_malus = dead_man->specials.attacked_level;
 		level_total += npc_level_malus;
 

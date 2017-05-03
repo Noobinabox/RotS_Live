@@ -1593,7 +1593,7 @@ ASPELL(spell_earthquake) {
 
 ASPELL(spell_lightning_strike)
 {
-	int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 40;
+	int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 30;
 
 	if (!OUTSIDE(caster)) 
 	{
@@ -2062,7 +2062,7 @@ ASPELL(spell_spear_of_darkness)
 
 	if (!SUN_PENALTY(caster))
 	{
-		dam += number(8, get_magic_power(caster)) / 2 + 20;
+		dam += number(8, get_magic_power(caster)) / 2 + 30;
 	}
 	else
 	{

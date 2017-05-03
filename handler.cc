@@ -485,41 +485,43 @@ void affect_naked(char_data * ch)
 	GET_WILLPOWER(ch) = get_naked_willpower(ch);
 	ch->specials.affected_by |= race_affect[GET_RACE(ch)];
 
-	switch (GET_SPEC(ch)) 
+	//switch (GET_SPEC(ch)) 
+	//{
+	//case PLRSPEC_FIRE:
+	//{
+	//	GET_RESISTANCES(ch) = 1 << PLRSPEC_FIRE;
+	//	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_COLD;
+	//	break;
+	//}
+	//case PLRSPEC_COLD:
+	//{
+	//	GET_RESISTANCES(ch) = 1 << PLRSPEC_COLD;
+	//	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_FIRE;
+	//	break;
+	//}
+	//case PLRSPEC_LGHT:
+	//{
+	//	GET_RESISTANCES(ch) = 1 << PLRSPEC_LGHT;
+	//	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_DARK;
+	//	break;
+	//}
+	//case PLRSPEC_DARK:
+	//{
+	//	GET_RESISTANCES(ch) = 1 << PLRSPEC_DARK;
+	//	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_LGHT;
+	//	break;
+	//}
+	//default:
+	//{
+	//	
+	//	break;
+	//}
+	//}
+
+	if (!IS_NPC(ch))
 	{
-	case PLRSPEC_FIRE:
-	{
-		GET_RESISTANCES(ch) = 1 << PLRSPEC_FIRE;
-		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_COLD;
-		break;
-	}
-	case PLRSPEC_COLD:
-	{
-		GET_RESISTANCES(ch) = 1 << PLRSPEC_COLD;
-		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_FIRE;
-		break;
-	}
-	case PLRSPEC_LGHT:
-	{
-		GET_RESISTANCES(ch) = 1 << PLRSPEC_LGHT;
-		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_DARK;
-		break;
-	}
-	case PLRSPEC_DARK:
-	{
-		GET_RESISTANCES(ch) = 1 << PLRSPEC_DARK;
-		GET_VULNERABILITIES(ch) = 1 << PLRSPEC_LGHT;
-		break;
-	}
-	default:
-	{
-		if (!IS_NPC(ch))
-		{
-			GET_RESISTANCES(ch) = 0;
-			GET_VULNERABILITIES(ch) = 0;
-		}
-		break;
-	}
+		GET_RESISTANCES(ch) = 0;
+		GET_VULNERABILITIES(ch) = 0;
 	}
 }
 

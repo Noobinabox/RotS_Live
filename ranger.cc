@@ -826,9 +826,15 @@ ambush_calculate_damage(struct char_data *ch, struct char_data *victim,
 	/* Add damage based on weapon */
 	dmg += (weapon_dmg*weapon_dmg/100) * GET_LEVELA(ch)/30;
 
+	/* Reduce the damage of ambush unless the ch is below 20
+	   and spec in stealth*/
+	if (GET_LEVEL(ch) > 20 && utils::get_specialization(*ch) != game_types::PS_Stealth)
+	{
+		dmg = dmg * 3 / 4;
+	}
+
 	/* Ambushes are capped at 275 damage */
 	dmg = MIN(dmg, 275);
-
 	return dmg;
 }
 

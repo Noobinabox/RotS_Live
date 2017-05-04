@@ -267,7 +267,7 @@ namespace game_rules
 		// You can never move the corpse of someone on a different side of the race war.
 		return !is_same_side_race_war(corpse_iter->second.player_race, looter->player.race);
 #else
-		return false
+		return false;
 #endif
 	}
 

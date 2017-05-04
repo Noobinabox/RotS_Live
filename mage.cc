@@ -1244,7 +1244,7 @@ ASPELL(spell_lightning_bolt)
 {
 	int dam = number(0, get_magic_power(caster)) / 2 + 25;
 
-	if (OUTSIDE(caster))
+	if (OUTSIDE(caster) || (utils::get_specialization(*caster) == game_types::PS_Lightning))
 	{
 		dam += number(0, get_magic_power(caster) / 4) + 4;
 	}

@@ -197,7 +197,7 @@ assign_mobiles(void)
   ASSIGNMOB(21344, receptionist); /*tawarost*/
   //ASSIGNMOB(1101, drake_one);
   ASSIGNMOB(2041, guild); //ALT RotS Puke
-  ASSIGNMOB(2042, guild); //ALT RotS Uruk
+  ASSIGNMOB(2043, guild); //ALT RotS Uruk
 }
 
 

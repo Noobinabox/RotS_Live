@@ -210,7 +210,12 @@ int get_character_saving_throw(const char_data* victim)
 {
 	int saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
 
+	// NPCs are only considered 66% mages!  :D
 	int level_bonus = utils::get_prof_level(PROF_MAGE, *victim);
+	if (utils::is_npc(*victim))
+	{
+		level_bonus = level_bonus * 2 / 3;
+	}
 	
 	saving_throw += level_bonus / 3; // Add 1/3 level to save bonus, no rounding.
 	saving_throw += (victim->tmpabilities.intel - 8) / 4;
@@ -244,7 +249,7 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
 	int save_value = get_character_saving_throw(victim) + save_bonus;
 	int casting_dc = get_saving_throw_dc(caster);
 
-	int roll = number(1, 8);
+	int roll = number(1, 20);
 	bool saved = roll + save_value > casting_dc;
 
 	spllog_mage_level = casting_dc;

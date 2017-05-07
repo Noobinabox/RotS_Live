@@ -561,7 +561,7 @@ ASPELL(spell_resist_magic)
 	// Protection specialization gets additional defenses against magic.
 	if (utils::get_specialization(*caster) == game_types::PS_Protection)
 	{
-		modifier += 2;
+		modifier += 1;
 	}
 
 	affected_type af;

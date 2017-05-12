@@ -932,9 +932,17 @@ ACMD(do_cast)
 	{
 		if (IS_NPC(ch)) 
 		{
-			tmp = ch->player.level * 8 - skills[spell_index].level * 10;
-			tmp = std::max(tmp, 0);
-			tmp = tmp + 25;
+			// Orc followers are considered to have 100% knowledge of all spells.
+			if (MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master)
+			{
+				tmp = 100;
+			}
+			else
+			{
+				tmp = ch->player.level * 8 - skills[spell_index].level * 10;
+				tmp = std::max(tmp, 0);
+				tmp = tmp + 25;
+			}
 		}
 		else
 		{

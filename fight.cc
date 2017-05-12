@@ -2655,6 +2655,11 @@ bool does_double_hit_proc(const char_data* character)
 	return number() >= 0.90;
 }
 
+void tick(float start_time, float end_time)
+{
+
+}
+
 /*
  * Control all of the fights going on; works on PULSE_VIOLENCE
  */

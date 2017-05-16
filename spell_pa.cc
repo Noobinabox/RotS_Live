@@ -208,7 +208,7 @@ saves_spell(struct char_data *ch, sh_int level, int bonus)
 //============================================================================
 int get_character_saving_throw(const char_data* victim)
 {
-	int saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
+	int saving_throw = 0;
 
 	// NPCs are only considered 66% mages!  :D
 	int level_bonus = utils::get_prof_level(PROF_MAGE, *victim);

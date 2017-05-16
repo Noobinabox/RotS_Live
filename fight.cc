@@ -2651,13 +2651,8 @@ bool can_double_hit(const char_data* character)
 
 bool does_double_hit_proc(const char_data* character)
 {
-	// Double-hit has a 10% proc chance.
-	return number() >= 0.90;
-}
-
-void tick(float start_time, float end_time)
-{
-
+	// Double-hit has a 15% proc chance.
+	return number() >= 0.85;
 }
 
 /*

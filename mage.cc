@@ -2090,7 +2090,7 @@ ASPELL(spell_spear_of_darkness)
 	{
 		// characters can't save vs spear
 	}
-	apply_spell_damage(caster, victim, dam, SPELL_SPEAR_OF_DARKNESS, 0);
+	damage(caster, victim, dam, SPELL_SPEAR_OF_DARKNESS, 0);
 }
 
 

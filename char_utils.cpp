@@ -600,7 +600,7 @@ namespace utils
 		int base_encumb = character.points.encumb;
 		if (get_specialization(character) == game_types::PS_HeavyFighting)
 		{
-			base_encumb = std::max(base_encumb, ENCUMB_OF_CHAIN + 2);
+			base_encumb = std::min(base_encumb, ENCUMB_OF_CHAIN + 2);
 		}
 
 		int raw_encumb_factor = base_encumb * encumb_multiplier;

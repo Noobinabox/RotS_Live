@@ -660,74 +660,88 @@ get_real_stealth(struct char_data *ch)
 
 int get_real_OB(char_data* ch)
 {
-	int sun_mod = 0;
-	int bonus, tmpob, tactics = 0;
-	struct obj_data *wpn;
-
 	if (IS_NPC(ch))
+	{
+		int base_npc_ob = (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) + GET_LEVEL(ch) / 2);
 		if (IS_AFFECTED(ch, AFF_CONFUSE))
-			return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) +
-				GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);
-		else
-			return (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) +
-				GET_LEVEL(ch) / 2);
+		{
+			base_npc_ob -= (get_confuse_modifier(ch) * 2 / 3);
+		}
+		return base_npc_ob;
+	}
 
-	bonus = (GET_PROF_LEVEL(PROF_WARRIOR, ch) * 3 +
-		3 * GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch) *
-		GET_LEVELA(ch) / 30) / 2 + GET_BAL_STR(ch);
+	int sun_mod = 0;
+	int tmpob, tactics = 0;
+
+	int ob_bonus = (GET_PROF_LEVEL(PROF_WARRIOR, ch) * 3 + 3 * GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch) * GET_LEVELA(ch) / 30) / 2 + GET_BAL_STR(ch);
 
 	tmpob = GET_OB(ch);
 	tmpob -= utils::get_skill_penalty(*ch);
 
-	wpn = ch->equipment[WIELD];
-	if (!wpn)
+	obj_data* weapon = ch->equipment[WIELD];
+	if (!weapon)
 	{
-		return tmpob + bonus;
+		return tmpob + ob_bonus;
+	}
+	else
+	{
+		// For light weapons and light fighters, allow them to use ranger level instead
+		// of warrior level and dexterity instead of strength for OB if this will give
+		// them a higher value.
+		int bulk = weapon->get_bulk();
+		if (bulk <= 2 && utils::get_specialization(*ch) == game_types::PS_LightFighting)
+		{
+			int light_ob_bonus = (utils::get_prof_level(PROF_RANGER, *ch) * 3
+				+ 3 * utils::get_max_race_prof_level(PROF_RANGER, *ch) * utils::get_level_a(*ch) / 30)
+				/ 2 + ch->tmpabilities.dex;
+
+			ob_bonus = std::max(ob_bonus, light_ob_bonus);
+		}
 	}
 
-	int weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(wpn->get_weapon_type()));
+	int weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(weapon->get_weapon_type()));
 
 	if (IS_TWOHANDED(ch)) 
 	{
-		if (wpn->is_ranged_weapon())
+		if (weapon->is_ranged_weapon())
 		{
-			tmpob += wpn->obj_flags.value[2] * (200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
+			tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
 			weapon_skill = (weapon_skill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
 		}
 		else
 		{
-			tmpob += wpn->obj_flags.value[2] * (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
+			tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
 			weapon_skill = (weapon_skill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
 		}
 	}
 	else
 	{
-		tmpob -= (wpn->obj_flags.value[2] * 2 - 6);
+		tmpob -= (weapon->obj_flags.value[2] * 2 - 6);
 	}
 
 	switch (GET_TACTICS(ch)) {
 	case TACTICS_DEFENSIVE:
-		tmpob += bonus - bonus / 4 - 8;
+		tmpob += ob_bonus - ob_bonus / 4 - 8;
 		tactics = 4;
 		break;
 	case TACTICS_CAREFUL:
-		tmpob += bonus - bonus / 8 - 4;
+		tmpob += ob_bonus - ob_bonus / 8 - 4;
 		tactics = 6;
 		break;
 	case TACTICS_NORMAL:
-		tmpob += bonus;
+		tmpob += ob_bonus;
 		tactics = 8;
 		break;
 	case TACTICS_AGGRESSIVE:
-		tmpob += bonus + bonus / 16 + 2;
+		tmpob += ob_bonus + ob_bonus / 16 + 2;
 		tactics = 10;
 		break;
 	case TACTICS_BERSERK:
-		tmpob += bonus + bonus / 16 + 5 + GET_RAW_SKILL(ch, SKILL_BERSERK) / 8;
+		tmpob += ob_bonus + ob_bonus / 16 + 5 + GET_RAW_SKILL(ch, SKILL_BERSERK) / 8;
 		tactics = 10;
 		break;
 	default:
-		tmpob += bonus + GET_BAL_STR(ch);
+		tmpob += ob_bonus + GET_BAL_STR(ch);
 		break;
 	};
 
@@ -748,7 +762,7 @@ int get_real_OB(char_data* ch)
 	if (!CAN_SEE(ch))
 		tmpob -= 10;
 
-	tmpob += weapon_skill * (wpn->obj_flags.value[2] + 20) * tactics / 1000;
+	tmpob += weapon_skill * (weapon->obj_flags.value[2] + 20) * tactics / 1000;
 
 	return tmpob;
 }

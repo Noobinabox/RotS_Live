@@ -1922,6 +1922,8 @@ ASPELL(spell_word_of_shock)
 	if (caster->in_room < 0)
 		return;
 
+	int caster_level = utils::get_prof_level(PROF_MAGE, *caster);
+
 	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
 		if (tmpch != caster)
 			send_to_char("An assault on your mind leaves you reeling.\n\r", tmpch);
@@ -1929,7 +1931,7 @@ ASPELL(spell_word_of_shock)
 			GET_ENERGY(tmpch) -= 400;
 		if (tmpch->specials.fighting == caster)
 			GET_ENERGY(tmpch) -= 400;
-		if (!new_saves_spell(caster, tmpch, 0))
+		if (!saves_spell(tmpch, caster_level, 0))
 		{
 			if (tmpch->specials.fighting)
 				stop_fighting(tmpch);

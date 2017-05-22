@@ -500,6 +500,8 @@ ASPELL(spell_flash) {
 	if (caster->in_room < 0) 
 		return;
 
+	int caster_level = utils::get_prof_level(PROF_MAGE, *caster);
+
 	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) 
 	{
 		if (tmpch != caster)
@@ -507,7 +509,7 @@ ASPELL(spell_flash) {
 		if (tmpch->specials.fighting)
 			GET_ENERGY(tmpch) -= 400;
 		if (tmpch->specials.fighting == caster)  GET_ENERGY(tmpch) -= 400;
-		if (!new_saves_spell(caster, tmpch, 0))
+		if (!saves_spell(tmpch, caster_level, 0))
 		{
 			//  6-11-01 Errent attempts to make flash give power of arda to darkies - look out!
 			if (RACE_EVIL(tmpch)) {
@@ -1186,14 +1188,8 @@ ASPELL(spell_magic_missile)
 
 void apply_chilled_effect(char_data* victim)
 {
-	// Cap energy lost to 1/2 of a swing.
 	int energy_lost = victim->specials.ENERGY / 2 + victim->points.ENE_regen * 4;
-	energy_lost = std::min(energy_lost, 600);
-
 	victim->specials.ENERGY -= energy_lost;
-
-	// Don't allow a victim's energy to go below -300 (re-adding chill lock to the game).
-	victim->specials.ENERGY = std::max(victim->specials.ENERGY, (sh_int)-300);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1209,15 +1205,16 @@ void apply_chilled_effect(char_data* victim)
 ASPELL(spell_chill_ray)
 {
 	int mag_power = get_magic_power(caster);
-	int dam = number(1, mag_power) / 2 + 20;
-
-	// Cold spec makes chill ray hit 5% harder.
-	if (utils::get_specialization(*caster) == game_types::PS_Cold)
-	{
-		dam += dam / 20;
-	}
+	int dam = number(1, mag_power) / 2 + 15;
 
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
+
+	// Cold spec makes it much more difficult to resist chill ray.
+	if (utils::get_specialization(*caster) == game_types::PS_Cold)
+	{
+		save_bonus -= 4;
+	}
+
 	bool saved = new_saves_spell(caster, victim, save_bonus);
 	if (!saved)
 	{
@@ -2010,7 +2007,7 @@ ASPELL(spell_word_of_agony)
 {
 	int dam = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 20;
 
-	bool saved = new_saves_spell(caster, victim, 0);
+	bool saved = new_saves_spell(caster, victim, -2);
 	if (saved)
 	{
 		apply_spell_damage(caster, victim, dam * 2 / 3, SPELL_WORD_OF_AGONY, 0);

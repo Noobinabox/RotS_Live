@@ -500,7 +500,7 @@ ASPELL(spell_flash) {
 	if (caster->in_room < 0) 
 		return;
 
-	int caster_level = utils::get_prof_level(PROF_MAGE, *caster);
+	int caster_level = get_mage_caster_level(caster);
 
 	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) 
 	{
@@ -1922,7 +1922,7 @@ ASPELL(spell_word_of_shock)
 	if (caster->in_room < 0)
 		return;
 
-	int caster_level = utils::get_prof_level(PROF_MAGE, *caster);
+	int caster_level = get_mage_caster_level(caster);
 
 	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
 		if (tmpch != caster)

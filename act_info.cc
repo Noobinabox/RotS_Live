@@ -63,6 +63,7 @@ extern char *handbook;
 extern char *dirs[];
 extern char *refer_dirs[];
 extern char *where[];
+extern char *beornwhere[];
 extern char *color_liquid[];
 extern char *fullness[];
 extern char *connected_types[];
@@ -268,8 +269,17 @@ show_equipment_to_char(struct char_data *from, struct char_data *to)
 
       if (j == WIELD && IS_TWOHANDED(from))
           send_to_char(where[WIELD_TWOHANDED], to);
-      else
-        send_to_char(where[j], to);
+	  else {
+		  if (GET_RACE(from) == RACE_BEORNING)
+		  {
+			  send_to_char(beornwhere[j], to);
+		  }
+		  else
+		  {
+			  send_to_char(where[j], to);
+		  }
+	  }
+        
 
       if (CAN_SEE_OBJ(to, from->equipment[j]))
 	show_obj_to_char(from->equipment[j], to, 1);

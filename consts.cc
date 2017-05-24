@@ -2173,6 +2173,32 @@ char	*weekdays[7] = {
    "<wielded two-handed>   ",
 };
 
+   char *beornwhere[] = {
+	   "<used as light>        ",
+	   "<worn on paw>          ",
+	   "<worn on paw>          ",
+	   "<worn around neck>     ",
+	   "<worn around neck>     ",
+	   "<worn on body>         ",
+	   "<worn on head>         ",
+	   "<worn on hindleg>      ",
+	   "<worn on hindfoot>     ",
+	   "<worn on claws>        ",
+	   "<worn on foreleg>      ",
+	   "<worn as shield>       ",
+	   "<worn about body>      ",
+	   "<worn about waist>     ",
+	   "<worn around wrist>    ",
+	   "<worn around wrist>    ",
+	   "<wielded>              ",
+	   "<held>                 ",
+	   "<worn on back>         ",
+	   "<worn on belt>         ",
+	   "<worn on belt>         ",
+	   "<worn on belt>         ",
+	   "<wielded two-handed>   ",
+   };
+
 sh_int encumb_table[MAX_WEAR] = {
   0,
   0,

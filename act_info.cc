@@ -2201,19 +2201,19 @@ ACMD(do_who)
       case 'w':
 	who_whitie = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Humans, Elves, Dwarves and Hobbits\r\n");
+	buf2pt += sprintf(buf2pt, "Humans, Elves, Dwarves, Hobbits, and Beornings\r\n");
 	break;
 
       case 'm':
 	who_magi = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Uruk-Lhuth\r\n");
+	buf2pt += sprintf(buf2pt, "Uruk-Lhuth and Haradrims\r\n");
 	break;
 
       case 'd':
 	who_darkie = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Uruk-Hai and Common Orcs\r\n");
+	buf2pt += sprintf(buf2pt, "Uruk-Hai, Common Orcs, and Olog-Hais\r\n");
 	break;
 
       default:
@@ -2267,14 +2267,15 @@ ACMD(do_who)
     if(who_whitie && !(GET_RACE(tch) == RACE_WOOD ||
 		       GET_RACE(tch) == RACE_DWARF ||
 		       GET_RACE(tch) == RACE_HOBBIT ||
-		       GET_RACE(tch) == RACE_HUMAN))
+		       GET_RACE(tch) == RACE_HUMAN ||
+			   GET_RACE(tch) == RACE_BEORNING))
       continue;
     /* who -d, and tch isn't a darkie */
     if(who_darkie && !(GET_RACE(tch) == RACE_URUK ||
-		       GET_RACE(tch) == RACE_ORC))
+		       GET_RACE(tch) == RACE_ORC || GET_RACE(tch) == RACE_OLOGHAI))
       continue;
     /* who -m, and tch isn't a lhuth */
-    if(who_magi && !(GET_RACE(tch) == RACE_MAGUS))
+    if(who_magi && !(GET_RACE(tch) == RACE_MAGUS || GET_RACE(tch) == RACE_HARADRIM))
       continue;
     /* if level_limit is non-zero, we don't show incognito players */
     if(level_limit && PLR_FLAGGED(tch, PLR_INCOGNITO))

@@ -157,14 +157,17 @@ other_side_num(int ch_race, int i_race)
 {
   if((ch_race == RACE_GOD) || (i_race == RACE_GOD)) 
     return 0;
-  if((ch_race <= RACE_HIGH) && (i_race <= RACE_HIGH)) 
+  if((ch_race <= RACE_BEORNING) && (i_race <= RACE_BEORNING)) 
     return 0;
 
   if((ch_race >= RACE_URUK) && (ch_race != RACE_MAGUS) && 
-     (ch_race != RACE_EASTERLING) && (i_race >= RACE_URUK) &&
-     (i_race != RACE_MAGUS) && (i_race != RACE_EASTERLING))
+     (ch_race != RACE_EASTERLING) && (ch_race != RACE_HARADRIM) && (i_race >= RACE_URUK) &&
+     (i_race != RACE_MAGUS) && (i_race != RACE_EASTERLING) && (i_race != RACE_HARADRIM))
     return 0;
      
+  if (((ch_race == RACE_MAGUS) || (ch_race == RACE_HARADRIM)) && ((i_race == RACE_MAGUS) || (i_race == RACE_HARADRIM)))
+	  return 0;
+
   if(ch_race == i_race)
     return 0;
      

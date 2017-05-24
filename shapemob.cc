@@ -81,6 +81,9 @@ void recalculate_mob(struct char_data * ch){
   case RACE_HIGH:
     mob->player.language = LANG_HUMAN;
     break;
+  case RACE_BEORNING:
+	  mob->player.language = LANG_ANIMAL;
+	  break;
   case RACE_URUK:
   case RACE_HARAD:
   case RACE_ORC:

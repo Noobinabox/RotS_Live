@@ -2611,30 +2611,30 @@ char	*pc_prof_types[] = {
 //const
 char *pc_races[] = {
    "God",
-   "Human", "Dwarf", "Wood Elf", "Hobbit", "High Elf", "UNDEFINED",
+   "Human", "Dwarf", "Wood Elf", "Hobbit", "High Elf", "Beorning",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "Uruk-Hai", "Harad", "Orc", "Easterling", "Uruk-Lhuth",
-   "Undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "Troll",
+   "Undead", "Olog-Hai", "Haradrim", "UNDEFINED", "Troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
 };
 char *pc_race_types[] = {
    "god",
-   "human", "dwarf", "elf", "hobbit", "elf", "UNDEFINED",
+   "human", "dwarf", "elf", "hobbit", "elf", "beorning",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "uruk-hai", "human", "orc", "easterling", "uruk-lhuth",
-   "undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "troll",
+   "undead", "olog-Hai", "haradrim", "UNDEFINED", "troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
 };
 char *pc_race_keywords[] = {
    "god",
-   "human", "dwarf", "elf", "hobbit", "elf", "UNDEFINED",
+   "human", "dwarf", "elf", "hobbit", "elf", "bear",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "uruk", "human", "orc", "human", "uruk",
-   "undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "troll",
+   "undead", "olog", "human", "UNDEFINED", "troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
@@ -2643,10 +2643,10 @@ char *pc_race_keywords[] = {
 //const
 char *pc_star_types[] = {
    "God",
-   "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "UNDEFINED",
+   "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "*a Bear*",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "*an Uruk*", "*a Human*", "*an Orc*", "*an Easterling*", "*an Uruk*",
-   "*an Undead*", "UNDEFINED", "UNDEFINED", "UNDEFINED", "*a Troll*",
+   "*an Undead*", "*an Olog-Hai*", "*a Human*", "UNDEFINED", "*a Troll*",
   /* Orc is 11, 16 total */
    "\n"
 };
@@ -2654,10 +2654,10 @@ char *pc_star_types[] = {
 //const
 char *pc_named_star_types[] = {
    "%s the God",
-   "*%s the Human*", "*%s the Dwarf*", "*%s the Elf*", "*%s the Hobbit*", "*%s the Elf*", "UNDEFINED",
+   "*%s the Human*", "*%s the Dwarf*", "*%s the Elf*", "*%s the Hobbit*", "*%s the Elf*", "*%s the Beorning*",
    "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED",
    "*%s the Uruk*", "*%s the Human*", "*%s the Orc*", "*%s the Easterling*", "*%s the Uruk*",
-   "*%s the Undead*", "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED", "*%s the Troll*",
+   "*%s the Undead*", "*%s the Olog-Hai*", "*%s the Haradrim*", "%s the UNDEFINED", "*%s the Troll*",
   /* Orc is 11, 16 total */
    "\n"
 };
@@ -3035,7 +3035,7 @@ long race_affect[] = {
   1024,          // WOOD
   0,            // HOBBIT
   1024,          // HIGH
-  0,
+  2,
   0,
   0,
   0,
@@ -3046,8 +3046,8 @@ long race_affect[] = {
   0,		// EASTERLING
   2,		// MAGI
   0,
-  0,
-  0,
+  2,
+  2,
   0,
   0,
   0
@@ -3085,7 +3085,7 @@ int mortal_start_room[MAX_RACES] = {
   1170,            // WOOD
   1160,            // HOBBIT
   1160,            // HIGH
-  1101,
+  1160,            // BEORNING
   1101,
   1101,
   1101,
@@ -3096,8 +3096,8 @@ int mortal_start_room[MAX_RACES] = {
   10263,	   // EASTERLING
   13626, //1192,	   // MAGI connect to 13626
   0,
-  0,
-  0,
+  10263,           //OLOG-HAI
+  13626,           //HARADRIM
   0,
   0,
   0
@@ -3113,7 +3113,7 @@ int mortal_idle_room[MAX_RACES] = {
   1102,            // WOOD
   1102,            // HOBBIT
   1102,            // HIGH
-  1102,
+  1102,            // BEORNING
   1102,
   1102,
   1102,
@@ -3124,8 +3124,8 @@ int mortal_idle_room[MAX_RACES] = {
   10263,	   // EASTERLING
   1192,	   // MAGI connect to 13626
   0,
-  0,
-  0,
+  1190,     //OLOG-HAI
+  1192,     //HARADRIM
   0,
   0,
   0
@@ -3157,7 +3157,7 @@ char * race_abbrevs[MAX_RACES+40/*for mob ones*/] = {
   "WdE",
   "Hob",
   "HiE",
-  "??",
+  "Beo",
   "??",
   "??",
   "??",
@@ -3168,8 +3168,8 @@ char * race_abbrevs[MAX_RACES+40/*for mob ones*/] = {
   "Eas",
   "Lhu",
   "??",
-  "??",
-  "??",
+  "Olo",
+  "Har",
   "??",
   "??",
   "??"
@@ -3183,7 +3183,7 @@ int max_race_align[MAX_RACES]={
   500,
   500,
   500,
-  0,
+  500,
   0,
   0,
   0,
@@ -3194,8 +3194,8 @@ int max_race_align[MAX_RACES]={
   -100,
   -100,
   0,
-  0,
-  0,
+  -100,
+  -100,
   0,
   0,
   0
@@ -3207,7 +3207,7 @@ int min_race_align[MAX_RACES]={
   -200,           // 50
   -100,          // 100
   -100,          // 100
-  0,
+  -100,
   0,
   0,
   0,
@@ -3218,8 +3218,8 @@ int min_race_align[MAX_RACES]={
   -500,
   -500,
   0,
-  0,
-  0,
+  -500,
+  -500,
   0,
   0,
   0

@@ -628,6 +628,7 @@ ACMD(do_bash)
 			act(buf, TRUE, ch, 0, 0, TO_ROOM);
 		}
 		if ((tmp == RACE_URUK) || (tmp == RACE_DWARF)) prob += 10;
+		if ((tmp == RACE_BEORNING)) prob += 20;
 
 		if (IS_SET(EXIT(ch, door)->exit_info, EX_DOORISHEAVY)) prob = -1;
 		if (IS_SET(EXIT(ch, door)->exit_info, EX_NOBREAK)) prob = -1;

@@ -238,6 +238,15 @@ get_race_weight(struct char_data *ch)
   case RACE_TROLL:
     return 80000 * gender_mod / 10;
 
+  case RACE_BEORNING:
+	  return 80000 * gender_mod / 10;
+
+  case RACE_OLOGHAI:
+	  return 80000 * gender_mod / 10;
+
+  case RACE_HARADRIM:
+	  return 17000 * gender_mod / 10;
+
   case RACE_UNDEAD:
     return 5000 * gender_mod / 10;
 
@@ -299,6 +308,15 @@ get_race_height(struct char_data *ch)
 
   case RACE_UNDEAD:
     return 180 * gender_mod / 10;
+  
+  case RACE_HARADRIM:
+	  return 180 * gender_mod / 10;
+
+  case RACE_BEORNING:
+	  return 225 * gender_mod / 10;
+
+  case RACE_OLOGHAI:
+	  return 225 * gender_mod / 10;
 
   default: 
     return 200;
@@ -327,6 +345,9 @@ get_race_perception(struct char_data *ch)
   case RACE_MAGUS: return 30;
   case RACE_UNDEAD: return 60;
   case RACE_TROLL: return 30;
+  case RACE_HARADRIM: return 30;
+  case RACE_OLOGHAI: return 30;
+  case RACE_BEORNING: return 30;
   default: return 0;
   }
   return 0;
@@ -647,7 +668,7 @@ get_real_stealth(struct char_data *ch)
   if(GET_RACE(ch) == RACE_DWARF)
     percent -= 10;
 
-  if(GET_RACE(ch) == RACE_HOBBIT)
+  if(GET_RACE(ch) == RACE_HOBBIT || GET_RACE(ch) == RACE_BEORNING || GET_RACE(ch) == RACE_HARADRIM)
     percent += 5;
 
   percent -= GET_LEG_ENCUMB(ch);
@@ -757,6 +778,8 @@ int get_real_OB(char_data* ch)
 			tmpob = tmpob * 3 / 4 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS)
 			tmpob = tmpob * 4 / 5 - sun_mod;
+		if (GET_RACE(ch) == RACE_OLOGHAI)
+			tmpob = tmpob * 4 / 5 - sun_mod;
 	}
 
 	if (!CAN_SEE(ch))
@@ -849,6 +872,7 @@ get_real_parry(struct char_data *ch)
 		if (GET_RACE(ch) == RACE_URUK) tmpparry = tmpparry * 9 / 10 - sun_mod;
 		if (GET_RACE(ch) == RACE_ORC) tmpparry = tmpparry * 8 / 9 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS) tmpparry = tmpparry * 9 / 10 - sun_mod;
+		if (GET_RACE(ch) == RACE_OLOGHAI) tmpparry = tmpparry * 9 / 10 - sun_mod;
 	}
 
 	if (!CAN_SEE(ch)) 
@@ -884,6 +908,7 @@ int get_real_dodge(struct char_data *ch)
 		if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - sun_mod;
 		if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - sun_mod;
+		if (GET_RACE(ch) == RACE_OLOGHAI) dodge = dodge * 9 / 10 - sun_mod;
 	}
 
 	switch (GET_TACTICS(ch))

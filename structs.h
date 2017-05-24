@@ -767,12 +767,14 @@ namespace game_types
 #define RACE_WOOD       3
 #define RACE_HOBBIT     4
 #define RACE_HIGH       5
-#define RACE_URUK 	11
+#define RACE_BEORNING   6
+#define RACE_URUK 	    11
 #define RACE_HARAD      12
-#define RACE_ORC	13
+#define RACE_ORC	    13
 #define RACE_EASTERLING	14
-#define RACE_MAGUS	15
-
+#define RACE_MAGUS	    15
+#define RACE_HARADRIM   18
+#define RACE_OLOGHAI    17
 /* race for NPCs */
 #define RACE_TROLL      20
 #define RACE_UNDEAD     16

@@ -571,8 +571,84 @@ void	wear_message(struct char_data *ch, struct obj_data *obj, int where)
         "You fasten $p on your belt." }
    };
 
-   act(wear_messages[where][0], TRUE, ch, obj, 0, TO_ROOM);
-   act(wear_messages[where][1], FALSE, ch, obj, 0, TO_CHAR);
+   char *beorn_wear_messages[][2] = {
+	   { "$n lights $p and holds it.",
+	   "You light $p and hold it." },
+
+	   { "$n slides $p on to $s right ring finger.",
+	   "You slide $p on to your right ring finger." },
+
+	   { "$n slides $p on to $s left ring finger.",
+	   "You slide $p on to your left ring finger." },
+
+	   { "$n wears $p around $s neck.",
+	   "You wear $p around your neck." },
+
+	   { "$n wears $p around $s neck.",
+	   "You wear $p around your neck." },
+
+	   { "$n wears $p on $s body." ,
+	   "You wear $p on your body.", },
+
+	   { "$n wears $p on $s head.",
+	   "You wear $p on your head." },
+
+	   { "$n puts $p on $s hindlegs.",
+	   "You put $p on your hindlegs." },
+
+	   { "$n wears $p on $s hindfeet.",
+	   "You wear $p on your hindfeet." },
+
+	   { "$n puts $p on $s claws.",
+	   "You put $p on your claws." },
+
+	   { "$n wears $p on $s forelegs.",
+	   "You wear $p on your forelegs." },
+
+	   { "$n straps $p around $s arm as a shield.",
+	   "You start to use $p as a shield." },
+
+	   { "$n wears $p about $s body." ,
+	   "You wear $p around your body." },
+
+	   { "$n wears $p around $s waist.",
+	   "You wear $p around your waist." },
+
+	   { "$n puts $p on around $s right wrist.",
+	   "You put $p on around your right wrist." },
+
+	   { "$n puts $p on around $s left wrist.",
+	   "You put $p on around your left wrist." },
+
+	   { "$n wields $p.",
+	   "You wield $p." },
+
+	   { "$n grabs $p.",
+	   "You grab $p." },
+
+	   { "$n wears $p around $s back.",
+	   "You wear $p around your back." },
+
+	   { "$n fastens $p on $s belt.",
+	   "You fasten $p on your belt." },
+
+	   { "$n fastens $p on $s belt.",
+	   "You fasten $p on your belt." },
+
+	   { "$n fastens $p on $s belt.",
+	   "You fasten $p on your belt." }
+   };
+   if (GET_RACE(ch) == RACE_BEORNING)
+   {
+	   act(beorn_wear_messages[where][0], TRUE, ch, obj, 0, TO_ROOM);
+	   act(beorn_wear_messages[where][1], FALSE, ch, obj, 0, TO_CHAR);
+   }
+   else
+   {
+	   act(wear_messages[where][0], TRUE, ch, obj, 0, TO_ROOM);
+	   act(wear_messages[where][1], FALSE, ch, obj, 0, TO_CHAR);
+   }
+
 }
 
 
@@ -612,7 +688,65 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
     "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
     "There is no more room on your belt.\n\r"
   };
-  
+
+  static const char* beorn_already_wearing_messages[] = {
+	  "You're already using a light.\n\r",
+	  "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
+	  "You're already wearing something on both of your ring fingers.\n\r",
+	  "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
+	  "You can't wear anything else around your neck.\n\r",
+	  "You're already wearing something on your body.\n\r",
+	  "You're already wearing something on your head.\n\r",
+	  "You're already wearing something on your hindlegs.\n\r",
+	  "You're already wearing something on your findfeet.\n\r",
+	  "You're already wearing something on your claws.\n\r",
+	  "You're already wearing something on your forelegs.\n\r",
+	  "You're already using a shield.\n\r",
+	  "You're already wearing something about your body.\n\r",
+	  "You already have something around your waist.\n\r",
+	  "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
+	  "You're already wearing something around both of your wrists.\n\r",
+	  "You're already wielding a weapon.\n\r",
+	  "You're already holding something.\n\r",
+	  "You're already wearing something on your back.\n\r",
+	  "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
+	  "YOU SHOULD NEVER SEE THIS MESSAGE.  PLEASE REPORT.\n\r",
+	  "There is no more room on your belt.\n\r"
+  };
+
+  /*-------------- Beorning item restrictions here -----------*/
+  if ((CAN_WEAR(item, ITEM_WEAR_SHIELD)) && (GET_RACE(character) == RACE_BEORNING))
+  {
+	  send_to_char("You cannot wear a shield.\n\r", character);
+	  return;
+  }
+
+  if ((CAN_WEAR(item, ITEM_HOLD)) && (GET_RACE(character) == RACE_BEORNING))
+  {
+	  send_to_char("You cannot hold anything.\n\r", character);
+	  return;
+  }
+
+  if ((CAN_WEAR(item, ITEM_WEAR_HANDS)) && (GET_RACE(character) == RACE_BEORNING))
+  {
+	  send_to_char("You cannot wear anything on your claws.\n\r", character);
+	  return;
+  }
+
+  if ((CAN_WEAR(item, ITEM_WIELD)) && (GET_RACE(character) == RACE_BEORNING))
+  {
+	  send_to_char("Sorry, bears can't wield weapons.\n\r", character);
+	  return;
+  }
+
+  if ((CAN_WEAR(item, ITEM_WEAR_FEET)) && (GET_RACE(character) == RACE_BEORNING))
+  {
+	  send_to_char("You cannot wear anything on your hindfeet.\n\r", character);
+	  return;
+  }
+  /*-------------- End Beorning item restrictions  -----------*/
+
+
   /* see if this is shield, and weapon is in two hands */
   if((GET_ITEM_TYPE(item) == ITEM_SHIELD) && 
      IS_TWOHANDED(character)&&character->equipment[WIELD]) {
@@ -649,7 +783,10 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
 		item_slot++;
   
   if(character->equipment[item_slot]) {
-    send_to_char(already_wearing_messages[item_slot], character);
+	  if (GET_RACE(character) == RACE_BEORNING)
+		  send_to_char(beorn_already_wearing_messages[item_slot], character);
+	  else
+		  send_to_char(already_wearing_messages[item_slot], character);
     return;
   }
   
@@ -800,6 +937,12 @@ ACMD(do_wield)
 	if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) && !(MOB_FLAGGED(ch, MOB_ORC_FRIEND)))
 	{
 		send_to_char("Sorry, tamed mobiles can't wear anything.\n\r", ch);
+		return;
+	}
+
+	if (GET_RACE(ch) == RACE_BEORNING)
+	{
+		send_to_char("Sorry, bears can't wield weapons.\n\r", ch);
 		return;
 	}
 

@@ -2036,7 +2036,11 @@ struct race_bodypart_data bodyparts[MAX_BODYTYPES] =
   {{"","","","","","","","","","",""},   /* 14, can easily be added */
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-  }
+  },
+  { { "","head","body","left hindleg","right hindleg","left hindfoot","right hindfoot","left foreleg","right foreleg","left claw","right claw" },         /* 15 */
+  { 0, 15, 35, 8, 8, 2, 2, 10, 10, 5, 5 }, 10,
+  { 0,  6,  5, 7, 7, 8, 8, 10, 10, 9, 9 }
+  },
 };
 
 

@@ -793,7 +793,7 @@ void recalc_abilities(char_data* character)
 		if ((GET_RACE(character) == RACE_WOOD) || GET_RACE(character) == RACE_HIGH)
 			character->abilities.move += 15;
 		if (GET_RACE(character) == RACE_BEORNING)
-			character->abilities.move += 15;
+			character->abilities.move += 50;
 
 		if (character->tmpabilities.move > character->abilities.move)
 			character->tmpabilities.move = character->abilities.move;

@@ -1559,7 +1559,15 @@ void generate_damage_message(char_data* attacker, char_data *victim, int damage,
 	{
 		if (!attacker->equipment[WIELD])
 		{
-			dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			if (GET_RACE(attacker) == RACE_BEORNING)
+			{
+				dam_message(damage, attacker, victim, TYPE_CLAW, body_part);
+			}
+			else
+			{
+				dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			}
+			
 		}
 		else
 		{
@@ -2399,7 +2407,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	int location;
 	int tmp; /* rolled number stored as the chance to hit, adds OB */
 	struct waiting_type tmpwtl;
-	extern struct race_bodypart_data bodyparts[15];
+	extern struct race_bodypart_data bodyparts[16];
 
 	if (ch->in_room != victim->in_room) {
 		log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");

@@ -53,7 +53,7 @@ const int ENE_TO_HIT = 1200;
 #define MAX_MESSAGES         255
 #define MAX_ITEMS            153
 #define MAX_RACES             32
-#define MAX_BODYTYPES         15
+#define MAX_BODYTYPES         16
 #define MAX_BODYPARTS         11
 #define MAX_RACE_NAME_LENGTH  14
 #define MIN_NAME_LENGTH        3

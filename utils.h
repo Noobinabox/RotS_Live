@@ -401,8 +401,8 @@ struct time_info_data age(struct char_data *ch);
         ((IS_SET(world[adj_room].room_flags, SHADOWY)) && \
 	 (!IS_SET(world[cur_room].dir_option[door]->exit_info, EX_CLOSED)))
 
-#define SUN_PENALTY(ch) (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS)) && OUTSIDE(ch) && (weather_info.sunlight == SUN_LIGHT) && (!IS_SET(world[ch->in_room].room_flags, DARK)) && (!IS_SET(world[ch->in_room].room_flags, SHADOWY)))
-#define EVIL_RACE(ch)  ((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS))
+#define SUN_PENALTY(ch) (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_OLOGHAI) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS)) && OUTSIDE(ch) && (weather_info.sunlight == SUN_LIGHT) && (!IS_SET(world[ch->in_room].room_flags, DARK)) && (!IS_SET(world[ch->in_room].room_flags, SHADOWY)))
+#define EVIL_RACE(ch)  ((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI))
 
 #define GET_SKILL_PENALTY(ch) ((GET_ENCUMB(ch)*25 + GET_ENCUMB_WEIGHT(ch)/GET_BAL_STR(ch))/50)
 

@@ -1363,7 +1363,7 @@ ACMD(do_look)
 	     * leads to a sunlit room
 	     */
 	    if(((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) ||
-		(GET_RACE(ch) == RACE_MAGUS)) &&
+		(GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) &&
 	       IS_SUNLIT_EXIT(ch->in_room,
 			      world[ch->in_room].dir_option[i]->to_room, i))
 	      if(exit_choice != 4)
@@ -1375,7 +1375,7 @@ ACMD(do_look)
 	     * room.
 	     */
 	    if(((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) ||
-		(GET_RACE(ch) == RACE_MAGUS)) &&
+		(GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) &&
 	       IS_SHADOWY_EXIT(ch->in_room,
 			       world[ch->in_room].dir_option[i]->to_room, i)
 	       && weather_info.sunlight == SUN_LIGHT)

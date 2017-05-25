@@ -1162,6 +1162,74 @@ struct char_prof_data
 	int specialization;
 };
 
+struct elemental_spec_data
+{
+	/* Target (if any) that the character has 'exposed' to their element. */
+	char_data* exposed_target;
+};
+
+struct defender_data
+{
+	/* The last time the player used the "block" command. */
+	time_t last_block_time;
+
+	/* Time the player can use the "block" command again. */
+	time_t next_block_available;
+
+	/* True if the player is currently "blocking". */
+	bool is_blocking;
+};
+
+struct wild_fighting_data
+{
+	/* True if the character is currently in a frenzy. */
+	bool is_frenzying;
+
+	/* Gets the energy regeneration multiplier for the character. */
+	double get_eneregy_regen_multiplier(int current_hp, int max_hp);
+
+	/* Gets the damage multiplier for the character. */
+	double get_damage_multiplier(int current_hp, int max_hp);
+};
+
+struct light_fighting_data
+{
+	/* Weapon that is currently being used in the off-hand. */
+	obj_data* off_hand_weapon;
+
+	/* Current energy of the off-hand.  */
+	sh_int off_hand_energy;
+	
+	/* Rate at which energy for hitting is regenerated for the off-hand. */
+	sh_int off_hand_energy_regen;
+};
+
+struct heavy_fighting_data
+{
+
+};
+
+/* ========== Structure for storing specialization information ============= */
+struct specialization_data
+{
+	specialization_data() : elemental_spec(nullptr) { };
+
+	union
+	{
+		elemental_spec_data* elemental_spec;
+		defender_data* defender_spec;
+		wild_fighting_data* wild_fighting_spec;
+		light_fighting_data* light_fighting_spec;
+		heavy_fighting_data* heavy_fighting_spec;
+	};
+};
+
+/* ========== Structure used for storing skill data ============= */
+struct player_skill_data
+{
+	byte skills[MAX_SKILLS];
+	byte knowledge[MAX_SKILLS];
+};
 
 /* ================== Structure for player/non-player ===================== */
 struct char_data
@@ -1199,10 +1267,15 @@ public:
 	struct char_point_data points;        /* Points                        */
 	struct char_special_data specials;    /* Special playing constants      */
 	struct char_special2_data specials2;  /* Additional special constants  */
-	struct char_prof_data * profs;    /* prof cooficients */
-	byte *skills;			 /* dynam. alloc. array of pracs spent                                         on skills */
-	byte *knowledge;                     /* array of knowledge, computed from
+	struct char_prof_data* profs;    /* prof cooficients */
+	specialization_data extra_specialization_data; /* extra data used by some specializations */
+
+	byte* skills;			 /* dynam. alloc. array of pracs spent                                         on skills */
+	byte* knowledge;                     /* array of knowledge, computed from
 											pracs spent at logon */
+	
+	//player_skill_data* skills_data;       /* dynamically created struct that will contain skill data. */
+
 	struct affected_type *affected;       /* affected by what spells       */
 	struct obj_data *equipment[MAX_WEAR]; /* Equipment array               */
 

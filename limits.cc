@@ -79,85 +79,42 @@ int	graf(int age, int p0, int p1, int p2, int p3, int p4, int p5, int p6)
 }
 
 
-int xp_to_level(int level)
+int xp_to_level(int lvl)
 {
-	return level * level * 1500;
+	return lvl * lvl * 1500;
 }
 
-struct advance_mini_level_data
+inline void advance_mini_level(struct char_data *ch)
 {
-	advance_mini_level_data(char_data* ch) : character(ch) 
-	{ 
-		old_mini_level = get_mini_level();
-	};
-
-	void advance_mini_level() { character->specials2.mini_level++; };
-
+	int i, n;
+	i = ++GET_MINI_LEVEL(ch);
 	/* add on average 2 HP/level */
-	bool should_gain_hp() const { return number() >= 0.98; }
-	void gain_hp() { character->constabilities.hit++; }
-
-	bool should_level_up() const
+	if (GET_MAX_MINI_LEVEL(ch) < GET_MINI_LEVEL(ch))
 	{
-		int next_level = character->player.level + 1;
-		return xp_to_level(next_level) <= character->points.exp;
-	}
-
-	void level_up()
-	{
-		character->player.level++;
-		advance_level(character);
-	}
-
-	void update_max_mini_level() 
-	{
-		char_special2_data& data = character->specials2;
-		data.max_mini_level = std::max(data.max_mini_level, data.mini_level);
-	}
-
-	void advance_prof_levels()
-	{
-		for (int prof = PROF_MAGIC_USER; prof <= MAX_PROFS; prof++)
+		if (number() >= 0.98)
 		{
-			int prof_coof = utils::get_prof_coof(prof, *character);
-			int prof_level = utils::get_prof_level(prof, *character);
-			
-			if (old_mini_level * prof_coof >= 100000 * prof_level)
+			ch->constabilities.hit++;
+		}
+	}
+
+	if ((xp_to_level(GET_LEVEL(ch) + 1) <= GET_EXP(ch)))
+	{
+		GET_LEVEL(ch)++;
+		advance_level(ch);
+	}
+
+	for (n = 1; n <= MAX_PROFS; n++)
+	{
+		if ((i)*GET_PROF_COOF(n, ch) >= 100000 * (GET_PROF_LEVEL(n, ch) + 1))
+		{
+			if (GET_PROF_COOF(n, ch) * LEVEL_MAX >= 1000 * (GET_PROF_LEVEL(n, ch) + 1))
 			{
-				if (prof_coof * LEVEL_MAX >= 1000 * prof_level)
-				{
-					advance_level_prof(prof, character);
-				}
+				advance_level_prof(n, ch);
 			}
 		}
 	}
 
-private:
-	int get_mini_level() const { return character->specials2.mini_level; }
-	int get_max_mini_level() const { return character->specials2.mini_level; }
-
-	char_data* character;
-	int old_mini_level;
-};
-
-inline void advance_mini_level(char_data* character)
-{
-	advance_mini_level_data character_data(character);
-
-	character_data.advance_mini_level();
-
-	if (character_data.should_gain_hp())
-	{
-		character_data.gain_hp();
-	}
-
-	if (character_data.should_level_up())
-	{
-		character_data.level_up();
-	}
-
-	character_data.advance_prof_levels();
-	character_data.update_max_mini_level();
+	GET_MAX_MINI_LEVEL(ch) = std::max(GET_MAX_MINI_LEVEL(ch), GET_MINI_LEVEL(ch));
 }
 
 double adjust_regen_for_level(int character_level, double regen_amount)
@@ -395,20 +352,21 @@ void check_autowiz(struct char_data *ch)
  * because I've never seen this 10,000 exp loss minimum come into
  * play.
  */
-void gain_exp(struct char_data *ch, int gain)
+void
+gain_exp(struct char_data *ch, int gain)
 {
   if (GET_LEVEL(ch) < 0)
     return;
 
   /* Don't let LEVEL_IMMORT - 1 chars gain exp, otherwise they'll be imms */
   if (gain > 0 && GET_LEVEL(ch) < LEVEL_IMMORT - 1) {
-    gain = std::min(7000, gain);
+    gain = MIN(7000, gain);
     gain_exp_regardless(ch, gain);
   }
     
   /* Imms shouldn't lose experience */
   if (gain < 0 && GET_LEVEL(ch) < LEVEL_IMMORT) {
-    gain = std::max(-10000, gain);  /* Never lose more than 10000 */
+    gain = MAX(-10000, gain);  /* Never lose more than 10000 */
     gain_exp_regardless(ch, gain);
   }
 }
@@ -467,12 +425,12 @@ gain_exp_regardless(struct char_data *ch, int gain)
   if (is_altered) {
     hp_lack = GET_MAX_HIT(ch) - GET_HIT(ch);
     affect_total(ch);
-    GET_HIT(ch) = std::max(GET_HIT(ch), GET_MAX_HIT(ch) - hp_lack);
+    GET_HIT(ch) = MAX(GET_HIT(ch), GET_MAX_HIT(ch) - hp_lack);
   }
 }
 
 
-void gain_condition(struct char_data *ch, int condition, int value)
+void	gain_condition(struct char_data *ch, int condition, int value)
 {
    char intoxicated;
 
@@ -905,66 +863,64 @@ void update_room_tracks(){
  * Function called when a character chooses "1" from the main
  * menu and the character's level is 0.
  */
-void do_start(char_data* character)
+void
+do_start(struct char_data *ch)
 {
-	int tmp;
-	extern int top_of_p_table;  /* From db.cc */
+  int tmp;
+  extern int top_of_p_table;  /* From db.cc */
+  
+  GET_MINI_LEVEL(ch) = 99;
+  GET_LEVEL(ch) = 0;
+  GET_EXP(ch) = 1500;
+  
+  GET_BODYTYPE(ch) = 1;
+  set_title(ch);
+  
+  roll_abilities(ch, 80, 85);
+  
+  ch->constabilities.move = 80;
+  ch->constabilities.mana = 40;
+  ch->points.spirit = 9;
+  ch->constabilities.hit  = 10;  /* These are BASE numbers   */
+  SPELLS_TO_LEARN(ch) = 10;
+  
+  if(!number(0,1))
+    ch->constabilities.hit++;
+  
+  GET_GOLD(ch) = number(200,300);
+  
+  advance_mini_level(ch);
+  gain_exp_regardless(ch,1500);
+  
+  for(tmp = 0; tmp < MAX_SKILLS; tmp++)
+    ch->skills[tmp] = 0;
+  
+  recalc_skills(ch);
+  recalc_abilities(ch);
+  GET_REROLLS(ch) = 0;
+  
+  GET_HIT(ch) = GET_MAX_HIT(ch);
+  GET_MANA(ch) = GET_MAX_MANA(ch);
+  GET_MOVE(ch) = GET_MAX_MOVE(ch);   
+  
+  GET_COND(ch, THIRST) = 48;
+  GET_COND(ch, FULL) = 48;
+  GET_COND(ch, DRUNK) = 0;
+  
+  ch->player.time.played = 0;
+  ch->player.time.logon = time(0);
 
-	character->specials2.mini_level = 99;
-	character->player.level = 0;
-	character->points.exp = 1500;
-	character->player.bodytype = 1;
-
-	set_title(character);
-
-	roll_abilities(character, 80, 85);
-
-	character->constabilities.move = 80;
-	character->constabilities.mana = 40;
-	character->points.spirit = 9;
-	character->constabilities.hit = 10;  /* These are BASE numbers   */
-	character->specials2.spells_to_learn = 10;
-
-	if (number() >= 0.50)
-	{
-		character->constabilities.hit++;
-	}
-
-	GET_GOLD(character) = number(200, 300);
-
-	advance_mini_level(character);
-	gain_exp_regardless(character, 1500);
-
-	for (tmp = 0; tmp < MAX_SKILLS; tmp++)
-		character->skills[tmp] = 0;
-
-	recalc_skills(character);
-	recalc_abilities(character);
-	GET_REROLLS(character) = 0;
-
-	GET_HIT(character) = GET_MAX_HIT(character);
-	GET_MANA(character) = GET_MAX_MANA(character);
-	GET_MOVE(character) = GET_MAX_MOVE(character);
-
-	GET_COND(character, THIRST) = 48;
-	GET_COND(character, FULL) = 48;
-	GET_COND(character, DRUNK) = 0;
-
-	character->player.time.played = 0;
-	character->player.time.logon = time(0);
-
-	/*
-	 * If no player files exist, the top of the p_table is -1.  We
-	 * call create_entry before we call do_start, and create_entry
-	 * will create a new cell in the ptab and increment the top by
-	 * 1.  Hence if the top is 0, there are no players other than
-	 * this one and we want it to be the imp.
-	 */
-	if (top_of_p_table == 0) 
-	{
-		log("Player table was empty: creating new implementor.\r\n");
-		gain_exp_regardless(character, xp_to_level(LEVEL_IMPL));
-	}
+  /*
+   * If no player files exist, the top of the p_table is -1.  We
+   * call create_entry before we call do_start, and create_entry
+   * will create a new cell in the ptab and increment the top by
+   * 1.  Hence if the top is 0, there are no players other than
+   * this one and we want it to be the imp.
+   */
+  if (top_of_p_table == 0) {
+    log("Player table was empty: creating new implementor.\r\n");
+    gain_exp_regardless(ch, xp_to_level(LEVEL_IMPL));
+  }
 }
 
 // Simply checks that a character can breathe in the room they are in.

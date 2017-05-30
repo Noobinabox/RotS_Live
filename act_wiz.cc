@@ -3686,18 +3686,32 @@ ACMD(do_top){
         } else if (!strncmp("elf", arg3, strlen(arg3)) || !strncmp("woodelf", arg3, strlen(arg3))) {
             sprintf(buf2, "Wood Elf ");
             race = 3;
-        } else if (!strncmp("hobbit", arg3, strlen(arg3))) {
-            sprintf(buf2, "Hobbit ");
-            race = 4;
+		}
+		else if (!strncmp("hobbit", arg3, strlen(arg3))) {
+			sprintf(buf2, "Hobbit ");
+			race = 4;
+		}
+		else if (!strncmp("bear", arg3, strlen(arg3)) || !strncmp("beorning", arg3, strlen(arg3))) {
+			sprintf(buf2, "Beorning ");
+			race = 6;
         } else if (!strncmp("uruk-hai", arg3, strlen(arg3))) {
             sprintf(buf2, "Uruk-Hai ");
             race = 11;
         } else if (!strncmp("orc", arg3, strlen(arg3))) {
             sprintf(buf2, "Common Orc ");
             race = 13;
-        } else if (!strncmp("uruk-lhuth", arg3, strlen(arg3)) || !strncmp("lhuth", arg3, strlen(arg3))) {
-            sprintf(buf2, "Uruk-Lhuth ");
-            race = 15;
+		}
+		else if (!strncmp("uruk-lhuth", arg3, strlen(arg3)) || !strncmp("lhuth", arg3, strlen(arg3))) {
+			sprintf(buf2, "Uruk-Lhuth ");
+			race = 15;
+		}
+		else if (!strncmp("olog-hai", arg3, strlen(arg3)) || !strncmp("olog", arg3, strlen(arg3))) {
+			sprintf(buf2, "Olog-Hai ");
+			race = 17;
+		}
+		else if (!strncmp("harad", arg3, strlen(arg3)) || !strncmp("haradrim", arg3, strlen(arg3))) {
+			sprintf(buf2, "Haradrim ");
+			race = 18;
         } else if (!strncmp("oldest", arg3, strlen(arg3))) {
             sprintf(buf2, "Oldest Legend ");
             oldest = 1;
@@ -3717,9 +3731,14 @@ ACMD(do_top){
             } else if (!strncmp("elf", arg4, strlen(arg4)) || !strncmp("woodelf", arg4, strlen(arg4))) {
                 sprintf(buf2, "%sWood Elf ", buf2);
                 race = 3;
-            } else if (!strncmp("hobbit", arg4, strlen(arg4))) {
-                sprintf(buf2, "%sHobbit ", buf2);
-                race = 4;
+			}
+			else if (!strncmp("hobbit", arg4, strlen(arg4))) {
+				sprintf(buf2, "%sHobbit ", buf2);
+				race = 4;
+			}
+			else if (!strncmp("bear", arg4, strlen(arg4)) || !strncmp("beorning", arg4, strlen(arg4))) {
+				sprintf(buf2, "%sBeorning ", buf2);
+				race = 6;
             } else if (!strncmp("uruk-hai", arg4, strlen(arg4))) {
                 sprintf(buf2, "%sUruk-Hai ", buf2);
                 race = 11;
@@ -3730,6 +3749,14 @@ ACMD(do_top){
                 sprintf(buf2, "%sUruk-Lhuth ", buf2);
                 race = 15;
             }
+			else if (!strncmp("olog-hai", arg4, strlen(arg4)) || !strncmp("olog", arg4, strlen(arg4))) {
+				sprintf(buf2, "%sOlog-Hai ", buf2);
+				race = 17;
+			}
+			else if (!strncmp("harad", arg4, strlen(arg4)) || !strncmp("haradrim", arg4, strlen(arg4))) {
+				sprintf(buf2, "%sHaradrim ", buf2);
+				race = 18;
+			}
         }
         
         sprintf(buf, "Top %2d %sCharacters\n\r", zonnum, buf2);

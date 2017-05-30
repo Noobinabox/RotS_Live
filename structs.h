@@ -639,12 +639,12 @@ struct room_data {
 #define AFF_CONFUSE           (1 << 15)
 #define AFF_SLEEP             (1 << 16)
 #define AFF_BASH              (1 << 17)
-#define AFF_FLYING	      (1 << 18)
+#define AFF_FLYING	          (1 << 18)
 #define AFF_DETECT_INVISIBLE  (1 << 19)
 #define AFF_FEAR              (1 << 20)
 #define AFF_BLIND             (1 << 21)
 #define AFF_FOLLOW            (1 << 22)
-#define AFF_SWIM	      (1 << 23)
+#define AFF_SWIM	          (1 << 23)
 #define AFF_HUNT              (1 << 24)
 #define AFF_EVASION           (1 << 25)
 #define AFF_WAITING           (1 << 26)
@@ -652,6 +652,7 @@ struct room_data {
 #define AFF_CONCENTRATION     (1 << 29)
 #define AFF_HAZE              (1 << 30)
 #define AFF_HALLUCINATE       (1 << 31)
+#define AFF_SCENT			  (1 << 32)
 
 /* modifiers to char's abilities */
 

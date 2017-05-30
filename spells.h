@@ -39,6 +39,7 @@
 #define SKILL_PIERCE             4
 #define SKILL_SPEARS             5
 #define SKILL_AXE                6
+#define SKILL_NATURAL_ATTACK	 7
 
 #define SKILL_SWIM               8
 #define SKILL_TWOHANDED	         9

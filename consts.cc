@@ -236,7 +236,7 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
   { "axes"               , PROF_WARRIOR,  0, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
-  { ""                   , PROF_WARRIOR,  4, NULL,
+  { "natural attacks"                   , PROF_WARRIOR,  1, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
   { "swimming"           , PROF_RANGER,   2, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  25,  1,  0, PLRSPEC_NONE },

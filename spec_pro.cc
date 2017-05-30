@@ -170,9 +170,16 @@ void recalc_skills(struct char_data *ch) {
   case RACE_HIGH:
     tmp = LANG_HUMAN;
     break;
+  case RACE_BEORNING:
+	  tmp = LANG_ANIMAL;
+	  break;
   case RACE_URUK: 
   case RACE_HARAD:
   case RACE_ORC:
+  case RACE_HARADRIM:
+	  tmp = LANG_ORC;
+	  break;
+  case RACE_OLOGHAI:
   case RACE_MAGUS:
     tmp = LANG_ORC;
     break;

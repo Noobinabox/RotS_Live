@@ -2641,7 +2641,8 @@ nanny(struct descriptor_data *d, char *arg)
 			"  [H]uman                * [U]ruk-hai Orc\n\r"
 			"  [D]warf                # [C]ommon Orc  \n\r"
 			"  [W]ood Elf             # Uruk-[L]huth  \n\r"
-			"  Ho[B]bit\n\r"
+			"  Ho[B]bit               # [O]log-Hai\n\r"
+			"# Beor[N]ing             # Harad[R]im\n\r"
 			"\n\r"
 			"Races marked with a * are hard to play.\n\r"
 			"Races marked with a # are very hard to play.\n\r"
@@ -2658,6 +2659,15 @@ nanny(struct descriptor_data *d, char *arg)
 		*arg = LOWER(*arg);
 
 		switch (*arg) {
+		case 'n':
+			GET_RACE(d->character) = RACE_BEORNING;
+			break;
+		case 'o':
+			GET_RACE(d->character) = RACE_OLOGHAI;
+			break;
+		case 'r':
+			GET_RACE(d->character) = RACE_HARADRIM;
+			break;
 		case 'h':
 			GET_RACE(d->character) = RACE_HUMAN;
 			break;

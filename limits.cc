@@ -872,8 +872,14 @@ do_start(struct char_data *ch)
   GET_MINI_LEVEL(ch) = 99;
   GET_LEVEL(ch) = 0;
   GET_EXP(ch) = 1500;
-  
-  GET_BODYTYPE(ch) = 1;
+  if (GET_RACE(ch) == RACE_BEORNING)
+  {
+	  GET_BODYTYPE(ch) = 15;
+  }
+  else
+  {
+	  GET_BODYTYPE(ch) = 1;
+  }
   set_title(ch);
   
   roll_abilities(ch, 80, 85);

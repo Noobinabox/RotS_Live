@@ -53,7 +53,7 @@ sh_int race_modifiers[MAX_RACES][8] = {
   {-1, 1, 0, 2,-2, 0, 0, 0},
   {-3,-1, 0, 2, 2, 0, 0, 0},
   { 0, 2, 0, 2,-2, 0, 0, 0},  /* 5 */
-  { 0, 0, 0, 0, 0, 0, 0, 0},
+  { 4,-4,-2, 0, 4,-2, 0, 0},  //Beorning
   { 0, 0, 0, 0, 0, 0, 0, 0},
   { 0, 0, 0, 0, 0, 0, 0, 0},
   { 0, 0, 0, 0, 0, 0, 0, 0},
@@ -62,7 +62,10 @@ sh_int race_modifiers[MAX_RACES][8] = {
   { 0, 0,-1, 0, 1, 0, 0, 0},
   {-1,-3,-3,-1,-1,-5, 0, 0},
   { 0, 0, 0, 0, 0, 0, 0, 0},
-  {-1,-1,-3, 0, 1,-2, 0, 0}
+  {-1,-1,-3, 0, 1,-2, 0, 0},
+  { 0, 0, 0, 0, 0, 0, 0, 0},
+  { 2,-4,-3,-2, 4,-3, 0, 0},
+  { 0,-2,-2, 2, 0,-3, 0, 0},
 };
 
 sh_int get_str_mod(int race)
@@ -789,6 +792,8 @@ void recalc_abilities(char_data* character)
 			GET_RAW_KNOWLEDGE(character, SKILL_TRAVELLING) / 4;
 		if ((GET_RACE(character) == RACE_WOOD) || GET_RACE(character) == RACE_HIGH)
 			character->abilities.move += 15;
+		if (GET_RACE(character) == RACE_BEORNING)
+			character->abilities.move += 50;
 
 		if (character->tmpabilities.move > character->abilities.move)
 			character->tmpabilities.move = character->abilities.move;

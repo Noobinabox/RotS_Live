@@ -53,7 +53,7 @@ const int ENE_TO_HIT = 1200;
 #define MAX_MESSAGES         255
 #define MAX_ITEMS            153
 #define MAX_RACES             32
-#define MAX_BODYTYPES         15
+#define MAX_BODYTYPES         16
 #define MAX_BODYPARTS         11
 #define MAX_RACE_NAME_LENGTH  14
 #define MIN_NAME_LENGTH        3
@@ -639,12 +639,12 @@ struct room_data {
 #define AFF_CONFUSE           (1 << 15)
 #define AFF_SLEEP             (1 << 16)
 #define AFF_BASH              (1 << 17)
-#define AFF_FLYING	      (1 << 18)
+#define AFF_FLYING	          (1 << 18)
 #define AFF_DETECT_INVISIBLE  (1 << 19)
 #define AFF_FEAR              (1 << 20)
 #define AFF_BLIND             (1 << 21)
 #define AFF_FOLLOW            (1 << 22)
-#define AFF_SWIM	      (1 << 23)
+#define AFF_SWIM	          (1 << 23)
 #define AFF_HUNT              (1 << 24)
 #define AFF_EVASION           (1 << 25)
 #define AFF_WAITING           (1 << 26)
@@ -652,6 +652,7 @@ struct room_data {
 #define AFF_CONCENTRATION     (1 << 29)
 #define AFF_HAZE              (1 << 30)
 #define AFF_HALLUCINATE       (1 << 31)
+#define AFF_SCENT			  (1 << 32)
 
 /* modifiers to char's abilities */
 
@@ -767,12 +768,14 @@ namespace game_types
 #define RACE_WOOD       3
 #define RACE_HOBBIT     4
 #define RACE_HIGH       5
-#define RACE_URUK 	11
+#define RACE_BEORNING   6
+#define RACE_URUK 	    11
 #define RACE_HARAD      12
-#define RACE_ORC	13
+#define RACE_ORC	    13
 #define RACE_EASTERLING	14
-#define RACE_MAGUS	15
-
+#define RACE_MAGUS	    15
+#define RACE_HARADRIM   18
+#define RACE_OLOGHAI    17
 /* race for NPCs */
 #define RACE_TROLL      20
 #define RACE_UNDEAD     16

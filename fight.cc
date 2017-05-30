@@ -1366,8 +1366,15 @@ void group_gain(char_data* killer, char_data* dead_man)
 			int gain = spirit_gain * GET_PERCEPTION(character) / perc_total / 100;
 			if (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))
 			{
-				vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
-				GET_SPIRIT(character) += gain;
+				if (GET_SPIRIT(character) >= 99000)
+				{
+					vsend_to_char(character, "You have capped out on spirits.\n\r");
+				}
+				else
+				{
+					vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
+					GET_SPIRIT(character) += gain;
+				}
 			}
 		}
 
@@ -1559,7 +1566,15 @@ void generate_damage_message(char_data* attacker, char_data *victim, int damage,
 	{
 		if (!attacker->equipment[WIELD])
 		{
-			dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			if (GET_RACE(attacker) == RACE_BEORNING)
+			{
+				dam_message(damage, attacker, victim, TYPE_CLAW, body_part);
+			}
+			else
+			{
+				dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			}
+			
 		}
 		else
 		{
@@ -2293,7 +2308,7 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 				send_to_char("OUCH! You hear a crunching sound and feel " "a sharp pain.\n\r", victim);
 				send_to_room_except_two("You hear a crunching sound.\n\r", ch->in_room, ch, victim);
 
-				damage += damage_reduction * 2;
+damage += damage_reduction * 2;
 			}
 		}
 	}
@@ -2389,6 +2404,23 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 	return BASE_VALUE + spec_bonus + defender_bonus - attacker_offset;
 }
 
+int natural_attack_dam(struct char_data *attacker)
+{
+	int dam, level_factor, str_factor, warrior_factor;
+	if (utils::get_skill(*attacker, SKILL_NATURAL_ATTACK) == 0)
+	{
+		if (!IS_NPC(attacker))
+		{
+			return dam = BAREHANDED_DAMAGE * 10;
+		}
+	}
+	
+	level_factor = GET_LEVEL(attacker);
+	warrior_factor = utils::get_prof_level(PROF_WARRIOR, *attacker);
+	str_factor = GET_STR(attacker);
+	return dam = level_factor + str_factor + warrior_factor;
+}
+
 //============================================================================
 void hit(struct char_data *ch, struct char_data *victim, int type)
 {
@@ -2399,7 +2431,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	int location;
 	int tmp; /* rolled number stored as the chance to hit, adds OB */
 	struct waiting_type tmpwtl;
-	extern struct race_bodypart_data bodyparts[15];
+	extern struct race_bodypart_data bodyparts[16];
 
 	if (ch->in_room != victim->in_room) {
 		log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");
@@ -2421,8 +2453,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 			w_type = ch->specials.attack_type;
 		else {
 			w_type = TYPE_HIT;
-			if (!IS_NPC(ch))
-				dam = BAREHANDED_DAMAGE * 10;
+			dam = natural_attack_dam(ch);
 		}
 	}
 

@@ -377,94 +377,92 @@ gain_exp(struct char_data *ch, int gain)
  * when creating new implementors or when a player dies from a
  * mob death.
  */
-void
-gain_exp_regardless(struct char_data *ch, int gain)
+void gain_exp_regardless(char_data* character, int gain)
 {
-  int i, is_altered;
-  int hp_lack;
+	/* NPCs aren't allowed to gain experience */
+	if (IS_NPC(character))
+		return;
 
-  i = GET_MINI_LEVEL(ch);
-  is_altered = 0;
-  
-  /* NPCs aren't allowed to gain experience */
-  if (IS_NPC(ch))
-    return;
+	int temp_int = GET_MINI_LEVEL(character);
+	bool is_altered = false;
 
-  if (gain > 0) {	 
-    GET_EXP(ch) += gain;
+	if (gain > 0) 
+	{
+		GET_EXP(character) += gain;
 
-    for (i = GET_MINI_LEVEL(ch);  i*i*3/20 <= GET_EXP(ch); i++) {
-      if (i > GET_MINI_LEVEL(ch)) {
-        advance_mini_level(ch);
-        is_altered = 1;
-        GET_MINI_LEVEL(ch) = i;
-      }
-    }
-  }
-      
-  if (gain < 0) {
-    GET_EXP(ch) += gain;
-    is_altered = 1;
+		for (temp_int = GET_MINI_LEVEL(character); temp_int*temp_int * 3 / 20 <= GET_EXP(character); temp_int++) 
+		{
+			if (temp_int > GET_MINI_LEVEL(character)) 
+			{
+				advance_mini_level(character);
+				is_altered = true;
+				GET_MINI_LEVEL(character) = temp_int;
+			}
+		}
+	}
 
-    /* Each loop loses one level, with tolerance of 20,000 exp */
-    while (xp_to_level(GET_LEVEL(ch)) - 20000 > GET_EXP(ch)) {
-      GET_LEVEL(ch) = GET_LEVEL(ch) - 1;
-      GET_MINI_LEVEL(ch) = 100 * GET_LEVEL(ch);
-      SPELLS_TO_LEARN(ch) -= PRACS_PER_LEVEL +
-                             GET_LEA_BASE(ch) / LEA_PRAC_FACTOR;
+	if (gain < 0) 
+	{
+		GET_EXP(character) += gain;
+		is_altered = true;
 
-      send_to_char("You lose a level!\n\r", ch);
-    }
-  }
-      
-  /* Sanity check: don't let exp go negative */
-  if (GET_EXP(ch) < 0)
-    GET_EXP(ch) = 0;
+		/* Each loop loses one level, with tolerance of 20,000 exp */
+		while (xp_to_level(GET_LEVEL(character)) - 20000 > GET_EXP(character)) 
+		{
+			GET_LEVEL(character) = GET_LEVEL(character) - 1;
+			GET_MINI_LEVEL(character) = 100 * GET_LEVEL(character);
+			SPELLS_TO_LEARN(character) -= PRACS_PER_LEVEL + GET_LEA_BASE(character) / LEA_PRAC_FACTOR;
 
-  /* If we did anything, recalc hp, mana, moves and other points */
-  if (is_altered) {
-    hp_lack = GET_MAX_HIT(ch) - GET_HIT(ch);
-    affect_total(ch);
-    GET_HIT(ch) = MAX(GET_HIT(ch), GET_MAX_HIT(ch) - hp_lack);
-  }
+			send_to_char("You lose a level!\n\r", character);
+		}
+	}
+
+	/* Sanity check: don't let exp go negative */
+	if (GET_EXP(character) < 0)
+		GET_EXP(character) = 0;
+
+	/* If we did anything, recalc hp, mana, moves and other points */
+	if (is_altered) 
+	{
+		int hp_lack = GET_MAX_HIT(character) - GET_HIT(character);
+		affect_total(character);
+		GET_HIT(character) = std::max(GET_HIT(character), GET_MAX_HIT(character) - hp_lack);
+	}
 }
 
 
-void	gain_condition(struct char_data *ch, int condition, int value)
+void gain_condition(struct char_data *ch, int condition, int value)
 {
-   char intoxicated;
+	if (GET_COND(ch, condition) == -1) /* No change */
+		return;
 
-   if (GET_COND(ch, condition) == -1) /* No change */
-      return;
-      
-   if (IS_SHADOW(ch))
-	 return;
+	if (IS_SHADOW(ch))
+		return;
 
-   intoxicated = (GET_COND(ch, DRUNK) > 0);
+	char intoxicated = (GET_COND(ch, DRUNK) > 0);
 
-   GET_COND(ch, condition)  += value;
+	GET_COND(ch, condition) += value;
 
-   GET_COND(ch, condition) = std::max(sh_int(0), GET_COND(ch, condition));
-   GET_COND(ch, condition) = std::min(sh_int(24), GET_COND(ch, condition));
+	GET_COND(ch, condition) = std::max(0, GET_COND(ch, condition));
+	GET_COND(ch, condition) = std::min(24, GET_COND(ch, condition));
 
-   if (GET_COND(ch, condition) || PLR_FLAGGED(ch, PLR_WRITING))
-      return;
+	if (GET_COND(ch, condition) || PLR_FLAGGED(ch, PLR_WRITING))
+		return;
 
-   switch (condition) {
-   case FULL :
-      send_to_char("You are hungry.\n\r", ch);
-      return;
-   case THIRST :
-      send_to_char("You are thirsty.\n\r", ch);
-      return;
-   case DRUNK :
-      if (intoxicated)
-	 send_to_char("You are now sober.\n\r", ch);
-      return;
-   default :
-      break;
-   }
-
+	switch (condition) {
+	case FULL:
+		send_to_char("You are hungry.\n\r", ch);
+		return;
+	case THIRST:
+		send_to_char("You are thirsty.\n\r", ch);
+		return;
+	case DRUNK:
+		if (intoxicated)
+			send_to_char("You are now sober.\n\r", ch);
+		return;
+	default:
+		break;
+	}
 }
 
 void Crash_extract_objs(obj_data *);

@@ -1024,6 +1024,15 @@ void stop_follower(struct char_data *ch, int mode)
 		if (!ch->master)
 			return;
 
+		if (GET_SPEC(ch->master) == PLRSPEC_PETS && IS_AFFECTED(ch, AFF_CHARM))
+		{
+			ch->constabilities.str -= 2;
+			ch->tmpabilities.str -= 2;
+			ch->abilities.str -= 2;
+			ch->points.ENE_regen -= 40;
+			ch->points.damage -= 2;
+		}
+
 		forget(ch, ch->master); // in case we were "hunting" him
 
 		if (IS_AFFECTED(ch, AFF_CHARM))
@@ -1375,8 +1384,8 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
   item->obj_flags.timer = -1;
   
   // Encumb and weight update:
-  GET_ENCUMB(character) += item->obj_flags.value[2] * encumb_table[item_slot];
-  GET_LEG_ENCUMB(character) += item->obj_flags.value[2] * leg_encumb_table[item_slot];
+  character->points.encumb += item->obj_flags.value[2] * encumb_table[item_slot];
+  character->specials2.leg_encumb += item->obj_flags.value[2] * leg_encumb_table[item_slot];
   if(encumb_table[item_slot])
     GET_ENCUMB_WEIGHT(character) += GET_OBJ_WEIGHT(item) * encumb_table[item_slot];
   else
@@ -1461,8 +1470,8 @@ struct obj_data *unequip_char(struct char_data *ch, int pos)
   
    ch->equipment[pos] = 0;
 
-   GET_ENCUMB(ch) -= obj->obj_flags.value[2]*encumb_table[pos];
-   GET_LEG_ENCUMB(ch) -= obj->obj_flags.value[2]*leg_encumb_table[pos];
+   ch->points.encumb -= obj->obj_flags.value[2]*encumb_table[pos];
+   ch->specials2.leg_encumb -= obj->obj_flags.value[2]*leg_encumb_table[pos];
    if(encumb_table[pos])
      GET_ENCUMB_WEIGHT(ch) -= GET_OBJ_WEIGHT(obj) * encumb_table[pos];
    else

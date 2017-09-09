@@ -131,7 +131,12 @@ int get_char_directory(char *, char *);
 int load_player(char *, struct char_file_u *);
 
 // Implemented in consts.cc
+
+/* Returns an array of size MAX_WEAR that contains item encumbrance multipliers. */
 sh_int* get_encumb_table();
+
+/* Returns an array of size MAX_WEAR that contains item leg encumbrance multipliers. */
+sh_int* get_leg_encumb_table();
 
 #define REAL 0
 #define VIRT 1
@@ -151,15 +156,15 @@ struct crime_record_type {
 /* structure for the reset commands */
 struct reset_com {
    char	command;    /* current command */
-   sh_int if_flag;  /* if TRUE: exe only if preceding exe'd */
-   sh_int arg1;
-   sh_int arg2;     /* Arguments to the command */
-   sh_int arg3;
-   sh_int arg4;
-   sh_int arg5;
-   sh_int arg6;
-   sh_int arg7;
-   sh_int existing;
+   int if_flag;  /* if TRUE: exe only if preceding exe'd */
+   int arg1;
+   int arg2;     /* Arguments to the command */
+   int arg3;
+   int arg4;
+   int arg5;
+   int arg6;
+   int arg7;
+   int existing;
    /* 
     *  Commands:
     *  'M': Read a mobile

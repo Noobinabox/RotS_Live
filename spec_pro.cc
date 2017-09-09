@@ -389,7 +389,8 @@ ACMD(do_pracreset)
     vict->specials2.spells_to_learn=GET_LEVEL(vict)*PRACS_PER_LEVEL + GET_LEVEL(vict) * GET_LEA(vict) / LEA_PRAC_FACTOR + 10;
   } 
   
-  SET_SPEC(vict, 0);
+  utils::set_specialization(*vict, game_types::PS_None);
+
   SET_SHOOTING(vict, SHOOTING_NORMAL);
   
   recalc_skills(vict);
@@ -1519,11 +1520,13 @@ namespace
 
 SPECIAL(mob_cleric)
 {
-	if (callflag == SPECIAL_COMMAND)
+	if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
 		return FALSE;
 
-	if (!ch || ch->in_room == NOWHERE)
+	if (host->delay.wait_value && host->delay.subcmd)
+	{
 		return FALSE;
+	}
 
 	char_data* target = choose_mystic_target(host);
 	if (target == NULL)
@@ -1569,86 +1572,91 @@ int get_mob_spell_type (struct char_data *host, int spell_var) {
 }
 
 SPECIAL(mob_magic_user) {
-  waiting_type wtl_base;
-  int spl_num, num, tmp, spell_var;
-  char_data * tmpch;
-  char_data * tar_ch = 0;
-  
-  if ((callflag != SPECIAL_SELF) ||(host->in_room == NOWHERE))
-    return FALSE;
-  
-  /* find target */
-  for (num = 0, tmpch = world[ch->in_room].people; tmpch; 
-       tmpch = tmpch->next_in_room)
-    if (!IS_NPC(tmpch))
-      num++;
-  
-  if (!num)
-    return FALSE;
-  
-  tmp = number(1, num);
+	waiting_type wtl_base;
+	int spl_num, num, tmp, spell_var;
+	char_data * tmpch;
+	char_data * tar_ch = 0;
 
-  for (num = 0, tmpch = world[ch->in_room].people; (num < tmp) && tmpch; 
-       tmpch = tmpch->next_in_room)
-    if (!IS_NPC(tmpch)) {
-      num++;
-      tar_ch = tmpch;
-    }
-  
-  if (!host->specials.fighting) {
-    if (GET_HIT(host) < GET_MAX_HIT(host) / 3)
-      spl_num = SPELL_CURE_SELF;
-    else
-      return FALSE;
-  }
-  /*
-   * If this mobs hit points drops below one third
-   * mage mobs start casting cure self.
-   */
-  else { 
-    if (IS_SET(MOB_FLAGS(host), MOB_WIMPY) && 
-	(GET_HIT(host) < GET_MAX_HIT(host) / 4))
-      spl_num = SPELL_BLINK;
-    
-    else {
-      /*
-       * Since we have a list of 10 spells to choose from, and
-       * since some of our in-game mobs are over 50 in level
-       * any mob over level 50 will have its random number
-       * divided by eight rather than 5 to ensure a spell
-       * is picked from the array spell_list.
-       * This will very soon be replaced with each mob having
-       * a bitvector list of spells that each can cast from.
-       */
-      tmp = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, host));
-      if ( tmp > 50)
-	tmp = tmp / 8;
-      else
-	tmp = tmp / 5;
-      
-      if ((number (0, 1)) == 1 ) {
+	if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
+		return FALSE;
+
+	if (host->delay.wait_value && host->delay.subcmd)
+	{
+		return FALSE;
+	}
+
+	/* find target */
+	for (num = 0, tmpch = world[ch->in_room].people; tmpch;
+		tmpch = tmpch->next_in_room)
+		if (!IS_NPC(tmpch))
+			num++;
+
+	if (!num)
+		return FALSE;
+
+	tmp = number(1, num);
+
+	for (num = 0, tmpch = world[ch->in_room].people; (num < tmp) && tmpch;
+		tmpch = tmpch->next_in_room)
+		if (!IS_NPC(tmpch)) {
+			num++;
+			tar_ch = tmpch;
+		}
+
+	if (!host->specials.fighting) {
+		if (GET_HIT(host) < GET_MAX_HIT(host) / 3)
+			spl_num = SPELL_CURE_SELF;
+		else
+			return FALSE;
+	}
 	/*
-	 * A 50% chance of a mob casting a spell 
-	 * makes for a good casting rate on active mobs.
+	 * If this mobs hit points drops below one third
+	 * mage mobs start casting cure self.
 	 */
-	spell_var = get_mob_spell_type (host, spell_var); 
-	spl_num = spell_list[tmp][spell_var];
-      }
-      else 
-	return FALSE;   
-    }
-  }
-  wtl_base.cmd = CMD_CAST;
-  wtl_base.subcmd = 0;
-  wtl_base.targ1.ch_num = spl_num;
-  wtl_base.targ1.type = TARGET_OTHER;
-  wtl_base.targ2.ptr.ch = tar_ch;
-  wtl_base.targ2.ch_num = tar_ch->abs_number;
-  wtl_base.targ2.type = TARGET_CHAR;
-  wtl_base.targ2.choice = TAR_CHAR_ROOM;
-  wtl_base.flg = 1;
-  do_cast(host,"",&wtl_base, CMD_CAST, 0);  
-  return FALSE;
+	else {
+		if (IS_SET(MOB_FLAGS(host), MOB_WIMPY) &&
+			(GET_HIT(host) < GET_MAX_HIT(host) / 4))
+			spl_num = SPELL_BLINK;
+
+		else {
+			/*
+			 * Since we have a list of 10 spells to choose from, and
+			 * since some of our in-game mobs are over 50 in level
+			 * any mob over level 50 will have its random number
+			 * divided by eight rather than 5 to ensure a spell
+			 * is picked from the array spell_list.
+			 * This will very soon be replaced with each mob having
+			 * a bitvector list of spells that each can cast from.
+			 */
+			tmp = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, host));
+			if (tmp > 50)
+				tmp = tmp / 8;
+			else
+				tmp = tmp / 5;
+
+			if ((number(0, 1)) == 1) {
+				/*
+				 * A 50% chance of a mob casting a spell
+				 * makes for a good casting rate on active mobs.
+				 */
+				spell_var = get_mob_spell_type(host, spell_var);
+				spl_num = spell_list[tmp][spell_var];
+			}
+			else
+				return FALSE;
+		}
+	}
+	wtl_base.cmd = CMD_CAST;
+	wtl_base.subcmd = 0;
+	wtl_base.targ1.ch_num = spl_num;
+	wtl_base.targ1.type = TARGET_OTHER;
+	wtl_base.targ2.ptr.ch = tar_ch;
+	wtl_base.targ2.ch_num = tar_ch->abs_number;
+	wtl_base.targ2.type = TARGET_CHAR;
+	wtl_base.targ2.choice = TAR_CHAR_ROOM;
+	wtl_base.flg = 1;
+	do_cast(host, "", &wtl_base, CMD_CAST, 0);
+	return FALSE;
 }
 
 int  warrior_abilities [] = {

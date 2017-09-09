@@ -459,6 +459,20 @@ namespace
 
 	bool can_cast_spell(char_data& character, int spell_index, const skill_data& spell)
 	{
+		if (spell_index == SPELL_EXPOSE_ELEMENTS)
+		{
+			game_types::player_specs spec = utils::get_specialization(character);
+			if (spec == game_types::PS_Arcane || spec == game_types::PS_Cold ||
+				spec == game_types::PS_Darkness || spec == game_types::PS_Fire ||
+				spec == game_types::PS_Lightning)
+			{
+				return true;
+			}
+
+			send_to_char("You need to have a mage specialization to cast this spell!\n\r", &character);
+			return false;
+		}
+
 		if (utils::is_npc(character) && utils::is_mob_flagged(character, MOB_PET))
 		{
 			// Ensure that the pet's master gets the message.
@@ -747,6 +761,24 @@ ACMD(do_cast)
 					send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your lips falter.\r\n", ch);
 					return;
 				}
+
+				if (spell_index == SPELL_EXPOSE_ELEMENTS)
+				{
+					if (utils::is_pc(*tmpwtl.targ2.ptr.ch))
+					{
+						send_to_char("You cannot target players with that spell.\r\n", ch);
+						return;
+					}
+					else if (ch->extra_specialization_data.is_mage_spec())
+					{
+						elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(ch->extra_specialization_data.current_spec_info);
+						if (spec_data->exposed_target_id == tmpwtl.targ2.ptr.ch->abs_number)
+						{
+							send_to_char("You have already exposed your target to the elements!\n\r", ch);
+							return;
+						}
+					}
+				}
 			}
 		}
 		/* supposedly, we have ch.delay formed now, except for delay value. */
@@ -754,12 +786,18 @@ ACMD(do_cast)
 		if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING))
 		{
 			/* putting the player into waiting list */
-			if ((GET_CASTING(ch) == CASTING_FAST) && (spell_prof == PROF_MAGE))
-				casting_time = CASTING_TIME(ch, spell_index) * .75;
-			else if ((GET_CASTING(ch) == CASTING_SLOW) && (spell_prof == PROF_MAGE))
-				casting_time = CASTING_TIME(ch, spell_index) / .75;
+			if ((GET_CASTING(ch) == CASTING_FAST) && (spell_prof == PROF_MAGE) && spell_index != SPELL_EXPOSE_ELEMENTS)
+			{
+				casting_time = int(CASTING_TIME(ch, spell_index) * .75);
+			}	
+			else if ((GET_CASTING(ch) == CASTING_SLOW) && (spell_prof == PROF_MAGE) && spell_index != SPELL_EXPOSE_ELEMENTS)
+			{
+				casting_time = int(CASTING_TIME(ch, spell_index) / .75);
+			}
 			else
+			{
 				casting_time = CASTING_TIME(ch, spell_index);
+			}
 
 			WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
 			ch->delay.targ1 = tmpwtl.targ1;
@@ -947,20 +985,26 @@ ACMD(do_cast)
 		else
 		{
 			tmp = GET_KNOWLEDGE(ch, spell_index);
+
+			// Characters that can cast 'Expose Elements' are considered 100% trained in it.
+			if (spell_index == SPELL_EXPOSE_ELEMENTS)
+			{
+				tmp = 100;
+			}
 		}
 
 		/* encumberance spell penalty, about 10% at max. encumberance */
 		if (skills[spell_index].type == PROF_MAGE)
 		{
-			tmp -= GET_ENCUMB(ch) / 3 - 1;
+			tmp -= utils::get_encumbrance(*ch) / 3 - 1;
 		}
 
 		tmp -= get_power_of_arda(ch);
 
 		tmp = std::min(tmp, 100);
 
-		if (number(1, 101) > tmp) 
-		{ /* 101% is failure */
+		if (number(0, 100) >= tmp) 
+		{
 			send_to_char("You lost your concentration!\n\r", ch);
 			if (skills[spell_index].type == PROF_MAGE)
 			{
@@ -976,18 +1020,42 @@ ACMD(do_cast)
 
 		if (skills[spell_index].type == PROF_MAGE) 
 		{
-			if (GET_CASTING(ch) == CASTING_FAST)
+			int mana_cost = USE_MANA(ch, spell_index);
+			if (GET_CASTING(ch) == CASTING_FAST && spell_index != SPELL_EXPOSE_ELEMENTS)
 			{
-				GET_MANA(ch) -= (USE_MANA(ch, spell_index)) / 0.75;
+				mana_cost = mana_cost * 4 / 3;
 			}
-			else if (GET_CASTING(ch) == CASTING_SLOW)
+			else if (GET_CASTING(ch) == CASTING_SLOW && spell_index != SPELL_EXPOSE_ELEMENTS)
 			{
-				GET_MANA(ch) -= (USE_MANA(ch, spell_index)) * 0.75;
+				mana_cost = mana_cost * 3 / 4;
 			}
-			else
+			
+			if (ch->extra_specialization_data.current_spec_info && ch->extra_specialization_data.is_mage_spec() && tar_char)
 			{
-				GET_MANA(ch) -= (USE_MANA(ch, spell_index));
+				elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(ch->extra_specialization_data.current_spec_info);
+				if (tar_char->abs_number == spec_data->exposed_target_id)
+				{
+					// Currently, spells cast by expose elements are free.
+					if (spell_index == spec_data->spell_id)
+					{
+						if (GET_CASTING(ch) == CASTING_NORMAL)
+						{
+							mana_cost = 0;
+						}
+						else if (GET_CASTING(ch) == CASTING_FAST)
+						{
+							mana_cost = USE_MANA(ch, spell_index) / 2;
+						}
+						else if (GET_CASTING(ch) == CASTING_SLOW)
+						{
+							// Casting slow with expose elements restores mana.
+							mana_cost = -USE_MANA(ch, spell_index) / 3;
+						}
+					}
+				}
 			}
+			
+			GET_MANA(ch) -= mana_cost;
 		}
 		/* it's a cleric spell */
 		else 

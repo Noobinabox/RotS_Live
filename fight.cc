@@ -563,7 +563,7 @@ void remove_random_item(struct char_data *ch, struct obj_data *corpse)
 	int chance, i;
 	struct obj_data *obj;
 
-	if (!IS_NPC(ch) || IS_AFFECTED(ch, AFF_CHARM) || IS_GUARDIAN(ch)) 
+	if (!IS_NPC(ch) || IS_AFFECTED(ch, AFF_CHARM) || utils::is_guardian(*ch)) 
 	{
 		chance = number(0, 24);
 		i = 0;
@@ -2302,35 +2302,65 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 }
 
 //============================================================================
-int heavy_fighting_effect(const char_data& attacker, int damage)
+int heavy_fighting_effect(char_data& attacker, int damage)
 {
-	//TODO(drelidan):  If heavy fighters need any more buffs, start here.
-	// Heavy fighters deal 5% more damage with heavy weapons.
-	/*
 	if (utils::get_specialization(attacker) == (int)game_types::PS_HeavyFighting)
 	{
 		obj_data* weapon = attacker.equipment[WIELD];
-		if (weapon && weapon->get_bulk() >= 6)
+		if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)
 		{
-			int modified_damage = damage + damage / 20;
-			return modified_damage;
+			int extra_damage = damage / 20;
+
+			heavy_fighting_data* data = static_cast<heavy_fighting_data*>(attacker.extra_specialization_data.current_spec_info);
+			data->add_heavy_fighting_damage(extra_damage);
+
+			return damage + extra_damage;
 		}
 	}
-	*/
 
 	return damage;
+}
+
+//============================================================================
+double get_wild_fighting_proc_chance(int tactics)
+{
+	switch (tactics)
+	{
+	case TACTICS_DEFENSIVE:
+	case TACTICS_CAREFUL:
+		return 0.0;
+	case TACTICS_NORMAL:
+		return 0.05;
+	case TACTICS_AGGRESSIVE:
+		return 0.10;
+	case TACTICS_BERSERK:
+		return 0.15;
+	default:
+		return 0.0;
+	}
 }
 
 //============================================================================
 int wild_fighting_effect(char_data* attacker, int damage)
 {
 	/* 10% chance for wild fighters to rush when they hit */
-	if (utils::get_specialization(*attacker) == game_types::PS_WildFighting && number() >= 0.9)
+	if (utils::get_specialization(*attacker) == game_types::PS_WildFighting)
 	{
-		send_to_char("You rush forward wildly.\n\r", attacker);
-		act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
+		int tactics = utils::get_tactics(*attacker);
+		double proc_chance = get_wild_fighting_proc_chance(tactics);
+		
+		if (number() < proc_chance)
+		{
+			send_to_char("You rush forward wildly.\n\r", attacker);
+			act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
 
-		return int(damage * 1.5);
+			int extra_damage = int(damage * 0.5);
+
+			wild_fighting_data* data = static_cast<wild_fighting_data*>(attacker->extra_specialization_data.current_spec_info);
+			data->add_rush_damage(extra_damage);
+
+			return damage + extra_damage;
+		}
 	}
 
 	return damage;
@@ -2339,19 +2369,28 @@ int wild_fighting_effect(char_data* attacker, int damage)
 //============================================================================
 int defender_effect(char_data* attacker, char_data* victim, int damage)
 {
-	// Defender specialized characters have a 30% chance to reduce damage by 30% from
-	// hits.
 	if (utils::get_specialization(*victim) == game_types::PS_Defender)
 	{
 		obj_data* shield = victim->equipment[WEAR_SHIELD];
 		if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD)
 		{
-			if (number() >= 0.70)
+			int warrior_level = utils::get_prof_level(PROF_WARRIOR, *victim);
+			int ranger_level = utils::get_prof_level(PROF_RANGER, *victim);
+			int defender_block_chance = std::max(warrior_level, ranger_level);
+			defender_block_chance += std::min(warrior_level, ranger_level) / 2;
+
+			if (number(0, 100) <= defender_block_chance)
 			{
 				act("You block $N's attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_CHAR);
 				act("$n blocks your attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_VICT);
 				act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
-				return int(damage * 0.7);
+
+				int blocked_damage = int(damage * 0.3);
+
+				defender_data* data = static_cast<defender_data*>(victim->extra_specialization_data.current_spec_info);
+				data->add_blocked_damage(blocked_damage);
+
+				return damage - blocked_damage;
 			}
 		}
 	}
@@ -2376,7 +2415,7 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 	}
 
 	int spec_bonus = 0;
-	// Protection specialization gets additional defenses against magic.
+	// Protection specialization grants a bit of extra dodge.
 	if (utils::get_specialization(victim) == game_types::PS_Protection)
 	{
 		spec_bonus += 3;
@@ -2632,9 +2671,9 @@ bool can_double_hit(const char_data* character)
 	if (utils::get_specialization(*character) != game_types::PS_LightFighting)
 		return false;
 
-	// Characters must be wielding a weapon with a bulk of 3 or less to double hit.
+	// Characters must be wielding a weapon in one hand to double strike.
 	obj_data* weapon = character->equipment[WIELD];
-	if (!weapon || weapon->get_bulk() > 3)
+	if (!weapon || utils::is_twohanded(*character))
 		return false;
 
 	// The character is no longer fighting anyone.  Can't double-hit.
@@ -2651,8 +2690,8 @@ bool can_double_hit(const char_data* character)
 
 bool does_double_hit_proc(const char_data* character)
 {
-	// Double-hit has a 15% proc chance.
-	return number() >= 0.85;
+	// Double-hit has a 10% proc chance.
+	return number() >= 0.9;
 }
 
 /*
@@ -2707,6 +2746,9 @@ void perform_violence(int mini_tics)
 
 					if (can_double_hit(ch) && does_double_hit_proc(ch))
 					{
+						light_fighting_data* data = static_cast<light_fighting_data*>(ch->extra_specialization_data.current_spec_info);
+						data->add_light_fighting_proc();
+
 						char_data* victim = ch->specials.fighting;
 						act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, ch, NULL, victim, TO_CHAR);
 						act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, ch, NULL, victim, TO_VICT);

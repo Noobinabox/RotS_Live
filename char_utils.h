@@ -11,12 +11,6 @@ struct affected_type;
 
 namespace utils
 {
-	const int ENCUMB_OF_CHAIN = 12;
-	const int ENCUMB_WEIGHT_OF_CHAIN = 3000;
-	const int WEIGHT_OF_CHAIN = 3350;
-	const int HEAVY_WEAPON_WEIGHT = 500;
-	const int HEAVY_SHIELD_WEIGHT = 800;
-
 	typedef signed short sh_int;
 	typedef unsigned char byte;
 
@@ -67,6 +61,10 @@ namespace utils
 
 	bool is_evil_race(const char_data& character);
 
+	int get_worn_weight(const char_data& character);
+	int get_encumbrance_weight(const char_data& character);
+	int get_encumbrance(const char_data& character);
+	int get_leg_encumbrance(const char_data& character);
 	int get_skill_penalty(const char_data& character);
 	int get_dodge_penalty(const char_data& character);
 

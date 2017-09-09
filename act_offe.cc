@@ -269,8 +269,10 @@ ACMD(do_order)
 	 return;
       }
 
-      if (victim) {
-         if (IS_GUARDIAN(victim)) {
+      if (victim) 
+	  {
+         if (utils::is_guardian(*victim)) 
+		 {
             send_to_char("Your guardian appears unwilling to do your bidding.\n\r", ch);
             return;
          }
@@ -295,7 +297,7 @@ ACMD(do_order)
 
 	 for (k = ch->followers; k; k = k->next) {
 	    if (org_room == k->follower->in_room)
-	       if (IS_AFFECTED(k->follower, AFF_CHARM) && !IS_GUARDIAN(k->follower)) {
+	       if (IS_AFFECTED(k->follower, AFF_CHARM) && !utils::is_guardian(*k->follower)) {
 		  found = TRUE;
 		  command_interpreter(k->follower, message);
 	       }
@@ -704,94 +706,100 @@ char * rescue_message [MAX_RACES] [2] = {
 ACMD(do_rescue)
 {
 
-  int room_message = 1;
-  
-   struct char_data *victim, *tmp_ch;
-   byte	percent, prob, shadow_flag;
+	int room_message = 1;
 
-   if (IS_SHADOW(ch)){
-	send_to_char("You are too insubstantial to do that.\n\r", ch);
-	return;
-  }
+	struct char_data *victim, *tmp_ch;
+	byte	percent, prob, shadow_flag;
 
-   if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && MOB_FLAGGED(ch, MOB_PET)) {
-     act("$n shrugs at you.", FALSE, ch, 0, ch->master, TO_VICT);
-     act("$n shrugs at $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
-     return;
-   }
+	if (IS_SHADOW(ch)) {
+		send_to_char("You are too insubstantial to do that.\n\r", ch);
+		return;
+	}
 
-   if(wtl){
-     if((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num) || wtl->targ1.ptr.ch->in_room != ch->in_room){
-       send_to_char("Alas! You lost your victim.\n\r",ch);
-       return;
-     }
-     victim = wtl->targ1.ptr.ch;
-   }
-   else{
-     one_argument(argument, arg);
-     
-     if (!(victim = get_char_room_vis(ch, arg))) {
-       send_to_char("Who do you want to rescue?\n\r", ch);
-       return;
-     }
-   }
-     if (victim == ch) {
-       send_to_char("What about fleeing instead?\n\r", ch);
-       return;
-     }
-     
-     if (ch->specials.fighting == victim) {
-       send_to_char("How can you rescue someone you are trying to kill?\n\r", ch);
-       return;
-     }
+	if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && MOB_FLAGGED(ch, MOB_PET)) {
+		act("$n shrugs at you.", FALSE, ch, 0, ch->master, TO_VICT);
+		act("$n shrugs at $N.", FALSE, ch, 0, ch->master, TO_NOTVICT);
+		return;
+	}
 
-     shadow_flag = IS_SHADOW(ch);
-     
-     for (tmp_ch = world[ch->in_room].people; tmp_ch && 
-	    ((tmp_ch->specials.fighting != victim) || 
-	     (shadow_flag && !IS_SHADOW(tmp_ch)) ||
-	     (!shadow_flag && IS_NPC(tmp_ch) && IS_SHADOW(tmp_ch))); 
-	  tmp_ch = tmp_ch->next_in_room)
-       ;
-     
-     if (!tmp_ch) {
-       if(!shadow_flag)
-	 act("But no mortal is fighting $M!", FALSE, ch, 0, victim, TO_CHAR);
-       else
-	 act("But no wraith is fighting $M!", FALSE, ch, 0, victim, TO_CHAR);
-       return;
-     }
-     
-     percent = number(1, 101); /* 101% is a complete failure */
-     prob = GET_SKILL(ch, SKILL_RESCUE);
+	if (wtl) {
+		if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num) || wtl->targ1.ptr.ch->in_room != ch->in_room) {
+			send_to_char("Alas! You lost your victim.\n\r", ch);
+			return;
+		}
+		victim = wtl->targ1.ptr.ch;
+	}
+	else {
+		one_argument(argument, arg);
 
-      if (percent > prob) {
-	 send_to_char("You fail the rescue!\n\r", ch);
-	 return;
-      }
-      
-      if (GET_RACE(ch) >= 5) { 
-	send_to_char ("You shouldn't have rescue, stop using it!\r\n", ch);
-	return;
-      }
-      send_to_char(rescue_message[GET_RACE(ch)][0], ch);
-      act("To your relief $N has rescued you.", FALSE, victim, 0, ch, TO_CHAR);
-      act(rescue_message[GET_RACE(ch)] [room_message], FALSE, ch, 0, victim, TO_NOTVICT); 
-     
-      if (victim->specials.fighting == tmp_ch)
-      	stop_fighting(victim);
-      if (tmp_ch->specials.fighting)
-      	stop_fighting(tmp_ch);
-      if (victim->specials.fighting)
-        stop_fighting(victim);
+		if (!(victim = get_char_room_vis(ch, arg))) {
+			send_to_char("Who do you want to rescue?\n\r", ch);
+			return;
+		}
+	}
+	if (victim == ch) {
+		send_to_char("What about fleeing instead?\n\r", ch);
+		return;
+	}
 
-      set_fighting(ch, tmp_ch);
-      set_fighting(tmp_ch, ch); // Was commented out.  Uncommented by Fingolfin 1/1/02
-      tmp_ch->specials.fighting = ch;
+	if (ch->specials.fighting == victim) {
+		send_to_char("How can you rescue someone you are trying to kill?\n\r", ch);
+		return;
+	}
 
-      WAIT_STATE(victim, PULSE_VIOLENCE/3);
-      WAIT_STATE(ch, PULSE_VIOLENCE/2);
-	
+	shadow_flag = IS_SHADOW(ch);
+
+	for (tmp_ch = world[ch->in_room].people; tmp_ch &&
+		((tmp_ch->specials.fighting != victim) ||
+		(shadow_flag && !IS_SHADOW(tmp_ch)) ||
+			(!shadow_flag && IS_NPC(tmp_ch) && IS_SHADOW(tmp_ch)));
+		tmp_ch = tmp_ch->next_in_room)
+		;
+
+	if (!tmp_ch) {
+		if (!shadow_flag)
+			act("But no mortal is fighting $M!", FALSE, ch, 0, victim, TO_CHAR);
+		else
+			act("But no wraith is fighting $M!", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
+
+	percent = number(1, 101); /* 101% is a complete failure */
+	prob = GET_SKILL(ch, SKILL_RESCUE);
+
+	if (percent > prob) {
+		send_to_char("You fail the rescue!\n\r", ch);
+		return;
+	}
+
+	if (GET_RACE(ch) >= 5) 
+	{
+		send_to_char("You shouldn't have rescue, stop using it!\r\n", ch);
+		return;
+	}
+
+	send_to_char(rescue_message[GET_RACE(ch)][0], ch);
+	act("To your relief $N has rescued you.", FALSE, victim, 0, ch, TO_CHAR);
+	act(rescue_message[GET_RACE(ch)][room_message], FALSE, ch, 0, victim, TO_NOTVICT);
+
+	if (victim->specials.fighting == tmp_ch)
+		stop_fighting(victim);
+	if (tmp_ch->specials.fighting)
+		stop_fighting(tmp_ch);
+	if (victim->specials.fighting)
+		stop_fighting(victim);
+
+	set_fighting(ch, tmp_ch);
+	set_fighting(tmp_ch, ch); // Was commented out.  Uncommented by Fingolfin 1/1/02
+	tmp_ch->specials.fighting = ch;
+
+	// Defender specialized characters don't have a delay from rescue.
+	game_types::player_specs spec = utils::get_specialization(*ch);
+	if (spec != game_types::PS_Defender)
+	{
+		WAIT_STATE(victim, PULSE_VIOLENCE / 3);
+		WAIT_STATE(ch, PULSE_VIOLENCE / 2);
+	}
 }
 
 

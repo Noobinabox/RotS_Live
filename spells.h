@@ -13,6 +13,7 @@
 
 #include "platdef.h"  /* For sh_int, ush_int, byte, etc. */
 #include "structs.h"  /* For the MAX_SKILLS macro */
+#include <algorithm>
 
 /*
  * Spell ranges are:
@@ -152,6 +153,7 @@
 #define SPELL_DETECT_EVIL	109
 #define SPELL_ATTUNE		110
 #define SPELL_CONFUSE		111
+#define SPELL_EXPOSE_ELEMENTS	112
 
 #define SPELL_ASPHYXIATION      116
 #define SPELL_ARDA		117
@@ -288,8 +290,8 @@ inline int weapon_skill_num(game_types::weapon_type weapon_type)
 #define SPELL_LEVEL(ch, sn) (skills[(sn)].level)
 
 #define USE_MANA(ch, sn)                                                   \
-  MAX(skills[sn].min_usesmana,    120 /                                    \
-      (3 + MAX(-1, GET_PROF_LEVEL(PROF_MAGE, ch) - SPELL_LEVEL(ch, sn))) - \
+  std::max(skills[sn].min_usesmana,    120 /                                    \
+      (3 + std::max(-1, GET_PROF_LEVEL(PROF_MAGE, ch) - SPELL_LEVEL(ch, sn))) - \
       (IS_SET(skills[sn].learn_type, REDUCED_MANA) ? 5 : 0))
 
 #define USE_SPIRIT(ch, sn) (skills[sn].min_usesmana)
@@ -444,6 +446,7 @@ ASPELL(spell_mind_block);
 ASPELL(spell_resist_poison);
 ASPELL(spell_attune);
 ASPELL(spell_confuse);
+ASPELL(spell_expose_elements);
 
 bool is_strong_enough_to_tame(struct char_data* tamer, struct char_data* animal, bool include_current_followers);
 

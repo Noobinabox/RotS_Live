@@ -597,7 +597,7 @@ get_real_stealth(struct char_data *ch)
   if(IS_AFFECTED(ch, AFF_SNEAK) && 
      IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) {
     if(IS_NPC(ch))
-      percent += MAX(100, 10 * GET_LEVEL(ch) / 30);
+      percent += std::max(100, 10 * GET_LEVEL(ch) / 30);
     else
       percent += GET_SKILL(ch, SKILL_SNEAK) / 20;
   }
@@ -650,8 +650,8 @@ get_real_stealth(struct char_data *ch)
   if(GET_RACE(ch) == RACE_HOBBIT)
     percent += 5;
 
-  percent -= GET_LEG_ENCUMB(ch);
-  percent -= GET_ENCUMB(ch) / 4;
+  percent -= utils::get_leg_encumbrance(*ch);
+  percent -= utils::get_encumbrance(*ch) / 4;
 
   return(percent);
 }
@@ -662,7 +662,7 @@ int get_real_OB(char_data* ch)
 {
 	if (IS_NPC(ch))
 	{
-		int base_npc_ob = (GET_OB(ch) + GET_BAL_STR(ch) + 15 - GET_SKILL_PENALTY(ch) + GET_LEVEL(ch) / 2);
+		int base_npc_ob = (GET_OB(ch) + GET_BAL_STR(ch) + 15 - utils::get_skill_penalty(*ch) + GET_LEVEL(ch) / 2);
 		if (IS_AFFECTED(ch, AFF_CONFUSE))
 		{
 			base_npc_ob -= (get_confuse_modifier(ch) * 2 / 3);
@@ -673,30 +673,36 @@ int get_real_OB(char_data* ch)
 	int sun_mod = 0;
 	int tmpob, tactics = 0;
 
-	int ob_bonus = (GET_PROF_LEVEL(PROF_WARRIOR, ch) * 3 + 3 * GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch) * GET_LEVELA(ch) / 30) / 2 + GET_BAL_STR(ch);
+	obj_data* weapon = ch->equipment[WIELD];
+
+	int warrior_level = GET_PROF_LEVEL(PROF_WARRIOR, ch);
+	int max_warrior_level = GET_MAX_RACE_PROF_LEVEL(PROF_WARRIOR, ch);
+	int offense_stat = GET_BAL_STR(ch);
+
+	// Light fighters can use dex and some of their ranger level with light weapons.
+	if (utils::get_specialization(*ch) == game_types::PS_LightFighting)
+	{
+		if (weapon)
+		{
+			int bulk = weapon->get_bulk();
+			if (bulk <= 2 || (bulk == 3 && weapon->get_weight() <= LIGHT_WEAPON_WEIGHT_CUTOFF))
+			{
+				offense_stat = std::max(offense_stat, int(ch->tmpabilities.dex));
+
+				int ranger_bonus = GET_PROF_LEVEL(PROF_RANGER, ch) / 3;
+				warrior_level += ranger_bonus;
+			}
+		}
+	}
+
+	int ob_bonus = (warrior_level * 3 + 3 * max_warrior_level * GET_LEVELA(ch) / 30) / 2 + offense_stat;
 
 	tmpob = GET_OB(ch);
 	tmpob -= utils::get_skill_penalty(*ch);
 
-	obj_data* weapon = ch->equipment[WIELD];
 	if (!weapon)
 	{
 		return tmpob + ob_bonus;
-	}
-	else
-	{
-		// For light weapons and light fighters, allow them to use ranger level instead
-		// of warrior level and dexterity instead of strength for OB if this will give
-		// them a higher value.
-		int bulk = weapon->get_bulk();
-		if (bulk <= 2 && utils::get_specialization(*ch) == game_types::PS_LightFighting)
-		{
-			int light_ob_bonus = (utils::get_prof_level(PROF_RANGER, *ch) * 3
-				+ 3 * utils::get_max_race_prof_level(PROF_RANGER, *ch) * utils::get_level_a(*ch) / 30)
-				/ 2 + ch->tmpabilities.dex;
-
-			ob_bonus = std::max(ob_bonus, light_ob_bonus);
-		}
 	}
 
 	int weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(weapon->get_weapon_type()));
@@ -905,8 +911,10 @@ int get_followers_level(char_data *ch)  /* summ of levels of mobs/players charme
 	{
 		if ((tmpch->master == ch) && IS_AFFECTED(tmpch, AFF_CHARM))
 		{
-			if(!IS_GUARDIAN(tmpch))
+			if (!utils::is_guardian(*tmpch))
+			{
 				levels += std::max(2, tmpch->get_level());
+			}
 		}
 	}
 

@@ -7,9 +7,14 @@
 #include "handler.h" // for fname and other_side
 
 #include "structs.h"
+#include "utils.h"
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+
+#include <string>
+#include <sstream>
+#include <iostream>
 
 struct race_bodypart_data;
 
@@ -391,28 +396,28 @@ namespace utils
 
 		static const double max_race_str[] =
 		{
-			20,            // IMM
-			20,            // HUMAN
-			20,            // DWARF
-			18,            // WOOD
-			16,            // HOBBIT
-			18,            // HIGH ELF
-			20,
-			20,
-			20,
-			20,
-			20,
-			20,           // URUK
-			20,           // HARAD
-			18,	   	// COMMON ORC
-			20,	  	// EASTERLING
-			18,	  	// LHUTH
-			20,
-			20,
-			20,
-			20,
-			20,   // TROLL
-			20
+			22,            // IMM
+			22,            // HUMAN
+			22,            // DWARF
+			22,            // WOOD
+			20,            // HOBBIT
+			22,            // HIGH ELF
+			22,
+			22,
+			22,
+			22,
+			22,
+			22,           // URUK
+			22,           // HARAD
+			22,	   	// COMMON ORC
+			22,	  	// EASTERLING
+			22,	  	// LHUTH
+			22,
+			22,
+			22,
+			22,
+			22,   // TROLL
+			22
 		};
 
 		// If the character's strength is within normal bounds for their race, just return it.
@@ -436,158 +441,308 @@ namespace utils
 		return race == RACE_URUK || race == RACE_ORC || race == RACE_MAGUS;
 	}
 
-
-	namespace
+	//============================================================================
+	// Internal helper namespace for constants, etc.
+	//============================================================================
+	namespace 
 	{
-		//============================================================================
-		// Calculates the new worn weight for a character if they are wearing heavy armor
-		// and have heavy fighting specialization.
-		//============================================================================
-		int calculate_encumbrance_weight(const char_data& character)
+		/* Encumbrance values used for light fighting.  These values represent the
+		 * expected encumbrance for a piece of gear in that slot. */
+		const int light_fighting_encumb_table[MAX_WEAR] = 
 		{
-			// This is an array of size MAX_WEAR
-			sh_int* encumb_table = get_encumb_table();
+			0,
+			0,
+			0,
+			0,
+			0,
+			1,/*body*/
+			1,/*head*/
+			1,/*legs*/
+			1,/*feet*/
+			1,/*hands*/
+			1,/*arms*/
+			2,/*shield*/
+			0,/*about body*/
+			0,/*about waist*/
+			0,
+			0,
+			2,/*weapon*/
+			0,/*held*/
+			0,/*back*/
+			0,/*belt*/
+			0,/*belt*/
+			0/*belt*/
+		};
 
-			int encumbrance_weight = character.specials.encumb_weight;
-			if (get_specialization(character) != game_types::PS_HeavyFighting)
-				return encumbrance_weight;
+		/* Light fighting weight values.  These values represent the expected 
+		 * weight of an item in this slot. */
+		const int light_fighting_weight_table[MAX_WEAR] =
+		{
+			0,
+			0,
+			0,
+			0,
+			0,
+			225,/*body*/
+			225,/*head*/
+			225,/*legs*/
+			225,/*feet*/
+			225,/*hands*/
+			225,/*arms*/
+			500,/*shield*/
+			50,/*about body*/
+			0,/*about waist*/
+			0,
+			0,
+			165,/*weapon*/
+			0,/*held*/
+			0,/*back*/
+			0,/*belt*/
+			0,/*belt*/
+			0/*belt*/
+		};
 
-			// Assumptions for the following calculation.
-			assert(encumb_table[WIELD] == 1);
-			assert(encumb_table[WEAR_SHIELD] == 1);
+		/* Encumbrance values used for heavy fighting.  These values represent the
+		* expected encumbrance for a piece of gear in that slot. */
+		const int heavy_fighting_encumb_table[MAX_WEAR] =
+		{
+			0,
+			0,
+			0,
+			0,
+			0,
+			2,/*body*/
+			2,/*head*/
+			2,/*legs*/
+			2,/*feet*/
+			3,/*hands*/
+			2,/*arms*/
+			3,/*shield*/
+			0,/*about body*/
+			0,/*about waist*/
+			0,
+			0,
+			3,/*weapon*/
+			0,/*held*/
+			0,/*back*/
+			0,/*belt*/
+			0,/*belt*/
+			0/*belt*/
+		};
 
-			if (encumbrance_weight > ENCUMB_WEIGHT_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
+		/* Weight values used for heavy fighting.  These values represent the
+		* expected weight for a piece of gear in that slot. */
+		const int heavy_fighting_weight_table[MAX_WEAR] =
+		{
+			0,
+			0,
+			0,
+			0,
+			0,
+			975,/*body*/
+			325,/*head*/
+			650,/*legs*/
+			350,/*feet*/
+			400,/*hands*/
+			650,/*arms*/
+			500,/*shield*/
+			100,/*about body*/
+			0,/*about waist*/
+			0,
+			0,
+			250,/*weapon*/
+			0,/*held*/
+			0,/*back*/
+			0,/*belt*/
+			0,/*belt*/
+			0/*belt*/
+		};
+
+		//============================================================================
+		// Returns the weight of items worn by the character, potentially multiplying
+		// them by the encumbrance table.
+		//============================================================================
+		int get_character_item_weight(const char_data& character, const sh_int* encumb_table, int default_value)
+		{
+			game_types::player_specs spec = get_specialization(character);
+			if (spec == game_types::PS_HeavyFighting)
 			{
-				int remaining_encumb = encumbrance_weight;
-				int new_encumb_weight = 0;
-
-				const obj_data* weapon = character.equipment[WIELD];
-				if (weapon)
+				int total_worn_weight = 0;
+				for (int wear_index = 0; wear_index < MAX_WEAR; ++wear_index)
 				{
-					int weapon_weight = weapon->get_weight();
-					if (weapon_weight > HEAVY_WEAPON_WEIGHT)
+					const obj_data* worn_item = character.equipment[wear_index];
+					if (worn_item)
 					{
-						int encumb_difference = weapon_weight - HEAVY_WEAPON_WEIGHT;
-						new_encumb_weight += HEAVY_WEAPON_WEIGHT + int(std::sqrt(encumb_difference));
-					}
-
-					remaining_encumb -= weapon_weight;
-				}
-
-				const obj_data* shield = character.equipment[WEAR_SHIELD];
-				if (shield)
-				{
-					int shield_weight = shield->get_weight();
-					if (shield_weight > HEAVY_SHIELD_WEIGHT)
-					{
-						int encumb_difference = shield_weight - HEAVY_SHIELD_WEIGHT;
-						new_encumb_weight += HEAVY_SHIELD_WEIGHT + int(std::sqrt(encumb_difference));
-					}
-
-					remaining_encumb -= shield_weight;
-				}
-
-				int armor_encumb_weight = 0;
-				for (int armor_index = WEAR_BODY; armor_index <= WEAR_ARMS; ++armor_index)
-				{
-					const obj_data* armor = character.equipment[armor_index];
-					if (armor)
-					{
-						int armor_weight = armor->get_weight();
-						int encumb_value = encumb_table[armor_index];
-						if (encumb_value > 0)
+						int item_weight = worn_item->get_weight();
+						const int heavy_item_weight = heavy_fighting_weight_table[wear_index];
+						if (heavy_item_weight > 0 && item_weight > heavy_item_weight)
 						{
-							armor_encumb_weight += armor_weight * encumb_value;
+							// Heavy fighting uses the base item weight as the soft cap for worn weight.
+							int heavy_adjustment = int(std::sqrt(item_weight - heavy_item_weight));
+							item_weight = heavy_item_weight + heavy_adjustment;
+						}
+
+						if (encumb_table)
+						{
+							int encumb_value = encumb_table[wear_index];
+							if (encumb_value > 0)
+							{
+								total_worn_weight += item_weight * encumb_value;
+							}
+							else
+							{
+								total_worn_weight += item_weight / 2;
+							}
 						}
 						else
 						{
-							armor_encumb_weight += armor_weight / 2;
+							total_worn_weight += item_weight;
 						}
 					}
 				}
 
-				remaining_encumb -= armor_encumb_weight;
-
-				if (armor_encumb_weight > ENCUMB_WEIGHT_OF_CHAIN)
+				return total_worn_weight;
+			}
+			else if (spec == game_types::PS_LightFighting)
+			{
+				int total_worn_weight = 0;
+				for (int wear_index = 0; wear_index < MAX_WEAR; ++wear_index)
 				{
-					int encumb_difference = armor_encumb_weight - ENCUMB_WEIGHT_OF_CHAIN;
-					new_encumb_weight += ENCUMB_WEIGHT_OF_CHAIN + int(std::sqrt(encumb_difference));
+					const obj_data* worn_item = character.equipment[wear_index];
+					if (worn_item)
+					{
+						int item_weight = worn_item->get_weight();
+						const int light_item_weight = light_fighting_weight_table[wear_index];
+
+						// Light fighting performs a soft weight reduction based on the item weight.
+						item_weight = std::max(item_weight - light_item_weight, 0);
+
+						if (encumb_table)
+						{
+							int encumb_value = encumb_table[wear_index];
+							if (encumb_value > 0)
+							{
+								total_worn_weight += item_weight * encumb_value;
+							}
+							else
+							{
+								total_worn_weight += item_weight / 2;
+							}
+						}
+						else
+						{
+							total_worn_weight += item_weight;
+						}
+					}
 				}
 
-				new_encumb_weight += remaining_encumb;
-				return new_encumb_weight;
+				return total_worn_weight;
 			}
 
-			return encumbrance_weight;
+			return default_value;
 		}
 
 		//============================================================================
-		// Calculates the new worn weight for a character if they are wearing heavy armor
-		// and have heavy fighting specialization.
+		// Returns the character's encumbrance value, calculated based on spec.
 		//============================================================================
-		int calculate_worn_weight(const char_data& character)
+		int get_encumbrance(const char_data& character, const sh_int* encumb_table, int default_value)
 		{
-			int worn_weight = character.specials.worn_weight;
-			if (get_specialization(character) != game_types::PS_HeavyFighting)
-				return worn_weight;
-
-			if (worn_weight > WEIGHT_OF_CHAIN + HEAVY_SHIELD_WEIGHT + HEAVY_WEAPON_WEIGHT)
+			if (get_specialization(character) == game_types::PS_HeavyFighting)
 			{
-				int remaining_weight = worn_weight;
-				int new_worn_weight = 0;
+				// Recalculate encumbrance.
+				int new_encumb = 0;
 
-				const obj_data* weapon = character.equipment[WIELD];
-				if (weapon)
+				// Used to track how much the character is "over" the encumbrance difference.
+				int heavy_fighting_encumbrance_difference = 0;
+
+				for (int item_index = 0; item_index < MAX_WEAR; ++item_index)
 				{
-					int weapon_weight = weapon->get_weight();
-					if (weapon_weight > HEAVY_WEAPON_WEIGHT)
+					if (encumb_table[item_index] > 0)
 					{
-						int weight_difference = weapon_weight - HEAVY_WEAPON_WEIGHT;
-						new_worn_weight += HEAVY_WEAPON_WEIGHT + int(std::sqrt(weight_difference));
-					}
+						const obj_data* worn_item = character.equipment[item_index];
+						if (worn_item)
+						{
+							sh_int multiplier = encumb_table[item_index];
+							int item_encumbrance = worn_item->obj_flags.value[2];
 
-					remaining_weight -= weapon_weight;
-				}
+							const int heavy_item_encumbrance = heavy_fighting_encumb_table[item_index];
+							if (heavy_item_encumbrance > 0 && item_encumbrance > heavy_item_encumbrance)
+							{
+								heavy_fighting_encumbrance_difference += (item_encumbrance - heavy_item_encumbrance) * multiplier;
+								item_encumbrance = heavy_item_encumbrance;
+							}
 
-				const obj_data* shield = character.equipment[WEAR_SHIELD];
-				if (shield)
-				{
-					int shield_weight = shield->get_weight();
-					if (shield_weight > HEAVY_SHIELD_WEIGHT)
-					{
-						int weight_difference = shield_weight - HEAVY_SHIELD_WEIGHT;
-						new_worn_weight += HEAVY_SHIELD_WEIGHT + int(std::sqrt(weight_difference));
-					}
-
-					remaining_weight -= shield_weight;
-				}
-
-				int armor_weight = 0;
-				for (int armor_index = WEAR_BODY; armor_index <= WEAR_ARMS; ++armor_index)
-				{
-					const obj_data* armor = character.equipment[armor_index];
-					if (armor)
-					{
-						armor_weight += armor->get_weight();
+							new_encumb += item_encumbrance * multiplier;
+						}
 					}
 				}
 
-				remaining_weight -= armor_weight;
+				new_encumb += int(std::sqrt(heavy_fighting_encumbrance_difference));
 
-				if (armor_weight > WEIGHT_OF_CHAIN)
+				return new_encumb;
+			}
+			else if (get_specialization(character) == game_types::PS_LightFighting)
+			{
+				// Recalculate encumbrance.
+				int new_encumb = 0;
+
+				for (int item_index = 0; item_index < MAX_WEAR; ++item_index)
 				{
-					int weight_difference = armor_weight - WEIGHT_OF_CHAIN;
-					new_worn_weight += WEIGHT_OF_CHAIN + int(std::sqrt(weight_difference));
+					if (encumb_table[item_index] > 0)
+					{
+						const obj_data* worn_item = character.equipment[item_index];
+						if (worn_item)
+						{
+							int item_encumbrance = worn_item->obj_flags.value[2];
+							item_encumbrance = std::max(item_encumbrance - light_fighting_encumb_table[item_index], 0);
+							new_encumb += item_encumbrance * encumb_table[item_index];
+						}
+					}
 				}
 
-				new_worn_weight += remaining_weight;
-				return new_worn_weight;
+				return new_encumb;
 			}
 
-			return worn_weight;
+			return default_value;
 		}
 	}
 
+	//============================================================================
+	// Calculates the new encumbrance weight for a character based on specialization.
+	//============================================================================
+	int get_encumbrance_weight(const char_data& character)
+	{
+		sh_int* encumb_table = get_encumb_table();
+		int encumbrance_weight = character.specials.encumb_weight;
+
+		return get_character_item_weight(character, encumb_table, encumbrance_weight);
+	}
+
+	//============================================================================
+	// Calculates the new worn weight for a character based on specialization.
+	//============================================================================
+	int get_worn_weight(const char_data& character)
+	{
+		int worn_weight = character.specials.worn_weight;
+
+		return get_character_item_weight(character, NULL, worn_weight);
+	}
+
+	//============================================================================
+	int get_encumbrance(const char_data& character)
+	{
+		int base_encumb = character.points.encumb;
+		sh_int* encumb_table = get_encumb_table();
+		return get_encumbrance(character, encumb_table, base_encumb);
+	}
+
+	//============================================================================
+	int get_leg_encumbrance(const char_data& character)
+	{
+		int base_encumb = character.specials2.leg_encumb;
+		sh_int* encumb_table = get_leg_encumb_table();
+		return get_encumbrance(character, encumb_table, base_encumb);
+	}
 
 	//============================================================================
 	int get_skill_penalty(const char_data& character)
@@ -596,14 +751,10 @@ namespace utils
 		const int encumb_divisor = 50;
 
 		int character_strength = get_bal_strength(character);
-		int encumb_weight = calculate_encumbrance_weight(character);
-		int base_encumb = character.points.encumb;
-		if (get_specialization(character) == game_types::PS_HeavyFighting)
-		{
-			base_encumb = std::min(base_encumb, ENCUMB_OF_CHAIN + 2);
-		}
+		int encumb_weight = get_encumbrance_weight(character);
+		int encumbrance = get_encumbrance(character);
 
-		int raw_encumb_factor = base_encumb * encumb_multiplier;
+		int raw_encumb_factor = encumbrance * encumb_multiplier;
 		int encumb_weight_factor = encumb_weight / character_strength;
 		int skill_penalty = raw_encumb_factor + encumb_weight_factor;
 		skill_penalty /=  encumb_divisor;
@@ -616,9 +767,9 @@ namespace utils
 		const int dodge_multiplier = 20;
 
 		int character_strength = get_bal_strength(character);
-		int worn_weight = calculate_worn_weight(character);
+		int worn_weight = get_worn_weight(character);
 
-		int raw_encumb_factor = character.specials2.leg_encumb * dodge_multiplier;
+		int raw_encumb_factor = get_leg_encumbrance(character) * dodge_multiplier;
 		int worn_weight_factor = worn_weight / character_strength;
 		int dodge_penalty = raw_encumb_factor + worn_weight_factor;
 		dodge_penalty /= dodge_multiplier;
@@ -1077,7 +1228,18 @@ namespace utils
 		if (is_npc(character) || character.profs == NULL)
 			return;
 
+		if (character.extra_specialization_data.is_mage_spec())
+		{
+			untrack_specialized_mage(&character);
+		}
+
 		character.profs->specialization = (int)value;
+		character.extra_specialization_data.set(character);
+		
+		if (character.extra_specialization_data.is_mage_spec())
+		{
+			track_specialized_mage(&character);
+		}
 	}
 
 	//============================================================================
@@ -1096,7 +1258,236 @@ namespace utils
 	bool is_guardian(const char_data& character)
 	{
 		return is_npc(character) && is_affected_by(character, AFF_CHARM)
-			&& character.master != NULL && is_mob_flagged(character, MOB_BODYGUARD);
+			&& character.master != NULL && is_mob_flagged(character, MOB_GUARDIAN);
 	}
+}
+
+void cold_spec_data::on_chill_applied(int chill_amount)
+{
+	total_energy_sapped += chill_amount;
+}
+
+void cold_spec_data::on_chill_ray_success(int damage)
+{
+	++total_chill_ray_count;
+	++successful_chill_ray_count;
+	total_chill_ray_damage += damage;
+}
+
+void cold_spec_data::on_chill_ray_fail(int damage)
+{
+	++total_chill_ray_count;
+	++failed_chill_ray_count;
+	total_chill_ray_damage += damage;
+}
+
+void cold_spec_data::on_cone_of_cold_success(int damage)
+{
+	++total_cone_of_cold_count;
+	++successful_cone_of_cold_count;
+	total_cone_of_cold_damage += damage;
+}
+
+void cold_spec_data::on_cone_of_cold_failed(int damage)
+{
+	++total_cone_of_cold_count;
+	++failed_cone_of_cold_count;
+	total_cone_of_cold_damage += damage;
+}
+
+void specialization_data::reset()
+{
+	if (current_spec_info)
+	{
+		delete current_spec_info;
+		current_spec_info = NULL;
+	}
+
+	current_spec = game_types::PS_None;
+}
+
+void specialization_data::set(char_data& character)
+{
+	reset();
+
+	game_types::player_specs spec = utils::get_specialization(character);
+	if (spec == game_types::PS_Darkness)
+	{
+		current_spec_info = new darkness_spec_data();
+	}
+	else if (spec == game_types::PS_Fire)
+	{
+		current_spec_info = new fire_spec_data();
+	}
+	else if (spec == game_types::PS_Lightning)
+	{
+		current_spec_info = new lightning_spec_data();
+	}
+	else if (spec == game_types::PS_Arcane)
+	{
+		current_spec_info = new arcane_spec_data();
+	}
+	else if (spec == game_types::PS_Cold)
+	{
+		current_spec_info = new cold_spec_data();
+	}
+	else if (spec == game_types::PS_Defender)
+	{
+		current_spec_info = new defender_data();
+	}
+	else if (spec == game_types::PS_LightFighting)
+	{
+		current_spec_info = new light_fighting_data();
+	}
+	else if (spec == game_types::PS_HeavyFighting)
+	{
+		current_spec_info = new heavy_fighting_data();
+	}
+	else if (spec == game_types::PS_WildFighting)
+	{
+		current_spec_info = new wild_fighting_data();
+	}
+
+	current_spec = spec;
+}
+
+std::string specialization_data::to_string(char_data& character) const
+{
+	if (current_spec_info)
+	{
+		return current_spec_info->to_string(character);
+	}
+
+	return std::string("You are not specialized in anything.\r\n");
+}
+
+std::string elemental_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in a mage specialization." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string cold_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in cold." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "Your cold spells are more difficult to resist." << std::endl;
+	message_writer << "Your fire spells are easier to resist." << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	message_writer << "Your cone of cold spell can now chill targets." << std::endl;
+	message_writer << "Your chill ray spell is much harder to resist." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	/*
+	message_writer << "Chill Ray:" << std::endl;
+	message_writer << "\tTotal Casts: " << get_chill_ray_count() << std::endl;
+	message_writer << "\tSuccessful Casts: " << get_successful_chills() << std::endl;
+	message_writer << "\tFailed Casts: " << get_saved_chills() << std::endl;
+	message_writer << "\tTotal Damage: " << total_chill_ray_damage << std::endl << std::endl;
+	message_writer << "Cone of Cold:" << std::endl;
+	message_writer << "\tTotal Casts: " << get_cone_count() << std::endl;
+	message_writer << "\tSuccessful Casts: " << get_successful_cones() << std::endl;
+	message_writer << "\tFailed Casts: " << get_saved_cones() << std::endl;
+	message_writer << "\tTotal Damage: " << total_cone_of_cold_damage << std::endl << std::endl;
+	message_writer << "\tTotal Attacks Stopped: " << get_total_energy_sapped() / ENE_TO_HIT << std::endl;
+	*/
+	return message_writer.str();
+}
+
+std::string fire_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in fire." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "Your fire spells are more difficult to resist." << std::endl;
+	message_writer << "Your cold spells are easier to resist." << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	if (utils::is_race_good(character))
+	{
+		message_writer << "The minimum damage of firebolt is increased significantly." << std::endl;
+		message_writer << "Your fireballs will no longer spread to friendly targets." << std::endl;
+	}
+	else
+	{
+		message_writer << "Your searing darkness spell deals significantly more fire damage." << std::endl;
+	}
+	message_writer << "------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string lightning_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in lightning." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "Your lightning spells are more difficult to resist." << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	message_writer << "Lightning bolt does not lose effectiveness indoors, and deals increased damage." << std::endl;
+	message_writer << "You can cast lightning strike without a storm at slightly reduced effectiveness." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string darkness_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in darkness." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "Your dark spells are more difficult to resist." << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	if (utils::is_race_magi(character))
+	{
+		message_writer << "Your black arrow is harder to resist." << std::endl;
+		message_writer << "Your spear of darkness spell deals additional damage." << std::endl;
+	}
+	else
+	{
+		message_writer << "Your dark bolt spell deals increased damage." << std::endl;
+		message_writer << "Your searing darkness spell deals additional dark damage." << std::endl;
+	}
+	message_writer << "------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string arcane_spec_data::to_string(char_data& character) const
+{
+	std::ostringstream message_writer;
+	message_writer << "You are specialized in the arcane." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
+	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+	message_writer << "You can cast spells at a normal, fast, or slow pace." << std::endl;
+	message_writer << "Slow cast spells against exposed targets will restore mana." << std::endl;
+	message_writer << "------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string heavy_fighting_data::to_string(char_data& character) const
+{
+	return std::string("You are specialized in heavy fighting.");
+}
+
+std::string light_fighting_data::to_string(char_data& character) const
+{
+	return std::string("You are specialized in light fighting.");
+}
+
+std::string defender_data::to_string(char_data& character) const
+{
+	return std::string("You are specialized in defending.");
+}
+
+std::string wild_fighting_data::to_string(char_data& character) const
+{
+	return std::string("You are specialized in wild fighting.");
 }
 

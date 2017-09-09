@@ -1439,10 +1439,14 @@ ASPELL(spell_enchant_weapon)
 		!IS_SET(obj->obj_flags.extra_flags, ITEM_MAGIC)) {
 
 		for (i = 0; i < MAX_OBJ_AFFECT; i++)
-			if (obj->affected[i].location != APPLY_NONE) {
+		{
+			if (obj->affected[i].location != APPLY_NONE) 
+			{
+				GET_SPIRIT(caster) += 50;
 				send_to_char("There is too much magic in it already.\n\r", caster);
 				return;
 			}
+		}
 
 		SET_BIT(obj->obj_flags.extra_flags, ITEM_MAGIC);
 		bonus = 6;
@@ -1539,6 +1543,123 @@ ASPELL(spell_confuse) {
 	}
 }
 
+void set_guardian_stats(const int caster_mystic_level, char_ability_data& guardian_mob_abilities)
+{
+	const int ability_base = 8 + caster_mystic_level / 4;
+	guardian_mob_abilities.str = ability_base;
+	guardian_mob_abilities.intel = ability_base;
+	guardian_mob_abilities.wil = ability_base;
+	guardian_mob_abilities.dex = ability_base;
+	guardian_mob_abilities.con = ability_base;
+	guardian_mob_abilities.lea = ability_base;
+}
+
+int calc_guardian_hp(const int base_hp, const int caster_mystic_level)
+{
+	double random_factor = number(6.0) - 3.0; // TODO(drelidan): fix number_d with negative "to" number.
+	int health = int(base_hp * (caster_mystic_level + random_factor) / 3.0);
+	return health;
+}
+
+void set_guardian_health(char_data* guardian_mob, int new_health, bool restore_health)
+{
+	if (restore_health || guardian_mob->abilities.hit < new_health)
+	{
+		guardian_mob->abilities.hit = new_health;
+		guardian_mob->constabilities.hit = new_health;
+	}
+
+	if (restore_health)
+	{
+		guardian_mob->tmpabilities.hit = new_health;
+	}
+	else
+	{
+		guardian_mob->tmpabilities.hit = std::min(guardian_mob->tmpabilities.hit, guardian_mob->abilities.hit);
+	}
+}
+
+void tweak_aggressive_guardian_stats(const int caster_mystic_level, char_data* guardian_mob, bool restore_health)
+{
+	guardian_mob->abilities.str += 5;
+	guardian_mob->abilities.wil -= 5;
+
+	guardian_mob->tmpabilities.str += 5;
+	guardian_mob->tmpabilities.wil -= 5;
+
+	guardian_mob->constabilities.str += 5;
+	guardian_mob->constabilities.wil -= 5;
+
+	const int BASE_OB = 13;
+	guardian_mob->points.OB = BASE_OB * caster_mystic_level / 5;
+	guardian_mob->points.parry = 3 + caster_mystic_level / 2;
+	guardian_mob->points.dodge = caster_mystic_level / 10;
+	guardian_mob->points.damage = (caster_mystic_level / 3) + 1;
+
+	const int BASE_HP = 9;
+	int health = calc_guardian_hp(BASE_HP, caster_mystic_level);
+	set_guardian_health(guardian_mob, health, restore_health);
+}
+
+void tweak_defensive_guardian_stats(const int caster_mystic_level, char_data* guardian_mob, bool restore_health)
+{
+	guardian_mob->abilities.wil -= 5;
+	guardian_mob->tmpabilities.wil -= 5;
+	guardian_mob->constabilities.wil -= 5;
+
+	guardian_mob->points.OB = (caster_mystic_level / 2) - 2;
+	guardian_mob->points.parry = 8 + caster_mystic_level * 2;
+	guardian_mob->points.dodge = 8 + caster_mystic_level;
+	guardian_mob->points.damage = (caster_mystic_level / 6) + 1;
+
+	const int BASE_HP = 22;
+	int health = calc_guardian_hp(BASE_HP, caster_mystic_level);
+	set_guardian_health(guardian_mob, health, restore_health);
+}
+
+void tweak_mystic_guardian_stats(const int caster_mystic_level, char_data* guardian_mob, bool restore_health)
+{
+	guardian_mob->abilities.wil += 5;
+	guardian_mob->tmpabilities.wil += 5;
+	guardian_mob->constabilities.wil += 5;
+
+	guardian_mob->points.OB = 0;
+	guardian_mob->points.dodge = 0;
+	guardian_mob->points.parry = 0;
+
+	guardian_mob->points.damage = (caster_mystic_level / 6);
+
+	const int BASE_HP = 5;
+	int health = calc_guardian_hp(BASE_HP, caster_mystic_level);
+	set_guardian_health(guardian_mob, health, restore_health);
+}
+
+void scale_guardian(int guardian_type, const char_data* caster, char_data* guardian_mob, bool restore_health)
+{
+	const int caster_mystic_level = utils::get_prof_level(PROF_CLERIC, *caster);
+	guardian_mob->player.level = caster_mystic_level / 2;
+	set_guardian_stats(caster_mystic_level, guardian_mob->constabilities);
+	set_guardian_stats(caster_mystic_level, guardian_mob->abilities);
+	set_guardian_stats(caster_mystic_level, guardian_mob->tmpabilities);
+
+	switch (guardian_type)
+	{
+	case AGGRESSIVE_GUARDIAN:
+		tweak_aggressive_guardian_stats(caster_mystic_level, guardian_mob, restore_health);
+		break;
+	case DEFENSIVE_GUARDIAN:
+		tweak_defensive_guardian_stats(caster_mystic_level, guardian_mob, restore_health);
+		break;
+	case MYSTIC_GUARDIAN:
+		tweak_mystic_guardian_stats(caster_mystic_level, guardian_mob, restore_health);
+		break;
+	default:
+		break;
+	}
+
+	guardian_mob->points.willpower = sh_int(guardian_mob->player.level + guardian_mob->abilities.wil);
+}
+
 ASPELL(spell_guardian) {
 	/*
 	 * Guardian now takes an extra
@@ -1585,7 +1706,7 @@ ASPELL(spell_guardian) {
 
 	if (caster->in_room == NOWHERE) return;
 	for (tmpch = character_list; tmpch; tmpch = tmpch->next)
-		if ((tmpch->master == caster) && IS_GUARDIAN(tmpch))
+		if ((tmpch->master == caster) && utils::is_guardian(*tmpch))
 			break;
 
 	if (tmpch) {
@@ -1603,6 +1724,7 @@ ASPELL(spell_guardian) {
 	add_follower(guardian, caster, FOLLOW_MOVE);
 	SET_BIT(guardian->specials.affected_by, AFF_CHARM);
 	SET_BIT(MOB_FLAGS(guardian), MOB_PET);
+	scale_guardian(guardian_to_load, caster, guardian, true);
 }
 
 

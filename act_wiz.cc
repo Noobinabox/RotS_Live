@@ -28,6 +28,7 @@
 #include "protos.h"
 #include "zone.h"
 #include "pkill.h"
+#include "char_utils.h"
 
 /*   external vars  */
 extern FILE *player_fl;
@@ -837,7 +838,7 @@ void do_stat_character(struct char_data *ch, struct char_data *k)
 	   GET_SPIRIT(k), 0,0, /*GET_MAX_SPIRIT(k), spirit_gain(k),*/
 	   (k)->constabilities.hit, (k)->constabilities.mana, (k)->constabilities.move);
    send_to_char(buf, ch);
-   sprintf (buf,"Encumbrance %d, Leg_encu %d, Perception %d, Willpower %d,\n\r",GET_ENCUMB(k),GET_LEG_ENCUMB(k), GET_PERCEPTION(k),GET_WILLPOWER(k));
+   sprintf (buf,"Encumbrance %d, Leg_encu %d, Perception %d, Willpower %d,\n\r", utils::get_encumbrance(*k), utils::get_leg_encumbrance(*k), GET_PERCEPTION(k),GET_WILLPOWER(k));
    send_to_char(buf,ch);
    sprintf(buf, "Coins: [%9d]\n\r", GET_GOLD(k));
    send_to_char(buf, ch);

@@ -30,6 +30,7 @@
 #include "pkill.h"
 
 #include "big_brother.h"
+#include <string>
 #include <cmath>
 #include "char_utils.h"
 
@@ -323,9 +324,16 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
 	}
 	if (IS_AFFECTED(viewer, AFF_DETECT_MAGIC))
 	{
+		bool is_exposed_to_elements = false;
+		if (viewer->extra_specialization_data.is_mage_spec())
+		{
+			elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(viewer->extra_specialization_data.current_spec_info);
+			is_exposed_to_elements = looked_at->abs_number == spec_data->exposed_target_id;
+		}
+
 		game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 		bool is_protected = !bb_instance.is_target_valid(viewer, looked_at);
-		if (!looked_at->affected && !is_protected)
+		if (looked_at->affected == false && is_protected == false && is_exposed_to_elements == false)
 		{
 			sprintf(buf, "%s is not affected by anything.\n\r", strname);
 			send_to_char(buf, viewer);
@@ -336,6 +344,10 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
 			if (is_protected)
 			{
 				sprintf(buf, "%-30s (special)\n\r", "holy protection");
+			}
+			if (is_exposed_to_elements)
+			{
+				sprintf(buf, "%-30s (special)\n\r", "expose elements");
 			}
 			for (tmpaff = looked_at->affected; tmpaff; tmpaff = tmpaff->next)
 			{
@@ -1758,7 +1770,7 @@ ACMD(do_info)
   /* `ch's skill encumbrance and leg encumbrance */
   bufpt += sprintf(bufpt, "Your skill encumbrance is %d, and your "
 		   "movement is encumbered by %d.\n\r",
-		   GET_ENCUMB(ch), GET_LEG_ENCUMB(ch));
+		   utils::get_encumbrance(*ch), utils::get_leg_encumbrance(*ch));
 
   /* How much effort `ch' has to put into moving in this room */
   tmp = room_move_cost(ch, &world[ch->in_room]);
@@ -1867,44 +1879,78 @@ int test_hp(int war_points, int ran_points, int cler_points, int level, int con_
 
 ACMD(do_score)
 {
-  int tmp;
-  char *bufpt;
+	int tmp;
+	char *bufpt;
 
-  bufpt = buf;
-  bufpt += sprintf(bufpt, "You have %d/%d hit, %d/%d stamina, %d/%d moves, "
-		   "%d spirit.\r\n", GET_HIT(ch), GET_MAX_HIT(ch),
-		   GET_MANA(ch), GET_MAX_MANA(ch), GET_MOVE(ch),
-		   GET_MAX_MOVE(ch), GET_SPIRIT(ch) );
+	bufpt = buf;
+	bufpt += sprintf(bufpt, "You have %d/%d hit, %d/%d stamina, %d/%d moves, "
+		"%d spirit.\r\n", GET_HIT(ch), GET_MAX_HIT(ch),
+		GET_MANA(ch), GET_MAX_MANA(ch), GET_MOVE(ch),
+		GET_MAX_MOVE(ch), GET_SPIRIT(ch));
 
-  bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
-		   get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
-		   GET_ENE_REGEN(ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
+	bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
+		get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
+		GET_ENE_REGEN(ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
 
-  /* No XP blurb for immortals */
-  if(GET_LEVEL(ch) < LEVEL_IMMORT - 1) {
-    tmp = xp_to_level(GET_LEVEL(ch) + 1) - GET_EXP(ch);
-    if(tmp < 1000 && tmp > -1000)
-      bufpt += sprintf(bufpt, ", XP Needed: %d.\n\r", tmp);
-    else
-      bufpt += sprintf(bufpt, ", XP Needed: %dK.\n\r", tmp / 1000);
-  }
-  else
-    bufpt += sprintf(bufpt, ".\r\n");
+	/* No XP blurb for immortals */
+	if (GET_LEVEL(ch) < LEVEL_IMMORT - 1) 
+	{
+		tmp = xp_to_level(GET_LEVEL(ch) + 1) - GET_EXP(ch);
+		if (tmp < 1000 && tmp > -1000)
+		{
+			bufpt += sprintf(bufpt, ", XP Needed: %d.\n\r", tmp);
+		}
+		else
+		{
+			bufpt += sprintf(bufpt, ", XP Needed: %dK.\n\r", tmp / 1000);
+		}
+	}
+	else
+	{
+		bufpt += sprintf(bufpt, ".\r\n");
+	}
 
-  if(GET_COND(ch, DRUNK) > 10)
-    bufpt += sprintf(bufpt, "You are intoxicated.\n\r");
-  if(!GET_COND(ch, FULL))
-    bufpt += sprintf(bufpt, "You are hungry.\r\n");
-  else
-    if(GET_COND(ch, FULL) < 4 && GET_COND(ch, FULL) > 0)
-      bufpt += sprintf(bufpt, "You are getting hungry.\r\n");
-  if(!GET_COND(ch, THIRST))
-    bufpt += sprintf(bufpt, "You are thirsty.\r\n");
-  else
-    if(GET_COND(ch, THIRST) < 4 && GET_COND(ch, THIRST) > 0)
-      bufpt += sprintf(bufpt, "You are getting thirsty.\r\n");
-  
-  send_to_char(buf, ch);
+	if (utils::get_specialization(*ch) == game_types::PS_LightFighting)
+	{
+		obj_data* weapon = ch->equipment[WIELD];
+		if (weapon && (weapon->get_bulk() <= 2 || (weapon->get_bulk() == 3 && weapon->get_weight() <= LIGHT_WEAPON_WEIGHT_CUTOFF)))
+		{
+			bufpt += sprintf(bufpt, "The lightness of your weapon lends precision to your strikes.\r\n");
+		}
+	}
+	else if (utils::get_specialization(*ch) == game_types::PS_HeavyFighting)
+	{
+		obj_data* weapon = ch->equipment[WIELD];
+		if (weapon && (weapon->get_bulk() >= 4 || (weapon->get_bulk() == 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)))
+		{
+			bufpt += sprintf(bufpt, "The heft of your weapon lends power to your blows.\r\n");
+		}
+	}
+
+	if (GET_COND(ch, DRUNK) > 10)
+	{
+		bufpt += sprintf(bufpt, "You are intoxicated.\n\r");
+	}
+
+	if (!GET_COND(ch, FULL))
+	{
+		bufpt += sprintf(bufpt, "You are hungry.\r\n");
+	}
+	else if (GET_COND(ch, FULL) < 4 && GET_COND(ch, FULL) > 0)
+	{
+		bufpt += sprintf(bufpt, "You are getting hungry.\r\n");
+	}
+	
+	if (!GET_COND(ch, THIRST))
+	{
+		bufpt += sprintf(bufpt, "You are thirsty.\r\n");
+	}
+	else if (GET_COND(ch, THIRST) < 4 && GET_COND(ch, THIRST) > 0)
+	{
+		bufpt += sprintf(bufpt, "You are getting thirsty.\r\n");
+	}
+
+	send_to_char(buf, ch);
 }
 
 
@@ -4658,3 +4704,37 @@ void do_identify_object(struct char_data *ch, struct obj_data *j) {
 
   send_to_char("\r\n", ch);
 }
+
+void do_details(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
+{
+	const char* SPEC_FLAG = "spec";
+	const char* GROUP_FLAG = "group";
+
+	if (wait_list && (wait_list->targ1.type == TARGET_TEXT))
+	{
+		const char* details_argument = argument + 1;
+
+		int len = strlen(details_argument);
+		if (len == 0)
+			return;
+
+		if (strstr(details_argument, SPEC_FLAG))
+		{
+			std::string spec_data = character->extra_specialization_data.to_string(*character);
+			send_to_char(spec_data.c_str(), character);
+		}
+		else if (strstr(details_argument, GROUP_FLAG))
+		{
+			send_to_char("Group details:  NYI\r\n", character);
+		}
+		else
+		{
+			send_to_char("Accepted arguments: spec, group\r\n", character);
+		}
+	}
+	else
+	{
+		send_to_char("Accepted arguments: spec, group\r\n", character);
+	}
+}
+

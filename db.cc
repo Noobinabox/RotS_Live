@@ -23,6 +23,7 @@
 #include "zone.h"
 #include "pkill.h"
 
+#include "char_utils.h"
 #include "big_brother.h"
 #include <string>
 #include <sstream>
@@ -2102,12 +2103,15 @@ void	store_to_char(struct char_file_u *st, struct char_data *ch)
    ch->points.damage          = 0;//st->points.damage;
    SET_DODGE(ch)          = 0;
    SET_OB(ch)             = 0;
-   SET_ENCUMB(ch) = 0;
-   SET_LEG_ENCUMB(ch) = 0;
-   
+   ch->points.encumb = 0;
+   ch->specials2.leg_encumb = 0;
    ch->points.ENE_regen        = st->points.ENE_regen;
    ch->specials.ENERGY  = 1200;
    
+   utils::set_specialization(*ch, game_types::PS_None);
+   int spec = st->profs.specialization;
+   utils::set_specialization(*ch, game_types::player_specs(spec));
+
    CREATE(ch->player.name, char, strlen(st->name) + 1);
    strcpy(ch->player.name, st->name);
 
@@ -2696,6 +2700,7 @@ void	free_char(struct char_data *ch)
    }
 //printf("skills freed, and others\n");
 
+   ch->extra_specialization_data.reset();
    remove_char_exists(ch->abs_number);
    RELEASE(ch);
 }
@@ -2883,6 +2888,7 @@ void	clear_char(struct char_data *ch, int mode)
   ch->specials2.rp_flag = 0;
   ch->specials2.retiredon = 0;
   ch->specials2.hide_flags = 0;
+  utils::set_specialization(*ch, game_types::PS_None);
   
   SET_DODGE(ch) = 0; /* Basic Armor */
   if (ch->abilities.mana < 100)
@@ -3009,64 +3015,86 @@ int	real_room(int virt)
 /* returns the real number of the monster with given virt number */
 int	real_mobile(int virt)
 {
-   int	bot, top, mid;
+	int	bot, top, mid;
+	bot = 0;
+	top = top_of_mobt;
 
-   bot = 0;
-   top = top_of_mobt;
+	/* perform binary search on mob-table */
+	for (; ; )
+	{
+		mid = (bot + top) / 2;
 
-   /* perform binary search on mob-table */
-   for (; ; ) {
-      mid = (bot + top) / 2;
-
-      if ((mob_index + mid)->virt == virt)
-	 return(mid);
-      if (bot >= top)
-	 return(-1);
-      if ((mob_index + mid)->virt > virt)
-	 top = mid - 1;
-      else
-	 bot = mid + 1;
-   }
+		if ((mob_index + mid)->virt == virt)
+		{
+			return(mid);
+		}
+		if (bot >= top)
+		{
+			return(-1);
+		}
+		if ((mob_index + mid)->virt > virt)
+		{
+			top = mid - 1;
+		}
+		else
+		{
+			bot = mid + 1;
+		}
+	}
 }
-
-
-
-
-
 
 /* returns the real number of the object with given virt number */
 int	real_object(int virt)
 {
-   int	bot, top, mid;
+	int	bot, top, mid;
 
-   bot = 0;
-   top = top_of_objt;
+	bot = 0;
+	top = top_of_objt;
 
-   /* perform binary search on obj-table */
-   for (; ; ) {
-      mid = (bot + top) / 2;
+	/* perform binary search on obj-table */
+	for (; ; )
+	{
+		mid = (bot + top) / 2;
 
-      if ((obj_index + mid)->virt == virt)
-	 return(mid);
-      if (bot >= top)
-	 return(-1);
-      if ((obj_index + mid)->virt > virt)
-	 top = mid - 1;
-      else
-	 bot = mid + 1;
-   }
+		if ((obj_index + mid)->virt == virt)
+		{
+			return(mid);
+		}
+		if (bot >= top)
+		{
+			return(-1);
+		}
+		if ((obj_index + mid)->virt > virt)
+		{
+			top = mid - 1;
+		}
+		else
+		{
+			bot = mid + 1;
+		}
+	}
 }
 
-int real_program(int virt){
-  int tmp;
-  
-  for(tmp = 0; tmp <= num_of_programs; tmp++)
-    if(mobile_program_zone[tmp] == virt) break;
+int real_program(int virt)
+{
+	int tmp = 0;
 
-  if(tmp == num_of_programs+1) return 0;
+	for (tmp = 0; tmp <= num_of_programs; tmp++)
+	{
+		if (mobile_program_zone[tmp] == virt)
+		{
+			break;
+		}
+	}
 
-  return tmp;
+	if (tmp == num_of_programs + 1)
+	{
+		return 0;
+	}
+
+	return tmp;
 }
+
 
 void load_mudlle(FILE * fp){
   int tmp;

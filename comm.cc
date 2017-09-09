@@ -39,6 +39,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #define MAX_HOSTNAME	256
 #define OPT_USEC	250000  /* time delay corresponding to 4 passes/sec */
@@ -235,12 +236,11 @@ main(int argc, char **argv)
    return(0);
 }
 
-
-
-
+// TODO(drelidan):  Move this into a place that makes sense.  We're cooking pasta!
+std::vector<char_data*> specialized_mages;
 
 /* Init sockets, run game, and cleanup sockets */
-void	run_the_game(sh_int port)
+void run_the_game(sh_int port)
 {
    int	s;
 
@@ -260,6 +260,7 @@ void	run_the_game(sh_int port)
    log(buf);
    log("Entering game loop.");
 
+   specialized_mages.clear();
    game_loop(s);
 
    close_sockets(s);
@@ -273,12 +274,87 @@ void	run_the_game(sh_int port)
    log("Normal termination of game.");
 }
 
+void clean_expose_elements()
+{
+	typedef std::vector<char_data*>::iterator iter_type;
+
+	for (iter_type iter = specialized_mages.begin(); iter != specialized_mages.end(); )
+	{
+		char_data* mage = *iter;
+		if (mage->extra_specialization_data.is_mage_spec())
+		{
+			elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(mage->extra_specialization_data.current_spec_info);
+			if (spec_data->exposed_target_id != 0)
+			{
+				// The mage has cast 'expose elements' on a target.  If that target is no longer
+				// in the room, remove this.
+				int room_number = mage->in_room;
+				const room_data& current_room = world[room_number];
+				
+				bool found_target = false;
+				for (char_data* person = current_room.people; person; person = person->next_in_room)
+				{
+					if (person->abs_number == spec_data->exposed_target_id)
+					{
+						found_target = true;
+						break;
+					}
+				}
+
+				if (!found_target)
+				{
+					send_to_char("Your target is no longer vulnerable to your spells.\r\n", mage);
+					spec_data->reset();
+				}
+			}
+
+			++iter;
+		}
+		else
+		{
+			// character no longer has a mage spec - remove them from our tracked list
+			iter = specialized_mages.erase(iter);
+		}
+	}
+}
+
+/* MORE SPAGHETTI!!! */
+
+/* Implementation from for function defined in utils.h */
+void track_specialized_mage(char_data* mage)
+{
+	if (!mage)
+		return;
+
+	typedef std::vector<char_data*>::iterator iter_type;
+
+	iter_type found_mage = std::find(specialized_mages.begin(), specialized_mages.end(), mage);
+	if (found_mage == specialized_mages.end())
+	{
+		specialized_mages.push_back(mage);
+	}
+}
+
+/* Implementation from for function defined in utils.h */
+void untrack_specialized_mage(char_data* mage)
+{
+	if (!mage)
+		return;
+
+	typedef std::vector<char_data*>::iterator iter_type;
+
+	iter_type found_mage = std::remove(specialized_mages.begin(), specialized_mages.end(), mage);
+	if (found_mage != specialized_mages.end())
+	{
+		specialized_mages.erase(found_mage);
+	}
+}
+
 void add_prompt(char * prompt, struct char_data * ch, long flag);
 
 
 /* Accept pnew connects, relay commands, and call 'heartbeat-functs' */
-
-struct timeval opt_time;
+timeval opt_time;
 int pulse = 0;  // moved here from being a local variable
 
 void game_loop(SocketType s)
@@ -683,6 +759,9 @@ void game_loop(SocketType s)
 			//now increasing hp/mp/mana/spirit fast in fast_update.. 
 			fast_update();
 			affect_update();
+
+			// clean-up expose elements
+			clean_expose_elements();
 		}
 
 		if (!(pulse % (60 * 4))) /* one minute */
@@ -1620,7 +1699,7 @@ void close_socket(descriptor_data* conn_descriptor, int drop_all)
 			save_char(conn_descriptor->character, NOWHERE, 0);
 			act("$n has lost $s link.", TRUE, conn_descriptor->character, 0, 0, TO_ROOM);
 			sprintf(buf, "Closing link to: %s [%s].", GET_NAME(conn_descriptor->character), conn_descriptor->host);
-			mudlog(buf, NRM, std::max(sh_int(LEVEL_IMMORT), GET_INVIS_LEV(conn_descriptor->character)), TRUE);
+			mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(conn_descriptor->character)), TRUE);
 			//	 d->character->desc = 0;
 			conn_descriptor->connected = CON_LINKLS;
 		}
@@ -1634,7 +1713,7 @@ void close_socket(descriptor_data* conn_descriptor, int drop_all)
 			{
 				sprintf(buf, "Losing Unnamed player [%s].", conn_descriptor->host);
 			}
-			mudlog(buf, NRM, std::max(sh_int(LEVEL_IMMORT), GET_INVIS_LEV(conn_descriptor->character)), TRUE);
+			mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(conn_descriptor->character)), TRUE);
 			free_char(conn_descriptor->character);
 			drop_all = 1;
 		}

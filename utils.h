@@ -88,6 +88,9 @@ int can_breathe(char_data *ch);
 
 struct time_info_data age(struct char_data *ch);
 
+void track_specialized_mage(char_data* mage);
+void untrack_specialized_mage(char_data* mage);
+
 /* defines for fseek */
 #ifndef SEEK_SET
 #define SEEK_SET	0
@@ -381,12 +384,6 @@ struct time_info_data age(struct char_data *ch);
 #define GET_PARRY(ch) ((ch)->points.parry)
 #define SET_PARRY(ch) ((ch)->points.parry)
 
-#define GET_ENCUMB(ch) ((ch)->points.encumb)
-#define SET_ENCUMB(ch) ((ch)->points.encumb)
-
-#define GET_LEG_ENCUMB(ch) ((ch)->specials2.leg_encumb)
-#define SET_LEG_ENCUMB(ch) ((ch)->specials2.leg_encumb)
-
 // If:  the adjacent room is not DARK, not INDOORS, and the exit is open or broken:
 // and if the adjacent room ain't shadowy either (loman)
 #define IS_SUNLIT_EXIT(cur_room, adj_room, door) \
@@ -403,10 +400,6 @@ struct time_info_data age(struct char_data *ch);
 
 #define SUN_PENALTY(ch) (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS)) && OUTSIDE(ch) && (weather_info.sunlight == SUN_LIGHT) && (!IS_SET(world[ch->in_room].room_flags, DARK)) && (!IS_SET(world[ch->in_room].room_flags, SHADOWY)))
 #define EVIL_RACE(ch)  ((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS))
-
-#define GET_SKILL_PENALTY(ch) ((GET_ENCUMB(ch)*25 + GET_ENCUMB_WEIGHT(ch)/GET_BAL_STR(ch))/50)
-
-#define GET_DODGE_PENALTY(ch) ((GET_LEG_ENCUMB(ch)*20+ GET_WORN_WEIGHT(ch)/GET_BAL_STR(ch))/20)
 
 #define GET_OB(ch) ((ch)->points.OB)
 #define SET_OB(ch) ((ch)->points.OB)
@@ -668,11 +661,11 @@ void bzero(char *, int);
 void    show_char_to_char(struct char_data *i, struct char_data *ch, int mode,
 			  char * pos_line = 0);
 
-#define IS_GUARDIAN(ch)	(IS_AFFECTED((ch), AFF_CHARM) && IS_NPC((ch)) && \
-			(ch)->master && MOB_FLAGGED((ch), MOB_BODYGUARD))
-
 #define IS_WATER(room)	((world[(room)].sector_type == SECT_WATER_SWIM) || \
 			 (world[(room)].sector_type == SECT_WATER_NOSWIM) || \
 			 (world[(room)].sector_type == SECT_UNDERWATER))
+
+/* Returns the guardian type.  Returns GUARDIAN_INVALID if the mob is not a guardian. */
+int get_guardian_type(int race_number, const char_data* in_guardian_mob);
 
 #endif /* UTILS_H */

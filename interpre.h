@@ -26,6 +26,7 @@
 
 #define CRYPT(a,b) ((char *)(a))
 
+typedef int(*special_func)(char_data* host, char_data* character, int cmd, char* argument, int callflag, waiting_type* wait_data);
 #define SPECIAL(cname) int (cname)(struct char_data *host, struct char_data *ch, int cmd, char *arg,int callflag, waiting_type * wtl)
 
 

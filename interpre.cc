@@ -28,6 +28,7 @@
 #include "mail.h"
 #include "pkill.h"
 
+#include "char_utils.h"
 #include "big_brother.h"
 
 
@@ -279,6 +280,8 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
 void do_scan(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
+void do_details(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
+
 const char *command[] = {
    "north", 		               /* 1 */
    "east",
@@ -512,6 +515,7 @@ const char *command[] = {
    "recover",
    "retrieve",
    "scan",
+   "details",
    "\n"
 };
 
@@ -1598,36 +1602,47 @@ half_chop(char *string, char *arg1, char *arg2)
 
 void *virt_program_number(int);
 
-int
-activate_char_special(struct char_data *k, struct char_data *ch, int cmd,
-		      char *arg, int callflag, struct waiting_type *wtl,
-		      int in_room)
+int activate_char_special(char_data* character, char_data* victim, int cmd, char* argument, 
+	int callflag, waiting_type* wait_data, int in_room)
 {
-  SPECIAL(*tmpfunc);
+	special_func tmp_func;
 
-  if(IS_MOB(k)) {
-    if(mob_index[k->nr].func &&
-       (IS_SET(k->specials2.act, MOB_SPEC) && !no_specials)) {
-      if((*mob_index[k->nr].func)(k, ch, cmd, arg, callflag, wtl))
-	return 1;
-    }
-    else if(k->specials.store_prog_number) {
-      tmpfunc = (SPECIAL(*))virt_program_number(k->specials.store_prog_number);
-      if(tmpfunc(k, ch, cmd, arg, callflag,wtl))
-	return 1;
-    }
-    else if(k->specials.union1.prog_number) {
-      if(intelligent(k, ch, cmd, arg, callflag, wtl))
-	return 1;
-    }
-  }
-  else if(!IS_NPC(k) && k->specials.store_prog_number) {
-    tmpfunc=(SPECIAL(*))virt_program_number(k->specials.store_prog_number);
-    if(tmpfunc(k, ch, cmd, arg, callflag, wtl))
-      return 1;
-  }
+	if (IS_MOB(character)) 
+	{
+		tmp_func = mob_index[character->nr].func;
+		if (tmp_func && (IS_SET(character->specials2.act, MOB_SPEC) && !no_specials))
+		{
+			if (tmp_func(character, victim, cmd, argument, callflag, wait_data))
+			{
+				return 1;
+			}
+		}
+		else if (character->specials.store_prog_number) 
+		{
+			tmp_func = (special_func)virt_program_number(character->specials.store_prog_number);
+			if (tmp_func && tmp_func(character, victim, cmd, argument, callflag, wait_data))
+			{
+				return 1;
+			}
+		}
+		else if (character->specials.union1.prog_number) 
+		{
+			if (intelligent(character, victim, cmd, argument, callflag, wait_data))
+			{
+				return 1;
+			}
+		}
+	}
+	else if (!IS_NPC(character) && character->specials.store_prog_number) 
+	{
+		tmp_func = (special_func)virt_program_number(character->specials.store_prog_number);
+		if (tmp_func && tmp_func(character, victim, cmd, argument, callflag, wait_data))
+		{
+			return 1;
+		}
+	}
 
-  return 0;
+	return 0;
 }
 
 
@@ -2045,7 +2060,7 @@ assign_command_pointers(void)
 	   FULL_TARGET, FULL_TARGET, 0);
   COMMANDO(126, POSITION_DEAD,     do_invis,     LEVEL_IMMORT+1, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
-  COMMANDO(127, POSITION_DEAD,     do_specialize, 20, TRUE, 0,
+  COMMANDO(127, POSITION_DEAD,     do_specialize, 12, TRUE, 0,
 	   TAR_TEXT | TAR_NONE_OK, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
   COMMANDO(128, POSITION_DEAD,     do_set,       0, TRUE, 0,
 	   FULL_TARGET, FULL_TARGET, 0);
@@ -2248,6 +2263,8 @@ assign_command_pointers(void)
 	  FULL_TARGET, TAR_IGNORE, 0);
   COMMANDO(232, POSITION_STANDING, do_scan, 0, TRUE, 0,
 	  FULL_TARGET, TAR_IGNORE, 0);
+  COMMANDO(233, POSITION_DEAD, do_details, 0, TRUE, 0,
+	  TAR_TEXT | TAR_NONE_OK, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
 }
 
 
@@ -3220,6 +3237,8 @@ introduce_char(struct descriptor_data *d)
   sprintf(buf,"Char created: %s, idnum = %ld", GET_NAME(d->character),
 	  GET_IDNUM(d->character));
   log(buf);
+
+  utils::set_specialization(*d->character, game_types::PS_None);
 
   if((fp = Crash_get_file_by_name(GET_NAME(d->character), "wb")))
     fclose(fp);

@@ -782,9 +782,25 @@ ambush_calculate_success(struct char_data *ch, struct char_data *victim)
 	if (GET_POSITION(victim) <= POSITION_RESTING)
 		percent += 25 * (POSITION_FIGHTING - GET_POSITION(victim));
 	percent -= GET_AMBUSHED(victim);
-	percent -= GET_ENCUMB(ch);
+	percent -= utils::get_encumbrance(*ch);
 
 	return percent;
+}
+
+int calculate_ambush_damage_cap(const char_data* attacker)
+{
+	assert(attacker);
+
+	int ranger_level = utils::get_prof_level(PROF_RANGER, *attacker);
+	if (ranger_level <= LEVEL_MAX)
+	{
+		return ranger_level * 10;
+	}
+	else
+	{
+		ranger_level -= LEVEL_MAX;
+		return LEVEL_MAX * 10 + ranger_level * 4;
+	}
 }
 
 /*
@@ -793,49 +809,53 @@ ambush_calculate_success(struct char_data *ch, struct char_data *victim)
  * against an opponent with no awareness, the modifier should be
  * on the order of 60.
  */
-int
-ambush_calculate_damage(struct char_data *ch, struct char_data *victim,
-                        int modifier)
+int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier)
 {
-	int dmg;
-        int weapon_bulk, weapon_dmg;
-
 	if (modifier <= 0)
 		return 0;
 
-	if (ch->equipment[WIELD] != NULL) {
-		weapon_bulk = ch->equipment[WIELD]->obj_flags.value[2];
-		weapon_dmg = get_weapon_damage(ch->equipment[WIELD]);
-	} else {
-		weapon_bulk = 0;
-		weapon_dmg = 0;
+	int weapon_bulk = 0;
+	int weapon_dmg = 0;
+	
+	if (attacker->equipment[WIELD] != NULL) 
+	{
+		weapon_bulk = attacker->equipment[WIELD]->get_bulk();
+		weapon_dmg = get_weapon_damage(attacker->equipment[WIELD]);
 	}
 
-	dmg = 120 + modifier;
+	int damage_dealt = 60 + modifier;
 
 	/* Scale by the amount of hp the victim has */
-	dmg *= MIN(GET_HIT(victim), GET_PROF_LEVEL(PROF_RANGER, ch) * 20);
+	damage_dealt *= std::min(GET_HIT(victim), GET_PROF_LEVEL(PROF_RANGER, attacker) * 20);
 
 	/* Penalize for gear encumbrance and weapon encumbrance */
-	dmg /= 400 + 5 * (GET_ENCUMB(ch) + GET_LEG_ENCUMB(ch) +
-	        weapon_bulk*weapon_bulk);
+	damage_dealt /= 400 + 5 * (utils::get_encumbrance(*attacker) + utils::get_leg_encumbrance(*attacker) + weapon_bulk * weapon_bulk);
 
 	/* Add a small constant amount of damage */
-	dmg += GET_PROF_LEVEL(PROF_RANGER, ch) - GET_LEVELA(victim) + 15;
+	damage_dealt += GET_PROF_LEVEL(PROF_RANGER, attacker) - GET_LEVELA(victim) + 10;
 
-	/* Add damage based on weapon */
-	dmg += (weapon_dmg*weapon_dmg/100) * GET_LEVELA(ch)/30;
-
-	/* Reduce the damage of ambush unless the ch is below 20
-	   and spec in stealth*/
-	if (GET_LEVEL(ch) > 20 && utils::get_specialization(*ch) != game_types::PS_Stealth)
+	/* Apply stealth specialization amplification */
+	if (utils::get_specialization(*attacker) == game_types::PS_Stealth)
 	{
-		dmg = dmg * 3 / 4;
+		damage_dealt = damage_dealt * 3 / 2;
 	}
 
-	/* Ambushes are capped at 275 damage */
-	dmg = MIN(dmg, 275);
-	return dmg;
+	/* Add damage based on weapon */
+	damage_dealt += (weapon_dmg*weapon_dmg / 100) * GET_LEVELA(attacker) / 30;
+
+	int soft_damage_cap = calculate_ambush_damage_cap(attacker);
+	if (damage_dealt > soft_damage_cap)
+	{
+		damage_dealt = soft_damage_cap + ((damage_dealt - soft_damage_cap) / 3);
+	}
+
+	if (utils::is_pc(*attacker))
+	{
+		sprintf(buf, "%s ambush damage of %3d.", GET_NAME(attacker), damage_dealt);
+		mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
+	}
+
+	return damage_dealt;
 }
 
 ACMD(do_ambush)
@@ -1817,54 +1837,65 @@ ACMD (do_hunt) {
  *     calls can determine whether or not we should bonus this
  *     character for his sneaking
  */
-void
-snuck_in(struct char_data *ch)
+void snuck_in(struct char_data *ch)
 {
-  int wait;
-  struct char_data *t;
+	GET_HIDING(ch) = number(hide_prof(ch) / 3, hide_prof(ch) * 4 / 5);
+	if (GET_HIDING(ch) > 0)
+	{
+		SET_BIT(ch->specials.affected_by, AFF_HIDE);
+	}
+	SET_BIT(ch->specials2.hide_flags, HIDING_SNUCK_IN);
 
-  GET_HIDING(ch) = number(hide_prof(ch) / 3, hide_prof(ch) * 4 / 5);
-  if(GET_HIDING(ch) > 0)
-    SET_BIT(ch->specials.affected_by, AFF_HIDE);
-  SET_BIT(ch->specials2.hide_flags, HIDING_SNUCK_IN);
+	char_data* observer = NULL;
+	for (observer = world[ch->in_room].people; observer; observer = observer->next_in_room)
+	{
+		if (observer != ch && CAN_SEE(ch, observer))
+		{
+			break;
+		}
+	}
 
-  for(t = world[ch->in_room].people; t; t = t->next_in_room)
-    if(t != ch && CAN_SEE(ch, t))
-      break;
-  if(t)
-    send_to_char("You managed to enter without anyone noticing.\r\n", ch);
+	if (observer)
+	{
+		send_to_char("You managed to enter without anyone noticing.\r\n", ch);
+	}
 
-  /*
-   * If you're hunting, we don't want sneak to make your hunt delay
-   * non-existent, so we add the hunt delay to the sneak delay if
-   * you're hunting.
-   *
-   * For those confused as to why we use the variable `wait': since
-   * macro expansion simply replaces the text in the macro with the
-   * text we send it as arguments, sending 'ch->delay.wait_value + 2'
-   * doesn't actually work.  WAIT_STATE is called, it calls
-   * WAIT_STATE_FULL, which will call abort_delay (in the case of
-   * hunt), which will set ch->delay.wait_value to 0.  Your wait time
-   * will still be using the simple ch->delay.wait_value + 2 syntax
-   * when it actually performs the wait_value assignment in
-   * WAIT_STATE_FULL, but the value in ch->delay.wait_value will
-   * already be 0.
-   *
-   * Another worthy thing to note is that the WAIT_STATE macros seem
-   * to go through alot of angst to circumvent the buzz-worthy 'double
-   * delays'; a double delay is just what is happening here: the hunt
-   * delay is still active, and we're throwing another on top of it.
-   * I don't really see what the problem with this is, assuming both
-   * delays were set with WAIT_STATE (and they are, for this case).
-   * Notice that if anyone ever mudlles any sort of delay, sneak won't
-   * destroy the delay's value, but it'll destroy its other info.. not
-   * quite sure what we should do about this.
-   */
-  wait = ch->delay.wait_value + 2;
-  if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
-    wait = wait - 1;
+	/*
+	 * If you're hunting, we don't want sneak to make your hunt delay
+	 * non-existent, so we add the hunt delay to the sneak delay if
+	 * you're hunting.
+	 *
+	 * For those confused as to why we use the variable `wait': since
+	 * macro expansion simply replaces the text in the macro with the
+	 * text we send it as arguments, sending 'ch->delay.wait_value + 2'
+	 * doesn't actually work.  WAIT_STATE is called, it calls
+	 * WAIT_STATE_FULL, which will call abort_delay (in the case of
+	 * hunt), which will set ch->delay.wait_value to 0.  Your wait time
+	 * will still be using the simple ch->delay.wait_value + 2 syntax
+	 * when it actually performs the wait_value assignment in
+	 * WAIT_STATE_FULL, but the value in ch->delay.wait_value will
+	 * already be 0.
+	 *
+	 * Another worthy thing to note is that the WAIT_STATE macros seem
+	 * to go through a lot of angst to circumvent the buzz-worthy 'double
+	 * delays'; a double delay is just what is happening here: the hunt
+	 * delay is still active, and we're throwing another on top of it.
+	 * I don't really see what the problem with this is, assuming both
+	 * delays were set with WAIT_STATE (and they are, for this case).
+	 * Notice that if anyone ever muddles any sort of delay, sneak won't
+	 * destroy the delay's value, but it'll destroy its other info.. not
+	 * quite sure what we should do about this.
+	 */
 
-  WAIT_STATE(ch, wait);
+	// Characters that are stealth spec do not have a sneak delay.
+	if (utils::get_specialization(*ch) != game_types::PS_Stealth)
+	{
+		int wait = ch->delay.wait_value + 2;
+		if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
+			wait = wait - 1;
+
+		WAIT_STATE(ch, wait);
+	}
 }
 
 
@@ -2638,7 +2669,7 @@ ACMD(do_shoot)
 	if (subcmd == -1)
 	{
 		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
-		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after interruption.
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 		
 		// Clean-up targets.
 		wtl->targ1.cleanup();
@@ -2766,7 +2797,7 @@ ACMD(do_shoot)
 			on_arrow_miss(ch, victim, arrow);
 		}
 
-		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0); // reset swing timer after loosing an arrow.
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after loosing an arrow.
 
 		// Clean-up targets.
 		wtl->targ1.cleanup();

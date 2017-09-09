@@ -379,7 +379,7 @@ FILE* Crash_load(char_data* character)
 		send_to_char("*** Your equipment was lost! Please contact an immortal. ***\n\r", character);
 		sprintf(buf, "%s entering game with no equipment.", GET_NAME(character));
 		GET_ALIAS(character) = 0;
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		character->specials2.load_room = calc_load_room(character, RENT_UNDEF);
 		return fl;
 	}
@@ -410,7 +410,7 @@ FILE* Crash_load(char_data* character)
 			equip_lost = 1;
 			sprintf(buf, "%s entering game, rented equipment lost (no $).",
 				GET_NAME(character));
-			mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+			mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		}
 		else {
 			equip_lost = 0;
@@ -421,28 +421,28 @@ FILE* Crash_load(char_data* character)
 	switch (orig_rent_code = rent.rentcode) {
 	case RENT_RENTED:
 		sprintf(buf, "%s un-renting and entering game.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	case RENT_CRASH:
 		sprintf(buf, "%s retrieving crash-saved items and entering game.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	case RENT_CAMP:
 		sprintf(buf, "%s un-camping and entering game.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	case RENT_FORCED:
 	case RENT_TIMEDOUT:
 		sprintf(buf, "%s retrieving force-saved items and entering game.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	case RENT_QUIT:
 		sprintf(buf, "%s un-quit and entering game.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	default:
 		sprintf(buf, "WARNING: %s entering game with undefined rent code.", GET_NAME(character));
-		mudlog(buf, NRM, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+		mudlog(buf, NRM, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 		break;
 	}
 
@@ -798,6 +798,7 @@ void Crash_follower_load(struct char_data *ch, FILE *fp){
 			  calm_affect.bitvector = 0;
 			  affect_to_char(mob, &calm_affect);
 		  }
+		  
 		  if (GET_SPEC(ch) == PLRSPEC_PETS)
 		  {
 			  mob->abilities.str += 2;
@@ -811,8 +812,13 @@ void Crash_follower_load(struct char_data *ch, FILE *fp){
         break;
       
       case FOL_GUARDIAN:  // and guardian
-        SET_BIT(mob->specials.affected_by, AFF_CHARM);
-        SET_BIT(MOB_FLAGS(mob), MOB_PET);
+	  {
+		  extern int scale_guardian(int, const char_data*, char_data*, bool);
+		  SET_BIT(mob->specials.affected_by, AFF_CHARM);
+		  SET_BIT(MOB_FLAGS(mob), MOB_PET);
+		  int guardian_type = get_guardian_type(ch->player.race, mob);
+		  scale_guardian(guardian_type, ch, mob, true);
+	  }
         break;
       
       case FOL_MOUNT:

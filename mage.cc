@@ -59,12 +59,36 @@ int get_magic_power(const char_data* caster)
 
 int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, int spell_number, int hit_location)
 {
-	int saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
+	double saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
+	if (utils::is_pc(*caster))
+	{
+		if (utils::is_npc(*victim))
+		{
+			saving_throw = saving_throw - (utils::get_prof_level(PROF_MAGE, *caster) / 5.0);
+		}
+		else
+		{
+			// Players that are a higher level than their attacker's mage level
+			// get some innate damage reduction.  Players at a lower level take
+			// extra damage.
+			double saving_throw_bonus = (utils::get_level_a(*victim) - utils::get_prof_level(PROF_MAGE, *caster)) / 5.0;
+			saving_throw += saving_throw_bonus;
+		}
+	}
 
-	double damage_multiplier = 20.0 / (20.0 + saving_throw);
+	double damage_multiplier = 1.0;
+	if (saving_throw > 0)
+	{
+		damage_multiplier = 20.0 / (20.0 + saving_throw);
+	}
+	else if (saving_throw < 0)
+	{
+		damage_multiplier = 2.0 - (20.0 / (20.0 - saving_throw));
+	}
+	
 	damage_dealt = int(damage_dealt * damage_multiplier);
 
-	damage(caster, victim, damage_dealt, spell_number, hit_location);
+	return damage(caster, victim, damage_dealt, spell_number, hit_location);
 }
 
 /*
@@ -1163,7 +1187,7 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
 /*
  * Spell Magic Missile
  * Our most basic Offensive spell
- * Does small ammounts of phys damage 
+ * Does small amounts of phys damage 
  */
 
 ASPELL(spell_magic_missile)
@@ -1186,10 +1210,16 @@ ASPELL(spell_magic_missile)
 	}
 }
 
-void apply_chilled_effect(char_data* victim)
+void apply_chilled_effect(char_data* caster, char_data* victim)
 {
 	int energy_lost = victim->specials.ENERGY / 2 + victim->points.ENE_regen * 4;
 	victim->specials.ENERGY -= energy_lost;
+
+	if (utils::get_specialization(*caster) == game_types::PS_Cold)
+	{
+		cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
+		data->on_chill_applied(energy_lost);
+	}
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1205,12 +1235,13 @@ void apply_chilled_effect(char_data* victim)
 ASPELL(spell_chill_ray)
 {
 	int mag_power = get_magic_power(caster);
-	int dam = number(1, mag_power) / 2 + 15;
+	int dam = number(1, mag_power) / 2 + 20;
 
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
-
-	// Cold spec makes it much more difficult to resist chill ray.
-	if (utils::get_specialization(*caster) == game_types::PS_Cold)
+	
+	// Cold spec makes chill ray much harder to resist.
+	bool is_cold_spec = utils::get_specialization(*caster) == game_types::PS_Cold;
+	if (is_cold_spec)
 	{
 		save_bonus -= 4;
 	}
@@ -1218,11 +1249,21 @@ ASPELL(spell_chill_ray)
 	bool saved = new_saves_spell(caster, victim, save_bonus);
 	if (!saved)
 	{
-		apply_chilled_effect(victim);
+		apply_chilled_effect(caster, victim);
+		if (is_cold_spec)
+		{
+			cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
+			data->on_chill_ray_success(dam);
+		}
 	}
 	else
 	{
 		dam >>= 1;
+		if (is_cold_spec)
+		{
+			cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
+			data->on_chill_ray_fail(dam);
+		}
 	}
 
 	apply_spell_damage(caster, victim, dam, SPELL_CHILL_RAY, 0);
@@ -1370,18 +1411,27 @@ ASPELL(spell_cone_of_cold)
 {
 	int dam = number(1, get_magic_power(caster)) / 2 + get_magic_power(caster) / 4 + 25;
 
-	if (victim) 
+	if (victim)
 	{
+		bool is_cold_spec = utils::get_specialization(*caster) == game_types::PS_Cold;
+
 		int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
 		bool saved = new_saves_spell(caster, victim, save_bonus);
 		if (saved)
 		{
 			dam = dam * 2 / 3;
+			if (is_cold_spec)
+			{
+				cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
+				data->on_cone_of_cold_failed(dam);
+			}
 		}
-		else if(utils::get_specialization(*caster) == game_types::PS_Cold)
+		else if(is_cold_spec)
 		{
 			// Cold spec mages apply the chilled effect on Cone of Cold.
-			apply_chilled_effect(victim);
+			apply_chilled_effect(caster, victim);
+			cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
+			data->on_cone_of_cold_success(dam);
 		}
 		apply_spell_damage(caster, victim, dam, SPELL_CONE_OF_COLD, 0);
 		
@@ -1652,10 +1702,10 @@ ASPELL(spell_searing_darkness)
 
 	int fire_damage = number(0, get_magic_power(caster)) / 2 + 15;
 
-	// Fire spec adds an additional 10% fire damage.
+	// Fire spec adds an additional 50% fire damage.
 	if (caster_spec == game_types::PS_Fire)
 	{
-		fire_damage += fire_damage / 10;
+		fire_damage += fire_damage / 2;
 	}
 
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
@@ -1676,7 +1726,7 @@ ASPELL(spell_searing_darkness)
 		send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
 	}
 
-	// Lightning spec adds an additional 10% darkness damage.
+	// Dark spec adds an additional 10% darkness damage.
 	if (caster_spec == game_types::PS_Darkness)
 	{
 		darkness_damage += darkness_damage / 10;
@@ -1702,79 +1752,97 @@ ASPELL(spell_searing_darkness)
  * does big damage at the risk of hitting others in the room
  */
 
+bool is_friendly_taget(const char_data* caster, const char_data* victim)
+{
+	if (victim == caster)
+		return true;
+
+	if (victim->master)
+		return is_friendly_taget(caster, victim->master);
+
+	return !other_side(caster, victim);
+}
+
 ASPELL(spell_fireball)
 {
-	int dam, tmp;
-	struct char_data *tmpch;
-	struct char_data *tmpch_next;
+	int fireball_damage;
 
 	if (caster->in_room == NOWHERE)
 		return;
 
-	dam = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 30;
+	fireball_damage = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 30;
 
 	if (RACE_SOME_ORC(caster))
-		dam -= 5;
+		fireball_damage -= 5;
 	if (RACE_SOME_ORC(caster) && !number(0, 9)) {
 		send_to_char("You fail to control the fire you invoke!\n\r", caster);
 		victim = caster;
-		dam = dam / 3;
+		fireball_damage = fireball_damage / 3;
 	}
 
-	// Fire spec mages deal an extra 10% damage with fireball.
-	if (utils::get_specialization(*caster) == game_types::PS_Fire)
-	{
-		dam += dam / 10;
-	}
+	bool is_fire_spec = utils::get_specialization(*caster) == game_types::PS_Fire;
 
 	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
 	bool saved = new_saves_spell(caster, victim, save_bonus);
 	if (saved)
 	{
-		apply_spell_damage(caster, victim, dam * 2 / 3, SPELL_FIREBALL, 0);
+		apply_spell_damage(caster, victim, fireball_damage * 2 / 3, SPELL_FIREBALL, 0);
 		act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_CHAR);
 		act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_VICT);
 	}
 	else
 	{
-		apply_spell_damage(caster, victim, dam, SPELL_FIREBALL, 0);
+		apply_spell_damage(caster, victim, fireball_damage, SPELL_FIREBALL, 0);
 	}
 
-	for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch_next) {
-		tmpch_next = tmpch->next_in_room;
 
-		tmp = number(0, 99);
-		if ((tmpch != caster) && (tmpch != victim)) 
+	char_data* next_character = NULL;
+	for (char_data* potential_victim = world[caster->in_room].people; potential_victim; potential_victim = next_character)
+	{
+		next_character = potential_victim->next_in_room;
+		if (potential_victim == caster || potential_victim == victim)
+			continue;
+
+		double random_roll = number();
+		bool splashed = false;
+		int damage_divisor = 1;
+		if (potential_victim->specials.fighting == caster && random_roll <= 0.8)
 		{
-			if ((tmpch->specials.fighting == caster) && (tmp < 80))
+			splashed = true;
+			damage_divisor = 3;
+		}
+
+		if (potential_victim->specials.fighting != caster && random_roll <= 0.2)
+		{
+			/* Fire specialization mages won't hit friendly targets. */
+			if (is_fire_spec)
 			{
-				int tmp_save_bonus = get_save_bonus(*caster, *tmpch, game_types::PS_Fire, game_types::PS_Cold);
-				bool tmp_saved = new_saves_spell(caster, tmpch, tmp_save_bonus);
-				if (tmp_saved)
+				if (!is_friendly_taget(caster, victim))
 				{
-					apply_spell_damage(caster, tmpch, dam / 6, SPELL_FIREBALL2, 0);
-					act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, tmpch, TO_CHAR);
-					act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, tmpch, TO_VICT);
-				}
-				else
-				{
-					apply_spell_damage(caster, tmpch, dam / 3, SPELL_FIREBALL2, 0);
+					splashed = true;
+					damage_divisor = 5;
 				}
 			}
-			if ((tmpch->specials.fighting != caster) && (tmp < 20))
+			else
 			{
-				int tmp_save_bonus = get_save_bonus(*caster, *tmpch, game_types::PS_Fire, game_types::PS_Cold);
-				bool tmp_saved = new_saves_spell(caster, tmpch, tmp_save_bonus);
-				if (tmp_saved)
-				{
-					apply_spell_damage(caster, tmpch, dam / 10, SPELL_FIREBALL2, 0);
-					act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, tmpch, TO_CHAR);
-					act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, tmpch, TO_VICT);
-				}
-				else
-				{
-					apply_spell_damage(caster, tmpch, dam / 5, SPELL_FIREBALL2, 0);
-				}
+				splashed = true;
+				damage_divisor = 5;
+			}
+		}
+
+		if (splashed)
+		{
+			int tmp_save_bonus = get_save_bonus(*caster, *potential_victim, game_types::PS_Fire, game_types::PS_Cold);
+			bool tmp_saved = new_saves_spell(caster, potential_victim, tmp_save_bonus);
+			if (tmp_saved)
+			{
+				apply_spell_damage(caster, potential_victim, fireball_damage / (damage_divisor * 2), SPELL_FIREBALL2, 0);
+				act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_CHAR);
+				act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_VICT);
+			}
+			else
+			{
+				apply_spell_damage(caster, potential_victim, fireball_damage / damage_divisor, SPELL_FIREBALL2, 0);
 			}
 		}
 	}
@@ -1962,7 +2030,7 @@ ASPELL(spell_black_arrow)
 	int min_poison_dam = 5;
 	int dam = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 13;
 
-	if (!SUN_PENALTY(caster))
+	if (!SUN_PENALTY(caster) || utils::get_specialization(*caster) == game_types::PS_Darkness)
 	{
 		dam += number(0, get_magic_power(caster) / 6) + 2;
 	}
@@ -2018,7 +2086,7 @@ ASPELL(spell_word_of_agony)
 	}
 	else 
 	{
-		apply_chilled_effect(victim);
+		apply_chilled_effect(caster, victim);
 		apply_spell_damage(caster, victim, dam, SPELL_WORD_OF_AGONY, 0);
 	}
 }
@@ -2334,3 +2402,211 @@ ASPELL(spell_mist_of_baazunga)
 	return;
 }
 
+const char* get_expose_spell_message(int spell_id)
+{
+	switch (spell_id)
+	{
+	case SPELL_SPEAR_OF_DARKNESS:
+		return "Your target is now exposed to 'Spear of Darkness'.\r\n";
+		break;
+	case SPELL_SEARING_DARKNESS:
+		return "Your target is now exposed to 'Searing Darkness'.\r\n";
+		break;
+	case SPELL_DARK_BOLT:
+		return "Your target is now exposed to 'Dark Bolt'.\r\n";
+		break;
+	case SPELL_FIREBALL:
+		return "Your target is now exposed to 'Fireball'.\r\n";
+		break;
+	case SPELL_FIREBOLT:
+		return "Your target is now exposed to 'Firebolt'.\r\n";
+		break;
+	case SPELL_CONE_OF_COLD:
+		return "Your target is now exposed to 'Cone of Cold'.\r\n";
+		break;
+	case SPELL_CHILL_RAY:
+		return "Your target is now exposed to 'Chill Ray'.\r\n";
+		break;
+	case SPELL_LIGHTNING_STRIKE:
+		return "Your target is now exposed to 'Lightning Strike'.\r\n";
+		break;
+	case SPELL_LIGHTNING_BOLT:
+		return "Your target is now exposed to 'Lightning Bolt'.\r\n";
+		break;
+	default:
+		return "Unknown spell.\r\n";
+	}
+}
+
+void spell_expose_elements(char_data* caster, char* arg, int type, char_data* victim, obj_data *obj, int digit, int is_object)
+{
+	if (!victim || !caster)
+		return;
+
+	if (utils::is_pc(*victim))
+	{
+		send_to_char("This spell cannot target players.\r\n", caster);
+		return;
+	}
+
+	game_types::player_specs valid_specs[5] = { game_types::PS_Arcane,
+		game_types::PS_Cold, game_types::PS_Darkness, game_types::PS_Fire,
+		game_types::PS_Lightning };
+
+	bool valid_spec = false;
+	game_types::player_specs caster_spec = utils::get_specialization(*caster);
+	for (int i = 0; i < 5; ++i)
+	{
+		if (caster_spec == valid_specs[i])
+		{
+			valid_spec = true;
+		}
+	}
+
+	if (!valid_spec)
+	{
+		send_to_char("You are not of an appropriate specialization to cast this spell.", caster);
+		return;
+	}
+
+	// Player is of the appropriate spec - cast the data.
+	elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(caster->extra_specialization_data.current_spec_info);
+	spec_data->exposed_target_id = victim->abs_number;
+
+	const room_data& current_room = world[caster->in_room];
+	int weather_type = weather_info.sky[current_room.sector_type];
+
+	int mage_level = utils::get_prof_level(PROF_MAGE, *caster);
+	switch (caster_spec)
+	{
+	case game_types::PS_Arcane:
+	{
+		if (utils::is_evil_race(*caster))
+		{
+			if (caster->player.race == RACE_MAGUS)
+			{
+				if (GET_SKILL(caster, SPELL_SPEAR_OF_DARKNESS) > 50)
+				{
+					spec_data->spell_id = SPELL_SPEAR_OF_DARKNESS;
+				}
+				else
+				{
+					spec_data->spell_id = SPELL_DARK_BOLT;
+				}
+			}
+			else
+			{
+				if (GET_SKILL(caster, SPELL_SEARING_DARKNESS) > 50)
+				{
+					spec_data->spell_id = SPELL_SEARING_DARKNESS;
+				}
+				else
+				{
+					spec_data->spell_id = SPELL_DARK_BOLT;
+				}
+			}
+		}
+		else if (GET_SKILL(caster, SPELL_LIGHTNING_STRIKE) > 50 && weather_type == SKY_LIGHTNING && OUTSIDE(caster))
+		{
+			spec_data->spell_id = SPELL_LIGHTNING_STRIKE;
+		}
+		else if (GET_SKILL(caster, SPELL_CONE_OF_COLD) > 50)
+		{
+			spec_data->spell_id = SPELL_CONE_OF_COLD;
+		}
+		else if (GET_SKILL(caster, SPELL_LIGHTNING_BOLT) > 50 && OUTSIDE(caster))
+		{
+			spec_data->spell_id = SPELL_LIGHTNING_BOLT;
+		}
+		else if (GET_SKILL(caster, SPELL_FIREBOLT) > 50)
+		{
+			spec_data->spell_id = SPELL_FIREBOLT;
+		}
+		else
+		{
+			spec_data->spell_id = SPELL_CHILL_RAY;
+		}
+	}
+		break;
+	case game_types::PS_Cold:
+	{
+		if (GET_SKILL(caster, SPELL_CONE_OF_COLD) > 50)
+		{
+			spec_data->spell_id = SPELL_CONE_OF_COLD;
+		}
+		else
+		{
+			spec_data->spell_id = SPELL_CHILL_RAY;
+		}
+	}
+	break;
+	case game_types::PS_Darkness:
+	{
+		if (caster->player.race == RACE_MAGUS)
+		{
+			if (GET_SKILL(caster, SPELL_SPEAR_OF_DARKNESS) > 50)
+			{
+				spec_data->spell_id = SPELL_SPEAR_OF_DARKNESS;
+			}
+			else
+			{
+				spec_data->spell_id = SPELL_DARK_BOLT;
+			}
+		}
+		else
+		{
+			if (GET_SKILL(caster, SPELL_SEARING_DARKNESS) > 50)
+			{
+				spec_data->spell_id = SPELL_SEARING_DARKNESS;
+			}
+			else
+			{
+				spec_data->spell_id = SPELL_DARK_BOLT;
+			}
+		}
+	}
+	break;
+	case game_types::PS_Fire:
+	{
+		if (utils::is_race_good(*caster))
+		{
+			if (GET_SKILL(caster, SPELL_FIREBALL) > 50)
+			{
+				spec_data->spell_id = SPELL_FIREBALL;
+			}
+			else
+			{
+				spec_data->spell_id = SPELL_FIREBOLT;
+			}
+		}
+		else
+		{
+			if (GET_SKILL(caster, SPELL_SEARING_DARKNESS) > 50)
+			{
+				spec_data->spell_id = SPELL_SEARING_DARKNESS;
+			}
+			else
+			{
+				spec_data->spell_id = SPELL_DARK_BOLT;
+			}
+		}
+	}
+	break;
+	case game_types::PS_Lightning:
+	{
+		if (OUTSIDE(caster) && GET_SKILL(caster, SPELL_LIGHTNING_STRIKE) > 50)
+		{
+			spec_data->spell_id = SPELL_LIGHTNING_STRIKE;
+		}
+		else
+		{
+			spec_data->spell_id = SPELL_LIGHTNING_BOLT;
+		}
+	}
+	break;
+	default:
+		break;
+	}
+
+	send_to_char(get_expose_spell_message(spec_data->spell_id), caster);
+}

@@ -18,7 +18,7 @@
 #include "limits.h"
 
  char	circlemud_version[] = {
-   "Arda: The Fourth Age, version 1.0.3.1\n\r" };
+   "Arda: The Fourth Age, version 1.0.3.2a\n\r" };
 
 
 //const
@@ -364,7 +364,7 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_STANDING    ,  2, 10,    18,  10,  1,  0, PLRSPEC_NONE },
   { "regeneration"       , PROF_CLERIC,  15,  spell_regeneration,
     POSITION_STANDING    ,  5, 15,    10,  10,  1,  1, PLRSPEC_REGN },
-  { "guardian"           , PROF_CLERIC,  27,  spell_guardian,         /* 65 */
+  { "guardian"           , PROF_CLERIC,  10,  spell_guardian,         /* 65 */
     POSITION_STANDING    , 30, 55, 32768,  10, 65,  0, PLRSPEC_GRDN },
   { "infravision"        , PROF_CLERIC,  17,  spell_infravision,
     POSITION_STANDING    ,  2, 15,    40,  10,  1,  0, PLRSPEC_NONE },
@@ -469,8 +469,8 @@ struct skill_data skills[MAX_SKILLS] = {
   /* 111 */
   { "confuse"            , PROF_CLERIC ,  1,  spell_confuse,
     POSITION_FIGHTING    , 10, 28,    16,  10, 65,  1, PLRSPEC_ILLU },
-  { "trash"              , PROF_MAGE,     1,  NULL,
-    POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
+  { "expose elements"    , PROF_MAGE,     1,  spell_expose_elements,
+	  POSITION_FIGHTING  ,  70,  5, 16,   1,  1,  0, PLRSPEC_NONE   },
   { "trash"              , PROF_MAGE,     1,  NULL,
     POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
   { "trash"              , PROF_MAGE,     1,  NULL,
@@ -2224,6 +2224,11 @@ sh_int leg_encumb_table[MAX_WEAR] = {
   0/*belt*/
 };
 
+sh_int* get_leg_encumb_table()
+{
+	return leg_encumb_table;
+}
+
 //const
    char	*drinks[] =
 {
@@ -2671,7 +2676,7 @@ char	*npc_prof_types[] = {
 
 
 //const
-char	*action_bits[] = {
+char* action_bits[] = {
    "SPEC",
    "SENTINEL",
    "SCAVENGER",
@@ -2697,12 +2702,14 @@ char	*action_bits[] = {
    "HUNTER",
    "ORC_FRIEND",
    "RACE_GUARD",
+   "ASSISTANT",
+   "GUARDIAN",
    "\n"
 };
 
 
 //const
-char	*player_bits[] = {
+char* player_bits[] = {
    "",
    "IS_NCHANGED",
    "FROZEN",
@@ -3293,6 +3300,7 @@ char * vulnerability_name[]={
   * Guardian type from left to right
   * Aggressive->Defensive->Mystic.
   */
+
 int guardian_mob [MAX_RACES] [3] = {
   {1110, 1110, 1110},
   {1315, 1316, 1301},
@@ -3317,6 +3325,24 @@ int guardian_mob [MAX_RACES] [3] = {
   {0, 0, 0},
   {0, 0, 0}
 };
+
+int get_guardian_type(int race_number, const char_data* in_guardian_mob)
+{
+	extern struct index_data* mob_index;
+	if (race_number >= MAX_RACES)
+		return INVALID_GUARDIAN;
+
+	int virtual_number = mob_index[in_guardian_mob->nr].virt;
+	for (int guardian_type = AGGRESSIVE_GUARDIAN; guardian_type <= MYSTIC_GUARDIAN; ++guardian_type)
+	{
+		if (guardian_mob[race_number][guardian_type] == virtual_number)
+		{
+			return guardian_type;
+		}
+	}
+
+	return INVALID_GUARDIAN;
+}
 
 unsigned long    stat_ticks_passed = 0;
 unsigned long    stat_mortals_counter = 0;

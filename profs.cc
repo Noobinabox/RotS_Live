@@ -203,7 +203,28 @@ void advance_level_prof(int prof, char_data* character)
 		send_to_char("You feel more adept in magic!\n\r", character);
 		break;
 	case PROF_CLERIC:
+	{
 		send_to_char("Your spirit grows stronger!\n\r", character);
+
+		// When the player's mystic level increases, scale their guardian if they are guardian spec.
+		// Ensure that the guardian isn't healed to full in this case.
+		if (utils::get_specialization(*character) == game_types::PS_Guardian)
+		{
+			int race_number = character->player.race;
+			for (follow_type* follower = character->followers; follower; follower = follower->next)
+			{
+				int guardian_number = get_guardian_type(race_number, follower->follower);
+				if (guardian_number != INVALID_GUARDIAN)
+				{
+					bool restore_guardian_health = false;
+					extern int scale_guardian(int, const char_data*, char_data*, bool);
+					scale_guardian(guardian_number, character, follower->follower, restore_guardian_health);
+					break;
+				}
+			}
+		}
+	}
+		
 		break;
 	case PROF_RANGER:
 		send_to_char("You feel more agile!\n\r", character);
@@ -402,7 +423,7 @@ void advance_level(char_data* character)
 	}
 
 	sprintf(buf, "%s advanced to level %d", GET_NAME(character), GET_LEVEL(character));
-	mudlog(buf, BRF, std::max((sh_int)LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
+	mudlog(buf, BRF, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 
 	/* log following levels in exploits */
 	if ((GET_LEVEL(character) == 6) || (GET_LEVEL(character) == 10) || (GET_LEVEL(character) == 15) ||
@@ -434,6 +455,7 @@ void advance_level(char_data* character)
 		(GET_LEA_BASE(character) + GET_LEVEL(character) % LEA_PRAC_FACTOR) / LEA_PRAC_FACTOR;
 
 	save_char(character, NOWHERE, 0);
+
 }
 
 namespace
@@ -747,7 +769,92 @@ void roll_abilities(char_data* character, int min_sum, int max_sum)
 	character->tmpabilities = character->abilities;
 }
 
+void update_specialization_spell(char_data* character)
+{
+	if (character->extra_specialization_data.current_spec_info && character->extra_specialization_data.is_mage_spec())
+	{
+		int spell_id = 0;
 
+		game_types::player_specs spec_type = character->extra_specialization_data.get_current_spec();
+		int mage_level = utils::get_prof_level(PROF_MAGE, *character);
+		if (spec_type == game_types::PS_Cold)
+		{
+			if (mage_level >= 14)
+			{
+				spell_id = SPELL_CONE_OF_COLD;
+			}
+			else
+			{
+				spell_id = SPELL_CHILL_RAY;
+			}
+		}
+		else if (spec_type == game_types::PS_Fire)
+		{
+			if (utils::is_good(*character))
+			{
+				spell_id = SPELL_FIREBOLT;
+			}
+			else
+			{
+				spell_id = SPELL_SEARING_DARKNESS;
+			}
+		}
+		else if (spec_type == game_types::PS_Lightning)
+		{
+			spell_id = SPELL_LIGHTNING_BOLT;
+		}
+		else if (spec_type == game_types::PS_Darkness)
+		{
+			if (utils::is_race_magi(*character) || utils::is_race_easterling(*character))
+			{
+				if (mage_level >= 21)
+				{
+					spell_id = SPELL_SPEAR_OF_DARKNESS;
+				}
+				else
+				{
+					spell_id = SPELL_BLACK_ARROW;
+				}
+			}
+			else
+			{
+				if (mage_level >= 21)
+				{
+					spell_id = SPELL_SEARING_DARKNESS;
+				}
+				else
+				{
+					spell_id = SPELL_DARK_BOLT;
+				}
+			}
+		}
+		else if (spec_type == game_types::PS_Arcane)
+		{
+			if (utils::is_good(*character))
+			{
+				if (mage_level >= 14)
+				{
+					spell_id = SPELL_CONE_OF_COLD;
+				}
+				else if (mage_level >= 11)
+				{
+					spell_id = SPELL_FIREBOLT;
+				}
+				else
+				{
+					spell_id = SPELL_CHILL_RAY;
+				}
+			}
+			else
+			{
+				spell_id = SPELL_DARK_BOLT;
+			}
+		}
+
+		elemental_spec_data* mage_data = static_cast<elemental_spec_data*>(character->extra_specialization_data.current_spec_info);
+		mage_data->spell_id = spell_id;
+	}
+}
 
 /* This is called whenever some of person's stats/level change */
 void recalc_abilities(char_data* character)
@@ -769,29 +876,33 @@ void recalc_abilities(char_data* character)
 			(class_HP(character) * (GET_CON(character) + 20) / 14) *
 			std::min(LEVEL_MAX * 100, (int)GET_MINI_LEVEL(character)) / 100000;
 
+		// Characters specialized in defender get 10% bonus HP.
+		if (utils::get_specialization(*character) == game_types::PS_Defender)
+		{
+			character->abilities.hit += character->abilities.hit / 10;
+		}
+
 		// dirty test to see if this ranger change can work
 		character->abilities.hit = std::max(character->abilities.hit -
 			(GET_RAW_SKILL(character, SKILL_STEALTH) *
 				GET_LEVELA(character) +
 				GET_RAW_SKILL(character, SKILL_STEALTH) * 3) / 33, 10);
 
-		if (character->tmpabilities.hit > character->abilities.hit)
-			character->tmpabilities.hit = character->abilities.hit;
+		character->tmpabilities.hit = std::min(character->tmpabilities.hit, character->abilities.hit);
 
 		character->abilities.mana = character->constabilities.mana + GET_INT(character) +
 			GET_WILL(character) / 2 + GET_PROF_LEVEL(PROF_MAGE, character) * 2;
 
-		if (character->tmpabilities.mana > character->abilities.mana)
-			character->tmpabilities.mana = character->abilities.mana;
+		character->tmpabilities.mana = std::min(character->tmpabilities.mana, character->abilities.mana);
 
 		character->abilities.move = character->constabilities.move + GET_CON(character) +
 			20 + GET_PROF_LEVEL(PROF_RANGER, character) +
 			GET_RAW_KNOWLEDGE(character, SKILL_TRAVELLING) / 4;
+
 		if ((GET_RACE(character) == RACE_WOOD) || GET_RACE(character) == RACE_HIGH)
 			character->abilities.move += 15;
 
-		if (character->tmpabilities.move > character->abilities.move)
-			character->tmpabilities.move = character->abilities.move;
+		character->tmpabilities.move = std::min(character->tmpabilities.move, character->abilities.move);
 
 		weapon = character->equipment[WIELD];
 		if (weapon)
@@ -835,20 +946,13 @@ void recalc_abilities(char_data* character)
 			{
 				GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
 			}
-
-			// Heavy fighters get +5% speed with bulk 4 or 5 weapons.
-			if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
-			{
-				if (bulk == 4 || bulk == 5)
-				{
-					character->points.ENE_regen += character->points.ENE_regen / 20;
-				}
-			}
 		}
 		else
 		{
 			GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);
 		}
+
+		update_specialization_spell(character);
 	}
 }
 

@@ -187,44 +187,38 @@ void list_help(struct char_data * ch);
 void list_simple_proto(struct char_data * ch, struct char_data * mob); /* forward declaration */
 void list_simple_help(struct char_data * ch);
 
-void new_mob(struct char_data * ch){
-
-  //    SHAPE_PROTO(ch)->proto=(struct char_data *)calloc(1,sizeof(struct char_data));
-    //bzero((char *)(SHAPE_PROTO(ch)->proto),sizeof(struct char_data));
-  CREATE1(SHAPE_PROTO(ch)->proto, char_data);
-    SHAPE_PROTO(ch)->proto ->player.time.birth = time(0);
-    SHAPE_PROTO(ch)->proto->player.time.played = 0;
-    SHAPE_PROTO(ch)->proto->player.time.logon  = time(0);
-    SHAPE_PROTO(ch)->proto->specials2.act=MOB_ISNPC;
-    SHAPE_PROTO(ch)->proto->nr=-1;
-    //    SHAPE_PROTO(ch)->proto->player.name=(char *)calloc(6,1);
-    CREATE(SHAPE_PROTO(ch)->proto->player.name, char, 6);
-    strcpy(SHAPE_PROTO(ch)->proto->player.name,"golem");
-    //    SHAPE_PROTO(ch)->proto->player.short_descr=(char *)calloc(6,1);
-    CREATE(SHAPE_PROTO(ch)->proto->player.short_descr, char, 6);
-    strcpy(SHAPE_PROTO(ch)->proto->player.short_descr,"golem");
-    //    SHAPE_PROTO(ch)->proto->player.long_descr=(char *)calloc(6,1);
-    CREATE(SHAPE_PROTO(ch)->proto->player.long_descr, char, 6);
-    strcpy(SHAPE_PROTO(ch)->proto->player.long_descr,"golem");
-    //    SHAPE_PROTO(ch)->proto->player.description=(char *)calloc(8,1);
-    CREATE(SHAPE_PROTO(ch)->proto->player.description, char, 8);
-    strcpy(SHAPE_PROTO(ch)->proto->player.description,"golem\n\r");
-    SHAPE_PROTO(ch)->proto->in_room=ch->in_room;
-    SHAPE_PROTO(ch)->proto->specials2.pref=0;
-    SHAPE_PROTO(ch)->proto->player.weight=5000;
-    SHAPE_PROTO(ch)->proto->player.height=150;
-    SHAPE_PROTO(ch)->proto->player.prof=0;
-    SHAPE_PROTO(ch)->proto->points.gold=0;
-    SHAPE_PROTO(ch)->proto->specials.position=POSITION_STANDING;
-    SHAPE_PROTO(ch)->proto->specials.default_pos=POSITION_STANDING;
-    SHAPE_PROTO(ch)->proto->specials.butcher_item = 0;
-    SHAPE_PROTO(ch)->proto->specials2.perception = -1;
-    SHAPE_PROTO(ch)->proto->specials2.rp_flag = 0;
-    SHAPE_PROTO(ch)->proto->player.corpse_num = 0;
-    SHAPE_PROTO(ch)->proto->specials.resistance = 0;
-    SHAPE_PROTO(ch)->proto->specials.vulnerability = 0;
-    SHAPE_PROTO(ch)->proto->player.death_cry = NULL;
-    SHAPE_PROTO(ch)->proto->player.death_cry2 = NULL;
+void new_mob(struct char_data * ch)
+{
+	CREATE1(SHAPE_PROTO(ch)->proto, char_data);
+	SHAPE_PROTO(ch)->proto->player.time.birth = time(0);
+	SHAPE_PROTO(ch)->proto->player.time.played = 0;
+	SHAPE_PROTO(ch)->proto->player.time.logon = time(0);
+	SHAPE_PROTO(ch)->proto->specials2.act = MOB_ISNPC;
+	SHAPE_PROTO(ch)->proto->nr = -1;
+	CREATE(SHAPE_PROTO(ch)->proto->player.name, char, 6);
+	strcpy(SHAPE_PROTO(ch)->proto->player.name, "golem");
+	CREATE(SHAPE_PROTO(ch)->proto->player.short_descr, char, 6);
+	strcpy(SHAPE_PROTO(ch)->proto->player.short_descr, "golem");
+	CREATE(SHAPE_PROTO(ch)->proto->player.long_descr, char, 6);
+	strcpy(SHAPE_PROTO(ch)->proto->player.long_descr, "golem");
+	CREATE(SHAPE_PROTO(ch)->proto->player.description, char, 8);
+	strcpy(SHAPE_PROTO(ch)->proto->player.description, "golem\n\r");
+	SHAPE_PROTO(ch)->proto->in_room = ch->in_room;
+	SHAPE_PROTO(ch)->proto->specials2.pref = 0;
+	SHAPE_PROTO(ch)->proto->player.weight = 5000;
+	SHAPE_PROTO(ch)->proto->player.height = 150;
+	SHAPE_PROTO(ch)->proto->player.prof = 0;
+	SHAPE_PROTO(ch)->proto->points.gold = 0;
+	SHAPE_PROTO(ch)->proto->specials.position = POSITION_STANDING;
+	SHAPE_PROTO(ch)->proto->specials.default_pos = POSITION_STANDING;
+	SHAPE_PROTO(ch)->proto->specials.butcher_item = 0;
+	SHAPE_PROTO(ch)->proto->specials2.perception = -1;
+	SHAPE_PROTO(ch)->proto->specials2.rp_flag = 0;
+	SHAPE_PROTO(ch)->proto->player.corpse_num = 0;
+	SHAPE_PROTO(ch)->proto->specials.resistance = 0;
+	SHAPE_PROTO(ch)->proto->specials.vulnerability = 0;
+	SHAPE_PROTO(ch)->proto->player.death_cry = NULL;
+	SHAPE_PROTO(ch)->proto->player.death_cry2 = NULL;
 }
 
 
@@ -1684,171 +1678,174 @@ void free_proto(struct char_data * ch){
   if(GET_POS(ch) <= POSITION_SHAPING) GET_POS(ch) = POSITION_STANDING;
   //printf("passed free_mob\n");
 }
+
 /****************************** main() ********************************/
-void extra_coms_proto(struct char_data * ch, char * argument){
+void extra_coms_proto(struct char_data * ch, char * argument) 
+{
 
-  //  extern struct room_data world;
-  int comm_key,room_number,zonnum;
-  char str[255],str2[50];
+	//  extern struct room_data world;
+	int comm_key, room_number, zonnum;
+	char str[255], str2[50];
 
-  room_number=ch->in_room;
+	room_number = ch->in_room;
 
-  if(SHAPE_PROTO(ch)->procedure==SHAPE_EDIT){
-    
-    send_to_char("you invoked some rhymes from shapeless indefinity...\n\r",ch);
-    comm_key=SHAPE_NONE;
-    str[0]=0;
-    str2[0]=0;
-    sscanf(argument,"%s %s",str,str2);
-    if(str[0]==0) return;
-    do{
-      if(!strlen(str)) strcpy(str,"weird");
-      if(!strncmp(str,"free",strlen(str))) {comm_key=SHAPE_FREE;break;}      
-      if(!strncmp(str,"new",strlen(str))) {comm_key=SHAPE_CREATE;break;}
-      if(!strncmp(str,"load",strlen(str))) {comm_key=SHAPE_LOAD;break;}
-      if(!strncmp(str,"save",strlen(str))) {comm_key=SHAPE_SAVE;break;}
-      if(!strncmp(str,"add",strlen(str)))  {comm_key=SHAPE_ADD;break;}
-      if(!strncmp(str,"done",strlen(str))) {comm_key=SHAPE_DONE;break;}
-      if(!strncmp(str,"delete",strlen(str))) {comm_key=SHAPE_DELETE;break;}
-      if(!strncmp(str,"simple",strlen(str))) {comm_key=SHAPE_MODE;break;} 
-      if(!strncmp(str,"implement",strlen(str))){comm_key=SHAPE_IMPLEMENT;break;}
-      if(!strncmp(str,"recalculate",strlen(str))) {comm_key=SHAPE_RECALCULATE;break;}         
-      send_to_char("Possible commands are:\n\r",ch);
-      send_to_char("new <zone_number> - to create a new mobile;\n\r",ch);
-      //      send_to_char("load   <mobile number #>;\n\r",ch);
-      //      send_to_char("add    <zone #>;\n\r",ch);
-      send_to_char("save  [mobile #]- to save changes to the disk database;\n\r",ch);
-      send_to_char("delete - to remove the loaded mobile from the disk database;\n\r",ch);
-      send_to_char("implement - applies changes to the game, leaving disk prointact;\n\r",ch);
-      send_to_char("edit  - edit it is;\n\r",ch);
-      send_to_char("simple - to switch between simple and extended editing;\n\r",ch);
-      send_to_char("recalculate - to generate all mobile parameters from it's level.\n\r",ch);
-      send_to_char("done - to save your job, implement it and stop shaping.;\n\r",ch);
-      send_to_char("free - to stop shaping.;\n\r",ch);
+	if (SHAPE_PROTO(ch)->procedure == SHAPE_EDIT) {
 
-      return;
-    }while(0);
-/*    SHAPE_PROTO(ch)->procedure=comm_key;*/
-  }
-  else comm_key=SHAPE_PROTO(ch)->procedure;
-  switch(comm_key){
-  case SHAPE_FREE:
-    free_proto(ch);
-    send_to_char("You released the mobile and stopped shaping.\n\r",ch);
-    break;
-  case SHAPE_CREATE:
-    if(str2[0]==0){
-      send_to_char("Choose zone of mob by 'new <zone_number>'.\n\r",ch);
-      free_proto(ch);
-      break;
-    }
-    zonnum=atoi(str2);
-    if(zonnum<=0 || zonnum >=MAX_ZONES){
-      send_to_char("Weird zone number. Aborted.\n\r",ch);
-      free_proto(ch);
-      break;
-    }
-    SHAPE_PROTO(ch)->permission=get_permission(zonnum, ch);
-    
-    sprintf(SHAPE_PROTO(ch)->f_from,SHAPE_MOB_DIR,str2);
-    sprintf(SHAPE_PROTO(ch)->f_old,SHAPE_MOB_BACKDIR,str2);
-    SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_FILENAME);
+		send_to_char("you invoked some rhymes from shapeless indefinity...\n\r", ch);
+		comm_key = SHAPE_NONE;
+		str[0] = 0;
+		str2[0] = 0;
+		sscanf(argument, "%s %s", str, str2);
+		if (str[0] == 0) return;
+		do {
+			if (!strlen(str)) strcpy(str, "weird");
+			if (!strncmp(str, "free", strlen(str))) { comm_key = SHAPE_FREE; break; }
+			if (!strncmp(str, "new", strlen(str))) { comm_key = SHAPE_CREATE; break; }
+			if (!strncmp(str, "load", strlen(str))) { comm_key = SHAPE_LOAD; break; }
+			if (!strncmp(str, "save", strlen(str))) { comm_key = SHAPE_SAVE; break; }
+			if (!strncmp(str, "add", strlen(str))) { comm_key = SHAPE_ADD; break; }
+			if (!strncmp(str, "done", strlen(str))) { comm_key = SHAPE_DONE; break; }
+			if (!strncmp(str, "delete", strlen(str))) { comm_key = SHAPE_DELETE; break; }
+			if (!strncmp(str, "simple", strlen(str))) { comm_key = SHAPE_MODE; break; }
+			if (!strncmp(str, "implement", strlen(str))) { comm_key = SHAPE_IMPLEMENT; break; }
+			if (!strncmp(str, "recalculate", strlen(str))) { comm_key = SHAPE_RECALCULATE; break; }
+			send_to_char("Possible commands are:\n\r", ch);
+			send_to_char("new <zone_number> - to create a new mobile;\n\r", ch);
+			send_to_char("save  [mobile #]- to save changes to the disk database;\n\r", ch);
+			send_to_char("delete - to remove the loaded mobile from the disk database;\n\r", ch);
+			send_to_char("implement - applies changes to the game, leaving disk prointact;\n\r", ch);
+			send_to_char("edit  - edit it is;\n\r", ch);
+			send_to_char("simple - to switch between simple and extended editing;\n\r", ch);
+			send_to_char("recalculate - to generate all mobile parameters from it's level.\n\r", ch);
+			send_to_char("done - to save your job, implement it and stop shaping.;\n\r", ch);
+			send_to_char("free - to stop shaping.;\n\r", ch);
 
-    new_mob(ch);
-    SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_PROTO_LOADED);
-    SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-    SHAPE_PROTO(ch)->editflag=49;
-    send_to_char("OK. You created a new mobile. Do '/save' to assign a number to your mobile\n\r",
-		 ch);
-    shape_center_proto(ch,"");
-    break;
+			return;
+		} while (0);
+	}
+	else comm_key = SHAPE_PROTO(ch)->procedure;
+	switch (comm_key) {
+	case SHAPE_FREE:
+		free_proto(ch);
+		send_to_char("You released the mobile and stopped shaping.\n\r", ch);
+		break;
+	case SHAPE_CREATE:
+		if (str2[0] == 0) {
+			send_to_char("Choose zone of mob by 'new <zone_number>'.\n\r", ch);
+			free_proto(ch);
+			break;
+		}
+		zonnum = atoi(str2);
+		if (zonnum <= 0 || zonnum >= MAX_ZONES) {
+			send_to_char("Weird zone number. Aborted.\n\r", ch);
+			free_proto(ch);
+			break;
+		}
+		SHAPE_PROTO(ch)->permission = get_permission(zonnum, ch);
+		sprintf(SHAPE_PROTO(ch)->f_from, SHAPE_MOB_DIR, str2);
+		sprintf(SHAPE_PROTO(ch)->f_old, SHAPE_MOB_BACKDIR, str2);
+		SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_FILENAME);
+		new_mob(ch);
+		SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_PROTO_LOADED);
+		SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+		SHAPE_PROTO(ch)->editflag = 49;
+		send_to_char("OK. You created a new mobile. Do '/save' to assign a number to your mobile\n\r",
+			ch);
+		shape_center_proto(ch, "");
+		break;
 
-  case SHAPE_LOAD:
-    if(!IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_PROTO_LOADED)){
-      if(load_proto(ch,argument) < 0){
-	free_proto(ch);
-      }
-    }
-    else send_to_char("you already have someone to care about\n\r",ch);
-    break;
-  case SHAPE_SAVE:
-    replace_proto(ch,argument);
-    break;
-  case SHAPE_ADD:
-    append_proto(ch,argument);
-    break;
-  case SHAPE_RECALCULATE:
-    recalculate_mob(ch);
-    SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-    send_to_char("You set parameters of your mobile to standard.\n\r",ch);
-    break;
-  case SHAPE_DELETE:
-    if(SHAPE_PROTO(ch)->procedure!=SHAPE_DELETE){
-      send_to_char("You are about to remove this mobile from database.\n\r Are you sure? (type 'yes' to confirm:\n\r",ch);
-      SHAPE_PROTO(ch)->procedure=SHAPE_DELETE;
-      SHAPE_PROTO(ch)->position=ch->specials.position;
-      ch->specials.position=POSITION_SHAPING;
-      break;
-    }
-    while(*argument && (*argument<=' ')) argument ++; 
-    if(!strcmp("yes",argument)){
-      SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_DELETE_ACTIVE);
-      replace_proto(ch,argument);
-      send_to_char("You still continue to shape it, /free to exit.\n\r",ch);
-    }
-    else send_to_char("Deletion cancelled.\n\r",ch);
-      REMOVE_BIT(SHAPE_PROTO(ch)->flags,SHAPE_DELETE_ACTIVE);
-      SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-      ch->specials.position=SHAPE_PROTO(ch)->position;
-      break;
-  case SHAPE_MODE:
-    if(IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_SIMPLEMODE)){
-      REMOVE_BIT(SHAPE_PROTO(ch)->flags,SHAPE_SIMPLEMODE);
-      send_to_char("You switched to extended editing mode.\n\r",ch);
-    }
-    else{
-      SET_BIT(SHAPE_PROTO(ch)->flags,SHAPE_SIMPLEMODE);
-//      recalculate_mob(ch);
-      send_to_char("You switched to simple editing mode.\n\r",ch);
-    }
-    SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-    break;
-  case SHAPE_IMPLEMENT:
-    implement_proto(ch);
-    SHAPE_PROTO(ch)->procedure=SHAPE_EDIT;
-    break;
-  case SHAPE_DONE:
-    replace_proto(ch,argument);
-    implement_proto(ch);
-    extra_coms_proto(ch,"free");
-    break;
-  }
-  //  printf("passed shape_proto_center\n");
-  return;
+	case SHAPE_LOAD:
+		if (!IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_PROTO_LOADED)) {
+			if (load_proto(ch, argument) < 0) {
+				free_proto(ch);
+			}
+		}
+		else send_to_char("you already have someone to care about\n\r", ch);
+		break;
+	case SHAPE_SAVE:
+		replace_proto(ch, argument);
+		break;
+	case SHAPE_ADD:
+		append_proto(ch, argument);
+		break;
+	case SHAPE_RECALCULATE:
+		recalculate_mob(ch);
+		SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+		send_to_char("You set parameters of your mobile to standard.\n\r", ch);
+		break;
+	case SHAPE_DELETE:
+		if (SHAPE_PROTO(ch)->procedure != SHAPE_DELETE) {
+			send_to_char("You are about to remove this mobile from database.\n\r Are you sure? (type 'yes' to confirm:\n\r", ch);
+			SHAPE_PROTO(ch)->procedure = SHAPE_DELETE;
+			SHAPE_PROTO(ch)->position = ch->specials.position;
+			ch->specials.position = POSITION_SHAPING;
+			break;
+		}
+		while (*argument && (*argument <= ' ')) argument++;
+		if (!strcmp("yes", argument)) {
+			SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE);
+			replace_proto(ch, argument);
+			send_to_char("You still continue to shape it, /free to exit.\n\r", ch);
+		}
+		else send_to_char("Deletion cancelled.\n\r", ch);
+		REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE);
+		SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+		ch->specials.position = SHAPE_PROTO(ch)->position;
+		break;
+	case SHAPE_MODE:
+		if (IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_SIMPLEMODE)) {
+			REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_SIMPLEMODE);
+			send_to_char("You switched to extended editing mode.\n\r", ch);
+		}
+		else {
+			SET_BIT(SHAPE_PROTO(ch)->flags, SHAPE_SIMPLEMODE);
+			//      recalculate_mob(ch);
+			send_to_char("You switched to simple editing mode.\n\r", ch);
+		}
+		SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+		break;
+	case SHAPE_IMPLEMENT:
+		implement_proto(ch);
+		SHAPE_PROTO(ch)->procedure = SHAPE_EDIT;
+		break;
+	case SHAPE_DONE:
+		replace_proto(ch, argument);
+		implement_proto(ch);
+		extra_coms_proto(ch, "free");
+		break;
+	}
+	//  printf("passed shape_proto_center\n");
+	return;
 }
-/*************************** Dispatch here :) *******************************/
-void shape_center(struct char_data * ch, char * argument){
 
-  if(ch->temp)
-    switch(*(sh_int *)ch->temp){
-    case SHAPE_PROTOS:
-      shape_center_proto(ch,argument);
-      break;
-    case SHAPE_OBJECTS:
-      shape_center_obj(ch,argument);
-      break;
-    case SHAPE_ROOMS:
-      shape_center_room(ch,argument);
-      break;
-    case SHAPE_ZONES:
-      shape_center_zone(ch,argument);
-      break;
-    case SHAPE_MUDLLES:
-      shape_center_mudlle(ch,argument);
-      break;
-	case SHAPE_SCRIPTS:
-	  shape_center_script(ch, argument);
-	  break;
-    }
-  else send_to_char("Use 'shape <mob|obj|room|script> <number>' to start shaping.\n\r",ch);
+/*************************** Dispatch here :) *******************************/
+void shape_center(struct char_data * ch, char * argument) 
+{
+
+	if (ch->temp)
+		switch (*(sh_int *)ch->temp) 
+		{
+		case SHAPE_PROTOS:
+			shape_center_proto(ch, argument);
+			break;
+		case SHAPE_OBJECTS:
+			shape_center_obj(ch, argument);
+			break;
+		case SHAPE_ROOMS:
+			shape_center_room(ch, argument);
+			break;
+		case SHAPE_ZONES:
+			shape_center_zone(ch, argument);
+			break;
+		case SHAPE_MUDLLES:
+			shape_center_mudlle(ch, argument);
+			break;
+		case SHAPE_SCRIPTS:
+			shape_center_script(ch, argument);
+			break;
+		}
+	else
+	{
+		send_to_char("Use 'shape <mob|obj|room|script> <number>' to start shaping.\n\r", ch);
+	}
 }

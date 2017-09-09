@@ -18,6 +18,7 @@
 #include "db.h"
 #include "comm.h"
 #include "handler.h"
+#include "char_utils.h"
 
 /* external structs */
 extern struct char_data *character_list;
@@ -64,338 +65,389 @@ mobile_activity(void)
 
 
 
-void
-one_mobile_activity(struct char_data *ch)
+void one_mobile_activity(char_data* ch)
 {
-  int door, found, max, tmp, is_passive;
-  struct char_data *tmp_ch, *tmpch, *vict;
-  struct obj_data *obj, *best_obj, *inside, *next_obj;
-  struct waiting_type wtl;
-  struct memory_rec *names;
-  struct follow_type *tmpfol;
-  SPECIAL(*tmpfunc);
+	int door, found, max, tmp, is_passive;
+	struct char_data *tmp_ch, *tmpch, *vict;
+	struct obj_data *obj, *best_obj, *inside, *next_obj;
+	struct waiting_type wtl;
+	struct memory_rec *names;
+	struct follow_type *tmpfol;
+	SPECIAL(*tmpfunc);
 
-  extern int no_specials;
-  
-  wtl.cmd = wtl.subcmd  = wtl.priority = 0;
-  
-  if(!ch)
-    return;
-  if(!IS_NPC(ch))
-    return;
-  
-  if((ch->in_room < 0) || (ch->in_room > top_of_world)) {
-    sprintf(buf,"mobile_act called for %s in %d.",
-	    GET_NAME(ch), ch->in_room);
-    mudlog(buf, NRM, LEVEL_IMPL, FALSE);
-    return;
-  }
-  
-  is_passive = 0;
-  if(MOB_FLAGGED(ch, MOB_PET) && !IS_GUARDIAN(ch) &&
-     ch->master && char_exists(ch->master_number))
-    if(ch->in_room == ch->master->in_room)
-      is_passive = 1;
+	extern int no_specials;
 
-  if(IS_MOB(ch) && ch->delay.wait_value <= 1 && !is_passive) {    
-    /* Tamed mobs can stay in non-default positions... */
-    if(!IS_AFFECTED(ch, AFF_CHARM))
-      enforce_position(ch, ch->specials.default_pos);
-    
-    /* Examine call for special procedure */
-    if(IS_SET(ch->specials2.act, MOB_SPEC) && !no_specials) {
-      if(!mob_index[ch->nr].func && ch->specials.store_prog_number) {
-	tmpfunc = 
-	  (SPECIAL(*)) virt_program_number(ch->specials.store_prog_number);
-	if(tmpfunc)
-	  if(tmpfunc(ch, ch, 0, "", SPECIAL_SELF, 0)) 
-	    return;
-      }
-      else
-	if(mob_index[ch->nr].func)
-	  if((*mob_index[ch->nr].func)(ch, ch, 0, "", SPECIAL_SELF, 0))
-	    return;
-      
-    }
-    else
-      if(ch->specials.union1.prog_number)
-	if(intelligent(ch, ch, 0, "", SPECIAL_SELF, 0)) 
-	  return;
-    
-    /* mob - helper */
-    if(AWAKE(ch) && IS_SET(ch->specials2.act, MOB_HELPER) && 
-       !ch->specials.fighting) {
-      for(tmp_ch = world[ch->in_room].people; tmp_ch;
-	  tmp_ch = tmp_ch->next_in_room)
-	if(IS_NPC(tmp_ch) && tmp_ch->specials.fighting &&
-	   CAN_SEE(ch, tmp_ch)) {
-	  tmp = 0;        /*  0 = no assist */
-		   
-	  if((GET_ALIGNMENT(ch) * GET_ALIGNMENT(tmp_ch) > 0) || 
-	     (IS_AGGR_TO(ch, tmp_ch->specials.fighting)))
-	    tmp = 1;
-	  if(IS_AGGR_TO(ch, tmp_ch) || (MOB_FLAGGED(tmp_ch, MOB_ORC_FRIEND) &&
-					MOB_FLAGGED(tmp_ch, MOB_PET)))
-	    tmp = 0;
-		   
-	  if(tmp) {
-	    if(GET_INT_BASE(ch) >= 7)
-	      do_say(ch, "I must protect my friend!", 0, 0, 0);
-	    wtl.targ1.type = TARGET_CHAR;
-	    wtl.targ1.ptr.ch = tmp_ch;
-	    wtl.targ1.ch_num = tmp_ch->abs_number;
-	    wtl.cmd = CMD_ASSIST;
-	    do_assist(ch, "", &wtl, 0, 0);
-	    break;
-	  }
+	wtl.cmd = wtl.subcmd = wtl.priority = 0;
+
+	if (!ch)
+		return;
+	if (!IS_NPC(ch))
+		return;
+
+	if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
+		sprintf(buf, "mobile_act called for %s in %d.",
+			GET_NAME(ch), ch->in_room);
+		mudlog(buf, NRM, LEVEL_IMPL, FALSE);
+		return;
 	}
-    }
-    
-    /* bodyguard - follower */
-    if(AWAKE(ch) && IS_SET(ch->specials2.act, MOB_BODYGUARD) &&
-       ch->master && (ch->master->in_room == ch->in_room)) {
-      if(GET_POS(ch) < POSITION_FIGHTING)
-	do_stand(ch, "", 0, 0, 0);
-      
-      tmp_ch = (ch->master)->specials.fighting;
-      
-      if(tmp_ch && (tmp_ch->specials.fighting == ch->master)) {
-	sscanf(ch->master->player.name,"%s",buf);
-	//	     printf("trying to rescue %s.\n",buf);
-	wtl.targ1.type = TARGET_CHAR;
-	wtl.targ1.ptr.ch = ch->master;
-	wtl.targ1.ch_num = ch->master->abs_number;
-	wtl.cmd = CMD_RESCUE;
-	do_rescue(ch, buf, &wtl, 0, 0);
-      }
-      if(tmp_ch && !(ch->specials.fighting)) {
-	sscanf(tmp_ch->player.name,"%s",buf);
-	wtl.targ1.type = TARGET_CHAR;
-	wtl.targ1.ptr.ch = tmp_ch;
-	wtl.targ1.ch_num = tmp_ch->abs_number;
-	wtl.cmd = CMD_HIT;
-	do_hit(ch, buf, &wtl, 0, 0);
-      }
-    }
-    
-    /* bodyguard - master */
-    if(AWAKE(ch) && IS_SET(ch->specials2.act, MOB_BODYGUARD) &&
-       ch->followers) {
-      if(GET_POS(ch) < POSITION_FIGHTING)
-	do_stand(ch, "", 0, 0, 0);
-      
-      for(tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
-	tmp_ch = (tmpfol->follower)->specials.fighting;
-	
-	if(tmp_ch && (tmp_ch->specials.fighting == tmpfol->follower)) {
-	  sscanf(tmpfol->follower->player.name,"%s",buf);
-	  wtl.targ1.type = TARGET_CHAR;
-	  wtl.targ1.ptr.ch = tmpfol->follower;
-	  wtl.targ1.ch_num = tmpfol->follower->abs_number;
-	  wtl.cmd = CMD_RESCUE;
-	  do_rescue(ch, buf, &wtl, 0, 0);
-	}
-      }
-    }
-    
-    /* Guardians, special case */
-    if(IS_GUARDIAN(ch) && ch->specials.fighting)
-      if(ch->master && (ch->master->in_room != ch->in_room))
-	do_flee(ch, "", 0, 0, 0);
-    
-    if(ch->specials.fighting && (GET_POS(ch) > POSITION_SITTING) &&
-       (IS_SET(ch->specials2.act, MOB_SWITCHING) ||
-	IS_SET(ch->specials2.act, MOB_SHADOW))) {
-      for(tmpch = world[ch->in_room].people; tmpch;
-	  tmpch = tmpch->next_in_room)
-	if((tmpch->specials.fighting == ch) && !number(0, 3) &&
-	   CAN_SEE(ch, tmpch) && (tmpch != ch->specials.fighting)) {
-	  ch->specials.fighting = tmpch;
-	  act("$n turns to fight $N!", TRUE, ch, 0, tmpch, TO_ROOM);
-	  break;
-	}
-    }
-    
-    if(AWAKE(ch) && !(ch->specials.fighting)) {
-      if(IS_SET(ch->specials2.act, MOB_SCAVENGER)) { /* if scavenger */
-	if(world[ch->in_room].contents && !number(0, 5)) {
-	  for(max = 1, best_obj = 0, obj = world[ch->in_room].contents; 
-	      obj; obj = obj->next_content) {
-	    if(CAN_GET_OBJ(ch, obj)) {
-	      if(obj->obj_flags.cost > max) {
-		best_obj = obj;
-		max = obj->obj_flags.cost;
-	      }
-	      else if(GET_ITEM_TYPE(obj) == ITEM_CONTAINER)
-		for(inside = obj->contains; inside; inside = next_obj) {
-		  next_obj = inside->next_content;
-		  if(inside->obj_flags.wear_flags > 1)
-		    if (IS_CARRYING_N(ch) < CAN_CARRY_N(ch)) {
-		      obj_from_obj(inside);
-		      obj_to_char(inside, ch);
-		      act("$n gets $p from $P.", 
-			  TRUE, ch, inside, obj, TO_ROOM);
-		      do_wear(ch,"all", 0,0,0);
-		    }
+
+	is_passive = 0;
+	if (MOB_FLAGGED(ch, MOB_PET) && !utils::is_guardian(*ch) && ch->master && char_exists(ch->master_number))
+	{
+		if (ch->in_room == ch->master->in_room)
+		{
+			is_passive = 1;
 		}
-	    }
-	  } /* for */
-	  
-	  if(best_obj) {
-	    obj_from_room(best_obj);
-	    obj_to_char(best_obj, ch);
-	    act("$n gets $p.", FALSE, ch, best_obj, 0, TO_ROOM);
-	  }
 	}
-      } /* Scavenger */
 
-      if(!IS_SET(ch->specials2.act, MOB_SENTINEL) && 
-	 (GET_POS(ch) == POSITION_STANDING) && 
-	 (!ch->master) &&
-	 ((door = number(0, 45)) < NUM_OF_DIRS) && CAN_GO(ch, door) && 
-	 !IS_SET(world[EXIT(ch, door)->to_room].room_flags, NO_MOB) && 
-	 !IS_SET(world[EXIT(ch, door)->to_room].room_flags, DEATH)) {
-	if (ch->specials.last_direction == door)
-	  ch->specials.last_direction = -1;
-	else {
-	  /* checking for STAY flags */
-	  if((!IS_SET(ch->specials2.act, MOB_STAY_ZONE) ||
-	      (world[EXIT(ch, door)->to_room].zone == 
-	       world[ch->in_room].zone)) &&
-	     (!IS_SET(ch->specials2.act, MOB_STAY_TYPE) ||
-	      (world[EXIT(ch, door)->to_room].sector_type == 
-	       world[ch->in_room].sector_type))) {
-	    ch->specials.last_direction = door;
-	    do_move(ch, "", 0, ++door, 0);
-	  }
-	}
-      } /* if can go */
-      
-      /* Here go Race aggressions */
-      if(ch->specials2.pref) {
-	for(tmp_ch = world[ch->in_room].people; tmp_ch;
-	    tmp_ch = tmp_ch->next_in_room)
-	  if((ch != tmp_ch) && (!IS_SET(ch->specials2.act, MOB_MOUNT)) &&
-	     IS_AGGR_TO(ch, tmp_ch) && CAN_SEE(ch, tmp_ch)) {
-	    sscanf(tmp_ch->player.name,"%s",buf);
-	    wtl.targ1.type = TARGET_CHAR;
-	    wtl.targ1.ptr.ch = tmp_ch;
-	    wtl.targ1.ch_num = tmp_ch->abs_number;
-	    wtl.cmd = CMD_HIT;
-	    do_hit(ch, buf, &wtl, 0, 0);
-	    break;
-	  }
-	if(tmp_ch)
-	  return; //continue;
-      }
-      
-      /* Standard aggressive mobs */
-      if(IS_SET(ch->specials2.act, MOB_AGGRESSIVE) &&
-	 (!IS_SET(ch->specials2.act, MOB_MOUNT))) {
-	found = FALSE;
-	vict = 0;
-	for(tmp_ch = world[ch->in_room].people; tmp_ch && !found;
-	    tmp_ch = tmp_ch->next_in_room) {
-	  if(!IS_NPC(tmp_ch) && CAN_SEE(ch, tmp_ch) &&
-	     !PRF_FLAGGED(tmp_ch, PRF_NOHASSLE)) {
-	    if(!IS_SET(ch->specials2.act, MOB_WIMPY) || !AWAKE(tmp_ch)) {
-	      if((IS_SET(ch->specials2.act, MOB_AGGRESSIVE_EVIL) &&
-		  IS_EVIL(tmp_ch)) ||
-		 (IS_SET(ch->specials2.act, MOB_AGGRESSIVE_GOOD) &&
-		  IS_GOOD(tmp_ch)) ||
-		 (IS_SET(ch->specials2.act, MOB_AGGRESSIVE_NEUTRAL) &&
-		  IS_NEUTRAL(tmp_ch)) ||
-		 (!IS_SET(ch->specials2.act, MOB_AGGRESSIVE_EVIL) &&
-		  !IS_SET(ch->specials2.act, MOB_AGGRESSIVE_NEUTRAL) &&
-		  !IS_SET(ch->specials2.act, MOB_AGGRESSIVE_GOOD))) {
-		if(MOB_FLAGGED(ch, MOB_SWITCHING)) {
-		  if(!vict)
-		    vict = tmp_ch;
-		  else
-		    if(number(0, 1))
-		      vict = tmp_ch;
+	if (IS_MOB(ch) && ch->delay.wait_value <= 1 && !is_passive) 
+	{
+		/* Tamed mobs can stay in non-default positions... */
+		if (!IS_AFFECTED(ch, AFF_CHARM))
+		{
+			enforce_position(ch, ch->specials.default_pos);
 		}
-		else {
-		  vict = tmp_ch;
-		  found = TRUE;
-		}
-	      }
-	    }
-	  }
-	}
-	if(vict) {
-	  wtl.targ1.type = TARGET_CHAR;
-	  wtl.targ1.ptr.ch = vict;
-	  wtl.targ1.ch_num = vict->abs_number;
-	  wtl.cmd = CMD_HIT;
-	  do_hit(ch, buf, &wtl, 0, 0);
-	  vict = 0;
-	}
-      } /* if aggressive */
-      
 
-      if((IS_SET(ch->specials2.act, MOB_MEMORY) ||
-	  IS_SET(ch->specials2.act, MOB_HUNTER) ||
-	  (IS_AFFECTED(ch, AFF_HUNT))) && ch->specials.memory) {
-	/* we assume pets do not hunt by themselves */
-	if(MOB_FLAGGED(ch, MOB_PET) && (GET_POS(ch) == POSITION_FIGHTING))
-	  do_flee(ch, "", 0, 0, 0);
-	
-	/* checking memory */
-	if(!IS_SET(ch->specials2.act, MOB_SENTINEL) && 
-	   (GET_POS(ch) == POSITION_STANDING)) {
-	  /* hunting the victim */
-	}
-	
-	vict = 0;
-	for(names = ch->specials.memory; names && !vict; 
-	    names = names->next_on_mob) {
-	  if(names->enemy && char_exists(names->enemy_number) &&
-	     (names->enemy->in_room == ch->in_room) && 
-	     CAN_SEE(ch, names->enemy))
-	    vict = names->enemy;
-	}
-	
-	if(vict) {
-	  if(ch->master == vict)
-	    forget(ch, vict);
-	  else {
-	    if(GET_INT(ch) <= 6)
-	      act("$n snarls and lunges at $N!", FALSE, ch, 0, vict, TO_ROOM);
-	    else
-	      act("$n grins evilly and attacks $N!", FALSE, ch, 0, vict, TO_ROOM);
-	    sscanf(vict->player.name,"%s",buf);
-	    wtl.targ1.type = TARGET_CHAR;
-	    wtl.targ1.ptr.ch = vict;
-	    wtl.targ1.ch_num = vict->abs_number;
-	    wtl.cmd = CMD_HIT;
-	    do_hit(ch, buf, &wtl, 0, 0);
-	  }
-	}
-	else if(IS_SET(ch->specials2.act, MOB_HUNTER) ||
-		IS_AFFECTED(ch, AFF_HUNT)){
-	  int modifier = 0;
-	  
-	  if(IS_AFFECTED(ch, AFF_CONFUSE))
-	    modifier = get_confuse_modifier(ch);
-	  
-	  for(names = ch->specials.memory; names && !vict;
-	      names = names->next_on_mob) {
-	    if(names->enemy && char_exists(names->enemy_number) &&
-	       (names->enemy->in_room != NOWHERE) &&
-	       (number(0,100) > modifier))  // confuse modifier...
-	      tmp = find_first_step(ch->in_room, names->enemy->in_room);
-	    else
-	      tmp = BFS_NO_PATH;
-	    if(tmp >= 0) { // found the way, moving there
-	      do_move(ch, "", 0, tmp + 1, 0);
-	      break;
-	    }
-	  }
-	}
-      }  /* mob memory */
-    }
-  }      /* If IS_MOB(ch)  */
+		/* Examine call for special procedure */
+		if (IS_SET(ch->specials2.act, MOB_SPEC) && !no_specials) 
+		{
+			if (!mob_index[ch->nr].func && ch->specials.store_prog_number) 
+			{
+				tmpfunc = (SPECIAL(*)) virt_program_number(ch->specials.store_prog_number);
+				if (tmpfunc)
+				{
+					if (tmpfunc(ch, ch, 0, "", SPECIAL_SELF, 0))
+					{
+						return;
+					}
+				}
+			}
+			else
+			{
+				if (mob_index[ch->nr].func)
+				{
+					if ((*mob_index[ch->nr].func)(ch, ch, 0, "", SPECIAL_SELF, 0))
+					{
+						return;
+					}
+				}
+			}
+					
+
+		}
+		else
+		{
+			if (ch->specials.union1.prog_number)
+			{
+				if (intelligent(ch, ch, 0, "", SPECIAL_SELF, 0))
+				{
+					return;
+				}
+			}
+		}
+
+		/* mob - helper */
+		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_HELPER) && !ch->specials.fighting) 
+		{
+			for (tmp_ch = world[ch->in_room].people; tmp_ch;
+				tmp_ch = tmp_ch->next_in_room)
+				if (IS_NPC(tmp_ch) && tmp_ch->specials.fighting &&
+					CAN_SEE(ch, tmp_ch)) {
+					tmp = 0;        /*  0 = no assist */
+
+					if ((GET_ALIGNMENT(ch) * GET_ALIGNMENT(tmp_ch) > 0) ||
+						(IS_AGGR_TO(ch, tmp_ch->specials.fighting)))
+						tmp = 1;
+					if (IS_AGGR_TO(ch, tmp_ch) || (MOB_FLAGGED(tmp_ch, MOB_ORC_FRIEND) &&
+						MOB_FLAGGED(tmp_ch, MOB_PET)))
+						tmp = 0;
+
+					if (tmp) {
+						if (GET_INT_BASE(ch) >= 7)
+							do_say(ch, "I must protect my friend!", 0, 0, 0);
+						wtl.targ1.type = TARGET_CHAR;
+						wtl.targ1.ptr.ch = tmp_ch;
+						wtl.targ1.ch_num = tmp_ch->abs_number;
+						wtl.cmd = CMD_ASSIST;
+						do_assist(ch, "", &wtl, 0, 0);
+						break;
+					}
+				}
+		}
+
+		/* bodyguard - follower */
+		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_BODYGUARD) && ch->master && (ch->master->in_room == ch->in_room)) 
+		{
+
+			if (GET_POS(ch) < POSITION_FIGHTING)
+				do_stand(ch, "", 0, 0, 0);
+
+			tmp_ch = (ch->master)->specials.fighting;
+
+			if (tmp_ch && (tmp_ch->specials.fighting == ch->master)) {
+				sscanf(ch->master->player.name, "%s", buf);
+				//	     printf("trying to rescue %s.\n",buf);
+				wtl.targ1.type = TARGET_CHAR;
+				wtl.targ1.ptr.ch = ch->master;
+				wtl.targ1.ch_num = ch->master->abs_number;
+				wtl.cmd = CMD_RESCUE;
+				do_rescue(ch, buf, &wtl, 0, 0);
+			}
+			if (tmp_ch && !(ch->specials.fighting)) {
+				sscanf(tmp_ch->player.name, "%s", buf);
+				wtl.targ1.type = TARGET_CHAR;
+				wtl.targ1.ptr.ch = tmp_ch;
+				wtl.targ1.ch_num = tmp_ch->abs_number;
+				wtl.cmd = CMD_HIT;
+				do_hit(ch, buf, &wtl, 0, 0);
+			}
+		}
+
+		/* bodyguard - master */
+		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_BODYGUARD) && ch->followers) 
+		{
+			if (GET_POS(ch) < POSITION_FIGHTING)
+				do_stand(ch, "", 0, 0, 0);
+
+			for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) 
+			{
+				tmp_ch = (tmpfol->follower)->specials.fighting;
+				if (tmp_ch && (tmp_ch->specials.fighting == tmpfol->follower)) 
+				{
+					sscanf(tmpfol->follower->player.name, "%s", buf);
+					wtl.targ1.type = TARGET_CHAR;
+					wtl.targ1.ptr.ch = tmpfol->follower;
+					wtl.targ1.ch_num = tmpfol->follower->abs_number;
+					wtl.cmd = CMD_RESCUE;
+					do_rescue(ch, buf, &wtl, 0, 0);
+				}
+			}
+		}
+
+		/* Assistant mob.  They always assist their master if their master is fighting
+		 * and they are not. */
+		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_ASSISTANT) && ch->master)
+		{
+			if (ch->master->in_room == ch->in_room && ch->master->specials.fighting && ch->specials.fighting == NULL)
+			{
+				if (CAN_SEE(ch, ch->master))
+				{
+					if (GET_POS(ch) < POSITION_FIGHTING)
+					{
+						do_stand(ch, "", NULL, 0, 0);
+					}
+
+					wtl.targ1.type = TARGET_CHAR;
+					wtl.targ1.ptr.ch = ch->master;
+					wtl.targ1.ch_num = ch->master->abs_number;
+					wtl.cmd = CMD_ASSIST;
+					do_assist(ch, "", &wtl, 0, 0);
+				}
+			}
+		}
+
+		/* Guardians, special case */
+		if (utils::is_guardian(*ch) && ch->master && ch->specials.fighting)
+		{
+			if (ch->master->in_room != ch->in_room)
+			{
+				do_flee(ch, "", NULL, 0, 0);
+			}
+		}
+
+		if (ch->specials.fighting && (GET_POS(ch) > POSITION_SITTING) &&
+			(IS_SET(ch->specials2.act, MOB_SWITCHING) ||
+				IS_SET(ch->specials2.act, MOB_SHADOW))) {
+			for (tmpch = world[ch->in_room].people; tmpch;
+				tmpch = tmpch->next_in_room)
+				if ((tmpch->specials.fighting == ch) && !number(0, 3) &&
+					CAN_SEE(ch, tmpch) && (tmpch != ch->specials.fighting)) {
+					ch->specials.fighting = tmpch;
+					act("$n turns to fight $N!", TRUE, ch, 0, tmpch, TO_ROOM);
+					break;
+				}
+		}
+
+		if (AWAKE(ch) && !(ch->specials.fighting)) {
+			if (IS_SET(ch->specials2.act, MOB_SCAVENGER)) { /* if scavenger */
+				if (world[ch->in_room].contents && !number(0, 5)) {
+					for (max = 1, best_obj = 0, obj = world[ch->in_room].contents;
+						obj; obj = obj->next_content) {
+						if (CAN_GET_OBJ(ch, obj)) {
+							if (obj->obj_flags.cost > max) {
+								best_obj = obj;
+								max = obj->obj_flags.cost;
+							}
+							else if (GET_ITEM_TYPE(obj) == ITEM_CONTAINER)
+								for (inside = obj->contains; inside; inside = next_obj) {
+									next_obj = inside->next_content;
+									if (inside->obj_flags.wear_flags > 1)
+										if (IS_CARRYING_N(ch) < CAN_CARRY_N(ch)) {
+											obj_from_obj(inside);
+											obj_to_char(inside, ch);
+											act("$n gets $p from $P.",
+												TRUE, ch, inside, obj, TO_ROOM);
+											do_wear(ch, "all", 0, 0, 0);
+										}
+								}
+						}
+					} /* for */
+
+					if (best_obj) {
+						obj_from_room(best_obj);
+						obj_to_char(best_obj, ch);
+						act("$n gets $p.", FALSE, ch, best_obj, 0, TO_ROOM);
+					}
+				}
+			} /* Scavenger */
+
+			if (!IS_SET(ch->specials2.act, MOB_SENTINEL) &&
+				(GET_POS(ch) == POSITION_STANDING) &&
+				(!ch->master) &&
+				((door = number(0, 45)) < NUM_OF_DIRS) && CAN_GO(ch, door) &&
+				!IS_SET(world[EXIT(ch, door)->to_room].room_flags, NO_MOB) &&
+				!IS_SET(world[EXIT(ch, door)->to_room].room_flags, DEATH)) {
+				if (ch->specials.last_direction == door)
+					ch->specials.last_direction = -1;
+				else {
+					/* checking for STAY flags */
+					if ((!IS_SET(ch->specials2.act, MOB_STAY_ZONE) ||
+						(world[EXIT(ch, door)->to_room].zone ==
+							world[ch->in_room].zone)) &&
+							(!IS_SET(ch->specials2.act, MOB_STAY_TYPE) ||
+						(world[EXIT(ch, door)->to_room].sector_type ==
+							world[ch->in_room].sector_type))) {
+						ch->specials.last_direction = door;
+						do_move(ch, "", 0, ++door, 0);
+					}
+				}
+			} /* if can go */
+
+			/* Here go Race aggressions */
+			if (ch->specials2.pref) {
+				for (tmp_ch = world[ch->in_room].people; tmp_ch;
+					tmp_ch = tmp_ch->next_in_room)
+					if ((ch != tmp_ch) && (!IS_SET(ch->specials2.act, MOB_MOUNT)) &&
+						IS_AGGR_TO(ch, tmp_ch) && CAN_SEE(ch, tmp_ch)) {
+						sscanf(tmp_ch->player.name, "%s", buf);
+						wtl.targ1.type = TARGET_CHAR;
+						wtl.targ1.ptr.ch = tmp_ch;
+						wtl.targ1.ch_num = tmp_ch->abs_number;
+						wtl.cmd = CMD_HIT;
+						do_hit(ch, buf, &wtl, 0, 0);
+						break;
+					}
+				if (tmp_ch)
+					return; //continue;
+			}
+
+			/* Standard aggressive mobs */
+			if (IS_SET(ch->specials2.act, MOB_AGGRESSIVE) &&
+				(!IS_SET(ch->specials2.act, MOB_MOUNT))) {
+				found = FALSE;
+				vict = 0;
+				for (tmp_ch = world[ch->in_room].people; tmp_ch && !found;
+					tmp_ch = tmp_ch->next_in_room) {
+					if (!IS_NPC(tmp_ch) && CAN_SEE(ch, tmp_ch) &&
+						!PRF_FLAGGED(tmp_ch, PRF_NOHASSLE)) {
+						if (!IS_SET(ch->specials2.act, MOB_WIMPY) || !AWAKE(tmp_ch)) {
+							if ((IS_SET(ch->specials2.act, MOB_AGGRESSIVE_EVIL) &&
+								IS_EVIL(tmp_ch)) ||
+								(IS_SET(ch->specials2.act, MOB_AGGRESSIVE_GOOD) &&
+									IS_GOOD(tmp_ch)) ||
+									(IS_SET(ch->specials2.act, MOB_AGGRESSIVE_NEUTRAL) &&
+										IS_NEUTRAL(tmp_ch)) ||
+										(!IS_SET(ch->specials2.act, MOB_AGGRESSIVE_EVIL) &&
+											!IS_SET(ch->specials2.act, MOB_AGGRESSIVE_NEUTRAL) &&
+											!IS_SET(ch->specials2.act, MOB_AGGRESSIVE_GOOD))) {
+								if (MOB_FLAGGED(ch, MOB_SWITCHING)) {
+									if (!vict)
+										vict = tmp_ch;
+									else
+										if (number(0, 1))
+											vict = tmp_ch;
+								}
+								else {
+									vict = tmp_ch;
+									found = TRUE;
+								}
+							}
+						}
+					}
+				}
+				if (vict) {
+					wtl.targ1.type = TARGET_CHAR;
+					wtl.targ1.ptr.ch = vict;
+					wtl.targ1.ch_num = vict->abs_number;
+					wtl.cmd = CMD_HIT;
+					do_hit(ch, buf, &wtl, 0, 0);
+					vict = 0;
+				}
+			} /* if aggressive */
+
+
+			if ((IS_SET(ch->specials2.act, MOB_MEMORY) ||
+				IS_SET(ch->specials2.act, MOB_HUNTER) ||
+				(IS_AFFECTED(ch, AFF_HUNT))) && ch->specials.memory) {
+				/* we assume pets do not hunt by themselves */
+				if (MOB_FLAGGED(ch, MOB_PET) && (GET_POS(ch) == POSITION_FIGHTING))
+					do_flee(ch, "", 0, 0, 0);
+
+				/* checking memory */
+				if (!IS_SET(ch->specials2.act, MOB_SENTINEL) &&
+					(GET_POS(ch) == POSITION_STANDING)) {
+					/* hunting the victim */
+				}
+
+				vict = 0;
+				for (names = ch->specials.memory; names && !vict;
+					names = names->next_on_mob) {
+					if (names->enemy && char_exists(names->enemy_number) &&
+						(names->enemy->in_room == ch->in_room) &&
+						CAN_SEE(ch, names->enemy))
+						vict = names->enemy;
+				}
+
+				if (vict) {
+					if (ch->master == vict)
+						forget(ch, vict);
+					else {
+						if (GET_INT(ch) <= 6)
+							act("$n snarls and lunges at $N!", FALSE, ch, 0, vict, TO_ROOM);
+						else
+							act("$n grins evilly and attacks $N!", FALSE, ch, 0, vict, TO_ROOM);
+						sscanf(vict->player.name, "%s", buf);
+						wtl.targ1.type = TARGET_CHAR;
+						wtl.targ1.ptr.ch = vict;
+						wtl.targ1.ch_num = vict->abs_number;
+						wtl.cmd = CMD_HIT;
+						do_hit(ch, buf, &wtl, 0, 0);
+					}
+				}
+				else if (IS_SET(ch->specials2.act, MOB_HUNTER) ||
+					IS_AFFECTED(ch, AFF_HUNT)) {
+					int modifier = 0;
+
+					if (IS_AFFECTED(ch, AFF_CONFUSE))
+						modifier = get_confuse_modifier(ch);
+
+					for (names = ch->specials.memory; names && !vict;
+						names = names->next_on_mob) {
+						if (names->enemy && char_exists(names->enemy_number) &&
+							(names->enemy->in_room != NOWHERE) &&
+							(number(0, 100) > modifier))  // confuse modifier...
+							tmp = find_first_step(ch->in_room, names->enemy->in_room);
+						else
+							tmp = BFS_NO_PATH;
+						if (tmp >= 0) { // found the way, moving there
+							do_move(ch, "", 0, tmp + 1, 0);
+							break;
+						}
+					}
+				}
+			}  /* mob memory */
+		}
+	}      /* If IS_MOB(ch)  */
 }
 
 

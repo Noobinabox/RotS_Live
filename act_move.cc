@@ -89,6 +89,24 @@ bool should_double_strength(char_data* character)
 	return false;
 }
 
+int get_room_move_penalty(const char_data* character, int room_sector)
+{
+	int room_move_penalty = movement_loss[room_sector];
+	if (room_sector == SECT_WATER_SWIM || room_sector == SECT_WATER_NOSWIM || room_sector == SECT_UNDERWATER
+		|| room_sector == SECT_SWAMP || room_sector == SECT_INSIDE)
+	{
+		return room_move_penalty;
+	}
+
+	// Stealth specialized characters on foot treat all other terrain as road.
+	if (utils::get_specialization(*character) == game_types::PS_Stealth && !character->mount_data.mount)
+	{
+		room_move_penalty = movement_loss[SECT_ROAD];
+	}
+
+	return room_move_penalty;
+}
+
 int room_move_cost(char_data* character, room_data* new_room) 
 {
 	assert(character);
@@ -120,14 +138,9 @@ int room_move_cost(char_data* character, room_data* new_room)
 		}
 	}
 
-	int leg_encumb = GET_LEG_ENCUMB(character) * 2;
-	if (utils::get_skill_penalty(*character) == game_types::PS_HeavyFighting)
-	{
-		leg_encumb = leg_encumb / 2;
-	}
-
-	move_cost += leg_encumb;
-	int room_move_penalty = movement_loss[new_room->sector_type];
+	move_cost += utils::get_leg_encumbrance(*character) * 2;
+	int room_sector = new_room->sector_type;
+	int room_move_penalty = get_room_move_penalty(character, room_sector);
 
 	if (!MOB_FLAGGED(character, MOB_MOUNT))
 	{

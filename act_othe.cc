@@ -1879,7 +1879,7 @@ ACMD(do_specialize)
 {
 	extern const char* specialize_name[];
 
-	if (GET_LEVEL(ch) < 20) 
+	if (GET_LEVEL(ch) < 12) 
 	{
 		send_to_char("You are too young to specialize.\n\r", ch);
 		return;

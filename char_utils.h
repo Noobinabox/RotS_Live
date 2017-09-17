@@ -126,5 +126,10 @@ namespace utils
 	bool is_vulnerable(const char_data& character, int attack_group);
 
 	bool is_guardian(const char_data& character);
+
+	void report_status_to_group(const group_data& group);
+	void perform_group_roll(const group_data& group);
+	void split_gold(const group_data& group, int gold);
+	void split_exp(const group_data& group, int exp);
 }
 

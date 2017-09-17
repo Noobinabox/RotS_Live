@@ -295,205 +295,278 @@ ACMD(do_title)
 
 ACMD(do_grouproll)
 {
-  int roll;
-  struct char_data *k, *victim;
-  struct follow_type *f;
+	int roll;
+	struct char_data *k, *victim;
+	struct follow_type *f;
 
-  one_argument(argument, buf);
+	one_argument(argument, buf);
 
-  if(IS_SHADOW(ch)) {
-    send_to_char("You cannot roll for groups while inhabiting the shadow world.\n\r", ch);
-    return;
-  }
+	if (IS_SHADOW(ch)) {
+		send_to_char("You cannot roll for groups while inhabiting the shadow world.\n\r", ch);
+		return;
+	}
 
-  if(!ch->group_leader && !ch->group)
-  {
-    send_to_char("But you are not in a group!\n\r", ch);
-    return;
-  }
+	if (!ch->group_leader && !ch->group)
+	{
+		send_to_char("But you are not in a group!\n\r", ch);
+		return;
+	}
 
-  if(ch->group_leader)
-  {
-    send_to_char("Only the group leader can roll for the group.\n\r", ch);
-    return;
-  }
+	if (ch->group_leader)
+	{
+		send_to_char("Only the group leader can roll for the group.\n\r", ch);
+		return;
+	}
 
-  if(!*buf) {
-        k = (ch->group_leader ? ch->group_leader : ch);
-        roll = number(1, 100);
-        sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(ch), roll);
-        act(buf, FALSE, ch, 0, 0, TO_CHAR);
-        act(buf, FALSE, ch, 0, 0, TO_ROOM);
+	if (!*buf) {
+		k = (ch->group_leader ? ch->group_leader : ch);
+		roll = number(1, 100);
+		sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(ch), roll);
+		act(buf, FALSE, ch, 0, 0, TO_CHAR);
+		act(buf, FALSE, ch, 0, 0, TO_ROOM);
 
-        for(f = k->group; f; f = f->next)
-        {
-          if(!IS_NPC(f->follower))
-          {
-            roll = number(1, 100);
-            sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(f->follower), roll);
-            act(buf, FALSE, ch, 0, 0, TO_CHAR);
-            act(buf, FALSE, ch, 0, 0, TO_ROOM);
-          }
-        }
-        return;
-      }
+		for (f = k->group; f; f = f->next)
+		{
+			if (!IS_NPC(f->follower))
+			{
+				roll = number(1, 100);
+				sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(f->follower), roll);
+				act(buf, FALSE, ch, 0, 0, TO_CHAR);
+				act(buf, FALSE, ch, 0, 0, TO_ROOM);
+			}
+		}
+		return;
+	}
 
-  victim = get_char_room_vis(ch, buf);
-  if(!victim) 
-  {
-    send_to_char("There is no such person!\n\r", ch);
-    return;
-  }
+	victim = get_char_room_vis(ch, buf);
+	if (!victim)
+	{
+		send_to_char("There is no such person!\n\r", ch);
+		return;
+	}
 
-  if(victim->group_leader != ch) {
-    if(victim == ch) {
-      roll=number(1, 100);
-      sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
-      act(buf, FALSE, ch, 0, 0, TO_CHAR);
-      act(buf, FALSE, ch, 0, 0, TO_ROOM);
-      return;
-    }
-    send_to_char("That person is not in the group!\n\r", ch);
-    return;
-  }
+	if (victim->group_leader != ch) {
+		if (victim == ch) {
+			roll = number(1, 100);
+			sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
+			act(buf, FALSE, ch, 0, 0, TO_CHAR);
+			act(buf, FALSE, ch, 0, 0, TO_ROOM);
+			return;
+		}
+		send_to_char("That person is not in the group!\n\r", ch);
+		return;
+	}
 
-  if(!IS_NPC(victim)) {
-    roll=number(1, 100);
-    sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
-    act(buf, FALSE, ch, 0, 0, TO_CHAR);
-    act(buf, FALSE, ch, 0, 0, TO_ROOM);
-    return;
-  }
+	if (!IS_NPC(victim)) {
+		roll = number(1, 100);
+		sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
+		act(buf, FALSE, ch, 0, 0, TO_CHAR);
+		act(buf, FALSE, ch, 0, 0, TO_ROOM);
+		return;
+	}
+}
 
+void print_group_leader(const char_data* leader)
+{
+	extern struct prompt_type prompt_hit[];
+	extern struct prompt_type prompt_mana[];
+	extern struct prompt_type prompt_move[];
+
+	int health_prompt_index = 0;
+	int mana_prompt_index = 0;
+	int move_prompt_index = 0;
+
+	// For loop just gets prompt indices to the correct spot.
+	for (health_prompt_index = 0; 
+		(1000 * GET_HIT(leader)) / GET_MAX_HIT(leader) > prompt_hit[health_prompt_index].value; 
+		health_prompt_index++);
+
+	for (mana_prompt_index = 0; 
+		(1000 * GET_MANA(leader)) / GET_MAX_MANA(leader) > prompt_mana[mana_prompt_index].value; 
+		mana_prompt_index++);
+
+	for (move_prompt_index = 0; 
+		(1000 * GET_MOVE(leader)) / GET_MAX_MOVE(leader) > prompt_move[move_prompt_index].value; 
+		move_prompt_index++);
+
+	sprintf(buf, "HP:%9s,%11s,%13s -- $N (Head of group)",
+		prompt_hit[health_prompt_index].message,
+		*prompt_mana[mana_prompt_index].message == '\0' ?
+		"S:Full" : prompt_mana[mana_prompt_index].message,
+		*prompt_move[move_prompt_index].message == '\0' ?
+		"MV:Energetic" : prompt_move[move_prompt_index].message);
+}
+
+void print_group_member(const char_data* group_member)
+{
+	extern struct prompt_type prompt_hit[];
+	extern struct prompt_type prompt_mana[];
+	extern struct prompt_type prompt_move[];
+
+	int health_prompt_index = 0;
+	int mana_prompt_index = 0;
+	int move_prompt_index = 0;
+
+	// For loop just gets prompt indices to the correct spot.
+	for (health_prompt_index = 0; 
+		(1000 * GET_HIT(group_member)) / 
+		(GET_MAX_HIT(group_member) == 0 ? 1 : GET_MAX_HIT(group_member)) > prompt_hit[health_prompt_index].value; 
+		health_prompt_index++);
+
+	for (mana_prompt_index = 0; 
+		(1000 * GET_MANA(group_member)) /
+		(GET_MAX_MANA(group_member) == 0 ? 1 : GET_MAX_MANA(group_member)) > prompt_mana[mana_prompt_index].value; 
+		mana_prompt_index++);
+
+	for (move_prompt_index = 0; 
+		(1000 * GET_MOVE(group_member)) /
+		(GET_MAX_MOVE(group_member) == 0 ? 1 : GET_MAX_MOVE(group_member)) > prompt_move[move_prompt_index].value; 
+		move_prompt_index++);
+
+	if (MOB_FLAGGED(group_member, MOB_ORC_FRIEND))
+	{
+		sprintf(buf, "HP:%9s,%11s,%13s -- $N (Lvl:%2d)",
+			prompt_hit[health_prompt_index].message,
+			*prompt_mana[mana_prompt_index].message == '\0' ?
+			"S:Full" : prompt_mana[mana_prompt_index].message,
+			*prompt_move[move_prompt_index].message == '\0' ?
+			"MV:Energetic" : prompt_move[move_prompt_index].message,
+			GET_LEVEL(group_member));
+	}
+	else
+	{
+		sprintf(buf, "HP:%9s,%11s,%13s -- $N",
+			prompt_hit[health_prompt_index].message,
+			*prompt_mana[mana_prompt_index].message == '\0' ?
+			"S:Full" : prompt_mana[mana_prompt_index].message,
+			*prompt_move[move_prompt_index].message == '\0' ?
+			"MV:Energetic" : prompt_move[move_prompt_index].message);
+	}
 }
 
 ACMD(do_group)
 {
-  int tmp1, tmp2, tmp3;
-  char found;
-  struct char_data *victim, *k;
-  struct follow_type *f;
+	char found;
+	struct char_data *victim;
+	struct follow_type *f;
 
-  extern struct prompt_type prompt_hit[];
-  extern struct prompt_type prompt_mana[];
-  extern struct prompt_type prompt_move[];
+	one_argument(argument, buf);
 
-  one_argument(argument, buf);
-
-  if(IS_SHADOW(ch)){
-    send_to_char("You cannot group whilst inhabiting the shadow world.\n\r", ch);
-    return;
-  }
-
-  if(!*buf) {
-    if(!ch->group_leader && !ch->group)
-      send_to_char("But you are not the member of a group!\n\r", ch);
-    else {
-      send_to_char("Your group consists of:\n\r", ch);
-
-      /* first, display the group leader's status */
-      k = (ch->group_leader ? ch->group_leader : ch);
-      for(tmp1=0; (1000*GET_HIT(k))/GET_MAX_HIT(k) > prompt_hit[tmp1].value; tmp1++);
-      for(tmp2=0; (1000*GET_MANA(k))/GET_MAX_MANA(k) > prompt_mana[tmp2].value; tmp2++);
-      for(tmp3=0; (1000*GET_MOVE(k))/GET_MAX_MOVE(k) > prompt_move[tmp3].value; tmp3++);
-
-      sprintf(buf, "HP:%9s,%11s,%13s -- $N (Head of group)",
-	      prompt_hit[tmp1].message,
-	      *prompt_mana[tmp2].message == '\0' ?
-	      "S:Full" : prompt_mana[tmp2].message,
-	      *prompt_move[tmp3].message == '\0' ?
-	      "MV:Energetic" : prompt_move[tmp3].message);
-      act(buf, FALSE, ch, 0, k, TO_CHAR);
-
-
-      /* now, we display the group members */
-
-      for(f = k->group; f ; f = f->next) {
-	for(tmp1=0; (1000*GET_HIT(f->follower))/
-	      (GET_MAX_HIT(f->follower)==0?1:GET_MAX_HIT(f->follower)) > prompt_hit[tmp1].value; tmp1++);
-	for(tmp2=0; (1000*GET_MANA(f->follower))/
-	      (GET_MAX_MANA(f->follower)==0?1:GET_MAX_MANA(f->follower)) > prompt_mana[tmp2].value; tmp2++);
-	for(tmp3=0; (1000*GET_MOVE(f->follower))/
-	      (GET_MAX_MOVE(f->follower)==0?1:GET_MAX_MOVE(f->follower)) > prompt_move[tmp3].value; tmp3++);
-	if(MOB_FLAGGED(f->follower, MOB_ORC_FRIEND))
-	  sprintf(buf, "HP:%9s,%11s,%13s -- $N (Lvl:%2d)",
-		  prompt_hit[tmp1].message,
-		  *prompt_mana[tmp2].message == '\0' ?
-		  "S:Full" : prompt_mana[tmp2].message,
-		  *prompt_move[tmp3].message == '\0' ?
-		  "MV:Energetic":prompt_move[tmp3].message,
-		  GET_LEVEL(f->follower));
-	else
-	  sprintf(buf, "HP:%9s,%11s,%13s -- $N",
-		  prompt_hit[tmp1].message,
-		  *prompt_mana[tmp2].message == '\0' ?
-		  "S:Full":prompt_mana[tmp2].message,
-		  *prompt_move[tmp3].message == '\0' ?
-		  "MV:Energetic":prompt_move[tmp3].message);
-	act(buf, FALSE, ch, 0, f->follower, TO_CHAR);
-      }
-    }
-    return;
-  }
-
-  if(ch->group_leader) {
-    act("You can not enroll group members without being head of a group.",
-	FALSE, ch, 0, 0, TO_CHAR);
-    return;
-  }
-
-  if(!str_cmp(buf, "all")) {
-    victim = 0;
-    for(f = ch->followers; f; f = f->next) {
-      victim = f->follower;
-      if(!char_exists(f->fol_number))
-	f->follower = victim = 0;
-      if(victim && !victim->group_leader && !other_side(ch, victim))
-	add_follower(victim, ch, FOLLOW_GROUP);
-    }
-    return;
-  }
-
-  if(!(victim = get_char_room_vis(ch, buf))) {
-    send_to_char("No one here by that name.\n\r", ch);
-    return;
-  }
-  else {
-    found = FALSE;
-
-    if(victim == ch)
-      found = TRUE;
-    else
-      for(f = ch->group; f; f = f->next)
-	if(f->follower == victim) {
-	  found = TRUE;
-	  break;
+	if (IS_SHADOW(ch)) {
+		send_to_char("You cannot group whilst inhabiting the shadow world.\n\r", ch);
+		return;
 	}
 
-    if(found) {
-      act("You have been kicked out of $n's group!",
-	  FALSE, ch, 0, victim, TO_VICT);
-      if(victim == ch)
-	send_to_char("You are already grouped with yourself.\n\r",ch);
-      else
-	stop_follower(victim, FOLLOW_GROUP);
-    }
-    else {
-      if(other_side(ch, victim)) {
-	sprintf(buf,"You wouldn't group with that ugly %s!\n\r",
-		pc_races[GET_RACE(victim)]);
-	send_to_char(buf, ch);
-	return;
-      }
-      if(victim == ch)
-	send_to_char("You are already grouped with yourself.\n\r",ch);
-      else if(victim->group_leader)
-	act("$N is busy somewhere else already.",
-	    FALSE, ch, 0, victim, TO_CHAR);
-      else
-	add_follower(victim, ch, FOLLOW_GROUP);
-    }
-  }
+	// If only one argument was passed in.
+	if (!*buf) 
+	{
+		// TODO(drelidan): This is the code using the new group format.
+		/*
+		if (ch->group_2 == NULL)
+		{
+			send_to_char("But you are not the member of a group!\n\r", ch);
+		}
+		else
+		{
+			send_to_char("Your group consists of:\n\r", ch);
+
+			// first, display the group leader's status
+			char_data* leader = ch->get_group_leader();
+			print_group_leader(leader);
+			act(buf, FALSE, ch, 0, leader, TO_CHAR);
+
+			// now, we display the group members; start with index 1 because index 0 is the group leader
+			for (size_t index = 1; index < ch->group_2->size(); ++index)
+			{
+				char_data* group_member = ch->group_2->at(index);
+				print_group_member(group_member);
+				act(buf, FALSE, ch, 0, group_member, TO_CHAR);
+			}
+		}
+		*/
+
+		if (!ch->group_leader && !ch->group)
+		{
+			send_to_char("But you are not the member of a group!\n\r", ch);
+		}
+		else 
+		{
+			send_to_char("Your group consists of:\n\r", ch);
+
+			/* first, display the group leader's status */
+			char_data* leader = (ch->group_leader ? ch->group_leader : ch);
+			print_group_leader(leader);
+			act(buf, FALSE, ch, 0, leader, TO_CHAR);
+
+			/* now, we display the group members */
+			for (f = leader->group; f; f = f->next) 
+			{
+				char_data* group_member = f->follower;
+				print_group_member(group_member);
+				act(buf, FALSE, ch, 0, group_member, TO_CHAR);
+			}
+		}
+		return;
+	}
+
+	if (ch->group_leader) {
+		act("You can not enroll group members without being head of a group.",
+			FALSE, ch, 0, 0, TO_CHAR);
+		return;
+	}
+
+	if (!str_cmp(buf, "all")) {
+		victim = 0;
+		for (f = ch->followers; f; f = f->next) {
+			victim = f->follower;
+			if (!char_exists(f->fol_number))
+				f->follower = victim = 0;
+			if (victim && !victim->group_leader && !other_side(ch, victim))
+				add_follower(victim, ch, FOLLOW_GROUP);
+		}
+		return;
+	}
+
+	if (!(victim = get_char_room_vis(ch, buf))) {
+		send_to_char("No one here by that name.\n\r", ch);
+		return;
+	}
+	else {
+		found = FALSE;
+
+		if (victim == ch)
+			found = TRUE;
+		else
+			for (f = ch->group; f; f = f->next)
+				if (f->follower == victim) {
+					found = TRUE;
+					break;
+				}
+
+		if (found) {
+			act("You have been kicked out of $n's group!",
+				FALSE, ch, 0, victim, TO_VICT);
+			if (victim == ch)
+				send_to_char("You are already grouped with yourself.\n\r", ch);
+			else
+				stop_follower(victim, FOLLOW_GROUP);
+		}
+		else {
+			if (other_side(ch, victim)) {
+				sprintf(buf, "You wouldn't group with that ugly %s!\n\r",
+					pc_races[GET_RACE(victim)]);
+				send_to_char(buf, ch);
+				return;
+			}
+			if (victim == ch)
+				send_to_char("You are already grouped with yourself.\n\r", ch);
+			else if (victim->group_leader)
+				act("$N is busy somewhere else already.",
+					FALSE, ch, 0, victim, TO_CHAR);
+			else
+				add_follower(victim, ch, FOLLOW_GROUP);
+		}
+	}
 }
 
 

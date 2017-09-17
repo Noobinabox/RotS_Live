@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <string>
 #include <map>
+#include <vector>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
 const int ENE_TO_HIT = 1200;
@@ -208,6 +209,10 @@ const int MYSTIC_GUARDIAN = 2;
 #define CONT_PICKPROOF      2
 #define CONT_CLOSED         4
 #define CONT_LOCKED         8
+
+typedef std::vector<struct char_data*> char_vector;
+typedef char_vector::iterator char_iter;
+typedef char_vector::const_iterator const_char_iter;
 
 struct combat_result_struct
 {
@@ -1504,13 +1509,48 @@ class group_damaga_data
 public:
 	group_damaga_data() : damage_map() { };
 
-	void add_damage(class char_data* character, int damage) { damage_map[character].add_damage(damage); }
+	void add_damage(struct char_data* character, int damage) { damage_map[character].add_damage(damage); }
+	void remove(struct char_data* character) { damage_map.erase(character); }
 	void reset() { damage_map.clear(); }
 
 	std::string get_damage_report() const;
 
 private:
-	std::map<class char_data*, timed_damage_details> damage_map;
+	std::map<struct char_data*, timed_damage_details> damage_map;
+};
+
+/* ================== Structure for grouping ===================== */
+class group_data
+{
+public:
+
+	/* Groups cannot exist without a leader. */
+	group_data(struct char_data* in_leader) : leader(in_leader) { add_member(in_leader); };
+
+	void add_member(struct char_data* member) { members.push_back(member); }
+	bool remove_member(struct char_data* member);
+
+	void track_damage(struct char_data* character, int damage) { damage_report.add_damage(character, damage); }
+	void reset_damage() { damage_report.reset(); }
+	std::string get_damage_report() const { return damage_report.get_damage_report(); }
+
+	struct char_data* get_leader() const { return leader; }
+	bool is_member(struct char_data* character) const;
+	bool is_leader(struct char_data* character) const { return character == leader; }
+	
+	size_t size() const { return members.size(); }
+	char_iter begin() { return members.begin(); }
+	char_iter end() { return members.end(); }
+	const_char_iter begin() const { return members.begin(); }
+	const_char_iter end() const { return members.end(); }
+	struct char_data* at(size_t index) { return members.at(index); }
+
+private:
+
+	struct char_data* leader;
+	char_vector members;
+
+	group_damaga_data damage_report;
 };
 
 /* ================== Structure for player/non-player ===================== */
@@ -1535,6 +1575,9 @@ public:
 	bool is_legend() const { return player.level >= LEVEL_MAX; }
 	// Returns the level of the player, or the 'maximum' level, whichever is lower.
 	int get_capped_level() const { return std::min(get_level(), LEVEL_MAX); }
+
+	/* Returns the leader of the character's group, if the character is in a group. */
+	char_data* get_group_leader() const { return group_2 ? group_2->get_leader() : NULL; }
 
 public:
 	int abs_number;                       /* bit number in the control array */
@@ -1575,6 +1618,7 @@ public:
 	int group_leader_num;
 
 	struct mount_data_type mount_data;
+	group_data* group_2;   /* The group that the character belongs to.  Can be null. */
 
 	void * temp;         /* pointer to any special structures if need be   */
 	struct waiting_type delay;

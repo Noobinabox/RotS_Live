@@ -1263,11 +1263,20 @@ namespace utils
 	}
 }
 
+//============================================================================
+// Below here you will find various implementations from structs.h
+// TODO(drelidan): Create a structs.cpp file and put all of this code there.
+//============================================================================
+
+//============================================================================
+// Specialization stuff!
+//============================================================================
 void cold_spec_data::on_chill_applied(int chill_amount)
 {
 	total_energy_sapped += chill_amount;
 }
 
+//============================================================================
 void cold_spec_data::on_chill_ray_success(int damage)
 {
 	++total_chill_ray_count;
@@ -1275,6 +1284,7 @@ void cold_spec_data::on_chill_ray_success(int damage)
 	total_chill_ray_damage += damage;
 }
 
+//============================================================================
 void cold_spec_data::on_chill_ray_fail(int damage)
 {
 	++total_chill_ray_count;
@@ -1282,6 +1292,7 @@ void cold_spec_data::on_chill_ray_fail(int damage)
 	total_chill_ray_damage += damage;
 }
 
+//============================================================================
 void cold_spec_data::on_cone_of_cold_success(int damage)
 {
 	++total_cone_of_cold_count;
@@ -1289,6 +1300,7 @@ void cold_spec_data::on_cone_of_cold_success(int damage)
 	total_cone_of_cold_damage += damage;
 }
 
+//============================================================================
 void cold_spec_data::on_cone_of_cold_failed(int damage)
 {
 	++total_cone_of_cold_count;
@@ -1296,6 +1308,7 @@ void cold_spec_data::on_cone_of_cold_failed(int damage)
 	total_cone_of_cold_damage += damage;
 }
 
+//============================================================================
 void specialization_data::reset()
 {
 	if (current_spec_info)
@@ -1307,6 +1320,7 @@ void specialization_data::reset()
 	current_spec = game_types::PS_None;
 }
 
+//============================================================================
 void specialization_data::set(char_data& character)
 {
 	reset();
@@ -1352,6 +1366,7 @@ void specialization_data::set(char_data& character)
 	current_spec = spec;
 }
 
+//============================================================================
 std::string specialization_data::to_string(char_data& character) const
 {
 	if (current_spec_info)
@@ -1362,6 +1377,7 @@ std::string specialization_data::to_string(char_data& character) const
 	return std::string("You are not specialized in anything.\r\n");
 }
 
+//============================================================================
 std::string elemental_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1373,6 +1389,7 @@ std::string elemental_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string cold_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1401,6 +1418,7 @@ std::string cold_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string fire_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1423,6 +1441,7 @@ std::string fire_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string lightning_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1437,6 +1456,7 @@ std::string lightning_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string darkness_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1459,6 +1479,7 @@ std::string darkness_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string arcane_spec_data::to_string(char_data& character) const
 {
 	std::ostringstream message_writer;
@@ -1472,26 +1493,33 @@ std::string arcane_spec_data::to_string(char_data& character) const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string heavy_fighting_data::to_string(char_data& character) const
 {
 	return std::string("You are specialized in heavy fighting.");
 }
 
+//============================================================================
 std::string light_fighting_data::to_string(char_data& character) const
 {
 	return std::string("You are specialized in light fighting.");
 }
 
+//============================================================================
 std::string defender_data::to_string(char_data& character) const
 {
 	return std::string("You are specialized in defending.");
 }
 
+//============================================================================
 std::string wild_fighting_data::to_string(char_data& character) const
 {
 	return std::string("You are specialized in wild fighting.");
 }
 
+//============================================================================
+// Damage reporting stuff!
+//============================================================================
 std::string player_damage_details::get_damage_report() const
 {
 	typedef std::map<int, damage_details>::const_iterator map_iter;
@@ -1552,6 +1580,7 @@ std::string player_damage_details::get_damage_report() const
 	return message_writer.str();
 }
 
+//============================================================================
 std::string group_damaga_data::get_damage_report() const
 {
 	typedef std::map<char_data*, timed_damage_details>::const_iterator map_iter;
@@ -1596,4 +1625,28 @@ std::string group_damaga_data::get_damage_report() const
 	message_writer << "Total Damage: " << total_damage_dealt << std::endl;
 	message_writer << "-------------------------------------------------------------------------------" << std::endl;
 	return message_writer.str();
+}
+
+//============================================================================
+// Group-based code!
+//============================================================================
+bool group_data::remove_member(char_data* member)
+{
+	/* The leader cannot be removed from a group. */
+	if (member == leader)
+		return false;
+
+	char_iter member_iter = std::remove(members.begin(), members.end(), member);
+	if (member_iter == members.end())
+		return false;
+
+	members.erase(member_iter);
+	damage_report.remove(member);
+	return true;
+}
+
+//============================================================================
+bool group_data::is_member(struct char_data* character) const
+{
+	return std::find(members.begin(), members.end(), character) != members.end();
 }

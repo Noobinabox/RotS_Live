@@ -1520,19 +1520,23 @@ int get_damage_message_number(int damage)
 	return message_number;
 }
 
-
-void dam_message(int damage, char_data* attacker, char_data* victim, int w_type, char* bodypart)
+const attack_hit_type& get_hit_text(int w_type)
 {
 	// That is, instead of using the TYPE_ which starts at 140+,
 	// see spells.h for details, we use w_type range from 0 to 13 or so,
 	// whatever number of different weapon types we have.
 	w_type -= TYPE_HIT;   /* Change to base of table with text */
 
+	return attack_hit_text[w_type];
+}
+
+void dam_message(int damage, char_data* attacker, char_data* victim, int w_type, char* bodypart)
+{
 	obj_data* wield = attacker->equipment[WIELD];
 
 	int msgnum = get_damage_message_number(damage);
 	const dam_weapon_type& weap = dam_weapons[msgnum];
-	const attack_hit_type& text = attack_hit_text[w_type];
+	const attack_hit_type& text = get_hit_text(w_type);
 
 	/* damage message to onlookers.  see note on replace_string */
 	char* buf = replace_string(weap.to_room, text.singular, text.plural, bodypart);
@@ -1902,6 +1906,10 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 	record_spell_damage(attacker, victim, attacktype, dam);
 
 	GET_HIT(victim) -= dam;
+	if (utils::is_pc(*attacker))
+	{
+		attacker->damage_details.add_damage(attacktype, dam);
+	}
 
 	if (attacker != victim)
 	{

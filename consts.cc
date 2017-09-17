@@ -18,7 +18,7 @@
 #include "limits.h"
 
  char	circlemud_version[] = {
-   "Arda: The Fourth Age, version 1.0.3.2a\n\r" };
+   "Arda: The Fourth Age, version 1.0.3.3\n\r" };
 
 
 //const
@@ -3343,6 +3343,8 @@ int get_guardian_type(int race_number, const char_data* in_guardian_mob)
 
 	return INVALID_GUARDIAN;
 }
+
+const skill_data* get_skill_array() { return skills; }
 
 unsigned long    stat_ticks_passed = 0;
 unsigned long    stat_mortals_counter = 0;

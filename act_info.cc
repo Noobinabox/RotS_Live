@@ -4709,6 +4709,8 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 {
 	const char* SPEC_FLAG = "spec";
 	const char* GROUP_FLAG = "group";
+	const char* DAMAGE_FLAG = "damage";
+	const char* RESET_FLAG = "reset";
 
 	if (wait_list && (wait_list->targ1.type == TARGET_TEXT))
 	{
@@ -4723,9 +4725,22 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 			std::string spec_data = character->extra_specialization_data.to_string(*character);
 			send_to_char(spec_data.c_str(), character);
 		}
+		else if (strstr(details_argument, DAMAGE_FLAG))
+		{
+			if (strstr(details_argument, RESET_FLAG))
+			{
+				character->damage_details.reset();
+				send_to_char("Damage details have been reset. \r\n", character);
+			}
+			else
+			{
+				std::string damage_data = character->damage_details.get_damage_report();
+				send_to_char(damage_data.c_str(), character);
+			}
+		}
 		else if (strstr(details_argument, GROUP_FLAG))
 		{
-			send_to_char("Group details:  NYI\r\n", character);
+			send_to_char("Group details:  Not yet implemented. \r\n", character);
 		}
 		else
 		{
@@ -4734,7 +4749,7 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 	}
 	else
 	{
-		send_to_char("Accepted arguments: spec, group\r\n", character);
+		send_to_char("Accepted arguments: spec, group, damage (optional: reset) \r\n", character);
 	}
 }
 

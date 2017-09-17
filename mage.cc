@@ -2476,7 +2476,6 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
 	const room_data& current_room = world[caster->in_room];
 	int weather_type = weather_info.sky[current_room.sector_type];
 
-	int mage_level = utils::get_prof_level(PROF_MAGE, *caster);
 	switch (caster_spec)
 	{
 	case game_types::PS_Arcane:

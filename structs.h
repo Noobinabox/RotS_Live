@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <string>
+#include <map>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
 const int ENE_TO_HIT = 1200;
@@ -1425,6 +1426,55 @@ struct player_skill_data
 	byte knowledge[MAX_SKILLS];
 };
 
+/* ========== Structures used for tracking player damage ============= */
+class damage_details
+{
+public:
+	damage_details() : total_damage(0), instance_count(0), largest_damage(0) { }
+
+	void add_damage(int damage)
+	{
+		total_damage += damage;
+		instance_count++;
+		largest_damage = std::max(largest_damage, damage);
+	}
+
+	float get_average_damage() const 
+	{
+		return float(total_damage) / instance_count;
+	}
+
+	int get_total_damage() const { return total_damage; }
+	int get_instance_count() const { return instance_count; }
+	int get_largest_damage() const { return largest_damage; }
+
+	void reset()
+	{
+		total_damage = 0;
+		instance_count = 0;
+		largest_damage = 0;
+	}
+
+private:
+	int total_damage;
+	int instance_count;
+	int largest_damage;
+};
+
+class player_damage_details
+{
+public:
+	player_damage_details() : damage_map() { };
+
+	void add_damage(int skill_id, int damage) { damage_map[skill_id].add_damage(damage); }
+	void reset() { damage_map.clear(); }
+
+	std::string get_damage_report() const;
+
+private:
+	std::map<int, damage_details> damage_map;
+};
+
 
 /* ================== Structure for player/non-player ===================== */
 struct char_data
@@ -1464,6 +1514,7 @@ public:
 	struct char_special2_data specials2;  /* Additional special constants  */
 	struct char_prof_data * profs;    /* prof cooficients */
 	specialization_data extra_specialization_data; /* extra data used by some specializations */
+	player_damage_details damage_details; /* structure for storing damage data */
 	byte *skills;			 /* dynam. alloc. array of pracs spent                                         on skills */
 	byte *knowledge;                     /* array of knowledge, computed from
 											pracs spent at logon */

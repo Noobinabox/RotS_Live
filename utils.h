@@ -668,4 +668,10 @@ void    show_char_to_char(struct char_data *i, struct char_data *ch, int mode,
 /* Returns the guardian type.  Returns GUARDIAN_INVALID if the mob is not a guardian. */
 int get_guardian_type(int race_number, const char_data* in_guardian_mob);
 
+/* Gets the skills array.  It has MAX_SKILLS entries. */
+const struct skill_data* get_skill_array();
+
+/* Gets the attack hit type for a given index. */
+const struct attack_hit_type& get_hit_text(int w_type);
+
 #endif /* UTILS_H */

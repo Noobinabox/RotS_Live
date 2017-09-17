@@ -15,6 +15,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 
 struct race_bodypart_data;
 
@@ -1491,3 +1492,43 @@ std::string wild_fighting_data::to_string(char_data& character) const
 	return std::string("You are specialized in wild fighting.");
 }
 
+std::string player_damage_details::get_damage_report() const
+{
+	typedef std::map<int, damage_details>::const_iterator map_iter;
+
+	const skill_data* skills = get_skill_array();
+
+	std::ostringstream message_writer;
+	message_writer << "Damage report details:" << std::endl;
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+	
+	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
+	{
+		char ability_name[25];
+		//const char* ability_name = "";
+		
+		int ability_index = iter->first;
+		if (ability_index > MAX_SKILLS && ability_index >= TYPE_HIT)
+		{
+			const attack_hit_type& hit_text = get_hit_text(ability_index);
+			sprintf(ability_name, "%-24s", hit_text.singular);
+		}
+		else
+		{
+			const skill_data& skill = skills[iter->first];
+			sprintf(ability_name, "%-24s", skill.name);
+		}
+		
+		const damage_details& details = iter->second;
+
+		message_writer << ability_name;
+		message_writer << "<Count: " << details.get_instance_count();
+		message_writer << ", Total: " << details.get_total_damage();
+		message_writer << ", Max: " << details.get_largest_damage();
+		message_writer << ", Average: " << details.get_average_damage() << ">";
+		message_writer << std::endl;
+	}
+
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}

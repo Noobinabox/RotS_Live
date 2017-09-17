@@ -2115,6 +2115,8 @@ void	store_to_char(struct char_file_u *st, struct char_data *ch)
    CREATE(ch->player.name, char, strlen(st->name) + 1);
    strcpy(ch->player.name, st->name);
 
+   ch->damage_details.reset();
+
    /* Add all spell effects */
    for (i = 0; i < MAX_AFFECT; i++) {
       if (st->affected[i].type)
@@ -2701,6 +2703,7 @@ void	free_char(struct char_data *ch)
 //printf("skills freed, and others\n");
 
    ch->extra_specialization_data.reset();
+   ch->damage_details.reset();
    remove_char_exists(ch->abs_number);
    RELEASE(ch);
 }
@@ -2972,6 +2975,8 @@ init_char(struct char_data *ch)
   for (i = 0; i < 3; i++)
     GET_COND(ch, i) = (GET_LEVEL(ch) == LEVEL_IMPL ? -1 : 24);
   
+  ch->damage_details.reset();
+
   /* The default preference flags */
   PRF_FLAGS(ch) |= PRF_SPAM | PRF_NARRATE | PRF_CHAT | PRF_WIZ | PRF_SING |
     PRF_PROMPT | PRF_ECHO | PRF_AUTOEX | PRF_SPINNER;

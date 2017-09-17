@@ -1432,6 +1432,8 @@ class damage_details
 public:
 	damage_details() : total_damage(0), instance_count(0), largest_damage(0) { }
 
+	virtual ~damage_details() { }
+
 	void add_damage(int damage)
 	{
 		total_damage += damage;
@@ -1448,7 +1450,7 @@ public:
 	int get_instance_count() const { return instance_count; }
 	int get_largest_damage() const { return largest_damage; }
 
-	void reset()
+	virtual void reset()
 	{
 		total_damage = 0;
 		instance_count = 0;
@@ -1477,6 +1479,39 @@ private:
 	float elapsed_combat_seconds;
 };
 
+class timed_damage_details : public damage_details
+{
+public:
+	timed_damage_details() : damage_details(), elapsed_combat_seconds(0) { }
+	virtual ~timed_damage_details() { }
+
+	float get_combat_time() const { return elapsed_combat_seconds; }
+	float get_dps() const { return get_total_damage() / std::max(elapsed_combat_seconds, 0.5f); }
+	void tick(float delta) { elapsed_combat_seconds += delta; }
+
+	virtual void reset()
+	{
+		damage_details::reset();
+		elapsed_combat_seconds = 0;
+	}
+
+private:
+	float elapsed_combat_seconds;
+};
+
+class group_damaga_data
+{
+public:
+	group_damaga_data() : damage_map() { };
+
+	void add_damage(class char_data* character, int damage) { damage_map[character].add_damage(damage); }
+	void reset() { damage_map.clear(); }
+
+	std::string get_damage_report() const;
+
+private:
+	std::map<class char_data*, timed_damage_details> damage_map;
+};
 
 /* ================== Structure for player/non-player ===================== */
 struct char_data

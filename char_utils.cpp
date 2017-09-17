@@ -1517,7 +1517,6 @@ std::string player_damage_details::get_damage_report() const
 	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
 	{
 		char ability_name[25];
-		//const char* ability_name = "";
 		
 		int ability_index = iter->first;
 		if (ability_index > MAX_SKILLS && ability_index >= TYPE_HIT)
@@ -1549,6 +1548,52 @@ std::string player_damage_details::get_damage_report() const
 	message_writer << "Total Damage: " << total_damage_dealt;
 	message_writer << "; Combat Time: " << combat_seconds;
 	message_writer << "s; Damage per Second: " << dps << std::endl;
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+	return message_writer.str();
+}
+
+std::string group_damaga_data::get_damage_report() const
+{
+	typedef std::map<char_data*, timed_damage_details>::const_iterator map_iter;
+
+	if (damage_map.empty())
+	{
+		return std::string("You have not recorded any damage dealt.\r\n");
+	}
+
+	/* First pass: Calculate total damage dealt.*/
+	long total_damage_dealt = 0;
+	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
+	{
+		total_damage_dealt += iter->second.get_total_damage();
+	}
+
+	std::ostringstream message_writer;
+	message_writer << "Group damage report details:" << std::endl;
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+
+	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
+	{
+		char character_name[25];
+
+		char_data* character = iter->first;
+		sprintf(character_name, "%-24s", utils::get_name(*character));
+
+		const timed_damage_details& details = iter->second;
+
+		message_writer << character_name;
+		message_writer << "<Count: " << details.get_instance_count();
+		message_writer << ", Total: " << details.get_total_damage();
+		message_writer << ", Max: " << details.get_largest_damage();
+		message_writer << ", Average: " << details.get_average_damage();
+		message_writer << ", DPS: " << details.get_dps() << "> ";
+		message_writer << details.get_total_damage() / double(total_damage_dealt);
+		message_writer << "%";
+		message_writer << std::endl;
+	}
+
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+	message_writer << "Total Damage: " << total_damage_dealt << std::endl;
 	message_writer << "-------------------------------------------------------------------------------" << std::endl;
 	return message_writer.str();
 }

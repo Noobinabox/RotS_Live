@@ -1464,15 +1464,17 @@ private:
 class player_damage_details
 {
 public:
-	player_damage_details() : damage_map() { };
+	player_damage_details() : damage_map(), elapsed_combat_seconds(0) { };
 
 	void add_damage(int skill_id, int damage) { damage_map[skill_id].add_damage(damage); }
-	void reset() { damage_map.clear(); }
+	void tick(float delta) { elapsed_combat_seconds += delta; }
+	void reset() { damage_map.clear(); elapsed_combat_seconds = 0; }
 
 	std::string get_damage_report() const;
 
 private:
 	std::map<int, damage_details> damage_map;
+	float elapsed_combat_seconds;
 };
 
 

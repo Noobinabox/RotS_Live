@@ -35,6 +35,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <ctime>
 
 #define IS_PHYSICAL(_at) \
   ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)
@@ -2702,73 +2703,101 @@ bool does_double_hit_proc(const char_data* character)
 	return number() >= 0.9;
 }
 
+namespace
+{
+	timeval last_time; 
+	timeval current_time;
+
+	timeval timediff(struct timeval *a, struct timeval *b)
+	{
+		struct timeval rslt, tmp;
+
+		tmp = *a;
+
+		if ((rslt.tv_usec = tmp.tv_usec - b->tv_usec) < 0) {
+			rslt.tv_usec += 1000000;
+			--(tmp.tv_sec);
+		}
+		if ((rslt.tv_sec = tmp.tv_sec - b->tv_sec) < 0) {
+			rslt.tv_usec = 0;
+			rslt.tv_sec = 0;
+		}
+		return(rslt);
+	}
+}
+
 /*
  * Control all of the fights going on; works on PULSE_VIOLENCE
  */
 void perform_violence(int mini_tics)
 {
-	struct char_data *ch;
+	last_time = current_time;
+	gettimeofday(&current_time, NULL);
+	timeval time_difference = timediff(&current_time, &last_time);
 
-	for (ch = combat_list; ch; ch = combat_next_dude) 
+	float time_delta = time_difference.tv_sec + time_difference.tv_usec / 1000000.0f;
+	for (char_data* fighter = combat_list; fighter; fighter = combat_next_dude) 
 	{
-		combat_next_dude = ch->next_fighting;
+		fighter->damage_details.tick(time_delta);
 
-		SET_CURRENT_PARRY(ch) = std::min(GET_CURRENT_PARRY(ch) + 3, 100);
+		combat_next_dude = fighter->next_fighting;
 
-		if (GET_MENTAL_DELAY(ch) && (GET_MENTAL_DELAY(ch) > -120))
+		SET_CURRENT_PARRY(fighter) = std::min(GET_CURRENT_PARRY(fighter) + 3, 100);
+
+		if (GET_MENTAL_DELAY(fighter) && (GET_MENTAL_DELAY(fighter) > -120))
 		{
-			GET_MENTAL_DELAY(ch)--;
+			GET_MENTAL_DELAY(fighter)--;
 		}
 
-		if (GET_MENTAL_DELAY(ch) > 1)
+		if (GET_MENTAL_DELAY(fighter) > 1)
 			continue;
 
-		if (ch->specials.fighting && (IS_MENTAL(ch) || (IS_NPC(ch) && IS_SHADOW(ch->specials.fighting)))) 
+		if (fighter->specials.fighting && (IS_MENTAL(fighter) || (IS_NPC(fighter) && IS_SHADOW(fighter->specials.fighting)))) 
 		{
-			if ((GET_POS(ch) >= POSITION_FIGHTING) && !IS_AFFECTED(ch, AFF_WAITING))
+			if ((GET_POS(fighter) >= POSITION_FIGHTING) && !IS_AFFECTED(fighter, AFF_WAITING))
 			{
-				do_mental(ch, "", 0, 0, 0);
+				do_mental(fighter, "", 0, 0, 0);
 			}
 			continue; // have in mind, the ch could die himself
 		}
 
 
-		if (!IS_AFFECTED(ch, AFF_WAITING) || (GET_WAIT_PRIORITY(ch) == 29) || (GET_WAIT_PRIORITY(ch) == 59)) 
+		if (!IS_AFFECTED(fighter, AFF_WAITING) || (GET_WAIT_PRIORITY(fighter) == 29) || (GET_WAIT_PRIORITY(fighter) == 59)) 
 		{
-			if ((GET_POS(ch) >= POSITION_FIGHTING) && (ch->specials.ENERGY <= ENE_TO_HIT))
+			if ((GET_POS(fighter) >= POSITION_FIGHTING) && (fighter->specials.ENERGY <= ENE_TO_HIT))
 			{
-				ch->specials.ENERGY += ch->points.ENE_regen;
+				fighter->specials.ENERGY += fighter->points.ENE_regen;
 			}
-			else if (IS_NPC(ch) && !ch->delay.wait_value)
+			else if (IS_NPC(fighter) && !fighter->delay.wait_value)
 			{
-				do_stand(ch, "", 0, 0, 0);
+				do_stand(fighter, "", 0, 0, 0);
 			}
 
-			if (ch->specials.ENERGY > ENE_TO_HIT)
+			if (fighter->specials.ENERGY > ENE_TO_HIT)
 			{
-				if (AWAKE(ch) && ch->specials.fighting && (ch->in_room == ch->specials.fighting->in_room))
+				if (AWAKE(fighter) && fighter->specials.fighting && (fighter->in_room == fighter->specials.fighting->in_room))
 				{
 					// Note:  Calling hit reduces the character's current energy.
-					sh_int current_energy = ch->specials.ENERGY;
-					hit(ch, ch->specials.fighting, TYPE_UNDEFINED);
+					sh_int current_energy = fighter->specials.ENERGY;
+					hit(fighter, fighter->specials.fighting, TYPE_UNDEFINED);
 
-					if (can_double_hit(ch) && does_double_hit_proc(ch))
+					if (can_double_hit(fighter) && does_double_hit_proc(fighter))
 					{
-						light_fighting_data* data = static_cast<light_fighting_data*>(ch->extra_specialization_data.current_spec_info);
+						light_fighting_data* data = static_cast<light_fighting_data*>(fighter->extra_specialization_data.current_spec_info);
 						data->add_light_fighting_proc();
 
-						char_data* victim = ch->specials.fighting;
-						act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, ch, NULL, victim, TO_CHAR);
-						act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, ch, NULL, victim, TO_VICT);
-						act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, ch, 0, victim, TO_NOTVICT, FALSE);
+						char_data* victim = fighter->specials.fighting;
+						act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, fighter, NULL, victim, TO_CHAR);
+						act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, fighter, NULL, victim, TO_VICT);
+						act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
 
-						ch->specials.ENERGY = current_energy;
-						hit(ch, victim, TYPE_UNDEFINED);
+						fighter->specials.ENERGY = current_energy;
+						hit(fighter, victim, TYPE_UNDEFINED);
 					}
 				}
 				else /* Not in same room */
 				{
-					stop_fighting(ch);
+					stop_fighting(fighter);
 				}
 			}
 		}

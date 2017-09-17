@@ -1498,6 +1498,18 @@ std::string player_damage_details::get_damage_report() const
 
 	const skill_data* skills = get_skill_array();
 
+	if (damage_map.empty())
+	{
+		return std::string("You have not recorded any damage dealt.\r\n");
+	}
+
+	/* First pass: Calculate total damage dealt.*/
+	long total_damage_dealt = 0;
+	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
+	{
+		total_damage_dealt += iter->second.get_total_damage();
+	}
+
 	std::ostringstream message_writer;
 	message_writer << "Damage report details:" << std::endl;
 	message_writer << "-------------------------------------------------------------------------------" << std::endl;
@@ -1525,10 +1537,18 @@ std::string player_damage_details::get_damage_report() const
 		message_writer << "<Count: " << details.get_instance_count();
 		message_writer << ", Total: " << details.get_total_damage();
 		message_writer << ", Max: " << details.get_largest_damage();
-		message_writer << ", Average: " << details.get_average_damage() << ">";
+		message_writer << ", Average: " << details.get_average_damage() << "> ";
+		message_writer << details.get_total_damage() / double(total_damage_dealt);
+		message_writer << "%";
 		message_writer << std::endl;
 	}
 
+	float combat_seconds = std::max(elapsed_combat_seconds, 0.5f);
+	float dps = total_damage_dealt / combat_seconds;
+	message_writer << "-------------------------------------------------------------------------------" << std::endl;
+	message_writer << "Total Damage: " << total_damage_dealt;
+	message_writer << "; Combat Time: " << combat_seconds;
+	message_writer << "s; Damage per Second: " << dps << std::endl;
 	message_writer << "-------------------------------------------------------------------------------" << std::endl;
 	return message_writer.str();
 }

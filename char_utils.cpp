@@ -1570,7 +1570,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
 		message_writer << std::fixed;
 		message_writer.precision(2);
 		message_writer << ", Average: " << details.get_average_damage() << "> ";
-		message_writer << details.get_total_damage() / double(total_damage_dealt);
+		message_writer << details.get_total_damage() / double(total_damage_dealt) * 100;
 		message_writer << "% of damage";
 		message_writer << std::endl;
 	}
@@ -1623,7 +1623,7 @@ std::string group_damaga_data::get_damage_report() const
 		message_writer.precision(2);
 		message_writer << ", Average: " << details.get_average_damage();
 		message_writer << ", DPS: " << details.get_dps() << "> ";
-		message_writer << details.get_total_damage() / double(total_damage_dealt);
+		message_writer << (details.get_total_damage() / double(total_damage_dealt)) * 100;
 		message_writer << "% of group damage";
 		message_writer << std::endl;
 	}

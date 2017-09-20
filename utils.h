@@ -674,11 +674,11 @@ const struct skill_data* get_skill_array();
 /* Gets the attack hit type for a given index. */
 const struct attack_hit_type& get_hit_text(int w_type);
 
-namespace string
+namespace string_func
 {
-	bool equals(const char* a, const char* b) { return strcmp(a, b) == 0; }
-	bool is_null_or_empty(const char* a) { return !a || a[0] == '\0'; }
-	bool contains(const char* a, const char* b) { return strstr(a, b) != NULL; }
+	bool equals(const char* a, const char* b);
+	bool is_null_or_empty(const char* a);
+	bool contains(const char* a, const char* b);
 }
 
 #endif /* UTILS_H */

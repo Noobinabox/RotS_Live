@@ -4730,12 +4730,33 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 			if (strstr(details_argument, RESET_FLAG))
 			{
 				character->damage_details.reset();
-				send_to_char("Damage details have been reset. \r\n", character);
+
+				for (follow_type* follower = character->followers; follower; follower = follower->next)
+				{
+					char_data* follow_char = follower->follower;
+					if (utils::is_npc(*follow_char) && utils::is_affected_by(*follow_char, AFF_CHARM))
+					{
+						follow_char->damage_details.reset();
+					}
+				}
+
+				send_to_char("Damage details have been reset.\r\n", character);
 			}
 			else
 			{
-				std::string damage_data = character->damage_details.get_damage_report();
+				std::string damage_data = character->damage_details.get_damage_report(character);
 				send_to_char(damage_data.c_str(), character);
+
+				for (follow_type* follower = character->followers; follower; follower = follower->next)
+				{
+					const char_data* follow_char = follower->follower;
+					if (utils::is_npc(*follow_char) && utils::is_affected_by(*follow_char, AFF_CHARM))
+					{
+						std::string follower_damage_data = follow_char->damage_details.get_damage_report(follow_char);
+						send_to_char("\n\r", character);
+						send_to_char(follower_damage_data.c_str(), character);
+					}
+				}
 			}
 		}
 		else if (strstr(details_argument, GROUP_FLAG))

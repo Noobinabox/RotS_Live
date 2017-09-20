@@ -1907,7 +1907,7 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 	record_spell_damage(attacker, victim, attacktype, dam);
 
 	GET_HIT(victim) -= dam;
-	if (utils::is_pc(*attacker))
+	if (utils::is_pc(*attacker) || (attacker->master && utils::is_affected_by(*attacker, AFF_CHARM)))
 	{
 		attacker->damage_details.add_damage(attacktype, dam);
 	}

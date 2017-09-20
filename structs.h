@@ -1477,7 +1477,7 @@ public:
 	void tick(float delta) { elapsed_combat_seconds += delta; }
 	void reset() { damage_map.clear(); elapsed_combat_seconds = 0; }
 
-	std::string get_damage_report() const;
+	std::string get_damage_report(const char_data* character) const;
 
 private:
 	std::map<int, damage_details> damage_map;

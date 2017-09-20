@@ -1520,15 +1520,18 @@ std::string wild_fighting_data::to_string(char_data& character) const
 //============================================================================
 // Damage reporting stuff!
 //============================================================================
-std::string player_damage_details::get_damage_report() const
+std::string player_damage_details::get_damage_report(const char_data* character) const
 {
 	typedef std::map<int, damage_details>::const_iterator map_iter;
 
 	const skill_data* skills = get_skill_array();
 
+	const char* character_name = utils::get_name(*character);
 	if (damage_map.empty())
 	{
-		return std::string("You have not recorded any damage dealt.\r\n");
+		std::ostringstream message_writer;
+		message_writer << character_name << " has not recorded any damage dealt." << std::endl;
+		return message_writer.str();
 	}
 
 	/* First pass: Calculate total damage dealt.*/
@@ -1539,7 +1542,7 @@ std::string player_damage_details::get_damage_report() const
 	}
 
 	std::ostringstream message_writer;
-	message_writer << "Damage report details:" << std::endl;
+	message_writer << "Damage report details for " << character_name << ":" << std::endl;
 	message_writer << "-------------------------------------------------------------------------------" << std::endl;
 	
 	for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter)
@@ -1659,4 +1662,12 @@ bool group_data::remove_member(char_data* member)
 bool group_data::is_member(struct char_data* character) const
 {
 	return std::find(members.begin(), members.end(), character) != members.end();
+}
+
+//============================================================================
+namespace string_func
+{
+	bool equals(const char* a, const char* b) { return strcmp(a, b) == 0; }
+	bool is_null_or_empty(const char* a) { return !a || a[0] == '\0'; }
+	bool contains(const char* a, const char* b) { return strstr(a, b) != NULL; }
 }

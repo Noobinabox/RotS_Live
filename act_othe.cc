@@ -567,7 +567,7 @@ ACMD(do_group)
 		return;
 	}
 
-	if (string::equals(buf, "all"))
+	if (string_func::equals(buf, "all"))
 	{
 		for (follow_type* follower = ch->followers; follower; follower = follower->next)
 		{

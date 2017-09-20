@@ -50,6 +50,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include "base_utils.h"
 
 /* external vars */
 extern struct room_data world;
@@ -261,208 +262,219 @@ affect_modify_room(struct room_data *room, byte loc, int mod,
 
 
 
-void
-affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
+void affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
 {
-  int maxabil, tmp, tmp2;
-  
-  if(add == AFFECT_MODIFY_SET)
-    SET_BIT(ch->specials.affected_by, bitv);
-  else if(add == AFFECT_MODIFY_REMOVE) {
-    REMOVE_BIT(ch->specials.affected_by, bitv);
-    mod = -mod;
-  }
-  ch->specials.affected_by |= race_affect[GET_RACE(ch)];
-   
-  maxabil = (IS_NPC(ch) ? 25 : 25);
-  
-  if(add == AFFECT_MODIFY_TIME) {
-    switch(loc) {
-    case APPLY_MANA_REGEN:
-      GET_MANA(ch) += mod;
-      if(GET_MANA(ch) < 0)
-	GET_MANA(ch) = 0;
-      if(GET_MANA(ch) > GET_MAX_MANA(ch)) 
-	GET_MANA(ch) = GET_MAX_MANA(ch);
-    }
-    return;  /* so, usual affects are not modified in this call */
-  }
-  
-  switch (loc) {
-  case APPLY_NONE:
-    break;
-    
-  case APPLY_STR: 
-    SET_STR_BASE(ch,GET_STR_BASE(ch)+mod);
-    SET_STR(ch,GET_STR(ch)+mod);
-    break;
+	int maxabil, tmp, tmp2;
 
-  case APPLY_LEA:
-    GET_LEA_BASE(ch) += mod;
-    GET_LEA(ch) += mod;
-    break;
+	if (add == AFFECT_MODIFY_SET)
+	{
+		SET_BIT(ch->specials.affected_by, bitv);
+		if (utils::is_set(bitv, long(AFF_CHARM)))
+		{
+			ch->damage_details.reset();
+		}
+	}
+	else if (add == AFFECT_MODIFY_REMOVE)
+	{
+		REMOVE_BIT(ch->specials.affected_by, bitv);
+		if (utils::is_set(bitv, long(AFF_CHARM)))
+		{
+			ch->damage_details.reset();
+		}
 
-  case APPLY_DEX: 
-    GET_DEX_BASE(ch) += mod; 
-    GET_DEX(ch) += mod; 
-    break;
+		mod = -mod;
+	}
+	ch->specials.affected_by |= race_affect[GET_RACE(ch)];
 
-  case APPLY_INT: 
-    GET_INT_BASE(ch) += mod;
-    GET_INT(ch) += mod;
-    break;
+	maxabil = (IS_NPC(ch) ? 25 : 25);
 
-  case APPLY_WILL: 
-    GET_WILL_BASE(ch) += mod; 
-    GET_WILL(ch) += mod; 
-    break;
+	if (add == AFFECT_MODIFY_TIME) {
+		switch (loc) {
+		case APPLY_MANA_REGEN:
+			GET_MANA(ch) += mod;
+			if (GET_MANA(ch) < 0)
+				GET_MANA(ch) = 0;
+			if (GET_MANA(ch) > GET_MAX_MANA(ch))
+				GET_MANA(ch) = GET_MAX_MANA(ch);
+		}
+		return;  /* so, usual affects are not modified in this call */
+	}
 
-  case APPLY_CON:
-    GET_CON_BASE(ch) += mod;
-    GET_CON(ch) += mod;
-    break;
-    
-  case APPLY_PROF:
-    /* ??? GET_PROF(ch) += mod; */
-    break;
-    
-  case APPLY_LEVEL:
-    /* ??? GET_LEVEL(ch) += mod; */
-    break;
-    
-  case APPLY_AGE:
-    ch->player.time.birth -= (mod * SECS_PER_MUD_YEAR);
-    break;
-    
-  case APPLY_CHAR_WEIGHT:
-    GET_WEIGHT(ch) += mod;
-    break;
-    
-  case APPLY_CHAR_HEIGHT:
-    GET_HEIGHT(ch) += mod;
-    break;
-    
-  case APPLY_MANA:
-    ch->abilities.mana += mod;
-    break;
-    
-  case APPLY_WILLPOWER:
-    GET_WILLPOWER(ch) += mod;
-    break;
-    
-  case APPLY_HIT:
-    ch->abilities.hit += mod;
-    break;
-    
-  case APPLY_MOVE:
-    ch->abilities.move += mod;
-    break;
-    
-  case APPLY_GOLD:
-    break;
-    
-  case APPLY_EXP:
-    break;
-    
-  case APPLY_DODGE:
-    SET_DODGE(ch) += mod;
-    break;
-    
-  case APPLY_OB:
-    SET_OB(ch) += mod;
-    break;
-    
-  case APPLY_DAMROLL:
-    GET_DAMAGE(ch) += mod;
-    break;
-    
-  case APPLY_SAVING_SPELL:
-    GET_SAVE(ch) += mod;
-    break;
+	switch (loc) {
+	case APPLY_NONE:
+		break;
 
-  case APPLY_VISION:
-    if(add){
-      if(mod > 0)
-	SET_BIT(ch->specials.affected_by, AFF_INFRARED);
-      if(mod < 0)
-	SET_BIT(ch->specials.affected_by, AFF_BLIND);
-    }
-    else {
-      if(mod > 0)
-	REMOVE_BIT(ch->specials.affected_by, AFF_BLIND);
-      if(mod < 0)
-	REMOVE_BIT(ch->specials.affected_by, AFF_INFRARED);
-    }
-    
-  case APPLY_REGEN:
-     break;
+	case APPLY_STR:
+		SET_STR_BASE(ch, GET_STR_BASE(ch) + mod);
+		SET_STR(ch, GET_STR(ch) + mod);
+		break;
 
-  case APPLY_SPEED:
-    break;
+	case APPLY_LEA:
+		GET_LEA_BASE(ch) += mod;
+		GET_LEA(ch) += mod;
+		break;
 
-  case APPLY_ARMOR:
-    //     mod = (2*mod*GET_PERCEPTION(ch))/100;
-    //     SET_DODGE(ch) += mod;
-    break;
-    
-  case APPLY_PERCEPTION:
-    ch->specials2.perception += mod;
-    break;
-    
-  case APPLY_SPELL:
-    if(!add)
-      mod = -mod;
-    tmp = mod & 255;   // spell number, in skills[] table
-    tmp2 = mod / 256;  // spell level
-    if(!tmp2)
-      tmp2 = GET_LEVEL(ch);
-    if(tmp >= 128)
-      break;
-    
-    if(!skills[tmp].spell_pointer) 
-      break;
-    
-    if(add)
-      skills[tmp].spell_pointer(ch, "", SPELL_TYPE_SPELL, ch, 0, 0, 1);
-    else
-      skills[tmp].spell_pointer(ch, "", SPELL_TYPE_ANTI, ch, 0, 0, 1);
-    break;
-    
-  case APPLY_BITVECTOR:
-    if(add){
-      if((mod <0) || (mod > 31))
-	mod = 0;
-      SET_BIT(ch->specials.affected_by, 1 << mod);
-    }
-    else {
-      mod = -mod;
-      if((mod <0) || (mod > 31)) 
-	mod = 0;
-      REMOVE_BIT(ch->specials.affected_by, 1<<mod);
-    }
-    break;
-    
-  case  APPLY_MANA_REGEN:
-    break;
+	case APPLY_DEX:
+		GET_DEX_BASE(ch) += mod;
+		GET_DEX(ch) += mod;
+		break;
 
-  case APPLY_RESIST:
-    if(mod >= 0) 
-      GET_RESISTANCES(ch) |= (1 << mod);
-    else
-      GET_RESISTANCES(ch) &= ~(1 << mod);
-    break;
-    
-  case APPLY_VULN:
-    if(mod >= 0) 
-      GET_VULNERABILITIES(ch) |= (1 << mod);
-    else
-      GET_VULNERABILITIES(ch) &= ~(1 << mod);
-    break;
-    
-  default:
-    log("SYSERR: Unknown apply adjust attempt (handler.c, affect_modify).");
-    break;
-  } /* switch */
+	case APPLY_INT:
+		GET_INT_BASE(ch) += mod;
+		GET_INT(ch) += mod;
+		break;
+
+	case APPLY_WILL:
+		GET_WILL_BASE(ch) += mod;
+		GET_WILL(ch) += mod;
+		break;
+
+	case APPLY_CON:
+		GET_CON_BASE(ch) += mod;
+		GET_CON(ch) += mod;
+		break;
+
+	case APPLY_PROF:
+		/* ??? GET_PROF(ch) += mod; */
+		break;
+
+	case APPLY_LEVEL:
+		/* ??? GET_LEVEL(ch) += mod; */
+		break;
+
+	case APPLY_AGE:
+		ch->player.time.birth -= (mod * SECS_PER_MUD_YEAR);
+		break;
+
+	case APPLY_CHAR_WEIGHT:
+		GET_WEIGHT(ch) += mod;
+		break;
+
+	case APPLY_CHAR_HEIGHT:
+		GET_HEIGHT(ch) += mod;
+		break;
+
+	case APPLY_MANA:
+		ch->abilities.mana += mod;
+		break;
+
+	case APPLY_WILLPOWER:
+		GET_WILLPOWER(ch) += mod;
+		break;
+
+	case APPLY_HIT:
+		ch->abilities.hit += mod;
+		break;
+
+	case APPLY_MOVE:
+		ch->abilities.move += mod;
+		break;
+
+	case APPLY_GOLD:
+		break;
+
+	case APPLY_EXP:
+		break;
+
+	case APPLY_DODGE:
+		SET_DODGE(ch) += mod;
+		break;
+
+	case APPLY_OB:
+		SET_OB(ch) += mod;
+		break;
+
+	case APPLY_DAMROLL:
+		GET_DAMAGE(ch) += mod;
+		break;
+
+	case APPLY_SAVING_SPELL:
+		GET_SAVE(ch) += mod;
+		break;
+
+	case APPLY_VISION:
+		if (add) {
+			if (mod > 0)
+				SET_BIT(ch->specials.affected_by, AFF_INFRARED);
+			if (mod < 0)
+				SET_BIT(ch->specials.affected_by, AFF_BLIND);
+		}
+		else {
+			if (mod > 0)
+				REMOVE_BIT(ch->specials.affected_by, AFF_BLIND);
+			if (mod < 0)
+				REMOVE_BIT(ch->specials.affected_by, AFF_INFRARED);
+		}
+
+	case APPLY_REGEN:
+		break;
+
+	case APPLY_SPEED:
+		break;
+
+	case APPLY_ARMOR:
+		//     mod = (2*mod*GET_PERCEPTION(ch))/100;
+		//     SET_DODGE(ch) += mod;
+		break;
+
+	case APPLY_PERCEPTION:
+		ch->specials2.perception += mod;
+		break;
+
+	case APPLY_SPELL:
+		if (!add)
+			mod = -mod;
+		tmp = mod & 255;   // spell number, in skills[] table
+		tmp2 = mod / 256;  // spell level
+		if (!tmp2)
+			tmp2 = GET_LEVEL(ch);
+		if (tmp >= 128)
+			break;
+
+		if (!skills[tmp].spell_pointer)
+			break;
+
+		if (add)
+			skills[tmp].spell_pointer(ch, "", SPELL_TYPE_SPELL, ch, 0, 0, 1);
+		else
+			skills[tmp].spell_pointer(ch, "", SPELL_TYPE_ANTI, ch, 0, 0, 1);
+		break;
+
+	case APPLY_BITVECTOR:
+		if (add) {
+			if ((mod < 0) || (mod > 31))
+				mod = 0;
+			SET_BIT(ch->specials.affected_by, 1 << mod);
+		}
+		else {
+			mod = -mod;
+			if ((mod < 0) || (mod > 31))
+				mod = 0;
+			REMOVE_BIT(ch->specials.affected_by, 1 << mod);
+		}
+		break;
+
+	case  APPLY_MANA_REGEN:
+		break;
+
+	case APPLY_RESIST:
+		if (mod >= 0)
+			GET_RESISTANCES(ch) |= (1 << mod);
+		else
+			GET_RESISTANCES(ch) &= ~(1 << mod);
+		break;
+
+	case APPLY_VULN:
+		if (mod >= 0)
+			GET_VULNERABILITIES(ch) |= (1 << mod);
+		else
+			GET_VULNERABILITIES(ch) &= ~(1 << mod);
+		break;
+
+	default:
+		log("SYSERR: Unknown apply adjust attempt (handler.c, affect_modify).");
+		break;
+	} /* switch */
 }
 
 
@@ -969,45 +981,56 @@ void put_to_follow_type_pool(struct follow_type * oldfol){
 
 /* Do NOT call this before having checked if a circle of followers */
 /* will arise. CH will follow leader                               */
-void	add_follower(struct char_data *ch, struct char_data *leader, int mode)
+void add_follower(char_data* follower, char_data* leader, int mode)
 {
-   struct follow_type *k;
+	if (!leader) 
+	{
+		printf("add_follower called without leader for %s\n", GET_NAME(follower));
+		return;
+	}
 
-   if(!leader){
-     printf("add_follower called without leader for %s\n",GET_NAME(ch));
-     return;
-   }
-   if(mode == FOLLOW_MOVE){
-     if(ch->master) stop_follower(ch, FOLLOW_MOVE);
-     ch->master = leader;
-   }
-   else{
-     if(ch->group_leader) stop_follower(ch, FOLLOW_GROUP);
-     ch->group_leader = leader;
-   }
+	if (mode == FOLLOW_MOVE)
+	{
+		if (follower->master)
+		{
+			stop_follower(follower, FOLLOW_MOVE);
+		}
+		follower->master = leader;
+	}
+	else 
+	{
+		if (follower->group_leader)
+		{
+			stop_follower(follower, FOLLOW_GROUP);
+		}
+		follower->group_leader = leader;
+	}
 
-   //   CREATE(k, struct follow_type, 1);
-   k = get_from_follow_type_pool();
+	follow_type* k = get_from_follow_type_pool();
 
-   k->follower = ch;
-   k->fol_number = ch->abs_number;
-   if(mode == FOLLOW_MOVE)
-     k->next = leader->followers;
-   else
-     k->next = leader->group;
+	k->follower = follower;
+	k->fol_number = follower->abs_number;
+	if (mode == FOLLOW_MOVE)
+	{
+		k->next = leader->followers;
+	}
+	else
+	{
+		k->next = leader->group;
+	}
 
-   if(mode == FOLLOW_MOVE) {
-     leader->followers = k;
-     act("You now follow $N.", FALSE, ch, 0, leader, TO_CHAR);
-     act("$n starts following you.", TRUE, ch, 0, leader, TO_VICT);
-     act("$n now follows $N.", TRUE, ch, 0, leader, TO_NOTVICT);
-   }
-   else {
-     leader->group = k;
-     act("You join the group of $N.", FALSE, ch, 0, leader, TO_CHAR);
-     act("$n joins your group.", TRUE, ch, 0, leader, TO_VICT);
-     act("$n joins the group of $N.", TRUE, ch, 0, leader, TO_NOTVICT);
-   }
+	if (mode == FOLLOW_MOVE) {
+		leader->followers = k;
+		act("You now follow $N.", FALSE, follower, 0, leader, TO_CHAR);
+		act("$n starts following you.", TRUE, follower, 0, leader, TO_VICT);
+		act("$n now follows $N.", TRUE, follower, 0, leader, TO_NOTVICT);
+	}
+	else {
+		leader->group = k;
+		act("You join the group of $N.", FALSE, follower, 0, leader, TO_CHAR);
+		act("$n joins your group.", TRUE, follower, 0, leader, TO_VICT);
+		act("$n joins the group of $N.", TRUE, follower, 0, leader, TO_NOTVICT);
+	}
 }
 
 /* Called when stop following persons, or stopping charm */
@@ -1050,6 +1073,7 @@ void stop_follower(struct char_data *ch, int mode)
 				affect_from_char(ch, SKILL_RECRUIT);
 			}
 			REMOVE_BIT(ch->specials.affected_by, AFF_CHARM);
+			ch->damage_details.reset();
 		}
 		else
 		{

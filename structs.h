@@ -1544,6 +1544,7 @@ public:
 	const_char_iter begin() const { return members.begin(); }
 	const_char_iter end() const { return members.end(); }
 	struct char_data* at(size_t index) { return members.at(index); }
+	bool contains(const char_data* character) { return std::find(members.begin(), members.end(), character) != members.end(); }
 
 private:
 

@@ -695,46 +695,104 @@ ACMD(do_group)
 
 ACMD(do_ungroup)
 {
-  struct follow_type *f, *next_fol;
-  struct char_data *tch;
+	struct follow_type *f, *next_fol;
+	struct char_data *tch;
 
-  one_argument(argument, buf);
+	one_argument(argument, buf);
 
-  if(!*buf) {
-    if(ch->group_leader) {
-      stop_follower(ch, FOLLOW_GROUP);
-      return;
-    }
-    else if(!ch->group) {
-      send_to_char("You have no group to leave.\n\r",ch);
-      return;
-    }
-    else {
-      sprintf(buf2, "%s has disbanded the group.\n\r", GET_NAME(ch));
-      for(f = ch->group; f; f = next_fol) {
-	next_fol = f->next;
-	send_to_char(buf2, f->follower);
-	stop_follower(f->follower, FOLLOW_GROUP);
-      }
-      send_to_char("You have disbanded the group.\n\r", ch);
-      return;
-    }
-  }
+	/*
+	group_data* group = ch->group_2;
 
-  if(!(tch = get_char_room_vis(ch, buf))) {
-    send_to_char("There is no such person!\n\r", ch);
-    return;
-  }
+	// Ungroup was typed in without an argument.
+	if (string_func::is_null_or_empty(buf))
+	{
+		if (group)
+		{
+			if (group->is_leader(ch))
+			{
+				size_t index = group->size() - 1;
+				while (index >= 1)
+				{
+					remove_character_from_group(group->at(index--), ch);
+				}
+			}
+			else
+			{
+				remove_character_from_group(ch, group->get_leader());
+			}
+		}
+		else
+		{
+			send_to_char("You have no group to leave.\n\r", ch);
+		}
+	}
+	else
+	{
+		// Trying to ungroup a particular character.
+		if (!group || !group->is_leader(ch))
+		{
+			send_to_char("You are not the leader of a group.\n\r", ch);
+		}
+		else
+		{
+			if (char_data* lost_member = get_char_room_vis(ch, buf))
+			{
+				if (group->contains(ch))
+				{
+					act("You have been kicked out of $n's group!", FALSE, ch, 0, lost_member, TO_VICT);
+					remove_character_from_group(lost_member, ch);
+				}
+				else
+				{
+					send_to_char("That person is not in your group!\n\r", ch);
+				}
+			}
+			else
+			{
+				send_to_char("There is no such person!\n\r", ch);
+			}
+		}
+	}
+	*/
 
-  if(tch->group_leader != ch) {
-    send_to_char("That person is not in your group!\n\r", ch);
-    return;
-  }
+	if (!*buf) 
+	{
+		if (ch->group_leader) 
+		{
+			stop_follower(ch, FOLLOW_GROUP);
+			return;
+		}
+		else if (!ch->group) 
+		{
+			send_to_char("You have no group to leave.\n\r", ch);
+			return;
+		}
+		else 
+		{
+			sprintf(buf2, "%s has disbanded the group.\n\r", GET_NAME(ch));
+			for (f = ch->group; f; f = next_fol) {
+				next_fol = f->next;
+				send_to_char(buf2, f->follower);
+				stop_follower(f->follower, FOLLOW_GROUP);
+			}
+			send_to_char("You have disbanded the group.\n\r", ch);
+			return;
+		}
+	}
 
-  act("You have been kicked out of $n's group!", FALSE, ch, 0, tch, TO_VICT);
-  stop_follower(tch, FOLLOW_GROUP);
+	if (!(tch = get_char_room_vis(ch, buf))) {
+		send_to_char("There is no such person!\n\r", ch);
+		return;
+	}
+
+	if (tch->group_leader != ch) {
+		send_to_char("That person is not in your group!\n\r", ch);
+		return;
+	}
+
+	act("You have been kicked out of $n's group!", FALSE, ch, 0, tch, TO_VICT);
+	stop_follower(tch, FOLLOW_GROUP);
 }
-
 
 
 ACMD(do_report)

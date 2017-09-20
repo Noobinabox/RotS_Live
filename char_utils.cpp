@@ -1630,6 +1630,15 @@ std::string group_damaga_data::get_damage_report() const
 //============================================================================
 // Group-based code!
 //============================================================================
+void group_data::add_member(char_data* member)
+{
+	if (std::find(members.begin(), members.end(), member) != members.end())
+		return;
+
+	members.push_back(member);
+	member->group_2 = this;
+}
+
 bool group_data::remove_member(char_data* member)
 {
 	/* The leader cannot be removed from a group. */
@@ -1642,6 +1651,7 @@ bool group_data::remove_member(char_data* member)
 
 	members.erase(member_iter);
 	damage_report.remove(member);
+	member->group_2 = NULL;
 	return true;
 }
 

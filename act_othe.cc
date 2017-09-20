@@ -444,6 +444,49 @@ void print_group_member(const char_data* group_member)
 	}
 }
 
+void display_joined_group(char_data* character, char_data* leader)
+{
+	act("You join the group of $N.", FALSE, character, 0, leader, TO_CHAR);
+	act("$n joins your group.", TRUE, character, 0, leader, TO_VICT);
+	act("$n joins the group of $N.", TRUE, character, 0, leader, TO_NOTVICT);
+}
+
+void add_character_to_group(char_data* character, char_data* group_leader)
+{
+	group_data* group = group_leader->group_2;
+	if (group == NULL)
+	{
+		group = new group_data(group_leader);
+	}
+
+	group->add_member(character);
+
+	act("You join the group of $N.", FALSE, character, 0, group_leader, TO_CHAR);
+	act("$n joins your group.", TRUE, character, 0, group_leader, TO_VICT);
+	act("$n joins the group of $N.", TRUE, character, 0, group_leader, TO_NOTVICT);
+}
+
+void remove_character_from_group(char_data* character, char_data* group_leader)
+{
+	if (group_leader->group_2 == NULL)
+		return;
+
+	group_data* group = group_leader->group_2;
+	group->remove_member(character);
+
+	act("You leave the group of $N.", FALSE, character, 0, group_leader, TO_CHAR);
+	act("$n leaves the group of $N.", FALSE, character, 0, group_leader, TO_NOTVICT);
+	act("$n leaves your group.", FALSE, character, 0, group_leader, TO_VICT);
+
+	// We removed the last member from the group, destroy the group.
+	if (group->size() == 1)
+	{
+		send_to_char("You have disbanded the group.\n\r", group_leader);
+		group_leader->group_2 = NULL;
+		delete group;
+	}
+}
+
 ACMD(do_group)
 {
 	char found;
@@ -509,7 +552,86 @@ ACMD(do_group)
 		return;
 	}
 
-	if (ch->group_leader) {
+	// TODO(drelidan):  New group code.
+	/*
+	group_data* group = ch->group_2;
+	bool can_add_members = group == NULL;
+	if (!can_add_members)
+	{
+		can_add_members = group->is_leader(ch);
+	}
+
+	if (!can_add_members)
+	{
+		act("You can not enroll group members without being head of a group.", FALSE, ch, 0, 0, TO_CHAR);
+		return;
+	}
+
+	if (string::equals(buf, "all"))
+	{
+		for (follow_type* follower = ch->followers; follower; follower = follower->next)
+		{
+			char_data* potential_member = follower->follower;
+			if (potential_member && char_exists(follower->fol_number))
+			{
+				// Can only add ungrouped members to your group.
+				if (potential_member->group_2 == NULL && !other_side(ch, potential_member))
+				{
+					add_character_to_group(potential_member, ch);
+				}
+			}
+			else
+			{
+				// Follower clean-up is done here.  Unsure why, don't want to change functionality though.
+				follower->follower = NULL;
+			}
+		}
+	}
+
+	if (char_data* potential_member = get_char_room_vis(ch, buf))
+	{
+		// Easy error cases are handled up here.
+		if (potential_member == ch)
+		{
+			send_to_char("Eww, who wants to group with that guy?\n\r", ch);
+		}
+		else if(other_side(ch, potential_member))
+		{
+			sprintf(buf, "You wouldn't group with that ugly %s!\n\r", pc_races[GET_RACE(victim)]);
+			send_to_char(buf, ch);
+		}
+		else if (potential_member->group_2 && potential_member->group_2 != group)
+		{
+			act("$N is busy somewhere else already.", FALSE, ch, 0, potential_member, TO_CHAR);
+		}
+		else
+		{
+			if (group == NULL)
+			{
+				group = new group_data(ch);
+				ch->group_2 = group;
+			}
+
+			char_iter member = std::find(group->begin(), group->end(), potential_member);
+			if (member == group->end())
+			{
+				add_character_to_group(potential_member, ch);
+			}
+			else
+			{
+				remove_character_from_group(potential_member, ch);
+			}
+		}
+	}
+	else
+	{
+		send_to_char("No one here by that name.\n\r", ch);
+	}
+	*/
+
+
+	if (ch->group_leader) 
+	{
 		act("You can not enroll group members without being head of a group.",
 			FALSE, ch, 0, 0, TO_CHAR);
 		return;

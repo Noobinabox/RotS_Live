@@ -1527,7 +1527,7 @@ public:
 	/* Groups cannot exist without a leader. */
 	group_data(struct char_data* in_leader) : leader(in_leader) { add_member(in_leader); };
 
-	void add_member(struct char_data* member) { members.push_back(member); }
+	void add_member(struct char_data* member);
 	bool remove_member(struct char_data* member);
 
 	void track_damage(struct char_data* character, int damage) { damage_report.add_damage(character, damage); }

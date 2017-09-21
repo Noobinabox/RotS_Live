@@ -292,19 +292,69 @@ ACMD(do_title)
   }
 }
 
+void roll_for_character(char_data* character, char_data* roll_initiator)
+{
+	if (utils::is_pc(*character))
+	{
+		int roll = number(1, 100);
+		sprintf(buf, "%8s -- Rolled: %3d", utils::get_name(*character), roll);
+		act(buf, FALSE, roll_initiator, 0, 0, TO_CHAR);
+		act(buf, FALSE, roll_initiator, 0, 0, TO_ROOM);
+	}
+}
 
 ACMD(do_grouproll)
 {
-	int roll;
 	struct char_data *k, *victim;
 	struct follow_type *f;
 
 	one_argument(argument, buf);
 
-	if (IS_SHADOW(ch)) {
+	if (IS_SHADOW(ch)) 
+	{
 		send_to_char("You cannot roll for groups while inhabiting the shadow world.\n\r", ch);
 		return;
 	}
+
+	/*
+	if (ch->group_2 == NULL)
+	{
+		send_to_char("But you are not in a group!\n\r", ch);
+		return;
+	}
+
+	if (ch->group_2->get_leader() != ch)
+	{
+		send_to_char("Only the group leader can roll for the group.\n\r", ch);
+		return;
+	}
+
+	if (string_func::is_null_or_empty(buf))
+	{
+		for (char_iter iter = ch->group_2->begin(); iter != ch->group_2->end(); ++iter)
+		{
+			roll_for_character(*iter, ch);
+		}
+	}
+	else 
+	{
+		if (char_data* rollee = get_char_room_vis(ch, buf))
+		{
+			if (ch->group_2->contains(rollee))
+			{
+				roll_for_character(rollee, ch);
+			}
+			else
+			{
+				send_to_char("That person is not in the group!\n\r", ch);
+			}
+		}
+		else
+		{
+			send_to_char("There is no such person!\n\r", ch);
+		}
+	}
+	*/
 
 	if (!ch->group_leader && !ch->group)
 	{
@@ -318,22 +368,14 @@ ACMD(do_grouproll)
 		return;
 	}
 
-	if (!*buf) {
+	if (string_func::is_null_or_empty(buf))
+	{
 		k = (ch->group_leader ? ch->group_leader : ch);
-		roll = number(1, 100);
-		sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(ch), roll);
-		act(buf, FALSE, ch, 0, 0, TO_CHAR);
-		act(buf, FALSE, ch, 0, 0, TO_ROOM);
+		roll_for_character(k, ch);
 
 		for (f = k->group; f; f = f->next)
 		{
-			if (!IS_NPC(f->follower))
-			{
-				roll = number(1, 100);
-				sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(f->follower), roll);
-				act(buf, FALSE, ch, 0, 0, TO_CHAR);
-				act(buf, FALSE, ch, 0, 0, TO_ROOM);
-			}
+			roll_for_character(f->follower, ch);
 		}
 		return;
 	}
@@ -345,25 +387,18 @@ ACMD(do_grouproll)
 		return;
 	}
 
-	if (victim->group_leader != ch) {
-		if (victim == ch) {
-			roll = number(1, 100);
-			sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
-			act(buf, FALSE, ch, 0, 0, TO_CHAR);
-			act(buf, FALSE, ch, 0, 0, TO_ROOM);
+	if (victim->group_leader != ch) 
+	{
+		if (victim == ch) 
+		{
+			roll_for_character(victim, ch);
 			return;
 		}
 		send_to_char("That person is not in the group!\n\r", ch);
 		return;
 	}
 
-	if (!IS_NPC(victim)) {
-		roll = number(1, 100);
-		sprintf(buf, "%8s -- Rolled: %3d", GET_NAME(victim), roll);
-		act(buf, FALSE, ch, 0, 0, TO_CHAR);
-		act(buf, FALSE, ch, 0, 0, TO_ROOM);
-		return;
-	}
+	roll_for_character(victim, ch);
 }
 
 void print_group_leader(const char_data* leader)

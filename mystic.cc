@@ -1642,10 +1642,12 @@ void scale_guardian(int guardian_type, const char_data* caster, char_data* guard
 	set_guardian_stats(caster_mystic_level, guardian_mob->abilities);
 	set_guardian_stats(caster_mystic_level, guardian_mob->tmpabilities);
 
+	int base_energy_regen = 60;
 	switch (guardian_type)
 	{
 	case AGGRESSIVE_GUARDIAN:
 		tweak_aggressive_guardian_stats(caster_mystic_level, guardian_mob, restore_health);
+		base_energy_regen = 70;
 		break;
 	case DEFENSIVE_GUARDIAN:
 		tweak_defensive_guardian_stats(caster_mystic_level, guardian_mob, restore_health);
@@ -1658,6 +1660,7 @@ void scale_guardian(int guardian_type, const char_data* caster, char_data* guard
 	}
 
 	guardian_mob->points.willpower = sh_int(guardian_mob->player.level + guardian_mob->abilities.wil);
+	guardian_mob->points.ENE_regen = base_energy_regen + caster_mystic_level;
 }
 
 ASPELL(spell_guardian) {

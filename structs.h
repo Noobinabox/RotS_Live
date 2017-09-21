@@ -1525,7 +1525,7 @@ class group_data
 public:
 
 	/* Groups cannot exist without a leader. */
-	group_data(struct char_data* in_leader) : leader(in_leader) { add_member(in_leader); };
+	group_data(struct char_data* in_leader) : leader(in_leader), pc_count(0) { add_member(in_leader); };
 
 	void add_member(struct char_data* member);
 	bool remove_member(struct char_data* member);
@@ -1537,7 +1537,8 @@ public:
 	struct char_data* get_leader() const { return leader; }
 	bool is_member(struct char_data* character) const;
 	bool is_leader(struct char_data* character) const { return character == leader; }
-	
+	int get_pc_count() const { return pc_count; }
+
 	size_t size() const { return members.size(); }
 	char_iter begin() { return members.begin(); }
 	char_iter end() { return members.end(); }
@@ -1552,6 +1553,7 @@ private:
 	char_vector members;
 
 	group_damaga_data damage_report;
+	int pc_count;
 };
 
 /* ================== Structure for player/non-player ===================== */

@@ -1234,42 +1234,107 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 
 }
 
-bool master_gets_credit(const char_data* character)
+namespace 
 {
-	assert(character);
-	assert(character->master);
-	
-	return (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET)) && character->in_room == character->master->in_room;
-}
+	bool master_gets_credit(const char_data* character)
+	{
+		assert(character);
+		assert(character->master);
 
-bool gets_kill_credit(const char_data* character, const char_data* dead_man, const char_data* group_leader)
-{
-	assert(character);
-	assert(dead_man);
-	assert(group_leader);
+		return (MOB_FLAGGED(character, MOB_ORC_FRIEND) || MOB_FLAGGED(character, MOB_PET)) && character->in_room == character->master->in_room;
+	}
 
-	// NPCs don't get kill credit.
-	if (IS_NPC(character))
+	bool gets_kill_credit(const char_data* character, const char_data* dead_man, const char_data* group_leader)
+	{
+		assert(character);
+		assert(dead_man);
+		assert(group_leader);
+
+		// NPCs don't get kill credit.
+		if (IS_NPC(character))
+			return false;
+
+		// You can only get kill credit if you're in the same room as the kill.
+		if (character->in_room != dead_man->in_room)
+			return false;
+
+		// You get XP if you're fighting the victim.
+		if (character->specials.fighting == dead_man)
+			return true;
+
+		// The group leader of the killer gets kill credit.
+		if (character == group_leader)
+			return true;
+
+		// If you're in the same group as the killer, you get kill credit.
+		if (character->group_leader == group_leader)
+			return true;
+
+		// No one else gets kill credit.
 		return false;
+	}
 
-	// You can only get kill credit if you're in the same room as the kill.
-	if (character->in_room != dead_man->in_room)
-		return false;
+	// Gets all PCs that have some kill contribution.  The vector will contain duplicates.
+	void get_possible_killers(char_data* killer, char_data* dead_man, char_vector& total_killers)
+	{
+		const room_data& death_room = world[dead_man->in_room];
+		for (char_data* character = death_room.people; character; character = character->next_in_room)
+		{
+			// Everyone in the group of someone fighting the dead man gets XP.
+			if (character->specials.fighting == dead_man && character->group_2)
+			{
+				character->group_2->get_pcs_in_room(total_killers, dead_man->in_room);
+			}
 
-	// You get XP if you're fighting the victim.
-	if (character->specials.fighting == dead_man)
-		return true;
+			// If an orc follower or pet contributed to the kill, give his master credit if he is in the same room.
+			char_data* cur_killer = character;
+			if (IS_NPC(character) && character->master && dead_man != character->master)
+			{
+				if (master_gets_credit(character))
+				{
+					cur_killer = character->master;
+				}
+			}
 
-	// The group leader of the killer gets kill credit.
-	if (character == group_leader)
-		return true;
+			// If the master and pet are in different groups, ensure both groups get credit.
+			if (cur_killer->specials.fighting == dead_man)
+			{
+				total_killers.push_back(cur_killer);
+				if (cur_killer->group_2 && cur_killer->group_2 != character->group_2)
+				{
+					cur_killer->group_2->get_pcs_in_room(total_killers, dead_man->in_room);
+				}
+			}
+		}
+	}
 
-	// If you're in the same group as the killer, you get kill credit.
-	if (character->group_leader == group_leader)
-		return true;
+	struct kill_share_data
+	{
+		kill_share_data() : killer_count(0), level_total(0), perception_total(0), killing_pcs() { };
 
-	// No one else gets kill credit.
-	return false;
+		void fill_kill_share(const char_vector& total_killers)
+		{
+			// Filters out duplicates and handles totalling up data.
+			for (const_char_iter iter = total_killers.begin(); iter != total_killers.end(); ++iter)
+			{
+				char_data* cur_killer = *iter;
+				if (utils::is_pc(*cur_killer))
+				{
+					if (killing_pcs.insert(cur_killer).second)
+					{
+						++killer_count;
+						level_total += GET_LEVELB(cur_killer);
+						perception_total += GET_PERCEPTION(cur_killer);
+					}
+				}
+			}
+		}
+
+		int killer_count;
+		int level_total;
+		int perception_total;
+		std::set<char_data*> killing_pcs;
+	};
 }
 
 void group_gain(char_data* killer, char_data* dead_man)
@@ -1279,6 +1344,17 @@ void group_gain(char_data* killer, char_data* dead_man)
 
 	if (killer->in_room != dead_man->in_room)
 		return;
+
+	/*
+	char_vector total_killers;
+	get_possible_killers(killer, dead_man, total_killers);
+
+	kill_share_data share_data;
+	share_data.fill_kill_share(total_killers);
+
+	if (share_data.killer_count == 0)
+		return;
+		*/
 
 	char_data* group_leader = killer->group_leader;
 	if (group_leader == NULL)

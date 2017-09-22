@@ -866,101 +866,204 @@ ACMD(do_report)
     do_say(ch, str, 0, 0, 0);
 }
 
+int calculate_gold_amount(char* text, char* argument, char_data* character)
+{
+	char* current_argument = one_argument(argument, text);
 
+	int amount = 0;
+	if (is_number(current_argument))
+	{
+		amount = atoi(text);
+		if (amount > 0)
+		{
+			one_argument(current_argument, text);
+			if (string_func::equals(text, "gold") || string_func::equals(text, "silver") || string_func::equals(text, "copper"))
+			{
+				/* save some strcmp'ing time since only the previous three
+				* arguments could possibly have made it here */
+				switch (*text)
+				{
+				case 'g':
+					amount *= 1000;
+					break;
+				case 's':
+					amount *= 100;
+					break;
+				case 'c':
+					amount *= 1;
+					break;
+				}
+			}
+			else
+			{
+				send_to_char("You must specify what type of coin to split.\r\n", character);
+			}
+		}
+		else
+		{
+			send_to_char("Sorry, you can't do that.\n\r", character);
+		}
+	}
+	else
+	{
+		send_to_char("You must specify how much you wish to split.\r\n", character);
+	}
+
+	return amount;
+}
+
+void give_share(char_data* sender, char_data* receiver, int share_amount)
+{
+	GET_GOLD(receiver) += share_amount;
+	sprintf(buf, "%s splits some money among the group; you receive %s.\r\n", GET_NAME(sender), money_message(share_amount, 0));
+	send_to_char(buf, receiver);
+}
 
 ACMD(do_split)
 {
-  int amount, num, share;
-  char *current_arg;
-  struct char_data *k;
-  struct follow_type *f;
+	char *current_arg;
+	struct char_data *k;
+	struct follow_type *f;
 
-  if(IS_NPC(ch))
-    return;
+	if (IS_NPC(ch))
+		return;
 
-  current_arg = one_argument(argument, buf);
-
-  if(is_number(buf)) {
-    amount = atoi(buf);
-    if(amount <= 0) {
-      send_to_char("Sorry, you can't do that.\n\r", ch);
-      return;
-    }
-
-    one_argument(current_arg, buf);
-    if(!strcmp(buf, "gold") || !strcmp(buf, "silver") ||
-       !strcmp(buf, "copper")) {
-
-      /* save some strcmp'ing time since only the previous three
-       * arguments could possibly have made it here */
-      switch(*buf) {
-      case 'g':
-	amount *= 1000;
-	break;
-      case 's':
-	amount *= 100;
-	break;
-      case 'c':
-	amount *= 1;
-	break;
-      }
-
-      if(amount > GET_GOLD(ch)) {
-	send_to_char("You don't have that much coin to split.\n\r", ch);
-	return;
-      }
-
-      if(ch->group_leader)
-	k = ch->group_leader;
-      else
-	k = ch;
-
-      /* num starts at 1, because the group leader is never
-       * listed in the group */
-      for(num = 1, f = k->group; f; f = f->next)
-	if((!IS_NPC(f->follower)) &&
-	   (f->follower->in_room == ch->in_room))
-	  num++;
-
-      if(num > 1)
-	share = amount / num;
-      else {
-	send_to_char("There is no one here for you to share with.\r\n", ch);
-	return;
-      }
-
-      GET_GOLD(ch) -= share * (num - 1);
-
-      /* special check for `k' -- group leader, because the leader
-       * is not listed in the group */
-      if((k->in_room == ch->in_room)
-	 && !(IS_NPC(k)) &&  k != ch) {
-	GET_GOLD(k) += share;
-	sprintf(buf, "%s splits some money among the group; you receive %s.\r\n",
-		GET_NAME(ch), money_message(share, 0));
-	send_to_char(buf, k);
-      }
-
-      for(f = k->group; f; f = f->next) {
-	if((!IS_NPC(f->follower)) &&
-	   (f->follower->in_room == ch->in_room) &&
-	   f->follower != ch) {
-	  GET_GOLD(f->follower) += share;
-	  sprintf(buf, "%s splits some money among the group; you receive %s.\r\n",
-		  GET_NAME(ch), money_message(share, 0));
-	  send_to_char(buf, f->follower);
+	/*
+	if (ch->group_2 == NULL)
+	{
+		send_to_char("You have no group to split with.\n\r", ch);
+		return;
 	}
-      }
-      sprintf(buf, "You give %s to each member of your group.\n\r",
-	      money_message(share, 0));
-      send_to_char(buf, ch);
-    }
-    else
-      send_to_char("You must specify what type of coin to split.\r\n", ch);
-  }
-  else
-    send_to_char("You must specify how much you wish to split.\r\n",
-		 ch);
+
+	int total_gold_to_split = calculate_gold_amount(buf, argument, ch);
+	if (total_gold_to_split == 0)
+		return;
+
+	if (total_gold_to_split > GET_GOLD(ch))
+	{
+		send_to_char("You don't have that much coin to split.\n\r", ch);
+		return;
+	}
+
+	char_vector split_group;
+	ch->group_2->get_pcs_in_room(split_group, ch->in_room);
+	int share_count = (int)split_group.size();
+	if (share_count == 1)
+	{
+		send_to_char("You have no one to split with.\n\r", ch);
+		return;
+	}
+
+	int share_amount = total_gold_to_split / share_count;
+	GET_GOLD(ch) -= share_amount * (share_count - 1);
+
+	for (char_iter iter = split_group.begin(); iter != split_group.end(); ++iter)
+	{
+		char_data* receiver = *iter;
+		if (receiver != ch)
+		{
+			give_share(ch, receiver, share_amount);
+		}
+	}
+
+	sprintf(buf, "You give %s to each member of your group.\n\r", money_message(share_amount, 0));
+	send_to_char(buf, ch);
+	*/
+
+	current_arg = one_argument(argument, buf);
+
+	if (is_number(buf)) 
+	{
+		int amount = atoi(buf);
+		if (amount <= 0) 
+		{
+			send_to_char("Sorry, you can't do that.\n\r", ch);
+			return;
+		}
+
+		one_argument(current_arg, buf);
+		if (!strcmp(buf, "gold") || !strcmp(buf, "silver") || !strcmp(buf, "copper")) 
+		{
+			/* save some strcmp'ing time since only the previous three
+			 * arguments could possibly have made it here */
+			switch (*buf) 
+			{
+			case 'g':
+				amount *= 1000;
+				break;
+			case 's':
+				amount *= 100;
+				break;
+			case 'c':
+				amount *= 1;
+				break;
+			}
+
+			if (amount > GET_GOLD(ch)) 
+			{
+				send_to_char("You don't have that much coin to split.\n\r", ch);
+				return;
+			}
+
+			if (ch->group_leader)
+			{
+				k = ch->group_leader;
+			}
+			else
+			{
+				k = ch;
+			}
+
+			/* num starts at 1, because the group leader is never
+			 * listed in the group */
+			int num = 1;
+			for (num = 1, f = k->group; f; f = f->next)
+			{
+				if ((!IS_NPC(f->follower)) && (f->follower->in_room == ch->in_room))
+				{
+					num++;
+				}
+			}
+
+			int share = 0;
+			if (num > 1)
+			{
+				share = amount / num;
+			}
+			else 
+			{
+				send_to_char("There is no one here for you to share with.\r\n", ch);
+				return;
+			}
+
+			GET_GOLD(ch) -= share * (num - 1);
+
+			/* special check for `k' -- group leader, because the leader
+			 * is not listed in the group */
+			if ((k->in_room == ch->in_room) && !(IS_NPC(k)) && k != ch) 
+			{
+				give_share(ch, k, share);
+			}
+
+			for (f = k->group; f; f = f->next) 
+			{
+				if ((!IS_NPC(f->follower)) && (f->follower->in_room == ch->in_room) && f->follower != ch) 
+				{
+					give_share(ch, f->follower, share);
+				}
+			}
+			sprintf(buf, "You give %s to each member of your group.\n\r", money_message(share, 0));
+			send_to_char(buf, ch);
+		}
+		else
+		{
+			send_to_char("You must specify what type of coin to split.\r\n", ch);
+		}
+	}
+	else
+	{
+		send_to_char("You must specify how much you wish to split.\r\n", ch);
+	}
 }
 
 

@@ -1539,6 +1539,7 @@ public:
 	bool is_leader(struct char_data* character) const { return character == leader; }
 	int get_pc_count() const { return pc_count; }
 
+	void get_pcs_in_room(char_vector& pc_vec, int room_number) const;
 	size_t size() const { return members.size(); }
 	char_iter begin() { return members.begin(); }
 	char_iter end() { return members.end(); }

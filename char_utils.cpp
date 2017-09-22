@@ -1680,6 +1680,19 @@ bool group_data::is_member(struct char_data* character) const
 }
 
 //============================================================================
+void group_data::get_pcs_in_room(char_vector& pc_vec, int room_number) const
+{
+	for(const_char_iter iter = members.begin(); iter != members.end(); ++iter)
+	{
+		char_data* character = *iter;
+		if (utils::is_pc(*character) && character->in_room == room_number)
+		{
+			pc_vec.push_back(character);
+		}
+	}
+}
+
+//============================================================================
 namespace string_func
 {
 	bool equals(const char* a, const char* b) { return strcmp(a, b) == 0; }

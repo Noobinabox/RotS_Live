@@ -305,9 +305,6 @@ void roll_for_character(char_data* character, char_data* roll_initiator)
 
 ACMD(do_grouproll)
 {
-	struct char_data *k, *victim;
-	struct follow_type *f;
-
 	one_argument(argument, buf);
 
 	if (IS_SHADOW(ch)) 
@@ -316,7 +313,6 @@ ACMD(do_grouproll)
 		return;
 	}
 
-	/*
 	if (ch->group_2 == NULL)
 	{
 		send_to_char("But you are not in a group!\n\r", ch);
@@ -340,7 +336,7 @@ ACMD(do_grouproll)
 	{
 		if (char_data* rollee = get_char_room_vis(ch, buf))
 		{
-			if (ch->group_2->contains(rollee))
+			if (ch->group_2 == rollee->group_2)
 			{
 				roll_for_character(rollee, ch);
 			}
@@ -354,51 +350,6 @@ ACMD(do_grouproll)
 			send_to_char("There is no such person!\n\r", ch);
 		}
 	}
-	*/
-
-	if (!ch->group_leader && !ch->group)
-	{
-		send_to_char("But you are not in a group!\n\r", ch);
-		return;
-	}
-
-	if (ch->group_leader)
-	{
-		send_to_char("Only the group leader can roll for the group.\n\r", ch);
-		return;
-	}
-
-	if (string_func::is_null_or_empty(buf))
-	{
-		k = (ch->group_leader ? ch->group_leader : ch);
-		roll_for_character(k, ch);
-
-		for (f = k->group; f; f = f->next)
-		{
-			roll_for_character(f->follower, ch);
-		}
-		return;
-	}
-
-	victim = get_char_room_vis(ch, buf);
-	if (!victim)
-	{
-		send_to_char("There is no such person!\n\r", ch);
-		return;
-	}
-
-	if (victim->group_leader != ch) 
-	{
-		if (victim == ch) 
-		{
-			roll_for_character(victim, ch);
-			return;
-		}
-		send_to_char("That person is not in the group!\n\r", ch);
-		return;
-	}
-
-	roll_for_character(victim, ch);
 }
 
 void print_group_leader(const char_data* leader)
@@ -524,10 +475,6 @@ void remove_character_from_group(char_data* character, char_data* group_leader)
 
 ACMD(do_group)
 {
-	char found;
-	struct char_data *victim;
-	struct follow_type *f;
-
 	one_argument(argument, buf);
 
 	if (IS_SHADOW(ch)) {
@@ -535,11 +482,9 @@ ACMD(do_group)
 		return;
 	}
 
-	// If only one argument was passed in.
-	if (!*buf) 
+	// If only "group" was passed in.
+	if (string_func::is_null_or_empty(buf)) 
 	{
-		// TODO(drelidan): This is the code using the new group format.
-		/*
 		if (ch->group_2 == NULL)
 		{
 			send_to_char("But you are not the member of a group!\n\r", ch);
@@ -561,167 +506,82 @@ ACMD(do_group)
 				act(buf, FALSE, ch, 0, group_member, TO_CHAR);
 			}
 		}
-		*/
-
-		if (!ch->group_leader && !ch->group)
-		{
-			send_to_char("But you are not the member of a group!\n\r", ch);
-		}
-		else 
-		{
-			send_to_char("Your group consists of:\n\r", ch);
-
-			/* first, display the group leader's status */
-			char_data* leader = (ch->group_leader ? ch->group_leader : ch);
-			print_group_leader(leader);
-			act(buf, FALSE, ch, 0, leader, TO_CHAR);
-
-			/* now, we display the group members */
-			for (f = leader->group; f; f = f->next) 
-			{
-				char_data* group_member = f->follower;
-				print_group_member(group_member);
-				act(buf, FALSE, ch, 0, group_member, TO_CHAR);
-			}
-		}
-		return;
-	}
-
-	// TODO(drelidan):  New group code.
-	/*
-	group_data* group = ch->group_2;
-	bool can_add_members = group == NULL;
-	if (!can_add_members)
-	{
-		can_add_members = group->is_leader(ch);
-	}
-
-	if (!can_add_members)
-	{
-		act("You can not enroll group members without being head of a group.", FALSE, ch, 0, 0, TO_CHAR);
-		return;
-	}
-
-	if (string_func::equals(buf, "all"))
-	{
-		for (follow_type* follower = ch->followers; follower; follower = follower->next)
-		{
-			char_data* potential_member = follower->follower;
-			if (potential_member && char_exists(follower->fol_number))
-			{
-				// Can only add ungrouped members to your group.
-				if (potential_member->group_2 == NULL && !other_side(ch, potential_member))
-				{
-					add_character_to_group(potential_member, ch);
-				}
-			}
-			else
-			{
-				// Follower clean-up is done here.  Unsure why, don't want to change functionality though.
-				follower->follower = NULL;
-			}
-		}
-	}
-
-	if (char_data* potential_member = get_char_room_vis(ch, buf))
-	{
-		// Easy error cases are handled up here.
-		if (potential_member == ch)
-		{
-			send_to_char("Eww, who wants to group with that guy?\n\r", ch);
-		}
-		else if(other_side(ch, potential_member))
-		{
-			sprintf(buf, "You wouldn't group with that ugly %s!\n\r", pc_races[GET_RACE(victim)]);
-			send_to_char(buf, ch);
-		}
-		else if (potential_member->group_2 && potential_member->group_2 != group)
-		{
-			act("$N is busy somewhere else already.", FALSE, ch, 0, potential_member, TO_CHAR);
-		}
-		else
-		{
-			if (group == NULL)
-			{
-				group = new group_data(ch);
-				ch->group_2 = group;
-			}
-
-			char_iter member = std::find(group->begin(), group->end(), potential_member);
-			if (member == group->end())
-			{
-				add_character_to_group(potential_member, ch);
-			}
-			else
-			{
-				remove_character_from_group(potential_member, ch);
-			}
-		}
 	}
 	else
 	{
-		send_to_char("No one here by that name.\n\r", ch);
-	}
-	*/
-
-
-	if (ch->group_leader) 
-	{
-		act("You can not enroll group members without being head of a group.",
-			FALSE, ch, 0, 0, TO_CHAR);
-		return;
-	}
-
-	if (!str_cmp(buf, "all")) {
-		victim = 0;
-		for (f = ch->followers; f; f = f->next) {
-			victim = f->follower;
-			if (!char_exists(f->fol_number))
-				f->follower = victim = 0;
-			if (victim && !victim->group_leader && !other_side(ch, victim))
-				add_follower(victim, ch, FOLLOW_GROUP);
+		// Try to add members to the group.
+		group_data* group = ch->group_2;
+		bool can_add_members = group == NULL;
+		if (!can_add_members)
+		{
+			can_add_members = group->is_leader(ch);
 		}
-		return;
-	}
 
-	if (!(victim = get_char_room_vis(ch, buf))) {
-		send_to_char("No one here by that name.\n\r", ch);
-		return;
-	}
-	else {
-		found = FALSE;
+		if (!can_add_members)
+		{
+			act("You can not enroll group members without being head of a group.", FALSE, ch, 0, 0, TO_CHAR);
+			return;
+		}
 
-		if (victim == ch)
-			found = TRUE;
-		else
-			for (f = ch->group; f; f = f->next)
-				if (f->follower == victim) {
-					found = TRUE;
-					break;
+		if (string_func::equals(buf, "all"))
+		{
+			for (follow_type* follower = ch->followers; follower; follower = follower->next)
+			{
+				char_data* potential_member = follower->follower;
+				if (potential_member && char_exists(follower->fol_number))
+				{
+					// Can only add ungrouped members to your group.
+					if (potential_member->group_2 == NULL && !other_side(ch, potential_member))
+					{
+						add_character_to_group(potential_member, ch);
+					}
+				}
+				else
+				{
+					// Follower clean-up is done here.  Unsure why, don't want to change functionality though.
+					follower->follower = NULL;
+				}
+			}
+		}
+
+		if (char_data* potential_member = get_char_room_vis(ch, buf))
+		{
+			// Easy error cases are handled up here.
+			if (potential_member == ch)
+			{
+				send_to_char("Eww, who wants to group with that guy?\n\r", ch);
+			}
+			else if (other_side(ch, potential_member))
+			{
+				sprintf(buf, "You wouldn't group with that ugly %s!\n\r", pc_races[GET_RACE(potential_member)]);
+				send_to_char(buf, ch);
+			}
+			else if (potential_member->group_2 && potential_member->group_2 != group)
+			{
+				act("$N is busy somewhere else already.", FALSE, ch, 0, potential_member, TO_CHAR);
+			}
+			else
+			{
+				if (group == NULL)
+				{
+					group = new group_data(ch);
+					ch->group_2 = group;
 				}
 
-		if (found) {
-			act("You have been kicked out of $n's group!",
-				FALSE, ch, 0, victim, TO_VICT);
-			if (victim == ch)
-				send_to_char("You are already grouped with yourself.\n\r", ch);
-			else
-				stop_follower(victim, FOLLOW_GROUP);
-		}
-		else {
-			if (other_side(ch, victim)) {
-				sprintf(buf, "You wouldn't group with that ugly %s!\n\r",
-					pc_races[GET_RACE(victim)]);
-				send_to_char(buf, ch);
-				return;
+				char_iter member = std::find(group->begin(), group->end(), potential_member);
+				if (member == group->end())
+				{
+					add_character_to_group(potential_member, ch);
+				}
+				else
+				{
+					remove_character_from_group(potential_member, ch);
+				}
 			}
-			if (victim == ch)
-				send_to_char("You are already grouped with yourself.\n\r", ch);
-			else if (victim->group_leader)
-				act("$N is busy somewhere else already.",
-					FALSE, ch, 0, victim, TO_CHAR);
-			else
-				add_follower(victim, ch, FOLLOW_GROUP);
+		}
+		else
+		{
+			send_to_char("No one here by that name.\n\r", ch);
 		}
 	}
 }
@@ -730,12 +590,8 @@ ACMD(do_group)
 
 ACMD(do_ungroup)
 {
-	struct follow_type *f, *next_fol;
-	struct char_data *tch;
-
 	one_argument(argument, buf);
 
-	/*
 	group_data* group = ch->group_2;
 
 	// Ungroup was typed in without an argument.
@@ -788,90 +644,55 @@ ACMD(do_ungroup)
 			}
 		}
 	}
-	*/
-
-	if (!*buf) 
-	{
-		if (ch->group_leader) 
-		{
-			stop_follower(ch, FOLLOW_GROUP);
-			return;
-		}
-		else if (!ch->group) 
-		{
-			send_to_char("You have no group to leave.\n\r", ch);
-			return;
-		}
-		else 
-		{
-			sprintf(buf2, "%s has disbanded the group.\n\r", GET_NAME(ch));
-			for (f = ch->group; f; f = next_fol) {
-				next_fol = f->next;
-				send_to_char(buf2, f->follower);
-				stop_follower(f->follower, FOLLOW_GROUP);
-			}
-			send_to_char("You have disbanded the group.\n\r", ch);
-			return;
-		}
-	}
-
-	if (!(tch = get_char_room_vis(ch, buf))) {
-		send_to_char("There is no such person!\n\r", ch);
-		return;
-	}
-
-	if (tch->group_leader != ch) {
-		send_to_char("That person is not in your group!\n\r", ch);
-		return;
-	}
-
-	act("You have been kicked out of $n's group!", FALSE, ch, 0, tch, TO_VICT);
-	stop_follower(tch, FOLLOW_GROUP);
 }
 
 
 ACMD(do_report)
 {
-  char str[255];
-  int tmp1, tmp2, tmp3;
-  char *tmpchar;
+	char str[255];
+	int tmp1, tmp2, tmp3;
+	char *tmpchar;
 
-  extern struct prompt_type prompt_hit[];
-  extern struct prompt_type prompt_mana[];
-  extern struct prompt_type prompt_move[];
+	extern struct prompt_type prompt_hit[];
+	extern struct prompt_type prompt_mana[];
+	extern struct prompt_type prompt_move[];
 
-  if(IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) &&
-     !(MOB_FLAGGED(ch, MOB_ORC_FRIEND))) {
-    send_to_char("Sorry, tamed mobiles can't report.\n\r", ch);
-    return;
-  }
+	if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_PET) &&
+		!(MOB_FLAGGED(ch, MOB_ORC_FRIEND))) {
+		send_to_char("Sorry, tamed mobiles can't report.\n\r", ch);
+		return;
+	}
 
-  for(tmp1=0; (1000*GET_HIT(ch))/GET_MAX_HIT(ch) > prompt_hit[tmp1].value; tmp1++);
-  for(tmp2=0; (1000*GET_MANA(ch))/GET_MAX_MANA(ch) > prompt_mana[tmp2].value; tmp2++);
-  for(tmp3=0; (1000*GET_MOVE(ch))/GET_MAX_MOVE(ch) > prompt_move[tmp3].value; tmp3++);
+	for (tmp1 = 0; (1000 * GET_HIT(ch)) / GET_MAX_HIT(ch) > prompt_hit[tmp1].value; tmp1++);
+	for (tmp2 = 0; (1000 * GET_MANA(ch)) / GET_MAX_MANA(ch) > prompt_mana[tmp2].value; tmp2++);
+	for (tmp3 = 0; (1000 * GET_MOVE(ch)) / GET_MAX_MOVE(ch) > prompt_move[tmp3].value; tmp3++);
 
-  sprintf(str, "I am %s, my stamina is %s, and I am %s.",
-	  prompt_hit[tmp1].message,                     // No need to add
-	  *prompt_mana[tmp2].message == '\0' ?
-	  "full" : prompt_mana[tmp2].message + 3,       // Add 3 because of M:
-	  *prompt_move[tmp3].message == '\0' ?
-	  "energetic" : prompt_move[tmp3].message + 4); // Add 4 because of MV:
+	sprintf(str, "I am %s, my stamina is %s, and I am %s.",
+		prompt_hit[tmp1].message,                     // No need to add
+		*prompt_mana[tmp2].message == '\0' ?
+		"full" : prompt_mana[tmp2].message + 3,       // Add 3 because of M:
+		*prompt_move[tmp3].message == '\0' ?
+		"energetic" : prompt_move[tmp3].message + 4); // Add 4 because of MV:
 
-  for(tmpchar = &str[1]; *tmpchar != '\0'; tmpchar++)
-    *tmpchar = tolower(*tmpchar);
+	for (tmpchar = &str[1]; *tmpchar != '\0'; tmpchar++)
+		*tmpchar = tolower(*tmpchar);
 
-  if(ch->group || ch->group_leader)
-    do_gsay(ch, str, 0, 0, 0);
-  else
-    do_say(ch, str, 0, 0, 0);
+	if (ch->group_2)
+	{
+		do_gsay(ch, str, 0, 0, 0);
+	}
+	else
+	{
+		do_say(ch, str, 0, 0, 0);
+	}
 }
 
 int calculate_gold_amount(char* text, char* argument, char_data* character)
 {
 	char* current_argument = one_argument(argument, text);
-
+	
 	int amount = 0;
-	if (is_number(current_argument))
+	if (is_number(text))
 	{
 		amount = atoi(text);
 		if (amount > 0)
@@ -921,14 +742,9 @@ void give_share(char_data* sender, char_data* receiver, int share_amount)
 
 ACMD(do_split)
 {
-	char *current_arg;
-	struct char_data *k;
-	struct follow_type *f;
-
 	if (IS_NPC(ch))
 		return;
 
-	/*
 	if (ch->group_2 == NULL)
 	{
 		send_to_char("You have no group to split with.\n\r", ch);
@@ -968,102 +784,6 @@ ACMD(do_split)
 
 	sprintf(buf, "You give %s to each member of your group.\n\r", money_message(share_amount, 0));
 	send_to_char(buf, ch);
-	*/
-
-	current_arg = one_argument(argument, buf);
-
-	if (is_number(buf)) 
-	{
-		int amount = atoi(buf);
-		if (amount <= 0) 
-		{
-			send_to_char("Sorry, you can't do that.\n\r", ch);
-			return;
-		}
-
-		one_argument(current_arg, buf);
-		if (!strcmp(buf, "gold") || !strcmp(buf, "silver") || !strcmp(buf, "copper")) 
-		{
-			/* save some strcmp'ing time since only the previous three
-			 * arguments could possibly have made it here */
-			switch (*buf) 
-			{
-			case 'g':
-				amount *= 1000;
-				break;
-			case 's':
-				amount *= 100;
-				break;
-			case 'c':
-				amount *= 1;
-				break;
-			}
-
-			if (amount > GET_GOLD(ch)) 
-			{
-				send_to_char("You don't have that much coin to split.\n\r", ch);
-				return;
-			}
-
-			if (ch->group_leader)
-			{
-				k = ch->group_leader;
-			}
-			else
-			{
-				k = ch;
-			}
-
-			/* num starts at 1, because the group leader is never
-			 * listed in the group */
-			int num = 1;
-			for (num = 1, f = k->group; f; f = f->next)
-			{
-				if ((!IS_NPC(f->follower)) && (f->follower->in_room == ch->in_room))
-				{
-					num++;
-				}
-			}
-
-			int share = 0;
-			if (num > 1)
-			{
-				share = amount / num;
-			}
-			else 
-			{
-				send_to_char("There is no one here for you to share with.\r\n", ch);
-				return;
-			}
-
-			GET_GOLD(ch) -= share * (num - 1);
-
-			/* special check for `k' -- group leader, because the leader
-			 * is not listed in the group */
-			if ((k->in_room == ch->in_room) && !(IS_NPC(k)) && k != ch) 
-			{
-				give_share(ch, k, share);
-			}
-
-			for (f = k->group; f; f = f->next) 
-			{
-				if ((!IS_NPC(f->follower)) && (f->follower->in_room == ch->in_room) && f->follower != ch) 
-				{
-					give_share(ch, f->follower, share);
-				}
-			}
-			sprintf(buf, "You give %s to each member of your group.\n\r", money_message(share, 0));
-			send_to_char(buf, ch);
-		}
-		else
-		{
-			send_to_char("You must specify what type of coin to split.\r\n", ch);
-		}
-	}
-	else
-	{
-		send_to_char("You must specify how much you wish to split.\r\n", ch);
-	}
 }
 
 

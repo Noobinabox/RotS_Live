@@ -16,6 +16,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include "comm.h" // for send_to_char
 
 struct race_bodypart_data;
 
@@ -1690,6 +1691,23 @@ void group_data::get_pcs_in_room(char_vector& pc_vec, int room_number) const
 			pc_vec.push_back(character);
 		}
 	}
+}
+
+//============================================================================
+void group_data::reset_damage()
+{
+	damage_report.reset();
+
+	for (char_iter character = members.begin(); character != members.end(); ++character)
+	{
+		send_to_char("The group damage meter has been reset.\r\n", *character);
+	}
+}
+
+//============================================================================
+void group_data::track_combat_time(char_data* character, float elapsed_seconds)
+{
+	damage_report.track_time(character, elapsed_seconds);
 }
 
 //============================================================================

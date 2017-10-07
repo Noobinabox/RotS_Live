@@ -674,6 +674,9 @@ const struct skill_data* get_skill_array();
 /* Gets the attack hit type for a given index. */
 const struct attack_hit_type& get_hit_text(int w_type);
 
+void add_character_to_group(struct char_data* character, struct char_data* group_leader);
+void remove_character_from_group(struct char_data* character, struct char_data* group_leader);
+
 namespace string_func
 {
 	bool equals(const char* a, const char* b);

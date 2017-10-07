@@ -997,14 +997,6 @@ void add_follower(char_data* follower, char_data* leader, int mode)
 		}
 		follower->master = leader;
 	}
-	else 
-	{
-		if (follower->group_leader)
-		{
-			stop_follower(follower, FOLLOW_GROUP);
-		}
-		follower->group_leader = leader;
-	}
 
 	follow_type* k = get_from_follow_type_pool();
 
@@ -1014,22 +1006,12 @@ void add_follower(char_data* follower, char_data* leader, int mode)
 	{
 		k->next = leader->followers;
 	}
-	else
-	{
-		k->next = leader->group;
-	}
 
 	if (mode == FOLLOW_MOVE) {
 		leader->followers = k;
 		act("You now follow $N.", FALSE, follower, 0, leader, TO_CHAR);
 		act("$n starts following you.", TRUE, follower, 0, leader, TO_VICT);
 		act("$n now follows $N.", TRUE, follower, 0, leader, TO_NOTVICT);
-	}
-	else {
-		leader->group = k;
-		act("You join the group of $N.", FALSE, follower, 0, leader, TO_CHAR);
-		act("$n joins your group.", TRUE, follower, 0, leader, TO_VICT);
-		act("$n joins the group of $N.", TRUE, follower, 0, leader, TO_NOTVICT);
 	}
 }
 
@@ -1114,7 +1096,8 @@ void stop_follower(struct char_data *ch, int mode)
 		}
 	}
 
-	else if (mode == FOLLOW_REFOL) {
+	else if (mode == FOLLOW_REFOL)
+	{
 		if (!ch->master) return;
 
 		act("You stop following $N.", FALSE, ch, 0, ch->master, TO_CHAR);
@@ -1138,33 +1121,6 @@ void stop_follower(struct char_data *ch, int mode)
 
 		ch->master = 0;
 	}
-
-	else {
-		if (!ch->group_leader) return;
-
-		act("You leave the group of $N.", FALSE, ch, 0, ch->group_leader, TO_CHAR);
-		act("$n leaves the group of $N.", FALSE, ch, 0, ch->group_leader, TO_NOTVICT);
-		act("$n leaves your group.", FALSE, ch, 0, ch->group_leader, TO_VICT);
-
-
-		if (ch->group_leader->group->follower == ch) { /* Head of follower-list? */
-			k = ch->group_leader->group;
-			ch->group_leader->group = k->next;
-			//       RELEASE(k);
-			put_to_follow_type_pool(k);
-		}
-		else { /* locate follower who is not head of list */
-			for (k = ch->group_leader->group; k->next->follower != ch; k = k->next)
-				;
-
-			j = k->next;
-			k->next = j->next;
-			//       RELEASE(j);
-			put_to_follow_type_pool(j);
-		}
-
-		ch->group_leader = 0;
-	}
 }
 
 
@@ -1172,38 +1128,57 @@ void stop_follower(struct char_data *ch, int mode)
 /* Follow "Loop/circle"                                    */
 char circle_follow(struct char_data *ch, struct char_data *victim, int mode)
 {
-   struct char_data *k;
+	for (char_data* character = victim; character; character = character->master)
+	{
+		if (character == ch)
+		{
+			return(TRUE);
+		}
+	}
 
-   for (k = victim; k; k = (mode == FOLLOW_MOVE)?k->master:k->group_leader){
-      if (k == ch)
-	 return(TRUE);
-   }
-
-   return(FALSE);
+	return(FALSE);
 }
 
 
 
 
 /* Called when a character that follows/is followed dies */
-void	die_follower(struct char_data *ch)
+void die_follower(char_data* character)
 {
    struct follow_type *j, *k;
 
-   if (ch->master)
-      stop_follower(ch, FOLLOW_MOVE);
+   if (character->master)
+   {
+	   stop_follower(character, FOLLOW_MOVE);
+   }
 
-   for (k = ch->followers; k; k = j) {
+   for (k = character->followers; k; k = j) 
+   {
       j = k->next;
       stop_follower(k->follower, FOLLOW_MOVE);
    }
 
-   if (ch->group_leader)
-      stop_follower(ch, FOLLOW_GROUP);
+   group_data* group = character->group_2;
+   if (group)
+   {
+	   if (group->is_leader(character))
+	   {
+		   // Do disband.
+		   size_t index = group->size() - 1;
+		   while (index >= 1)
+		   {
+			   group->remove_member(group->at(index));
+			   --index;
+		   }
 
-   for (k = ch->group; k; k = j) {
-      j = k->next;
-      stop_follower(k->follower, FOLLOW_GROUP);
+		   character->group_2 = NULL;
+		   delete group;
+	   }
+	   else
+	   {
+		   // Remove the character from the group.
+		   group->remove_member(character);
+	   }
    }
 }
 
@@ -2036,7 +2011,7 @@ void	update_char_objects( struct char_data *ch )
 ACMD(do_look);
 void stop_fighting_him(struct char_data *ch);
 
-void	extract_char(struct char_data *ch, int new_room)
+void extract_char(struct char_data *ch, int new_room)
 {
    struct obj_data *i;
    struct char_data *k, *k2, *next_char;
@@ -2054,7 +2029,7 @@ void	extract_char(struct char_data *ch, int new_room)
 		 do_return(t_desc->character, "", 0, 0, 0);
    }
 
-   if (ch->followers || ch->master || ch->group || ch->group_leader)
+   if (ch->followers || ch->master || ch->group_2)
       die_follower(ch);
 
    GET_ENERGY(ch) = 1201;

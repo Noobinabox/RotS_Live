@@ -1510,6 +1510,7 @@ public:
 	group_damaga_data() : damage_map() { };
 
 	void add_damage(struct char_data* character, int damage) { damage_map[character].add_damage(damage); }
+	void track_time(struct char_data* character, float elapsed_seconds) { damage_map[character].tick(elapsed_seconds); }
 	void remove(struct char_data* character) { damage_map.erase(character); }
 	void reset() { damage_map.clear(); }
 
@@ -1531,7 +1532,8 @@ public:
 	bool remove_member(struct char_data* member);
 
 	void track_damage(struct char_data* character, int damage) { damage_report.add_damage(character, damage); }
-	void reset_damage() { damage_report.reset(); }
+	void track_combat_time(struct char_data* character, float elapsed_seconds);
+	void reset_damage();
 	std::string get_damage_report() const { return damage_report.get_damage_report(); }
 
 	struct char_data* get_leader() const { return leader; }
@@ -1616,10 +1618,6 @@ public:
 	struct follow_type *followers;        /* List of chars followers       */
 	struct char_data *master;             /* Who is char following?        */
 	int master_number;
-
-	struct follow_type *group;
-	struct char_data * group_leader;
-	int group_leader_num;
 
 	struct mount_data_type mount_data;
 	group_data* group_2;   /* The group that the character belongs to.  Can be null. */

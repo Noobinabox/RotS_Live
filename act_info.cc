@@ -4761,11 +4761,34 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 		}
 		else if (strstr(details_argument, GROUP_FLAG))
 		{
-			send_to_char("Group details:  Not yet implemented. \r\n", character);
+			group_data* group = character->group_2;
+			if (group)
+			{
+				if (strstr(details_argument, RESET_FLAG))
+				{
+					if (group->is_leader(character))
+					{
+						group->reset_damage();
+					}
+					else
+					{
+						send_to_char("Only the group leader can reset damage details.\r\n", character);
+					}
+				}
+				else
+				{
+					std::string damage_data = group->get_damage_report();
+					send_to_char(damage_data.c_str(), character);
+				}
+			}
+			else
+			{
+				send_to_char("You need to be in a group to get group damage details.\r\n", character);
+			}
 		}
 		else
 		{
-			send_to_char("Accepted arguments: spec, group\r\n", character);
+			send_to_char("Accepted arguments: spec, group, damage (optional: reset) \r\n", character);
 		}
 	}
 	else

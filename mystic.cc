@@ -1756,7 +1756,8 @@ ASPELL(spell_shift) {
 		GET_COND(victim, FULL) = 1;
 		GET_COND(victim, THIRST) = 1;
 	}
-	else {
+	else 
+	{
 		SET_BIT(PLR_FLAGS(victim), PLR_ISSHADOW);
 		if (IS_RIDING(victim))
 			stop_riding(victim);
@@ -1766,8 +1767,8 @@ ASPELL(spell_shift) {
 			affect_from_char(victim, SPELL_SANCTUARY);
 		for (tmpfol = victim->followers; tmpfol; tmpfol = victim->followers)
 			stop_follower(tmpfol->follower, FOLLOW_MOVE);
-		if (victim->group_leader)
-			stop_follower(victim, FOLLOW_GROUP);
+		if (victim->group_2)
+			remove_character_from_group(victim, victim->get_group_leader());
 		if (IS_AFFECTED(victim, AFF_HUNT))
 			REMOVE_BIT(victim->specials.affected_by, AFF_HUNT);
 		if (IS_AFFECTED(victim, AFF_SNEAK))

@@ -23,6 +23,7 @@
 #include "script.h"
 #include "big_brother.h"
 #include "spells.h"
+#include "char_utils.h"
 
 extern struct room_data world;
 extern struct descriptor_data *descriptor_list;
@@ -127,44 +128,55 @@ ACMD(do_say)
 
 ACMD(do_gsay)
 {
-  int	i;
-  struct char_data *k, *tmpch;
-  struct follow_type *f;
-  
-  for (i = 0; *(argument + i) == ' '; i++)
-    ;
-  
-  if (!ch->group_leader && !ch->group) {
-    send_to_char("But you are not the member of a group!\n\r", ch);
-    return;
-   }
-  
-  if (!*(argument + i))
-    send_to_char("Yes, but WHAT do you want to group-say?\n\r", ch);
-  else {
-      if (ch->group_leader)
-	 k = ch->group_leader;
-      else
-	 k = ch;
-      sprintf(buf, "%s group-says '%s'\n\r", GET_NAME(ch), argument + i);
-      if (k != ch)
-	send_to_char(buf, k);
-      for (f = k->group; f; f = f->next)
-	 if(f->follower != ch)
-	    send_to_char(buf, f->follower);
-      if (PRF_FLAGGED(ch, PRF_ECHO)) {
-	 sprintf(buf, "You group-say '%s'\n\r", argument + i);
-	 send_to_char(buf, ch);
-      } else
-	 send_to_char("Ok.\n\r", ch);
+	int	message_index = 0;
+	for (message_index = 0; *(argument + message_index) == ' '; message_index++)
+		;
 
-      sprintf(buf, "$n says '%s'\n\r", argument + i);
-      for(tmpch = world[ch->in_room].people; tmpch; 
-	  tmpch = tmpch->next_in_room)
-	if((tmpch->group_leader != k) && (tmpch != k)){
-	  act(buf, FALSE, ch, 0, tmpch, TO_VICT);
+	group_data* group = ch->group_2;
+	if (group == NULL)
+	{
+		send_to_char("But you are not the member of a group!\n\r", ch);
+		return;
 	}
-   }
+
+	if (!*(argument + message_index))
+	{
+		send_to_char("Yes, but WHAT do you want to group-say?\n\r", ch);
+	}
+	else 
+	{
+		// Send the message to the group.
+		sprintf(buf, "%s group-says '%s'\n\r", GET_NAME(ch), argument + message_index);
+		for (char_iter iter = group->begin(); iter != group->end(); ++iter)
+		{
+			char_data* member = *iter;
+			if (member != ch)
+			{
+				send_to_char(buf, member);
+			}
+		}
+
+		// Alert the player that their message has been sent.
+		if (PRF_FLAGGED(ch, PRF_ECHO)) 
+		{
+			sprintf(buf, "You group-say '%s'\n\r", argument + message_index);
+			send_to_char(buf, ch);
+		}
+		else
+		{
+			send_to_char("Ok.\n\r", ch);
+		}
+
+		// Other people in the room hear this as well.
+		sprintf(buf, "$n says '%s'\n\r", argument + message_index);
+		for (char_data* bystander = world[ch->in_room].people; bystander; bystander = bystander->next_in_room)
+		{
+			if (group != bystander->group_2 && utils::is_pc(*bystander))
+			{
+				act(buf, FALSE, ch, 0, bystander, TO_VICT);
+			}
+		}
+	}
 }
 
 

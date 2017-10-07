@@ -517,7 +517,7 @@ namespace utils
 			2,/*head*/
 			2,/*legs*/
 			2,/*feet*/
-			3,/*hands*/
+			2,/*hands*/
 			2,/*arms*/
 			3,/*shield*/
 			0,/*about body*/
@@ -580,8 +580,8 @@ namespace utils
 						if (heavy_item_weight > 0 && item_weight > heavy_item_weight)
 						{
 							// Heavy fighting uses the base item weight as the soft cap for worn weight.
-							int heavy_adjustment = int(std::sqrt(item_weight - heavy_item_weight));
-							item_weight = heavy_item_weight + heavy_adjustment;
+							int heavy_adjustment = item_weight - heavy_item_weight;
+							item_weight = heavy_item_weight + heavy_adjustment / 3;
 						}
 
 						if (encumb_table)
@@ -679,7 +679,8 @@ namespace utils
 					}
 				}
 
-				new_encumb += int(std::sqrt(heavy_fighting_encumbrance_difference));
+				// Drelidan:  Removing this for now, but leaving it in for future changes.
+				//new_encumb += int(std::sqrt(heavy_fighting_encumbrance_difference));
 
 				return new_encumb;
 			}

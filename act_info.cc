@@ -4761,7 +4761,7 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 		}
 		else if (strstr(details_argument, GROUP_FLAG))
 		{
-			group_data* group = character->group_2;
+			group_data* group = character->group;
 			if (group)
 			{
 				if (strstr(details_argument, RESET_FLAG))

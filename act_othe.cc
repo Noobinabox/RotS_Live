@@ -313,13 +313,13 @@ ACMD(do_grouproll)
 		return;
 	}
 
-	if (ch->group_2 == NULL)
+	if (ch->group == NULL)
 	{
 		send_to_char("But you are not in a group!\n\r", ch);
 		return;
 	}
 
-	if (ch->group_2->get_leader() != ch)
+	if (ch->group->get_leader() != ch)
 	{
 		send_to_char("Only the group leader can roll for the group.\n\r", ch);
 		return;
@@ -327,7 +327,7 @@ ACMD(do_grouproll)
 
 	if (string_func::is_null_or_empty(buf))
 	{
-		for (char_iter iter = ch->group_2->begin(); iter != ch->group_2->end(); ++iter)
+		for (char_iter iter = ch->group->begin(); iter != ch->group->end(); ++iter)
 		{
 			roll_for_character(*iter, ch);
 		}
@@ -336,7 +336,7 @@ ACMD(do_grouproll)
 	{
 		if (char_data* rollee = get_char_room_vis(ch, buf))
 		{
-			if (ch->group_2 == rollee->group_2)
+			if (ch->group == rollee->group)
 			{
 				roll_for_character(rollee, ch);
 			}
@@ -439,7 +439,7 @@ void display_joined_group(char_data* character, char_data* leader)
 
 void add_character_to_group(char_data* character, char_data* group_leader)
 {
-	group_data* group = group_leader->group_2;
+	group_data* group = group_leader->group;
 	if (group == NULL)
 	{
 		group = new group_data(group_leader);
@@ -454,10 +454,10 @@ void add_character_to_group(char_data* character, char_data* group_leader)
 
 void remove_character_from_group(char_data* character, char_data* group_leader)
 {
-	if (group_leader->group_2 == NULL)
+	if (group_leader->group == NULL)
 		return;
 
-	group_data* group = group_leader->group_2;
+	group_data* group = group_leader->group;
 	group->remove_member(character);
 
 	act("You leave the group of $N.", FALSE, character, 0, group_leader, TO_CHAR);
@@ -468,7 +468,7 @@ void remove_character_from_group(char_data* character, char_data* group_leader)
 	if (group->size() == 1)
 	{
 		send_to_char("You have disbanded the group.\n\r", group_leader);
-		group_leader->group_2 = NULL;
+		group_leader->group = NULL;
 		delete group;
 	}
 }
@@ -485,7 +485,7 @@ ACMD(do_group)
 	// If only "group" was passed in.
 	if (string_func::is_null_or_empty(buf)) 
 	{
-		if (ch->group_2 == NULL)
+		if (ch->group == NULL)
 		{
 			send_to_char("But you are not the member of a group!\n\r", ch);
 		}
@@ -499,9 +499,9 @@ ACMD(do_group)
 			act(buf, FALSE, ch, 0, leader, TO_CHAR);
 
 			// now, we display the group members; start with index 1 because index 0 is the group leader
-			for (size_t index = 1; index < ch->group_2->size(); ++index)
+			for (size_t index = 1; index < ch->group->size(); ++index)
 			{
-				char_data* group_member = ch->group_2->at(index);
+				char_data* group_member = ch->group->at(index);
 				print_group_member(group_member);
 				act(buf, FALSE, ch, 0, group_member, TO_CHAR);
 			}
@@ -510,7 +510,7 @@ ACMD(do_group)
 	else
 	{
 		// Try to add members to the group.
-		group_data* group = ch->group_2;
+		group_data* group = ch->group;
 		bool can_add_members = group == NULL;
 		if (!can_add_members)
 		{
@@ -531,7 +531,7 @@ ACMD(do_group)
 				if (potential_member && char_exists(follower->fol_number))
 				{
 					// Can only add ungrouped members to your group.
-					if (potential_member->group_2 == NULL && !other_side(ch, potential_member))
+					if (potential_member->group == NULL && !other_side(ch, potential_member))
 					{
 						add_character_to_group(potential_member, ch);
 					}
@@ -556,7 +556,7 @@ ACMD(do_group)
 				sprintf(buf, "You wouldn't group with that ugly %s!\n\r", pc_races[GET_RACE(potential_member)]);
 				send_to_char(buf, ch);
 			}
-			else if (potential_member->group_2 && potential_member->group_2 != group)
+			else if (potential_member->group && potential_member->group != group)
 			{
 				act("$N is busy somewhere else already.", FALSE, ch, 0, potential_member, TO_CHAR);
 			}
@@ -565,7 +565,7 @@ ACMD(do_group)
 				if (group == NULL)
 				{
 					group = new group_data(ch);
-					ch->group_2 = group;
+					ch->group = group;
 				}
 
 				char_iter member = std::find(group->begin(), group->end(), potential_member);
@@ -592,7 +592,7 @@ ACMD(do_ungroup)
 {
 	one_argument(argument, buf);
 
-	group_data* group = ch->group_2;
+	group_data* group = ch->group;
 
 	// Ungroup was typed in without an argument.
 	if (string_func::is_null_or_empty(buf))
@@ -677,7 +677,7 @@ ACMD(do_report)
 	for (tmpchar = &str[1]; *tmpchar != '\0'; tmpchar++)
 		*tmpchar = tolower(*tmpchar);
 
-	if (ch->group_2)
+	if (ch->group)
 	{
 		do_gsay(ch, str, 0, 0, 0);
 	}
@@ -745,7 +745,7 @@ ACMD(do_split)
 	if (IS_NPC(ch))
 		return;
 
-	if (ch->group_2 == NULL)
+	if (ch->group == NULL)
 	{
 		send_to_char("You have no group to split with.\n\r", ch);
 		return;
@@ -762,7 +762,7 @@ ACMD(do_split)
 	}
 
 	char_vector split_group;
-	ch->group_2->get_pcs_in_room(split_group, ch->in_room);
+	ch->group->get_pcs_in_room(split_group, ch->in_room);
 	int share_count = (int)split_group.size();
 	if (share_count == 1)
 	{

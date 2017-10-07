@@ -132,7 +132,7 @@ ACMD(do_gsay)
 	for (message_index = 0; *(argument + message_index) == ' '; message_index++)
 		;
 
-	group_data* group = ch->group_2;
+	group_data* group = ch->group;
 	if (group == NULL)
 	{
 		send_to_char("But you are not the member of a group!\n\r", ch);
@@ -171,7 +171,7 @@ ACMD(do_gsay)
 		sprintf(buf, "$n says '%s'\n\r", argument + message_index);
 		for (char_data* bystander = world[ch->in_room].people; bystander; bystander = bystander->next_in_room)
 		{
-			if (group != bystander->group_2 && utils::is_pc(*bystander))
+			if (group != bystander->group && utils::is_pc(*bystander))
 			{
 				act(buf, FALSE, ch, 0, bystander, TO_VICT);
 			}

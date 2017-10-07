@@ -1644,7 +1644,7 @@ void group_data::add_member(char_data* member)
 		return;
 
 	members.push_back(member);
-	member->group_2 = this;
+	member->group = this;
 
 	if (utils::is_pc(*member))
 	{
@@ -1664,7 +1664,7 @@ bool group_data::remove_member(char_data* member)
 
 	members.erase(member_iter);
 	damage_report.remove(member);
-	member->group_2 = NULL;
+	member->group = NULL;
 
 	if (utils::is_pc(*member))
 	{

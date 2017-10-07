@@ -1583,7 +1583,7 @@ public:
 	int get_capped_level() const { return std::min(get_level(), LEVEL_MAX); }
 
 	/* Returns the leader of the character's group, if the character is in a group. */
-	char_data* get_group_leader() const { return group_2 ? group_2->get_leader() : NULL; }
+	char_data* get_group_leader() const { return group ? group->get_leader() : NULL; }
 
 public:
 	int abs_number;                       /* bit number in the control array */
@@ -1620,7 +1620,7 @@ public:
 	int master_number;
 
 	struct mount_data_type mount_data;
-	group_data* group_2;   /* The group that the character belongs to.  Can be null. */
+	group_data* group;   /* The group that the character belongs to.  Can be null. */
 
 	void * temp;         /* pointer to any special structures if need be   */
 	struct waiting_type delay;

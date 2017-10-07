@@ -1158,7 +1158,7 @@ void die_follower(char_data* character)
       stop_follower(k->follower, FOLLOW_MOVE);
    }
 
-   group_data* group = character->group_2;
+   group_data* group = character->group;
    if (group)
    {
 	   if (group->is_leader(character))
@@ -1171,7 +1171,7 @@ void die_follower(char_data* character)
 			   --index;
 		   }
 
-		   character->group_2 = NULL;
+		   character->group = NULL;
 		   delete group;
 	   }
 	   else
@@ -2029,7 +2029,7 @@ void extract_char(struct char_data *ch, int new_room)
 		 do_return(t_desc->character, "", 0, 0, 0);
    }
 
-   if (ch->followers || ch->master || ch->group_2)
+   if (ch->followers || ch->master || ch->group)
       die_follower(ch);
 
    GET_ENERGY(ch) = 1201;

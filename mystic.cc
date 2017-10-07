@@ -1767,7 +1767,7 @@ ASPELL(spell_shift) {
 			affect_from_char(victim, SPELL_SANCTUARY);
 		for (tmpfol = victim->followers; tmpfol; tmpfol = victim->followers)
 			stop_follower(tmpfol->follower, FOLLOW_MOVE);
-		if (victim->group_2)
+		if (victim->group)
 			remove_character_from_group(victim, victim->get_group_leader());
 		if (IS_AFFECTED(victim, AFF_HUNT))
 			REMOVE_BIT(victim->specials.affected_by, AFF_HUNT);

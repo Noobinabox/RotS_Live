@@ -1257,7 +1257,7 @@ namespace
 		const room_data& death_room = world[dead_man->in_room];
 		for (char_data* character = death_room.people; character; character = character->next_in_room)
 		{
-			group_data* group = character->group_2;
+			group_data* group = character->group;
 			// Everyone in the group of someone fighting the dead man gets XP.
 			if (character->specials.fighting == dead_man)
 			{
@@ -1279,9 +1279,9 @@ namespace
 					// If the master and pet are in different groups, ensure both groups get credit.
 					if (master->specials.fighting == dead_man)
 					{
-						if (master->group_2 && master->group_2 != group)
+						if (master->group && master->group != group)
 						{
-							master->group_2->get_pcs_in_room(total_killers, dead_man->in_room);
+							master->group->get_pcs_in_room(total_killers, dead_man->in_room);
 						}
 					}
 				}
@@ -1934,9 +1934,9 @@ int damage(char_data* attacker, char_data *victim, int dam, int attacktype, int 
 		attacker->damage_details.add_damage(attacktype, dam);
 	}
 
-	if (attacker->group_2)
+	if (attacker->group)
 	{
-		attacker->group_2->track_damage(attacker, dam);
+		attacker->group->track_damage(attacker, dam);
 	}
 
 	if (attacker != victim)
@@ -2766,9 +2766,9 @@ void perform_violence(int mini_tics)
 	for (char_data* fighter = combat_list; fighter; fighter = combat_next_dude) 
 	{
 		fighter->damage_details.tick(time_delta);
-		if (fighter->group_2)
+		if (fighter->group)
 		{
-			fighter->group_2->track_combat_time(fighter, time_delta);
+			fighter->group->track_combat_time(fighter, time_delta);
 		}
 
 		combat_next_dude = fighter->next_fighting;

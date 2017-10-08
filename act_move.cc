@@ -1593,6 +1593,9 @@ ACMD(do_lose){
 
 ACMD(do_follow)
 {
+	if (ch == NULL)
+		return;
+
 	char_data* leader = NULL;
 
 	one_argument(argument, buf);
@@ -1606,11 +1609,6 @@ ACMD(do_follow)
 		else
 		{
 			leader = get_char_room_vis(ch, buf);
-			if (leader == NULL)
-			{
-				send_to_char("I see no person by that name here!\n\r", ch);
-				return;
-			}
 		}
 	}
 	else 
@@ -1618,6 +1616,14 @@ ACMD(do_follow)
 		send_to_char("Whom do you wish to follow?\n\r", ch);
 		return;
 	}
+
+
+	if (leader == NULL)
+	{
+		send_to_char("I see no person by that name here!\n\r", ch);
+		return;
+	}
+
 	if (other_side(ch, leader) || (IS_NPC(leader) && MOB_FLAGGED(leader, MOB_MOUNT) && IS_AGGR_TO(leader, ch))) 
 	{
 		sprintf(buf, "It doesn't want you to follow it.\n\r");

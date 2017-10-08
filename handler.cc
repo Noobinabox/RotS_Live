@@ -1170,9 +1170,6 @@ void die_follower(char_data* character)
 			   remove_character_from_group(group->at(index), character);
 			   --index;
 		   }
-
-		   character->group = NULL;
-		   delete group;
 	   }
 	   else
 	   {

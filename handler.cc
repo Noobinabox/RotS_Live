@@ -1167,7 +1167,7 @@ void die_follower(char_data* character)
 		   size_t index = group->size() - 1;
 		   while (index >= 1)
 		   {
-			   group->remove_member(group->at(index));
+			   remove_character_from_group(group->at(index), character);
 			   --index;
 		   }
 
@@ -1177,7 +1177,7 @@ void die_follower(char_data* character)
 	   else
 	   {
 		   // Remove the character from the group.
-		   group->remove_member(character);
+		   remove_character_from_group(character, group->get_leader());
 	   }
    }
 }
@@ -2020,8 +2020,6 @@ void extract_char(struct char_data *ch, int new_room)
 
    extern struct char_data *combat_list;
    extern struct char_data *waiting_list; 
-
-   void	die_follower(struct char_data *ch);
 
    if (!IS_NPC(ch) && !ch->desc) {
 	 for (t_desc = descriptor_list; t_desc; t_desc = t_desc->next)

@@ -769,93 +769,6 @@ void roll_abilities(char_data* character, int min_sum, int max_sum)
 	character->tmpabilities = character->abilities;
 }
 
-void update_specialization_spell(char_data* character)
-{
-	if (character->extra_specialization_data.current_spec_info && character->extra_specialization_data.is_mage_spec())
-	{
-		int spell_id = 0;
-
-		game_types::player_specs spec_type = character->extra_specialization_data.get_current_spec();
-		int mage_level = utils::get_prof_level(PROF_MAGE, *character);
-		if (spec_type == game_types::PS_Cold)
-		{
-			if (mage_level >= 14)
-			{
-				spell_id = SPELL_CONE_OF_COLD;
-			}
-			else
-			{
-				spell_id = SPELL_CHILL_RAY;
-			}
-		}
-		else if (spec_type == game_types::PS_Fire)
-		{
-			if (utils::is_good(*character))
-			{
-				spell_id = SPELL_FIREBOLT;
-			}
-			else
-			{
-				spell_id = SPELL_SEARING_DARKNESS;
-			}
-		}
-		else if (spec_type == game_types::PS_Lightning)
-		{
-			spell_id = SPELL_LIGHTNING_BOLT;
-		}
-		else if (spec_type == game_types::PS_Darkness)
-		{
-			if (utils::is_race_magi(*character) || utils::is_race_easterling(*character))
-			{
-				if (mage_level >= 21)
-				{
-					spell_id = SPELL_SPEAR_OF_DARKNESS;
-				}
-				else
-				{
-					spell_id = SPELL_BLACK_ARROW;
-				}
-			}
-			else
-			{
-				if (mage_level >= 21)
-				{
-					spell_id = SPELL_SEARING_DARKNESS;
-				}
-				else
-				{
-					spell_id = SPELL_DARK_BOLT;
-				}
-			}
-		}
-		else if (spec_type == game_types::PS_Arcane)
-		{
-			if (utils::is_good(*character))
-			{
-				if (mage_level >= 14)
-				{
-					spell_id = SPELL_CONE_OF_COLD;
-				}
-				else if (mage_level >= 11)
-				{
-					spell_id = SPELL_FIREBOLT;
-				}
-				else
-				{
-					spell_id = SPELL_CHILL_RAY;
-				}
-			}
-			else
-			{
-				spell_id = SPELL_DARK_BOLT;
-			}
-		}
-
-		elemental_spec_data* mage_data = static_cast<elemental_spec_data*>(character->extra_specialization_data.current_spec_info);
-		mage_data->spell_id = spell_id;
-	}
-}
-
 /* This is called whenever some of person's stats/level change */
 void recalc_abilities(char_data* character)
 {
@@ -951,8 +864,6 @@ void recalc_abilities(char_data* character)
 		{
 			GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);
 		}
-
-		update_specialization_spell(character);
 	}
 }
 

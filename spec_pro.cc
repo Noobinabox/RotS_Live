@@ -392,6 +392,7 @@ ACMD(do_pracreset)
   utils::set_specialization(*vict, game_types::PS_None);
 
   SET_SHOOTING(vict, SHOOTING_NORMAL);
+  utils::set_casting(*vict, CASTING_NORMAL);
   
   recalc_skills(vict);
   send_to_char("You reset his/her learning abilities.\n\r",ch);

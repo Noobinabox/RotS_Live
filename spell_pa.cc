@@ -771,8 +771,8 @@ ACMD(do_cast)
 					}
 					else if (ch->extra_specialization_data.is_mage_spec())
 					{
-						elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(ch->extra_specialization_data.current_spec_info);
-						if (spec_data->exposed_target_id == tmpwtl.targ2.ptr.ch->abs_number)
+						elemental_spec_data* spec_data = ch->extra_specialization_data.get_mage_spec();
+						if (spec_data->exposed_target == tmpwtl.targ2.ptr.ch)
 						{
 							send_to_char("You have already exposed your target to the elements!\n\r", ch);
 							return;
@@ -786,17 +786,17 @@ ACMD(do_cast)
 		if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING))
 		{
 			/* putting the player into waiting list */
-			if ((GET_CASTING(ch) == CASTING_FAST) && (spell_prof == PROF_MAGE) && spell_index != SPELL_EXPOSE_ELEMENTS)
+			casting_time = CASTING_TIME(ch, spell_index);
+			if (spell_prof == PROF_MAGE && spell_index != SPELL_EXPOSE_ELEMENTS)
 			{
-				casting_time = int(CASTING_TIME(ch, spell_index) * .75);
-			}	
-			else if ((GET_CASTING(ch) == CASTING_SLOW) && (spell_prof == PROF_MAGE) && spell_index != SPELL_EXPOSE_ELEMENTS)
-			{
-				casting_time = int(CASTING_TIME(ch, spell_index) / .75);
-			}
-			else
-			{
-				casting_time = CASTING_TIME(ch, spell_index);
+				if (GET_CASTING(ch) == CASTING_FAST)
+				{
+					casting_time = int(CASTING_TIME(ch, spell_index) * .75);
+				}
+				else if (GET_CASTING(ch) == CASTING_SLOW)
+				{
+					casting_time = int(CASTING_TIME(ch, spell_index) / .75);
+				}
 			}
 
 			WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
@@ -1021,28 +1021,29 @@ ACMD(do_cast)
 		if (skills[spell_index].type == PROF_MAGE) 
 		{
 			int mana_cost = USE_MANA(ch, spell_index);
-			if (GET_CASTING(ch) == CASTING_FAST && spell_index != SPELL_EXPOSE_ELEMENTS)
+			if (spell_index != SPELL_EXPOSE_ELEMENTS)
 			{
-				mana_cost = mana_cost * 4 / 3;
-			}
-			else if (GET_CASTING(ch) == CASTING_SLOW && spell_index != SPELL_EXPOSE_ELEMENTS)
-			{
-				mana_cost = mana_cost * 3 / 4;
+				int casting = GET_CASTING(ch);
+				if (casting == CASTING_FAST)
+				{
+					mana_cost = mana_cost * 4 / 3;
+				}
+				else if (casting == CASTING_SLOW)
+				{
+					mana_cost = mana_cost * 3 / 4;
+				}
 			}
 			
-			if (ch->extra_specialization_data.current_spec_info && ch->extra_specialization_data.is_mage_spec() && tar_char)
+			elemental_spec_data* spec_data = ch->extra_specialization_data.get_mage_spec();
+			if (spec_data)
 			{
-				elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(ch->extra_specialization_data.current_spec_info);
-				if (tar_char->abs_number == spec_data->exposed_target_id)
+				if (tar_char == spec_data->exposed_target)
 				{
 					// Currently, spells cast by expose elements are free.
 					if (spell_index == spec_data->spell_id)
 					{
-						if (GET_CASTING(ch) == CASTING_NORMAL)
-						{
-							mana_cost = 0;
-						}
-						else if (GET_CASTING(ch) == CASTING_FAST)
+						mana_cost = 0;
+						if (GET_CASTING(ch) == CASTING_FAST)
 						{
 							mana_cost = USE_MANA(ch, spell_index) / 2;
 						}

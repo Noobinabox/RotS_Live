@@ -2033,7 +2033,7 @@ load_char(char *name, struct char_file_u *char_element)
 
 
 /* copy data from the file structure to a char struct */
-void	store_to_char(struct char_file_u *st, struct char_data *ch)
+void store_to_char(struct char_file_u *st, struct char_data *ch)
 {
    int	i;
 
@@ -2107,10 +2107,12 @@ void	store_to_char(struct char_file_u *st, struct char_data *ch)
    ch->specials2.leg_encumb = 0;
    ch->points.ENE_regen        = st->points.ENE_regen;
    ch->specials.ENERGY  = 1200;
+   SET_SHOOTING(ch, SHOOTING_NORMAL);
    
    utils::set_specialization(*ch, game_types::PS_None);
    int spec = st->profs.specialization;
    utils::set_specialization(*ch, game_types::player_specs(spec));
+   utils::set_casting(*ch, CASTING_NORMAL);
 
    CREATE(ch->player.name, char, strlen(st->name) + 1);
    strcpy(ch->player.name, st->name);
@@ -2871,7 +2873,7 @@ reset_char(struct char_data *ch)
 
 
 /* clear ALL the working variables of a char and do NOT free any space alloc'ed*/
-void	clear_char(struct char_data *ch, int mode)
+void clear_char(struct char_data *ch, int mode)
 {
   memset((char *)ch, (char)'\0', (int)sizeof(struct char_data));
   CREATE1(ch->profs, char_prof_data);

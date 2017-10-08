@@ -1210,19 +1210,22 @@ struct specialization_info
 
 struct elemental_spec_data : public specialization_info
 {
-	elemental_spec_data() : exposed_target_id(0), spell_id(0) { }
+	elemental_spec_data() : exposed_target(NULL), spell_id(0) { }
 
 	void reset()
 	{
-		exposed_target_id = 0;
+		exposed_target = NULL;
 		spell_id = 0;
 	}
 
 	/* Target (if any) that the character has 'exposed' to their element. */
-	int exposed_target_id;
+	char_data* exposed_target;
 	int spell_id;
 
 	virtual std::string to_string(char_data& character) const;
+
+protected:
+	void report_exposed_data(std::ostringstream& message_writer) const;
 };
 
 struct cold_spec_data : public elemental_spec_data
@@ -1407,13 +1410,23 @@ struct specialization_data
 	
 	specialization_info* current_spec_info;
 
-	bool is_mage_spec()
+	bool is_mage_spec() const
 	{
 		if (current_spec == game_types::PS_None)
 			return false;
 
 		return current_spec == game_types::PS_Darkness || current_spec == game_types::PS_Arcane ||
 			current_spec == game_types::PS_Fire || current_spec == game_types::PS_Cold || current_spec == game_types::PS_Lightning;
+	}
+
+	elemental_spec_data* get_mage_spec() const
+	{
+		if (is_mage_spec())
+		{
+			return static_cast<elemental_spec_data*>(current_spec_info);
+		}
+
+		return NULL;
 	}
 
 	game_types::player_specs get_current_spec() const { return current_spec; }

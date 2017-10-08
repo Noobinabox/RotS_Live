@@ -3238,7 +3238,9 @@ introduce_char(struct descriptor_data *d)
 	  GET_IDNUM(d->character));
   log(buf);
 
+  SET_SHOOTING(d->character, SHOOTING_NORMAL);
   utils::set_specialization(*d->character, game_types::PS_None);
+  utils::set_casting(*d->character, CASTING_NORMAL);
 
   if((fp = Crash_get_file_by_name(GET_NAME(d->character), "wb")))
     fclose(fp);

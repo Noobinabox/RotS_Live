@@ -203,10 +203,13 @@ namespace utils
 		return character.specials.casting;
 	}
 
+	//============================================================================
 	void set_casting(char_data& character, int value)
 	{
-		if (!is_npc(character))
+		if (is_pc(character))
+		{
 			character.specials.casting = value;
+		}
 	}
 
 	//============================================================================
@@ -1388,7 +1391,22 @@ std::string elemental_spec_data::to_string(char_data& character) const
 	message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
 	message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
 	message_writer << "------------------------------------------------------------" << std::endl;
+	report_exposed_data(message_writer);
 	return message_writer.str();
+}
+
+//============================================================================
+void elemental_spec_data::report_exposed_data(std::ostringstream& message_writer) const
+{
+	if (exposed_target)
+	{
+		const skill_data* skills = get_skill_array();
+		const char* skill_name = skills[spell_id].name;
+
+		message_writer << utils::get_name(*exposed_target) << " is exposed to the spell ";
+		message_writer << "[" << skill_name << "]." << std::endl;
+		message_writer << "------------------------------------------------------------" << std::endl;
+	}
 }
 
 //============================================================================
@@ -1417,6 +1435,7 @@ std::string cold_spec_data::to_string(char_data& character) const
 	message_writer << "\tTotal Damage: " << total_cone_of_cold_damage << std::endl << std::endl;
 	message_writer << "\tTotal Attacks Stopped: " << get_total_energy_sapped() / ENE_TO_HIT << std::endl;
 	*/
+	report_exposed_data(message_writer);
 	return message_writer.str();
 }
 
@@ -1440,6 +1459,7 @@ std::string fire_spec_data::to_string(char_data& character) const
 		message_writer << "Your searing darkness spell deals significantly more fire damage." << std::endl;
 	}
 	message_writer << "------------------------------------------------------------" << std::endl;
+	report_exposed_data(message_writer);
 	return message_writer.str();
 }
 
@@ -1455,6 +1475,7 @@ std::string lightning_spec_data::to_string(char_data& character) const
 	message_writer << "Lightning bolt does not lose effectiveness indoors, and deals increased damage." << std::endl;
 	message_writer << "You can cast lightning strike without a storm at slightly reduced effectiveness." << std::endl;
 	message_writer << "------------------------------------------------------------" << std::endl;
+	report_exposed_data(message_writer);
 	return message_writer.str();
 }
 
@@ -1478,6 +1499,7 @@ std::string darkness_spec_data::to_string(char_data& character) const
 		message_writer << "Your searing darkness spell deals additional dark damage." << std::endl;
 	}
 	message_writer << "------------------------------------------------------------" << std::endl;
+	report_exposed_data(message_writer);
 	return message_writer.str();
 }
 
@@ -1492,6 +1514,8 @@ std::string arcane_spec_data::to_string(char_data& character) const
 	message_writer << "You can cast spells at a normal, fast, or slow pace." << std::endl;
 	message_writer << "Slow cast spells against exposed targets will restore mana." << std::endl;
 	message_writer << "------------------------------------------------------------" << std::endl;
+	report_exposed_data(message_writer);
+
 	return message_writer.str();
 }
 

@@ -2470,8 +2470,8 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
 	}
 
 	// Player is of the appropriate spec - cast the data.
-	elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(caster->extra_specialization_data.current_spec_info);
-	spec_data->exposed_target_id = victim->abs_number;
+	elemental_spec_data* spec_data = caster->extra_specialization_data.get_mage_spec();
+	spec_data->exposed_target = victim;
 
 	const room_data& current_room = world[caster->in_room];
 	int weather_type = weather_info.sky[current_room.sector_type];

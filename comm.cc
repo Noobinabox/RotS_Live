@@ -276,15 +276,13 @@ void run_the_game(sh_int port)
 
 void clean_expose_elements()
 {
-	typedef std::vector<char_data*>::iterator iter_type;
-
-	for (iter_type iter = specialized_mages.begin(); iter != specialized_mages.end(); )
+	for (char_iter iter = specialized_mages.begin(); iter != specialized_mages.end(); )
 	{
 		char_data* mage = *iter;
 		if (mage->extra_specialization_data.is_mage_spec())
 		{
-			elemental_spec_data* spec_data = static_cast<elemental_spec_data*>(mage->extra_specialization_data.current_spec_info);
-			if (spec_data->exposed_target_id != 0)
+			elemental_spec_data* spec_data = mage->extra_specialization_data.get_mage_spec();
+			if (spec_data->exposed_target)
 			{
 				// The mage has cast 'expose elements' on a target.  If that target is no longer
 				// in the room, remove this.
@@ -294,7 +292,7 @@ void clean_expose_elements()
 				bool found_target = false;
 				for (char_data* person = current_room.people; person; person = person->next_in_room)
 				{
-					if (person->abs_number == spec_data->exposed_target_id)
+					if (person == spec_data->exposed_target)
 					{
 						found_target = true;
 						break;
@@ -326,9 +324,7 @@ void track_specialized_mage(char_data* mage)
 	if (!mage)
 		return;
 
-	typedef std::vector<char_data*>::iterator iter_type;
-
-	iter_type found_mage = std::find(specialized_mages.begin(), specialized_mages.end(), mage);
+	char_iter found_mage = std::find(specialized_mages.begin(), specialized_mages.end(), mage);
 	if (found_mage == specialized_mages.end())
 	{
 		specialized_mages.push_back(mage);
@@ -341,9 +337,7 @@ void untrack_specialized_mage(char_data* mage)
 	if (!mage)
 		return;
 
-	typedef std::vector<char_data*>::iterator iter_type;
-
-	iter_type found_mage = std::remove(specialized_mages.begin(), specialized_mages.end(), mage);
+	char_iter found_mage = std::remove(specialized_mages.begin(), specialized_mages.end(), mage);
 	if (found_mage != specialized_mages.end())
 	{
 		specialized_mages.erase(found_mage);

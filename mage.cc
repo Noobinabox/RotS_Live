@@ -1415,7 +1415,7 @@ ASPELL(spell_cone_of_cold)
 	{
 		bool is_cold_spec = utils::get_specialization(*caster) == game_types::PS_Cold;
 
-		int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
+		int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
 		bool saved = new_saves_spell(caster, victim, save_bonus);
 		if (saved)
 		{

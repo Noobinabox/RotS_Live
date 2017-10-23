@@ -461,16 +461,11 @@ namespace
 	{
 		if (spell_index == SPELL_EXPOSE_ELEMENTS)
 		{
-			game_types::player_specs spec = utils::get_specialization(character);
-			if (spec == game_types::PS_Arcane || spec == game_types::PS_Cold ||
-				spec == game_types::PS_Darkness || spec == game_types::PS_Fire ||
-				spec == game_types::PS_Lightning)
+			if (character.extra_specialization_data.is_mage_spec() == false)
 			{
-				return true;
+				send_to_char("You need to have a mage specialization to cast this spell!\n\r", &character);
+				return false;
 			}
-
-			send_to_char("You need to have a mage specialization to cast this spell!\n\r", &character);
-			return false;
 		}
 
 		if (utils::is_npc(character) && utils::is_mob_flagged(character, MOB_PET))
@@ -531,7 +526,7 @@ namespace
 			send_to_char("You can not cast this!!\n\r", &character);
 			return false;
 		}
-		if ((GET_KNOWLEDGE(&character, spell_index) <= 0))
+		if ((GET_KNOWLEDGE(&character, spell_index) <= 0) && spell_index != SPELL_EXPOSE_ELEMENTS)
 		{
 			send_to_char("You don't know this spell.\n\r", &character);
 			return false;
@@ -541,6 +536,7 @@ namespace
 			send_to_char("You can't concentrate enough.\n\r", &character);
 			return false;
 		}
+		
 		if (spell.type == PROF_MAGE && (character.tmpabilities.mana < USE_MANA(&character, spell_index)))
 		{
 			send_to_char("You can't summon enough energy to cast the spell.\n\r", &character);

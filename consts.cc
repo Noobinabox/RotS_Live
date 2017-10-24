@@ -18,7 +18,7 @@
 #include "limits.h"
 
  char	circlemud_version[] = {
-   "Arda: The Fourth Age, version 1.0.3.3\n\r" };
+   "Arda: The Fourth Age, version 1.0.3.3a\n\r" };
 
 
 //const

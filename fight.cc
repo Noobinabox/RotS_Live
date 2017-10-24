@@ -1246,76 +1246,6 @@ namespace
 			 || MOB_FLAGGED(character, MOB_GUARDIAN)) 
 			 && character->in_room == character->master->in_room;
 	}
-
-	// Gets all PCs that have some kill contribution.  The vector will contain duplicates.
-	void get_possible_killers(char_data* killer, char_data* dead_man, char_vector& total_killers)
-	{
-		// Everyone in the room that is fighting the dead man gets kill credit.
-		// Everyone in the room that is in the same group as someone fighting the dead man gets kill credit.
-		// If someone has a pet, and the pet is fighting the target, they get kill credit.
-
-		const room_data& death_room = world[dead_man->in_room];
-		for (char_data* character = death_room.people; character; character = character->next_in_room)
-		{
-			group_data* group = character->group;
-			// Everyone in the group of someone fighting the dead man gets XP.
-			if (character->specials.fighting == dead_man)
-			{
-				total_killers.push_back(character);
-				if (group)
-				{
-					group->get_pcs_in_room(total_killers, dead_man->in_room);
-				}
-			}
-
-			// If an orc follower or pet contributed to the kill, give his master credit if he is in the same room.
-			if (IS_NPC(character) && character->master && dead_man != character->master)
-			{
-				if (master_gets_credit(character))
-				{
-					char_data* master = character->master;
-					total_killers.push_back(master);
-
-					// If the master and pet are in different groups, ensure both groups get credit.
-					if (master->specials.fighting == dead_man)
-					{
-						if (master->group && master->group != group)
-						{
-							master->group->get_pcs_in_room(total_killers, dead_man->in_room);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	struct kill_share_data
-	{
-		kill_share_data() : killer_count(0), level_total(0), perception_total(0), killing_pcs() { };
-
-		void fill_kill_share(const char_vector& total_killers, char_data* dead_man)
-		{
-			// Filters out duplicates and handles totalling up data.
-			for (const_char_iter iter = total_killers.begin(); iter != total_killers.end(); ++iter)
-			{
-				char_data* killer = *iter;
-				if (utils::is_pc(*killer) && killer != dead_man)
-				{
-					if (killing_pcs.insert(killer).second)
-					{
-						++killer_count;
-						level_total += GET_LEVELB(killer);
-						perception_total += GET_PERCEPTION(killer);
-					}
-				}
-			}
-		}
-
-		int killer_count;
-		int level_total;
-		int perception_total;
-		std::set<char_data*> killing_pcs;
-	};
 }
 
 void group_gain(char_data* killer, char_data* dead_man)
@@ -1329,14 +1259,72 @@ void group_gain(char_data* killer, char_data* dead_man)
 	if (killer->in_room != dead_man->in_room)
 		return;
 
-	char_vector total_killers;
-	get_possible_killers(killer, dead_man, total_killers);
+	char_vector involved_killers;
+	char_set player_killers;
+	
+	// Collect everyone in the room who is fighting the person that died.
+	const room_data& death_room = world[dead_man->in_room];
+	for (char_data* character = death_room.people; character; character = character->next_in_room)
+	{
+		if (character->specials.fighting == dead_man)
+		{
+			involved_killers.push_back(character);
+			if (utils::is_pc(*character))
+			{
+				player_killers.insert(character);
+			}
+		}
+	}
 
-	kill_share_data share_data;
-	share_data.fill_kill_share(total_killers, dead_man);
+	for (char_iter killer_iter = involved_killers.begin(); killer_iter != involved_killers.end(); ++killer_iter)
+	{
+		// Iterate over the group of each killer.
+		char_data* local_killer = *killer_iter;
+		if (local_killer->group)
+		{
+			for (char_iter group_iter = local_killer->group->begin(); group_iter != local_killer->group->end(); ++group_iter)
+			{
+				char_data* groupee = *group_iter;
+				if (groupee->in_room == dead_man->in_room)
+				{
+					player_killers.insert(groupee);
+				}
+			}
+		}
 
-	if (share_data.killer_count == 0)
+		if (utils::is_npc(*local_killer))
+		{
+			if (local_killer->master && master_gets_credit(local_killer))
+			{
+				char_data* master = local_killer->master;
+				player_killers.insert(master);
+
+				// Master is in a different group than its pet.  Add credit to the master's group too.
+				if (master->group != local_killer->group)
+				{
+					for (char_iter group_iter = master->group->begin(); group_iter != master->group->end(); ++group_iter)
+					{
+						char_data* groupee = *group_iter;
+						if (groupee->in_room == dead_man->in_room)
+						{
+							player_killers.insert(groupee);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (player_killers.size() == 0)
 		return;
+
+	int perception_total = 0;
+	int level_total = 0;
+	for (char_set_iter iter = player_killers.begin(); iter != player_killers.end(); ++iter)
+	{
+		level_total += GET_LEVELB(*iter);
+		perception_total += GET_PERCEPTION(*iter);
+	}
 
 	int share = GET_EXP(dead_man) / 10;
 	int npc_level_malus = 0;
@@ -1351,9 +1339,9 @@ void group_gain(char_data* killer, char_data* dead_man)
 		}
 		
 		npc_level_malus = dead_man->specials.attacked_level;
-		share_data.level_total += npc_level_malus;
+		level_total += npc_level_malus;
 
-		int num_killers = share_data.killer_count;
+		int num_killers = (int)player_killers.size();
 		share = share * (num_killers + 1) / num_killers;
 	}
 	else
@@ -1361,19 +1349,18 @@ void group_gain(char_data* killer, char_data* dead_man)
 		spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
 	}
 
-	share = share / share_data.level_total;
+	share = share / level_total;
 
-	typedef std::set<char_data*>::iterator iter;
-	for (iter killer_iter = share_data.killing_pcs.begin(); killer_iter != share_data.killing_pcs.end(); ++killer_iter)
+	for (char_set_iter killer_iter = player_killers.begin(); killer_iter != player_killers.end(); ++killer_iter)
 	{
 		char_data* character = *killer_iter;
 		if(character->player.level >= LEVEL_IMMORT)
 			continue;
 
 		// Do spirit gain.
-		if (share_data.perception_total > 0 && spirit_gain > 0)
+		if (perception_total > 0 && spirit_gain > 0)
 		{
-			int gain = spirit_gain * GET_PERCEPTION(character) / share_data.perception_total / 100;
+			int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
 			if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character)))
 			{
 				vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
@@ -1382,7 +1369,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 		}
 
 		int capped_level = GET_LEVELB(character);
-		int group_bonus = std::min(share * capped_level / 2, (share_data.level_total - npc_level_malus - capped_level) * share / 4);
+		int group_bonus = std::min(share * capped_level / 2, (level_total - npc_level_malus - capped_level) * share / 4);
 		int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus);
 
 		vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);

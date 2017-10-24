@@ -23,6 +23,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <set>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch)*2)
 const int ENE_TO_HIT = 1200;
@@ -213,6 +214,10 @@ const int MYSTIC_GUARDIAN = 2;
 typedef std::vector<struct char_data*> char_vector;
 typedef char_vector::iterator char_iter;
 typedef char_vector::const_iterator const_char_iter;
+
+typedef std::set<struct char_data*> char_set;
+typedef char_set::iterator char_set_iter;
+typedef char_set::const_iterator const_char_set_iter;
 
 struct combat_result_struct
 {

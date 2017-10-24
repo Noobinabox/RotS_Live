@@ -84,11 +84,13 @@ ACMD(do_hit)
       act("$n hits $mself, and says OUCH!", FALSE, ch, 0, victim, TO_ROOM);
       return;
     }
-    if(IS_AFFECTED(ch, AFF_CHARM) && (ch->master == victim)) {
-      act("$N is just such a good friend, you simply can't hit $M.", 
-	  FALSE, ch, 0, victim, TO_CHAR);
-      return;
-    }
+	if ((IS_AFFECTED(ch, AFF_CHARM) && ch->master == victim) || 
+		(IS_AFFECTED(victim, AFF_CHARM) && victim->master == ch))
+	{
+		act("$N is just such a good friend, you simply can't hit $M.",
+			FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
     if(!IS_NPC(ch) && IS_NPC(victim) && (subcmd == SCMD_HIT) && 
        (GET_LEVEL(ch) < 4) && (GET_LEVEL(victim) > GET_LEVEL(ch)*3 + 2)) {
       act("Your arm refuses to attack such a powerful opponent.\n\r"

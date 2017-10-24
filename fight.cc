@@ -1300,7 +1300,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 				player_killers.insert(master);
 
 				// Master is in a different group than its pet.  Add credit to the master's group too.
-				if (master->group != local_killer->group)
+				if (master->group && (master->group != local_killer->group))
 				{
 					for (char_iter group_iter = master->group->begin(); group_iter != master->group->end(); ++group_iter)
 					{

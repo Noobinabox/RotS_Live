@@ -1287,7 +1287,10 @@ void group_gain(char_data* killer, char_data* dead_man)
 				char_data* groupee = *group_iter;
 				if (groupee->in_room == dead_man->in_room)
 				{
-					player_killers.insert(groupee);
+					if (utils::is_pc(*groupee))
+					{
+						player_killers.insert(groupee);
+					}
 				}
 			}
 		}
@@ -1297,7 +1300,10 @@ void group_gain(char_data* killer, char_data* dead_man)
 			if (local_killer->master && master_gets_credit(local_killer))
 			{
 				char_data* master = local_killer->master;
-				player_killers.insert(master);
+				if (utils::is_pc(*master))
+				{
+					player_killers.insert(master);
+				}
 
 				// Master is in a different group than its pet.  Add credit to the master's group too.
 				if (master->group && (master->group != local_killer->group))
@@ -1307,7 +1313,10 @@ void group_gain(char_data* killer, char_data* dead_man)
 						char_data* groupee = *group_iter;
 						if (groupee->in_room == dead_man->in_room)
 						{
-							player_killers.insert(groupee);
+							if (utils::is_pc(*groupee))
+							{
+								player_killers.insert(groupee);
+							}
 						}
 					}
 				}

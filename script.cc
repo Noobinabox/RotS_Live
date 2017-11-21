@@ -860,11 +860,19 @@ run_script(struct info_script *info, struct script_data *position)
 		break;
 		
 	  case SCRIPT_DO_FOLLOW:
+		//tmpch is follower
+		//tmpch2 is leader
 		if (curr->param[0] && curr->param[1]){
 		  tmpch = get_char_param(curr->param[0], info);
 		  tmpch2 = get_char_param(curr->param[1], info);
 		  if (tmpch && tmpch2)
-			add_follower(tmpch, tmpch2, FOLLOW_MOVE);
+			{
+				if(circle_follow(tmpch, tmpch2, FOLLOW_MOVE))
+				{
+					stop_follower(tmpch2, FOLLOW_MOVE);
+				}
+				add_follower(tmpch, tmpch2, FOLLOW_MOVE);
+			}
 		}
 		curr = curr->next;
 		break;

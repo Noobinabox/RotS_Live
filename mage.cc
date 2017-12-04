@@ -57,24 +57,53 @@ int get_magic_power(const char_data* caster)
 	return caster_level + level_modifier + intel_factor;
 }
 
-int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, int spell_number, int hit_location)
+bool should_apply_spell_penetration(const char_data* caster)
+{
+	bool apply_spell_pen = utils::is_pc(*caster);
+	if (apply_spell_pen == false)
+	{
+		if (utils::is_mob_flagged(*caster, MOB_ORC_FRIEND) && utils::is_affected_by(*caster, AFF_CHARM))
+		{
+			apply_spell_pen = caster->master && utils::is_pc(*(caster->master));
+		}
+	}
+	return apply_spell_pen;
+}
+
+double get_spell_pen_value(const char_data* caster)
+{
+	int mage_level = utils::get_prof_level(PROF_MAGE, *caster);
+	if (utils::is_npc(*caster) && utils::is_affected_by(*caster, AFF_CHARM) && caster->master)
+	{
+		mage_level += utils::get_prof_level(PROF_MAGE, *(caster->master)) / 3;
+	}
+
+	return mage_level / 5.0;
+}
+
+double get_victim_saving_throw(const char_data* caster, const char_data* victim)
 {
 	double saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
-	if (utils::is_pc(*caster))
+
+	if (should_apply_spell_penetration(caster))
 	{
-		if (utils::is_npc(*victim))
-		{
-			saving_throw = saving_throw - (utils::get_prof_level(PROF_MAGE, *caster) / 5.0);
-		}
-		else
+		double spell_pen = get_spell_pen_value(caster);
+		saving_throw = saving_throw - spell_pen;
+		if (utils::is_pc(*victim))
 		{
 			// Players that are a higher level than their attacker's mage level
 			// get some innate damage reduction.  Players at a lower level take
 			// extra damage.
-			double saving_throw_bonus = (utils::get_level_a(*victim) - utils::get_prof_level(PROF_MAGE, *caster)) / 5.0;
-			saving_throw += saving_throw_bonus;
+			saving_throw += utils::get_level_a(*victim) / 5.0;
 		}
 	}
+
+	return saving_throw;
+}
+
+int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, int spell_number, int hit_location)
+{
+	double saving_throw = get_victim_saving_throw(caster, victim);
 
 	double damage_multiplier = 1.0;
 	if (saving_throw > 0)

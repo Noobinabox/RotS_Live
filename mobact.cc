@@ -147,32 +147,53 @@ void one_mobile_activity(char_data* ch)
 		}
 
 		/* mob - helper */
-		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_HELPER) && !ch->specials.fighting) 
+		const room_data& room = world[ch->in_room];
+		if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_HELPER) && !ch->specials.fighting)
 		{
-			for (tmp_ch = world[ch->in_room].people; tmp_ch;
-				tmp_ch = tmp_ch->next_in_room)
-				if (IS_NPC(tmp_ch) && tmp_ch->specials.fighting &&
-					CAN_SEE(ch, tmp_ch)) {
-					tmp = 0;        /*  0 = no assist */
+			for (char_data* ally = room.people; ally; ally = ally->next_in_room)
+			{
+				// Don't assist allies that you are aggressive to.
+				if (IS_AGGR_TO(ch, ally))
+					continue;
 
-					if ((GET_ALIGNMENT(ch) * GET_ALIGNMENT(tmp_ch) > 0) ||
-						(IS_AGGR_TO(ch, tmp_ch->specials.fighting)))
-						tmp = 1;
-					if (IS_AGGR_TO(ch, tmp_ch) || (MOB_FLAGGED(tmp_ch, MOB_ORC_FRIEND) &&
-						MOB_FLAGGED(tmp_ch, MOB_PET)))
-						tmp = 0;
+				// Never assist guardians or orc followers.
+				if (MOB_FLAGGED(ally, MOB_GUARDIAN) || (MOB_FLAGGED(ally, MOB_ORC_FRIEND) && MOB_FLAGGED(ally, MOB_PET)))
+					continue;
 
-					if (tmp) {
+				char_data* enemy = ally->specials.fighting;
+				if (enemy && IS_NPC(ally) && CAN_SEE(ch, ally))
+				{
+					bool assist = false;
+					if (IS_AGGR_TO(ch, enemy))
+					{
+						// Always assist against targets that you are aggressive to.
+						assist = true;
+					}
+					else
+					{
+						// Assist if the ally has the same alignment as the helper, and the ally
+						// is not aggressive to its enemy.
+						if (GET_ALIGNMENT(ch) * GET_ALIGNMENT(ally) > 0 && !IS_AGGR_TO(ally, enemy))
+						{
+							assist = true;
+						}
+					}
+
+					if (assist)
+					{
 						if (GET_INT_BASE(ch) >= 7)
+						{
 							do_say(ch, "I must protect my friend!", 0, 0, 0);
+						}
 						wtl.targ1.type = TARGET_CHAR;
-						wtl.targ1.ptr.ch = tmp_ch;
-						wtl.targ1.ch_num = tmp_ch->abs_number;
+						wtl.targ1.ptr.ch = ally;
+						wtl.targ1.ch_num = ally->abs_number;
 						wtl.cmd = CMD_ASSIST;
 						do_assist(ch, "", &wtl, 0, 0);
 						break;
 					}
 				}
+			}
 		}
 
 		/* bodyguard - follower */

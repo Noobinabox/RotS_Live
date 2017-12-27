@@ -388,10 +388,27 @@ ASPELL(spell_locate_living) {
 
 ASPELL(spell_cure_self)
 {
+	affected_type *af;
+	af = affected_by_spell(caster, SKILL_MARK);
+
 	if (caster->tmpabilities.hit >= caster->abilities.hit)
 	{
-		send_to_char("You are already healthy.\n\r", caster);
-		return;
+		if(!af)
+		{
+			send_to_char("You are already healthy.\n\r", caster);
+			return;
+		}
+		else
+		{
+			af->duration = std::max(af->duration - 30, 0);
+			send_to_char("You close the wounds in your chest.\n\r", caster);
+			return;
+		}
+	}
+
+	if(af)
+	{
+		af->duration = std::max(af->duration - 20, 0);
 	}
 
 	int caster_level = get_mage_caster_level(caster);

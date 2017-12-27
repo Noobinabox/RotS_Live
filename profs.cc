@@ -47,22 +47,27 @@ struct prof_type existing_profs[DEFAULT_PROFS] = {
 };
 
 sh_int race_modifiers[MAX_RACES][8] = {
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 2, 0,-2,-3, 4,-1, 0, 0},
-  {-1, 1, 0, 2,-2, 0, 0, 0},
-  {-3,-1, 0, 2, 2, 0, 0, 0},
-  { 0, 2, 0, 2,-2, 0, 0, 0},  /* 5 */
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  { 0,-4,-3, 0, 2,-3, 0, 0},  /* 11 */
-  { 0, 0,-1, 0, 1, 0, 0, 0},
-  {-1,-3,-3,-1,-1,-5, 0, 0},
-  { 0, 0, 0, 0, 0, 0, 0, 0},
-  {-1,-1,-3, 0, 1,-2, 0, 0}
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // God
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Human
+  { 2, 0,-2,-3, 4,-1, 0, 0}, // Dwarf
+  {-1, 1, 0, 2,-2, 0, 0, 0}, // Wood Elf
+  {-3,-1, 0, 2, 2, 0, 0, 0}, // Hobbit
+  { 0, 2, 0, 2,-2, 0, 0, 0}, // High-Elf
+  { 4,-4,-2, 0, 4,-2, 0, 0}, // Beorning
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Unused
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Unused
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Unused
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Unsed
+  { 0,-4,-3, 0, 2,-3, 0, 0}, // Uruk-Hai
+  { 0, 0,-1, 0, 1, 0, 0, 0}, // !NPC - Harad!
+  {-1,-3,-3,-1,-1,-5, 0, 0}, // Common Orc
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // !NPC - Easterling!
+  {-1,-1,-3, 0, 1,-2, 0, 0}, // Uruk-Lhuth
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // !NPC - Undead!
+  { 4,-4,-3,-2, 4,-3, 0, 0}, // Olog-Hai
+  { 0,-2,-2, 2, 0,-3, 0, 0}, // Haradrim
+  { 0, 0, 0, 0, 0, 0, 0, 0}, // Unused
+  { 0, 0, 0, 0, 0, 0, 0, 0}  // !NPC - Troll!
 };
 
 sh_int get_str_mod(int race)
@@ -815,6 +820,11 @@ void recalc_abilities(char_data* character)
 		if ((GET_RACE(character) == RACE_WOOD) || GET_RACE(character) == RACE_HIGH)
 			character->abilities.move += 15;
 
+		// Giving the beorning race 50+ moves
+		if (GET_RACE(character) == RACE_BEORNING) {
+			character->abilities.move += 50;
+		}
+
 		character->tmpabilities.move = std::min(character->tmpabilities.move, character->abilities.move);
 
 		weapon = character->equipment[WIELD];
@@ -863,6 +873,8 @@ void recalc_abilities(char_data* character)
 		else
 		{
 			GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);
+
+			/*---------------- Beornings get a different speed calc here -----------------*/
 		}
 	}
 }

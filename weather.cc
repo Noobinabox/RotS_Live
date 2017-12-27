@@ -285,6 +285,23 @@ void weather_to_char(char_data *ch){
   
 }
 
+void age_bleed_tracks()
+{
+	room_data* tmproom;
+	int roomnum, tmp;
+	extern int top_of_world;
+	extern struct room_data world;
+
+	for (roomnum = 0; roomnum <= top_of_world; roomnum++)
+	{
+		tmproom = &world[roomnum];
+		for (tmp = 0; tmp < NUM_OF_BLOOD_TRAILS; tmp++)
+		{
+			tmproom->bleed_track[tmp].condition += (weather_info.snow[tmproom->sector_type] ? number(0, 1) : sector_age_value(tmproom->sector_type));
+		}
+	}
+}
+
 void age_room_tracks(){
   room_data * tmproom;
   int roomnum, tmp;
@@ -357,6 +374,7 @@ void	another_hour(int mode)
      }     
    }
   age_room_tracks();
+  age_bleed_tracks();
 }
 
 

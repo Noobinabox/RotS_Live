@@ -1372,8 +1372,15 @@ void group_gain(char_data* killer, char_data* dead_man)
 			int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
 			if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character)))
 			{
-				vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
-				GET_SPIRIT(character) += gain;
+				if(GET_SPIRIT(character) >= 99000)
+				{
+					vsend_to_char(character, "You have capped out on spirits.\n\r");
+				}
+				else
+				{
+					vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
+					GET_SPIRIT(character) += gain;
+				}
 			}
 		}
 
@@ -1569,7 +1576,14 @@ void generate_damage_message(char_data* attacker, char_data *victim, int damage,
 	{
 		if (!attacker->equipment[WIELD])
 		{
-			dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			if(GET_RACE(attacker) == RACE_BEORNING)
+			{
+				dam_message(damage, attacker, victim, TYPE_CLAW, body_part);
+			}
+			else
+			{
+				dam_message(damage, attacker, victim, TYPE_HIT, body_part);
+			}
 		}
 		else
 		{
@@ -2270,6 +2284,13 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 	if (location < 0 || location > MAX_WEAR)
 		return 0;
 
+	if(GET_RACE(victim) == RACE_BEORNING && (victim->equipment[location] == NULL))
+	{
+		int damage_reduction = 2;
+		damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
+		damage -= damage_reduction;
+	}
+
 	/* If they've got armor, let's let it do its thing */
 	if (victim->equipment[location] != NULL) 
 	{
@@ -2460,6 +2481,20 @@ int get_evasion_malus(const char_data& attacker, const char_data& victim)
 	return BASE_VALUE + spec_bonus + defender_bonus - attacker_offset;
 }
 
+int natural_attack_dam(struct char_data *attacker)
+{
+	int dam, level_factor, str_factor, warrior_factor;
+	
+	if(utils::get_skill(*attacker, SKILL_NATURAL_ATTACK) == 0)
+		return dam = BAREHANDED_DAMAGE * 10;
+	
+	level_factor = GET_LEVEL(attacker);
+	level_factor = level_factor / 3;
+	warrior_factor = utils::get_prof_level(PROF_WARRIOR, *attacker);
+	str_factor = GET_STR(attacker);
+	return dam = level_factor + str_factor + warrior_factor;
+}
+
 //============================================================================
 void hit(struct char_data *ch, struct char_data *victim, int type)
 {
@@ -2470,7 +2505,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 	int location;
 	int tmp; /* rolled number stored as the chance to hit, adds OB */
 	struct waiting_type tmpwtl;
-	extern struct race_bodypart_data bodyparts[15];
+	extern struct race_bodypart_data bodyparts[16];
 
 	if (ch->in_room != victim->in_room) {
 		log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");
@@ -2493,7 +2528,7 @@ void hit(struct char_data *ch, struct char_data *victim, int type)
 		else {
 			w_type = TYPE_HIT;
 			if (!IS_NPC(ch))
-				dam = BAREHANDED_DAMAGE * 10;
+				dam = natural_attack_dam(ch);
 		}
 	}
 
@@ -2726,6 +2761,33 @@ bool does_double_hit_proc(const char_data* character)
 	return number() >= 0.9;
 }
 
+bool can_beorning_swipe(struct char_data* character)
+{
+	assert(character);
+
+	if(GET_RACE(character) != RACE_BEORNING)
+		return false;
+
+	if(character->specials.fighting == NULL)
+		return false;
+	
+	if(character->specials.fighting->in_room != character->in_room)
+		return false;
+
+	return true;
+}
+
+bool does_beorning_swipe_proc(struct char_data* character)
+{
+	int warrior_level, skill_level;
+	double chance;
+	warrior_level = utils::get_prof_level(PROF_WARRIOR, *character);
+	skill_level = utils::get_raw_knowledge(*character, SKILL_SWIPE);
+	chance = (skill_level * (warrior_level + 4)) / 100;
+	chance = (100 - chance) / 100;
+	return number() >= chance;
+}
+
 namespace
 {
 	timeval last_time; 
@@ -2820,6 +2882,17 @@ void perform_violence(int mini_tics)
 
 						fighter->specials.ENERGY = current_energy;
 						hit(fighter, victim, TYPE_UNDEFINED);
+					}
+
+					if (can_beorning_swipe(fighter) && does_beorning_swipe_proc(fighter))
+					{
+						char_data* victim = fighter->specials.fighting;
+						act("You rear back and extend your foreleg swiping at $N!", FALSE, fighter, NULL, victim, TO_CHAR);
+						act("$n rears back and extends their foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
+						act("$n rears back and extends their foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
+						fighter->specials.ENERGY = current_energy;
+						hit(fighter, victim, TYPE_UNDEFINED);					
+
 					}
 				}
 				else /* Not in same room */

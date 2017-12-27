@@ -443,7 +443,7 @@ namespace utils
 	bool is_evil_race(const char_data& character)
 	{
 		int race = character.player.race;
-		return race == RACE_URUK || race == RACE_ORC || race == RACE_MAGUS;
+		return race == RACE_URUK || race == RACE_ORC || race == RACE_MAGUS || race == RACE_OLOGHAI || race == RACE_HARADRIM;
 	}
 
 	//============================================================================

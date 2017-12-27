@@ -40,6 +40,7 @@
 #define SKILL_PIERCE             4
 #define SKILL_SPEARS             5
 #define SKILL_AXE                6
+#define SKILL_NATURAL_ATTACK     7
 
 #define SKILL_SWIM               8
 #define SKILL_TWOHANDED	         9
@@ -148,23 +149,30 @@
 #define SPELL_WORD_OF_SHOCK     104
 #define SPELL_SPEAR_OF_DARKNESS 105
 #define SPELL_LEACH             106
-#define SPELL_BLACK_ARROW	107
+#define SPELL_BLACK_ARROW       107
 #define SPELL_SHIELD            108
-#define SPELL_DETECT_EVIL	109
-#define SPELL_ATTUNE		110
-#define SPELL_CONFUSE		111
+#define SPELL_DETECT_EVIL	    109
+#define SKILL_BLINDING      	110
+#define SPELL_CONFUSE		    111
 #define SPELL_EXPOSE_ELEMENTS	112
+#define SKILL_BITE              113
+#define SKILL_SWIPE				114
+#define SKILL_MAUL				115
 
 #define SPELL_ASPHYXIATION      116
-#define SPELL_ARDA		117
+#define SPELL_ARDA		        117
 #define SPELL_ACTIVITY          118
 #define SPELL_RAGE              119
 #define SPELL_ANGER             120
+#define SKILL_MARK				124
 #define SPELL_NONE              127
 
 /* 130-150 are reserved for weapon types.  200 is suffering */
 #define SKILL_TRAP              151
+#define SKILL_REND				152
+
 #define SPELL_FIREBALL2         201
+#define SPELL_DRAGONSBREATH     202
 
 #define TYPE_UNDEFINED               -1
 #define SPELL_RESERVED_DBC            0  /* SKILL NUMBER ZERO */

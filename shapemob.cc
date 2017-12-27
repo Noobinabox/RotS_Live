@@ -81,6 +81,9 @@ void recalculate_mob(struct char_data * ch){
   case RACE_HIGH:
     mob->player.language = LANG_HUMAN;
     break;
+  case RACE_BEORNING:
+    mob->player.language = LANG_ANIMAL;
+    break;
   case RACE_URUK:
   case RACE_HARAD:
   case RACE_ORC:
@@ -213,7 +216,7 @@ void new_mob(struct char_data * ch)
 	SHAPE_PROTO(ch)->proto->specials.default_pos = POSITION_STANDING;
 	SHAPE_PROTO(ch)->proto->specials.butcher_item = 0;
 	SHAPE_PROTO(ch)->proto->specials2.perception = -1;
-	SHAPE_PROTO(ch)->proto->specials2.rp_flag = 0;
+	SHAPE_PROTO(ch)->proto->specials2.will_teach = 0;
 	SHAPE_PROTO(ch)->proto->player.corpse_num = 0;
 	SHAPE_PROTO(ch)->proto->specials.resistance = 0;
 	SHAPE_PROTO(ch)->proto->specials.vulnerability = 0;
@@ -280,13 +283,14 @@ write_proto(FILE *f, struct char_data *m, int num)
 		m->abilities.dex,
 		m->abilities.con,
 		m->abilities.lea);
-	fprintf(f, "%d %d %d %d %d %d 0\n",
+	fprintf(f, "%d %d %d %d %d %d %ld\n",
 		m->player.language,
 		m->specials2.perception,
 		m->specials.resistance,
 		m->specials.vulnerability,
 		m->specials.script_number,
-		m->points.spirit);
+		m->points.spirit,
+    m->specials2.will_teach);
 }
 
 
@@ -719,6 +723,15 @@ void shape_center_proto(struct char_data * ch, char * arg){
 	  }
   }
   break;
+  case 41:
+  {
+	  DIGITCHANGE("WILL TEACH", mob->specials2.will_teach);
+	  if (IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_CHAIN))
+	  {
+		  SHAPE_PROTO(ch)->editflag = proto_chain[41];
+	  }
+  }
+  break;
 #undef DIGITCHANGE
     case 48:
       if(!IS_SET(SHAPE_PROTO(ch)->flags,SHAPE_DIGIT_ACTIVE)){
@@ -816,7 +829,8 @@ void list_help(struct char_data * ch){
       send_to_char("37 - vulnerabilities;\n\r",ch);
       send_to_char("38 - script number;\n\r", ch);
       send_to_char("39 - roleplay flag;\n\r", ch);
-	  send_to_char("40 - mob spirit;\n\r", ch);
+	    send_to_char("40 - mob spirit;\n\r", ch);
+      send_to_char("41 - will teach;\n\r", ch);
       send_to_char("49 - mob creation sequence;\n\r",ch);
       send_to_char("50 - list;\n\r",ch); 
 return;
@@ -952,6 +966,8 @@ void list_proto(struct char_data * ch, struct char_data * mob)
 	send_to_char(str, ch);
 	sprintf(str, "(40) spirit:%d\n\r", mob->points.spirit);
 	send_to_char(str, ch);
+  sprintf(str, "(41) will teach     :%ld\n\r", mob->specials2.will_teach);
+  send_to_char(str, ch);
 
 }
 
@@ -1147,6 +1163,11 @@ int load_proto(struct char_data * ch, char * arg) {
 		{
 			SHAPE_PROTO(ch)->proto->points.spirit = tmp;
 		}
+
+    if (fscanf(file, "%ld ", &tmp) != EOF)
+    {
+      SHAPE_PROTO(ch)->proto->specials2.will_teach = tmp;
+    }
 
 		if ((format != 'M') && (format != 'N')) 
 		{

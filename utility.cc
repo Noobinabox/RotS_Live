@@ -238,6 +238,15 @@ get_race_weight(struct char_data *ch)
   case RACE_TROLL:
     return 80000 * gender_mod / 10;
 
+  case RACE_BEORNING:
+    return 80000 * gender_mod / 10;
+
+  case RACE_OLOGHAI:
+    return 80000 * gender_mod / 10;
+
+  case RACE_HARADRIM:
+    return 17000 * gender_mod / 10;
+
   case RACE_UNDEAD:
     return 5000 * gender_mod / 10;
 
@@ -300,6 +309,15 @@ get_race_height(struct char_data *ch)
   case RACE_UNDEAD:
     return 180 * gender_mod / 10;
 
+  case RACE_HARADRIM:
+    return 180 * gender_mod / 10;
+
+  case RACE_BEORNING:
+    return 225 * gender_mod / 10;
+  
+  case RACE_OLOGHAI:
+    return 225 * gender_mod / 10;
+
   default: 
     return 200;
   }
@@ -327,6 +345,9 @@ get_race_perception(struct char_data *ch)
   case RACE_MAGUS: return 30;
   case RACE_UNDEAD: return 60;
   case RACE_TROLL: return 30;
+  case RACE_HARADRIM: return 30;
+  case RACE_BEORNING: return 30;
+  case RACE_OLOGHAI: return 30;
   default: return 0;
   }
   return 0;
@@ -647,7 +668,7 @@ get_real_stealth(struct char_data *ch)
   if(GET_RACE(ch) == RACE_DWARF)
     percent -= 10;
 
-  if(GET_RACE(ch) == RACE_HOBBIT)
+  if(GET_RACE(ch) == RACE_HOBBIT || GET_RACE(ch) == RACE_BEORNING || GET_RACE(ch) == RACE_HARADRIM)
     percent += 5;
 
   percent -= utils::get_leg_encumbrance(*ch);
@@ -671,7 +692,7 @@ int get_real_OB(char_data* ch)
 	}
 
 	int sun_mod = 0;
-	int tmpob, tactics = 0;
+	int tmpob, tactics, weapon_skill = 0;
 
 	obj_data* weapon = ch->equipment[WIELD];
 
@@ -700,30 +721,39 @@ int get_real_OB(char_data* ch)
 	tmpob = GET_OB(ch);
 	tmpob -= utils::get_skill_penalty(*ch);
 
-	if (!weapon)
+	if (!weapon && utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK) == 0)
 	{
 		return tmpob + ob_bonus;
 	}
+  else if (!weapon && utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK) > 0)
+  {
+    weapon_skill = utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK);
+    tmpob -= (GET_STR(ch) / 2 - 6);
+  }
+  else 
+  {
+    weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(weapon->get_weapon_type()));
 
-	int weapon_skill = utils::get_raw_knowledge(*ch, weapon_skill_num(weapon->get_weapon_type()));
+    if (IS_TWOHANDED(ch)) 
+    {
+      if (weapon->is_ranged_weapon())
+      {
+        tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
+        weapon_skill = (weapon_skill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+      }
+      else
+      {
+        tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
+        weapon_skill = (weapon_skill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+      }
+    }
+    else
+    {
+      tmpob -= (weapon->obj_flags.value[2] * 2 - 6);
+    }
+  }
 
-	if (IS_TWOHANDED(ch)) 
-	{
-		if (weapon->is_ranged_weapon())
-		{
-			tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 100 - 15;
-			weapon_skill = (weapon_skill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
-		}
-		else
-		{
-			tmpob += weapon->obj_flags.value[2] * (200 + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 100 - 15;
-			weapon_skill = (weapon_skill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
-		}
-	}
-	else
-	{
-		tmpob -= (weapon->obj_flags.value[2] * 2 - 6);
-	}
+	
 
 	switch (GET_TACTICS(ch)) {
 	case TACTICS_DEFENSIVE:
@@ -763,12 +793,17 @@ int get_real_OB(char_data* ch)
 			tmpob = tmpob * 3 / 4 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS)
 			tmpob = tmpob * 4 / 5 - sun_mod;
+    if (GET_RACE(ch) == RACE_OLOGHAI)
+      tmpob = tmpob * 4 / 5 - sun_mod;
 	}
 
 	if (!CAN_SEE(ch))
 		tmpob -= 10;
 
-	tmpob += weapon_skill * (weapon->obj_flags.value[2] + 20) * tactics / 1000;
+  if(!weapon)
+    tmpob += weapon_skill * (GET_STR(ch) + 20) * tactics / 1000;
+  else
+	  tmpob += weapon_skill * (weapon->obj_flags.value[2] + 20) * tactics / 1000;
 
 	return tmpob;
 }
@@ -786,33 +821,40 @@ get_real_parry(struct char_data *ch)
 		else
 			return (GET_PARRY(ch) + GET_LEVEL(ch) / 2 + 15);
 
-	int tmpparry, tmpskill, tactics, bonus, weapon_bonus;
+	int tmpparry, tmpskill, tactics, bonus, weapon_bonus = 0;
 	struct obj_data * weapon;
 
 	tmpparry = GET_PARRY(ch);
 	bonus = GET_PROF_LEVEL(PROF_WARRIOR, ch) * 2 + std::min(30, GET_LEVEL(ch)) + GET_BAL_STR(ch);
 
 	weapon = ch->equipment[WIELD];
-	if (!weapon)
+	if (!weapon && utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK) == 0)
 	{
 		return tmpparry + bonus / 2;
 	}
-	weapon_bonus = weapon->obj_flags.value[1];
+  else if (!weapon && utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK) > 0)
+  {
+    tmpskill = GET_RAW_SKILL(ch, SKILL_NATURAL_ATTACK);
+  }
+  else
+  {
+    weapon_bonus = weapon->obj_flags.value[1];
 
-	tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(weapon->obj_flags.value[3]));
-	if (isname("bow", weapon->name))
-	{
-		tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
-	}
+    tmpskill = GET_RAW_KNOWLEDGE(ch, weapon_skill_num(weapon->obj_flags.value[3]));
+    if (isname("bow", weapon->name))
+    {
+      tmpskill = GET_RAW_SKILL(ch, SKILL_ARCHERY);
+    }
 
-	if (IS_TWOHANDED(ch))
-	{
-		tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
-		if (isname("bow", weapon->name))
-		{
-			tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
-		}
-	}
+    if (IS_TWOHANDED(ch))
+    {
+      tmpskill = (tmpskill + GET_RAW_KNOWLEDGE(ch, SKILL_TWOHANDED)) / 2;
+      if (isname("bow", weapon->name))
+      {
+        tmpskill = (tmpskill + GET_RAW_SKILL(ch, SKILL_ARCHERY)) / 2;
+      }
+    }
+  }
 
 	tmpskill = (tmpskill + 3 * GET_RAW_KNOWLEDGE(ch, SKILL_PARRY)) / 4;
 	if (GET_TACTICS(ch) == TACTICS_BERSERK)
@@ -855,6 +897,7 @@ get_real_parry(struct char_data *ch)
 		if (GET_RACE(ch) == RACE_URUK) tmpparry = tmpparry * 9 / 10 - sun_mod;
 		if (GET_RACE(ch) == RACE_ORC) tmpparry = tmpparry * 8 / 9 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS) tmpparry = tmpparry * 9 / 10 - sun_mod;
+    if (GET_RACE(ch) == RACE_OLOGHAI) tmpparry = tmpparry * 9 / 10 - sun_mod;
 	}
 
 	if (!CAN_SEE(ch)) 
@@ -878,7 +921,13 @@ int get_real_dodge(struct char_data *ch)
 	int dodge = ((GET_SKILL(ch, SKILL_DODGE) + GET_SKILL(ch, SKILL_STEALTH) / 2 + 60) * GET_PROF_LEVEL(PROF_RANGER, ch) / 200 + (GET_SKILL(ch, SKILL_DODGE) + GET_SKILL(ch, SKILL_STEALTH) / 4) / 20);
 	dodge -= utils::get_dodge_penalty(*ch);
 	dodge += 3;
-	
+
+  if(GET_RACE(ch) == RACE_BEORNING)
+  {
+    dodge += 10;
+  }
+  
+
 	if (GET_TACTICS(ch) == TACTICS_BERSERK)
 		dodge /= 2;
 
@@ -890,6 +939,7 @@ int get_real_dodge(struct char_data *ch)
 		if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - sun_mod;
 		if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - sun_mod;
+    if (GET_RACE(ch) == RACE_OLOGHAI) dodge = dodge * 9 / 10 - sun_mod;
 	}
 
 	switch (GET_TACTICS(ch))

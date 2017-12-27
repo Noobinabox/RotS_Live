@@ -76,6 +76,7 @@ extern char *sector_types[];
 extern char *moon_phase[];
 extern long judppwd;
 extern int judpavailable;
+extern char *beornwhere[];
 
 
 
@@ -107,6 +108,7 @@ void report_affection(struct affected_type *, char *);
 void report_perception(struct char_data *, char *);
 int show_tracks(struct char_data *, char *, int);
 static char *get_level_abbr(sh_int level, sh_int);
+int show_blood_trail(struct char_data*, char*, int);
 
 
 /* Procedures related to 'look' */
@@ -270,7 +272,16 @@ show_equipment_to_char(struct char_data *from, struct char_data *to)
       if (j == WIELD && IS_TWOHANDED(from))
           send_to_char(where[WIELD_TWOHANDED], to);
       else
-        send_to_char(where[j], to);
+      {
+        if(GET_RACE(from) == RACE_BEORNING)
+        {
+          send_to_char(beornwhere[j], to);
+        }
+        else
+        {
+          send_to_char(where[j], to);
+        }
+      }
 
       if (CAN_SEE_OBJ(to, from->equipment[j]))
 	show_obj_to_char(from->equipment[j], to, 1);
@@ -468,6 +479,11 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
 	{
 		strcat(character_message, " (shadow)");
 	}
+
+  if((utils::is_affected_by_spell(*viewed, SKILL_MARK)) && (GET_RACE(viewer) == RACE_HARADRIM))
+  {
+    strcat(character_message, " (marked)");
+  }
 
 	if ((MOB_FLAGGED(viewed, MOB_PET) || MOB_FLAGGED(viewed, MOB_ORC_FRIEND)) || !IS_NPC(viewed))
 	{
@@ -1375,7 +1391,7 @@ ACMD(do_look)
 	     * leads to a sunlit room
 	     */
 	    if(((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) ||
-		(GET_RACE(ch) == RACE_MAGUS)) &&
+		(GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) &&
 	       IS_SUNLIT_EXIT(ch->in_room,
 			      world[ch->in_room].dir_option[i]->to_room, i))
 	      if(exit_choice != 4)
@@ -1387,7 +1403,7 @@ ACMD(do_look)
 	     * room.
 	     */
 	    if(((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) ||
-		(GET_RACE(ch) == RACE_MAGUS)) &&
+		(GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) &&
 	       IS_SHADOWY_EXIT(ch->in_room,
 			       world[ch->in_room].dir_option[i]->to_room, i)
 	       && weather_info.sunlight == SUN_LIGHT)
@@ -1444,6 +1460,8 @@ ACMD(do_look)
 
     /* Now list the people in the room */
     list_char_to_char(world[ch->in_room].people, ch, subcmd);
+
+    show_blood_trail(ch, 0, 1);
 
     /* ORC DELAY - URUK DELAY - a nasty hack, but what else can i do.. */
     if(SUN_PENALTY(ch) && !IS_AFFECTED(ch, AFF_WAITING) &&
@@ -2247,19 +2265,19 @@ ACMD(do_who)
       case 'w':
 	who_whitie = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Humans, Elves, Dwarves and Hobbits\r\n");
+	buf2pt += sprintf(buf2pt, "Humans, Elves, Dwarves, Beornings and Hobbits\r\n");
 	break;
 
       case 'm':
 	who_magi = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Uruk-Lhuth\r\n");
+	buf2pt += sprintf(buf2pt, "Uruk-Lhuth and Haradrims\r\n");
 	break;
 
       case 'd':
 	who_darkie = 1;
 	strcpy(buf, buf1);
-	buf2pt += sprintf(buf2pt, "Uruk-Hai and Common Orcs\r\n");
+	buf2pt += sprintf(buf2pt, "Uruk-Hais, Olog-Hais and Common Orcs\r\n");
 	break;
 
       default:
@@ -2313,14 +2331,17 @@ ACMD(do_who)
     if(who_whitie && !(GET_RACE(tch) == RACE_WOOD ||
 		       GET_RACE(tch) == RACE_DWARF ||
 		       GET_RACE(tch) == RACE_HOBBIT ||
-		       GET_RACE(tch) == RACE_HUMAN))
+		       GET_RACE(tch) == RACE_HUMAN ||
+           GET_RACE(tch) == RACE_BEORNING))
       continue;
     /* who -d, and tch isn't a darkie */
     if(who_darkie && !(GET_RACE(tch) == RACE_URUK ||
-		       GET_RACE(tch) == RACE_ORC))
+		       GET_RACE(tch) == RACE_ORC ||
+           GET_RACE(tch) == RACE_OLOGHAI))
       continue;
     /* who -m, and tch isn't a lhuth */
-    if(who_magi && !(GET_RACE(tch) == RACE_MAGUS))
+    if(who_magi && !(GET_RACE(tch) == RACE_MAGUS ||
+           GET_RACE(tch) == RACE_HARADRIM))
       continue;
     /* if level_limit is non-zero, we don't show incognito players */
     if(level_limit && PLR_FLAGGED(tch, PLR_INCOGNITO))

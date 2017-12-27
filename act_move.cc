@@ -318,6 +318,32 @@ check_simple_move(struct char_data *ch, int cmd,
 }
 
 
+/*=================================================================================
+   set_blood_trail:
+   Here we are setting the blood trail for the harad ability in rooms.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 8, 2017 - Created
+==================================================================================*/
+void set_blood_trail(struct char_data* ch, int dir)
+{
+	int tmp;
+	if((utils::is_npc(*ch) || (utils::get_race_abbrev(*ch) != RACE_GOD)))
+	{
+		tmp = number(0, NUM_OF_BLOOD_TRAILS - 1);
+		if (utils::is_npc(*ch))
+		{
+			world[ch->in_room].bleed_track[tmp].char_number = ch->nr;
+		}
+		else
+		{
+			world[ch->in_room].bleed_track[tmp].char_number = -GET_RACE(ch);
+		}
+
+		world[ch->in_room].bleed_track[tmp].data = time_info.hours * 8 + dir;
+		world[ch->in_room].bleed_track[tmp].condition = 0;
+	}
+}
+
 
 /*
  * moves the mount and everybody riding it..
@@ -416,7 +442,7 @@ perform_move_mount(struct char_data *ch, int dir)
       if(is_death)
 	raw_kill(tmpch, NULL, 0);
     }
-
+    /* Setting tracks in room */
     if((IS_NPC(ch) || (GET_RACE(ch) != RACE_GOD)) && !(IS_AFFECTED(ch, AFF_FLYING))){
       tmp = number(0, NUM_OF_TRACKS-1);
       if(IS_NPC(ch))
@@ -426,6 +452,11 @@ perform_move_mount(struct char_data *ch, int dir)
       
       world[ch->in_room].room_track[tmp].data=time_info.hours*8 + dir;
       world[ch->in_room].room_track[tmp].condition = 0;
+    }
+
+    if(utils::is_affected_by_spell(*ch, SKILL_MARK))
+    {
+      set_blood_trail(ch, dir);
     }
     
     stop_hiding(ch, TRUE);
@@ -662,7 +693,12 @@ ACMD(do_move)
 	
 	  world[ch->in_room].room_track[tmp].data=time_info.hours*8 + cmd;
           world[ch->in_room].room_track[tmp].condition = 0;
-	}
+	  }
+      }
+
+      if(utils::is_affected_by_spell(*ch, SKILL_MARK))
+      {
+        set_blood_trail(ch, cmd);
       }
 
       char_from_room(ch);

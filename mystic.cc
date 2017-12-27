@@ -908,6 +908,12 @@ ASPELL(spell_vitality)
 	if (!victim)
 		return;
 
+	if(GET_RACE(victim) == RACE_OLOGHAI)
+	{
+		send_to_char("You cannot improve an Olog-Hai's vitality.\n\r", caster);
+		return;
+	}
+
 	int healing_level = get_mystic_caster_level(caster);
 	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)
 	{
@@ -1032,6 +1038,12 @@ ASPELL(spell_regeneration)
 {
 	if (!victim)
 		return;
+
+	if(GET_RACE(victim) == RACE_OLOGHAI)
+	{
+		send_to_char("You cannot improve an Olog-Hai's regeneration.\n\r", caster);
+		return;
+	}
 
 	int regen_level = get_mystic_caster_level(caster) - 10;
 	if (utils::get_specialization(*caster) == game_types::PS_Regeneration)

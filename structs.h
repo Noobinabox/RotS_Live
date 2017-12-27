@@ -64,7 +64,7 @@ const int MYSTIC_GUARDIAN = 2;
 #define MAX_MESSAGES         255
 #define MAX_ITEMS            153
 #define MAX_RACES             32
-#define MAX_BODYTYPES         15
+#define MAX_BODYTYPES         16
 #define MAX_BODYPARTS         11
 #define MAX_RACE_NAME_LENGTH  14
 #define MIN_NAME_LENGTH        3
@@ -185,6 +185,19 @@ const int MYSTIC_GUARDIAN = 2;
 #define ITEM_NORENT	         (1 << 12) /* not allowed to rent the item */
 #define ITEM_NOINVIS	     (1 << 14) /* not allowed to cast invis on */
 #define ITEM_WILLPOWER       (1 << 15) /* indicates a weapon which can damage a wraith */
+#define ITEM_IMM             (1 << 16)
+#define ITEM_HUMAN           (1 << 17)
+#define ITEM_DWARF           (1 << 18)
+#define ITEM_WOODELF         (1 << 19)
+#define ITEM_HOBBIT          (1 << 20)
+#define ITEM_BEORNING        (1 << 21)
+#define ITEM_URUK            (1 << 22)
+#define ITEM_ORC             (1 << 23)
+#define ITEM_MOBORC          (1 << 24)
+#define ITEM_MAGUS           (1 << 25)
+#define ITEM_OLOGHAI         (1 << 26)
+#define ITEM_HARADRIM        (1 << 27)
+
 
 /* Some different kind of liquids */
 #define LIQ_WATER      0
@@ -552,6 +565,7 @@ struct room_direction_data {
 #define EXTENSION_SIZE  50
 #define EXTENSION_ROOM_HEAD 100000
 
+const int NUM_OF_BLOOD_TRAILS = 3;
 #define NUM_OF_TRACKS  10
 struct room_data;
 
@@ -562,6 +576,19 @@ struct room_track_data {
                     // Weather makes tracks age faster/slower etc
 
   room_track_data(){char_number = 0; data = 0; condition = 0;}
+};
+
+struct room_bleed_data {
+	sh_int char_number;
+	byte data;
+	sh_int condition;
+
+	room_bleed_data()
+	{
+		char_number = 0;
+		data = 0;
+		condition = 0;
+	}
 };
 
 struct room_data_extension{
@@ -603,6 +630,8 @@ struct room_data
 	struct char_data *people;    /* List of NPC / PC in room           */
 
 	struct affected_type * affected; /* room affects */
+
+	struct room_bleed_data bleed_track[NUM_OF_BLOOD_TRAILS];
 
 	room_data();
 
@@ -677,12 +706,12 @@ struct room_data
 #define AFF_CONFUSE           (1 << 15)
 #define AFF_SLEEP             (1 << 16)
 #define AFF_BASH              (1 << 17)
-#define AFF_FLYING	      (1 << 18)
+#define AFF_FLYING	          (1 << 18)
 #define AFF_DETECT_INVISIBLE  (1 << 19)
 #define AFF_FEAR              (1 << 20)
 #define AFF_BLIND             (1 << 21)
 #define AFF_FOLLOW            (1 << 22)
-#define AFF_SWIM	      (1 << 23)
+#define AFF_SWIM	          (1 << 23)
 #define AFF_HUNT              (1 << 24)
 #define AFF_EVASION           (1 << 25)
 #define AFF_WAITING           (1 << 26)
@@ -798,22 +827,25 @@ namespace game_types
 #define PLRSPEC_DARK   16
 #define PLRSPEC_ARCANE   17
 
-/* race for PCs */
-#define RACE_GOD  	0
-#define RACE_HUMAN 	1
+/* Races for PCS */
+#define RACE_GOD        0
+#define RACE_HUMAN      1
 #define RACE_DWARF      2
 #define RACE_WOOD       3
 #define RACE_HOBBIT     4
 #define RACE_HIGH       5
-#define RACE_URUK 	11
-#define RACE_HARAD      12
-#define RACE_ORC	13
-#define RACE_EASTERLING	14
-#define RACE_MAGUS	15
+#define RACE_BEORNING   6
+#define RACE_URUK       11
+#define RACE_ORC        13
+#define RACE_MAGUS      15
+#define RACE_OLOGHAI    17
+#define RACE_HARADRIM   18
 
-/* race for NPCs */
-#define RACE_TROLL      20
+/* Races used for NPCs */
+#define RACE_EASTERLING 14
+#define RACE_HARAD      12
 #define RACE_UNDEAD     16
+#define RACE_TROLL      20
 
 #define localtime(x) localtime((time_t *)x)
 #ifndef CONSTANTSMARK
@@ -1132,6 +1164,7 @@ struct char_special2_data
 					   /* NPC (bitvector) */
 	int retiredon;     /* time of retirement */
 	int hide_flags;    /* flag set for hide info */
+	long will_teach;
 };
 
 enum source_type

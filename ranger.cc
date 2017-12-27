@@ -57,6 +57,16 @@ extern void stop_hiding(struct char_data *ch, char);
 extern void update_pos(struct char_data *victim);
 
 
+const int GATHER_FOOD = 7218;
+const int GATHER_LIGHT = 7007;
+const int GATHER_BOW = 2700;
+const int GATHER_ARROW = 2720;
+const int GATHER_DUST = 4620;
+const int GATHER_POISON = 4614;
+const int GATHER_ANTIDOTE = 4615;
+
+
+
 ACMD (do_move);
 ACMD (do_hit);
 ACMD (do_gen_com);
@@ -380,6 +390,9 @@ ACMD (do_gather_food) {
     "energy",
 	"bow",
 	"arrows",
+	"dust",
+	"poison",
+	"antidote",
     "\n"
   };
 
@@ -436,7 +449,7 @@ ACMD (do_gather_food) {
        */
       switch(subcmd) {
       case 1:
-	if ((obj = read_object(7218, VIRT)) != NULL) {
+	if ((obj = read_object(GATHER_FOOD, VIRT)) != NULL) {
 	  send_to_char("You look around, and manage to find some edible"
 		       " roots and berries.\n\r", ch);
 	  obj_to_char(obj, ch);
@@ -445,7 +458,7 @@ ACMD (do_gather_food) {
 		       " Please notify imps.\n\r", ch);
 	break;
       case 2:
-	if ((obj = read_object(7007, VIRT)) != NULL) {
+	if ((obj = read_object(GATHER_LIGHT, VIRT)) != NULL) {
 	  send_to_char("You gather some wood and fashion it into a"
 		       " crude torch.\n\r", ch);
 	    obj_to_char(obj, ch);
@@ -467,7 +480,7 @@ ACMD (do_gather_food) {
 		     "\n\r", ch);
 	break;
 	  case 5:
-		  if ((obj = read_object(2700, VIRT)) != NULL)
+		  if ((obj = read_object(GATHER_BOW, VIRT)) != NULL)
 		  {
 			  obj_to_char(obj, ch);
 			  send_to_char("You manage to find some branches that you fashion into a bow.\n\r", ch);
@@ -478,7 +491,7 @@ ACMD (do_gather_food) {
 		  }
 		  break;
 	  case 6:
-		  if ((obj = read_object(2720, VIRT)) != NULL)
+		  if ((obj = read_object(GATHER_ARROW, VIRT)) != NULL)
 		  {
 			  obj_to_char(obj, ch);
 			  send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);
@@ -2985,6 +2998,15 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 	act("$n recovers some arrows.\r\n", FALSE, character, NULL, NULL, TO_ROOM);
 }
 
+/*=================================================================================
+   do_scan:
+   This will scan all rooms in a straight line from the player and report back
+   all mobs in the rooms. The characters ranger level determines how far they
+   can scan. There are two hard stops for the loop one is if the room is dark and
+   the player doesn't have infravision and two is if the direction is a door.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 6, 2017 - Documented
+==================================================================================*/
 void do_scan(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
 {
 	struct char_data *i;
@@ -3067,3 +3089,540 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
 	character->in_room = is_in;
 }
 
+
+/*=================================================================================
+   mark_calculate_duration:
+   The duration for mark is ranger level - 10 and then ranger_level / 2 *
+   sec_per_mud_hour(60) * 4 / pulse_fast_update (12)
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 5, 2017 - Created
+==================================================================================*/
+int mark_calculate_duration(char_data* archer)
+{
+	int mark_duration = utils::get_prof_level(PROF_RANGER, *archer) - 10;
+	mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	return mark_duration;
+}
+
+/*=================================================================================
+   mark_calculate_damage:
+   Here we do a simple damage calculation on mark. It's damage is similar to 
+   magic missile. The mark ability isn't meant to do that much damage.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 5, 2017 - Created
+==================================================================================*/
+int mark_calculate_damage(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
+	int str_factor = archer->tmpabilities.str / 5;
+	int dex_factor = archer->tmpabilities.dex / 3;
+	if (number(0, dex_factor % 5) > 0)
+	{
+		++dex_factor;
+	}
+
+	int damage = ranger_level + str_factor + dex_factor;
+	damage = number(1, damage / 6) + 12;
+	return damage;
+	
+}
+
+/*=================================================================================
+   on_mark_hit:
+   When a harads mark is successful and hits the target it will apply the mark
+   affection and do small damage to them.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 5, 2017 - Created
+==================================================================================*/
+void on_mark_hit(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	struct affected_type af;
+
+	int damage_dealt = mark_calculate_damage(archer, victim, arrow);
+	move_arrow_to_victim(archer, victim, arrow);
+	if (!utils::is_affected_by_spell(*victim, SKILL_MARK))
+	{
+		af.type = SKILL_MARK;
+		af.duration = mark_calculate_duration(archer);
+		af.modifier = 1; 
+		af.location = APPLY_NONE;
+		af.bitvector = 0;
+
+		affect_to_char(victim, &af);
+	}
+
+	damage(archer, victim, damage_dealt, SKILL_MARK, 0);
+}
+
+/*=================================================================================
+   on_mark_miss:
+   If the harad archer misses his mark it moves the arrow they used to shoot
+   to the room they are in.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 5, 2017 - Created
+==================================================================================*/
+void on_mark_miss(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	act("You miss your mark and your arrow harmlessly flies past $N!\r\n", FALSE, archer, 0, victim, TO_CHAR);
+	move_arrow_to_room(archer, arrow, archer->in_room);
+
+}
+
+
+/*=================================================================================
+   mark_calculate_success:
+   Here we calculate the success chance of the archer using the mark skill. Current
+   forumla is ranger level + (ranger dex / 2) + (mark skill / 2) + 
+   (archer skill / 2) + arrow tohit
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 6, 2017 - Created
+==================================================================================*/
+int mark_calculate_success(char_data* archer, char_data* victim, obj_data* arrow)
+{
+	int mark_skill = utils::get_skill(*archer, SKILL_MARK);
+	int archery_skill = utils::get_skill(*archer, SKILL_ARCHERY);
+	int arrow_to_hit = arrow->obj_flags.value[0];
+
+	int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
+	int ranger_dex = archer->get_cur_dex();
+
+	int success_chance = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + (archery_skill / 2) + arrow_to_hit;
+
+	return success_chance;
+}
+
+
+/*=================================================================================
+   can_ch_mark:
+   Check to see if the archer is a Haradrim and they have the skill mark.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 6, 2017 - Created
+==================================================================================*/
+bool can_ch_mark(char_data* archer)
+{
+	// Check to see if archer is a player haradrim
+	if (GET_RACE(archer) != RACE_HARADRIM)
+	{
+		send_to_char("Unrecognized command.\r\n", archer);
+		return false;
+	}
+
+	if (utils::get_skill(*archer, SKILL_MARK) == 0)
+	{
+		send_to_char("Learn how to mark first.\r\n", archer);
+		return false;
+	}
+
+	return true;
+}
+
+/*=================================================================================
+   do_mark:
+   This is a race specific harad ability. It will mark the victim and they
+   will leave a blood trail as they enter and leave rooms. It will also
+   slow down movement regeneration. When the harad is shooting a marked target they
+   will receive a bonus on damage and their success rate.
+   Cure self and regeneration will reduce the duration of the mark ability.
+   ------------------------------Change Log---------------------------------------
+   slyon: Sept 5, 2017 - Created
+==================================================================================*/
+ACMD(do_mark)
+{
+	one_argument(argument, arg);
+
+	if (subcmd == -1)
+	{
+		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
+
+																		// Clean-up targets.
+		wtl->targ1.cleanup();
+		wtl->targ2.cleanup();
+		return;
+	}
+	// TODO: Add can_ch_mark
+	if (!can_ch_mark(ch))
+		return;
+
+	if (!can_ch_shoot(ch))
+		return;
+
+	char_data* victim = is_targ_valid(ch, wtl);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if (!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
+		return;
+	}
+
+	if (affected_by_spell(victim, SKILL_MARK))
+	{
+		act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
+
+	if (utils::is_affected_by(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your sanctuary!\r\n", ch);
+		act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	switch (subcmd)
+	{
+		case 0:
+		{
+			if (victim == NULL)
+			{
+				return;
+			}
+			send_to_char("You draw back your bow and prepare to mark your target.\r\n", ch);
+
+			if (!utils::is_affected_by(*ch, AFF_HIDE))
+			{
+				if (GET_SEX(ch) == SEX_MALE)
+				{
+					act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+				}
+				else if (GET_SEX(ch) == SEX_FEMALE)
+				{
+					act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+				}
+				else
+				{
+					act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+				}
+			}
+
+			wtl->targ1.cleanup();
+			wtl->targ2.cleanup();
+
+			int wait_delay = shoot_calculate_wait(ch);
+			WAIT_STATE_FULL(ch, wait_delay, CMD_MARK, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+		}
+		break;
+		case 1:
+		{
+			if (victim == NULL)
+			{
+				return;
+			}
+
+			if (!CAN_SEE(ch, victim))
+			{
+				send_to_char("Mark who?\r\n", ch);
+				return;
+			}
+
+			if (ch->in_room != victim->in_room)
+			{
+				send_to_char("Your target is not here any longer.\r\n", ch);
+				return;
+			}
+
+			/* Get the arrow */
+			obj_data* arrow = NULL;
+			obj_data* quiver = ch->equipment[WEAR_BACK];
+			if (quiver)
+			{
+				arrow = quiver->contains;
+			}
+			// Check here
+			int roll = number(0, 99);
+			int target_number = mark_calculate_success(ch, victim, arrow);
+			if (roll < target_number)
+			{
+				on_mark_hit(ch, victim, arrow);
+			}
+			else
+			{
+				on_mark_miss(ch, victim, arrow);
+			}
+
+			wtl->targ1.cleanup();
+			wtl->targ2.cleanup();
+		}
+		break;
+		default:
+			sprintf(buf2, "do_mark: illegal subcommand '%d'.\r\n", subcmd);
+			mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+			abort_delay(ch);
+			break;;
+	}
+
+}
+
+// bool can_ch_blind(char_data* ch)
+// {
+// 	const room_data& room = world[ch->in_room];
+// 	obj_data* dust = NULL;
+
+// 	if (GET_RACE(ch) != RACE_HARADRIM)
+// 	{
+// 		send_to_char("Unrecognized Command.\r\n", ch);
+// 		return false;
+// 	}
+
+// 	if (utils::is_shadow(*ch))
+// 	{
+// 		send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+// 		return false;
+// 	}
+
+// 	if (utils::is_npc(*ch))
+// 	{
+// 		char_data* receiver = ch->master ? ch->master : ch;
+// 		send_to_char("Your follower lacks the knowledge to blind a target.\r\n", receiver);
+// 		return false;
+// 	}
+
+// 	if (utils::is_set(room.room_flags, (long)PEACEROOM))
+// 	{
+// 		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+// 		return false;
+// 	}
+
+// 	if (utils::get_skill(*ch, SKILL_BLINDING) == 0)
+// 	{
+// 		send_to_char("Learn how to blind first.\r\n", ch);
+// 		return false;
+// 	}
+
+// 	if(ch->carrying != NULL)
+// 	{
+// 		for (obj_data* item = ch->carrying; item; item = item->next)
+// 		{
+// 			if (item->item_number == GATHER_DUST)
+// 			{
+// 				dust = item;
+// 				break;
+// 			}
+// 		}
+
+// 		if (dust == NULL)
+// 		{
+// 			send_to_char("You do not possess the appropriate materials to blind your target.\r\n", ch);
+// 			return false;
+// 		}
+// 	}
+
+
+// 	return true;
+// }
+
+// char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
+// {
+// 	char_data* victim = NULL;
+
+// 	if (target->targ1.type == TARGET_TEXT)
+// 	{
+// 		victim = get_char_room(ch->name, target->targ1.ptr.text->text);
+// 	}
+// 	else if (target->targ1.type == TARGET_CHAR)
+// 	{
+// 		if (char_exists(target->targ1.ch_num))
+// 		{
+// 			victim = target->targ1.ptr.ch;
+// 		}
+// 	}
+
+// 	if (victim == NULL)
+// 	{
+// 		if (ch->specials.fighting)
+// 		{
+// 			victim = ch->specials.fighting;
+// 		}
+// 		else
+// 		{
+// 			send_to_char("Blind who?\r\n", ch);
+// 			return NULL;
+// 		}
+// 	}
+
+// 	if (ch->in_room != victim->in_room)
+// 	{
+// 		send_to_char("Your victim is no longer here.\r\n", ch);
+// 		return NULL;
+// 	}
+
+// 	if (ch == victim)
+// 	{
+// 		send_to_char("Why would you blind yourself?!\r\n", ch);
+// 		return NULL;
+// 	}
+
+// 	if (!CAN_SEE(ch, victim))
+// 	{
+// 		send_to_char("Blind who?\r\n", ch);
+// 		return NULL;
+// 	}
+
+// 	return victim;
+// }
+
+// int dust_calculate_success(const char_data* ch, const char_data* victim)
+// {
+// 	int random_roll = number(0, 99);
+
+// 	// Attacker calculations
+// 	int ch_blind_skill = utils::get_skill(*ch, SKILL_BLINDING);
+// 	int ch_ranger_level = utils::get_prof_level(PROF_RANGER, *ch);
+// 	int ch_dex = ch->get_cur_dex();
+
+// 	// Victim calculation saves
+// 	int victim_ranger_level = get_prof_level(PROF_RANGER, *victim);
+// 	int victim_dex = victim->get_cur_dex();
+
+// 	int success_rate = (ch_blind_skill + ch_ranger_level + ch_dex) - (random_roll + victim_ranger_level + victim_dex);
+// 	return success_rate;
+// }
+
+// void on_dust_miss(const char_data* ch, const char_data* victim, obj_data* dust)
+// {
+// 	extract_obj(dust);
+// 	damage(ch, victim, 0, SKILL_BLINDING, 0);
+// }
+
+// void on_dust_hit(const char_data* ch, const char_data* victim, obj_data* dust)
+// {
+// 	struct affected_type af;
+// 	int affects_last = 22 - ranger_bonus;
+// 	extract_obj(dust);
+// 	damage(ch, victim, 1, SKILL_BLINDIING, 0);
+// 	af.type = AFF_BLIND;
+// 	af.duration = affects_last;
+// 	af.modifier = 0;
+// 	af.location = APPLY_NONE;
+// 	af.bitvector = 0;
+// 	affect_to_char(victim, &af);
+// }
+
+/*=================================================================================
+  do_blinding:
+  This is a race specific harad ability. It will blind the target provided the harad
+  has GATHER_DUST in his inventory and the target fails their dex and con save.
+  ------------------------------Change Log---------------------------------------
+  slyon: Sept 27, 2017 - Created
+==================================================================================*/
+ACMD(do_blinding)
+{
+
+	return;
+	// one_argument(argument, arg);
+
+	// if (subcmd == -1)
+	// {
+	// 	send_to_char("Your attempt to blind your target have been foiled.\r\n", ch);
+	// 	ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0);
+	// 	wtl->targ1.cleanup();
+	// 	wtl->targ2.cleanup();
+	// 	return;
+	// }
+
+	// if (!can_ch_blind(ch))
+	// {
+	// 	return;
+	// }
+
+	// char_data* victim = is_targ_blind_valid(ch, wtl);
+
+	// game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	// if (!bb_instance.is_target_valid(ch, victim))
+	// {
+	// 	send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+	// 	return;
+	// }
+
+	// if (utils::is_affected_by(*ch, AFF_SANCTUARY))
+	// {
+	// 	appear(ch);
+	// 	send_to_char("You cast off your sanctuary!\r\n", ch);
+	// 	act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	// }
+
+	// if (affected_by_spell(victim, AFF_BLIND))
+	// {
+	// 	act("$N is already blind.\r\n", FALSE, ch, 0, victim, TO_CHAR);
+	// 	return;
+	// }
+
+	// switch (subcmd)
+	// {
+	// 	case 0:
+	// 	{
+	// 		if (victim == NULL)
+	// 		{
+	// 			return;
+	// 		}
+
+	// 		send_to_char("BLINDING ATTACK STARTED.\r\n", ch);
+	// 		act("$n STARTING BLINDING ATTACK.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+	// 		wtl->targ1.cleanup();
+	// 		wtl->targ2.cleanup();
+
+	// 		WAIT_STATE_FULL(ch, skills[SKILL_BLINDING].beats, CMD_BLINDING, 1, 30, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+	// 	}
+	// 	break;
+
+	// 	case 1:
+	// 	{
+	// 		if(victim == NULL)
+	// 		{
+	// 			return;
+	// 		}
+
+	// 		if(!CAN_SEE(ch, victim))
+	// 		{
+	// 			send_to_char("Blind who?\r\n", ch);
+	// 			return;
+	// 		}
+
+	// 		if(ch->in_room != victim->in_room)
+	// 		{
+	// 			send_to_char("Your victim is no longer here.\r\n", ch);
+	// 			return;
+	// 		}
+
+	// 		obj_data* dust = NULL;
+	// 		for(obj_data* item = ch->carrying; item; item = item->next)
+	// 		{
+	// 			if(item->virt_num == GATHER_DUST)
+	// 			{
+	// 				dust = item;
+	// 				break;
+	// 			}
+	// 		}
+
+	// 		if(dust == NULL)
+	// 		{
+	// 			send_to_char("You lack the material to use this skill.\r\n", ch);
+	// 			return;
+	// 		}
+
+	// 		send_to_char("You throw your dust at the target.\r\n", ch);
+	// 		act("$n throws some dust at you!\r\n", FALSE, ch, 0, 0, TO_VICT);
+
+	// 		int percent_hit = dust_calculate_success(ch, victim);
+	// 		if(percent_hit < 0)
+	// 		{
+	// 			on_dust_miss(ch, victim, dust);
+	// 		}
+	// 		else
+	// 		{
+	// 			on_dust_hit(ch, victim, dust);
+	// 		}
+
+	// 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0);
+	// 		wtl->targ1.cleanup();
+	// 		wtl->targ2.cleanup();
+	// 	}
+	// 	break;
+
+	// 	default:
+	// 		sprintf(buf2, "do_blinding: illegal subcommand '%d'.\r\n", subcmd);
+	// 		mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+	// 		abort_delay(ch);
+	// 	break;;
+	// }
+}

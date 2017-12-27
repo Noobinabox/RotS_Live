@@ -61,6 +61,7 @@ SPECIAL(healing_plant);
 
 SPECIAL(ferry_boat);
 SPECIAL(ferry_captain);
+SPECIAL(dragon);
 
 SPECIAL(gen_board);
 
@@ -198,6 +199,11 @@ assign_mobiles(void)
   //ASSIGNMOB(1101, drake_one);
   ASSIGNMOB(2041, guild); //ALT RotS Puke
   ASSIGNMOB(2043, guild); //ALT RotS Uruk
+
+  ASSIGNMOB(10310, guild);
+  ASSIGNMOB(6605, guild);
+
+  ASSIGNMOB(2012, dragon);
 }
 
 
@@ -367,6 +373,8 @@ void* virt_program_number(int number)
 		return (void *)herald;
 	case 29:
 		return (void *)postmaster;
+  case 30:
+    return (void *)dragon;
 	default:
 		log("Virt_assign: unknown prog_number for special mob.");
 		return 0;
@@ -438,6 +446,8 @@ special_func_ptr get_special_function(int number)
 		return &herald;
 	case 29:
 		return &postmaster;
+  case 30:
+    return &dragon;
 	default:
 		log("Virt_assign: unknown prog_number for special mob.");
 		return 0;

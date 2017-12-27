@@ -158,12 +158,15 @@ other_side_num(int ch_race, int i_race)
 {
   if((ch_race == RACE_GOD) || (i_race == RACE_GOD)) 
     return 0;
-  if((ch_race <= RACE_HIGH) && (i_race <= RACE_HIGH)) 
+  if((ch_race <= RACE_BEORNING) && (i_race <= RACE_BEORNING)) 
     return 0;
 
   if((ch_race >= RACE_URUK) && (ch_race != RACE_MAGUS) && 
-     (ch_race != RACE_EASTERLING) && (i_race >= RACE_URUK) &&
-     (i_race != RACE_MAGUS) && (i_race != RACE_EASTERLING))
+     (ch_race != RACE_EASTERLING) && (ch_race != RACE_HARADRIM) && (i_race >= RACE_URUK) &&
+     (i_race != RACE_MAGUS) && (i_race != RACE_EASTERLING) && (i_race != RACE_HARADRIM))
+    return 0;
+
+  if (((ch_race == RACE_MAGUS) || (ch_race == RACE_HARADRIM)) && ((i_race == RACE_MAGUS) || (i_race == RACE_HARADRIM)))
     return 0;
      
   if(ch_race == i_race)
@@ -1029,7 +1032,7 @@ void stop_follower(struct char_data *ch, int mode)
 		if (!ch->master)
 			return;
 
-		if (GET_SPEC(ch->master) == PLRSPEC_PETS && IS_AFFECTED(ch, AFF_CHARM))
+		if ((GET_SPEC(ch->master) == PLRSPEC_PETS) && (IS_AFFECTED(ch, AFF_CHARM)))
 		{
 			ch->constabilities.str -= 2;
 			ch->tmpabilities.str -= 2;

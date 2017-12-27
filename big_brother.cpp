@@ -47,6 +47,10 @@ namespace game_rules
 		m_harmful_skills.insert(SKILL_SWING);
 		m_harmful_skills.insert(SKILL_RIPOSTE);
 		m_harmful_skills.insert(SKILL_AMBUSH);
+		m_harmful_skills.insert(SKILL_BITE);
+		m_harmful_skills.insert(SKILL_SWIPE);
+		m_harmful_skills.insert(SKILL_MAUL);
+		m_harmful_skills.insert(SKILL_NATURAL_ATTACK);
 		m_harmful_skills.insert(SPELL_HAZE);
 		m_harmful_skills.insert(SPELL_FEAR);
 		m_harmful_skills.insert(SPELL_POISON);

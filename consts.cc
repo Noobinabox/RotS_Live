@@ -18,7 +18,7 @@
 #include "limits.h"
 
  char	circlemud_version[] = {
-   "Arda: The Fourth Age, version 1.0.3.3b\n\r" };
+   "Arda: The Fourth Age, version 1.4.0.1\n\r" };
 
 
 //const
@@ -147,7 +147,7 @@ char	*spell_wear_off_msg[] = {
    "!Magic Missile!",
    "You feel less sick8.",
    "You feel less protected.",
-   "You time of punishment is over and you are free to leave the cell.",
+   "Your time of punishment is over and you are free to leave the cell.",
    "You can breathe more easily",
    "The Power of Arda no longer weakens you.",
    "You feel less tired.",
@@ -156,7 +156,7 @@ char	*spell_wear_off_msg[] = {
    "!Locate object!",
    "!Magic Missile!",
    "You feel less sick9.",
-   "You feel less protected.",
+   "The wound in your side stops bleeding.",
    "!Remove Curse!",
    "The white aura around your body fades.",
    "!Shocking Grasp!",
@@ -236,7 +236,7 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
   { "axes"               , PROF_WARRIOR,  0, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
-  { ""                   , PROF_WARRIOR,  4, NULL,
+  { "natural attacks"    , PROF_WARRIOR,  1, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  30,  1,  0, PLRSPEC_NONE },
   { "swimming"           , PROF_RANGER,   2, NULL,
     POSITION_FIGHTING    ,  0,  0,    16,  25,  1,  0, PLRSPEC_NONE },
@@ -463,20 +463,20 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_STANDING    ,  5,  9,    32,  10,  1,  0, PLRSPEC_NONE },
   { "detect evil"        , PROF_MAGE,     3,  spell_detect_evil,
     POSITION_STANDING    ,  2, 12,     1,   5,  1,  0, PLRSPEC_NONE },
-  { "attune"             , PROF_CLERIC,   6,  spell_attune,
-    POSITION_STANDING    ,  5, 36,    32,  10,  1,  0, PLRSPEC_NONE },
+  { "blind"              , PROF_RANGER,   24,  NULL,
+    POSITION_FIGHTING    ,  0, 20,    16,  24,  1,  1, PLRSPEC_NONE },
 
   /* 111 */
   { "confuse"            , PROF_CLERIC ,  1,  spell_confuse,
     POSITION_FIGHTING    , 10, 28,    16,  10, 65,  1, PLRSPEC_ILLU },
   { "expose elements"    , PROF_MAGE,     1,  spell_expose_elements,
 	  POSITION_FIGHTING  ,  70,  5, 16,   1,  1,  0, PLRSPEC_NONE   },
-  { "trash"              , PROF_MAGE,     1,  NULL,
-    POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
-  { "trash"              , PROF_MAGE,     1,  NULL,
-    POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
-  { "trash"              , PROF_GENERAL,  1,  NULL,
-    POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
+  { "bite"              , PROF_WARRIOR,     1,  NULL,
+    POSITION_STANDING    ,  0,  0,     16,   30,  1,  0, PLRSPEC_NONE },
+  { "swipe"              , PROF_WARRIOR,     1,  NULL,
+    POSITION_STANDING    ,  0,  0,     16,   1,  1,  0, PLRSPEC_NONE },
+  { "maul"              , PROF_WARRIOR,  1,  NULL,
+    POSITION_STANDING    ,  0,  0,     16,   1,  1,  0, PLRSPEC_NONE },
   { "asphyxiation"       , PROF_GENERAL,  1,  NULL,
     POSITION_STANDING    ,  5,  2,     6,   1,  1,  1, PLRSPEC_NONE },
   { "Power of Arda"      , PROF_GENERAL,  1,  NULL,
@@ -495,8 +495,8 @@ struct skill_data skills[MAX_SKILLS] = {
     POSITION_STANDING    ,  0,  0,    16,   5,  1,  0, PLRSPEC_NONE },
   { "orcish language"    , PROF_GENERAL,  1,  NULL,
     POSITION_STANDING    ,  0,  0,    16,   5,  1,  0, PLRSPEC_NONE },
-  { "trash"              , PROF_MAGE,     1,  NULL,
-    POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
+  { "mark"               , PROF_RANGER,     15,  NULL,
+    POSITION_FIGHTING    ,  0,  0,    16,  24,  1,  1, PLRSPEC_NONE },
   { "trash"              , PROF_MAGE,     1,  NULL,
     POSITION_STANDING    ,  5,  2,     6,   1,  1,  0, PLRSPEC_NONE },
   { "trash"              , PROF_MAGE,     1,  NULL,
@@ -515,7 +515,7 @@ byte language_skills[] = {
 };
 
 
-char guildmaster_number = 58;
+char guildmaster_number = 61;
 
 struct skill_teach_data guildmasters[]={
   {    // ALL SKILLS (1)
@@ -1939,20 +1939,86 @@ struct skill_teach_data guildmasters[]={
 	  "The guildmaster tells you 'I won't teach you any better.'",
 	  "You're already perfect in this.",
 		  { 0,
-/*01*/		100,100,100,100,100,100,  0,100,100,100,
-/*11*/		100,100,100,  0,100,100,  0,100,  0,100,
-/*21*/		100,100,100,100,100,100,100,100,100,100,
-/*31*/		100,100,100,100,100,100,100,100,100,  0,
-/*41*/		100,100,100,100,100,100,100,100,100,100,
-/*51*/		100,100,100,100,  0,  0,100,100,  0,100,
-/*61*/		100,100,100,100,100,  0,100,100,100,  0,
-/*71*/		100,100,100,100,100,100,  0,  0,100,  0,
-/*81*/		100,  0,100,100,  0,100,100,100,100,  0,
-/*91*/		  0,100,100,100,  0,  0,  0,100,  0,  0,
-/*101*/		  0,  0,  0,  0,  0,  0,  0,100,  0,  0,
-/*111*/		100,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-/*121*/		  0,100,  0,  0,  0,  0,  0 }
-  }
+      /*01*/		100,100,100,100,100,100,  0,100,100,100,
+      /*11*/		100,100,100,  0,100,100,  0,100,  0,100,
+      /*21*/		100,100,100,100,100,100,100,100,100,100,
+      /*31*/		100,100,100,100,100,100,100,100,100,  0,
+      /*41*/		100,100,100,100,100,100,100,100,100,100,
+      /*51*/		100,100,100,100,  0,  0,100,100,  0,100,
+      /*61*/		100,100,100,100,100,  0,100,100,100,  0,
+      /*71*/		100,100,100,100,100,100,  0,  0,100,  0,
+      /*81*/		100,  0,100,100,  0,100,100,100,100,  0,
+      /*91*/		  0,100,100,100,  0,  0,  0,100,  0,  0,
+      /*101*/		  0,  0,  0,  0,  0,  0,  0,100,  0,  0,
+      /*111*/		100,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+      /*121*/		  0,100,  0,  0,  0,  0,  0 }
+  },
+  {    /* Beorning Guildmaster VNUM:10310 (59)*/
+	  "You can train in these skills:",
+		  "$n snarls 'Get out!'",
+		  "$n trains $N.",
+		  "You practice it for a while.",
+		  "The guildmaster tells you 'I won't teach you any better.'",
+		  "You're already perfect in this.",
+		  { 0,
+		  /*01*/		  0,  0,  0,  0,  0,  0,100, 10,  0,  0,
+		  /*11*/		100,  0,100,100,100,  0,  0,  0,  0,  0,
+		  /*21*/		100,100,100,100,100,100,100,100,100,100,
+		  /*31*/		100,100,  0,  0,100,100,100,100,100,  0,
+		  /*41*/		 30,  0,  0, 25, 60, 40,  0, 30,  0,  0,
+		  /*51*/		  0,  0,  0,  0,  0,  0,  0, 40,  0,  0,
+		  /*61*/		  0,  0,  0,  0,  0,  0,  0, 10,  0,  0,
+		  /*71*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		  /*81*/		  0,  0,  0,  0,  0,  0, 20,  0,100,  0,
+		  /*91*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		  /*101*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+		  /*111*/		  0,100,100,100,  0,  0,  0,  0,  0,  0,
+		  /*121*/		100,100,100,  0,  0,  0,  0 }
+  },
+  {    /* Olog-Hai Guildmaster VNUM: (60)*/
+	  "You can train in these skills:",
+	  "$n snarls 'Get out!'",
+	  "$n trains $N.",
+	  "You practice it for a while.",
+	  "The guildmaster tells you 'I won't teach you any better.'",
+	  "You're already perfect in this.",
+	  { 0,
+	  /*01*/		100,100,100,100,100,100,100, 10,100,100,
+	  /*11*/		100,100,100,  0,100,100,  0,100,  0,100,
+	  /*21*/		100,100, 40, 45,  0,100,100,100, 70,  0,
+	  /*31*/		  0,100,100,  0,100,100,100, 60,100,  0,
+	  /*41*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*51*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*61*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*71*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*81*/		  0,  0,  0,  0,  0, 60,  0,  0,100,  0,
+	  /*91*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*101*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*111*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*121*/		  0,100,  0,  0,  0,  0,  0 }
+  },
+  {    /* Haradrim Guildmaster VNUM:6605 (61) */
+	  "You can train in these skills:",
+	  "$n snarls 'Get out!'",
+	  "$n trains $N.",
+	  "You practice it for a while.",
+	  "The guildmaster tells you 'I won't teach you any better.'",
+	  "You're already perfect in this.",
+	  { 0,
+	  /*01*/		100, 30, 60,100,100,  0,  0,100,100,  0,
+	  /*11*/		100,100,  0,  0, 90,100,  0,100,  0,100,
+	  /*21*/		100,100,100,100,100,100,100,100,100,100,
+	  /*31*/		100,100,100,100,100,100,100,100,100,  0,
+	  /*41*/		  0,  0,  0, 30,  0,  0,  0,  0,  0,  0,
+	  /*51*/		 30,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*61*/		100,  0,  0,  0,100,  0,  0,  0, 60,  0,
+	  /*71*/		  0,  0,  0, 80,  0,  0,  0,  0, 65,  0,
+	  /*81*/		  0,  0,  0,  0,  0, 25,  0,  0,100,  0,
+	  /*91*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*101*/		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*111*/		100,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+	  /*121*/		100,100,100,  0,  0,  0,  0 }
+}
 };
 
 
@@ -2036,7 +2102,11 @@ struct race_bodypart_data bodyparts[MAX_BODYTYPES] =
   {{"","","","","","","","","","",""},   /* 14, can easily be added */
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-  }
+  },
+  { { "","head","body","left hindleg","right hindleg","left hindfoot","right hindfoot","left foreleg","right foreleg","left claw","right claw" }, /* 15 */
+    { 0, 15, 35, 8, 8, 2, 2, 10, 10, 5, 5 }, 10,
+    { 0,  6,  5, 7, 7, 8, 8, 10, 10, 9, 9 }
+  },
 };
 
 
@@ -2168,6 +2238,32 @@ char	*weekdays[7] = {
    "<worn on belt>         ",
    "<wielded two-handed>   ",
 };
+
+   char *beornwhere[] = {
+   "<used as light>        ",
+   "<worn on paw>          ",
+   "<worn on paw>          ",
+   "<worn around neck>     ",
+   "<worn around neck>     ",
+   "<worn on body>         ",
+   "<worn on head>         ",
+   "<worn on hindlegs>     ",
+   "<worn on hindfeet>     ",
+   "<worn on claws>        ",
+   "<worn on forlegs>      ",
+   "<worn as shield>       ",
+   "<worn about body>      ",
+   "<worn about waist>     ",
+   "<worn around wrist>    ",
+   "<worn around wrist>    ",
+   "<wielded>              ",
+   "<held>                 ",
+   "<worn on back>         ",
+   "<worn on belt>         ",
+   "<worn on belt>         ",
+   "<worn on belt>         ",
+   "<wielded two-handed>   ",
+   };
 
 sh_int encumb_table[MAX_WEAR] = {
   0,
@@ -2616,30 +2712,30 @@ char	*pc_prof_types[] = {
 //const
 char *pc_races[] = {
    "God",
-   "Human", "Dwarf", "Wood Elf", "Hobbit", "High Elf", "UNDEFINED",
+   "Human", "Dwarf", "Wood Elf", "Hobbit", "High Elf", "Beorning",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "Uruk-Hai", "Harad", "Orc", "Easterling", "Uruk-Lhuth",
-   "Undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "Troll",
+   "Undead", "Olog-Hai", "Haradrim", "UNDEFINED", "Troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
 };
 char *pc_race_types[] = {
    "god",
-   "human", "dwarf", "elf", "hobbit", "elf", "UNDEFINED",
+   "human", "dwarf", "elf", "hobbit", "elf", "beorning",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "uruk-hai", "human", "orc", "easterling", "uruk-lhuth",
-   "undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "troll",
+   "undead", "olog-hai", "haradrim", "UNDEFINED", "troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
 };
 char *pc_race_keywords[] = {
    "god",
-   "human", "dwarf", "elf", "hobbit", "elf", "UNDEFINED",
+   "human", "dwarf", "elf", "hobbit", "elf", "bear",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "uruk", "human", "orc", "human", "uruk",
-   "undead", "UNDEFINED", "UNDEFINED", "UNDEFINED", "troll",
+   "undead", "olog", "human", "UNDEFINED", "troll",
   /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
    "\n"
@@ -2648,10 +2744,10 @@ char *pc_race_keywords[] = {
 //const
 char *pc_star_types[] = {
    "God",
-   "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "UNDEFINED",
+   "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "*a Bear*",
    "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
    "*an Uruk*", "*a Human*", "*an Orc*", "*an Easterling*", "*an Uruk*",
-   "*an Undead*", "UNDEFINED", "UNDEFINED", "UNDEFINED", "*a Troll*",
+   "*an Undead*", "*an Olog-Hai*", "*a Human*", "UNDEFINED", "*a Troll*",
   /* Orc is 11, 16 total */
    "\n"
 };
@@ -2659,10 +2755,10 @@ char *pc_star_types[] = {
 //const
 char *pc_named_star_types[] = {
    "%s the God",
-   "*%s the Human*", "*%s the Dwarf*", "*%s the Elf*", "*%s the Hobbit*", "*%s the Elf*", "UNDEFINED",
+   "*%s the Human*", "*%s the Dwarf*", "*%s the Elf*", "*%s the Hobbit*", "*%s the Elf*", "*%s the Beorning*",
    "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED",
    "*%s the Uruk*", "*%s the Human*", "*%s the Orc*", "*%s the Easterling*", "*%s the Uruk*",
-   "*%s the Undead*", "%s the UNDEFINED", "%s the UNDEFINED", "%s the UNDEFINED", "*%s the Troll*",
+   "*%s the Undead*", "*%s the Olog-Hai*", "*%s the Haradrim*", "%s the UNDEFINED", "*%s the Troll*",
   /* Orc is 11, 16 total */
    "\n"
 };
@@ -3035,107 +3131,108 @@ char *moon_phase[8] = {
   "dying"
 };
 
+// Perm starting affects for races
 long race_affect[] = {
-  0,            // GOD
-  0,            // HUMAN
-  0,            // DWARF
-  1024,          // WOOD
-  0,            // HOBBIT
-  1024,          // HIGH
-  0,
-  0,
-  0,
-  0,
-  0,
-  2,            // ORC
-  0,            // HARAD
-  2,		// COMMON
-  0,		// EASTERLING
-  2,		// MAGI
-  0,
-  0,
-  0,
-  0,
-  0,
-  0
+    0,       // God
+    0,       // Human
+    0,       // Dwarf
+ 1024,       // Wood Elf
+    0,       // Hobbit
+ 1024,       // High Elf
+    2,       // Beorning
+    0,       // !UNUSED!
+    0,       // !UNUSED!
+    0,       // !UNUSED!
+    0,       // !UNUSED!
+    2,       // Uruk-Hai
+    0,       // !NPC - Harad!
+    2,       // Common Orc
+    0,       // !NPC - Easterling!
+    2,       // Uruk-Lhuth
+    0,       // !NPC - Undead!
+    2,       // Olog-Hai
+ 1024,       // Haradrim
+    0,       // !UNUSED!
+    0,       // !NPC - Troll!
+    0        // !UNUSED!
 };
 
 int max_race_str[MAX_RACES] ={
-  22,            // IMM
-  22,            // HUMAN
-  22,            // DWARF
-  22,            // WOOD
-  20,            // HOBBIT
-  22,            // HIGH ELF
-  22,
-  22,
-  22,
-  22,
-  22,
-  22,           // URUK
-  22,           // HARAD
-  22,	   	// COMMON ORC
-  22,	  	// EASTERLING
-  22,	  	// LHUTH
-  22,
-  22,
-  22,
-  22,
-  22,   // TROLL
-  22
-};
+  22,    // God
+  22,    // Human
+  22,    // Dwarf
+  22,    // Wood Elf
+  20,    // Hobbit
+  22,    // High Elf
+  22,    // Beorning
+  22,    // !UNUSED!
+  22,    // !UNUSED!
+  22,    // !UNUSED!
+  22,    // !UNUSED!
+  22,    // Uruk-Hai
+  22,    // !NPC - Harad!
+  22,    // Common Orc
+  22,    // !NPC - Easterling!
+  22,    // Uruk-Lhuth
+  22,    // !NPC - Undead!
+  22,    // Olog-Hai
+  22,    // Haradrim
+  22,    // !UNUSED!
+  22,    // !NPC - Troll!
+  22     // !UNUSED!  
+  };
 
 int mortal_start_room[MAX_RACES] = {
-  1160,            // GOD
-  1160,            // HUMAN
-  1160,            // DWARF
-  1170,            // WOOD
-  1160,            // HOBBIT
-  1160,            // HIGH
-  1101,
-  1101,
-  1101,
-  1101,
-  1101,
-  10263, //1190,           // URUK connect to 10263
-  10263,           // HARAD
-  14499, //1191,	   // COMMON ORC connect to 14499
-  10263,	   // EASTERLING
-  13626, //1192,	   // MAGI connect to 13626
-  0,
-  0,
-  0,
-  0,
-  0,
-  0
+  1160,          // God
+  1160,          // Human
+  1160,          // Dwarf
+  1170,          // Wood Elf
+  1160,          // Hobbit
+  1160,          // High Elf
+  1160,          // Beorning
+  1101,          // !UNUSED!
+  1101,          // !UNUSED!
+  1101,          // !UNUSED!
+  1101,          // !UNUSED!
+  10263,         // Uruk-Hai
+  10263,         // !NPC - Harad!
+  14499,         // Common Orc
+  10263,         // !NPC - Easterling!
+  13626,         // Uruk-Lhuth
+  0,             // !NPC - Undead!
+  10263,         // Olog-Hai
+  13626,         // Haradrim
+  0,             // !UNUSED!
+  0,             // !NPC - Troll!
+  0              // !UNUSED!
 };
 
 
 int r_mortal_start_room[MAX_RACES];
 
 int mortal_idle_room[MAX_RACES] = {
-  1102,            // GOD
-  1102,            // HUMAN
-  1102,            // DWARF
-  1102,            // WOOD
-  1102,            // HOBBIT
-  1102,            // HIGH
-  1102,
-  1102,
-  1102,
-  1102,
-  1102,
-  1190,           // URUK connect to 10263
-  10263,           // HARAD
-  1191,	   // COMMON ORC connect to 14499
-  10263,	   // EASTERLING
-  1192,	   // MAGI connect to 13626
-  0,
-  0,
-  0,
-  0,
-  0,
-  0
+  1102,          // God
+  1102,          // Human
+  1102,          // Dwarf
+  1102,          // Wood Elf
+  1102,          // Hobbit
+  1102,          // High Elf
+  1102,          // Beorning
+  1102,          // !UNUSED!
+  1102,          // !UNUSED!
+  1102,          // !UNUSED!
+  1102,          // !UNUSED!
+  1190,          // Uruk-Hai
+  10263,         // !NPC - Harad!
+  1191,          // Common Orc
+  10263,         // !NPC - Easterling!
+  1192,          // Uruk-Lhuth
+  0,             // !NPC - Undead!
+  1190,          // Olog-Hai
+  1192,          // Haradrim
+  0,             // !UNUSED!
+  0,             // !NPC - Troll!
+  0              // !UNUSED!
 };
 
 int r_mortal_idle_room[MAX_RACES];
@@ -3164,7 +3261,7 @@ char * race_abbrevs[MAX_RACES+40/*for mob ones*/] = {
   "WdE",
   "Hob",
   "HiE",
-  "??",
+  "Beo",
   "??",
   "??",
   "??",
@@ -3175,8 +3272,8 @@ char * race_abbrevs[MAX_RACES+40/*for mob ones*/] = {
   "Eas",
   "Lhu",
   "??",
-  "??",
-  "??",
+  "Olo",
+  "Har",
   "??",
   "??",
   "??"
@@ -3190,7 +3287,7 @@ int max_race_align[MAX_RACES]={
   500,
   500,
   500,
-  0,
+  500,
   0,
   0,
   0,
@@ -3201,8 +3298,8 @@ int max_race_align[MAX_RACES]={
   -100,
   -100,
   0,
-  0,
-  0,
+  -100,
+  -100,
   0,
   0,
   0
@@ -3214,7 +3311,7 @@ int min_race_align[MAX_RACES]={
   -200,           // 50
   -100,          // 100
   -100,          // 100
-  0,
+  -100,
   0,
   0,
   0,
@@ -3225,8 +3322,8 @@ int min_race_align[MAX_RACES]={
   -500,
   -500,
   0,
-  0,
-  0,
+  -500,
+  -500,
   0,
   0,
   0

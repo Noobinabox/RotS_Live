@@ -230,6 +230,9 @@ struct command_info {
 #define SCMD_KICK        1
 #define SCMD_SWING       2
 
+#define SCMD_BITE        1
+#define SCMD_REND        2
+#define SCMD_MAUL        3
 
 #define CMD_ENTER        7
 #define CMD_LOOK        15
@@ -269,6 +272,8 @@ struct command_info {
 #define CMD_STALK       215
 #define CMD_COVER       216
 #define CMD_SHOOT       229
+#define CMD_MARK        237
+#define CMD_BLINDING    238
 
 #define CMD_HIDE	86
 #define CMD_AMBUSH      87

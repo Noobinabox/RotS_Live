@@ -170,9 +170,16 @@ void recalc_skills(struct char_data *ch) {
   case RACE_HIGH:
     tmp = LANG_HUMAN;
     break;
+  case RACE_BEORNING:
+    tmp = LANG_ANIMAL;
+    break;
   case RACE_URUK: 
   case RACE_HARAD:
   case RACE_ORC:
+  case RACE_HARADRIM:
+    tmp = LANG_ORC;
+    break;
+  case RACE_OLOGHAI:
   case RACE_MAGUS:
     tmp = LANG_ORC;
     break;
@@ -197,6 +204,11 @@ void recalc_skills(struct char_data *ch) {
   if(!IS_NPC(ch) && (GET_RACE(ch) == RACE_MAGUS) &&
      (GET_RAW_KNOWLEDGE(ch, SPELL_BLINK) == 0))
     SET_KNOWLEDGE(ch, SPELL_BLINK, 10);
+
+  if(!IS_NPC(ch) && (GET_RACE(ch) == RACE_BEORNING) && (GET_RAW_KNOWLEDGE(ch, SKILL_NATURAL_ATTACK) == 0))
+  {
+    SET_KNOWLEDGE(ch, SKILL_NATURAL_ATTACK, 10);
+  }
 }
 
 
@@ -217,7 +229,8 @@ SPECIAL(guild) {
     return TRUE;
   }
   
-  if(IS_AGGR_TO(host, ch)) {
+  if(!WILL_TEACH(host, ch))
+  {
     do_say(host, "Go away, I won't teach you anything!", 0, 0, 0);
     return TRUE;
   }
@@ -2427,6 +2440,40 @@ SPECIAL(ghoul){
   return 0;
 }
 
+SPECIAL(swarm)
+{
+  return 0;
+}
+
+SPECIAL(dragon)
+{
+  struct char_data *tmpch, *tmpch_next;
+	int dam_value, mob_level;
+	
+	if (GET_POS(host) != POSITION_FIGHTING)
+	{
+		return 0;
+	}
+
+	if (number(0, 4))
+	{
+		return 0;
+	}
+
+	mob_level = GET_LEVEL(host) / 2;
+
+	dam_value = dice(mob_level, 6);
+
+	for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch_next)
+	{
+		tmpch_next = tmpch->next_in_room;
+		if (tmpch != host)
+		{
+			damage(host, tmpch, dam_value, SPELL_DRAGONSBREATH, 0);
+		}
+	}
+	return 0;
+}
 
 
 SPECIAL(vampire_huntress){                  // Thuringwethil - in bat form she hunts through her zone

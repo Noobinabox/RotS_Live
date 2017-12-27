@@ -633,6 +633,8 @@ ACMD(do_bash)
 		}
 		if ((tmp == RACE_URUK) || (tmp == RACE_DWARF)) prob += 10;
 
+		if ((tmp == RACE_BEORNING) || (tmp == RACE_OLOGHAI)) prob += 20;
+
 		if (IS_SET(EXIT(ch, door)->exit_info, EX_DOORISHEAVY)) prob = -1;
 		if (IS_SET(EXIT(ch, door)->exit_info, EX_NOBREAK)) prob = -1;
 
@@ -1002,4 +1004,9 @@ ACMD(do_disengage){
   
 }
 
+
+ACMD(do_beorning)
+{
+	return;
+}
 

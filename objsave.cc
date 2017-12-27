@@ -1431,7 +1431,25 @@ gen_receptionist(struct char_data *ch, int cmd, char *arg, int mode)
 	FALSE, recep, 0, ch, TO_VICT);
     return (TRUE);
   }
-  
+
+  if(GET_RACE(recep) == RACE_BEORNING && GET_RACE(ch) != RACE_BEORNING)
+  {
+    act("$n tells you, 'Beornings only here. Try elsewhere.'", FALSE, recep, 0, ch, TO_VICT);
+    return (TRUE);
+  }
+
+  if (GET_RACE(recep) == RACE_OLOGHAI && GET_RACE(ch) != RACE_OLOGHAI)
+  {
+    act("$n tells you, 'Olog-Hais only here. Try elsewhere.'", FALSE, recep, 0, ch, TO_VICT);
+    return (TRUE);
+  }
+
+  if (GET_RACE(recep) == RACE_HARADRIM && GET_RACE(ch) != RACE_HARADRIM)
+  {
+    act("$n tells you, 'Haradrims only here. Try elsewhere.'", FALSE, recep, 0, ch, TO_VICT);
+    return (TRUE);
+  }
+
   if((ch) && (!RP_RACE_CHECK(recep, ch))) {
     act("$n tells you, 'You may not stay here.  Please try elsewhere.'",
 	FALSE, recep, 0, ch, TO_VICT);

@@ -1414,6 +1414,7 @@ void load_mobiles(FILE *mob_f)
 				mob_proto[i].specials.vulnerability = tmp4;
 				mob_proto[i].specials.script_number = tmp5;
 				mob_proto[i].points.spirit = tmp6;
+        mob_proto[i].specials2.will_teach = tmp7;
 
 				fscanf(mob_f, " \n");
 

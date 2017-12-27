@@ -223,6 +223,11 @@ int	hit_gain(const char_data* character)
 		gain *= 0.25;
 	}
 
+	if (GET_RACE(character) == RACE_OLOGHAI)
+	{
+		gain *= 3.0;
+	}
+
 	gain = adjust_regen_for_level(character->player.level, gain);
 
 	// Cast back into an integer when we're done.
@@ -297,7 +302,22 @@ int	move_gain(const char_data* character)
 			gain += 5.0;
 		}
 
+		if (race == RACE_BEORNING)
+		{
+			gain *= 1.25;
+		}
+
+		if (race == RACE_OLOGHAI)
+		{
+			gain *= 3.0;
+		}
+
 		if (is_affected_by(*character, AFF_POISON))
+		{
+			gain *= 0.25;
+		}
+
+		if(affected_by_spell(character, SKILL_MARK))
 		{
 			gain *= 0.25;
 		}
@@ -305,6 +325,11 @@ int	move_gain(const char_data* character)
 		if (get_condition(*character, FULL) == 0 || get_condition(*character, THIRST) == 0)
 		{
 			gain *= 0.25;
+		}
+
+		if(race == RACE_OLOGHAI)
+		{
+			gain *= 3.0;
 		}
 
 		return int(gain);
@@ -570,6 +595,7 @@ int	check_idling(char_data* character)
 /* Update both PC's & NPC's and objects*/
 void recount_light_room(int room);
 void update_room_tracks();
+void update_bleed_tracks();
 extern int LOOT_DECAY_TIME;
 
 void point_update(void)
@@ -584,6 +610,7 @@ void point_update(void)
 	/* characters */
 	recalc_zone_power();
 	update_room_tracks();
+	update_bleed_tracks();
 
 	mytime = time(0);
 
@@ -857,6 +884,22 @@ void update_room_tracks(){
   }
 }
 
+void update_bleed_tracks()
+{
+	room_data *tmproom;
+	int roomnum, tmp;
+
+	for(roomnum = 0; roomnum <= top_of_world; roomnum++)
+	{
+		if(tmproom->bleed_track[tmp].data / 8 == time_info.hours)
+		{
+			tmproom->bleed_track[tmp].char_number = 0;
+			tmproom->bleed_track[tmp].data = 0;
+			tmproom->bleed_track[tmp].condition = 0;
+		}
+	}
+}
+
 /*
  * Function called when a character chooses "1" from the main
  * menu and the character's level is 0.
@@ -871,7 +914,14 @@ do_start(struct char_data *ch)
   GET_LEVEL(ch) = 0;
   GET_EXP(ch) = 1500;
   
-  GET_BODYTYPE(ch) = 1;
+	if (GET_RACE(ch) == RACE_BEORNING)
+	{
+		GET_BODYTYPE(ch) = 15;
+	}
+	else
+	{
+		GET_BODYTYPE(ch) = 1;
+	}
   set_title(ch);
   
   roll_abilities(ch, 80, 85);
@@ -1107,6 +1157,22 @@ void	affect_update_person(struct char_data * i, int mode )
 		 }
 	   }
 	   break;
+		case SKILL_MARK:
+			/* If the player is affected by regeneration reduce the duration of mark. */
+			otheraf = affected_by_spell(i, SPELL_REGENERATION);
+			if (otheraf)
+			{
+				/* If the target is at full health remove the duration faster. */
+				if (i->tmpabilities.hit >= i->abilities.hit)
+				{
+					af->duration = std::max(af->duration - 4, 0);
+				}
+				else
+				{
+					af->duration = std::max(af->duration - 2, 0);
+				}
+			}
+			break;
 	 default:
 	   break;
 	 }

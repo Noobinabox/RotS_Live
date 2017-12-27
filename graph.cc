@@ -340,3 +340,78 @@ int show_tracks(char_data * ch, char * name, int mode){
   return count;
 }
 
+
+int show_blood_trail(struct char_data* ch, char* name, int mode)
+{
+	int tmp, count, chance_factor, ch_num, tr_time, shall_show;
+	room_data* ch_room;
+	if (ch->in_room == NOWHERE)
+	{
+		return 0;
+	}
+
+	ch_room = &world[ch->in_room];
+	chance_factor = 0;
+
+	if (ch_room->sector_type == SECT_CITY)
+	{
+		chance_factor = -100;
+	}
+
+	if (mode == 1)
+	{
+		chance_factor += 20;
+	}
+	
+	if (mode == 2)
+	{
+		chance_factor -= 20;
+	}
+
+	buf[0] = 0;
+
+	for (tmp = 0, count = 0; tmp < NUM_OF_BLOOD_TRAILS; tmp++)
+	{
+		ch_num = ch_room->bleed_track[tmp].char_number;
+		tr_time = ch_room->bleed_track[tmp].condition;
+		shall_show = (ch_num != 0) && ((mode == 1) || (tr_time < 3)) &&
+			(GET_SKILL(ch, SKILL_MARK) + chance_factor - tr_time * 2> number(0, 99));
+
+		if (shall_show && name && *name)
+		{
+			if (ch_num > 0)
+			{
+				shall_show = isname(name, mob_proto[ch_num].player.name, 1);
+			}
+			else
+			{
+				shall_show = !str_cmp(name, pc_race_keywords[-ch_num]);
+			}
+		}
+
+		if (shall_show)
+		{
+			count++;
+			if (IS_WATER(ch->in_room))
+			{
+				sprintf(buf, "The water looks %s distrubed to the %s.\n\r", 
+					water_track_desc(tr_time), dirs[ch_room->bleed_track[tmp].data & 7]);
+			}
+			else
+			{
+				sprintf(buf, "%sA blood trail leading %s is %s.\n\r", buf, dirs[ch_room->bleed_track[tmp].data & 7], track_desc(tr_time));
+			}
+		}
+	}
+
+	if (count != 0)
+	{
+		if (mode == 1)
+		{
+			send_to_char("You find some blood trails here.\r\n", ch);
+		}
+		send_to_char(buf, ch);
+	}
+	return count;
+}
+

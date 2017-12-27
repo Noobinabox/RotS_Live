@@ -1117,15 +1117,15 @@ std::string get_logged_in_count_message(descriptor_data* list)
 			{
 				int race = character->player.race;
 				if (race == RACE_WOOD || race == RACE_DWARF || race == RACE_HOBBIT
-					|| race == RACE_HUMAN)
+					|| race == RACE_HUMAN || race == RACE_BEORNING)
 				{
 					++whitie_count;
 				}
-				else if (race == RACE_URUK || race == RACE_ORC)
+				else if (race == RACE_URUK || race == RACE_ORC || race == RACE_OLOGHAI)
 				{
 					++darkie_count;
 				}
-				else if (race == RACE_MAGUS)
+				else if (race == RACE_MAGUS || race == RACE_HARADRIM)
 				{
 					++lhuth_count;
 				}

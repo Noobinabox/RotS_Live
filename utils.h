@@ -398,8 +398,8 @@ void untrack_specialized_mage(char_data* mage);
         ((IS_SET(world[adj_room].room_flags, SHADOWY)) && \
 	 (!IS_SET(world[cur_room].dir_option[door]->exit_info, EX_CLOSED)))
 
-#define SUN_PENALTY(ch) (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS)) && OUTSIDE(ch) && (weather_info.sunlight == SUN_LIGHT) && (!IS_SET(world[ch->in_room].room_flags, DARK)) && (!IS_SET(world[ch->in_room].room_flags, SHADOWY)))
-#define EVIL_RACE(ch)  ((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS))
+#define SUN_PENALTY(ch) (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_OLOGHAI) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS)) && OUTSIDE(ch) && (weather_info.sunlight == SUN_LIGHT) && (!IS_SET(world[ch->in_room].room_flags, DARK)) && (!IS_SET(world[ch->in_room].room_flags, SHADOWY)))
+#define EVIL_RACE(ch)  ((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI) || (GET_RACE(ch) == RACE_HARADRIM))
 
 #define GET_OB(ch) ((ch)->points.OB)
 #define SET_OB(ch) ((ch)->points.OB)
@@ -576,7 +576,7 @@ int CAN_SEE_OBJ(char_data *sub, obj_data *obj);
 #define RACE_GOOD(ch) ( (GET_RACE(ch) > 0) ? (GET_RACE(ch) < 10) ? 1 : 0 : 0)
 #define RACE_EVIL(ch) ( (GET_RACE(ch) > 10) ? 1 : 0 )
 #define RACE_EAST(ch) ( (GET_RACE(ch) == 14) ? 1 : 0 )
-#define RACE_MAGI(ch) ( (GET_RACE(ch) == 15) ? 1 : 0 )
+#define RACE_MAGI(ch) ( (GET_RACE(ch) == 15) || (GET_RACE(ch) == 18) ? 1 : 0 )
 
 #define GET_REROLLS(ch) ((ch)->specials2.rerolls)
 
@@ -607,6 +607,13 @@ int CAN_SEE_OBJ(char_data *sub, obj_data *obj);
    (((ch)->specials2.pref & (1 << GET_RACE(vict))) || \
    ((other_side(ch, vict) && !IS_NPC(vict)) \
     && GET_RACE(ch) != 0)))
+
+#define WILL_TEACH(ch, vict) \
+  (IS_NPC(ch) && \
+  (((ch)->specials2.will_teach & (1 << GET_RACE(vict))) || \
+  ((other_side(ch, vict) && !IS_NPC(vict)) \
+  && GET_RACE(ch) != 0)))
+
 
 #define RP_RACE_CHECK(ch, vict) (IS_NPC(ch) && (!(ch)->specials2.rp_flag)  || \
   ( (ch)->specials2.rp_flag & (1 << GET_RACE(vict)))    )

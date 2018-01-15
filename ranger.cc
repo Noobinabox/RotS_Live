@@ -61,7 +61,7 @@ const int GATHER_FOOD = 7218;
 const int GATHER_LIGHT = 7007;
 const int GATHER_BOW = 2700;
 const int GATHER_ARROW = 2720;
-const int GATHER_DUST = 4620;
+const int GATHER_DUST = 2100;
 const int GATHER_POISON = 4614;
 const int GATHER_ANTIDOTE = 4615;
 
@@ -905,10 +905,13 @@ ACMD(do_ambush)
     return;
   }
 
-  if (ch->equipment[WIELD]->obj_flags.value[2] > 2) {
-    send_to_char("You need to wield a smaller weapon to surprise your victim"
-      ".\r\n", ch);
-    return;
+  if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
+
+	  if((GET_RACE(ch) == RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS))
+	  {
+    	send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
+    	return;
+	  }
   }
 
   if (!GET_SKILL(ch,SKILL_AMBUSH)) {
@@ -3235,7 +3238,7 @@ ACMD(do_mark)
 		send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 
-																		// Clean-up targets.
+		// Clean-up targets.
 		wtl->targ1.cleanup();
 		wtl->targ2.cleanup();
 		return;
@@ -3353,150 +3356,152 @@ ACMD(do_mark)
 
 }
 
-// bool can_ch_blind(char_data* ch)
-// {
-// 	const room_data& room = world[ch->in_room];
-// 	obj_data* dust = NULL;
+bool can_ch_blind(char_data* ch)
+{
+	const room_data& room = world[ch->in_room];
+	obj_data* dust = NULL;
 
-// 	if (GET_RACE(ch) != RACE_HARADRIM)
-// 	{
-// 		send_to_char("Unrecognized Command.\r\n", ch);
-// 		return false;
-// 	}
+	if (GET_RACE(ch) != RACE_HARADRIM)
+	{
+		send_to_char("Unrecognized Command.\r\n", ch);
+		return false;
+	}
 
-// 	if (utils::is_shadow(*ch))
-// 	{
-// 		send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
-// 		return false;
-// 	}
+	if (utils::is_shadow(*ch))
+	{
+		send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+		return false;
+	}
 
-// 	if (utils::is_npc(*ch))
-// 	{
-// 		char_data* receiver = ch->master ? ch->master : ch;
-// 		send_to_char("Your follower lacks the knowledge to blind a target.\r\n", receiver);
-// 		return false;
-// 	}
+	if (utils::is_npc(*ch))
+	{
+		char_data* receiver = ch->master ? ch->master : ch;
+		send_to_char("Your follower lacks the knowledge to blind a target.\r\n", receiver);
+		return false;
+	}
 
-// 	if (utils::is_set(room.room_flags, (long)PEACEROOM))
-// 	{
-// 		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
-// 		return false;
-// 	}
+	if (utils::is_set(room.room_flags, (long)PEACEROOM))
+	{
+		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+		return false;
+	}
 
-// 	if (utils::get_skill(*ch, SKILL_BLINDING) == 0)
-// 	{
-// 		send_to_char("Learn how to blind first.\r\n", ch);
-// 		return false;
-// 	}
+	if (utils::get_skill(*ch, SKILL_BLINDING) == 0)
+	{
+		send_to_char("Learn how to blind first.\r\n", ch);
+		return false;
+	}
 
-// 	if(ch->carrying != NULL)
-// 	{
-// 		for (obj_data* item = ch->carrying; item; item = item->next)
-// 		{
-// 			if (item->item_number == GATHER_DUST)
-// 			{
-// 				dust = item;
-// 				break;
-// 			}
-// 		}
+	if(ch->carrying != NULL)
+	{
+		for (obj_data* item = ch->carrying; item; item = item->next)
+		{
+			if (item->item_number == GATHER_DUST)
+			{
+				dust = item;
+				break;
+			}
+		}
 
-// 		if (dust == NULL)
-// 		{
-// 			send_to_char("You do not possess the appropriate materials to blind your target.\r\n", ch);
-// 			return false;
-// 		}
-// 	}
+		if (dust == NULL)
+		{
+			send_to_char("You do not possess the appropriate materials to blind your target.\r\n", ch);
+			return false;
+		}
+	}
 
 
-// 	return true;
-// }
+	return true;
+}
 
-// char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
-// {
-// 	char_data* victim = NULL;
+char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
+{
+	char_data* victim = NULL;
 
-// 	if (target->targ1.type == TARGET_TEXT)
-// 	{
-// 		victim = get_char_room(ch->name, target->targ1.ptr.text->text);
-// 	}
-// 	else if (target->targ1.type == TARGET_CHAR)
-// 	{
-// 		if (char_exists(target->targ1.ch_num))
-// 		{
-// 			victim = target->targ1.ptr.ch;
-// 		}
-// 	}
+	if (target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
+	}
+	else if (target->targ1.type == TARGET_CHAR)
+	{
+		if (char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
 
-// 	if (victim == NULL)
-// 	{
-// 		if (ch->specials.fighting)
-// 		{
-// 			victim = ch->specials.fighting;
-// 		}
-// 		else
-// 		{
-// 			send_to_char("Blind who?\r\n", ch);
-// 			return NULL;
-// 		}
-// 	}
+	if (victim == NULL)
+	{
+		if (ch->specials.fighting)
+		{
+			victim = ch->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Blind who?\r\n", ch);
+			return NULL;
+		}
+	}
 
-// 	if (ch->in_room != victim->in_room)
-// 	{
-// 		send_to_char("Your victim is no longer here.\r\n", ch);
-// 		return NULL;
-// 	}
+	if (ch->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", ch);
+		return NULL;
+	}
 
-// 	if (ch == victim)
-// 	{
-// 		send_to_char("Why would you blind yourself?!\r\n", ch);
-// 		return NULL;
-// 	}
+	if (ch == victim)
+	{
+		send_to_char("Why would you blind yourself?!\r\n", ch);
+		return NULL;
+	}
 
-// 	if (!CAN_SEE(ch, victim))
-// 	{
-// 		send_to_char("Blind who?\r\n", ch);
-// 		return NULL;
-// 	}
+	if (!CAN_SEE(ch, victim))
+	{
+		send_to_char("Blind who?\r\n", ch);
+		return NULL;
+	}
 
-// 	return victim;
-// }
+	return victim;
+}
 
-// int dust_calculate_success(const char_data* ch, const char_data* victim)
-// {
-// 	int random_roll = number(0, 99);
+int dust_calculate_success(const char_data* ch, const char_data* victim)
+{
+	int random_roll = number(0, 99);
 
-// 	// Attacker calculations
-// 	int ch_blind_skill = utils::get_skill(*ch, SKILL_BLINDING);
-// 	int ch_ranger_level = utils::get_prof_level(PROF_RANGER, *ch);
-// 	int ch_dex = ch->get_cur_dex();
+	// Attacker calculations
+	int ch_blind_skill = utils::get_skill(*ch, SKILL_BLINDING);
+	int ch_ranger_level = utils::get_prof_level(PROF_RANGER, *ch);
+	int ch_dex = ch->get_cur_dex();
 
-// 	// Victim calculation saves
-// 	int victim_ranger_level = get_prof_level(PROF_RANGER, *victim);
-// 	int victim_dex = victim->get_cur_dex();
+	// Victim calculation saves
+	int victim_ranger_level = utils::get_prof_level(PROF_RANGER, *victim);
+	int victim_dex = victim->get_cur_dex();
+	int victim_con = victim->get_cur_con();
 
-// 	int success_rate = (ch_blind_skill + ch_ranger_level + ch_dex) - (random_roll + victim_ranger_level + victim_dex);
-// 	return success_rate;
-// }
+	int success_rate = (ch_blind_skill + ch_ranger_level + ch_dex) - (random_roll + victim_ranger_level + ((victim_dex + victim_con) / 2));
+	return success_rate;
+}
 
-// void on_dust_miss(const char_data* ch, const char_data* victim, obj_data* dust)
-// {
-// 	extract_obj(dust);
-// 	damage(ch, victim, 0, SKILL_BLINDING, 0);
-// }
+void on_dust_miss(char_data* ch,char_data* victim, obj_data* dust)
+{
+	extract_obj(dust);
+	damage(ch, victim, 0, SKILL_BLINDING, 0);
+}
 
-// void on_dust_hit(const char_data* ch, const char_data* victim, obj_data* dust)
-// {
-// 	struct affected_type af;
-// 	int affects_last = 22 - ranger_bonus;
-// 	extract_obj(dust);
-// 	damage(ch, victim, 1, SKILL_BLINDIING, 0);
-// 	af.type = AFF_BLIND;
-// 	af.duration = affects_last;
-// 	af.modifier = 0;
-// 	af.location = APPLY_NONE;
-// 	af.bitvector = 0;
-// 	affect_to_char(victim, &af);
-// }
+void on_dust_hit(char_data* ch,char_data* victim, obj_data* dust)
+{
+	int ranger_bonus = 15; // Setting this as a default for now.
+	struct affected_type af;
+	int affects_last = 22 - ranger_bonus;
+	extract_obj(dust);
+	damage(ch, victim, 1, SKILL_BLINDING, 0);
+	af.type = AFF_BLIND;
+	af.duration = affects_last;
+	af.modifier = 0;
+	af.location = APPLY_NONE;
+	af.bitvector = 0;
+	affect_to_char(victim, &af);
+}
 
 /*=================================================================================
   do_blinding:
@@ -3507,122 +3512,120 @@ ACMD(do_mark)
 ==================================================================================*/
 ACMD(do_blinding)
 {
+	one_argument(argument, arg);
 
-	return;
-	// one_argument(argument, arg);
+	if (subcmd == -1)
+	{
+		send_to_char("Your attempt to blind your target have been foiled.\r\n", ch);
+		ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+		wtl->targ1.cleanup();
+		wtl->targ2.cleanup();
+		return;
+	}
 
-	// if (subcmd == -1)
-	// {
-	// 	send_to_char("Your attempt to blind your target have been foiled.\r\n", ch);
-	// 	ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0);
-	// 	wtl->targ1.cleanup();
-	// 	wtl->targ2.cleanup();
-	// 	return;
-	// }
+	if (!can_ch_blind(ch))
+	{
+		return;
+	}
 
-	// if (!can_ch_blind(ch))
-	// {
-	// 	return;
-	// }
+	char_data* victim = is_targ_blind_valid(ch, wtl);
 
-	// char_data* victim = is_targ_blind_valid(ch, wtl);
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if (!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
 
-	// game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	// if (!bb_instance.is_target_valid(ch, victim))
-	// {
-	// 	send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
-	// 	return;
-	// }
+	if (utils::is_affected_by(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your sanctuary!\r\n", ch);
+		act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
 
-	// if (utils::is_affected_by(*ch, AFF_SANCTUARY))
-	// {
-	// 	appear(ch);
-	// 	send_to_char("You cast off your sanctuary!\r\n", ch);
-	// 	act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
-	// }
+	if (affected_by_spell(victim, AFF_BLIND))
+	{
+		act("$N is already blind.\r\n", FALSE, ch, 0, victim, TO_CHAR);
+		return;
+	}
 
-	// if (affected_by_spell(victim, AFF_BLIND))
-	// {
-	// 	act("$N is already blind.\r\n", FALSE, ch, 0, victim, TO_CHAR);
-	// 	return;
-	// }
+	switch (subcmd)
+	{
+		case 0:
+		{
+			if (victim == NULL)
+			{
+				return;
+			}
 
-	// switch (subcmd)
-	// {
-	// 	case 0:
-	// 	{
-	// 		if (victim == NULL)
-	// 		{
-	// 			return;
-	// 		}
+			send_to_char("BLINDING ATTACK STARTED.\r\n", ch);
+			act("$n STARTING BLINDING ATTACK.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+			wtl->targ1.cleanup();
+			wtl->targ2.cleanup();
 
-	// 		send_to_char("BLINDING ATTACK STARTED.\r\n", ch);
-	// 		act("$n STARTING BLINDING ATTACK.\r\n", FALSE, ch, 0, 0, TO_ROOM);
-	// 		wtl->targ1.cleanup();
-	// 		wtl->targ2.cleanup();
+			WAIT_STATE_FULL(ch, skills[SKILL_BLINDING].beats, CMD_BLINDING, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+		}
+		break;
 
-	// 		WAIT_STATE_FULL(ch, skills[SKILL_BLINDING].beats, CMD_BLINDING, 1, 30, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
-	// 	}
-	// 	break;
+		case 1:
+		{
+			if(victim == NULL)
+			{
+				return;
+			}
 
-	// 	case 1:
-	// 	{
-	// 		if(victim == NULL)
-	// 		{
-	// 			return;
-	// 		}
+			if(!CAN_SEE(ch, victim))
+			{
+				send_to_char("Blind who?\r\n", ch);
+				return;
+			}
 
-	// 		if(!CAN_SEE(ch, victim))
-	// 		{
-	// 			send_to_char("Blind who?\r\n", ch);
-	// 			return;
-	// 		}
+			if(ch->in_room != victim->in_room)
+			{
+				send_to_char("Your victim is no longer here.\r\n", ch);
+				return;
+			}
 
-	// 		if(ch->in_room != victim->in_room)
-	// 		{
-	// 			send_to_char("Your victim is no longer here.\r\n", ch);
-	// 			return;
-	// 		}
+			obj_data* dust = NULL;
+			for(obj_data* item = ch->carrying; item; item = item->next)
+			{
+				if(item->item_number == GATHER_DUST)
+				{
+					dust = item;
+					break;
+				}
+			}
 
-	// 		obj_data* dust = NULL;
-	// 		for(obj_data* item = ch->carrying; item; item = item->next)
-	// 		{
-	// 			if(item->virt_num == GATHER_DUST)
-	// 			{
-	// 				dust = item;
-	// 				break;
-	// 			}
-	// 		}
+			if(dust == NULL)
+			{
+				send_to_char("You lack the material to use this skill.\r\n", ch);
+				return;
+			}
 
-	// 		if(dust == NULL)
-	// 		{
-	// 			send_to_char("You lack the material to use this skill.\r\n", ch);
-	// 			return;
-	// 		}
+			send_to_char("You throw your dust at the target.\r\n", ch);
+			act("$n throws some dust at you!\r\n", FALSE, ch, 0, 0, TO_VICT);
 
-	// 		send_to_char("You throw your dust at the target.\r\n", ch);
-	// 		act("$n throws some dust at you!\r\n", FALSE, ch, 0, 0, TO_VICT);
+			int percent_hit = dust_calculate_success(ch, victim);
+			if(percent_hit < 0)
+			{
+				on_dust_miss(ch, victim, dust);
+			}
+			else
+			{
+				on_dust_hit(ch, victim, dust);
+			}
 
-	// 		int percent_hit = dust_calculate_success(ch, victim);
-	// 		if(percent_hit < 0)
-	// 		{
-	// 			on_dust_miss(ch, victim, dust);
-	// 		}
-	// 		else
-	// 		{
-	// 			on_dust_hit(ch, victim, dust);
-	// 		}
+			ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+			wtl->targ1.cleanup();
+			wtl->targ2.cleanup();
+		}
+		break;
 
-	// 		ch->specials.ENERGY = std::min(ch->specials.ENERGY, (sh_int)0);
-	// 		wtl->targ1.cleanup();
-	// 		wtl->targ2.cleanup();
-	// 	}
-	// 	break;
-
-	// 	default:
-	// 		sprintf(buf2, "do_blinding: illegal subcommand '%d'.\r\n", subcmd);
-	// 		mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
-	// 		abort_delay(ch);
-	// 	break;;
-	// }
+		default:
+			sprintf(buf2, "do_blinding: illegal subcommand '%d'.\r\n", subcmd);
+			mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+			abort_delay(ch);
+		break;;
+	}
 }

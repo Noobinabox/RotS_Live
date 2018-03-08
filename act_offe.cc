@@ -1010,3 +1010,134 @@ ACMD(do_beorning)
 	return;
 }
 
+/*=================================================================================
+   can_ch_rend:
+   Checks to see if the render is a beorning and they have the skill rend.
+   ------------------------------Change Log---------------------------------------
+   slyon: March 8, 2018
+==================================================================================*/
+bool can_ch_rend(char_data* render)
+{
+	using namespace utils;
+	if(GET_RACE(render) != RACE_BEORNING)
+	{
+		send_to_char("Unrecognized command.\r\n", render);
+		return false;
+	}
+
+	if(is_shadow(*render))
+	{
+		send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", render);
+		retun false;
+	}
+
+	const room_data& room = world[render->in_room];
+	if(is_set(room.room_flags, (long)PEACEROOM))
+	{
+		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", render);
+		return false;
+	}
+
+	if(utils::get_skill(*render, SKILL_REND) == 0)
+	{
+		send_to_char("Learn how to rend first.\r\n", render);
+		return false;
+	}
+	return true;
+}
+
+char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
+{
+	char_data* victim = NULL;
+
+	if(target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(render, target->targ1.ptr.text->text);
+	}
+	else if (target->targ1.type == TARGET_CHAR)
+	{
+		if(char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
+
+	if(victim == NULL)
+	{
+		if(render->specials.fighting)
+		{
+			victim = render->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Rend who?\r\n", render);
+			return NULL;
+		}
+	}
+
+	if(render->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", render);
+		return NULL;
+	}
+
+	if(render == victim)
+	{
+		send_to_char("But your fur is so nice...\r\n", render);
+		return NULL;
+	}
+
+	if(!CAN_SEE(render, victim))
+	{
+		send_to_char("Rend who?\r\n", render);
+		return NULL;
+	}
+
+	if(!IS_SET(victim->specials.affected_by, AFF_BASH))
+	{
+		send_to_char("You can only rend victims that are bashed.\r\n", render);
+		return NULL;
+	}
+	return victim;
+}
+
+ACMD(do_rend)
+{
+	int prob, num, dam;
+	one_argument(argument, arg);
+
+	if(!can_ch_rend(ch))
+		return;
+
+	char_data* victim = is_rend_targ_valid(ch, wtl);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if(!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if(utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	if(victim == NULL)
+	{
+		return;
+	}
+
+	prob = GET_SKILL(ch, SKILL_REND);
+	prob -= get_real_dodge(victim) / 2;
+	prob -= get_real_parry(victim) / 2;
+	prob += get_real_OB(ch) / 2;
+	prob += number(1, 100);
+	prob -= 120;
+
+	
+delay:
+
+}

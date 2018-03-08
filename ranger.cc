@@ -212,31 +212,43 @@ ACMD(do_ride)
 	IS_CARRYING_W(mountch) += GET_WEIGHT(ch) + IS_CARRYING_W(ch);
 }
 
-ACMD (do_dismount) {
-  struct char_data * mount = 0;
-  struct char_data * were_rider;
+ACMD(do_dismount) 
+{
+	if (ch == NULL)
+	{
+		sprintf(buf, "Dismount called without a character.  Exiting.");
+		mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
+		return;
+	}
 
-  if (!ch) {
-    sprintf(buf,"Screwed mount %s, no rider, all be wary!", GET_NAME(mount));
-    mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
-    return;
-  }
-  if (!IS_RIDING(ch))
-    send_to_char("You are not riding anything.\n\r",ch);
-  else{
-    mount = ch->mount_data.mount;
-    if (IS_RIDDEN(mount)) {
-      were_rider = mount->mount_data.rider;
-    } else {
-      sprintf(buf,"Screwed mount %s, all be wary!",GET_NAME(mount));
-      mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
-      were_rider = 0;
-    }
-    stop_riding(ch);
-    if (IS_NPC(mount) && (were_rider == ch) &&
-	(ch->specials.fighting != mount))
-      add_follower(mount, ch, FOLLOW_MOVE);
-  }
+	if (IS_RIDING(ch) == false)
+	{
+		send_to_char("You are not riding anything.\n\r", ch);
+	}
+	else 
+	{
+		char_data* mount = ch->mount_data.mount;
+		if (mount != NULL)
+		{
+			char_data* were_rider = NULL;
+			if (IS_RIDDEN(mount))
+			{
+				were_rider = mount->mount_data.rider;
+			}
+			else
+			{
+				sprintf(buf, "Screwed mount %s, all be wary!", GET_NAME(mount));
+				mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
+				were_rider = NULL;
+			}
+
+			stop_riding(ch);
+			if (IS_NPC(mount) && were_rider == ch && ch->specials.fighting != mount)
+			{
+				add_follower(mount, ch, FOLLOW_MOVE);
+			}
+		}
+	}
 }
 
 ACMD (do_track) {

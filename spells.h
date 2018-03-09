@@ -95,11 +95,11 @@
 #define SPELL_HAZE              52
 #define SPELL_FEAR              53
 #define SPELL_DIVINATION        54
-#define SPELL_CURE_WOUNDS       55
+#define SKILL_REND              55
 #define SPELL_SANCTUARY         56
 #define SPELL_VITALITY          57
 #define SPELL_TERROR            58
-#define SPELL_REFRESH_ALL       59
+#define SKILL_UNUSED3           59
 #define SPELL_ENCHANT_WEAPON    60
 #define SKILL_ARCHERY           61
 #define SPELL_SUMMON            62
@@ -136,9 +136,9 @@
 #define SPELL_RELOCATE           92
 #define SPELL_CONE_OF_COLD       93
 #define SPELL_IDENTIFY           94
-#define SPELL_LOCATE_OBJECT      95
+#define SKILL_UNUSED1            95
 #define SPELL_FIREBALL           96
-#define SPELL_LOCATE_LIFE        97
+#define SKILL_UNUSED2            97
 #define SPELL_SEARING_DARKNESS   98
 #define SPELL_LIGHTNING_STRIKE   99
 
@@ -164,12 +164,18 @@
 #define SPELL_ACTIVITY          118
 #define SPELL_RAGE              119
 #define SPELL_ANGER             120
+/* These are reserved fro languages do not used them...
+#define LANG_ANIMAL      121
+#define LANG_HUMAN       122
+#define LANG_ORC         123
+*/
 #define SKILL_MARK				124
+#define SKILL_UNUSED4           125
+#define SKILL_UNUSED5           126
 #define SPELL_NONE              127
 
 /* 130-150 are reserved for weapon types.  200 is suffering */
 #define SKILL_TRAP              151
-#define SKILL_REND				152
 
 #define SPELL_FIREBALL2         201
 #define SPELL_DRAGONSBREATH     202

@@ -1010,40 +1010,56 @@ ACMD(do_beorning)
 	return;
 }
 
-/*=================================================================================
-   can_ch_rend:
-   Checks to see if the render is a beorning and they have the skill rend.
-   ------------------------------Change Log---------------------------------------
-   slyon: March 8, 2018
-==================================================================================*/
-bool can_ch_rend(char_data* render)
+bool can_bear_skill(char_data* ch, int skill)
 {
 	using namespace utils;
-	if(GET_RACE(render) != RACE_BEORNING)
+	if(GET_RACE(ch) != RACE_BEORNING)
 	{
-		send_to_char("Unrecognized command.\r\n", render);
+		send_to_char("Unrecognized command.\r\n", ch);
 		return false;
 	}
 
-	if(is_shadow(*render))
+	if(is_shadow(*ch))
 	{
-		send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", render);
-		retun false;
+		send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
+		return false;
 	}
 
-	const room_data& room = world[render->in_room];
+	const room_data& room = world[ch->in_room];
 	if(is_set(room.room_flags, (long)PEACEROOM))
 	{
-		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", render);
+		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
 		return false;
 	}
 
-	if(utils::get_skill(*render, SKILL_REND) == 0)
+	if(utils::get_skill(*ch, skill) == 0)
 	{
-		send_to_char("Learn how to rend first.\r\n", render);
+		switch(skill)
+		{
+			case SKILL_BITE:
+				send_to_char("Learn how to bite first.\r\n", ch);
+				break;
+			case SKILL_REND:
+				send_to_char("Learn how to rend first.\r\n", ch);
+				break;
+			default:
+				send_to_char("Learn how the skill first.\r\n", ch);
+				break;
+		}
 		return false;
 	}
 	return true;
+}
+
+int get_prob_skill(char_data* attacker, char_data* victim, int skill)
+{
+	int prob = GET_SKILL(attacker, skill);
+	prob -= get_real_dodge(victim) / 2;
+	prob -= get_real_parry(victim) / 2;
+	prob += get_real_OB(attacker) / 2;
+	prob += number(1, 100);
+	prob -= 120;
+	return prob;
 }
 
 char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
@@ -1103,10 +1119,9 @@ char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
 
 ACMD(do_rend)
 {
-	int prob, num, dam;
 	one_argument(argument, arg);
 
-	if(!can_ch_rend(ch))
+	if(!can_bear_skill(ch, SKILL_REND))
 		return;
 
 	char_data* victim = is_rend_targ_valid(ch, wtl);
@@ -1130,14 +1145,121 @@ ACMD(do_rend)
 		return;
 	}
 
-	prob = GET_SKILL(ch, SKILL_REND);
-	prob -= get_real_dodge(victim) / 2;
-	prob -= get_real_parry(victim) / 2;
-	prob += get_real_OB(ch) / 2;
-	prob += number(1, 100);
-	prob -= 120;
+	int prob = get_prob_skill(ch, victim, SKILL_REND);
+
+	if(prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_REND, 0);
+	}
+	else 
+	{
+		int dam;
+		dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ((GET_WEIGHT(ch) / 3500) + ch->tmpabilities.str);
+		damage(ch, victim, dam, SKILL_REND, 0);
+	}
 
 	
 delay:
+	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
+		number(0, PULSE_VIOLENCE),
+		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+}
 
+char_data* is_bite_targ_valid(char_data* biter, waiting_type* target)
+{
+	char_data* victim = NULL;
+
+	if(target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(biter, target->targ1.ptr.text->text);
+	}
+	else if(target->targ1.type == TARGET_CHAR)
+	{
+		if(char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
+
+	if(victim == NULL)
+	{
+		if(biter->specials.fighting)
+		{
+			victim = biter->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Bite who?\r\n", biter);
+			return NULL;
+		}
+	}
+
+	if(biter->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", biter);
+		return NULL;
+	}
+
+	if(biter == victim)
+	{
+		send_to_char("You bite yourself! Ouch that hurts!\r\n", biter);
+		return NULL;
+	}
+
+	if(!CAN_SEE(biter, victim))
+	{
+		send_to_char("Bite who?\r\n", biter);
+		return NULL;
+	}
+
+	return victim;
+}
+
+ACMD(do_bite)
+{
+	one_argument(argument, arg);
+
+	if(!can_bear_skill(ch, SKILL_BITE))
+		return;
+	
+	char_data* victim = is_bite_targ_valid(ch, wtl);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if(!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if(utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	if(victim == NULL)
+	{
+		return;
+	}
+
+	int prob = get_prob_skill(ch, victim, SKILL_BITE);
+
+	if(prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_BITE, 0);
+	}
+	else
+	{
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
+		damage(ch, victim, dam, SKILL_BITE, 0);
+		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
+		number(0, PULSE_VIOLENCE),
+		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+	}
+
+delay:
+	WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 +
+		number(0, PULSE_VIOLENCE),
+		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }

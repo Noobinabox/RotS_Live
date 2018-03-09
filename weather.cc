@@ -378,7 +378,7 @@ void	another_hour(int mode)
 }
 
 
-void	weather_change(void)
+void weather_change(void)
 {
    int	diff = 0, change, SectorType;
 
@@ -505,57 +505,89 @@ void	weather_change(void)
 
 }
 
-void initialise_weather(){
-  int count;
+//=============================================================================
+int get_sunlight_level(int current_time, int sun_rise_time, int sun_set_time)
+{
+	if (current_time == sun_rise_time)
+	{
+		return SUN_RISE;
+	}
+	else if (current_time == sun_set_time)
+	{
+		return SUN_SET;
+	}
+	else if (current_time > sun_rise_time && current_time < sun_set_time)
+	{
+		return SUN_LIGHT;
+	}
+	else
+	{
+		return SUN_DARK;
+	}
+}
 
-  for (count = 1;count > 13; count++){
-    weather_info.sky[count] = 0;
-    weather_info.snow[count] = 0;
-    weather_info.temperature[count] = 0;
-  }
-   
-  if (time_info.hours == sun_events[time_info.month][0])
-    weather_info.sunlight = SUN_RISE;
-  else  
-    if (time_info.hours == sun_events[time_info.month][1])
-      weather_info.sunlight = SUN_SET;
-    else
-      if ((time_info.hours > sun_events[time_info.month][0]) && (time_info.hours < sun_events[time_info.month][1]))
-        weather_info.sunlight = SUN_LIGHT;
-      else
-        weather_info.sunlight = SUN_DARK;
+//=============================================================================
+int get_seasonal_pressure(int month)
+{
+	int max_pressure = 80;
+	// Greater atmospheric pressure in Winter and Spring than in Summer and Fall.
+	if (month >= 7 && month <= 12)
+		max_pressure = 50;
 
-   sprintf(buf, "   Current Gametime: %dH %dD %dM %dY.",
-       time_info.hours, time_info.day,
-       time_info.month, time_info.year);
-   log(buf);
+	return dice(1, max_pressure);
+}
 
-   weather_info.pressure = 960;
-   if ((time_info.month >= 7) && (time_info.month <= 12))
-      weather_info.pressure += dice(1, 50);
-   else
-      weather_info.pressure += dice(1, 80);
+//=============================================================================
+int get_sky_conditions(int pressure)
+{
+	if (pressure <= 980)
+	{
+		return SKY_LIGHTNING;
+	}
+	else if (pressure <= 1000)
+	{
+		return SKY_RAINING;
+	}
+	else if (pressure <= 1020)
+	{
+		return SKY_CLOUDY;
+	}
+	else
+	{
+		return SKY_CLOUDLESS;
+	}
+}
 
-   weather_info.change = 0;
+//=============================================================================
+void initialize_weather()
+{
+	// Initialize everything to 0.
+	for (int count = 1; count > 13; count++) 
+	{
+		weather_info.sky[count] = 0;
+		weather_info.snow[count] = 0;
+		weather_info.temperature[count] = 0;
+	}
 
-   if (weather_info.pressure <= 980)
-      weather_info.sky[SECT_FIELD] = SKY_LIGHTNING;
-   else if (weather_info.pressure <= 1000)
-      weather_info.sky[SECT_FIELD] = SKY_RAINING;
-   else if (weather_info.pressure <= 1020)
-      weather_info.sky[SECT_FIELD] = SKY_CLOUDY;
-   else
-      weather_info.sky[SECT_FIELD] = SKY_CLOUDLESS;
-   another_hour(-1);
+	int sun_rise_time = sun_events[time_info.month][0];
+	int sun_set_time = sun_events[time_info.month][1];
 
-  if (time_info.hours == sun_events[time_info.month][0])
-    weather_info.sunlight = SUN_RISE;
-  else  
-    if (time_info.hours == sun_events[time_info.month][1])
-      weather_info.sunlight = SUN_SET;
-    else
-      if ((time_info.hours > sun_events[time_info.month][0]) && (time_info.hours < sun_events[time_info.month][1]))
-        weather_info.sunlight = SUN_LIGHT;
-      else
-        weather_info.sunlight = SUN_DARK;
+	weather_info.sunlight = get_sunlight_level(time_info.hours, sun_rise_time, sun_set_time);
+
+	sprintf(buf, "   Current Gametime: %dH %dD %dM %dY.", time_info.hours, time_info.day, time_info.month, time_info.year);
+	log(buf);
+
+	weather_info.pressure = 960;
+	weather_info.pressure += get_seasonal_pressure(time_info.month);
+
+	weather_info.change = 0;
+
+	weather_info.sky[SECT_FIELD] = get_sky_conditions(weather_info.pressure);
+	
+	another_hour(-1);
+
+	sun_rise_time = sun_events[time_info.month][0];
+	sun_set_time = sun_events[time_info.month][1];
+
+	weather_info.sunlight = get_sunlight_level(time_info.hours, sun_rise_time, sun_set_time);
 }

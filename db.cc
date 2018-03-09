@@ -463,10 +463,10 @@ void	boot_db(void)
 void reset_time(void)
 {
 
-   void initialise_weather();
+   void initialize_weather();
 
    time_info = mud_time_passed(time(0), beginning_of_time);
-   initialise_weather();
+   initialize_weather();
 }
 
 void inc_p_table(void){

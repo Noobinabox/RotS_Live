@@ -83,6 +83,20 @@ $n lunges forward biting $N's neck!~
 ~
 ~
 M
+ 115
+$N screams in agony, as you maul $M to death!~
+You scream in final agony as $n's maul shreds your body!~
+$N screams in agony, as $n mauls them to death!~
+$N avoids your attempt to maul them.~
+You swiftly avoid $n's attempt to maul you.~
+$N swiftly avoids $n's attempt to maul them.~
+You maul $N, lacerating their skin and ripping muscle.~
+$n mauls you, lacerating your skin and exposing muscle.~
+$n mauls $N, lacerating $S skin and exposing muscle.~
+~
+~
+~
+M
  25
 $N slumps over dead from your fatal ambush!~
 $n leaps from his cover and kills you with expert precision.~
@@ -349,7 +363,7 @@ $N halts your evil with a single gesture, BEWARE!!!~
 Curiously, the arrow you fire at yourself rather hurts.~
 A stream of evil lashes at $N, causing $S skin to singe.~
 M
- 115
+ 124
 Your marked arrow pierces $N's chest, killing $S instantly.~
 $n's marked arrow pierces your chest, killing you instantly.~
 $n fires a marked arrow deep into $N's chest, killing $S instantly.~

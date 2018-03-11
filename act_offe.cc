@@ -1256,13 +1256,13 @@ ACMD(do_bite)
 	{
 		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
 		damage(ch, victim, dam, SKILL_BITE, 0);
-		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
+		WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 +
 		number(0, PULSE_VIOLENCE),
 		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 	}
 
 delay:
-	WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 +
+	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
 		number(0, PULSE_VIOLENCE),
 		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
@@ -1318,6 +1318,13 @@ char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
 	return victim;
 }
 
+int maul_calculate_duration(char_data* mauler)
+{
+	int maul_duration = utils::get_prof_level(PROF_WARRIOR, *mauler) - 10;
+	maul_duration = maul_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	return maul_duration;
+}
+
 
 //============================================================================
 // From design doc:
@@ -1349,6 +1356,12 @@ ACMD(do_maul)
 		return;
 	}
 
+	if(GET_MOVE(ch) < 25)
+	{
+		send_to_char("You are too tired for this right now.\r\n", ch);
+		return;
+	}
+
 	if (utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
 	{
 		appear(ch);
@@ -1373,13 +1386,53 @@ ACMD(do_maul)
 	}
 	else
 	{
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
-		damage(ch, victim, dam, SKILL_MAUL, 0);
-		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
-	}
+		affected_type* current_maul_victim = affected_by_spell(victim, SKILL_MAUL);
+		affected_type* current_maul_ch = affected_by_spell(ch, SKILL_MAUL);
+		if(!current_maul_victim)
+		{
+			affected_type af;
+			af.type = SKILL_MAUL;
+			af.duration = maul_calculate_duration(ch);
+			af.modifier = -5;
+			af.location = APPLY_DODGE;
+			af.bitvector = 0;
 
-delay:
-	WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+			affect_to_char(victim, &af);
+		}
+		else if(current_maul_victim->modifier > -25)
+		{
+			current_maul_victim->modifier -= 5;
+			current_maul_victim->duration = maul_calculate_duration(ch);
+		}
+		else 
+		{
+			act("Your maul attack can't stack anymore on $N.", FALSE, ch, 0, victim, TO_CHAR);
+		}
+
+		if(!current_maul_ch)
+		{
+			affected_type af;
+			af.type = SKILL_MAUL;
+			af.duration = maul_calculate_duration(ch);
+			af.modifier = 10;
+			af.location = APPLY_ARMOR;
+			af.bitvector = 0;
+
+			affect_to_char(ch, &af);
+		}
+		else if(current_maul_ch->modifier < 50)
+		{
+			current_maul_ch->modifier += 10;
+			current_maul_ch->duration = maul_calculate_duration(ch);
+		}
+		else
+		{
+			send_to_char("Your maul buff can't stack anymore.\r\n", ch);
+		}
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250);
+		damage(ch, victim, dam, SKILL_MAUL, 0);
+	}
+	GET_MOVE(ch) -= 25;
 }
 
 //============================================================================

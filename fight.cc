@@ -2295,6 +2295,18 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 		damage -= damage_reduction;
 	}
 
+	affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
+	if(maul_reduction)
+	{
+		if(maul_reduction->location == APPLY_ARMOR)
+		{
+			int damage_reduction = maul_reduction->modifier;
+			damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
+			damage -= damage_reduction;
+		}
+	}
+
+
 	/* If they've got armor, let's let it do its thing */
 	if (victim->equipment[location] != NULL) 
 	{

@@ -416,7 +416,7 @@ ACMD (do_gather_food) {
   case 0:
         move_use = 25 - percent / 5;
     if (GET_MOVE(ch) < move_use) {
-      send_to_char("You are too tired for this right now\n\r", ch);
+      send_to_char("You are too tired for this right now.\n\r", ch);
       return;
     }
     one_argument(argument, arg);

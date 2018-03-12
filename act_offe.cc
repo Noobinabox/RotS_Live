@@ -1253,15 +1253,11 @@ ACMD(do_bite)
 	else
 	{
 		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
+		WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 		damage(ch, victim, dam, SKILL_BITE, 0);
-		WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 +
-		number(0, PULSE_VIOLENCE),
-		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 	}
 
-	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
-		number(0, PULSE_VIOLENCE),
-		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 
 //============================================================================
@@ -1385,21 +1381,21 @@ ACMD(do_maul)
 	{
 		affected_type* current_maul_victim = affected_by_spell(victim, SKILL_MAUL);
 		affected_type* current_maul_ch = affected_by_spell(ch, SKILL_MAUL);
+		affected_type af;
+		af.type = SKILL_MAUL;
+		af.duration = maul_calculate_duration(ch);
+		af.location = APPLY_DODGE;
+		af.modifier = -5;
+		af.bitvector = 0;
 		if(!current_maul_victim)
 		{
-			affected_type af;
-			af.type = SKILL_MAUL;
-			af.duration = maul_calculate_duration(ch);
-			af.modifier = -5;
-			af.location = APPLY_DODGE;
-			af.bitvector = 0;
-
 			affect_to_char(victim, &af);
 		}
 		else if(current_maul_victim->modifier > -25)
 		{
-			current_maul_victim->modifier -= 5;
-			current_maul_victim->duration = maul_calculate_duration(ch);
+			af.modifier += current_maul_victim->modifier;
+			af.duration = maul_calculate_duration(ch);
+			affect_join(victim, &af, FALSE, FALSE);
 		}
 		else 
 		{

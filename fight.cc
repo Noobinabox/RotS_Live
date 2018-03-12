@@ -2300,7 +2300,7 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 	{
 		if(maul_reduction->location == APPLY_ARMOR)
 		{
-			int damage_reduction = maul_reduction->modifier;
+			int damage_reduction = maul_reduction->modifier / 5;
 			damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
 			damage -= damage_reduction;
 		}

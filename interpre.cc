@@ -279,6 +279,7 @@ ACMD(do_rend);
 ACMD(do_mark);
 ACMD(do_blinding);
 ACMD(do_bite);
+ACMD(do_maul);
 ACMD(do_beorning); // Placeholder for new Beorning Skills
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
@@ -2279,7 +2280,7 @@ assign_command_pointers(void)
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
   COMMANDO(235, POSITION_FIGHTING, do_rend, 1, TRUE, SCMD_REND,
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-  COMMANDO(236, POSITION_FIGHTING, do_beorning, 1, TRUE, SCMD_MAUL,
+  COMMANDO(236, POSITION_FIGHTING, do_maul, 1, TRUE, 0,
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
   COMMANDO(237, POSITION_FIGHTING, do_mark, 0, TRUE, 0,
     TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);

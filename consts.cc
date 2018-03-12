@@ -476,7 +476,7 @@ struct skill_data skills[MAX_SKILLS] = {
   { "swipe"              , PROF_WARRIOR,     1,  NULL,
     POSITION_STANDING    ,  0,  0,     16,   1,  1,  0, PLRSPEC_NONE },
   { "maul"              , PROF_WARRIOR, 12,  NULL,
-    POSITION_FIGHTING   ,  0,  0,     16,   1,  1,  1, PLRSPEC_NONE },
+    POSITION_FIGHTING   ,  0,  0,     16,   30,  1,  1, PLRSPEC_NONE },
   { "asphyxiation"       , PROF_GENERAL,  1,  NULL,
     POSITION_STANDING    ,  5,  2,     6,   1,  1,  1, PLRSPEC_NONE },
   { "Power of Arda"      , PROF_GENERAL,  1,  NULL,

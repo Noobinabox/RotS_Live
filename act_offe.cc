@@ -1159,8 +1159,6 @@ ACMD(do_rend)
 		damage(ch, victim, dam, SKILL_REND, 0);
 	}
 
-	
-delay:
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
 		number(0, PULSE_VIOLENCE),
 		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
@@ -1261,7 +1259,6 @@ ACMD(do_bite)
 		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 	}
 
-delay:
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
 		number(0, PULSE_VIOLENCE),
 		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
@@ -1406,7 +1403,8 @@ ACMD(do_maul)
 		}
 		else 
 		{
-			act("Your maul attack can't stack anymore on $N.", FALSE, ch, 0, victim, TO_CHAR);
+			act("Your maul attack can't stack anymore on $N.\r\n", FALSE, ch, 0, victim, TO_CHAR);
+			return;
 		}
 
 		if(!current_maul_ch)
@@ -1429,7 +1427,7 @@ ACMD(do_maul)
 		{
 			send_to_char("Your maul buff can't stack anymore.\r\n", ch);
 		}
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250);
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) / 2;
 		damage(ch, victim, dam, SKILL_MAUL, 0);
 	}
 	GET_MOVE(ch) -= 25;

@@ -428,7 +428,7 @@ ACMD (do_gather_food) {
   case 0:
         move_use = 25 - percent / 5;
     if (GET_MOVE(ch) < move_use) {
-      send_to_char("You are too tired for this right now\n\r", ch);
+      send_to_char("You are too tired for this right now.\n\r", ch);
       return;
     }
     one_argument(argument, arg);
@@ -2452,7 +2452,7 @@ bool can_ch_shoot(char_data* archer)
 			if (arrow == NULL)
 			{
 				char_data* receiver = archer->master ? archer->master : archer;
-				send_to_char("Your follower is our of arrows.", receiver);
+				send_to_char("Your follower is out of arrows.", receiver);
 				return false;
 			}
 		}
@@ -3615,8 +3615,8 @@ ACMD(do_blinding)
 				return;
 			}
 
-			send_to_char("You throw your dust at the target.\r\n", ch);
-			act("$n throws some dust at you!\r\n", FALSE, ch, 0, 0, TO_VICT);
+			act("You throw dust in $N eyes blinding them.\r\n", FALSE, victim, 0, 0, TO_CHAR);
+			act("$n throws grey dust in your eyes blinding you!\r\n", FALSE, ch, 0, 0, TO_VICT);
 
 			int percent_hit = dust_calculate_success(ch, victim);
 			if(percent_hit < 0)

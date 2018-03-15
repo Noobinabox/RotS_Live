@@ -24,6 +24,7 @@ Things still needing to be done:
 * Rend
 * Maul
 * Bite
+* Groom Wounds
 
 ### Swipe
 This is an off-hand attack that has a scaling chance based on a calculated value.
@@ -39,3 +40,25 @@ This attack is a debuff and buff skill. When the Beorning does a maul on a targe
 
 ### Bite
 This will be a standard damage attack on the target, and apply a small delay on both the target and beorning.
+
+### Groom Wounds
+This will be a 'Cure Self' style ability that costs moves.  Potentially make this a longer cooldown % based heal?
+
+### Specializations
+# Light Fighting:
+* Attack speed increases.  Other effects should work as normal (need to consider natural weapons as finesse weapons).
+* Bonus Rend effect?
+
+# Heavy Fighting:
+* Increased natural armor %.
+* Bonus Maul effect/power?
+
+# Wild Fighting:
+* Rush forward wildly works as normal.
+* Passive OB boost?
+* Bonus Bite effect?
+
+# Defender:
+* Beornings learn to absorb some blows (AKA block).
+* Other passive effects as normal.
+* Bonus to Groom Wounds?

@@ -275,9 +275,12 @@ ACMD(do_retire);
 ACMD(do_top);
 ACMD(do_grouproll);
 ACMD(do_shoot);
-ACMD(do_beorning);
+ACMD(do_rend);
 ACMD(do_mark);
 ACMD(do_blinding);
+ACMD(do_bite);
+ACMD(do_maul);
+ACMD(do_beorning); // Placeholder for new Beorning Skills
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
@@ -2273,11 +2276,11 @@ assign_command_pointers(void)
 	  FULL_TARGET, TAR_IGNORE, 0);
   COMMANDO(233, POSITION_DEAD, do_details, 0, TRUE, 0,
 	  TAR_TEXT | TAR_NONE_OK, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
-  COMMANDO(234, POSITION_FIGHTING, do_beorning, 1, TRUE, SCMD_BITE,
+  COMMANDO(234, POSITION_FIGHTING, do_bite, 1, TRUE, 0,
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-  COMMANDO(235, POSITION_FIGHTING, do_beorning, 1, TRUE, SCMD_REND,
+  COMMANDO(235, POSITION_FIGHTING, do_rend, 1, TRUE, SCMD_REND,
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-  COMMANDO(236, POSITION_FIGHTING, do_beorning, 1, TRUE, SCMD_MAUL,
+  COMMANDO(236, POSITION_FIGHTING, do_maul, 1, TRUE, 0,
     TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
   COMMANDO(237, POSITION_FIGHTING, do_mark, 0, TRUE, 0,
     TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
@@ -2676,8 +2679,8 @@ nanny(struct descriptor_data *d, char *arg)
 			"  [H]uman                * [U]ruk-hai Orc\n\r"
 			"  [D]warf                # [C]ommon Orc  \n\r"
 			"  [W]ood Elf             # Uruk-[L]huth  \n\r"
-			"  Ho[B]bit               # [O]log-Hai    \n\r"
-      "* Beor[N]ing             # Harad[R]im    \n\r"
+			"  Ho[B]bit               # [O]log-Hai (Coming Soon)   \n\r"
+      "* Beor[N]ing             # Harad[R]im (Coming Soon)   \n\r"
 			"\n\r"
 			"Races marked with a * are hard to play.\n\r"
 			"Races marked with a # are very hard to play.\n\r"
@@ -2719,11 +2722,13 @@ nanny(struct descriptor_data *d, char *arg)
       GET_RACE(d->character) = RACE_BEORNING;
       break;
     case 'o':
-      GET_RACE(d->character) = RACE_OLOGHAI;
-      break;
+      SEND_TO_Q("\r\nOlog-Hai race coming soon.\r\n"
+        "Race: ", d);
+        return;
     case 'r':
-      GET_RACE(d->character) = RACE_HARADRIM;
-      break;
+      SEND_TO_Q("\r\nHaradrim race coming soon.\r\n"
+        "Race: ", d);
+        return;
 		case '?':
 			do_help(d->character, arg + 1, 0, 0, 0);
 			SEND_TO_Q("\n\rRace: ", d);

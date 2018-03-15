@@ -434,7 +434,9 @@ void advance_level(char_data* character)
 	if ((GET_LEVEL(character) == 6) || (GET_LEVEL(character) == 10) || (GET_LEVEL(character) == 15) ||
 		(GET_LEVEL(character) == 20) || (GET_LEVEL(character) == 25) || (GET_LEVEL(character) == 30) ||
 		(GET_LEVEL(character) == 35) || (GET_LEVEL(character) == 40) || (GET_LEVEL(character) == 45) ||
-		(GET_LEVEL(character) == 50) || (GET_LEVEL(character) == 55) || (GET_LEVEL(character) > 89))
+		(GET_LEVEL(character) == 50) || (GET_LEVEL(character) == 55) || (GET_LEVEL(character) == 60) ||
+		(GET_LEVEL(character) == 65) || (GET_LEVEL(character) == 70) || (GET_LEVEL(character) == 75) ||
+		(GET_LEVEL(character) == 80) || (GET_LEVEL(character) == 85) || (GET_LEVEL(character) > 89))
 		add_exploit_record(EXPLOIT_LEVEL, character, GET_LEVEL(character), NULL);
 
 	/* add birth exploit */

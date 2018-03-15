@@ -143,7 +143,6 @@ Add the following to ranger.cc on ```do_ambush```:
     	return;
 	  }
   }
-}
 ```
 This allows haradrims to ambush with a spear.
 

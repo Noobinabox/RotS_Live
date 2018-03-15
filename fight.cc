@@ -467,6 +467,10 @@ get_corpse_desc(struct obj_data *corpse, struct char_data *ch,
     break;
   case 98: strncpy(condition, "darkened", BUF_LEN -1);
     break;
+  case 55: strncpy(condition, "mutilated", BUF_LEN -1);
+	break;
+  case 113: strncpy(condition, "gnawed", BUF_LEN -1);
+	break;
   default: strncpy(condition,  "silent", BUF_LEN -1);
   }
   if (world[ch->in_room].sector_type == SECT_WATER_NOSWIM ||
@@ -2291,6 +2295,18 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 		damage -= damage_reduction;
 	}
 
+	affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
+	if(maul_reduction)
+	{
+		if(maul_reduction->location == APPLY_ARMOR)
+		{
+			int damage_reduction = maul_reduction->modifier / 5;
+			damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
+			damage -= damage_reduction;
+		}
+	}
+
+
 	/* If they've got armor, let's let it do its thing */
 	if (victim->equipment[location] != NULL) 
 	{
@@ -2888,8 +2904,8 @@ void perform_violence(int mini_tics)
 					{
 						char_data* victim = fighter->specials.fighting;
 						act("You rear back and extend your foreleg swiping at $N!", FALSE, fighter, NULL, victim, TO_CHAR);
-						act("$n rears back and extends their foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
-						act("$n rears back and extends their foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
+						act("$n rears back and extends $s foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
+						act("$n rears back and extends $s foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
 						fighter->specials.ENERGY = current_energy;
 						hit(fighter, victim, TYPE_UNDEFINED);					
 

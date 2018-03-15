@@ -912,6 +912,11 @@ int get_real_dodge(struct char_data *ch)
 {
 	int sun_mod = 0;
 
+	//affected_type* maul_aff = affected_by_spell(ch, SKILL_MAUL);
+	//if (maul_aff && maul_aff->location == APPLY_DODGE && maul_aff->modifier < -5)
+	//{
+	//	GET_DODGE(ch) += (maul_aff->modifier + 5);
+	//}
 	if (IS_NPC(ch))
 		if (IS_AFFECTED(ch, AFF_CONFUSE))
 			return(GET_DODGE(ch) + GET_DEX(ch) - 5 + GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);
@@ -924,7 +929,7 @@ int get_real_dodge(struct char_data *ch)
 
   if(GET_RACE(ch) == RACE_BEORNING)
   {
-    dodge += 10;
+    dodge += 20;
   }
   
 
@@ -939,8 +944,9 @@ int get_real_dodge(struct char_data *ch)
 		if (GET_RACE(ch) == RACE_URUK) dodge = dodge * 9 / 10 - sun_mod;
 		if (GET_RACE(ch) == RACE_ORC) dodge = dodge * 8 / 9 - sun_mod;
 		if (GET_RACE(ch) == RACE_MAGUS) dodge = dodge * 9 / 10 - sun_mod;
-    if (GET_RACE(ch) == RACE_OLOGHAI) dodge = dodge * 9 / 10 - sun_mod;
+		if (GET_RACE(ch) == RACE_OLOGHAI) dodge = dodge * 9 / 10 - sun_mod;
 	}
+
 
 	switch (GET_TACTICS(ch))
 	{

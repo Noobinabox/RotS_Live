@@ -806,7 +806,19 @@ ACMD(do_rescue)
 	}
 }
 
-
+//============================================================================
+// Probability used for kick and beorning skills.
+//============================================================================
+int get_prob_skill(char_data* attacker, char_data* victim, int skill)
+{
+	int prob = GET_SKILL(attacker, skill);
+	prob -= get_real_dodge(victim) / 2;
+	prob -= get_real_parry(victim) / 2;
+	prob += get_real_OB(attacker) / 2;
+	prob += number(1, 100);
+	prob -= 120;
+	return prob;
+}
 
 /*
  * Also handles wild swing.
@@ -946,12 +958,7 @@ ACMD(do_kick)
 		victim = t;
 	}
 
-	prob = GET_SKILL(ch, attacktype);
-	prob -= get_real_dodge(victim) / 2;
-	prob -= get_real_parry(victim) / 2;
-	prob += get_real_OB(ch) / 2;
-	prob += number(1, 100);
-	prob -= 120;
+	prob = get_prob_skill(ch, victim, attacktype);
 
 	dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) *
 		(100 + prob) / 250;
@@ -1004,9 +1011,469 @@ ACMD(do_disengage){
   
 }
 
-
+//============================================================================
 ACMD(do_beorning)
 {
 	return;
+}
+
+//============================================================================
+bool can_bear_skill(char_data* ch, int skill)
+{
+	using namespace utils;
+	if(GET_RACE(ch) != RACE_BEORNING)
+	{
+		send_to_char("Unrecognized command.\r\n", ch);
+		return false;
+	}
+
+	if(is_shadow(*ch))
+	{
+		send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
+		return false;
+	}
+
+	const room_data& room = world[ch->in_room];
+	if(is_set(room.room_flags, (long)PEACEROOM))
+	{
+		send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+		return false;
+	}
+	if(utils::get_skill(*ch, skill) == 0)
+	{
+		switch(skill)
+		{
+			case SKILL_BITE:
+				send_to_char("Learn how to bite first.\r\n", ch);
+				break;
+			case SKILL_REND:
+				send_to_char("Learn how to rend first.\r\n", ch);
+				break;
+			case SKILL_MAUL:
+				send_to_char("Learn how to maul first.\r\n", ch);
+				break;
+			default:
+				send_to_char("Learn how the skill first.\r\n", ch);
+				break;
+		}
+		return false;
+	}
+	return true;
+}
+
+//============================================================================
+char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
+{
+	char_data* victim = NULL;
+
+	if(target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(render, target->targ1.ptr.text->text);
+	}
+	else if (target->targ1.type == TARGET_CHAR)
+	{
+		if(char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
+
+	if(victim == NULL)
+	{
+		if(render->specials.fighting)
+		{
+			victim = render->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Rend who?\r\n", render);
+			return NULL;
+		}
+	}
+
+	if(render->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", render);
+		return NULL;
+	}
+
+	if(render == victim)
+	{
+		send_to_char("But your fur is so nice...\r\n", render);
+		return NULL;
+	}
+
+	if(!CAN_SEE(render, victim))
+	{
+		send_to_char("Rend who?\r\n", render);
+		return NULL;
+	}
+
+	if(!IS_SET(victim->specials.affected_by, AFF_BASH))
+	{
+		send_to_char("You can only rend victims that are bashed.\r\n", render);
+		return NULL;
+	}
+	return victim;
+}
+
+//============================================================================
+ACMD(do_rend)
+{
+	one_argument(argument, arg);
+
+	if(!can_bear_skill(ch, SKILL_REND))
+		return;
+
+	char_data* victim = is_rend_targ_valid(ch, wtl);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if(!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if(utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	if(victim == NULL)
+	{
+		return;
+	}
+
+	int prob = get_prob_skill(ch, victim, SKILL_REND);
+
+	if(prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_REND, 0);
+	}
+	else 
+	{
+		int dam;
+		dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ((GET_WEIGHT(ch) / 3500) + ch->tmpabilities.str);
+		damage(ch, victim, dam, SKILL_REND, 0);
+	}
+
+	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 +
+		number(0, PULSE_VIOLENCE),
+		0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+}
+
+//============================================================================
+char_data* is_bite_targ_valid(char_data* biter, waiting_type* target)
+{
+	char_data* victim = NULL;
+
+	if(target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(biter, target->targ1.ptr.text->text);
+	}
+	else if(target->targ1.type == TARGET_CHAR)
+	{
+		if(char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
+
+	if(victim == NULL)
+	{
+		if(biter->specials.fighting)
+		{
+			victim = biter->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Bite who?\r\n", biter);
+			return NULL;
+		}
+	}
+
+	if(biter->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", biter);
+		return NULL;
+	}
+
+	if(biter == victim)
+	{
+		send_to_char("You bite yourself! Ouch that hurts!\r\n", biter);
+		return NULL;
+	}
+
+	if(!CAN_SEE(biter, victim))
+	{
+		send_to_char("Bite who?\r\n", biter);
+		return NULL;
+	}
+
+	return victim;
+}
+
+//============================================================================
+ACMD(do_bite)
+{
+	one_argument(argument, arg);
+
+	if(!can_bear_skill(ch, SKILL_BITE))
+		return;
+	
+	char_data* victim = is_bite_targ_valid(ch, wtl);
+
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if(!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if(utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	if(victim == NULL)
+	{
+		return;
+	}
+
+	int prob = get_prob_skill(ch, victim, SKILL_BITE);
+
+	if(prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_BITE, 0);
+	}
+	else
+	{
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
+		WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+		damage(ch, victim, dam, SKILL_BITE, 0);
+	}
+
+	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+}
+
+//============================================================================
+char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
+{
+	char_data* victim = NULL;
+
+	if (target->targ1.type == TARGET_TEXT)
+	{
+		victim = get_char_room_vis(mauler, target->targ1.ptr.text->text);
+	}
+	else if (target->targ1.type == TARGET_CHAR)
+	{
+		if (char_exists(target->targ1.ch_num))
+		{
+			victim = target->targ1.ptr.ch;
+		}
+	}
+
+	if (victim == NULL)
+	{
+		if (mauler->specials.fighting)
+		{
+			victim = mauler->specials.fighting;
+		}
+		else
+		{
+			send_to_char("Maul who?\r\n", mauler);
+			return NULL;
+		}
+	}
+
+	if (mauler->in_room != victim->in_room)
+	{
+		send_to_char("Your victim is no longer here.\r\n", mauler);
+		return NULL;
+	}
+
+	if (mauler == victim)
+	{
+		send_to_char("You maul yourself!  That's kind of nice...\r\n", mauler);
+		return NULL;
+	}
+
+	if (CAN_SEE(mauler, victim) == false)
+	{
+		send_to_char("Maul who?\r\n", mauler);
+		return NULL;
+	}
+
+	return victim;
+}
+
+int maul_calculate_duration(char_data* mauler)
+{
+	int maul_duration = utils::get_prof_level(PROF_WARRIOR, *mauler) - 10;
+	maul_duration = maul_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+	return maul_duration;
+}
+
+
+//============================================================================
+// From design doc:
+// This attack is a debuff and buff skill. When the Beorning does a maul on a 
+// target it will give them negatives to OB and DB, while applying a small 
+// amount of armor absorption to the Beorning. This ability will stack up to 5 
+// times.
+//============================================================================
+ACMD(do_maul)
+{
+	one_argument(argument, arg);
+
+	if (can_bear_skill(ch, SKILL_MAUL) == false)
+	{
+		return;
+	}
+
+	char_data* victim = is_maul_targ_valid(ch, wtl);
+	if (victim == NULL)
+	{
+		return;
+	}
+
+	// These first two tests, BigBrother and Sanctuary, they really need to be standardized.
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if (!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if(GET_MOVE(ch) < 25)
+	{
+		send_to_char("You are too tired for this right now.\r\n", ch);
+		return;
+	}
+
+	if (utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	// Goals with this skill:
+	// * It can stack up to five times.
+	// * It would be great if it had its own internal cooldown (so it does not use the delay system).
+	// * Unsure exactly how to stack the buff and debuff.  Probably use the Fast-Acting affect system.
+
+	// Can use a new Cooldown Manager for skill internal cooldowns.  This could eventually be extended
+	// to handle things such as "this target can only be affected by a certain spell once every 'x' seconds",
+	// to limit confuse or hallucinate spam etc.
+
+	int prob = get_prob_skill(ch, victim, SKILL_MAUL);
+
+	if (prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_MAUL, 0);
+	}
+	else
+	{
+		affected_type* current_maul_victim = affected_by_spell(victim, SKILL_MAUL);
+		affected_type* current_maul_ch = affected_by_spell(ch, SKILL_MAUL);
+		affected_type af;
+		af.type = SKILL_MAUL;
+		af.duration = maul_calculate_duration(ch);
+		af.location = APPLY_DODGE;
+		af.modifier = -5;
+		af.bitvector = 0;
+		if(!current_maul_victim)
+		{
+			affect_to_char(victim, &af);
+		}
+		else if(current_maul_victim->modifier > -25)
+		{
+			af.modifier += current_maul_victim->modifier;
+			af.duration = maul_calculate_duration(ch);
+			affect_join(victim, &af, FALSE, FALSE);
+		}
+		else 
+		{
+			act("Your maul attack can't stack anymore on $N.\r\n", FALSE, ch, 0, victim, TO_CHAR);
+			return;
+		}
+
+		if(!current_maul_ch)
+		{
+			affected_type af;
+			af.type = SKILL_MAUL;
+			af.duration = maul_calculate_duration(ch);
+			af.modifier = 10;
+			af.location = APPLY_ARMOR;
+			af.bitvector = 0;
+
+			affect_to_char(ch, &af);
+		}
+		else if(current_maul_ch->modifier < 50)
+		{
+			current_maul_ch->modifier += 10;
+			current_maul_ch->duration = maul_calculate_duration(ch);
+		}
+		else
+		{
+			send_to_char("Your maul buff can't stack anymore.\r\n", ch);
+		}
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) / 2;
+		damage(ch, victim, dam, SKILL_MAUL, 0);
+	}
+	GET_MOVE(ch) -= 25;
+}
+
+//============================================================================
+ACMD(do_groom)
+{
+	one_argument(argument, arg);
+
+	if (can_bear_skill(ch, SKILL_MAUL) == false)
+	{
+		return;
+	}
+
+	char_data* victim = is_maul_targ_valid(ch, wtl);
+	if (victim == NULL)
+	{
+		return;
+	}
+
+	// These first two tests, BigBrother and Sanctuary, they really need to be standardized.
+	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+	if (!bb_instance.is_target_valid(ch, victim))
+	{
+		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+		return;
+	}
+
+	if (utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
+	{
+		appear(ch);
+		send_to_char("You cast off your santuary!\r\n", ch);
+		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+	}
+
+	int prob = get_prob_skill(ch, victim, SKILL_MAUL);
+
+	if (prob < 0)
+	{
+		damage(ch, victim, 0, SKILL_MAUL, 0);
+	}
+	else
+	{
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
+		damage(ch, victim, dam, SKILL_MAUL, 0);
+		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+	}
+
+delay:
+	WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 

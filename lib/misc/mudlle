@@ -1,0 +1,41 @@
+#1101
+2I0m2m,0m#01105G,2m
+`Testing`s
+#1102
+1I`I am called.`s
+fa`heal`f! Mend i ; if command argument is not 'heal' - end it.
+fp                ; command issuer to list
+1d                ; delay, to make the healing be after the request
+vHvh= M001 i      ; if is healthy - do not heal
+vHVh              ; heal. maxhit -> hit
+`smile `f+U
+Mend g
+@001
+`You are healthy already.`X`tell `f+f+U
+@end.
+#1103
+03I`Now listening`s_ vc02I1d`Now distracted.`s
+#1104
+@000.02I`End of cycle`
+ 3Nt0  !M001i`Choice 0 line.`sTM004g ; random = 0
+@001.t1!M002i`Choice 1 line.`sTM004g ; random = 1
+@002.t2!M003i`Choice 2 line.`sTM004g;random=2;; 
+@003.t3!M004i`Choice 3 line.`sTM004g;  random	3
+;and here is the conclusion
+@004s.
+#1105
+`Subroutine called.`sr
+#1106
+2I`Here I am,`
+fsSXf+
+`, biding time in `Xf+
+frSXf+s
+#1107
+1Ivc0<Mend.i.
+fa`hello`f!Mend.i
+fhp1d`Hello to you, too - `f+s
+`smile `f+U
+@end.
+#99999
+
+

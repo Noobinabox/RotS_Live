@@ -1,0 +1,30 @@
+     To get to wizhelp topics for now, just type 'man <topic>'.
+                 WIZHELP IS AVAILABILE ON:
+
+-------------------------------------------------------------------------------
+         ESSENTIAL:                |                 INFO:
+                                   |
+      GOTO,  SHAPE,  set           | STAT<room|file|norm>, vstat, vnum, last
+-------------------------------------------------------------------------------
+              UTILITIES:           |     non-command concepts: 
+                                   |
+load,  wizset<your_name>, zreset   | boards, ideas, guidelines, zones
+  slay, purge                      |
+-------------------------------------------------------------------------------
+                                SHAPING:
+   SHAPE ROOM    |   SHAPE MOB     |      SHAPE ZONE   |    SHAPE OBJECT
+shape room flags | shape mob flags |     if flag       | shape obj flags
+  shape room #   | shape mob #     |                   |    shape obj #
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+

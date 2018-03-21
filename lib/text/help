@@ -1,0 +1,30 @@
+ _____________________________________________________________________________
+/ Return of the Shadow : HELP file index  NOTE- This is a semicomplete listing\
+|------------.------------.------------.------------.------------.------------|
+|Movement----|Comm.-------|Objects-----|Information-|Combat------|Utility-----|
+\------------\------------|------------|------------|------------|------------/
+/DIRECTIONS  |SAY         |GET         |POLICY      |KILL        |!           \
+|SLEEP       |TELL        |DROP        |MAN         |FLEE        |BRIEF       |
+|WAKE        |ASK         |PUT         |SCORE       |ASSIST      |COMPACT     |
+|REST        |WHISPER     |GIVE        |INFO        |CAST        |TITLE       |
+|STAND       |NARRATE     |WEAR        |WHO         |SPEED       |COMMANDS    |
+|FOLLOW      |CHAT        |REMOVE      |WHERE       |WIMPY       |SOCIALS     |
+|LOSE        |PETITION    |HOLD        |NEWS        |MENTAL      |DISPLAY     |
+|RIDE        |SING        |INVENTORY   |TIME        |PREPARE     |EDITOR      |
+|DISMOUNT    |GSAY        |EQUIPMENT   |WEATHER     |PERCEPTION  |ALIAS       |
+|OPEN        |MAIL        |EXAMINE     |CONSIDER    |WILLPOWER   |SPAM        |
+|CLOSE       |BOARD       |EAT         |LEVELS      |TACTICS     |ECHO        |
+|LOCK        |WRITE       |DRINK       |WIZLIST     |BUTCHER     |AUTOECIT    |
+|UNLOCK      |EMOTE       |POUR        |DEATH       |BEHEAD      |INCOGNITO   |
+|ENTER       |YELL        |WIELD       |SET         |CONCENTRATE |VISIBLE     |
+|LEAVE       |REPLY       |SPLIT       |FLAGS       |DIAGNOSE    |SET         |
+|LOOK        |BEEP        |PULL        |AFFECTIONS  |GROUP       |AFK         |
+|MAP         |REPORT      |COMPARE     |FAME        |MANA--------|CLEAR       |
+|EXITS       |NONARRATE   |SHOPS       |READ        |OB | DB | PB|COLOR       |
+|            |RECOVER     |            |            |            |            |
+|            |SCAN        |            |            |            |            |
+\------------\------------\------------\------------\---\----\---\------------\
+/Miscellaneous\ NEWBIE RETIRE LEGEND RACES QUESTS FAQ ANGEL SPECIALIZE RENT PK|
+\-------------/ LINK WARRIOR RANGER MYSTIC MAGE CLASS PRACTICE NOQUIT QUIT INN|
+| Further information available by HELP <keyword>, or MANUAL (do help manual).|
+\_____________________________________________________________________________/

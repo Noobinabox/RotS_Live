@@ -3189,7 +3189,7 @@ int mortal_start_room[MAX_RACES] = {
   1170,          // Wood Elf
   1160,          // Hobbit
   1160,          // High Elf
-  1160,          // Beorning
+  1184,          // Beorning
   1101,          // !UNUSED!
   1101,          // !UNUSED!
   1101,          // !UNUSED!

@@ -1118,7 +1118,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 		add_exploit_record(EXPLOIT_MOBDEATH, dead_man, GET_IDNUM(killer), GET_NAME(killer));
 	}
 
-	int base_xp_gain = -(dead_man->points.exp - 3000) / (dead_man->player.level + 2);
+	int base_xp_gain = -(dead_man->points.exp - 3000) / (dead_man->player.level + 2) * 2;
 
 	/* A player died: DT/poison/incap/etc. death. */
 	if (!killer)
@@ -2287,23 +2287,22 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 	/* Bogus hit location */
 	if (location < 0 || location > MAX_WEAR)
 		return 0;
-
-	if(GET_RACE(victim) == RACE_BEORNING && (victim->equipment[location] == NULL))
+	
+	/* Here we are checking to see if the victim is a Beorning because
+	   they have a natural damage reduction on physical weapons only. Spell
+	   damage is still at it's full amount. */
+	if(GET_RACE(victim) == RACE_BEORNING && (victim->equipment[location] == NULL && damage > 0))
 	{
-		int damage_reduction = 2;
-		damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
-		damage -= damage_reduction;
-	}
-
-	affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
-	if(maul_reduction)
-	{
-		if(maul_reduction->location == APPLY_ARMOR)
+		int damage_reduction = 5;
+		affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
+		if(maul_reduction)
 		{
-			int damage_reduction = maul_reduction->modifier / 5;
-			damage_reduction += ((damage - damage_reduction) * 20 + 50) / 100;
-			damage -= damage_reduction;
+			damage_reduction += maul_reduction->modifier / 5;
 		}
+
+		damage_reduction += ((damage - damage_reduction) * 10 + 50) / 100;
+		damage -= damage_reduction;
+		damage = std::max(damage, 1);
 	}
 
 

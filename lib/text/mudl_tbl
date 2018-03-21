@@ -1,0 +1,234 @@
+INTRODUCTION
+
+  The Assembler-Style Interpreter for Mobile Activity (ASIMA) provides
+this MUD with the means of online programming of "special" mobile 
+behaviour.
+  
+  The reasons for this name are: 
+
+  - The language consists of the number of one- or two-letter commands
+    performing predefined operations and it's data handling is different
+    from the traditions of the modern languages like C or Basic (see
+    OVERVIEW);
+
+  - Programs written in ASIMA are not converted into the machine codes
+    and are stored and executed in their text form as set of instructions
+    for the MUD rather than for the computer;
+
+  - So far, the language can be used only for mobiles. Special objects
+    and rooms have to be hard-coded. Contact Implementors if you feel that
+    you need one.
+
+  The language is complemented with the MUD interface, similar to the
+shaping interface. The ASIMA programs can be edited and implemented online,
+without participation of Implementors and without restarting the MUD,
+except in case of new programs. New programs are treated similarly to the
+new rooms, mobiles in shaping.
+
+  NOTE: the ASIMA language has no intrinsic limitations on the programs
+written in it (see LABELS for exceptions), but is intended for small 
+applications only. Writing a complex program in ASIMA can become a real
+challenge demanding good programming skills, experience and patience.
+If you need something involved, contact Implementors and it will be
+hard-coded for you.
+
+
+  For more information on ASIMA, see OVERVIEW and other articles of this
+chapter.
+#
+OVERVIEW
+
+  The basic concept of the ASIMA language is:  any command is always
+preceded by its arguments.
+
+  The language has no variables, using instead a digital Stack for 
+arithmetics and a general circular List for items such as text strings
+and references to other mobiles/players. See STACK and LIST for information
+on possible operations with those.
+
+  Memory handling: every "special" mobile in the MUD has its own finite
+Stack and List that are saved between calls to the program. The same program
+can be used by any number of different mobiles independently.
+
+  Arithmetics in ASIMA is a traditional stack arithmetics, limited to
+integer values only. Numbers can be put in explicitly from the program
+text or taken from an item in List. See LABELS for some details. Most
+basic arithmetic operations are available. See STACK for details.
+
+  Logic in ASIMA is very low-level and is limited to operators GOTO and 
+GO_IF. the latter performs GOTO if the lowest value in Stack is non-zero.
+Formally, this is sufficient for any algorithms, but in reality may be
+very awkward at times. If needed, more advanced operators will be added
+in a future.
+
+  The connection between the MUD and the program is performed by a set of
+commands that comprise two major groups: item-to-list commands and 
+list-to-stack/stack-to-list commands. The item-to-list commands create
+references in the List to the real items in the MUD; the list-stack
+commands change parameters of the lowest item in the List only. See LIST
+for details.
+#
+"SPECIAL MOBILES"
+
+  There are three ways to assign a special program to a mobile in this MUD:
+
+   1) The most traditional way - the hard-coded assignment. This is used
+      only in exceptional cases, the good example is shopkeepers.
+      These mobiles have SPECIAL flag on, and toying with them may be
+      harmful to the MUD.
+
+   2) The on-line assigned hardcoded procedures. These mobiles have SPECIAL
+      flag set and have their PROGRAM NUMBER set to the desired value.
+      the list of possible procedures is very limited now and will be 
+      expanded by requests from builders. 
+      See "SHAPE MOB2 29" for information.
+
+   3) The ASIMA programs. To assign such a program to a mobile, remove the
+      SPECIAL flag from the mobile and set its PROGRAM NUMBER to the number
+      of the ASIMA program you want.
+#
+STACK
+
+ In ASIMA, numbers are processed in stack logic, else called "bracket free"
+arithmetics. 
+  
+ Practically, this means that when you want to add two and two, instead of
+writing "2 + 2 =", you use "2 2 +". When you refer to the "stack value",
+you always get teh last number that was put there. Also, all arithmetic
+and most other commands remove from the stack the values they use, all the
+numbers being "disposable".
+  If you request a value from an empty stack, 0 will be obtained. 
+  If you overflow the stack (enter more numbers than the stack can hold),
+the oldest values will be lost, and your immediate calculations will not
+be affected. 
+
+  Here is an example of stack operations. Given a stack with value 99
+already in it, we are to calculate (17 - 3) * 2. The program for that would
+be "17.3-2*" .
+
+ Command:       1   7   .   3   -   2   *
+
+    S      99   1  17  17   3  14   2  28
+    T          99  99  99  17  99  14  99
+    A                      99      99
+    C
+    K
+  
+  The final result "28" is now the highest in stack, and if you, for 
+example, will now do "Vh" - set hitpoints - player's hitpoints will be
+set to 28, and this value will disappear from the stack.
+
+  Note the "." command in the above program. It is "do nothing" command,
+and it's purpose there is to separate two numbers entered.
+
+  Presently the following arithmetic operations are implemented:
+  + - * /   sum, subtract, multiply, divide (result is integer always).
+  & |       arithmetic and, arithmetic or ( 5 & 9 = 1,  5 | 9 = 13).
+  ~         unary "no". the value in stack is replaced with its negation.
+  > < = !   logics. Is bigger, Is less, equal, not equal. (5 > 3 = 1).
+
+  To make life easier, the following commands complement the stack
+operations:
+      
+    t  - lower stack. Duplicate the last number in stack.
+    T  - raise stack. Removes the last number in stack.
+    x  - exchange stack. Changes places of the two lowest items.
+
+  Example:  17t25xT<
+
+ Command:   1   7   t   2   5   x   T   < 
+
+    S       1  17  17   2  25  17  25   1
+    T              17  17  17  25  17
+    A                  17  17  17
+    C
+    K
+
+  Note: The "." command was not necessary this time. And the result of "<"
+was 1 :   (17 < 25 = 1)
+
+  See REFERENCE for the brief list of commands.
+#
+LIST
+
+
+#REFERENCE
+
+  This is a brief listing of the available commands. Some of the commands
+are strange or obsolete, but must be recognized. See other help articles
+for explanations.
+
+  Tabulation is used for two-letter commands. For example, the command to
+move north is "mn".
+
+_	- interrupt
+m
+    n	|
+    s	|
+    e	- movement keys.
+    w	|
+    u	|
+    d	|
+
+@<nnn>	- mark, pointer
+M<nnn>  - put mark, pointer to stack.
+I	- set call mask from stack (1-command, 2-self, 4-enter_room)
+N	- random number 0..<from stack>
+d	- delay, with no command or argument passed. delay time - 
+          from stack.
+U	- perform a command, given by a string in the list.
+Q	- reset and return FALSE
+q	- do not reset but return FALSE
+R	- reset and return TRUE
+r	- do not reset but return TRUE
+s	- say the string from the list, if any
+S	- convert the list item into string (string -> permanent string)
+v       - get parameter to stack or to list (from the lowest in list, 
+		if applicable), puts 1 to stack if succesful, 0 if failed.
+    h,H - hit, maxhit 
+    m,M	- mana, maxmana
+    v,V - move, maxmove
+    l	- level
+    c	- command
+V	- set parameter from stack
+    h   - hit
+    m   - mana
+    v   - move
+
+f	- get item to list
+    s	- self
+    a	- argument line
+    i	- number from stack as a string
+    +   - concatenate two lowest items on list
+    r	- the room the host is in
+    R	- the room the head item is in for char or obj, the host room
+	  if others or if char/obj is nowhere.
+    h	- command issuer (can be null)
+    =	- compare two lowest items in list, 1 to stack if they are equal
+    !	- compare two lowest items in list, 1 to stack if they are not equal
+    c   - first char in room, not self
+    p	- first player in room
+    m	- first mob in room, not self
+    N	- next in room to the one  in list
+    0	- null char, be careful
+c	- soft check, 1 if the current item in list is duplicated higher.
+C	- hard check. performs soft check, on 1 removes the current item
+	  and moves to it's other version in list.
+l	- forward in  list
+L	- backward in list
+p	- duplicate current item in the list
+P	- remove current item from the list
+t	- stack up (add)
+T	- stack down (remove)
+x	- switch the two lowest elements in stack
+X	- switch the two lowest elements in list
++-*/&|	- arithmetic with the two lowest stack members.
+~	- unary "no"
+><=!	- logic with the two lowest stack members. ( ! is != )
+g	- unconditional goto: goto (stack)
+i	- conditional goto: if ((stack-1)) then goto (stack)
+W	- "utter", to cast a spell, temporary (?) command.
+	  the lowest in list is the line with the spell,
+	  if the second lowest is not 0, the spell is cast on it.
+
+#~

@@ -160,7 +160,7 @@ ANGER was formerly known as NOQUIT.
 
 See also: RENT QUIT PK
 #
-STATS RACES DWARF ELF HOBBIT "WOOD ELF" URUK ORC "COMMON ORC" HUMAN LHUTH "URUK-LHUTH"
+STATS RACES DWARF ELF HOBBIT BEORNING "WOOD ELF" URUK ORC "COMMON ORC" HUMAN LHUTH "URUK-LHUTH"
 
 Different races in Arda have varying abilities and disadvantages; here
 is a basic chart comparing the attributes of all player controllable
@@ -172,6 +172,7 @@ Human      | Normal   | Normal   | Normal   | Normal   | Normal   | Normal
 Dwarf      | High     | Normal   | Low      | Very Low | Very High| Low
 Wood Elf   | Low      | High     | Normal   | High     | Low      | Normal
 Hobbit     | Very Low | Low      | Normal   | High     | High     | Normal
+Beorning   | Very High| Very Low | Low      | Normal   | Very High| Low
 Uruk-Hai   | Normal   | Very Low | Very Low | Normal   | High     | Very Low
 Common Orc | Low      | Very Low | Very Low | Low      | Very Low | Very Low
 Uruk-Lhuth | Low      | Normal   | Very Low | Normal   | Normal   | Low

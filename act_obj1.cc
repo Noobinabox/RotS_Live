@@ -867,8 +867,15 @@ ACMD(do_butcher)
 	tool = 0;
     }
     if(!tool) {
-      chance = 0;
-      no_tool = 1;
+			if(GET_RACE(ch) == RACE_BEORNING)
+			{
+				chance = 50 + (GET_PROF_LEVEL(PROF_RANGER, ch) + 2);
+			}
+			else
+			{
+				chance = 0;
+      	no_tool = 1;
+			}
     }
     else {
       no_tool = 0;

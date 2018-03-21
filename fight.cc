@@ -1118,7 +1118,7 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
 		add_exploit_record(EXPLOIT_MOBDEATH, dead_man, GET_IDNUM(killer), GET_NAME(killer));
 	}
 
-	int base_xp_gain = -(dead_man->points.exp - 3000) / (dead_man->player.level + 2) * 2;
+	int base_xp_gain = -(dead_man->points.exp - 3000) / (dead_man->player.level + 2);
 
 	/* A player died: DT/poison/incap/etc. death. */
 	if (!killer)
@@ -1234,7 +1234,7 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 	/* TEMPORARY: */
 	exp += 2 * exp / std::max(1, GET_LEVEL(character) - 1);
 
-	return exp;
+	return exp * 4;
 
 }
 

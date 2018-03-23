@@ -1252,11 +1252,10 @@ ACMD(do_bite)
 	}
 	else
 	{
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
-		WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + (ch->tmpabilities.str / 2);
+		GET_HIT(ch) = std::min(GET_MAX_HIT(ch), GET_HIT(ch) + dam / 2);
 		damage(ch, victim, dam, SKILL_BITE, 0);
 	}
-
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 
@@ -1349,7 +1348,7 @@ ACMD(do_maul)
 		return;
 	}
 
-	if(GET_MOVE(ch) < 25)
+	if(GET_MOVE(ch) < 15)
 	{
 		send_to_char("You are too tired for this right now.\r\n", ch);
 		return;
@@ -1408,15 +1407,15 @@ ACMD(do_maul)
 			affected_type af;
 			af.type = SKILL_MAUL;
 			af.duration = maul_calculate_duration(ch);
-			af.modifier = 10;
+			af.modifier = 100;
 			af.location = APPLY_ARMOR;
 			af.bitvector = 0;
 
 			affect_to_char(ch, &af);
 		}
-		else if(current_maul_ch->modifier < 50)
+		else if(current_maul_ch->modifier < 500)
 		{
-			current_maul_ch->modifier += 10;
+			current_maul_ch->modifier += 100;
 			current_maul_ch->duration = maul_calculate_duration(ch);
 		}
 		else
@@ -1426,7 +1425,7 @@ ACMD(do_maul)
 		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) / 2;
 		damage(ch, victim, dam, SKILL_MAUL, 0);
 	}
-	GET_MOVE(ch) -= 25;
+	GET_MOVE(ch) -= 15;
 }
 
 //============================================================================

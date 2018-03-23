@@ -1,0 +1,41 @@
+/* ************************************************************************
+*   File: limits.h                                      Part of CircleMUD *
+*  Usage: header file: protoypes of functions in limits.c                 *
+*                                                                         *
+*  All rights reserved.  See license.doc for complete information.        *
+*                                                                         *
+*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+************************************************************************ */
+
+#ifndef LIMITS_H
+#define LIMITS_H
+
+struct char_data;
+
+/* Public Procedures */
+int	mana_gain(const char_data* ch);
+int	hit_gain(const char_data* ch);
+int	move_gain(const char_data* ch);
+//int spirit_gain(const char_data* ch);
+
+int xp_to_level(int level);
+
+void do_start(struct char_data *ch);
+void set_title(struct char_data *ch);
+void gain_exp(struct char_data *ch, int gain);
+void gain_exp_regardless(struct char_data *ch, int gain);
+void gain_condition(struct char_data *ch, int condition, int value);
+int	check_idling(struct char_data *ch);
+// returns non-zero if ch was extracted
+void point_update(void);
+void update_pos(struct char_data *victim);
+
+struct title_type {
+	char	*title_m;
+	char	*title_f;
+	int	exp;
+};
+
+#endif /* LIMITS_H */
+

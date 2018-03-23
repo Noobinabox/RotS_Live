@@ -2293,15 +2293,29 @@ armor_effect(struct char_data *ch, struct char_data *victim,
 	   damage is still at it's full amount. */
 	if(GET_RACE(victim) == RACE_BEORNING && (victim->equipment[location] == NULL && damage > 0))
 	{
-		int damage_reduction = 5;
+		double damage_reduction = 10;
 		affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
 		if(maul_reduction)
 		{
-			damage_reduction += maul_reduction->modifier / 5;
+			damage_reduction += maul_reduction->modifier / 25.0;
 		}
+		
+		damage_reduction = damage_reduction / 100;
+		damage_reduction = (double)damage * damage_reduction;
+		damage -= (int)damage_reduction;
+		if(maul_reduction && maul_reduction->duration > 1)
+		{
+			int duration = maul_reduction->duration;
+			if(!(((int)damage_reduction / 2) > duration))
+			{
+				maul_reduction->modifier -= (int)damage_reduction;
+			}
 
-		damage_reduction += ((damage - damage_reduction) * 10 + 50) / 100;
-		damage -= damage_reduction;
+			if(!((int)damage_reduction > duration))
+			{
+				maul_reduction->duration -= (int)damage_reduction;
+			}
+		}
 		damage = std::max(damage, 1);
 	}
 

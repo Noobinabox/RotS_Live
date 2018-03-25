@@ -717,6 +717,12 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
   /*---------- Beorning item restriction here ----------*/
   if(GET_RACE(character) == RACE_BEORNING)
   {
+    if(armor_absorb(item) > 0)
+    {
+      send_to_char("You cannot wear armor.\r\n", character);
+      return;
+    }
+    
     if(CAN_WEAR(item, ITEM_WEAR_SHIELD))
     {
       send_to_char("You cannot wear a shield.\n\r", character);

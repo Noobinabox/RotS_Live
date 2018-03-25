@@ -578,14 +578,14 @@ ASPELL(spell_resist_magic)
 		if (resist_magic_effect->modifier <= modifier && resist_magic_effect->duration <= level && resist_magic_effect->duration > 0)
 		{
 			// Remove the old affect from the victim.
-			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_REMOVE);
+			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_REMOVE, 0);
 			affect_total(victim);
 
 			resist_magic_effect->modifier = modifier;
 			resist_magic_effect->duration = level;
 
 			// And add the new affect to the victim.
-			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_SET);
+			affect_modify(victim, resist_magic_effect->location, resist_magic_effect->modifier, resist_magic_effect->bitvector, AFFECT_MODIFY_SET, 0);
 			affect_total(victim);
 
 			send_to_char("You refresh your resistance to magic.\n\r", victim);

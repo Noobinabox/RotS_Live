@@ -2269,6 +2269,35 @@ check_riposte(struct char_data *ch, struct char_data *victim)
 }
 
 
+int maul_damage_reduction(char_data* ch, int damage)
+{
+	double damage_reduction = 0.10;
+	affected_type *maul_reduction = affected_by_spell(ch, SKILL_MAUL);
+
+	if(maul_reduction && maul_reduction->location == APPLY_MAUL)
+	{
+		damage_reduction += (maul_reduction->modifier / 1.6) * 0.001;
+	}
+	damage_reduction = (double)damage * damage_reduction;
+	damage -= (int)damage_reduction;
+
+	if(maul_reduction && maul_reduction->location == APPLY_MAUL && maul_reduction->duration > 1)
+	{
+		int duration = maul_reduction->duration;
+		int modifier = maul_reduction->modifier;
+		if(!(((int)damage_reduction * 2) > modifier))
+		{
+			maul_reduction->modifier -= (int)damage_reduction * 2;
+		}
+
+		if(!(((int)damage_reduction / 2) > duration))
+		{
+			maul_reduction->duration -= (int)damage_reduction / 2;
+		}
+	}
+	return damage = std::max(damage, 1);
+}
+
 
 /*
  * Given a hit location and a damage, calculate how much damage

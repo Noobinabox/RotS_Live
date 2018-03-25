@@ -265,7 +265,7 @@ affect_modify_room(struct room_data *room, byte loc, int mod,
 
 
 
-void affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
+void affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add, sh_int counter)
 {
 	int maxabil, tmp, tmp2;
 
@@ -419,6 +419,18 @@ void affect_modify(struct char_data *ch, byte loc, int mod, long bitv, char add)
 		//     mod = (2*mod*GET_PERCEPTION(ch))/100;
 		//     SET_DODGE(ch) += mod;
 		break;
+  
+  case APPLY_MAUL:
+    if(!add)
+    {
+      SET_DODGE(ch) += counter * 5;
+    }
+
+    if(add)
+    {
+      SET_DODGE(ch) += -(counter * 5);
+    }  
+    break;
 
 	case APPLY_PERCEPTION:
 		ch->specials2.perception += mod;
@@ -553,14 +565,14 @@ void	affect_total(struct char_data *ch, int mode)
 	     affect_modify(ch, ch->equipment[i]->affected[j].location,
 			   ch->equipment[i]->affected[j].modifier,
 			   ch->equipment[i]->obj_flags.bitvector, 
-			   AFFECT_MODIFY_REMOVE);
+			   AFFECT_MODIFY_REMOVE, 0);
 	 }
      }
      
      
      for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next,i++)
        affect_modify(ch, af->location, af->modifier, af->bitvector, 
-		     AFFECT_MODIFY_REMOVE);
+		     AFFECT_MODIFY_REMOVE, af->counter);
      
      recalc_abilities(ch);
 
@@ -575,14 +587,14 @@ void	affect_total(struct char_data *ch, int mode)
 	     affect_modify(ch, ch->equipment[i]->affected[j].location,
 			   ch->equipment[i]->affected[j].modifier,
 			   ch->equipment[i]->obj_flags.bitvector, 
-			   AFFECT_MODIFY_SET);
+			   AFFECT_MODIFY_SET, 0);
 	 }
      }
      
      
      for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next,i++)
        affect_modify(ch, af->location, af->modifier, af->bitvector, 
-		     AFFECT_MODIFY_SET);
+		     AFFECT_MODIFY_SET, af->counter);
    }
 
    if(mode & AFFECT_TOTAL_TIME){
@@ -593,14 +605,14 @@ void	affect_total(struct char_data *ch, int mode)
 	     affect_modify(ch, ch->equipment[i]->affected[j].location,
 			   ch->equipment[i]->affected[j].modifier,
 			   ch->equipment[i]->obj_flags.bitvector, 
-			   AFFECT_MODIFY_TIME);
+			   AFFECT_MODIFY_TIME, 0);
 	 }
      }
      
      
      for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next,i++)
        affect_modify(ch, af->location, af->modifier, af->bitvector, 
-		     AFFECT_MODIFY_TIME);
+		     AFFECT_MODIFY_TIME, af->counter);
    }
    /* Make certain values are between 0..100, not < 0 and not > 100! */
 
@@ -685,7 +697,7 @@ void	affect_to_char( struct char_data *ch, struct affected_type *af)
    
    // 5
    affect_modify(ch, af->location, af->modifier, af->bitvector, 
-		 AFFECT_MODIFY_SET);
+		 AFFECT_MODIFY_SET, af->counter);
    affect_total(ch);
 }
 
@@ -741,7 +753,7 @@ void	affect_remove( struct char_data *ch, struct affected_type *af )
    if(!ch->affected) return;
 
    affect_modify(ch, af->location, af->modifier, af->bitvector, 
-		 AFFECT_MODIFY_REMOVE);
+		 AFFECT_MODIFY_REMOVE, af->counter);
 
    /* remove structure *af from linked list */
    if (ch->affected == af) {
@@ -1427,7 +1439,7 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
   for(int j = 0; j < MAX_OBJ_AFFECT; j++)
     affect_modify(character, item->affected[j].location,
 		  item->affected[j].modifier,
-		  item->obj_flags.bitvector, AFFECT_MODIFY_SET);
+		  item->obj_flags.bitvector, AFFECT_MODIFY_SET, 0);
   
   affect_total(character);
   
@@ -1512,7 +1524,7 @@ struct obj_data *unequip_char(struct char_data *ch, int pos)
    for (j = 0; j < MAX_OBJ_AFFECT; j++)
       affect_modify(ch, obj->affected[j].location,
           obj->affected[j].modifier,
-          obj->obj_flags.bitvector, AFFECT_MODIFY_REMOVE);
+          obj->obj_flags.bitvector, AFFECT_MODIFY_REMOVE, 0);
 
    affect_total(ch);
 

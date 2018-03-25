@@ -754,6 +754,7 @@ struct room_data
 #define APPLY_MANA_REGEN       29
 #define APPLY_RESIST           30
 #define APPLY_VULN             31
+#define APPLY_MAUL             32
 
 #define ROOMAFF_SPELL    1
 #define ROOMAFF_EXIT     2
@@ -1196,6 +1197,7 @@ struct affected_type
 	sh_int modifier; /* This is added to apropriate ability     */
 	sh_int location; /* Tells which ability to change(APPLY_XXX)*/
 	long bitvector;  /* Tells which bits to set (AFF_XXX)       */
+	sh_int counter;
 
 	struct affected_type* next;
 };

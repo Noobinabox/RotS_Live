@@ -225,6 +225,7 @@ struct command_info {
 #define PROMPT_MANA 2
 #define PROMPT_MOVE 4
 #define PROMPT_STAT 8
+#define PROMPT_MAUL 16
 #define PROMPT_ALL (PROMPT_HIT | PROMPT_MANA | PROMPT_MOVE)
 
 #define SCMD_KICK        1

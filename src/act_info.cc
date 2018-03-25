@@ -3200,6 +3200,11 @@ void add_prompt(char * prompt, struct char_data * ch, long flag){
     sprintf(prompt,"%s%s%c",prompt,str,0);
     return;
   }
+  if(flag & PROMPT_MAUL)
+  {
+    affected_type *maul_aff = affected_by_spell(ch, SKILL_MAUL);
+    sprintf(prompt, "%s%d/1000%c", prompt, maul_aff->modifier,0);
+  }
   if (GET_MAX_MANA(ch))
     if(flag & PROMPT_MANA){
       for(tmp=0; (1000*GET_MANA(ch))/GET_MAX_MANA(ch) > prompt_mana[tmp].value; tmp ++);

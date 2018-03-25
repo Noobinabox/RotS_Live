@@ -33,6 +33,7 @@
 #include "zone.h"
 #include "char_utils.h"
 #include "big_brother.h"
+#include "spells.h"
 
 #include <cstdlib>
 #include <ctime>
@@ -678,16 +679,15 @@ void game_loop(SocketType s)
 							add_prompt(prompt, point->character->mount_data.mount,
 								PROMPT_MOVE);
 
-						// if (GET_RACE(point->character) == RACE_BEORNING)
-						// {
-						// 	affected_type maul_buff = affect_by_spell(point->character, SKILL_MAUL);
-						// 	if(maul_buff)
-						// 	{
-						// 		int counters = maul_buff->modifier;
-						// 		sprintf(prompt, "%s / 1000:", counters);
-						// 		add_prompt(prompt, )
-						// 	}
-						// }
+						if (GET_RACE(point->character) == RACE_BEORNING)
+						{
+							affected_type *maul_buff = affected_by_spell(point->character, SKILL_MAUL);
+							if(maul_buff && maul_buff->location == APPLY_MAUL)
+							{
+								sprintf(prompt, "%s Maul:", prompt);
+								add_prompt(prompt, point->character, PROMPT_MAUL);
+							}
+						}
 
 						if (point->character->specials.position == POSITION_FIGHTING) {
 							if (opponent) {

@@ -1254,7 +1254,7 @@ ACMD(do_bite)
 	{
 		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + (ch->tmpabilities.str / 2);
 		GET_HIT(ch) = std::min(GET_MAX_HIT(ch), GET_HIT(ch) + dam / 2);
-		send_to_char("You feel better.\r\n", ch);
+		send_to_char("You feel better.\n\r", ch);
 		damage(ch, victim, dam, SKILL_BITE, 0);
 	}
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
@@ -1320,25 +1320,12 @@ int maul_calculate_duration(char_data* mauler)
 
 void apply_maul_victim(char_data* victim, char_data* ch)
 {
-	affected_type *current_maul = affected_by_spell(victim, SKILL_MAUL);
 	affected_type af;
 	af.type = SKILL_MAUL;
 	af.duration = maul_calculate_duration(ch) / 5;
 	af.location = APPLY_DODGE;
 	af.modifier = -5;
 	af.bitvector = 0;
-
-	if(current_maul && current_maul->location == APPLY_DODGE)
-	{
-		if(current_maul->modifier >= 25)
-		{
-			act("Your maul attack can't stack anymore on $N.\r\n", FALSE, ch, 0, victim, TO_CHAR);
-			return;
-		}
-
-		af.duration += current_maul->duration;
-		af.modifier += current_maul->modifier;
-	}
 
 	affect_join(victim, &af, FALSE, FALSE);
 }
@@ -1364,6 +1351,7 @@ void apply_maul_char(char_data* ch)
 
 		af.duration += current_maul->duration;
 		af.modifier += current_maul->modifier;
+		af.modifier = std::min((int)af.modifier, 1000);
 		af.counter += current_maul->counter;
 	}
 	affect_join(ch, &af, FALSE, FALSE);
@@ -1401,7 +1389,7 @@ ACMD(do_maul)
 		return;
 	}
 
-	if(GET_MOVE(ch) < 10)
+	if(GET_MOVE(ch) < 15)
 	{
 		send_to_char("You are too tired for this right now.\r\n", ch);
 		return;
@@ -1433,11 +1421,9 @@ ACMD(do_maul)
 	{
 		apply_maul_victim(victim, ch);
 		apply_maul_char(ch);
-
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) / 2;
-		damage(ch, victim, dam, SKILL_MAUL, 0);
+		damage(ch, victim, number(1, 4), SKILL_MAUL, 0);
 	}
-	GET_MOVE(ch) -= 10;
+	GET_MOVE(ch) -= 15;
 }
 
 //============================================================================

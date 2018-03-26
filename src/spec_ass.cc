@@ -81,7 +81,7 @@ SPECIAL(obj_willpower);
 void
 assign_mobiles(void)
 {
-  
+  ASSIGNMOB(10312, receptionist);
   ASSIGNMOB(1105, receptionist);
   ASSIGNMOB(1109, guild);
   ASSIGNMOB(1118, postmaster);

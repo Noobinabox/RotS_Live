@@ -704,7 +704,11 @@ char * rescue_message [MAX_RACES] [2] = {
   {"Shouting 'A Elbereth Githloriel!', you leap to the rescue.\r\n", 
    "Shouting 'A Elbereth Githloriel', $n fearlessly rescues $N.\r\n"},
   {"Shouting 'For the Shire!', you leap to the rescue.\r\n", 
-   "Shouting 'For the Shire', $n the brave little halfling rescues $N.\r\n"}
+   "Shouting 'For the Shire', $n the brave little halfling rescues $N.\r\n"},
+  {"Fearless, you leap into harms way!\r\n",
+   "$n rescues $N.\r\n"},
+  {"With a bellowing roar, you leap to the rescue!\r\n",
+   "Roaring, $n fearlessly rescues $N.\r\n"}
 };
 
 ACMD(do_rescue)
@@ -776,7 +780,7 @@ ACMD(do_rescue)
 		return;
 	}
 
-	if (GET_RACE(ch) >= 5) 
+	if (GET_RACE(ch) >= 7) 
 	{
 		send_to_char("You shouldn't have rescue, stop using it!\r\n", ch);
 		return;
@@ -1146,6 +1150,11 @@ ACMD(do_rend)
 		return;
 	}
 
+	if (!check_overkill(victim)) {
+		send_to_char("You cannot get close enough!\n\r", ch);
+		return;
+	}
+
 	int prob = get_prob_skill(ch, victim, SKILL_REND);
 
 	if(prob < 0)
@@ -1154,8 +1163,18 @@ ACMD(do_rend)
 	}
 	else 
 	{
-		int dam;
-		dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ((GET_WEIGHT(ch) / 3500) + ch->tmpabilities.str);
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ((GET_WEIGHT(ch) / 3500) + ch->tmpabilities.str);
+		if(utils::get_specialization(*ch) != game_types::PS_HeavyFighting)
+		{
+			if(utils::get_specialization(*ch) == game_types::PS_WildFighting)
+			{
+				dam = (int)((double)dam * 0.75);
+			}
+			else
+			{
+				dam = (int)((double)dam * 0.50);
+			}
+		}
 		damage(ch, victim, dam, SKILL_REND, 0);
 	}
 
@@ -1244,6 +1263,11 @@ ACMD(do_bite)
 		return;
 	}
 
+	if (!check_overkill(victim)) {
+		send_to_char("You cannot get close enough!\n\r", ch);
+		return;
+	}
+
 	int prob = get_prob_skill(ch, victim, SKILL_BITE);
 
 	if(prob < 0)
@@ -1252,9 +1276,18 @@ ACMD(do_bite)
 	}
 	else
 	{
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + (ch->tmpabilities.str / 2);
-		GET_HIT(ch) = std::min(GET_MAX_HIT(ch), GET_HIT(ch) + dam / 2);
-		send_to_char("You feel better.\n\r", ch);
+		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + (ch->tmpabilities.str);
+		if(utils::get_specialization(*ch) != game_types::PS_HeavyFighting)
+		{
+			if(utils::get_specialization(*ch) == game_types::PS_WildFighting)
+			{
+				dam = (int)((double)dam * 0.75);
+			}
+			else
+			{
+				dam = (int)((double)dam * 0.50);
+			}
+		}
 		damage(ch, victim, dam, SKILL_BITE, 0);
 	}
 	WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),	0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
@@ -1307,6 +1340,8 @@ char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
 		send_to_char("Maul who?\r\n", mauler);
 		return NULL;
 	}
+
+	
 
 	return victim;
 }
@@ -1381,6 +1416,11 @@ ACMD(do_maul)
 		return;
 	}
 
+	if (!check_overkill(victim)) {
+		send_to_char("You cannot get close enough!\n\r", ch);
+		return;
+	}
+
 	// These first two tests, BigBrother and Sanctuary, they really need to be standardized.
 	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 	if (!bb_instance.is_target_valid(ch, victim))
@@ -1403,7 +1443,7 @@ ACMD(do_maul)
 	}
 
 	// Goals with this skill:
-	// * It can stack up to five times.
+	// * It can stack up to ten times.
 	// * It would be great if it had its own internal cooldown (so it does not use the delay system).
 	// * Unsure exactly how to stack the buff and debuff.  Probably use the Fast-Acting affect system.
 

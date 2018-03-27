@@ -2561,10 +2561,19 @@ int natural_attack_dam(struct char_data *attacker)
 		return dam = BAREHANDED_DAMAGE * 10;
 	
 	level_factor = GET_LEVEL(attacker);
-	level_factor = level_factor / 6;
+	level_factor = level_factor / 3;
 	warrior_factor = utils::get_prof_level(PROF_WARRIOR, *attacker);
 	str_factor = GET_STR(attacker);
-	return dam = level_factor + str_factor + warrior_factor;
+	dam = level_factor + str_factor + warrior_factor;
+	if(utils::get_specialization(*attacker) != game_types::PS_LightFighting && GET_LEVEL(attacker) > 11)
+	{
+		if(utils::get_specialization(*attacker) == game_types::PS_WildFighting)		
+			dam = (int)((double)dam * 0.75);
+		else
+			dam = (int)((double)dam * 0.50);
+	}
+
+	return dam;
 }
 
 //============================================================================

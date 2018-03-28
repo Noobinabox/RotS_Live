@@ -180,10 +180,13 @@ void do_mental(struct char_data *ch, char *argument, struct waiting_type *wtl, i
 
 	set_mental_delay(ch, PULSE_MENTAL_FIGHT);
 
-	if (!(IS_SHADOW(victim)) && GET_BODYTYPE(victim) != 1) 
+	if (!(IS_SHADOW(victim)) && GET_BODYTYPE(victim) != 1)
 	{
-		act("You cannot fathom $N's mind.\n\r", FALSE, ch, 0, victim, TO_CHAR);
-		return;
+		if(GET_RACE(victim) != RACE_BEORNING)
+		{
+			act("You cannot fathom $N's mind.\n\r", FALSE, ch, 0, victim, TO_CHAR);
+			return;
+		}
 	}
 
 	/* Check hallucination */

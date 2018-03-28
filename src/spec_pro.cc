@@ -1164,8 +1164,8 @@ SPECIAL(room_temple)
   if (GET_POS(host) != POSITION_STANDING)
     return FALSE;
   
-  if (GET_SPIRIT(host) < 30) {
-    GET_SPIRIT(host) = 30;
+  if (GET_SPIRIT(host) < 100) {
+    GET_SPIRIT(host) = 100;
     send_to_char("You feel inspired!\n\r", host);
   }
 

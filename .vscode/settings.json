@@ -7,6 +7,9 @@
         "iosfwd": "cpp",
         "xstring": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "tuple": "cpp",
+        "utility": "cpp",
+        "xmemory0": "cpp"
     }
 }

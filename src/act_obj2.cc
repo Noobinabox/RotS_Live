@@ -651,6 +651,67 @@ void	wear_message(struct char_data *ch, struct obj_data *obj, int where)
 
 }
 
+bool beorning_item_restriction(char_data* character, obj_data *item)
+{  
+  if(CAN_WEAR(item, ITEM_WEAR_SHIELD))
+  {
+    send_to_char("You cannot wear a shield.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WEAR_BODY))
+  {
+    send_to_char("You cannot wear anything around your body.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WEAR_LEGS))
+  {
+    send_to_char("You cannot wear anything around your hindlegs.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WEAR_ARMS))
+  {
+    send_to_char("You cannot wear anything around your forelegs.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_HOLD))
+  {
+    send_to_char("You cannot hold anything.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WEAR_HANDS))
+  {
+    send_to_char("You cannot wear anything on your claws.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WIELD))
+  {
+    send_to_char("Sorry, bears can't wield weapons.\n\r", character);
+    return false;
+  }
+
+  if(CAN_WEAR(item, ITEM_WEAR_FEET))
+  {
+    send_to_char("You cannot wear anything on your hindfeet.\n\r", character);
+    return false;
+  }
+
+  if(armor_absorb(item) > 0)
+  {
+    if(CAN_WEAR(item, ITEM_WEAR_BODY) || CAN_WEAR(item, ITEM_WEAR_HEAD) || CAN_WEAR(item, ITEM_WEAR_LEGS) || CAN_WEAR(item, ITEM_WEAR_ARMS))
+    {
+      send_to_char("You cannot wear armor.\n\r", character);
+      return false;    
+    }
+  }
+
+  return true;
+}
 
 
 void perform_wear(char_data* character, obj_data* item, int item_slot)
@@ -715,43 +776,9 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
   };
 
   /*---------- Beorning item restriction here ----------*/
-  if(GET_RACE(character) == RACE_BEORNING)
+  if(!beorning_item_restriction(character, item))
   {
-    if(armor_absorb(item) > 0)
-    {
-      send_to_char("You cannot wear armor.\r\n", character);
-      return;
-    }
-    
-    if(CAN_WEAR(item, ITEM_WEAR_SHIELD))
-    {
-      send_to_char("You cannot wear a shield.\n\r", character);
-      return;
-    }
-
-    if(CAN_WEAR(item, ITEM_HOLD))
-    {
-      send_to_char("You cannot hold anything.\n\r", character);
-      return;
-    }
-
-    if(CAN_WEAR(item, ITEM_WEAR_HANDS))
-    {
-      send_to_char("You cannot wear anything on your claws.\n\r", character);
-      return;
-    }
-
-    if(CAN_WEAR(item, ITEM_WIELD))
-    {
-      send_to_char("Sorry, bears can't wield weapons.\n\r", character);
-      return;
-    }
-
-    if(CAN_WEAR(item, ITEM_WEAR_FEET))
-    {
-      send_to_char("You cannot wear anything on your hindfeet.\n\r", character);
-      return;
-    }
+    return;
   }
 
   /* see if this is shield, and weapon is in two hands */

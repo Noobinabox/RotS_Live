@@ -164,14 +164,14 @@
 #define SPELL_ACTIVITY          118
 #define SPELL_RAGE              119
 #define SPELL_ANGER             120
-/* These are reserved fro languages do not used them...
+/* These are reserved for languages do not used them...
 #define LANG_ANIMAL      121
 #define LANG_HUMAN       122
 #define LANG_ORC         123
 */
 #define SKILL_MARK				124
 #define SKILL_UNUSED4           125
-#define SKILL_UNUSED5           126
+#define SKILL_GROOM             126
 #define SPELL_NONE              127
 
 /* 130-150 are reserved for weapon types.  200 is suffering */

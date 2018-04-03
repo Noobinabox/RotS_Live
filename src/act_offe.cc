@@ -1471,46 +1471,10 @@ ACMD(do_groom)
 {
 	one_argument(argument, arg);
 
-	if (can_bear_skill(ch, SKILL_MAUL) == false)
+	if(GET_RACE(ch) != RACE_BEORNING)
 	{
+		send_to_char("Unrecognized command.\r\n", ch);
 		return;
 	}
-
-	char_data* victim = is_maul_targ_valid(ch, wtl);
-	if (victim == NULL)
-	{
-		return;
-	}
-
-	// These first two tests, BigBrother and Sanctuary, they really need to be standardized.
-	game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	if (!bb_instance.is_target_valid(ch, victim))
-	{
-		send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
-		return;
-	}
-
-	if (utils::is_affected_by_spell(*ch, AFF_SANCTUARY))
-	{
-		appear(ch);
-		send_to_char("You cast off your santuary!\r\n", ch);
-		act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
-	}
-
-	int prob = get_prob_skill(ch, victim, SKILL_MAUL);
-
-	if (prob < 0)
-	{
-		damage(ch, victim, 0, SKILL_MAUL, 0);
-	}
-	else
-	{
-		int dam = ((2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250) + ch->tmpabilities.str;
-		damage(ch, victim, dam, SKILL_MAUL, 0);
-		WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
-	}
-
-delay:
-	WAIT_STATE_FULL(victim, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 

@@ -110,7 +110,7 @@
 #define SPELL_CURSE             67
 #define SPELL_REVIVE            68
 #define SPELL_DETECT_MAGIC      69
-#define SPELL_SHIFT             70
+#define SPELL_SHIFT             70 // Needs to be removed.
 
 #define SPELL_MAGIC_MISSILE      71
 #define SPELL_REVEAL_LIFE        72
@@ -118,7 +118,7 @@
 #define SPELL_CURE_SELF          74
 #define SPELL_CHILL_RAY          75
 #define SPELL_BLINK              76
-#define SPELL_FREEZE             77
+#define SPELL_FREEZE             77 // Needs to be removed.
 #define SPELL_LIGHTNING_BOLT     78
 #define SPELL_VITALIZE_SELF      79
 #define SPELL_FLASH              80
@@ -126,12 +126,12 @@
 #define SPELL_CREATE_LIGHT       82
 #define SPELL_DEATH_WARD         83
 #define SPELL_DARK_BOLT          84
-#define SPELL_MIST_OF_BAAZUNGA	 85
-#define SPELL_MIND_BLOCK	 86
+#define SPELL_MIST_OF_BAAZUNGA	 85 // Needs to be removed.
+#define SPELL_MIND_BLOCK	     86
 #define SPELL_REMOVE_POISON      87
 #define SPELL_BEACON             88
 #define SPELL_PROTECTION         89
-#define SPELL_BLAZE              90
+#define SPELL_BLAZE              90 // Needs to be removed
 #define SPELL_FIREBOLT           91
 #define SPELL_RELOCATE           92
 #define SPELL_CONE_OF_COLD       93
@@ -165,14 +165,15 @@
 #define SPELL_RAGE              119
 #define SPELL_ANGER             120
 /* These are reserved for languages do not used them...
-#define LANG_ANIMAL      121
-#define LANG_HUMAN       122
-#define LANG_ORC         123
+	#define LANG_ANIMAL      121
+	#define LANG_HUMAN       122
+	#define LANG_ORC         123
 */
 #define SKILL_MARK				124
 #define SKILL_UNUSED4           125
 #define SKILL_GROOM             126
 #define SPELL_NONE              127
+/* MAX_SKILL is defined at 128 and we can't exceed this without changing the playerfiles */
 
 /* 130-150 are reserved for weapon types.  200 is suffering */
 #define SKILL_TRAP              151
@@ -344,7 +345,7 @@ struct skill_data {
   byte beats;             /* Heartbeats until ready for next */
   int targets;            /* See above for use with TAR_XXX  */
   int learn_diff;         /* difficulty */
-  char learn_type;
+  char learn_type;        /* If the skill is spec only set to 65 otherwise 1  */
   byte is_fast;           /* non-zero if fast-updating skill */
   char skill_spec;        /* spell/skill group, specialization */
 };

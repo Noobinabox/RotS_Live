@@ -52,6 +52,7 @@ int immort_start_room = 1101;
 /* virtual number of room that frozen players should enter at */
 int frozen_start_room = 1110;
 
+const char *NOEFFECT = "Nothing seems to happen.\r\n";
 
 /* GAME OPERATION OPTIONS */
 

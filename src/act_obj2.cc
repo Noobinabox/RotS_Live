@@ -776,9 +776,12 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
   };
 
   /*---------- Beorning item restriction here ----------*/
-  if(!beorning_item_restriction(character, item))
+  if(GET_RACE(character) == RACE_BEORNING)
   {
-    return;
+    if(!beorning_item_restriction(character, item))
+    {
+      return;
+    }
   }
 
   /* see if this is shield, and weapon is in two hands */

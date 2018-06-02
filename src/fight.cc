@@ -2262,7 +2262,7 @@ check_riposte(struct char_data *ch, struct char_data *victim)
 	  MIN(GET_DEX(victim), 20) / number(50, 100);
 
 	if (damage(victim, ch, dam,
-		   weapon_hit_type(wielded->obj_flags.value[3]), 21))
+		   weapon_hit_type(wielded->obj_flags.value[3]), 1))
 	  return 1;
       }
     }

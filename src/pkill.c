@@ -1,18 +1,18 @@
 /*
- * pkill.c
- *
- * Handle everything to do with player kill records.  This
- * includes tracking current pkills and calculating total
- * fame.
- *
- * NOTE: The pkill expiration functionality relies on the
- * daily reboot scheme to filter out old pkills.  Without
- * the daily reboot, extra code needs to be put into place
- * that periodically checks the pkill table for expired
- * records and removes them.
- *
- * Copyright Joe Luquette, January 2008
- */
+* pkill.c
+*
+* Handle everything to do with player kill records.  This
+* includes tracking current pkills and calculating total
+* fame.
+*
+* NOTE: The pkill expiration functionality relies on the
+* daily reboot scheme to filter out old pkills.  Without
+* the daily reboot, extra code needs to be put into place
+* that periodically checks the pkill table for expired
+* records and removes them.
+*
+* Copyright Joe Luquette, January 2008
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,11 +26,11 @@
 #include "pkill.h"
 
 /* Local variables.  Do not ever use these externally.
- * If you think you need access to these variables externally,
- * then you may need to write a new entrypoint to the PKILL API.
- * However, do not, under any circumstances, reference these
- * variables externally.
- */
+* If you think you need access to these variables externally,
+* then you may need to write a new entrypoint to the PKILL API.
+* However, do not, under any circumstances, reference these
+* variables externally.
+*/
 PKILL *pkill_tab = NULL;
 int pkill_tab_len = 0;
 
@@ -45,12 +45,12 @@ RANKING good_ranking = { NULL, 0, 0, 0 };
 RANKING evil_ranking = { NULL, 0, 0, 0 };
 
 /*
- * Return > 0 if 'race' is a good race; otherwise return -1.
- * This should not have to be implemented here--there should
- * be a globally useful function that can take race as an
- * integer and return the side without requiring a full char
- * data structure.
- */
+* Return > 0 if 'race' is a good race; otherwise return -1.
+* This should not have to be implemented here--there should
+* be a globally useful function that can take race as an
+* integer and return the side without requiring a full char
+* data structure.
+*/
 int
 __pkill_side(int race)
 {
@@ -67,8 +67,8 @@ __pkill_side(int race)
 
 
 /*
- * Copy the PKILL structure at 'src' into 'dest'.
- */
+* Copy the PKILL structure at 'src' into 'dest'.
+*/
 void
 pkill_copy(PKILL *dest, PKILL *src)
 {
@@ -84,13 +84,13 @@ pkill_copy(PKILL *dest, PKILL *src)
 
 
 /*
- * Return 1 if the PKILL record p has expired; otherwise return 0.
- */
+* Return 1 if the PKILL record p has expired; otherwise return 0.
+*/
 int
 pkill_expired(PKILL *p)
 {
 	int days_passed, days_allowed;
-  
+
 	days_passed = (time(0) - p->kill_time) / (3600 * 24);
 
 	if (p->killer_level == 0)
@@ -99,7 +99,7 @@ pkill_expired(PKILL *p)
 		days_allowed = 30 * p->victim_level / p->killer_level;
 
 	vmudlog(CMP, "Check expiration: killer %d, victim %d, days elapsed %d.",
-	        p->killer, p->victim, days_passed);
+		p->killer, p->victim, days_passed);
 
 	if (days_passed >= days_allowed)
 		return 1;
@@ -107,27 +107,60 @@ pkill_expired(PKILL *p)
 	return 0;
 }
 
+
+
 /*
- * Return 0 if 'c' is not a valid player killer.  Otherwise,
- * return 1.
- */
+* Determine the weight of this kill.  If the victim has many
+* high level opponents contributing to his death, then the
+* weight will be small; if the victim has relatively few
+* opponents and levels (relative to his own level), then the
+* weight will be large.
+*/
+int
+pkill_weight(struct char_data *victim)
+{
+	int total_levels;
+	struct char_data *c;
+	extern struct char_data *combat_list;
+
+	total_levels = 0;
+	for (c = combat_list; c != NULL; c = c->next_fighting)
+		if (c->specials.fighting == victim)
+			total_levels += GET_LEVEL(c);
+
+	/* Get the larger of the two */
+	total_levels = MAX(victim->specials.attacked_level, total_levels);
+
+	/* Don't divide by zero */
+	if (total_levels == 0)
+		return 0;
+
+	return GET_LEVEL(victim) * 1000 / (total_levels * total_levels);
+}
+
+
+
+/*
+* Return 0 if 'c' is not a valid player killer.  Otherwise,
+* return 1.
+*/
 int
 pkill_valid_killer(struct char_data *killer, struct char_data *victim)
 {
 	/* The only valid NPCs are orc followers */
 	if (IS_NPC(killer)) {
 		if (!MOB_FLAGGED(killer, MOB_ORC_FRIEND) ||
-		    !MOB_FLAGGED(killer, MOB_PET))
+			!MOB_FLAGGED(killer, MOB_PET))
 			return 0;
 
 		/*
-		 * If we're here, we're dealing with an orc follower.  In
-		 * that case, we want to create a record ONLY when the
-		 * leader isn't engaged.  So if the leader is engaged, we'll
-		 * return invalid here.
-		 */
+		* If we're here, we're dealing with an orc follower.  In
+		* that case, we want to create a record ONLY when the
+		* leader isn't engaged.  So if the leader is engaged, we'll
+		* return invalid here.
+		*/
 		if (killer->master != NULL &&
-		    killer->master->specials.fighting == victim)
+			killer->master->specials.fighting == victim)
 			return 0;
 	}
 
@@ -140,18 +173,18 @@ pkill_valid_killer(struct char_data *killer, struct char_data *victim)
 
 
 
-int pkill_opponents(struct char_data *victim)
+int
+pkill_opponents(struct char_data *victim)
 {
-	int total_opponents = 0;
+	int total_opponents;
+	struct char_data *c;
 	extern struct char_data *combat_list;
 
-	for (struct char_data* c = combat_list; c != NULL; c = c->next_fighting)
-	{
-		if (c->specials.fighting == victim && pkill_valid_killer(c, victim))
-		{
+	total_opponents = 0;
+	for (c = combat_list; c != NULL; c = c->next_fighting)
+		if (c->specials.fighting == victim &&
+			pkill_valid_killer(c, victim))
 			++total_opponents;
-		}
-	}
 
 	return total_opponents;
 }
@@ -159,8 +192,8 @@ int pkill_opponents(struct char_data *victim)
 
 
 /*
- * Same side kills are awarded zero points.
- */
+* Same side kills are awarded zero points.
+*/
 int
 pkill_points(struct char_data *victim, struct char_data *killer, int weight)
 {
@@ -184,10 +217,10 @@ pkill_level(struct char_data *c)
 
 
 /*
- * Shift the interval [a, b] in rank_tab to [a+shift, b+shift].
- * Note that the caller of this function has to take care of
- * refilling all of the values obliterated by this shift!
- */
+* Shift the interval [a, b] in rank_tab to [a+shift, b+shift].
+* Note that the caller of this function has to take care of
+* refilling all of the values obliterated by this shift!
+*/
 void
 __shift_rank(RANKING *rnk, int a, int b, int shift)
 {
@@ -243,8 +276,8 @@ __delete_rank(RANKING *rnk, int r)
 
 
 /*
- * Insert a reference to character 'idx' at rank 'a'.
- */
+* Insert a reference to character 'idx' at rank 'a'.
+*/
 void
 __insert_rank(RANKING *rnk, int a, long idx)
 {
@@ -266,20 +299,20 @@ __insert_rank(RANKING *rnk, int a, long idx)
 
 
 /*
- * Update the rank arrays for each of the RANKING structures.
- * The only argument is the index of the character in the
- * player table.  The idea of the algorithm is:
- *   (1) Identify the character: make sure the index to the
- *       player table is valid and find the player's rank in
- *       the RANKING structures.
- *   (2) Delete the player from the rank structures.
- *   (3) Update the player's warpoint totals.
- *   (4) Re-insert the player into the RANKING structures.
- *       (a) Note that if the player has non-positive fame
- *           after we update his warpoints, then we do not
- *           re-insert him into the RANKINGs.  We only rank
- *           people with fame > 0.
- */
+* Update the rank arrays for each of the RANKING structures.
+* The only argument is the index of the character in the
+* player table.  The idea of the algorithm is:
+*   (1) Identify the character: make sure the index to the
+*       player table is valid and find the player's rank in
+*       the RANKING structures.
+*   (2) Delete the player from the rank structures.
+*   (3) Update the player's warpoint totals.
+*   (4) Re-insert the player into the RANKING structures.
+*       (a) Note that if the player has non-positive fame
+*           after we update his warpoints, then we do not
+*           re-insert him into the RANKINGs.  We only rank
+*           people with fame > 0.
+*/
 void
 pkill_update_rank(long idx)
 {
@@ -349,10 +382,10 @@ pkill_update_character_by_id(long idnum, int points)
 
 
 /*
- * Extend the internal pkill list by n elements.  Note that
- * this function is considered extremely private, and is thus
- * prefixed by a __.
- */
+* Extend the internal pkill list by n elements.  Note that
+* this function is considered extremely private, and is thus
+* prefixed by a __.
+*/
 void
 __pkill_extend_tab(int n)
 {
@@ -363,7 +396,8 @@ __pkill_extend_tab(int n)
 	if (pkill_tab_len == 0 || pkill_tab == NULL) {
 		CREATE(pkill_tab, PKILL, n);
 		pkill_tab_len = n;
-	} else {
+	}
+	else {
 		RECREATE(pkill_tab, PKILL, n + pkill_tab_len, pkill_tab_len);
 		pkill_tab_len += n;
 	}
@@ -372,10 +406,10 @@ __pkill_extend_tab(int n)
 
 
 /*
- * Read in all of the pkills currently written to the pkill
- * file.  Store them in the global variable pkill_tab and
- * return the number of pkills read from the file.
- */
+* Read in all of the pkills currently written to the pkill
+* file.  Store them in the global variable pkill_tab and
+* return the number of pkills read from the file.
+*/
 int
 pkill_read_file(char *file)
 {
@@ -387,7 +421,7 @@ pkill_read_file(char *file)
 	f = fopen(file, "rb");
 	if (f == NULL) {
 		vmudlog(BRF, "read_pkill_file: pkill file '%s' does not exist.",
-		        file);
+			file);
 		return 0;
 	}
 
@@ -427,9 +461,9 @@ pkill_delete_file(char *file)
 
 
 /*
- * Write out all pkills which haven't expired to the given
- * pkill file.
- */
+* Write out all pkills which haven't expired to the given
+* pkill file.
+*/
 int
 pkill_update_file(char *file, PKILL pkills[], int n)
 {
@@ -448,13 +482,13 @@ pkill_update_file(char *file, PKILL pkills[], int n)
 	for (i = 0; i < n; ++i) {
 		if (!pkill_expired(&pkills[i])) {
 			/*
-			 * The pkill file stores killer and victim IDs, not
-			 * player table indexes (which would be useless to
-			 * store).  If we ever move from a binary pkill file
-			 * to a text pkill file, we should store idnums and
-			 * player table indexes in the PKILL struct so that
-			 * we don't have to reference the player_table here.
-			 */
+			* The pkill file stores killer and victim IDs, not
+			* player table indexes (which would be useless to
+			* store).  If we ever move from a binary pkill file
+			* to a text pkill file, we should store idnums and
+			* player table indexes in the PKILL struct so that
+			* we don't have to reference the player_table here.
+			*/
 			pkill_copy(&p, &pkills[i]);
 			p.killer = player_table[p.killer].idnum;
 			p.victim = player_table[p.victim].idnum;
@@ -471,12 +505,12 @@ pkill_update_file(char *file, PKILL pkills[], int n)
 
 
 /*
- * Update the player table with all of the PKILLs recorded
- * in the array pkills.  Note that it isn't necessary to have
- * an entire list of PKILLs to update: we use this function
- * to update the player table ANY TIME a pkill record or set
- * of records is created.
- */
+* Update the player table with all of the PKILLs recorded
+* in the array pkills.  Note that it isn't necessary to have
+* an entire list of PKILLs to update: we use this function
+* to update the player table ANY TIME a pkill record or set
+* of records is created.
+*/
 int
 pkill_update_player_tab(PKILL pkills[], int nkills)
 {
@@ -487,11 +521,11 @@ pkill_update_player_tab(PKILL pkills[], int nkills)
 		p = &pkills[i];
 
 		p->killer = pkill_update_character_by_id(p->killer,
-		                                         p->killer_points);
+			p->killer_points);
 		pkill_update_rank(p->killer);
 
 		p->victim = pkill_update_character_by_id(p->victim,
-		                                         p->victim_points);
+			p->victim_points);
 		pkill_update_rank(p->victim);
 	}
 
@@ -501,138 +535,79 @@ pkill_update_player_tab(PKILL pkills[], int nkills)
 
 
 /*
- * Update the pkill table assuming that the victim has just died
- * and that the pkill statistics weight w and opponents n pertain
- * to this pkill.
- */
+* Update the pkill table assuming that the victim has just died
+* and that the pkill statistics weight w and opponents n pertain
+* to this pkill.
+*/
 int
-pkill_update_pkill_tab(struct char_data *victim, int* opponent_count)
+pkill_update_pkill_tab(struct char_data *victim, int w, int n)
 {
-	int cur_room;
-	int seen_chars_count;
-	int total_levels;
-	extern struct char_data *combat_list;
-
-	struct char_data* seen_chars[16];
-	for (int i = 0; i < 16; i++)
-	{
-		seen_chars[i] = NULL;
-	}
-
-	seen_chars_count = 0;
-	total_levels = 0;
-	cur_room = victim->in_room;
-	for (struct char_data *c = combat_list; c != NULL; c = c->next_fighting)
-	{
-		struct char_data* cur_char = c;
-		if (c->specials.fighting == victim)
-		{
-			if (IS_NPC(c))
-			{
-				if ((MOB_FLAGGED(c, MOB_PET) || MOB_FLAGGED(c, MOB_ORC_FRIEND)) && c->master)
-				{
-					cur_char = c->master;
-				}
-			}
-
-			// Only count characters in the same room as the victim, and characters that are not NPCs.
-			if (cur_char == NULL || cur_char->in_room != cur_room || IS_NPC(cur_char))
-				continue;
-
-			int is_unique = 1;
-			if (seen_chars_count < 16)
-			{
-				for (int index = 0; index < seen_chars_count; index++)
-				{
-					if (seen_chars[index] == cur_char)
-					{
-						is_unique = 0;
-						break;
-					}
-				}
-
-				if (is_unique)
-				{
-					seen_chars[seen_chars_count++] = cur_char;
-					total_levels += GET_LEVEL(cur_char);
-				}
-			}
-		}
-	}
-
-	/* Get the larger of the two */
-	total_levels = MAX(victim->specials.attacked_level, total_levels);
-
-	/* Don't divide by zero */
-	if (total_levels == 0)
-	{
-		return 0;
-	}
-
-	int weight = GET_LEVEL(victim) * 1000 / (total_levels * total_levels);
-
 	int i, start;
 	int points;
 	time_t t;
+	struct char_data *c;
 	extern struct char_data *combat_list;
 
 	/* Record where the list of new PKILL records start */
 	start = pkill_tab_len;
 
 	/* Make room for the new PKILLs */
-	__pkill_extend_tab(seen_chars_count);
+	__pkill_extend_tab(n);
 
 	i = 0;
 	t = time(0);
+	for (c = combat_list; c != NULL; c = c->next_fighting) {
+		if (c->specials.fighting == victim &&
+			pkill_valid_killer(c, victim)) {
+			vmudlog(CMP, "Creating pkill: %s killed %s.",
+				GET_NAME(c), GET_NAME(victim));
 
-	for (int i = 0; i < seen_chars_count; i++)
-	{
-		struct char_data *cur_char = seen_chars[i];
+			pkill_tab[start + i].kill_time = t;
+			pkill_tab[start + i].killer = c->specials2.idnum;
+			pkill_tab[start + i].victim = victim->specials2.idnum;
+			pkill_tab[start + i].killer_level = pkill_level(c);
+			pkill_tab[start + i].victim_level = pkill_level(victim);
 
-		vmudlog(CMP, "Creating pkill: %s killed %s.", GET_NAME(cur_char), GET_NAME(victim));
-
-		pkill_tab[start + i].kill_time = t;
-		pkill_tab[start + i].killer = cur_char->specials2.idnum;
-		pkill_tab[start + i].victim = victim->specials2.idnum;
-		pkill_tab[start + i].killer_level = pkill_level(cur_char);
-		pkill_tab[start + i].victim_level = pkill_level(victim);
-
-		points = pkill_points(victim, cur_char, weight);
-		pkill_tab[start + i].killer_points = points;
-		pkill_tab[start + i].victim_points = -1 * points;
+			points = pkill_points(victim, c, w);
+			pkill_tab[start + i].killer_points = points;
+			pkill_tab[start + i].victim_points = -1 * points;
+			++i;
+		}
 	}
-
-	*opponent_count = seen_chars_count;
 
 	return start;
 }
 
 
 
-void pkill_create(struct char_data *victim)
+void
+pkill_create(struct char_data *victim)
 {
+	int weight;
+	int opponents;
+	int start;
+
 	/* We don't record pkills for NPCs or immortals */
 	if (IS_NPC(victim) || GET_LEVEL(victim) >= LEVEL_IMMORT)
 		return;
 
 	/* Get the kill statistics */
-	int opponents = 0;
-	int start = pkill_update_pkill_tab(victim, &opponents);
-	if (start != 0)
-	{
-		pkill_update_player_tab(&pkill_tab[start], opponents);
-		pkill_update_file(PKILL_FILE, &pkill_tab[start], opponents);
-	}
+	weight = pkill_weight(victim);
+	opponents = pkill_opponents(victim);
+
+	start = pkill_update_pkill_tab(victim, weight, opponents);
+	pkill_update_player_tab(&pkill_tab[start], opponents);
+	pkill_update_file(PKILL_FILE, &pkill_tab[start], opponents);
 }
 
 
 
 /*
- * Remove all references to the character 'c' in the pkill
- * table.  Leave the character table untouched.
- *
- * Also note: requires that 'c' be in the player table.
- */
+* Remove all references to the character 'c' in the pkill
+* table.  Leave the character table untouched.
+*
+* Also note: requires that 'c' be in the player table.
+*/
 void
 pkill_unref_character(struct char_data *c)
 {
@@ -645,8 +620,8 @@ pkill_unref_character(struct char_data *c)
 
 
 /*
- * See the notes for pkill_unref_character above.
- */
+* See the notes for pkill_unref_character above.
+*/
 void
 pkill_unref_character_by_index(int idx)
 {
@@ -683,10 +658,10 @@ pkill_get_total()
 
 
 /*
- * This is horrible and should be removed.  It can only be
- * removed, however, when someone updates the char_data API
- * to support this functionality for us.
- */
+* This is horrible and should be removed.  It can only be
+* removed, however, when someone updates the char_data API
+* to support this functionality for us.
+*/
 char *
 __pkill_name(int i)
 {
@@ -706,14 +681,14 @@ __pkill_name(int i)
 
 
 /*
- * Return a string representation of the PKILL record p.
- * This returns dynamically allocated memory.  The caller
- * MUST free it after use.
- *
- * The flag can either be PKILL_STRING_KILLED or
- * PKILL_STRING_SLAIN.  These define from which viewpoint
- * the pkill string is created.
- */
+* Return a string representation of the PKILL record p.
+* This returns dynamically allocated memory.  The caller
+* MUST free it after use.
+*
+* The flag can either be PKILL_STRING_KILLED or
+* PKILL_STRING_SLAIN.  These define from which viewpoint
+* the pkill string is created.
+*/
 char *
 pkill_get_string(PKILL *p, int flag)
 {
@@ -731,10 +706,10 @@ pkill_get_string(PKILL *p, int flag)
 
 	if (flag == PKILL_STRING_KILLED)
 		asprintf(&ret, "On %s, %s killed %s.\r\n",
-		         day, killer, victim);
+			day, killer, victim);
 	else if (flag == PKILL_STRING_SLAIN)
 		asprintf(&ret, "On %s, %s was slain by %s.\r\n",
-		         day, victim, killer);
+			day, victim, killer);
 	else
 		asprintf(&ret, "ERROR: Unknown pkill string!  Notify an immortal.\r\n");
 
@@ -747,15 +722,15 @@ pkill_get_string(PKILL *p, int flag)
 
 
 /*
- * Return a list of all kills which occurred in the past 24
- * hours of real time.  Returns NULL if no valid pkills are
- * found.
- *
- * NOTE: The pkill table pkill_tab is kept in chronological
- * order, so we return the first entry in the table which is
- * within the 24 hour period and then assume all of the
- * following pkills are valid.
- */
+* Return a list of all kills which occurred in the past 24
+* hours of real time.  Returns NULL if no valid pkills are
+* found.
+*
+* NOTE: The pkill table pkill_tab is kept in chronological
+* order, so we return the first entry in the table which is
+* within the 24 hour period and then assume all of the
+* following pkills are valid.
+*/
 PKILL *
 pkill_get_new_kills(int *n)
 {
@@ -773,7 +748,8 @@ pkill_get_new_kills(int *n)
 	if (i != pkill_tab_len) {
 		*n = pkill_tab_len - i;
 		return &pkill_tab[i];
-	} else {
+	}
+	else {
 		*n = 0;
 		return NULL;
 	}
@@ -857,22 +833,22 @@ pkill_free_leader(LEADER *ldr)
 
 
 /*
- * Get the fame leader of the specified rank.  Rank values
- * are integers in [0, ...].  Hence the highest rank is
- * rank 0, the second highest is 1, etc.  A non-NULL LEADER
- * structure is ALWAYS returned, even if no leader with the
- * requested rank is found.  In this case, a dummy leader is
- * returned.
- *
- * Also note that the leader is pulled from the side of the
- * given reference race.  If a good race is used, a good
- * leader will be returned; otherwise an evil leader will be
- * chosen.
- *
- * A NULL rank_tab happens whenever there are no leaders;
- * i.e., when there have been no pkills or there is no
- * fame.
- */
+* Get the fame leader of the specified rank.  Rank values
+* are integers in [0, ...].  Hence the highest rank is
+* rank 0, the second highest is 1, etc.  A non-NULL LEADER
+* structure is ALWAYS returned, even if no leader with the
+* requested rank is found.  In this case, a dummy leader is
+* returned.
+*
+* Also note that the leader is pulled from the side of the
+* given reference race.  If a good race is used, a good
+* leader will be returned; otherwise an evil leader will be
+* chosen.
+*
+* A NULL rank_tab happens whenever there are no leaders;
+* i.e., when there have been no pkills or there is no
+* fame.
+*/
 LEADER *
 pkill_get_leader_by_rank(int rank, int race)
 {
@@ -898,10 +874,10 @@ pkill_get_leader_by_rank(int rank, int race)
 		ldr = __new_leader("", idx, PKILL_UNRANKED, 0, 0, 0, -1);
 	else {
 		ldr = __new_leader(player_table[idx].name,
-		                   idx, rank,
-		                   player_table[idx].warpoints / 100,
-		                   player_table[idx].race,
-		                   __pkill_side(player_table[idx].race), 0);
+			idx, rank,
+			player_table[idx].warpoints / 100,
+			player_table[idx].race,
+			__pkill_side(player_table[idx].race), 0);
 	}
 
 	return ldr;
@@ -910,9 +886,9 @@ pkill_get_leader_by_rank(int rank, int race)
 
 
 /*
- * Given a char_data structure, return the character's rank in
- * O(1) time.
- */
+* Given a char_data structure, return the character's rank in
+* O(1) time.
+*/
 int
 pkill_get_rank_by_character(struct char_data *c)
 {

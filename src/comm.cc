@@ -10,6 +10,7 @@
 
 
 #include <errno.h>
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -141,10 +142,24 @@ char * wait_wheel[8]={"\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\
 *  main game loop and related stuff				       *
 ********************************************************************* */
 
+void sigsegv_handler(int sig) {
+    void *array[10];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
+}
 
 int
 main(int argc, char **argv)
 {
+	signal(SIGSEGV, sigsegv_handler);
+
 	// initialize the random number generator
 	std::srand(std::time(0));
 

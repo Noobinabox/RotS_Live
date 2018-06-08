@@ -515,8 +515,8 @@ reset_zone(int zone)
   extern struct index_data *obj_index;
   extern struct char_data *character_list;
   int set_exit_state(struct room_data *, int, int);
-  void add_follower(struct char_data *, struct char_data *);
-  void extract_char(struct char_data *, int);
+  void add_follower(struct char_data *, struct char_data *, int mode);
+  void extract_char(struct char_data *, int new_room = -1);
   void extract_obj(struct obj_data *);
   /* XXX: int used for room virtual number */
   void char_to_room(struct char_data *, int);

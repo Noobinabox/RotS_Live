@@ -1465,16 +1465,3 @@ ACMD(do_maul)
 	}
 	GET_MOVE(ch) -= 15;
 }
-
-//============================================================================
-ACMD(do_groom)
-{
-	one_argument(argument, arg);
-
-	if(GET_RACE(ch) != RACE_BEORNING)
-	{
-		send_to_char("Unrecognized command.\r\n", ch);
-		return;
-	}
-}
-

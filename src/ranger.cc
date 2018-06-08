@@ -510,7 +510,7 @@ ACMD (do_gather_food) {
 		  }
 		  else
 		  {
-			  send_to_char("Problem in gather arrows. Could you create item. Please notify imps.\n\r", ch);
+			  send_to_char("Problem in gather arrows. Could not create item. Please notify imps.\n\r", ch);
 		  }
 		  break;
       }

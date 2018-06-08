@@ -1236,7 +1236,8 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
 	/* TEMPORARY: */
 	exp += 2 * exp / std::max(1, GET_LEVEL(character) - 1);
 
-	return exp * 4;
+	/* Here we return the experience for killing a mob/player. */
+	return exp;
 
 }
 

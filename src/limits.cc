@@ -891,6 +891,11 @@ void update_bleed_tracks()
 
 	for(roomnum = 0; roomnum <= top_of_world; roomnum++)
 	{
+		tmproom = &world[roomnum];
+	}
+	
+	for(tmp = 0; tmp < NUM_OF_BLOOD_TRAILS; tmp++)
+	{
 		if(tmproom->bleed_track[tmp].data / 8 == time_info.hours)
 		{
 			tmproom->bleed_track[tmp].char_number = 0;

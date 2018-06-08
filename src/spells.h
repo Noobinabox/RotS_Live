@@ -171,7 +171,7 @@
 */
 #define SKILL_MARK				124
 #define SKILL_UNUSED4           125
-#define SKILL_GROOM             126
+#define SKILL_UNUSED5           126
 #define SPELL_NONE              127
 /* MAX_SKILL is defined at 128 and we can't exceed this without changing the playerfiles */
 

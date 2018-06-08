@@ -2132,3 +2132,77 @@ ACMD(do_fish)
     abort_delay(ch);
   }
 }
+
+struct
+{
+  char *field;
+  int subcmd;
+}
+apply_options[] = {
+  {"poison", SCMD_APPLY_POISON},
+  {"antidote", SCMD_APPLY_ANTIDOTE}
+};
+
+const int num_of_apply = 2;
+
+/*=================================================================================
+   do_apply:
+   This will apply a poison to a weapon or apply an antidote to a player if they
+   are poisoned. The characters ranger level and gather skill determines how 
+   successful they are with apply the poison to the weapon, but there is no
+   restriction on the antidote.
+   ------------------------------Change Log---------------------------------------
+   slyon: June 4, 2018 - Created ACMD
+==================================================================================*/
+ACMD(do_apply)
+{
+  struct char_data *vict;
+  struct obj_data *tmp_object;
+  int percent, bits, tmp;
+
+  if(IS_NPC(ch))
+  {
+    send_to_char("You're just a dumb NPC.\n\r", ch);
+    return;
+  }
+
+  if(subcmd == 0)
+  {
+    if(!wtl || (wtl->targ1.type != TARGET_TEXT))
+    {
+      send_to_char("Wrong call to apply. Consult an Immortal, please.\n\r", ch);
+      return;
+    }
+
+    for(tmp = 0; tmp < num_of_apply; tmp++)
+    {
+      if(!str_cmp(apply_options[tmp].field, wtl->targ1.ptr.text->text)) break;
+    }
+
+    if((tmp == num_of_apply))
+    {
+      strcpy(buf, "The format is 'apply <type> <object>', \n\rPossible fields are:\n\r");
+      for(tmp = 0; tmp < num_of_apply; tmp++)
+      {
+        strcat(buf, apply_options[tmp].field);
+        strcat(buf, ", ");
+      }
+      strcpy(buf+strlen(buf)-2, ".\n\r");
+      send_to_char(buf, ch);
+      return;
+    }
+
+    subcmd = apply_options[tmp].subcmd;
+  }
+
+  switch(subcmd)
+  {
+    case SCMD_APPLY_POISON:
+      break;
+    case SCMD_APPLY_ANTIDOTE:
+      break;
+    default:
+      break;
+  }
+  
+}

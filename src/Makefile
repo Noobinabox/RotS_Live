@@ -5,7 +5,7 @@ CC = g++
 MYFLAGS = -fstrict-aliasing -Wall -funsigned-char
 
 #flags for profiling (see hacker.doc for more information)
-PROFILE = -g
+PROFILE = -g -rdynamic
 
 #remove the hash marks below if compiling under AIX
 #CC = g++

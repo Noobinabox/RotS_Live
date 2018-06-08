@@ -764,7 +764,7 @@ void roll_abilities(char_data* character, int min_sum, int max_sum)
 	{
 		const char_ability_data& abils = character->constabilities;
 		const char* character_name = utils::get_name(*character);
-		std::sprintf(stats, "STATS: %s rolled  %d %d %d %d %d %d",
+		sprintf(stats, "STATS: %s rolled  %d %d %d %d %d %d",
 			character_name, abils.str, abils.intel,
 			abils.wil, abils.dex,
 			abils.con, abils.lea);

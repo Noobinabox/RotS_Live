@@ -8,146 +8,135 @@
 *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
 ************************************************************************ */
 
+#include "platdef.h"
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "platdef.h"
 
 #include "structs.h"
 #include "utils.h"
 
-extern struct descriptor_data *descriptor_list;
-extern SocketType	mother_desc;
+extern struct descriptor_data* descriptor_list;
+extern SocketType mother_desc;
 
-void	checkpointing(int);
-void	logsig(int);
-void    diesig(int);
-void	hupsig(int);
-void	badcrash(int);
-void	unrestrict_game(int);
-void	reread_wizlists(int);
-void	Emergency_save(void);
+void checkpointing(int);
+void logsig(int);
+void diesig(int);
+void hupsig(int);
+void badcrash(int);
+void unrestrict_game(int);
+void reread_wizlists(int);
+void Emergency_save(void);
 
-int	graceful_tried = 0;
+int graceful_tried = 0;
 
-void	signal_setup(void)
+void signal_setup(void)
 {
-  // struct itimerval itime;
-  // struct timeval interval;
+    // struct itimerval itime;
+    // struct timeval interval;
 
-  //  return;
-   signal(SIGUSR1, reread_wizlists);
-   signal(SIGUSR2, unrestrict_game);
+    //  return;
+    signal(SIGUSR1, reread_wizlists);
+    signal(SIGUSR2, unrestrict_game);
 
-   /* just to be on the safe side: */
+    /* just to be on the safe side: */
 
-   signal(SIGHUP, hupsig);
-   signal(SIGILL, diesig);
-//   signal(SIGSEGV, diesig); Also should be included once the bugs are found :-)
-   signal(SIGFPE, diesig);
-/*   signal(SIGTRAP, diesig); */
-   signal(SIGFPE, diesig);
-   signal(SIGBUS, diesig);
-/*   signal(SIGIOT, diesig);  */
-   signal(SIGPIPE, SIG_IGN);
-   signal(SIGINT, hupsig);
-   signal(SIGALRM, logsig);
-   signal(SIGTERM, hupsig);
-//   signal(SIGSEGV, badcrash);
-//   signal(SIGBUS, badcrash);   This line and above commented out 11 Jan 00.  Put back in one day :-)
+    signal(SIGHUP, hupsig);
+    signal(SIGILL, diesig);
+    //   signal(SIGSEGV, diesig); Also should be included once the bugs are found :-)
+    signal(SIGFPE, diesig);
+    /*   signal(SIGTRAP, diesig); */
+    signal(SIGFPE, diesig);
+    signal(SIGBUS, diesig);
+    /*   signal(SIGIOT, diesig);  */
+    signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, hupsig);
+    signal(SIGALRM, logsig);
+    signal(SIGTERM, hupsig);
+    //   signal(SIGSEGV, badcrash);
+    //   signal(SIGBUS, badcrash);   This line and above commented out 11 Jan 00.  Put back in one day :-)
 
-   /* set up the deadlock-protection */
+    /* set up the deadlock-protection */
 
-//   interval.tv_sec = 900;    /* 15 minutes */
-//   interval.tv_usec = 0;
-   //itime.it_interval = interval;
-   //itime.it_value = interval;
-   //setitimer(ITIMER_VIRTUAL, &itime, 0);
-   signal(SIGVTALRM, checkpointing);
+    //   interval.tv_sec = 900;    /* 15 minutes */
+    //   interval.tv_usec = 0;
+    //itime.it_interval = interval;
+    //itime.it_value = interval;
+    //setitimer(ITIMER_VIRTUAL, &itime, 0);
+    signal(SIGVTALRM, checkpointing);
 }
 
-
-
-void	checkpointing(int fake)
+void checkpointing(int fake)
 {
-   extern int	tics;
+    extern int tics;
 
-   if (!tics) {
-      log("CHECKPOINT shutdown: tics not updated");
-      abort();
-   } else
-      tics = 0;
+    if (!tics) {
+        log("CHECKPOINT shutdown: tics not updated");
+        abort();
+    } else
+        tics = 0;
 }
 
-
-void	reread_wizlists(int fake)
+void reread_wizlists(int fake)
 {
-   void	reboot_wizlists(void);
+    void reboot_wizlists(void);
 
-   signal(SIGUSR1, reread_wizlists);
-   mudlog("Rereading wizlists.", CMP, LEVEL_IMMORT, FALSE);
-   reboot_wizlists();
+    signal(SIGUSR1, reread_wizlists);
+    mudlog("Rereading wizlists.", CMP, LEVEL_IMMORT, FALSE);
+    reboot_wizlists();
 }
 
-
-void	unrestrict_game(int fake)
+void unrestrict_game(int fake)
 {
-   extern int	restrict;
-   extern struct ban_list_element *ban_list;
-   extern int	num_invalid;
+    extern int restrict;
+    extern struct ban_list_element* ban_list;
+    extern int num_invalid;
 
-   signal(SIGUSR2, unrestrict_game);
-   mudlog("Received SIGUSR2 - unrestricting game (emergent)",
-	  BRF, LEVEL_IMMORT, TRUE);
-   ban_list = 0;
-   restrict = 0;
-   num_invalid = 0;
+    signal(SIGUSR2, unrestrict_game);
+    mudlog("Received SIGUSR2 - unrestricting game (emergent)",
+        BRF, LEVEL_IMMORT, TRUE);
+    ban_list = 0;
+    restrict = 0;
+    num_invalid = 0;
 }
-
-
-
-
 
 /* kick out players etc */
 
 void close_sockets(SocketType s);
 
-void	hupsig(int fake)
+void hupsig(int fake)
 {
-extern SocketType mother_desc;
-   log("Received SIGHUP, SIGINT, or SIGTERM.  Shutting down...");
-   Emergency_save();
-   close_sockets(mother_desc);
-   exit(0);   /* something more elegant should perhaps be substituted */
+    extern SocketType mother_desc;
+    log("Received SIGHUP, SIGINT, or SIGTERM.  Shutting down...");
+    Emergency_save();
+    close_sockets(mother_desc);
+    exit(0); /* something more elegant should perhaps be substituted */
 }
 
-
-void	badcrash(int fake)
+void badcrash(int fake)
 {
-   void	close_socket(struct descriptor_data *d);
-   struct descriptor_data *desc;
+    void close_socket(struct descriptor_data * d);
+    struct descriptor_data* desc;
 
-   log("SIGSEGV or SIGBUS received.  Trying to shut down gracefully.");
-   Emergency_save();
-   if (!graceful_tried) {
-      close(mother_desc);
-      log("Trying to close all sockets.");
-      graceful_tried = 1;
-      for (desc = descriptor_list; desc; desc = desc->next)
-	 close(desc->descriptor);
-   }
-   abort();
+    log("SIGSEGV or SIGBUS received.  Trying to shut down gracefully.");
+    Emergency_save();
+    if (!graceful_tried) {
+        close(mother_desc);
+        log("Trying to close all sockets.");
+        graceful_tried = 1;
+        for (desc = descriptor_list; desc; desc = desc->next)
+            close(desc->descriptor);
+    }
+    abort();
 }
 
-
-void	logsig(int fake)
+void logsig(int fake)
 {
-   log("Signal received.  Ignoring.");
+    log("Signal received.  Ignoring.");
 }
-void    diesig(int fake)
+void diesig(int fake)
 {
-  // Try to save everyone.
-  Emergency_save();
-  exit(0);
+    // Try to save everyone.
+    Emergency_save();
+    exit(0);
 }
-

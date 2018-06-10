@@ -1,11 +1,11 @@
 #compiler name
-CC = g++
+CC = g++-5 -m32
 
 #compiler flags you want to use (other than profiling, such as -Wall)
 MYFLAGS = -fstrict-aliasing -Wall -funsigned-char
 
 #flags for profiling (see hacker.doc for more information)
-PROFILE = -g
+PROFILE = -g -rdynamic
 
 #remove the hash marks below if compiling under AIX
 #CC = g++
@@ -30,9 +30,9 @@ OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
 	signals.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weather.o zone.o
 
 
-ageland:        /bin/ageland
+ageland:        ../bin/ageland
 
-/bin/ageland:	$(OBJFILES)
+../bin/ageland:	$(OBJFILES)
 
 all:	ageland
 
@@ -52,7 +52,7 @@ char_utils.o : char_utils.cpp base_utils.h char_utils.h object_utils.h \
 	$(CC) -c $(CFLAGS) char_utils.cpp
 environment_utils.o : environment_utils.cpp structs.h environment_utils.h
 	$(CC) -c $(CFLAGS) environment_utils.cpp
-object_utils.o : object_utils.cpp structs.h object_utils.h 
+object_utils.o : object_utils.cpp structs.h object_utils.h
 	$(CC) -c $(CFLAGS) object_utils.cpp
 char_utils_combat.o : char_utils_combat.cpp structs.h base_utils.h char_utils.h object_utils.h  comm.h char_utils_combat.h
 	$(CC) -c $(CFLAGS) char_utils_combat.cpp
@@ -92,7 +92,7 @@ act_wiz.o : act_wiz.cc structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h profs.h
 	$(CC) -c $(CFLAGS) act_wiz.cc
 handler.o : handler.cc structs.h utils.h comm.h db.h handler.h interpre.h
-	$(CC) -c $(CFLAGS) handler.cc 
+	$(CC) -c $(CFLAGS) handler.cc
 db.o : db.cc structs.h utils.h db.h comm.h handler.h limits.h spells.h \
         interpre.h big_brother.h
 	$(CC) -c $(CFLAGS) db.cc
@@ -100,7 +100,7 @@ ban.o : ban.cc structs.h utils.h comm.h interpre.h handler.h db.h
 	$(CC) -c $(CFLAGS) ban.cc
 interpre.o : interpre.cc structs.h comm.h interpre.h db.h utils.h \
 	limits.h spells.h handler.h profs.h
-	$(CC) -c $(CFLAGS) interpre.cc 
+	$(CC) -c $(CFLAGS) interpre.cc
 utility.o : utility.cc structs.h utils.h comm.h
 	$(CC) -c $(CFLAGS) utility.cc
 spec_ass.o : spec_ass.cc structs.h db.h interpre.h utils.h
@@ -121,13 +121,13 @@ mystic.o : mystic.cc structs.h utils.h comm.h spells.h handler.h limits.h \
 	$(CC) -c $(CFLAGS) mystic.cc
 mage.o  : mage.cc structs.h utils.h comm.h spells.h handler.h limits.h \
         interpre.h db.h
-	${CC} -c ${CFLAGS} mage.cc 
+	${CC} -c ${CFLAGS} mage.cc
 spell_pa.o : spell_pa.cc structs.h utils.h comm.h db.h interpre.h \
 	spells.h handler.h
-	$(CC) -c $(CFLAGS) spell_pa.cc 
+	$(CC) -c $(CFLAGS) spell_pa.cc
 mobact.o : mobact.cc utils.h structs.h db.h comm.h interpre.h handler.h
 	$(CC) -c $(CFLAGS) mobact.cc
-modify.o : modify.cc structs.h utils.h interpre.h handler.h db.h comm.h 
+modify.o : modify.cc structs.h utils.h interpre.h handler.h db.h comm.h
 	$(CC) -c $(CFLAGS) modify.cc
 consts.o : consts.cc structs.h limits.h
 	$(CC) -c $(CFLAGS) consts.cc
@@ -146,7 +146,7 @@ config.o : config.cc structs.h
 	$(CC) -c $(CFLAGS) config.cc
 ranger.o : ranger.cc structs.h utils.h comm.h interpre.h handler.h db.h\
 	 spells.h script.h
-	 $(CC) -c $(CFLAGS) ranger.cc  
+	 $(CC) -c $(CFLAGS) ranger.cc
 script.o : script.cc structs.h utils.h comm.h interpre.h protos.h script.h
 	$(CC) -c $(CFLAGS) script.cc
 shapemob.o : shapemob.cc structs.h utils.h comm.h interpre.h protos.h
@@ -170,7 +170,7 @@ profs.o   : profs.cc structs.h utils.h comm.h interpre.h limits.h profs.h comm.h
 clerics.o : clerics.cc structs.h utils.h comm.h handler.h interpre.h db.h spells.h limits.h
 	$(CC) -c $(CFLAGS) clerics.cc
 mail.o    : mail.cc structs.h utils.h comm.h interpre.h db.h handler.h
-	$(CC) -c $(CFLAGS) mail.cc 
+	$(CC) -c $(CFLAGS) mail.cc
 zone.o: zone.cc zone.h structs.h utils.h
 	$(CC) -c $(CFLAGS) zone.cc
 color.o: color.cc color.h
@@ -180,7 +180,41 @@ obj2html.o: obj2html.cc
 pkill.o: pkill.c pkill.h
 	$(CC) -c $(CFLAGS) pkill.c
 
-/bin/ageland:
+.PHONY: format
+format:
+	clang-format -i -style=WebKit *.cpp
+	clang-format -i -style=WebKit *.cc
+	clang-format -i -style=WebKit *.c
+	clang-format -i -style=WebKit *.h
+
+.PHONY: setup
+setup:
+	@mkdir -p ../bin ../log \
+		../lib/players/A-E \
+		../lib/players/F-J \
+		../lib/players/K-O \
+		../lib/players/P-T \
+		../lib/players/U-Z \
+		../lib/players/ZZZ \
+		../lib/plrobjs/A-E \
+		../lib/plrobjs/F-J \
+		../lib/plrobjs/K-O \
+		../lib/plrobjs/P-T \
+		../lib/plrobjs/U-Z \
+		../lib/plrobjs/ZZZ \
+		../lib/exploits/A-E \
+		../lib/exploits/F-J \
+		../lib/exploits/K-O \
+		../lib/exploits/P-T \
+		../lib/exploits/U-Z \
+		../lib/exploits/ZZZ
+	@touch ../log/lastdeath ../lib/last_cmds
+
+.PHONY: run
+run: ../bin/ageland setup
+	@cd .. && ./bin/ageland
+
+../bin/ageland:
 	if [ -f ../bin/ageland ]; \
 	  then mv -f ../bin/ageland ../bin/ageland~; \
 	fi

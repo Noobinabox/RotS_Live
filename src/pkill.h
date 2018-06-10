@@ -10,49 +10,49 @@
  * converted to player table indexes when the file is read.
  */
 typedef struct {
-	int kill_time;
-	int killer;
-	int victim;
-	unsigned char killer_level;
-	unsigned char victim_level;
-	int killer_points;
-	int victim_points;   /* Victim points are stored as negative values */
+    int kill_time;
+    int killer;
+    int victim;
+    unsigned char killer_level;
+    unsigned char victim_level;
+    int killer_points;
+    int victim_points; /* Victim points are stored as negative values */
 } PKILL;
 
 void boot_pkills();
-void pkill_create(struct char_data *);
+void pkill_create(struct char_data*);
 
-void pkill_unref_character(struct char_data *c);
+void pkill_unref_character(struct char_data* c);
 void pkill_unref_character_by_index(int);
 
 int pkill_get_total();
 
-#define PKILL_STRING_KILLED   0
-#define PKILL_STRING_SLAIN    1
-char *pkill_get_string(PKILL *, int);
+#define PKILL_STRING_KILLED 0
+#define PKILL_STRING_SLAIN 1
+char* pkill_get_string(PKILL*, int);
 
-PKILL *pkill_get_new_kills(int *);
+PKILL* pkill_get_new_kills(int*);
 
 /* XXX: Should eventually be removed */
-PKILL *pkill_get_all(int *);
+PKILL* pkill_get_all(int*);
 
 int pkill_get_good_fame();
 int pkill_get_evil_fame();
 
 typedef struct {
-	char *name;
-	int player_idx;
-	int rank;
-	int fame;
-	int race;
-	int side;
-	int invalid;   /* Non-zero means this leader was invalid */
+    char* name;
+    int player_idx;
+    int rank;
+    int fame;
+    int race;
+    int side;
+    int invalid; /* Non-zero means this leader was invalid */
 } LEADER;
 
 #define PKILL_UNRANKED -1
-LEADER *pkill_get_leader_by_rank(int, int);
-void pkill_free_leader(LEADER *);
+LEADER* pkill_get_leader_by_rank(int, int);
+void pkill_free_leader(LEADER*);
 
-int pkill_get_rank_by_character(struct char_data *);
+int pkill_get_rank_by_character(struct char_data*);
 
 #endif /* __PKILL_H__ */

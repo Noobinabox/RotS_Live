@@ -14,28 +14,27 @@
 struct char_data;
 
 /* Public Procedures */
-int	mana_gain(const char_data* ch);
-int	hit_gain(const char_data* ch);
-int	move_gain(const char_data* ch);
+int mana_gain(const char_data* ch);
+int hit_gain(const char_data* ch);
+int move_gain(const char_data* ch);
 //int spirit_gain(const char_data* ch);
 
 int xp_to_level(int level);
 
-void do_start(struct char_data *ch);
-void set_title(struct char_data *ch);
-void gain_exp(struct char_data *ch, int gain);
-void gain_exp_regardless(struct char_data *ch, int gain);
-void gain_condition(struct char_data *ch, int condition, int value);
-int	check_idling(struct char_data *ch);
+void do_start(struct char_data* ch);
+void set_title(struct char_data* ch);
+void gain_exp(struct char_data* ch, int gain);
+void gain_exp_regardless(struct char_data* ch, int gain);
+void gain_condition(struct char_data* ch, int condition, int value);
+int check_idling(struct char_data* ch);
 // returns non-zero if ch was extracted
 void point_update(void);
-void update_pos(struct char_data *victim);
+void update_pos(struct char_data* victim);
 
 struct title_type {
-	char	*title_m;
-	char	*title_f;
-	int	exp;
+    char* title_m;
+    char* title_f;
+    int exp;
 };
 
 #endif /* LIMITS_H */
-

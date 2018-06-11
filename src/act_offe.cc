@@ -1341,5 +1341,11 @@ ACMD(do_maul)
         apply_maul_char(ch);
         damage(ch, victim, number(1, 4), SKILL_MAUL, 0);
     }
-    GET_MOVE(ch) -= 15;
+
+    if(utils::get_specialization(*ch) == game_types::PS_Defender) {
+        GET_MOVE(ch) -= 7;
+    }
+    else {
+        GET_MOVE(ch) -= 15;
+    }
 }

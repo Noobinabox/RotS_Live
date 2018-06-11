@@ -1556,6 +1556,44 @@ void generate_damage_message(char_data* attacker, char_data* victim, int damage,
     }
 }
 
+
+int maul_damage_reduction(char_data* ch, int damage)
+{
+    using namespace utils;
+    double damage_reduction = 0.10;
+    double maul_db = 2.00;
+    double mod = 2;
+    double dur = 2;
+
+    if (utils::get_specialization(*ch) == game_types::PS_Defender) {
+        maul_db = 1.25;
+        mod = 0.50;
+        dur = 6;
+    }
+    affected_type* maul_reduction = affected_by_spell(ch, SKILL_MAUL);
+
+    if (maul_reduction && maul_reduction->location == APPLY_MAUL) {
+        damage_reduction += (maul_reduction->modifier / maul_db) * 0.001;
+    }
+    damage_reduction = (double)damage * damage_reduction;
+    damage -= (int)damage_reduction;
+
+    if (maul_reduction && maul_reduction->location == APPLY_MAUL && maul_reduction->duration > 1) {
+        int duration = maul_reduction->duration;
+        int modifier = maul_reduction->modifier;
+        if (!(((int)(damage_reduction * mod) > modifier))) {
+            maul_reduction->modifier -= (int)(damage_reduction * mod);
+        }
+
+        if (!(((int)(damage_reduction / dur) > duration))) {
+            maul_reduction->duration -= (int)(damage_reduction / dur);
+        }
+    }
+    return damage = std::max(damage, 1);
+}
+
+
+
 /*
  * damage now modified to return int - 1 if the victim was
  * killed, 0 if not.
@@ -1600,6 +1638,13 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
 	 */
     if (IS_PHYSICAL(attacktype) && !check_hallucinate(attacker, victim))
         return 0;
+
+    /* Here we are checking to see if the victim is a Beorning because
+	   they have a natural damage reduction on physical weapons only. Spell
+	   damage is still at it's full amount. */
+    if (GET_RACE(victim) == RACE_BEORNING && dam > 1) {
+        dam = maul_damage_reduction(victim, dam);
+    }
 
     /* Call special procs on damage */
     if (victim->specials.fighting != attacker) {
@@ -2088,40 +2133,6 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
     return 0;
 }
 
-int maul_damage_reduction(char_data* ch, int damage)
-{
-    using namespace utils;
-    double damage_reduction = 0.10;
-    double maul_db = 2.00;
-    double mod = 2;
-    double dur = 2;
-
-    if (utils::get_specialization(*ch) == game_types::PS_Defender) {
-        maul_db = 1.25;
-        mod = 0.50;
-        dur = 6;
-    }
-    affected_type* maul_reduction = affected_by_spell(ch, SKILL_MAUL);
-
-    if (maul_reduction && maul_reduction->location == APPLY_MAUL) {
-        damage_reduction += (maul_reduction->modifier / maul_db) * 0.001;
-    }
-    damage_reduction = (double)damage * damage_reduction;
-    damage -= (int)damage_reduction;
-
-    if (maul_reduction && maul_reduction->location == APPLY_MAUL && maul_reduction->duration > 1) {
-        int duration = maul_reduction->duration;
-        int modifier = maul_reduction->modifier;
-        if (!(((int)(damage_reduction * mod) > modifier))) {
-            maul_reduction->modifier -= (int)(damage_reduction * mod);
-        }
-
-        if (!(((int)(damage_reduction / dur) > duration))) {
-            maul_reduction->duration -= (int)(damage_reduction / dur);
-        }
-    }
-    return damage = std::max(damage, 1);
-}
 
 /*
  * Given a hit location and a damage, calculate how much damage
@@ -2139,37 +2150,6 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
     /* Bogus hit location */
     if (location < 0 || location > MAX_WEAR)
         return 0;
-
-    /* Here we are checking to see if the victim is a Beorning because
-	   they have a natural damage reduction on physical weapons only. Spell
-	   damage is still at it's full amount. */
-    if (GET_RACE(victim) == RACE_BEORNING && damage > 1) {
-        damage = maul_damage_reduction(victim, damage);
-        // double damage_reduction = 10;
-        // affected_type* maul_reduction = affected_by_spell(victim, SKILL_MAUL);
-        // if(maul_reduction)
-        // {
-        // 	damage_reduction += maul_reduction->modifier / 25.0;
-        // }
-
-        // damage_reduction = damage_reduction / 100;
-        // damage_reduction = (double)damage * damage_reduction;
-        // damage -= (int)damage_reduction;
-        // if(maul_reduction && maul_reduction->duration > 1)
-        // {
-        // 	int duration = maul_reduction->duration;
-        // 	if(!(((int)damage_reduction / 2) > duration))
-        // 	{
-        // 		maul_reduction->modifier -= (int)damage_reduction;
-        // 	}
-
-        // 	if(!((int)damage_reduction > duration))
-        // 	{
-        // 		maul_reduction->duration -= (int)damage_reduction;
-        // 	}
-        // }
-        // damage = std::max(damage, 1);
-    }
 
     /* If they've got armor, let's let it do its thing */
     if (victim->equipment[location] != NULL) {

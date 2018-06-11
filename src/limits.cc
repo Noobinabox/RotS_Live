@@ -289,10 +289,6 @@ int move_gain(const char_data* character)
             gain *= 0.25;
         }
 
-        if (race == RACE_OLOGHAI) {
-            gain *= 3.0;
-        }
-
         return int(gain);
     }
 }

@@ -33,6 +33,7 @@
  * Weapon types are 130 to 140.
  */
 
+/* Warrior Skills */
 #define SKILL_BAREHANDED 0
 #define SKILL_SLASH 1
 #define SKILL_CONCUSSION 2
@@ -41,11 +42,9 @@
 #define SKILL_SPEARS 5
 #define SKILL_AXE 6
 #define SKILL_NATURAL_ATTACK 7
-
 #define SKILL_SWIM 8
 #define SKILL_TWOHANDED 9
 #define SKILL_WEAPONS 10
-
 #define SKILL_PARRY 11
 #define SKILL_KICK 12
 #define SKILL_BASH 13
@@ -54,8 +53,6 @@
 #define SKILL_EXTRA_DAMAGE 16
 #define SKILL_BLOCK 17
 #define SKILL_SWING 18
-#define SKILL_LEADERSHIP 19
-#define SKILL_RIPOSTE 20
 
 /* Ranger skills */
 #define SKILL_DODGE 21
@@ -77,10 +74,14 @@
 #define SKILL_WHISTLE 37
 #define SKILL_STALK 38
 #define SKILL_TRAVELLING 39
+#define SKILL_RIPOSTE 20
+#define SKILL_ARCHERY 61
 
 /* Common orc recruit skill */
 #define SKILL_RECRUIT 40
+#define SKILL_LEADERSHIP 19
 
+/* Mystic Spells */
 #define SPELL_DETECT_HIDDEN 41
 #define SPELL_ARMOR 42
 #define SPELL_POISON 43
@@ -95,14 +96,10 @@
 #define SPELL_HAZE 52
 #define SPELL_FEAR 53
 #define SPELL_DIVINATION 54
-#define SKILL_REND 55
 #define SPELL_SANCTUARY 56
 #define SPELL_VITALITY 57
 #define SPELL_TERROR 58
-#define SKILL_UNUSED3 59
 #define SPELL_ENCHANT_WEAPON 60
-#define SKILL_ARCHERY 61
-#define SPELL_SUMMON 62
 #define SPELL_HALLUCINATE 63
 #define SPELL_REGENERATION 64
 #define SPELL_GUARDIAN 65
@@ -111,7 +108,14 @@
 #define SPELL_REVIVE 68
 #define SPELL_DETECT_MAGIC 69
 #define SPELL_SHIFT 70 // Needs to be removed.
+#define SPELL_DEATH_WARD 83
+#define SPELL_MIND_BLOCK 86
+#define SPELL_REMOVE_POISON 87
+#define SPELL_PROTECTION 89
+#define SPELL_CONFUSE 111
 
+/* Mage Spells */
+#define SPELL_SUMMON 62
 #define SPELL_MAGIC_MISSILE 71
 #define SPELL_REVEAL_LIFE 72
 #define SPELL_LOCATE_LIVING 73
@@ -124,24 +128,22 @@
 #define SPELL_FLASH 80
 #define SPELL_EARTHQUAKE 81
 #define SPELL_CREATE_LIGHT 82
-#define SPELL_DEATH_WARD 83
 #define SPELL_DARK_BOLT 84
 #define SPELL_MIST_OF_BAAZUNGA 85 // Needs to be removed.
-#define SPELL_MIND_BLOCK 86
-#define SPELL_REMOVE_POISON 87
 #define SPELL_BEACON 88
-#define SPELL_PROTECTION 89
 #define SPELL_BLAZE 90 // Needs to be removed
 #define SPELL_FIREBOLT 91
 #define SPELL_RELOCATE 92
 #define SPELL_CONE_OF_COLD 93
 #define SPELL_IDENTIFY 94
-#define SKILL_UNUSED1 95
 #define SPELL_FIREBALL 96
-#define SKILL_UNUSED2 97
 #define SPELL_SEARING_DARKNESS 98
 #define SPELL_LIGHTNING_STRIKE 99
+#define SPELL_SHIELD 108
+#define SPELL_DETECT_EVIL 109
+#define SPELL_EXPOSE_ELEMENTS 112
 
+/* Uruk-Lhuth Race Specific Spells */
 #define SPELL_WORD_OF_PAIN 100
 #define SPELL_WORD_OF_SIGHT 101
 #define SPELL_WORD_OF_AGONY 102
@@ -150,14 +152,16 @@
 #define SPELL_SPEAR_OF_DARKNESS 105
 #define SPELL_LEACH 106
 #define SPELL_BLACK_ARROW 107
-#define SPELL_SHIELD 108
-#define SPELL_DETECT_EVIL 109
-#define SKILL_BLINDING 110
-#define SPELL_CONFUSE 111
-#define SPELL_EXPOSE_ELEMENTS 112
+
+/* Beornings Race Specific Skills */
+#define SKILL_REND 55
 #define SKILL_BITE 113
 #define SKILL_SWIPE 114
 #define SKILL_MAUL 115
+
+/* Haradrim Race Specific Skills */
+#define SKILL_MARK 124
+#define SKILL_BLINDING 110
 
 #define SPELL_ASPHYXIATION 116
 #define SPELL_ARDA 117
@@ -169,9 +173,15 @@
 	#define LANG_HUMAN       122
 	#define LANG_ORC         123
 */
-#define SKILL_MARK 124
+
+/* Any skills and/or spells free should be listed here */
+#define SKILL_UNUSED1 95
+#define SKILL_UNUSED2 97
+#define SKILL_UNUSED3 59
 #define SKILL_UNUSED4 125
 #define SKILL_UNUSED5 126
+
+/* Don't remove this because it's use to remove spells */
 #define SPELL_NONE 127
 /* MAX_SKILL is defined at 128 and we can't exceed this without changing the playerfiles */
 

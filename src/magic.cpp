@@ -663,7 +663,7 @@ void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
 
             if (af) {
                 af->duration = std::max(af->duration - 30, 0);
-                send_to_char("You close the wounds in your chest.\r\n", victim);
+                send_to_char("The festering wound on your side starts to close up.\r\n", victim);
             }
 
             if (victim->tmpabilities.hit >= victim->abilities.hit) {

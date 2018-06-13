@@ -2556,7 +2556,7 @@ void nanny(struct descriptor_data* d, char* arg)
                   "  [D]warf                # [C]ommon Orc  \n\r"
                   "  [W]ood Elf             # Uruk-[L]huth  \n\r"
                   "  Ho[B]bit               # [O]log-Hai (Coming Soon)   \n\r"
-                  "* Beor[N]ing             # Harad[R]im (Coming Soon)   \n\r"
+                  "* Beor[N]ing             # Harad[R]im    \n\r"
                   "\n\r"
                   "Races marked with a * are hard to play.\n\r"
                   "Races marked with a # are very hard to play.\n\r"
@@ -2604,10 +2604,8 @@ void nanny(struct descriptor_data* d, char* arg)
                 d);
             return;
         case 'r':
-            SEND_TO_Q("\r\nHaradrim race coming soon.\r\n"
-                      "Race: ",
-                d);
-            return;
+            GET_RACE(d->character) = RACE_HARADRIM;
+            break;
         case '?':
             do_help(d->character, arg + 1, 0, 0, 0);
             SEND_TO_Q("\n\rRace: ", d);

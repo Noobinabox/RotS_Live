@@ -142,7 +142,7 @@ char* spell_wear_off_msg[] = {
     "!Shocking Grasp!",
     "Your magical shield disolves.",
     "You feel weaker.",
-    "Your special attunment with your weapon has worn off", //* 110 *
+    "Your eyesight returns as if a veil has been lifted.", //* 110 *
     "You feel less confused.",
     "!Magic Missile!",
     "You feel less sick8.",
@@ -464,7 +464,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "detect evil", PROF_MAGE, 3, spell_detect_evil,
         POSITION_STANDING, 2, 12, 1, 5, 1, 0, PLRSPEC_NONE },
     { "blind", PROF_RANGER, 24, NULL,
-        POSITION_FIGHTING, 0, 20, 16, 24, 1, 1, PLRSPEC_NONE },
+        POSITION_FIGHTING, 40, 20, 16, 24, 1, 1, PLRSPEC_NONE },
 
     /* 111 */
     { "confuse", PROF_CLERIC, 1, spell_confuse,

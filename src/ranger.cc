@@ -2863,7 +2863,7 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
 ==================================================================================*/
 int mark_calculate_duration(char_data* marker)
 {
-    int mark_duration = utils::get_prof_level(PROF_RANGER, *maker) - 10;
+    int mark_duration = utils::get_prof_level(PROF_RANGER, *marker) - 10;
     mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return mark_duration;
 }
@@ -2906,7 +2906,7 @@ void on_mark_hit(char_data* marker, char_data* victim)
         af.modifier = 1;
         af.location = APPLY_NONE;
         af.bitvector = 0;
-        affect_to_char(victim, &af);
+        affect_join(victim, &af, FALSE, FALSE);
     }
 
     damage(marker, victim, damage_dealt, SKILL_MARK, 0);
@@ -2937,13 +2937,13 @@ int mark_calculate_success(char_data* marker, char_data* victim)
     int mark_skill = utils::get_skill(*marker, SKILL_MARK);    
     int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
     int ranger_dex = marker->get_cur_dex();
-    int mark_ob = get_real_ob(marker);
+    int mark_ob = get_real_OB(marker);
     int total_marker = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + mark_ob;
 
     int vict_dex = victim->get_cur_dex();
     int vict_ranger = utils::get_prof_level(PROF_RANGER, *victim);
-    int vict_dodge = get_real_dodge(victim);
-    int total_victim = vict_ranger + (vic_dex / 2) + vict_dodge;
+    int vict_dodge = utils::get_real_dodge(*victim);
+    int total_victim = vict_ranger + (vict_dex / 2) + vict_dodge;
 
     int success_chance = total_marker - total_victim;
     return success_chance;
@@ -2970,19 +2970,18 @@ bool can_ch_mark(char_data* ch)
         return false;
     }
 
-    if (is_shadow(ch)) {
+    if (is_shadow(*ch)) {
         send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
         return false;
     }
 
-    const room_data& room = world[ch->in_room];
-    if(is_set(room.room_flags, (long)PEACEROOM)) {
+    if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
         send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
         return false;
     }
 
-    if(ch.tmpabilities.mana < 20) {
-        send_to_char("You can't summon enough energy to cast the spell.\n\r", &ch);
+    if(ch->tmpabilities.mana < 20) {
+        send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
         return false;
     }
 
@@ -3089,10 +3088,10 @@ ACMD(do_mark)
         return;
     }
 
-    if (affected_by_spell(victim, SKILL_MARK)) {
-        act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
-        return;
-    }
+    // if (affected_by_spell(victim, SKILL_MARK)) {
+    //     act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
+    //     return;
+    // }
 
     if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -3133,14 +3132,14 @@ ACMD(do_mark)
         }
 
         // Reduce mana for using the skill.
-        ch.tmpabilities.mana -= 20;
+        ch->tmpabilities.mana -= 20;
 
         // Did we land our touch attack???
         int target_number = mark_calculate_success(ch, victim);
         if (target_number > 0) {
-            on_mark_hit(ch, victim, arrow);
+            on_mark_hit(ch, victim);
         } else {
-            on_mark_miss(ch, victim, arrow);
+            on_mark_miss(ch, victim);
         }
 
         wtl->targ1.cleanup();

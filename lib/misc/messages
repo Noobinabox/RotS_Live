@@ -363,6 +363,20 @@ $N halts your evil with a single gesture, BEWARE!!!~
 Curiously, the arrow you fire at yourself rather hurts.~
 A stream of evil lashes at $N, causing $S skin to singe.~
 M
+ 110
+Your handful of dust destroys what is left of $N's fragile being.~
+$n destroys what is left of your fragile being with a handful of dust.~
+$n destroys what is left of $N's fragile being with a handful of dust.~
+You attempt to throw some dust, but it slips through your fingers.~
+$n attempts to throw some dust at you, but it slips through $s fingers.~
+$n attempts to throw some dust, but it slips through $s fingers.~
+You throw grey dust in $N's eyes.~
+$n throws grey dust in your eyes, blinding you!~
+$n throws grey dust in $N's eyes!~
+How shameful to throw dust at a GOD!!!~
+You turn your head and ignore $N's attempt to throw dust at you.~
+$N turns $S head and ignores $n's attempt to throw dust.~
+M
  124
 Your marked arrow pierces $N's chest, killing $S instantly.~
 $n's marked arrow pierces your chest, killing you instantly.~

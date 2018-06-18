@@ -3212,20 +3212,7 @@ void on_dust_miss(char_data* ch, char_data* victim, int mana_cost)
 {
     byte sex = ch->player.sex;
 
-    // Reduce mana
-    // TODO: Should mana be halved just because you missed?
     GET_MANA(ch) -= (mana_cost >> 1);
-
-    send_to_char("You attempt to throw some dust, but it slips through your fingers.\r\n", ch);
-
-    if (sex == SEX_MALE) {
-        act("$n attempts to throw some dust, but it slips through his fingers.\r\n", FALSE, ch, NULL, victim, TO_ROOM);
-    } else if (sex == SEX_FEMALE) {
-        act("$n attempts to throw some dust, but it slips through her fingers.\r\n", FALSE, ch, NULL, victim, TO_ROOM);
-    } else {
-        act("$n attempts to throw some dust, but it slips through their fingers.\r\n", FALSE, ch, NULL, victim, TO_ROOM);
-    }
-
     damage(ch, victim, 0, SKILL_BLINDING, 0);
 }
 
@@ -3241,15 +3228,12 @@ void on_dust_hit(char_data* ch, char_data* victim, int mana_cost)
     af.location = APPLY_NONE;
     af.bitvector = AFF_BLIND | AFF_HAZE;
 
-    act("$n throws grey dust in $N's eyes!\r\n", FALSE, ch, NULL, victim, TO_NOTVICT);
-    act("You throw grey dust in $N's eyes.\r\n", FALSE, ch, NULL, victim, TO_CHAR);
-    act("$n throws grey dust in your eyes, blinding you!\r\n", FALSE, ch, NULL, victim, TO_VICT);
-
     GET_MANA(ch) -= mana_cost;
 
-    // Add blindness after message so that player isn't sent "someone"
-    affect_to_char(victim, &af);
-    damage(ch, victim, 1, SKILL_BLINDING, 0);
+    // Skip blindness if it kills
+    if (damage(ch, victim, 1, SKILL_BLINDING, 0) < 1) {
+        affect_to_char(victim, &af);
+    }
 }
 
 /*=================================================================================
@@ -3266,6 +3250,7 @@ ACMD(do_blinding)
     one_argument(argument, arg);
 
     if (subcmd == -1) {
+        // FIXME: This triggers on cancel, is this right?
         send_to_char("Your attempt to blind your target have been foiled.\r\n", ch);
         ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
         wtl->targ1.cleanup();
@@ -3278,6 +3263,10 @@ ACMD(do_blinding)
     }
 
     char_data* victim = is_targ_blind_valid(ch, wtl);
+
+    if (victim == NULL) {
+        return;
+    }
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {

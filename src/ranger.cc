@@ -3186,7 +3186,7 @@ char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
     return victim;
 }
 
-int dust_calculate_success(const char_data* ch, const char_data* victim)
+int dust_calculate_success(char_data* ch, char_data* victim)
 {
     int random_roll = number(0, 99);
 
@@ -3199,13 +3199,13 @@ int dust_calculate_success(const char_data* ch, const char_data* victim)
     int victim_ranger_level = utils::get_prof_level(PROF_RANGER, *victim);
     int victim_dex = victim->get_cur_dex();
     int victim_con = victim->get_cur_con();
+    int victim_dodge = get_real_dodge(victim);
 
-    // FIXME: This doesn't seem right. A 30r ranger has a nearly 100% chance of
-    // landing on all, but the biggest of rangers.
-    // 30r, 100% skill, 20 dex vs. 30r 20dex and 20 con, 99 roll
-    // success_rate = (100 + 30 + 20) - (99 + 30 + (20 + 20) / 2) = 1
-    int success_rate = (ch_blind_skill + ch_ranger_level + ch_dex) - (random_roll + victim_ranger_level + ((victim_dex + victim_con) / 2));
-    return success_rate;
+    // TODO: Needs to be tweaked / balanced
+    int attack_dc = ch_blind_skill + ch_ranger_level + ch_dex + random_roll;
+    int victim_save = victim_dex + victim_dodge + victim_ranger_level + (victim_con / 4);
+
+    return attack_dc - victim_save;
 }
 
 void on_dust_miss(char_data* ch, char_data* victim, int mana_cost)

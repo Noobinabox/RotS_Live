@@ -2869,9 +2869,9 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_duration(char_data* archer)
+int mark_calculate_duration(char_data* marker)
 {
-    int mark_duration = utils::get_prof_level(PROF_RANGER, *archer) - 10;
+    int mark_duration = utils::get_prof_level(PROF_RANGER, *marker) - 10;
     mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return mark_duration;
 }
@@ -2883,11 +2883,11 @@ int mark_calculate_duration(char_data* archer)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_damage(char_data* archer, char_data* victim, obj_data* arrow)
+int mark_calculate_damage(char_data* marker, char_data* victim)
 {
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
-    int str_factor = archer->tmpabilities.str / 5;
-    int dex_factor = archer->tmpabilities.dex / 3;
+    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
+    int str_factor = marker->tmpabilities.str / 5;
+    int dex_factor = marker->tmpabilities.dex / 3;
     if (number(0, dex_factor % 5) > 0) {
         ++dex_factor;
     }
@@ -2904,23 +2904,20 @@ int mark_calculate_damage(char_data* archer, char_data* victim, obj_data* arrow)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_hit(char_data* archer, char_data* victim, obj_data* arrow)
+void on_mark_hit(char_data* marker, char_data* victim)
 {
     struct affected_type af;
-
-    int damage_dealt = mark_calculate_damage(archer, victim, arrow);
-    move_arrow_to_victim(archer, victim, arrow);
+    int damage_dealt = mark_calculate_damage(marker, victim);
     if (!utils::is_affected_by_spell(*victim, SKILL_MARK)) {
         af.type = SKILL_MARK;
-        af.duration = mark_calculate_duration(archer);
+        af.duration = mark_calculate_duration(marker);
         af.modifier = 1;
         af.location = APPLY_NONE;
         af.bitvector = 0;
-
-        affect_to_char(victim, &af);
+        affect_join(victim, &af, FALSE, FALSE);
     }
 
-    damage(archer, victim, damage_dealt, SKILL_MARK, 0);
+    damage(marker, victim, damage_dealt, SKILL_MARK, 0);
 }
 
 /*=================================================================================
@@ -2930,31 +2927,33 @@ void on_mark_hit(char_data* archer, char_data* victim, obj_data* arrow)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_miss(char_data* archer, char_data* victim, obj_data* arrow)
+void on_mark_miss(char_data* marker, char_data* victim)
 {
-    act("You miss your mark and your arrow harmlessly flies past $N!\r\n", FALSE, archer, 0, victim, TO_CHAR);
-    move_arrow_to_room(archer, arrow, archer->in_room);
+    damage(marker, victim, 0, SKILL_MARK, 0);
 }
 
 /*=================================================================================
    mark_calculate_success:
-   Here we calculate the success chance of the archer using the mark skill. Current
-   forumla is ranger level + (ranger dex / 2) + (mark skill / 2) + 
-   (archer skill / 2) + arrow tohit
+   Here we calculate the success chance of the Haradrim using the mark skill. Current
+   forumla is ranger level + (ranger dex / 2) + (mark skill / 2)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
+   slyon: June 12, 2018 - Remove archery and make success based on touch attack
 ==================================================================================*/
-int mark_calculate_success(char_data* archer, char_data* victim, obj_data* arrow)
+int mark_calculate_success(char_data* marker, char_data* victim)
 {
-    int mark_skill = utils::get_skill(*archer, SKILL_MARK);
-    int archery_skill = utils::get_skill(*archer, SKILL_ARCHERY);
-    int arrow_to_hit = arrow->obj_flags.value[0];
+    int mark_skill = utils::get_skill(*marker, SKILL_MARK);    
+    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
+    int ranger_dex = marker->get_cur_dex();
+    int mark_ob = get_real_OB(marker);
+    int total_marker = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + mark_ob;
 
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
-    int ranger_dex = archer->get_cur_dex();
+    int vict_dex = victim->get_cur_dex();
+    int vict_ranger = utils::get_prof_level(PROF_RANGER, *victim);
+    int vict_dodge = utils::get_real_dodge(*victim);
+    int total_victim = vict_ranger + (vict_dex / 2) + vict_dodge;
 
-    int success_chance = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + (archery_skill / 2) + arrow_to_hit;
-
+    int success_chance = total_marker - total_victim;
     return success_chance;
 }
 
@@ -2963,22 +2962,104 @@ int mark_calculate_success(char_data* archer, char_data* victim, obj_data* arrow
    Check to see if the archer is a Haradrim and they have the skill mark.
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
+   slyon: June 12, 2018 - Redesigned check
 ==================================================================================*/
-bool can_ch_mark(char_data* archer)
+bool can_ch_mark(char_data* ch)
 {
+    using namespace utils;
     // Check to see if archer is a player haradrim
-    if (GET_RACE(archer) != RACE_HARADRIM) {
-        send_to_char("Unrecognized command.\r\n", archer);
+    if (GET_RACE(ch) != RACE_HARADRIM) {
+        send_to_char("Unrecognized command.\r\n", ch);
         return false;
     }
 
-    if (utils::get_skill(*archer, SKILL_MARK) == 0) {
-        send_to_char("Learn how to mark first.\r\n", archer);
+    if (utils::get_skill(*ch, SKILL_MARK) == 0) {
+        send_to_char("Learn how to mark first.\r\n", ch);
+        return false;
+    }
+
+    if (is_shadow(*ch)) {
+        send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
+        return false;
+    }
+
+    if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        return false;
+    }
+
+    if(ch->tmpabilities.mana < 20) {
+        send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
         return false;
     }
 
     return true;
 }
+
+/*=================================================================================
+   is_targ_valid_mark:
+   Check to see if the mark target is valid and return NULL if not
+   ------------------------------Change Log---------------------------------------
+   slyon: June 12, 2018 - Created
+==================================================================================*/
+char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
+{
+    char_data* victim = NULL;
+
+    if (target->targ1.type == TARGET_TEXT) {
+        victim = get_char_room_vis(marker, target->targ1.ptr.text->text);
+    } else if (target->targ1.type == TARGET_CHAR) {
+        if (char_exists(target->targ1.ch_num)) {
+            victim = target->targ1.ptr.ch;
+        }
+    }
+
+    if (victim == NULL) {
+        if (marker->specials.fighting) {
+            victim = marker->specials.fighting;
+        } else {
+            send_to_char("Mark who?\r\n", marker);
+            return NULL;
+        }
+    }
+
+    if (marker->in_room != victim->in_room) {
+        send_to_char("Your victim is no longer here.\r\n", marker);
+        return NULL;
+    }
+
+    if (marker == victim) {
+        send_to_char("But you have so much to live for!\r\n", marker);
+        return NULL;
+    }
+
+    if (!CAN_SEE(marker, victim)) {
+        send_to_char("Mark who?\r\n", marker);
+        return NULL;
+    }
+
+    return victim;
+}
+
+
+/*=================================================================================
+   mark_calculate_wait:
+   Figure out how long the wait wheel should be for the Haradrim
+   ------------------------------Change Log---------------------------------------
+   slyon: June 12, 2018 - Created
+==================================================================================*/
+int mark_calculate_wait(const char_data* marker)
+{
+    const int base_beats = 12;
+    const int min_beats = 6;
+
+    int total_beats = base_beats - ((marker->points.ENE_regen / base_beats) - base_beats);
+    total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *marker) / base_beats);
+    total_beats = std::max(total_beats, min_beats);
+
+    return total_beats;
+}
+
 
 /*=================================================================================
    do_mark:
@@ -2995,7 +3076,7 @@ ACMD(do_mark)
     one_argument(argument, arg);
 
     if (subcmd == -1) {
-        send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+        send_to_char("You lost your concentration and miss your target!\r\n", ch);
         ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 
         // Clean-up targets.
@@ -3007,10 +3088,7 @@ ACMD(do_mark)
     if (!can_ch_mark(ch))
         return;
 
-    if (!can_ch_shoot(ch))
-        return;
-
-    char_data* victim = is_targ_valid(ch, wtl);
+    char_data* victim = is_targ_valid_mark(ch, wtl);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
@@ -3018,10 +3096,10 @@ ACMD(do_mark)
         return;
     }
 
-    if (affected_by_spell(victim, SKILL_MARK)) {
-        act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
-        return;
-    }
+    // if (affected_by_spell(victim, SKILL_MARK)) {
+    //     act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
+    //     return;
+    // }
 
     if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -3034,22 +3112,16 @@ ACMD(do_mark)
         if (victim == NULL) {
             return;
         }
-        send_to_char("You draw back your bow and prepare to mark your target.\r\n", ch);
+        send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
 
         if (!utils::is_affected_by(*ch, AFF_HIDE)) {
-            if (GET_SEX(ch) == SEX_MALE) {
-                act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            } else if (GET_SEX(ch) == SEX_FEMALE) {
-                act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            } else {
-                act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            }
+            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
         }
 
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
 
-        int wait_delay = shoot_calculate_wait(ch);
+        int wait_delay = mark_calculate_wait(ch);
         WAIT_STATE_FULL(ch, wait_delay, CMD_MARK, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {
@@ -3067,19 +3139,15 @@ ACMD(do_mark)
             return;
         }
 
-        /* Get the arrow */
-        obj_data* arrow = NULL;
-        obj_data* quiver = ch->equipment[WEAR_BACK];
-        if (quiver) {
-            arrow = quiver->contains;
-        }
-        // Check here
-        int roll = number(0, 99);
-        int target_number = mark_calculate_success(ch, victim, arrow);
-        if (roll < target_number) {
-            on_mark_hit(ch, victim, arrow);
+        // Reduce mana for using the skill.
+        ch->tmpabilities.mana -= 20;
+
+        // Did we land our touch attack???
+        int target_number = mark_calculate_success(ch, victim);
+        if (target_number > 0) {
+            on_mark_hit(ch, victim);
         } else {
-            on_mark_miss(ch, victim, arrow);
+            on_mark_miss(ch, victim);
         }
 
         wtl->targ1.cleanup();

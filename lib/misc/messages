@@ -265,6 +265,20 @@ How shameful to throw fireballs at a GOD!!!~
 The scorching heat burns you!~
 $N is burnt by the scorching heat.~
 M
+ 98
+Your searing darkness burns $N to ashes.~
+$n's searing darkness incinerates your body!~
+$n incinerates $N's body with $s searing darkness.~
+$N avoids the path of your searing darkness.~
+$n hurls a searing darkness toward you, but you quickly avoid it.~
+$N avoids a searing darkness sent by $n.~
+Your searing darkness scorches $N's body.~
+A searing darkness sent by $n scorches your body!~
+A searing darkness sent by $n scorches $N's body.~
+$N halts your fire with a single gesture, BEWARE!!!~
+A stream of flame and darkness lashes at you, singeing your skin!~
+A stream of flame and darkness lashes at $N, causing $S skin to singe.~
+M
  99
 $N trembles and dies after your mighty lightning bolt strikes $M.~
 A bright flash of light from the heavens kills you upon impact!~
@@ -378,18 +392,18 @@ You turn your head and ignore $N's attempt to throw dust at you.~
 $N turns $S head and ignores $n's attempt to throw dust.~
 M
  124
-Your marked arrow pierces $N's chest, killing $S instantly.~
-$n's marked arrow pierces your chest, killing you instantly.~
-$n fires a marked arrow deep into $N's chest, killing $S instantly.~
-$N dodges your marked arrow.~
-$n misses their mark.~
-$N dodges $n's marked arrow.~
-Your marked arrow opens a wound in $N's chest.~
-You wince in pain as $n's arrow opens a wound in your chest.~
-$N winces in pain as $n's arrow opens a wound in $S chest.~
-How shameful to mark a GOD!!!~
-You choose to ignore $n's shameful attempt to mark you.~
-$n's arrow is tactfully ignored by $N.~
+You grasp $N's side and their body is overtaken with disease and decay, killing $M instantly!~
+$n grasps your side and your body is taken over by disease and decay, killing you instantly!~
+$n grasps $N side and $M body becomes covered in disease and decay, killing $M instantly!~
+$N dodges your attempt to grasp their side.~
+$n attempts to grasp your side but misses.~
+$N dodges $n's attempt to grab $M side.~
+You grasp $N's side, leaving an open festering wound.~
+You scream in pain as $n grasps your side, leaving an open festering wound.~
+$N screams in pain as $n grabs $M side, leaving an open festering wound.~
+~
+~
+~
 M
  201
 The stray heat of your fireball burns $N to death!~

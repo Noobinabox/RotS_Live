@@ -682,7 +682,7 @@ struct room_data {
 /* For 'char_payer_data' */
 
 #define MAX_TOUNGE 3 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
-#define MAX_SKILLS 128 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
+#define MAX_SKILLS 256 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
 #define MAX_WEAR 22
 #define MAX_AFFECT 32 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
 

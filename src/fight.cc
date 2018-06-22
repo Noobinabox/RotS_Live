@@ -506,6 +506,9 @@ void get_corpse_desc(struct obj_data* corpse, struct char_data* ch,
     case 115:
         strncpy(condition, "mauled", BUF_LEN - 1);
         break;
+    case 124:
+        strncpy(condition, "festering", BUF_LEN -1);
+        break;
     default:
         strncpy(condition, "silent", BUF_LEN - 1);
     }

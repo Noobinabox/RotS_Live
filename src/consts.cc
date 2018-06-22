@@ -156,7 +156,7 @@ char* spell_wear_off_msg[] = {
     "!Locate object!",
     "!Magic Missile!",
     "You feel less sick9.",
-    "The wound in your side stops bleeding.",
+    "The festering wound on your side closes up completely.",
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",

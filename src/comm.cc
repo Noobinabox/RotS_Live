@@ -624,6 +624,12 @@ void game_loop(SocketType s)
                             }
                         }
 
+                        const obj_data* quiver = point->character->equipment[WEAR_BACK];
+                        if(quiver && quiver->is_quiver()) {
+                            sprintf(prompt, "%s A:(", prompt);
+                            add_prompt(prompt, point->character, PROMPT_ARROWS);
+                        }
+
                         if (point->character->specials.position == POSITION_FIGHTING) {
                             if (opponent) {
                                 if (opponent->specials.fighting != point->character) {

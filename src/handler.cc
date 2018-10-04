@@ -389,7 +389,6 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_SPEED:
-        GET_ENE_REGEN(ch) += mod;
         break;
 
     case APPLY_BEND: {

@@ -759,6 +759,7 @@ struct room_data {
 #define APPLY_RESIST 30
 #define APPLY_VULN 31
 #define APPLY_MAUL 32
+#define APPLY_BEND 33
 
 #define ROOMAFF_SPELL 1
 #define ROOMAFF_EXIT 2

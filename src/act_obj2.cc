@@ -674,6 +674,7 @@ bool beorning_item_restriction(char_data* character, obj_data* item)
 
     return true;
 }
+void perform_remove(struct char_data* ch, int pos);
 
 void perform_wear(char_data* character, obj_data* item, int item_slot)
 {
@@ -778,13 +779,16 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
             item_slot++;
 
     if (character->equipment[item_slot]) {
-        if (GET_RACE(character) == RACE_BEORNING)
-            send_to_char(beorn_already_wearing_message[item_slot], character);
-        else
-            send_to_char(already_wearing_messages[item_slot], character);
+        // if (GET_RACE(character) == RACE_BEORNING)
+        //     send_to_char(beorn_already_wearing_message[item_slot], character);
+        // else
+        //     send_to_char(already_wearing_messages[item_slot], character);
 
-        return;
+        // return;
+        perform_remove(character, item_slot);
     }
+
+
 
     obj_from_char(item);
     wear_message(character, item, item_slot);

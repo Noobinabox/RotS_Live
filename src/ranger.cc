@@ -3453,6 +3453,17 @@ bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
     return true;
 }
 
+bool check_bend_success(char_data* ch)
+{
+    int bend_skill = get_skill(*ch, SKILL_BEND_TIME);
+    int roll = number(1, 99);
+    if(roll > bend_skill)
+        return false;
+    else
+        return true;
+
+}
+
 void on_bend_success(char_data* ch, int mana_cost, int move_cost)
 {
     GET_MANA(ch) -= mana_cost;
@@ -3466,6 +3477,8 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
     af.location = APPLY_BEND;
     af.bitvector = 0;
     affect_to_char(ch, &af);
+    send_to_char("Time starts to move slower and energy from the land fills your body.\r\n", ch);
+    act("$n starts to blur in and out of existance.\r\n", FALSE, ch, 0, 0, TO_ROOM);
 }
 
 
@@ -3475,7 +3488,7 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
   current energy and increase their temporary ob by 20, for a short duration. 
   The cost of this skill is the players max mana and 100 moves.
   ------------------------------Change Log---------------------------------------
-  slyon: Sept 27, 2017 - Created
+  slyon: Oct 04, 2018 - Created
 ==================================================================================*/
 ACMD(do_bendtime)
 {
@@ -3512,7 +3525,13 @@ ACMD(do_bendtime)
             WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
         } break;
         case 1: {
-            on_bend_success(ch, mana_cost, move_cost);
+            if(check_bend_success(ch))
+                on_bend_success(ch, mana_cost, move_cost);
+            else {
+                GET_MANA(ch) -= (mana_cost / 2);
+                GET_MOVE(ch) -= (move_cost / 2);
+                send_to_char("You lost your concentration!\n\r", ch);
+            }
         } break;
         
         default: {

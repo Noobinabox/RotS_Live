@@ -2259,7 +2259,7 @@ bool can_ch_shoot(char_data* archer)
     using namespace utils;
 
     if (is_shadow(*archer)) {
-        send_to_char("Hmm, perhaps you've spent to much time in the "
+        send_to_char("Hmm, perhaps you've spent too much time in the "
                      " mortal lands.\r\n",
             archer);
         return false;
@@ -2979,7 +2979,7 @@ bool can_ch_mark(char_data* ch)
     }
 
     if (is_shadow(*ch)) {
-        send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
+        send_to_char("Hmm, perhaps you've spent too much time in the mortal lands.\r\n", ch);
         return false;
     }
 
@@ -3168,7 +3168,7 @@ bool can_ch_blind(char_data* ch, int mana_cost)
     }
 
     if (utils::is_shadow(*ch)) {
-        send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+        send_to_char("Hmm, perphaps you've spent too much time in the shadow lands.\r\n", ch);
         return false;
     }
 
@@ -3420,7 +3420,7 @@ bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
     }
 
     if(utils::is_shadow(*ch)) {
-        send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+        send_to_char("Hmm, perphaps you've spent too much time in the shadow lands.\r\n", ch);
         return false;
     }
 

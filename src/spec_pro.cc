@@ -34,6 +34,8 @@ extern int num_of_captains;
 extern char guildmaster_number;
 extern char* dirs[];
 extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern int mark_calculate_wait(const char_data* ch);
+extern int shoot_calculate_wait(const char_data* archer);
 extern byte language_number;
 extern byte language_skills[];
 extern struct char_data* character_list;
@@ -339,6 +341,19 @@ ACMD(do_practice)
             else if (skills[tmp].type == PROF_CLERIC)
                 sprintf(str2, "(%3d time, %3d spirit)",
                     CASTING_TIME(ch, tmp), USE_SPIRIT(ch, tmp));
+            else if (tmp == SKILL_BEND_TIME )
+                sprintf(str2, "(%3d time,   %3d stamina)",
+                    skills[tmp].beats, ch->abilities.mana);
+            else if (tmp == SKILL_MARK)
+                sprintf(str2, "(%3d time,   %3d stamina)",
+                    mark_calculate_wait(ch), skills[tmp].min_usesmana);
+            else if (tmp == SKILL_ARCHERY)
+                sprintf(str2, "(%3d time)",
+                    shoot_calculate_wait(ch));
+            else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {                
+                sprintf(str2, "(%3d time,   %3d stamina)",
+                    skills[tmp].beats, USE_MANA(ch, tmp));
+            }
             else if (CASTING_TIME(ch, tmp))
                 sprintf(str2, "(%3d time)",
                     skills[tmp].beats);

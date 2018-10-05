@@ -901,6 +901,10 @@ void do_power_of_arda(char_data* ch)
     affected_type newaf;
     int level, maxlevel;
 
+    if(GET_RACE(ch) == RACE_HARADRIM) {
+        return;
+    }
+
     level = get_sun_level(ch->in_room);
     maxlevel = level * 25; // so if you are in a shady room, the penalty can never be too high
     tmpaf = affected_by_spell(ch, SPELL_ARDA);

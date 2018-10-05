@@ -850,11 +850,6 @@ int get_real_dodge(struct char_data* ch)
 {
     int sun_mod = 0;
 
-    //affected_type* maul_aff = affected_by_spell(ch, SKILL_MAUL);
-    //if (maul_aff && maul_aff->location == APPLY_DODGE && maul_aff->modifier < -5)
-    //{
-    //	GET_DODGE(ch) += (maul_aff->modifier + 5);
-    //}
     if (IS_NPC(ch))
         if (IS_AFFECTED(ch, AFF_CONFUSE))
             return (GET_DODGE(ch) + GET_DEX(ch) - 5 + GET_LEVEL(ch) / 2) - (get_confuse_modifier(ch) * 2 / 3);

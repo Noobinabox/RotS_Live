@@ -2988,7 +2988,7 @@ bool can_ch_mark(char_data* ch)
         return false;
     }
 
-    if(ch->tmpabilities.mana < 20) {
+    if(ch->tmpabilities.mana < skills[SKILL_MARK].min_usesmana) {
         send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
         return false;
     }
@@ -3095,11 +3095,6 @@ ACMD(do_mark)
         send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
         return;
     }
-
-    // if (affected_by_spell(victim, SKILL_MARK)) {
-    //     act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
-    //     return;
-    // }
 
     if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -3414,4 +3409,136 @@ ACMD(do_blinding)
         break;
         ;
     }
+}
+
+bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
+{
+    const room_data& room = world[ch->in_room];
+    if(GET_RACE(ch) != RACE_HARADRIM) {
+        send_to_char("Unrecognized command.\r\n", ch);
+        return false;
+    }
+
+    if(utils::is_shadow(*ch)) {
+        send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+        return false;
+    }
+
+    if(utils::is_npc(*ch)) {
+        char_data* receiver = ch->master ? ch->master : ch;
+        send_to_char("Your follower lacks the knowledge to bend time.\r\n", receiver);
+        return false;
+    }
+
+    if(utils::is_set(room.room_flags, (long)PEACEROOM)) {
+        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        return false;
+    }
+
+    if(utils::get_skill(*ch, SKILL_BEND_TIME) == 0) {
+        send_to_char("Learn how to bend time first.\r\n", ch);
+        return false;
+    }
+
+    if(GET_MANA(ch) < mana_cost) {
+        send_to_char("You can't summon enough energy to use this skill.\r\n", ch);
+        return false;
+    }
+
+    if(GET_MOVE(ch) < move_cost) {
+        send_to_char("You are too tired for this right now.\n\r", ch);
+        return false;
+    }
+
+    return true;
+}
+
+bool check_bend_success(char_data* ch)
+{
+    int bend_skill = get_skill(*ch, SKILL_BEND_TIME);
+    int roll = number(1, 99);
+    if(roll > bend_skill)
+        return false;
+    else
+        return true;
+
+}
+
+void on_bend_success(char_data* ch, int mana_cost, int move_cost)
+{
+    GET_MANA(ch) -= mana_cost;
+    GET_MOVE(ch) -= move_cost;
+
+    struct affected_type af;
+
+    af.type = SKILL_BEND_TIME;
+    af.duration = 15;
+    af.modifier = 20;
+    af.location = APPLY_BEND;
+    af.bitvector = 0;
+    affect_to_char(ch, &af);
+    send_to_char("Time starts to move slower and energy from the land fills your body.\r\n", ch);
+    act("$n starts to blur in and out of existance.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+}
+
+
+/*=================================================================================
+  do_bendtime:
+  This is a race specific harad ability. It will allow the Haradrim to double it's
+  current energy and increase their temporary ob by 20, for a short duration. 
+  The cost of this skill is the players max mana and 100 moves.
+  ------------------------------Change Log---------------------------------------
+  slyon: Oct 04, 2018 - Created
+==================================================================================*/
+ACMD(do_bendtime)
+{
+    const int mana_cost = ch->abilities.mana;
+    const int move_cost = 100;
+
+    one_argument(argument, arg);
+
+    if(subcmd == -1) {
+        send_to_char("You could not concentrate anymore!\r\n", ch);
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
+        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+        return;
+    }
+
+    if(!can_ch_bendtime(ch, mana_cost, move_cost)) {
+        return;
+    }
+
+    if(affected_by_spell(ch, SKILL_BEND_TIME)) {
+        send_to_char("You are already affected by bend time.\r\n", ch);
+        return;
+    }
+
+    switch(subcmd) {
+        case 0: {
+            wtl->targ1.cleanup();
+            wtl->targ2.cleanup();
+
+            send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
+            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
+
+            WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        } break;
+        case 1: {
+            if(check_bend_success(ch))
+                on_bend_success(ch, mana_cost, move_cost);
+            else {
+                GET_MANA(ch) -= (mana_cost / 2);
+                GET_MOVE(ch) -= (move_cost / 2);
+                send_to_char("You lost your concentration!\n\r", ch);
+            }
+        } break;
+        
+        default: {
+            sprintf(buf2, "do_bendtime: illegal subcommand '%d'.\r\n", subcmd);
+            mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+            abort_delay(ch);
+        } break;
+    }
+
 }

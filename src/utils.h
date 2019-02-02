@@ -591,6 +591,7 @@ int CAN_SEE_OBJ(char_data* sub, obj_data* obj);
 #define RACE_EVIL(ch) ((GET_RACE(ch) > 10) ? 1 : 0)
 #define RACE_EAST(ch) ((GET_RACE(ch) == 14) ? 1 : 0)
 #define RACE_MAGI(ch) ((GET_RACE(ch) == 15) || (GET_RACE(ch) == 18) ? 1 : 0)
+#define RACE_HARAD(ch) ((GET_RACE(ch) == 18) ? 1 : 0)
 
 #define GET_REROLLS(ch) ((ch)->specials2.rerolls)
 

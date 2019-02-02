@@ -55,7 +55,7 @@ void perform_give(struct char_data* ch, struct char_data* vict, struct obj_data*
 int perform_drop(struct char_data* ch, struct obj_data* obj, sh_int RDR);
 void perform_remove(struct char_data* ch, int pos);
 int find_eq_pos(struct char_data* ch, struct obj_data* obj, char* arg);
-void perform_wear(struct char_data* ch, struct obj_data* obj, int where);
+void perform_wear(struct char_data* ch, struct obj_data* obj, int where, bool wearall = false);
 int find_action(char* arg);
 extern struct index_data* obj_index;
 

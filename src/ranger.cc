@@ -876,12 +876,9 @@ ACMD(do_ambush)
         return;
     }
 
-    if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
-
-        if ((GET_RACE(ch) == RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
-            send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
-            return;
-        }
+	if ((ch->equipment[WIELD]->obj_flags.value[2] > 2) && ((GET_RACE(ch) == RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS))) {
+		send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
+		return;
     }
 
     if (!GET_SKILL(ch, SKILL_AMBUSH)) {
@@ -2126,10 +2123,6 @@ int shoot_calculate_wait(const char_data* archer)
         total_beats = total_beats - 1;
     }
 
-    //if (utils::get_specialization(*archer) == (int)game_types::PS_Archery)
-    //{
-    //	total_beats = total_beats - 1;
-    //}
     if (GET_SHOOTING(archer) == SHOOTING_FAST) {
         total_beats = total_beats / 2;
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
@@ -2146,14 +2139,18 @@ int shoot_calculate_wait(const char_data* archer)
  * --------------------------- Change Log --------------------------------
  * drelidan: Jan 26, 2017 - Created function
  */
-bool does_arrow_break(const char_data* victim, const obj_data* arrow)
+bool does_arrow_break(const char_data* archer, const char_data* victim, const obj_data* arrow)
 {
-    const int breakpercentage = arrow->obj_flags.value[3];
+    int breakpercentage = arrow->obj_flags.value[3];
     if (victim) {
         // factor in victim contribution here - but victim is optional.
         // TODO(drelidan):  Figure out break contribution.  Perhaps this function
         // should be called and given an armor location or something.
     }
+
+	if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
+		breakpercentage >>= 1;
+	}
 
     const int rolledNumber = number(1, 100);
     if (rolledNumber < breakpercentage) {
@@ -2183,7 +2180,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
         obj_from_obj(arrow);
     }
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(victim, arrow)) {
+    if (does_arrow_break(archer, victim, arrow)) {
         // Destroy the arrow and exit.
         extract_obj(arrow);
         return false;
@@ -2225,7 +2222,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
     }
 
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(NULL, arrow)) {
+    if (does_arrow_break(archer, NULL, arrow)) {
         // Destroy the arrow and exit.
         extract_obj(arrow);
         return false;
@@ -3455,7 +3452,7 @@ bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
 
 bool check_bend_success(char_data* ch)
 {
-    int bend_skill = get_skill(*ch, SKILL_BEND_TIME);
+    int bend_skill = utils::get_skill(*ch, SKILL_BEND_TIME);
     int roll = number(1, 99);
     if(roll > bend_skill)
         return false;

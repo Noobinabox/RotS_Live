@@ -676,7 +676,7 @@ bool beorning_item_restriction(char_data* character, obj_data* item)
 }
 void perform_remove(struct char_data* ch, int pos);
 
-void perform_wear(char_data* character, obj_data* item, int item_slot)
+void perform_wear(char_data* character, obj_data* item, int item_slot, bool wearall = false)
 {
     static int item_slots[] = {
         ITEM_TAKE, ITEM_WEAR_FINGER, ITEM_WEAR_FINGER, ITEM_WEAR_NECK,
@@ -779,13 +779,19 @@ void perform_wear(char_data* character, obj_data* item, int item_slot)
             item_slot++;
 
     if (character->equipment[item_slot]) {
-        // if (GET_RACE(character) == RACE_BEORNING)
-        //     send_to_char(beorn_already_wearing_message[item_slot], character);
-        // else
-        //     send_to_char(already_wearing_messages[item_slot], character);
-
-        // return;
-        perform_remove(character, item_slot);
+		if (wearall == true) {
+			if (GET_RACE(character) == RACE_BEORNING) {
+				send_to_char(beorn_already_wearing_message[item_slot], character);
+			}
+			else {
+				send_to_char(already_wearing_messages[item_slot], character);
+			}
+			return;
+		}
+		if (IS_CARRYING_N(character) >= CAN_CARRY_N(character))
+			send_to_char("Your hands are already full!\n\r", character);
+		else
+				perform_remove(character, item_slot);
     }
 
 
@@ -901,7 +907,7 @@ ACMD(do_wear)
 
             if (where >= 0) {
                 items_worn++;
-                perform_wear(ch, obj, where);
+                perform_wear(ch, obj, where, true);
             }
         }
         if (!items_worn)
@@ -918,7 +924,7 @@ ACMD(do_wear)
             while (obj) {
                 next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content, 9999);
                 if ((where = find_eq_pos(ch, obj, 0)) >= 0)
-                    perform_wear(ch, obj, where);
+                    perform_wear(ch, obj, where, fals);
                 else
                     act("You can't wear $p.", FALSE, ch, obj, 0, TO_CHAR);
                 obj = next_obj;

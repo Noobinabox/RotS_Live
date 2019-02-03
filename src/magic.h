@@ -14,7 +14,7 @@ namespace magic {
         const int MAX_SPELL_AFFECTS = 1;
 
     public:
-        int mag_damaga(int level, struct char_data* caster, struct char_data* victim,
+        int mag_damage(int level, struct char_data* caster, struct char_data* victim,
             int spellnum, int savetype);
         void mag_affects(int level, struct char_data* caster, struct char_data* victim, 
             int spellnum, int savetype);

@@ -876,9 +876,10 @@ ACMD(do_ambush)
         return;
     }
 
-	if ((ch->equipment[WIELD]->obj_flags.value[2] > 2) && ((GET_RACE(ch) == RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS))) {
-		send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
-		return;
+	if ((ch->equipment[WIELD]->obj_flags.value[2] > 2) {
+        if(GET_RACE(ch) != RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
+            send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
+            return;
     }
 
     if (!GET_SKILL(ch, SKILL_AMBUSH)) {
@@ -3474,7 +3475,7 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
     af.location = APPLY_BEND;
     af.bitvector = 0;
     affect_to_char(ch, &af);
-    send_to_char("Time starts to move slower and energy from the land fills your body.\r\n", ch);
+    send_to_char("Time starts to move slower, and energy from the land fills your body.\r\n", ch);
     act("$n starts to blur in and out of existance.\r\n", FALSE, ch, 0, 0, TO_ROOM);
 }
 

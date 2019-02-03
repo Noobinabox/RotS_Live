@@ -924,7 +924,7 @@ ACMD(do_wear)
             while (obj) {
                 next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content, 9999);
                 if ((where = find_eq_pos(ch, obj, 0)) >= 0)
-                    perform_wear(ch, obj, where, fals);
+                    perform_wear(ch, obj, where, false);
                 else
                     act("You can't wear $p.", FALSE, ch, obj, 0, TO_CHAR);
                 obj = next_obj;

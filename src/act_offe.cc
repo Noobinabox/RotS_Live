@@ -967,12 +967,6 @@ ACMD(do_disengage)
 }
 
 //============================================================================
-ACMD(do_beorning)
-{
-    return;
-}
-
-//============================================================================
 bool can_bear_skill(char_data* ch, int skill)
 {
     using namespace utils;

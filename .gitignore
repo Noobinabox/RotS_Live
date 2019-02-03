@@ -39,3 +39,6 @@ lib/plrobjs/
 lib/exploits/
 lib/misc/pklist
 log/
+
+# Visual Studio Crap Dump
+src/.vs/

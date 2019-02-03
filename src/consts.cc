@@ -3021,7 +3021,7 @@ int mortal_start_room[MAX_RACES] = {
     13626, // Uruk-Lhuth
     0, // !NPC - Undead!
     10263, // Olog-Hai
-    13626, // Haradrim
+    6614, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!
     0 // !UNUSED!

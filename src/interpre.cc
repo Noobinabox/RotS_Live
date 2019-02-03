@@ -280,7 +280,6 @@ ACMD(do_mark);
 ACMD(do_blinding);
 ACMD(do_bite);
 ACMD(do_maul);
-ACMD(do_beorning); // Placeholder for new Beorning Skills
 ACMD(do_bendtime);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
@@ -2559,7 +2558,7 @@ void nanny(struct descriptor_data* d, char* arg)
                   "  [H]uman                * [U]ruk-hai Orc\n\r"
                   "  [D]warf                # [C]ommon Orc  \n\r"
                   "  [W]ood Elf             # Uruk-[L]huth  \n\r"
-                  "  Ho[B]bit               # [O]log-Hai    \n\r"
+                  "  Ho[B]bit               # [O]log-Hai    (Coming Soon)\n\r"
                   "* Beor[N]ing             # Harad[R]im    \n\r"
                   "\n\r"
                   "Races marked with a * are hard to play.\n\r"
@@ -2603,8 +2602,9 @@ void nanny(struct descriptor_data* d, char* arg)
             GET_RACE(d->character) = RACE_BEORNING;
             break;
         case 'o':
-            GET_RACE(d->character) = RACE_OLOGHAI;
-            break;
+            SEND_TO_Q("\r\nOlog-Hais are not available for play yet.\r\n", d);
+            return;
+            // GET_RACE(d->character) = RACE_OLOGHAI;
         case 'r':
             GET_RACE(d->character) = RACE_HARADRIM;
             break;

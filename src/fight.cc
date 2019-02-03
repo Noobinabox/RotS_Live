@@ -2603,7 +2603,7 @@ bool can_double_hit(const char_data* character)
 bool does_double_hit_proc(const char_data* character)
 {
     // Double-hit has a 10% proc chance.
-    return number() >= 0.9;
+    return number() >= 0.75;
 }
 
 bool can_beorning_swipe(struct char_data* character)

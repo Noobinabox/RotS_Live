@@ -877,7 +877,7 @@ ACMD(do_ambush)
     }
 
     if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
-        if ((GET_RACE(ch) != RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
+        if ((GET_RACE(ch) != RACE_HARADRIM) || (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
             send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
             return;
         }

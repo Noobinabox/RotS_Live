@@ -2924,7 +2924,7 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
         int arrows = 0;
         struct obj_data* quiver = ch->equipment[WEAR_BACK];
         struct obj_data* arrow;
-        for(arrow = quiver->contains; arrow; arrow = arrow->next_content) {
+        for (arrow = quiver->contains; arrow; arrow = arrow->next_content) {
             arrows++;
         }
         sprintf(prompt, "%s%d)%c", prompt, arrows, 0);

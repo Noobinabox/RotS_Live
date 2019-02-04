@@ -507,7 +507,7 @@ void get_corpse_desc(struct obj_data* corpse, struct char_data* ch,
         strncpy(condition, "mauled", BUF_LEN - 1);
         break;
     case 124:
-        strncpy(condition, "festering", BUF_LEN -1);
+        strncpy(condition, "festering", BUF_LEN - 1);
         break;
     default:
         strncpy(condition, "silent", BUF_LEN - 1);
@@ -1179,8 +1179,8 @@ int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)
     /* TEMPORARY: */
     exp += 2 * exp / std::max(1, GET_LEVEL(character) - 1);
 
-	/* Here we return the experience for killing a mob/player */
-	return exp;
+    /* Here we return the experience for killing a mob/player */
+    return exp;
 }
 
 namespace {
@@ -1559,7 +1559,6 @@ void generate_damage_message(char_data* attacker, char_data* victim, int damage,
     }
 }
 
-
 int maul_damage_reduction(char_data* ch, int damage)
 {
     using namespace utils;
@@ -1594,8 +1593,6 @@ int maul_damage_reduction(char_data* ch, int damage)
     }
     return damage = std::max(damage, 1);
 }
-
-
 
 /*
  * damage now modified to return int - 1 if the victim was
@@ -2135,7 +2132,6 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
 
     return 0;
 }
-
 
 /*
  * Given a hit location and a damage, calculate how much damage

@@ -876,8 +876,8 @@ ACMD(do_ambush)
         return;
     }
 
-	if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
-        if((GET_RACE(ch) != RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
+    if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
+        if ((GET_RACE(ch) != RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
             send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
             return;
         }
@@ -2150,9 +2150,9 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, const ob
         // should be called and given an armor location or something.
     }
 
-	if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
-		breakpercentage >>= 1;
-	}
+    if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
+        breakpercentage >>= 1;
+    }
 
     const int rolledNumber = number(1, 100);
     if (rolledNumber < breakpercentage) {
@@ -2941,7 +2941,7 @@ void on_mark_miss(char_data* marker, char_data* victim)
 ==================================================================================*/
 int mark_calculate_success(char_data* marker, char_data* victim)
 {
-    int mark_skill = utils::get_skill(*marker, SKILL_MARK);    
+    int mark_skill = utils::get_skill(*marker, SKILL_MARK);
     int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
     int ranger_dex = marker->get_cur_dex();
     int mark_ob = get_real_OB(marker);
@@ -2987,7 +2987,7 @@ bool can_ch_mark(char_data* ch)
         return false;
     }
 
-    if(ch->tmpabilities.mana < skills[SKILL_MARK].min_usesmana) {
+    if (ch->tmpabilities.mana < skills[SKILL_MARK].min_usesmana) {
         send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
         return false;
     }
@@ -3040,7 +3040,6 @@ char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
     return victim;
 }
 
-
 /*=================================================================================
    mark_calculate_wait:
    Figure out how long the wait wheel should be for the Haradrim
@@ -3058,7 +3057,6 @@ int mark_calculate_wait(const char_data* marker)
 
     return total_beats;
 }
-
 
 /*=================================================================================
    do_mark:
@@ -3413,38 +3411,38 @@ ACMD(do_blinding)
 bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
 {
     const room_data& room = world[ch->in_room];
-    if(GET_RACE(ch) != RACE_HARADRIM) {
+    if (GET_RACE(ch) != RACE_HARADRIM) {
         send_to_char("Unrecognized command.\r\n", ch);
         return false;
     }
 
-    if(utils::is_shadow(*ch)) {
+    if (utils::is_shadow(*ch)) {
         send_to_char("Hmm, perphaps you've spent too much time in the shadow lands.\r\n", ch);
         return false;
     }
 
-    if(utils::is_npc(*ch)) {
+    if (utils::is_npc(*ch)) {
         char_data* receiver = ch->master ? ch->master : ch;
         send_to_char("Your follower lacks the knowledge to bend time.\r\n", receiver);
         return false;
     }
 
-    if(utils::is_set(room.room_flags, (long)PEACEROOM)) {
+    if (utils::is_set(room.room_flags, (long)PEACEROOM)) {
         send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
         return false;
     }
 
-    if(utils::get_skill(*ch, SKILL_BEND_TIME) == 0) {
+    if (utils::get_skill(*ch, SKILL_BEND_TIME) == 0) {
         send_to_char("Learn how to bend time first.\r\n", ch);
         return false;
     }
 
-    if(GET_MANA(ch) < mana_cost) {
+    if (GET_MANA(ch) < mana_cost) {
         send_to_char("You can't summon enough energy to use this skill.\r\n", ch);
         return false;
     }
 
-    if(GET_MOVE(ch) < move_cost) {
+    if (GET_MOVE(ch) < move_cost) {
         send_to_char("You are too tired for this right now.\n\r", ch);
         return false;
     }
@@ -3456,11 +3454,10 @@ bool check_bend_success(char_data* ch)
 {
     int bend_skill = utils::get_skill(*ch, SKILL_BEND_TIME);
     int roll = number(1, 99);
-    if(roll > bend_skill)
+    if (roll > bend_skill)
         return false;
     else
         return true;
-
 }
 
 void on_bend_success(char_data* ch, int mana_cost, int move_cost)
@@ -3480,7 +3477,6 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
     act("$n starts to blur in and out of existance.\r\n", FALSE, ch, 0, 0, TO_ROOM);
 }
 
-
 /*=================================================================================
   do_bendtime:
   This is a race specific harad ability. It will allow the Haradrim to double it's
@@ -3496,7 +3492,7 @@ ACMD(do_bendtime)
 
     one_argument(argument, arg);
 
-    if(subcmd == -1) {
+    if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\r\n", ch);
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
@@ -3504,40 +3500,39 @@ ACMD(do_bendtime)
         return;
     }
 
-    if(!can_ch_bendtime(ch, mana_cost, move_cost)) {
+    if (!can_ch_bendtime(ch, mana_cost, move_cost)) {
         return;
     }
 
-    if(affected_by_spell(ch, SKILL_BEND_TIME)) {
+    if (affected_by_spell(ch, SKILL_BEND_TIME)) {
         send_to_char("You are already affected by bend time.\r\n", ch);
         return;
     }
 
-    switch(subcmd) {
-        case 0: {
-            wtl->targ1.cleanup();
-            wtl->targ2.cleanup();
+    switch (subcmd) {
+    case 0: {
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
 
-            send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
-            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
+        send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
+        act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
 
-            WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
-        } break;
-        case 1: {
-            if(check_bend_success(ch))
-                on_bend_success(ch, mana_cost, move_cost);
-            else {
-                GET_MANA(ch) -= (mana_cost / 2);
-                GET_MOVE(ch) -= (move_cost / 2);
-                send_to_char("You lost your concentration!\n\r", ch);
-            }
-        } break;
-        
-        default: {
-            sprintf(buf2, "do_bendtime: illegal subcommand '%d'.\r\n", subcmd);
-            mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
-            abort_delay(ch);
-        } break;
+        WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+    } break;
+    case 1: {
+        if (check_bend_success(ch))
+            on_bend_success(ch, mana_cost, move_cost);
+        else {
+            GET_MANA(ch) -= (mana_cost / 2);
+            GET_MOVE(ch) -= (move_cost / 2);
+            send_to_char("You lost your concentration!\n\r", ch);
+        }
+    } break;
+
+    default: {
+        sprintf(buf2, "do_bendtime: illegal subcommand '%d'.\r\n", subcmd);
+        mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+        abort_delay(ch);
+    } break;
     }
-
 }

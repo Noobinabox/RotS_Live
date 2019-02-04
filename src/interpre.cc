@@ -2604,7 +2604,7 @@ void nanny(struct descriptor_data* d, char* arg)
         case 'o':
             SEND_TO_Q("\r\nOlog-Hais are not available for play yet.\r\n", d);
             return;
-            // GET_RACE(d->character) = RACE_OLOGHAI;
+        // GET_RACE(d->character) = RACE_OLOGHAI;
         case 'r':
             GET_RACE(d->character) = RACE_HARADRIM;
             break;

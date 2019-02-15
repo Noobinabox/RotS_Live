@@ -1639,6 +1639,16 @@ public:
     /* Returns the leader of the character's group, if the character is in a group. */
     char_data* get_group_leader() const { return group ? group->get_leader() : NULL; }
 
+	int get_spent_practice_count() const;
+	int get_max_practice_count() const;
+
+	// Set's the character's available practice sessions to their max practice count
+	// less their used practice count.
+	void update_available_practices();
+
+	// Resets all known skills and practice sessions for a character.
+	void reset_skills();
+
 public:
     int abs_number; /* bit number in the control array */
     int player_index; /* Index in player table */

@@ -401,10 +401,7 @@ void advance_level(char_data* character)
         check_stat_increase(character);
     }
 
-    // TODO(drelidan):  Recalculate how many pracs a character should have given
-    // their LEA and the skills that they know.
-    SPELLS_TO_LEARN(character) += PRACS_PER_LEVEL + (GET_LEA_BASE(character) + GET_LEVEL(character) % LEA_PRAC_FACTOR) / LEA_PRAC_FACTOR;
-
+	character->update_available_practices();
     save_char(character, NOWHERE, 0);
 }
 

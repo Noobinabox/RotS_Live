@@ -1211,6 +1211,57 @@ bool is_guardian(const char_data& character)
 //============================================================================
 
 //============================================================================
+int char_data::get_spent_practice_count() const
+{
+	if (skills == NULL)
+		return 0;
+
+	int count = 0;
+	for (int index = 0; index < MAX_SKILLS; ++index)
+	{
+		count += skills[index];
+	}
+
+	return count;
+}
+
+//============================================================================
+int char_data::get_max_practice_count() const
+{
+	const int free_pracs = 10;
+
+	int base_pracs = player.level * PRACS_PER_LEVEL;
+	int bonus_lea_pracs = player.level * get_max_lea() / LEA_PRAC_FACTOR;
+
+	return base_pracs + bonus_lea_pracs + free_pracs;
+}
+
+//============================================================================
+void char_data::update_available_practices()
+{
+	int max_practice_count = get_max_practice_count();
+	int spent_practice_count = get_spent_practice_count();
+
+	// This value can be negative in the case a character loses a level.
+	specials2.spells_to_learn = max_practice_count - spent_practice_count;
+}
+
+//============================================================================
+void char_data::reset_skills()
+{
+	if (skills == nullptr || knowledge == nullptr)
+		return;
+
+	for (int index = 0; index < MAX_SKILLS; ++index)
+	{
+		skills[index] = 0;
+		knowledge[index] = 0;
+	}
+
+	specials2.spells_to_learn = get_max_practice_count();
+}
+
+//============================================================================
 // Specialization stuff!
 //============================================================================
 void cold_spec_data::on_chill_applied(int chill_amount)

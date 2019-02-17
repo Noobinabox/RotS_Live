@@ -189,7 +189,7 @@ format:
 
 .PHONY: setup
 setup:
-	@mkdir -p ../bin ../log \
+	@mkdir -p ../bin ../log ../lib/misc \
 		../lib/players/A-E \
 		../lib/players/F-J \
 		../lib/players/K-O \
@@ -208,7 +208,10 @@ setup:
 		../lib/exploits/P-T \
 		../lib/exploits/U-Z \
 		../lib/exploits/ZZZ
-	@touch ../log/lastdeath ../lib/last_cmds
+	@touch \
+		../log/lastdeath \
+		../lib/last_cmds \
+		../lib/misc/pklist
 
 .PHONY: run
 run: ../bin/ageland setup

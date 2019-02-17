@@ -153,9 +153,9 @@ void untrack_specialized_mage(char_data* mage);
 
 // second thought taken, let's try another variant first
 
-#define CREATE(result, type, number)                                               \
-    do {                                                                           \
-        result = (type*)create_function(sizeof(type), number, __LINE__, __FILE__); \
+#define CREATE(result, type, number)                                                   \
+    do {                                                                               \
+        result = (type*)create_function(sizeof(type) + 1, number, __LINE__, __FILE__); \
     } while (0)
 
 /* #define CREATE(result, type, number) do{\

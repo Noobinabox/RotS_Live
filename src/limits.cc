@@ -783,14 +783,14 @@ void update_bleed_tracks()
     int roomnum, tmp;
 
     for (roomnum = 0; roomnum <= top_of_world; roomnum++) {
-		tmproom = &world[roomnum];
+        tmproom = &world[roomnum];
 
-		for(tmp = 0; tmp < NUM_OF_BLOOD_TRAILS; tmp++)
-        if (tmproom->bleed_track[tmp].data / 8 == time_info.hours) {
-            tmproom->bleed_track[tmp].char_number = 0;
-            tmproom->bleed_track[tmp].data = 0;
-            tmproom->bleed_track[tmp].condition = 0;
-        }
+        for (tmp = 0; tmp < NUM_OF_BLOOD_TRAILS; tmp++)
+            if (tmproom->bleed_track[tmp].data / 8 == time_info.hours) {
+                tmproom->bleed_track[tmp].char_number = 0;
+                tmproom->bleed_track[tmp].data = 0;
+                tmproom->bleed_track[tmp].condition = 0;
+            }
     }
 }
 
@@ -900,6 +900,10 @@ void do_power_of_arda(char_data* ch)
     affected_type* tmpaf;
     affected_type newaf;
     int level, maxlevel;
+
+    if (GET_RACE(ch) == RACE_HARADRIM) {
+        return;
+    }
 
     level = get_sun_level(ch->in_room);
     maxlevel = level * 25; // so if you are in a shady room, the penalty can never be too high

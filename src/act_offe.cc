@@ -967,12 +967,6 @@ ACMD(do_disengage)
 }
 
 //============================================================================
-ACMD(do_beorning)
-{
-    return;
-}
-
-//============================================================================
 bool can_bear_skill(char_data* ch, int skill)
 {
     using namespace utils;
@@ -982,7 +976,7 @@ bool can_bear_skill(char_data* ch, int skill)
     }
 
     if (is_shadow(*ch)) {
-        send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
+        send_to_char("Hmm, perhaps you've spent too much time in the mortal lands.\r\n", ch);
         return false;
     }
 
@@ -1341,5 +1335,10 @@ ACMD(do_maul)
         apply_maul_char(ch);
         damage(ch, victim, number(1, 4), SKILL_MAUL, 0);
     }
-    GET_MOVE(ch) -= 15;
+
+    if (utils::get_specialization(*ch) == game_types::PS_Defender) {
+        GET_MOVE(ch) -= 7;
+    } else {
+        GET_MOVE(ch) -= 15;
+    }
 }

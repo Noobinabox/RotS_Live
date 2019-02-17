@@ -241,6 +241,7 @@ struct command_info {
 #define PROMPT_MOVE 4
 #define PROMPT_STAT 8
 #define PROMPT_MAUL 16
+#define PROMPT_ARROWS 32
 #define PROMPT_ALL (PROMPT_HIT | PROMPT_MANA | PROMPT_MOVE)
 
 #define SCMD_KICK 1
@@ -290,6 +291,7 @@ struct command_info {
 #define CMD_SHOOT 229
 #define CMD_MARK 237
 #define CMD_BLINDING 238
+#define CMD_BENDTIME 239
 
 #define CMD_HIDE 86
 #define CMD_AMBUSH 87

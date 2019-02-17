@@ -409,7 +409,7 @@ ASPELL(spell_cure_self)
             return;
         } else {
             af->duration = std::max(af->duration - 30, 0);
-            send_to_char("You close the wounds in your chest.\n\r", caster);
+            send_to_char("The festering wound on your side starts to close up.\n\r", caster);
             return;
         }
     }

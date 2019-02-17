@@ -136,8 +136,9 @@ ACMD(do_cast);
 SPECIAL(intelligent);
 char* wait_wheel[8] = { "\r|\r", "\r\\\r", "\r-\r", "\r/\r", "\r|\r", "\r\\\r", "\r-\r", "\r/\r" };
 
-void sigsegv_handler(int sig) {
-    void *array[10];
+void sigsegv_handler(int sig)
+{
+    void* array[10];
     size_t size;
 
     // get void*'s for all entries on the stack
@@ -622,6 +623,12 @@ void game_loop(SocketType s)
                                 sprintf(prompt, "%s Maul:", prompt);
                                 add_prompt(prompt, point->character, PROMPT_MAUL);
                             }
+                        }
+
+                        const obj_data* quiver = point->character->equipment[WEAR_BACK];
+                        if (quiver && quiver->is_quiver()) {
+                            sprintf(prompt, "%s A:(", prompt);
+                            add_prompt(prompt, point->character, PROMPT_ARROWS);
                         }
 
                         if (point->character->specials.position == POSITION_FIGHTING) {

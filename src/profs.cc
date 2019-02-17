@@ -65,7 +65,7 @@ sh_int race_modifiers[MAX_RACES][8] = {
     { -1, -1, -3, 0, 1, -2, 0, 0 }, // Uruk-Lhuth
     { 0, 0, 0, 0, 0, 0, 0, 0 }, // !NPC - Undead!
     { 4, -4, -3, -2, 4, -3, 0, 0 }, // Olog-Hai
-    { 0, -2, -2, 2, 0, -3, 0, 0 }, // Haradrim
+    { 0, -2, -4, 2, 0, -3, 0, 0 }, // Haradrim
     { 0, 0, 0, 0, 0, 0, 0, 0 }, // Unused
     { 0, 0, 0, 0, 0, 0, 0, 0 } // !NPC - Troll!
 };
@@ -767,6 +767,8 @@ void recalc_abilities(char_data* character)
             GET_ENE_REGEN(character) = do_squareroot(tmp / 100, character) / 20;
             if (GET_RACE(character) == RACE_DWARF && weapon_skill_num(w_type) == SKILL_AXE) {
                 GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
+            } else if (GET_RACE(character) == RACE_HARADRIM && weapon_skill_num(w_type) == SKILL_SPEARS) {
+                GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 30, 30);
             }
         } else {
             GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);

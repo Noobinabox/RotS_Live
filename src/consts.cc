@@ -127,7 +127,7 @@ char* spell_wear_off_msg[] = {
     "!Magic Missile!",
     "You feel less sick6.",
     "You feel less protected.",
-    "!Remove Curse!",
+    "You feel drained as the power of the land leaves your body.", //* 95 *
     "The white aura around your body fades.",
     "!Shocking Grasp!",
     "You feel less tired.",
@@ -142,7 +142,7 @@ char* spell_wear_off_msg[] = {
     "!Shocking Grasp!",
     "Your magical shield disolves.",
     "You feel weaker.",
-    "Your special attunment with your weapon has worn off", //* 110 *
+    "Your eyesight returns as if a veil has been lifted.", //* 110 *
     "You feel less confused.",
     "!Magic Missile!",
     "You feel less sick8.",
@@ -156,7 +156,7 @@ char* spell_wear_off_msg[] = {
     "!Locate object!",
     "!Magic Missile!",
     "You feel less sick9.",
-    "The wound in your side stops bleeding.",
+    "The festering wound on your side closes up completely.",
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",
@@ -431,8 +431,8 @@ struct skill_data skills[MAX_SKILLS] = {
         POSITION_FIGHTING, 15, 21, 18, 10, 1, 0, PLRSPEC_COLD },
     { "identify", PROF_MAGE, 18, spell_identify,
         POSITION_STANDING, 70, 50, 128, 10, 1, 0, PLRSPEC_NONE },
-    { "locate object", PROF_MAGE, 16, NULL,
-        POSITION_STANDING, 15, 24, 512, 10, 1, 0, PLRSPEC_NONE },
+    { "bend time", PROF_RANGER, 30, NULL,
+        POSITION_FIGHTING, 0, 6, 65, 10, 1, 1, PLRSPEC_NONE },
     { "fireball", PROF_MAGE, 21, spell_fireball,
         POSITION_FIGHTING, 18, 31, 18, 10, 1, 0, PLRSPEC_FIRE },
     { "locate life", PROF_MAGE, 20, NULL,
@@ -464,7 +464,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "detect evil", PROF_MAGE, 3, spell_detect_evil,
         POSITION_STANDING, 2, 12, 1, 5, 1, 0, PLRSPEC_NONE },
     { "blind", PROF_RANGER, 24, NULL,
-        POSITION_FIGHTING, 0, 20, 16, 24, 1, 1, PLRSPEC_NONE },
+        POSITION_FIGHTING, 40, 20, 16, 24, 1, 1, PLRSPEC_NONE },
 
     /* 111 */
     { "confuse", PROF_CLERIC, 1, spell_confuse,
@@ -496,7 +496,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "orcish language", PROF_GENERAL, 1, NULL,
         POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
     { "mark", PROF_RANGER, 15, NULL,
-        POSITION_FIGHTING, 0, 0, 16, 24, 1, 1, PLRSPEC_NONE },
+        POSITION_FIGHTING, 20, 0, 16, 24, 1, 1, PLRSPEC_NONE },
     { "trash", PROF_MAGE, 1, NULL,
         POSITION_STANDING, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "trash", PROF_MAGE, 1, NULL,
@@ -3021,7 +3021,7 @@ int mortal_start_room[MAX_RACES] = {
     13626, // Uruk-Lhuth
     0, // !NPC - Undead!
     10263, // Olog-Hai
-    13626, // Haradrim
+    6614, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!
     0 // !UNUSED!

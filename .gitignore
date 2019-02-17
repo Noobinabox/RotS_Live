@@ -27,3 +27,18 @@
 *.exe
 *.out
 *.app
+
+# Game Files
+.ageland.pid
+bin/
+lib/last_cmds
+lib/crash_cmds
+lib/world/
+lib/players/
+lib/plrobjs/
+lib/exploits/
+lib/misc/pklist
+log/
+
+# Visual Studio Crap Dump
+src/.vs/

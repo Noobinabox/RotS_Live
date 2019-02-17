@@ -391,6 +391,11 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     case APPLY_SPEED:
         break;
 
+    case APPLY_BEND: {
+        GET_ENE_REGEN(ch) += (GET_ENE_REGEN(ch) / 2);
+        SET_OB(ch) += mod;
+    } break;
+
     case APPLY_ARMOR:
         //     mod = (2*mod*GET_PERCEPTION(ch))/100;
         //     SET_DODGE(ch) += mod;

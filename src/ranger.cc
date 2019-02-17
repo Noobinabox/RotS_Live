@@ -395,7 +395,7 @@ ACMD(do_gather_food)
         one_argument(argument, arg);
         GatherType = search_block(arg, gather_type, 0);
         if (GatherType == -1) { /*If we can't find an argument */
-            send_to_char("You can gather food, healing, energy, bows, arrows, or light.\n\r", ch);
+            send_to_char("You can gather food, healing, energy, bows, arrows, dust, or light.\n\r", ch);
             return;
         }
         if (!check_gather_conditions(ch, percent, GatherType)) /*Checks sector and race conditions */
@@ -472,6 +472,14 @@ ACMD(do_gather_food)
                     send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);
                 } else {
                     send_to_char("Problem in gather arrows. Could not create item. Please notify imps.\n\r", ch);
+                }
+                break;
+            case 7:
+                if ((obj = read_object(GATHER_DUST, VIRT)) != NULL) {
+                    obj_to_char(obj, ch);
+                    send_to_char("You manage to find some suitable dust for blinding your victim.\n\r", ch);
+                } else {
+                    send_to_char("Problem in gather dust. Could not create item. Please notify imps.\n\r", ch);
                 }
                 break;
             }
@@ -869,8 +877,7 @@ ACMD(do_ambush)
     }
 
     if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
-
-        if ((GET_RACE(ch) == RACE_HARADRIM) && (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
+        if ((GET_RACE(ch) != RACE_HARADRIM) || (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
             send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
             return;
         }
@@ -2118,10 +2125,6 @@ int shoot_calculate_wait(const char_data* archer)
         total_beats = total_beats - 1;
     }
 
-    //if (utils::get_specialization(*archer) == (int)game_types::PS_Archery)
-    //{
-    //	total_beats = total_beats - 1;
-    //}
     if (GET_SHOOTING(archer) == SHOOTING_FAST) {
         total_beats = total_beats / 2;
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
@@ -2138,13 +2141,17 @@ int shoot_calculate_wait(const char_data* archer)
  * --------------------------- Change Log --------------------------------
  * drelidan: Jan 26, 2017 - Created function
  */
-bool does_arrow_break(const char_data* victim, const obj_data* arrow)
+bool does_arrow_break(const char_data* archer, const char_data* victim, const obj_data* arrow)
 {
-    const int breakpercentage = arrow->obj_flags.value[3];
+    int breakpercentage = arrow->obj_flags.value[3];
     if (victim) {
         // factor in victim contribution here - but victim is optional.
         // TODO(drelidan):  Figure out break contribution.  Perhaps this function
         // should be called and given an armor location or something.
+    }
+
+    if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
+        breakpercentage >>= 1;
     }
 
     const int rolledNumber = number(1, 100);
@@ -2175,7 +2182,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
         obj_from_obj(arrow);
     }
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(victim, arrow)) {
+    if (does_arrow_break(archer, victim, arrow)) {
         // Destroy the arrow and exit.
         extract_obj(arrow);
         return false;
@@ -2217,7 +2224,7 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
     }
 
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(NULL, arrow)) {
+    if (does_arrow_break(archer, NULL, arrow)) {
         // Destroy the arrow and exit.
         extract_obj(arrow);
         return false;
@@ -2251,7 +2258,7 @@ bool can_ch_shoot(char_data* archer)
     using namespace utils;
 
     if (is_shadow(*archer)) {
-        send_to_char("Hmm, perhaps you've spent to much time in the "
+        send_to_char("Hmm, perhaps you've spent too much time in the "
                      " mortal lands.\r\n",
             archer);
         return false;
@@ -2861,9 +2868,9 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_duration(char_data* archer)
+int mark_calculate_duration(char_data* marker)
 {
-    int mark_duration = utils::get_prof_level(PROF_RANGER, *archer) - 10;
+    int mark_duration = utils::get_prof_level(PROF_RANGER, *marker) - 10;
     mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return mark_duration;
 }
@@ -2875,11 +2882,11 @@ int mark_calculate_duration(char_data* archer)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_damage(char_data* archer, char_data* victim, obj_data* arrow)
+int mark_calculate_damage(char_data* marker, char_data* victim)
 {
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
-    int str_factor = archer->tmpabilities.str / 5;
-    int dex_factor = archer->tmpabilities.dex / 3;
+    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
+    int str_factor = marker->tmpabilities.str / 5;
+    int dex_factor = marker->tmpabilities.dex / 3;
     if (number(0, dex_factor % 5) > 0) {
         ++dex_factor;
     }
@@ -2896,23 +2903,20 @@ int mark_calculate_damage(char_data* archer, char_data* victim, obj_data* arrow)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_hit(char_data* archer, char_data* victim, obj_data* arrow)
+void on_mark_hit(char_data* marker, char_data* victim)
 {
     struct affected_type af;
-
-    int damage_dealt = mark_calculate_damage(archer, victim, arrow);
-    move_arrow_to_victim(archer, victim, arrow);
+    int damage_dealt = mark_calculate_damage(marker, victim);
     if (!utils::is_affected_by_spell(*victim, SKILL_MARK)) {
         af.type = SKILL_MARK;
-        af.duration = mark_calculate_duration(archer);
+        af.duration = mark_calculate_duration(marker);
         af.modifier = 1;
         af.location = APPLY_NONE;
         af.bitvector = 0;
-
-        affect_to_char(victim, &af);
+        affect_join(victim, &af, FALSE, FALSE);
     }
 
-    damage(archer, victim, damage_dealt, SKILL_MARK, 0);
+    damage(marker, victim, damage_dealt, SKILL_MARK, 0);
 }
 
 /*=================================================================================
@@ -2922,31 +2926,33 @@ void on_mark_hit(char_data* archer, char_data* victim, obj_data* arrow)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_miss(char_data* archer, char_data* victim, obj_data* arrow)
+void on_mark_miss(char_data* marker, char_data* victim)
 {
-    act("You miss your mark and your arrow harmlessly flies past $N!\r\n", FALSE, archer, 0, victim, TO_CHAR);
-    move_arrow_to_room(archer, arrow, archer->in_room);
+    damage(marker, victim, 0, SKILL_MARK, 0);
 }
 
 /*=================================================================================
    mark_calculate_success:
-   Here we calculate the success chance of the archer using the mark skill. Current
-   forumla is ranger level + (ranger dex / 2) + (mark skill / 2) + 
-   (archer skill / 2) + arrow tohit
+   Here we calculate the success chance of the Haradrim using the mark skill. Current
+   forumla is ranger level + (ranger dex / 2) + (mark skill / 2)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
+   slyon: June 12, 2018 - Remove archery and make success based on touch attack
 ==================================================================================*/
-int mark_calculate_success(char_data* archer, char_data* victim, obj_data* arrow)
+int mark_calculate_success(char_data* marker, char_data* victim)
 {
-    int mark_skill = utils::get_skill(*archer, SKILL_MARK);
-    int archery_skill = utils::get_skill(*archer, SKILL_ARCHERY);
-    int arrow_to_hit = arrow->obj_flags.value[0];
+    int mark_skill = utils::get_skill(*marker, SKILL_MARK);
+    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
+    int ranger_dex = marker->get_cur_dex();
+    int mark_ob = get_real_OB(marker);
+    int total_marker = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + mark_ob;
 
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
-    int ranger_dex = archer->get_cur_dex();
+    int vict_dex = victim->get_cur_dex();
+    int vict_ranger = utils::get_prof_level(PROF_RANGER, *victim);
+    int vict_dodge = utils::get_real_dodge(*victim);
+    int total_victim = vict_ranger + (vict_dex / 2) + vict_dodge;
 
-    int success_chance = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + (archery_skill / 2) + arrow_to_hit;
-
+    int success_chance = total_marker - total_victim;
     return success_chance;
 }
 
@@ -2955,21 +2961,101 @@ int mark_calculate_success(char_data* archer, char_data* victim, obj_data* arrow
    Check to see if the archer is a Haradrim and they have the skill mark.
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
+   slyon: June 12, 2018 - Redesigned check
 ==================================================================================*/
-bool can_ch_mark(char_data* archer)
+bool can_ch_mark(char_data* ch)
 {
+    using namespace utils;
     // Check to see if archer is a player haradrim
-    if (GET_RACE(archer) != RACE_HARADRIM) {
-        send_to_char("Unrecognized command.\r\n", archer);
+    if (GET_RACE(ch) != RACE_HARADRIM) {
+        send_to_char("Unrecognized command.\r\n", ch);
         return false;
     }
 
-    if (utils::get_skill(*archer, SKILL_MARK) == 0) {
-        send_to_char("Learn how to mark first.\r\n", archer);
+    if (utils::get_skill(*ch, SKILL_MARK) == 0) {
+        send_to_char("Learn how to mark first.\r\n", ch);
+        return false;
+    }
+
+    if (is_shadow(*ch)) {
+        send_to_char("Hmm, perhaps you've spent too much time in the mortal lands.\r\n", ch);
+        return false;
+    }
+
+    if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
+        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        return false;
+    }
+
+    if (ch->tmpabilities.mana < skills[SKILL_MARK].min_usesmana) {
+        send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
         return false;
     }
 
     return true;
+}
+
+/*=================================================================================
+   is_targ_valid_mark:
+   Check to see if the mark target is valid and return NULL if not
+   ------------------------------Change Log---------------------------------------
+   slyon: June 12, 2018 - Created
+==================================================================================*/
+char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
+{
+    char_data* victim = NULL;
+
+    if (target->targ1.type == TARGET_TEXT) {
+        victim = get_char_room_vis(marker, target->targ1.ptr.text->text);
+    } else if (target->targ1.type == TARGET_CHAR) {
+        if (char_exists(target->targ1.ch_num)) {
+            victim = target->targ1.ptr.ch;
+        }
+    }
+
+    if (victim == NULL) {
+        if (marker->specials.fighting) {
+            victim = marker->specials.fighting;
+        } else {
+            send_to_char("Mark who?\r\n", marker);
+            return NULL;
+        }
+    }
+
+    if (marker->in_room != victim->in_room) {
+        send_to_char("Your victim is no longer here.\r\n", marker);
+        return NULL;
+    }
+
+    if (marker == victim) {
+        send_to_char("But you have so much to live for!\r\n", marker);
+        return NULL;
+    }
+
+    if (!CAN_SEE(marker, victim)) {
+        send_to_char("Mark who?\r\n", marker);
+        return NULL;
+    }
+
+    return victim;
+}
+
+/*=================================================================================
+   mark_calculate_wait:
+   Figure out how long the wait wheel should be for the Haradrim
+   ------------------------------Change Log---------------------------------------
+   slyon: June 12, 2018 - Created
+==================================================================================*/
+int mark_calculate_wait(const char_data* marker)
+{
+    const int base_beats = 12;
+    const int min_beats = 6;
+
+    int total_beats = base_beats - ((marker->points.ENE_regen / base_beats) - base_beats);
+    total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *marker) / base_beats);
+    total_beats = std::max(total_beats, min_beats);
+
+    return total_beats;
 }
 
 /*=================================================================================
@@ -2987,7 +3073,7 @@ ACMD(do_mark)
     one_argument(argument, arg);
 
     if (subcmd == -1) {
-        send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
+        send_to_char("You lost your concentration and miss your target!\r\n", ch);
         ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 
         // Clean-up targets.
@@ -2999,19 +3085,11 @@ ACMD(do_mark)
     if (!can_ch_mark(ch))
         return;
 
-    if (!can_ch_shoot(ch))
-        return;
-
-    char_data* victim = is_targ_valid(ch, wtl);
+    char_data* victim = is_targ_valid_mark(ch, wtl);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
         send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
-        return;
-    }
-
-    if (affected_by_spell(victim, SKILL_MARK)) {
-        act("$N is already marked...\r\n", FALSE, ch, 0, victim, TO_CHAR);
         return;
     }
 
@@ -3026,22 +3104,16 @@ ACMD(do_mark)
         if (victim == NULL) {
             return;
         }
-        send_to_char("You draw back your bow and prepare to mark your target.\r\n", ch);
+        send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
 
         if (!utils::is_affected_by(*ch, AFF_HIDE)) {
-            if (GET_SEX(ch) == SEX_MALE) {
-                act("$n draws back his bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            } else if (GET_SEX(ch) == SEX_FEMALE) {
-                act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            } else {
-                act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            }
+            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
         }
 
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
 
-        int wait_delay = shoot_calculate_wait(ch);
+        int wait_delay = mark_calculate_wait(ch);
         WAIT_STATE_FULL(ch, wait_delay, CMD_MARK, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {
@@ -3059,19 +3131,15 @@ ACMD(do_mark)
             return;
         }
 
-        /* Get the arrow */
-        obj_data* arrow = NULL;
-        obj_data* quiver = ch->equipment[WEAR_BACK];
-        if (quiver) {
-            arrow = quiver->contains;
-        }
-        // Check here
-        int roll = number(0, 99);
-        int target_number = mark_calculate_success(ch, victim, arrow);
-        if (roll < target_number) {
-            on_mark_hit(ch, victim, arrow);
+        // Reduce mana for using the skill.
+        ch->tmpabilities.mana -= 20;
+
+        // Did we land our touch attack???
+        int target_number = mark_calculate_success(ch, victim);
+        if (target_number > 0) {
+            on_mark_hit(ch, victim);
         } else {
-            on_mark_miss(ch, victim, arrow);
+            on_mark_miss(ch, victim);
         }
 
         wtl->targ1.cleanup();
@@ -3086,7 +3154,7 @@ ACMD(do_mark)
     }
 }
 
-bool can_ch_blind(char_data* ch)
+bool can_ch_blind(char_data* ch, int mana_cost)
 {
     const room_data& room = world[ch->in_room];
     obj_data* dust = NULL;
@@ -3097,7 +3165,7 @@ bool can_ch_blind(char_data* ch)
     }
 
     if (utils::is_shadow(*ch)) {
-        send_to_char("Hmm, perphaps you've spent to much time in the shadow lands.\r\n", ch);
+        send_to_char("Hmm, perphaps you've spent too much time in the shadow lands.\r\n", ch);
         return false;
     }
 
@@ -3117,9 +3185,14 @@ bool can_ch_blind(char_data* ch)
         return false;
     }
 
+    if (GET_MANA(ch) < mana_cost) {
+        send_to_char("You can't summon enough energy to cast the spell.\n\r", ch);
+        return false;
+    }
+
     if (ch->carrying != NULL) {
-        for (obj_data* item = ch->carrying; item; item = item->next) {
-            if (item->item_number == GATHER_DUST) {
+        for (obj_data* item = ch->carrying; item; item = item->next_content) {
+            if (item->item_number == real_object(GATHER_DUST)) {
                 dust = item;
                 break;
             }
@@ -3173,7 +3246,7 @@ char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
     return victim;
 }
 
-int dust_calculate_success(const char_data* ch, const char_data* victim)
+int dust_calculate_success(char_data* ch, char_data* victim)
 {
     int random_roll = number(0, 99);
 
@@ -3186,30 +3259,41 @@ int dust_calculate_success(const char_data* ch, const char_data* victim)
     int victim_ranger_level = utils::get_prof_level(PROF_RANGER, *victim);
     int victim_dex = victim->get_cur_dex();
     int victim_con = victim->get_cur_con();
+    int victim_dodge = get_real_dodge(victim);
 
-    int success_rate = (ch_blind_skill + ch_ranger_level + ch_dex) - (random_roll + victim_ranger_level + ((victim_dex + victim_con) / 2));
-    return success_rate;
+    // TODO: Needs to be tweaked / balanced
+    int attack_dc = ch_blind_skill + ch_ranger_level + ch_dex + random_roll;
+    int victim_save = victim_dex + victim_dodge + victim_ranger_level + (victim_con / 4);
+
+    return attack_dc - victim_save;
 }
 
-void on_dust_miss(char_data* ch, char_data* victim, obj_data* dust)
+void on_dust_miss(char_data* ch, char_data* victim, int mana_cost)
 {
-    extract_obj(dust);
+    byte sex = ch->player.sex;
+
+    GET_MANA(ch) -= (mana_cost >> 1);
     damage(ch, victim, 0, SKILL_BLINDING, 0);
 }
 
-void on_dust_hit(char_data* ch, char_data* victim, obj_data* dust)
+void on_dust_hit(char_data* ch, char_data* victim, int mana_cost)
 {
     int ranger_bonus = 15; // Setting this as a default for now.
     struct affected_type af;
     int affects_last = 22 - ranger_bonus;
-    extract_obj(dust);
-    damage(ch, victim, 1, SKILL_BLINDING, 0);
-    af.type = AFF_BLIND;
+
+    af.type = SKILL_BLINDING;
     af.duration = affects_last;
     af.modifier = 0;
     af.location = APPLY_NONE;
-    af.bitvector = 0;
-    affect_to_char(victim, &af);
+    af.bitvector = AFF_BLIND | AFF_HAZE;
+
+    GET_MANA(ch) -= mana_cost;
+
+    // Skip blindness if it kills
+    if (damage(ch, victim, 1, SKILL_BLINDING, 0) < 1) {
+        affect_to_char(victim, &af);
+    }
 }
 
 /*=================================================================================
@@ -3221,9 +3305,12 @@ void on_dust_hit(char_data* ch, char_data* victim, obj_data* dust)
 ==================================================================================*/
 ACMD(do_blinding)
 {
+    const int mana_cost = skills[SKILL_BLINDING].min_usesmana;
+
     one_argument(argument, arg);
 
     if (subcmd == -1) {
+        // FIXME: This triggers on cancel, is this right?
         send_to_char("Your attempt to blind your target have been foiled.\r\n", ch);
         ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
         wtl->targ1.cleanup();
@@ -3231,11 +3318,15 @@ ACMD(do_blinding)
         return;
     }
 
-    if (!can_ch_blind(ch)) {
+    if (!can_ch_blind(ch, mana_cost)) {
         return;
     }
 
     char_data* victim = is_targ_blind_valid(ch, wtl);
+
+    if (victim == NULL) {
+        return;
+    }
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
@@ -3260,8 +3351,6 @@ ACMD(do_blinding)
             return;
         }
 
-        send_to_char("BLINDING ATTACK STARTED.\r\n", ch);
-        act("$n STARTING BLINDING ATTACK.\r\n", FALSE, ch, 0, 0, TO_ROOM);
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
 
@@ -3284,8 +3373,8 @@ ACMD(do_blinding)
         }
 
         obj_data* dust = NULL;
-        for (obj_data* item = ch->carrying; item; item = item->next) {
-            if (item->item_number == GATHER_DUST) {
+        for (obj_data* item = ch->carrying; item; item = item->next_content) {
+            if (item->item_number == real_object(GATHER_DUST)) {
                 dust = item;
                 break;
             }
@@ -3296,15 +3385,14 @@ ACMD(do_blinding)
             return;
         }
 
-        act("You throw dust in $N eyes blinding them.\r\n", FALSE, victim, 0, 0, TO_CHAR);
-        act("$n throws grey dust in your eyes blinding you!\r\n", FALSE, ch, 0, 0, TO_VICT);
-
         int percent_hit = dust_calculate_success(ch, victim);
         if (percent_hit < 0) {
-            on_dust_miss(ch, victim, dust);
+            on_dust_miss(ch, victim, mana_cost);
         } else {
-            on_dust_hit(ch, victim, dust);
+            on_dust_hit(ch, victim, mana_cost);
         }
+
+        extract_obj(dust);
 
         ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
         wtl->targ1.cleanup();
@@ -3317,5 +3405,134 @@ ACMD(do_blinding)
         abort_delay(ch);
         break;
         ;
+    }
+}
+
+bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
+{
+    const room_data& room = world[ch->in_room];
+    if (GET_RACE(ch) != RACE_HARADRIM) {
+        send_to_char("Unrecognized command.\r\n", ch);
+        return false;
+    }
+
+    if (utils::is_shadow(*ch)) {
+        send_to_char("Hmm, perphaps you've spent too much time in the shadow lands.\r\n", ch);
+        return false;
+    }
+
+    if (utils::is_npc(*ch)) {
+        char_data* receiver = ch->master ? ch->master : ch;
+        send_to_char("Your follower lacks the knowledge to bend time.\r\n", receiver);
+        return false;
+    }
+
+    if (utils::is_set(room.room_flags, (long)PEACEROOM)) {
+        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        return false;
+    }
+
+    if (utils::get_skill(*ch, SKILL_BEND_TIME) == 0) {
+        send_to_char("Learn how to bend time first.\r\n", ch);
+        return false;
+    }
+
+    if (GET_MANA(ch) < mana_cost) {
+        send_to_char("You can't summon enough energy to use this skill.\r\n", ch);
+        return false;
+    }
+
+    if (GET_MOVE(ch) < move_cost) {
+        send_to_char("You are too tired for this right now.\n\r", ch);
+        return false;
+    }
+
+    return true;
+}
+
+bool check_bend_success(char_data* ch)
+{
+    int bend_skill = utils::get_skill(*ch, SKILL_BEND_TIME);
+    int roll = number(1, 99);
+    if (roll > bend_skill)
+        return false;
+    else
+        return true;
+}
+
+void on_bend_success(char_data* ch, int mana_cost, int move_cost)
+{
+    GET_MANA(ch) -= mana_cost;
+    GET_MOVE(ch) -= move_cost;
+
+    struct affected_type af;
+
+    af.type = SKILL_BEND_TIME;
+    af.duration = 15;
+    af.modifier = 20;
+    af.location = APPLY_BEND;
+    af.bitvector = 0;
+    affect_to_char(ch, &af);
+    send_to_char("Time starts to move slower, and energy from the land fills your body.\r\n", ch);
+    act("$n starts to blur in and out of existance.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+}
+
+/*=================================================================================
+  do_bendtime:
+  This is a race specific harad ability. It will allow the Haradrim to double it's
+  current energy and increase their temporary ob by 20, for a short duration. 
+  The cost of this skill is the players max mana and 100 moves.
+  ------------------------------Change Log---------------------------------------
+  slyon: Oct 04, 2018 - Created
+==================================================================================*/
+ACMD(do_bendtime)
+{
+    const int mana_cost = ch->abilities.mana;
+    const int move_cost = 100;
+
+    one_argument(argument, arg);
+
+    if (subcmd == -1) {
+        send_to_char("You could not concentrate anymore!\r\n", ch);
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
+        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+        return;
+    }
+
+    if (!can_ch_bendtime(ch, mana_cost, move_cost)) {
+        return;
+    }
+
+    if (affected_by_spell(ch, SKILL_BEND_TIME)) {
+        send_to_char("You are already affected by bend time.\r\n", ch);
+        return;
+    }
+
+    switch (subcmd) {
+    case 0: {
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
+
+        send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
+        act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
+
+        WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+    } break;
+    case 1: {
+        if (check_bend_success(ch))
+            on_bend_success(ch, mana_cost, move_cost);
+        else {
+            GET_MANA(ch) -= (mana_cost / 2);
+            GET_MOVE(ch) -= (move_cost / 2);
+            send_to_char("You lost your concentration!\n\r", ch);
+        }
+    } break;
+
+    default: {
+        sprintf(buf2, "do_bendtime: illegal subcommand '%d'.\r\n", subcmd);
+        mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+        abort_delay(ch);
+    } break;
     }
 }

@@ -2000,7 +2000,8 @@ int load_char(char* name, struct char_file_u* char_element)
 
     ret = load_player(name, char_element);
 
-    convert_old_colormask(char_element);
+    if (ret >= 0)
+        convert_old_colormask(char_element);
 
     return ret;
 }

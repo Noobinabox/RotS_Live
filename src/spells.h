@@ -162,6 +162,7 @@
 /* Haradrim Race Specific Skills */
 #define SKILL_MARK 124
 #define SKILL_BLINDING 110
+#define SKILL_BEND_TIME 95
 
 #define SPELL_ASPHYXIATION 116
 #define SPELL_ARDA 117
@@ -175,7 +176,7 @@
 */
 
 /* Any skills and/or spells free should be listed here */
-#define SKILL_UNUSED1 95
+
 #define SKILL_UNUSED2 97
 #define SKILL_UNUSED3 59
 #define SKILL_UNUSED4 125

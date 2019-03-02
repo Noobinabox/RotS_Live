@@ -167,8 +167,11 @@ int get_tactics(const char_data& character)
 //============================================================================
 void set_tactics(char_data& character, int value)
 {
+	if (value <= 0)
+		value = TACTICS_NORMAL;
+
     if (!is_npc(character)) {
-        character.specials.tactics = value;
+        character.specials.tactics = static_cast<ubyte>(value);
     }
 }
 
@@ -184,8 +187,11 @@ int get_shooting(const char_data& character)
 //============================================================================
 void set_shooting(char_data& character, int value)
 {
+	if (value <= 0)
+		value = SHOOTING_NORMAL;
+
     if (!is_npc(character))
-        character.specials.shooting = value;
+        character.specials.shooting = static_cast<ubyte>(value);
 }
 
 //============================================================================
@@ -200,8 +206,11 @@ int get_casting(const char_data& character)
 //============================================================================
 void set_casting(char_data& character, int value)
 {
+	if (value <= 0)
+		value = CASTING_NORMAL;
+
     if (is_pc(character)) {
-        character.specials.casting = value;
+        character.specials.casting = static_cast<ubyte>(value);
     }
 }
 
@@ -732,7 +741,7 @@ int get_dodge_penalty(const char_data& character)
 }
 
 //============================================================================
-int get_idnum(const char_data& character)
+long get_idnum(const char_data& character)
 {
     if (is_npc(character))
         return -1;
@@ -1023,7 +1032,7 @@ bool is_hostile_to(const char_data& character, const char_data& victim)
         return true;
 
     // An NPC is hostile if it has a preference for the victim's race set.
-    if (is_preference_flagged(character, (long)1 << victim.player.race))
+    if (is_preference_flagged(character, 1 << victim.player.race))
         return true;
 
     return false;
@@ -1032,7 +1041,7 @@ bool is_hostile_to(const char_data& character, const char_data& victim)
 //============================================================================
 bool is_rp_race_check(const char_data& character, const char_data& victim)
 {
-    return is_npc(character) && character.specials2.rp_flag != 0 || utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
+    return (is_npc(character) && character.specials2.rp_flag != 0) || utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
 }
 
 //============================================================================
@@ -1552,7 +1561,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
         message_writer << std::fixed;
         message_writer.precision(2);
         message_writer << ", Average: " << details.get_average_damage() << "> ";
-        message_writer << details.get_total_damage() / double(total_damage_dealt) * 100;
+        message_writer << details.get_total_damage() / double(total_damage_dealt* 100);
         message_writer << "% of damage";
         message_writer << std::endl;
     }

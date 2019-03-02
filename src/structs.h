@@ -1292,7 +1292,7 @@ public:
     int get_saved_cones() const { return failed_cone_of_cold_count; }
     double get_cone_success_percentage() const { return double(successful_cone_of_cold_count) / double(total_cone_of_cold_count); }
 
-    int get_total_energy_sapped() const { return total_energy_sapped; }
+    long get_total_energy_sapped() const { return total_energy_sapped; }
 
     virtual std::string to_string(char_data& character) const;
 
@@ -1493,7 +1493,7 @@ public:
 
     float get_average_damage() const
     {
-        return float(total_damage) / instance_count;
+        return static_cast<float>(total_damage) / static_cast<float>(instance_count);
     }
 
     int get_total_damage() const { return total_damage; }
@@ -1544,7 +1544,7 @@ public:
     virtual ~timed_damage_details() {}
 
     float get_combat_time() const { return elapsed_combat_seconds; }
-    float get_dps() const { return get_total_damage() / std::max(elapsed_combat_seconds, 0.5f); }
+    float get_dps() const { return static_cast<float>(get_total_damage()) / std::max(elapsed_combat_seconds, 0.5f); }
     void tick(float delta) { elapsed_combat_seconds += delta; }
 
     virtual void reset()

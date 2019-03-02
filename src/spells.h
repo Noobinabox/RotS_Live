@@ -163,6 +163,7 @@
 #define SKILL_MARK 124
 #define SKILL_BLINDING 110
 #define SKILL_BEND_TIME 95
+#define SKILL_WINDBLAST 128
 
 #define SPELL_ASPHYXIATION 116
 #define SPELL_ARDA 117
@@ -179,7 +180,6 @@
 
 #define SKILL_UNUSED2 97
 #define SKILL_UNUSED3 59
-#define SKILL_UNUSED4 125
 #define SKILL_UNUSED5 126
 
 /* Don't remove this because it's use to remove spells */

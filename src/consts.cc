@@ -502,7 +502,9 @@ struct skill_data skills[MAX_SKILLS] = {
     { "trash", PROF_MAGE, 1, NULL,
         POSITION_STANDING, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "nothing", PROF_GENERAL, 0, NULL,
-        POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE }
+        POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
+    { "wind blast", PROF_RANGER, 24, NULL,
+        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE}
 };
 
 byte language_number = 3;
@@ -536,7 +538,7 @@ struct skill_teach_data guildmasters[] = {
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-            100, 100, 100, 100, 100, 100, 100 } },
+            100, 100, 100, 100, 100, 100, 100, 100 } },
     { // VINYANOST WARRIOR (2)
         "Hello, $N! I can teach you these skills:",
         "Sorry, I may not teach you.",
@@ -1900,7 +1902,7 @@ struct skill_teach_data guildmasters[] = {
             /*91*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*101*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*111*/ 100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*121*/ 100, 100, 100, 0, 0, 0, 0 } }
+            /*121*/ 100, 100, 100, 0, 0, 0, 0, 100 } }
 };
 
 struct race_bodypart_data bodyparts[MAX_BODYTYPES] = {

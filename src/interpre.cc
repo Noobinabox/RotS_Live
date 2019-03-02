@@ -281,6 +281,7 @@ ACMD(do_blinding);
 ACMD(do_bite);
 ACMD(do_maul);
 ACMD(do_bendtime);
+ACMD(do_windblast);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
@@ -528,7 +529,8 @@ const char* command[] = {
     "mark",
     "blind",
     "bend",
-    "\n" //240
+    "windblast", //240
+    "\n"
 };
 
 /* CEND: search for me when you're looking for the end of the cmd list! :) */
@@ -2185,6 +2187,8 @@ void assign_command_pointers(void)
         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
     COMMANDO(239, POSITION_STANDING, do_bendtime, 0, TRUE, 0,
         FULL_TARGET, TAR_IGNORE, 0);
+    COMMANDO(240, POSITION_FIGHTING, do_windblast, 0, TRUE, 0,
+        TAR_IGNORE, TAR_IGNORE, 0);
 }
 
 /* *************************************************************************

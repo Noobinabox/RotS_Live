@@ -33,6 +33,11 @@
 #include "char_utils.h"
 #include <cmath>
 #include <string>
+#include <vector>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
 
 /* extern variables */
 extern struct room_data world;
@@ -95,7 +100,7 @@ void stop_hiding(struct char_data* ch, char);
 
 /* intern functions & vars*/
 int num_of_cmds;
-void list_obj_to_char(struct obj_data*, struct char_data*, int, char);
+void list_obj_to_char(struct obj_data*, struct char_data*, int, bool);
 void calculate_small_map(int, int);
 void report_mob_age(struct char_data*, struct char_data*);
 void report_char_mentals(struct char_data*, char*, int);
@@ -104,6 +109,174 @@ void report_perception(struct char_data*, char*);
 int show_tracks(struct char_data*, char*, int);
 static char* get_level_abbr(sh_int level, sh_int);
 int show_blood_trail(struct char_data*, char*, int);
+
+
+namespace
+{
+	/* Simple structure for handling inventory formatting data. */
+	struct inventory_data
+	{
+		inventory_data() : description()
+		{
+			count = 0;
+		}
+
+		std::string description;
+		int count;
+	};
+
+	struct inventory_data_sort_alphabetically
+	{
+		bool operator()(const inventory_data& left, const inventory_data& right)
+		{
+			return left.description < right.description;
+		}
+	};
+
+	struct inventory_data_sort_by_length
+	{
+		bool operator()(const inventory_data& left, const inventory_data& right)
+		{
+			return left.description.size() < right.description.size();
+		}
+	};
+
+	/* Class that will return the contents of a container in a formatted string. */
+	class inventory_formatter
+	{
+	public:
+
+		inventory_formatter(obj_data* root_object, char_data* character)
+		{
+			m_root_object = root_object;
+			m_character = character;
+			m_working_data.reserve(64);
+		}
+
+		std::string format_inventory()
+		{
+			for (obj_data* item = m_root_object; item; item = item->next_content)
+			{
+				add_item_to_list(item);
+			}
+
+			if (m_seen_items.empty())
+			{
+				return std::string(" Nothing.\n\r");
+			}
+
+			// TODO(drelidan): Query preferences for these.
+			bool sort_alpha = false;
+			bool sort_length = false;
+
+			if (sort_alpha)
+			{
+				inventory_data_sort_alphabetically sorter;
+				std::sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+			}
+			else if (sort_length)
+			{
+				// stable sort is used for length because we want to maintain as much of
+				// the original order as possible.
+				inventory_data_sort_by_length sorter;
+				std::stable_sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+			}
+
+			std::ostringstream inventory_writer;
+			for (size_t index = 0; index < m_seen_items.size(); ++index)
+			{
+				const inventory_data& item_data = m_seen_items[index];
+				inventory_writer << item_data.description;
+				if (item_data.count > 1)
+				{
+					inventory_writer << " (" << item_data.count << ')';
+				}
+				inventory_writer << std::endl;
+			}
+
+			inventory_writer << std::endl;
+			return inventory_writer.str();
+		}
+
+	private:
+
+		void add_item_to_list(obj_data* object)
+		{
+			get_item_description(object, m_working_data);
+
+			for (size_t index = 0; index < m_seen_items.size(); ++index)
+			{
+				inventory_data& item_data = m_seen_items[index];
+				if (m_working_data == item_data.description)
+				{
+					++item_data.count;
+					return;
+				}
+			}
+
+			inventory_data new_item;
+			new_item.description.assign(m_working_data);
+			new_item.count = 1;
+			m_seen_items.push_back(new_item);
+		}
+
+		void get_item_description(obj_data* object, std::string& working_data)
+		{
+			// reset the state of working data - this shouldn't force a reallocation.
+			working_data.clear();
+
+			if (!CAN_SEE_OBJ(m_character, object))
+			{
+				working_data.append("Something.");
+				return;
+			}
+
+			working_data.append(object->short_description);
+
+			if (IS_OBJ_STAT(object, ITEM_INVISIBLE))
+			{
+				working_data.append("(invisible");
+			}
+
+			if (IS_OBJ_STAT(object, ITEM_EVIL) && IS_AFFECTED(m_character, AFF_DETECT_INVISIBLE))
+			{
+				working_data.append("..It glows red!");
+			}
+			if (IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(m_character, AFF_DETECT_MAGIC))
+			{
+				working_data.append("..It glows blue!");
+			}
+			if (IS_OBJ_STAT(object, ITEM_WILLPOWER) && IS_SHADOW(m_character))
+			{
+				working_data.append(" ..It has a powerful aura!");
+			}
+			if (IS_OBJ_STAT(object, ITEM_GLOW))
+			{
+				working_data.append("..It has a soft glowing aura!");
+			}
+			if (IS_OBJ_STAT(object, ITEM_HUM))
+			{
+				working_data.append("..It emits a faint humming sound!");
+			}
+			if (IS_OBJ_STAT(object, ITEM_BROKEN))
+			{
+				working_data.append(" (broken)");
+			}
+			if ((GET_ITEM_TYPE(object) == ITEM_LIGHT) && (object->obj_flags.value[2] && object->obj_flags.value[3]))
+			{
+				working_data.append("..It glows brightly.");
+			}
+		}
+
+		obj_data* m_root_object;
+		char_data* m_character;
+
+		// string that is used to store temporary work
+		std::string m_working_data;
+		std::vector<inventory_data> m_seen_items;
+	};
+}
+
 
 /* Procedures related to 'look' */
 void argument_split_2(char* argument, char* first_arg, char* second_arg)
@@ -214,24 +387,39 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
     send_to_char(buf, ch);
 }
 
-void list_obj_to_char(struct obj_data* list, struct char_data* ch,
-    int mode, char show)
+/** The 'show' flag is true for containers and false for rooms. */
+void list_obj_to_char(obj_data* list, char_data* ch, int mode, bool show)
 {
-    struct obj_data* i;
-    char found;
+	// TODO(drelidan):  Make this an enum and test appropriately.
+	int formatting_mode = 1;
+	if (show && formatting_mode > 0)
+	{
+		inventory_formatter formatter(ch->carrying, ch);
+		std::string inventory_message = formatter.format_inventory();
+		send_to_char(inventory_message.c_str(), ch);
+	}
+	else
+	{
+		bool found = show;
+		for (obj_data* root_object = list; root_object; root_object = root_object->next_content)
+		{
+			if (CAN_SEE_OBJ(ch, root_object))
+			{
+				show_obj_to_char(root_object, ch, mode);
+				found = true;
+			}
+			else if (show)
+			{
+				send_to_char("Something.\n\r", ch);
+			}
+		}
 
-    found = FALSE;
-    for (i = list; i; i = i->next_content) {
-        if (CAN_SEE_OBJ(ch, i)) {
-            show_obj_to_char(i, ch, mode);
-            found = TRUE;
-        } else if (show) {
-            found = TRUE;
-            send_to_char("Something.\n\r", ch);
-        }
-    }
-    if ((!found) && (show))
-        send_to_char(" Nothing.\n\r", ch);
+		// The character should get a report that the container is empty.
+		if (show && !found)
+		{
+			send_to_char(" Nothing.\n\r", ch);
+		}
+	}
 }
 
 void show_equipment_to_char(struct char_data* from, struct char_data* to)
@@ -721,7 +909,7 @@ void show_char_to_char(struct char_data* i, struct char_data* ch, int mode,
         }
     } else if (mode == 2) { /* Lists inventory */
         act("$n is carrying:", FALSE, i, 0, ch, TO_VICT);
-        list_obj_to_char(i->carrying, ch, 1, TRUE);
+        list_obj_to_char(i->carrying, ch, 1, true);
     }
 }
 
@@ -1081,7 +1269,7 @@ ACMD(do_look)
                             send_to_char(" (used) : \n\r", ch);
                             break;
                         }
-                        list_obj_to_char(tmp_object->contains, ch, 2, TRUE);
+                        list_obj_to_char(tmp_object->contains, ch, 2, true);
                     } else /* It was closed, pretty simple case */
                         send_to_char("It is closed.\n\r", ch);
                 } else /* They looked in something that isn't a container */
@@ -1320,7 +1508,7 @@ ACMD(do_look)
 
         /* Now list the objects in the room */
         send_to_char(CC_USE(ch, COLOR_OBJ), ch);
-        list_obj_to_char(world[ch->in_room].contents, ch, 0, FALSE);
+        list_obj_to_char(world[ch->in_room].contents, ch, 0, false);
         send_to_char(CC_NORM(ch), ch);
 
         /* Now list the people in the room */
@@ -2355,7 +2543,7 @@ ACMD(do_users)
 ACMD(do_inventory)
 {
     send_to_char("You are carrying:\n\r", ch);
-    list_obj_to_char(ch->carrying, ch, 1, TRUE);
+	list_obj_to_char(ch->carrying, ch, 1, true);
 }
 
 ACMD(do_equipment)

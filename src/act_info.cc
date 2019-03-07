@@ -141,6 +141,30 @@ namespace
 		}
 	};
 
+	bool use_inventory_formatter(char_data* character)
+	{
+		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+		return high_bit_set || low_bit_set;
+	}
+
+	bool use_alpha_sorting(char_data* character)
+	{
+		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+		return high_bit_set && !low_bit_set;
+	}
+
+	bool use_length_sorting(char_data* character)
+	{
+		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+		return high_bit_set && low_bit_set;
+	}
+
 	/* Class that will return the contents of a container in a formatted string. */
 	class inventory_formatter
 	{
@@ -165,9 +189,8 @@ namespace
 				return std::string(" Nothing.\n\r");
 			}
 
-			// TODO(drelidan): Query preferences for these.
-			bool sort_alpha = false;
-			bool sort_length = false;
+			bool sort_alpha = use_alpha_sorting(m_character);
+			bool sort_length = use_length_sorting(m_character);
 
 			if (sort_alpha)
 			{
@@ -390,9 +413,8 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
 /** The 'show' flag is true for containers and false for rooms. */
 void list_obj_to_char(obj_data* list, char_data* ch, int mode, bool show)
 {
-	// TODO(drelidan):  Make this an enum and test appropriately.
-	int formatting_mode = 1;
-	if (show && formatting_mode > 0)
+	bool use_formatter = use_inventory_formatter(ch);
+	if (show && use_formatter)
 	{
 		inventory_formatter formatter(ch->carrying, ch);
 		std::string inventory_message = formatter.format_inventory();

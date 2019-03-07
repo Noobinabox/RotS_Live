@@ -1237,8 +1237,106 @@ ACMD(do_shooting)
     send_to_char(buf, ch);
 }
 
-extern char* tactics[];
+extern const char* inv_sorting[];
+namespace
+{
+	bool has_argument(const char* argument)
+	{
+		return *argument != 0;
+	}
 
+	int get_sort_index(const char* argument)
+	{
+		size_t arg_len = strlen(argument);
+		for (int sort_index = 0; inv_sorting[sort_index][0] != '\n'; ++sort_index)
+		{
+			const char* sort_type = inv_sorting[sort_index];
+			if (strncmp(sort_type, argument, arg_len) == 0)
+			{
+				return sort_index;
+			}
+		}
+
+		return -1;
+	}
+
+	void set_sort_value(int sort_index, char_data* character)
+	{
+		int high_bit_value = (sort_index & 2) >> 1;
+		int low_bit_value = sort_index & 1;
+
+		if (high_bit_value != 0)
+		{
+			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+		}
+		else
+		{
+			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+		}
+
+		if (low_bit_value != 0)
+		{
+			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+		}
+		else
+		{
+			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+		}
+	}
+
+	void report_sort_choices_to(char_data* character)
+	{
+		sprintf(buf, "Possible sort choices are:\n\r   ");
+		for (int index = 0; inv_sorting[index][0] != '\n'; index++)
+		{
+			strcat(buf, inv_sorting[index]);
+			strcat(buf, " sorting.");
+			strcat(buf, "\n\r    ");
+		}
+
+		send_to_char(buf, character);
+	}
+
+	void report_inventory_sorting_to(char_data* character, const char* intro_string)
+	{
+		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+		int sort_value = high_bit_set << 1 | low_bit_set;
+
+		const char* sort_name = inv_sorting[sort_value];
+
+		sprintf(buf, "'%s' '%s'.", sort_name);
+		send_to_char(buf, character);
+	}
+}
+
+ACMD(do_inventory_sort)
+{
+	if (has_argument(argument))
+	{
+		int sort_index = get_sort_index(argument);
+		if (sort_index >= 0)
+		{
+			set_sort_value(sort_index, ch);
+
+			static const char* report_new_sort_string = "Your new inventory sorting method is";
+			report_inventory_sorting_to(ch, report_new_sort_string);
+		}
+		else
+		{
+			report_sort_choices_to(ch);
+		}
+	}
+	else
+	{
+		static const char* report_sort_string = "Your current inventory sorting method is";
+		report_inventory_sorting_to(ch, report_sort_string);
+	}
+}
+
+
+extern char* tactics[];
 ACMD(do_tactics)
 {
     char* s1 = "You are presently employing";
@@ -1370,6 +1468,8 @@ ACMD(do_language)
     return;
 }
 
+#define SORTING_COMMAND_INDEX 30
+
 char* change_comm[] = {
     "prompt", /* 0 */
     "tactics",
@@ -1396,11 +1496,12 @@ char* change_comm[] = {
     "spinner",
     "wiz",
     "roomflags",
-    "nohassle",
-    "holylight", /* 25 */
+    "nohassle", /* 25 */
+    "holylight", 
     "slowns",
     "shooting",
     "casting",
+	"sorting", /* 30 */
     "\n"
 };
 
@@ -1597,7 +1698,9 @@ ACMD(do_set)
     case 29:
         do_casting(ch, arg, wtl, 0, 0);
         break;
-
+	case SORTING_COMMAND_INDEX:
+		do_inventory_sort(ch, arg, wtl, 0, 0);
+		break;
     default:
         send_to_char("Undefined response to this argument.\n\r", ch);
         return;

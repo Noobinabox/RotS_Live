@@ -496,7 +496,7 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
 
         game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
         bool is_protected = !bb_instance.is_target_valid(viewer, looked_at);
-        if (looked_at->affected == false && is_protected == false && is_exposed_to_elements == false) {
+        if (looked_at->is_affected() == false && is_protected == false && is_exposed_to_elements == false) {
             sprintf(buf, "%s is not affected by anything.\n\r", strname);
             send_to_char(buf, viewer);
         } else {

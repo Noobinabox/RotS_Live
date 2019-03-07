@@ -1271,6 +1271,12 @@ void char_data::reset_skills()
 }
 
 //============================================================================
+bool char_data::is_affected() const
+{
+	return affected != nullptr;
+}
+
+//============================================================================
 // Specialization stuff!
 //============================================================================
 void cold_spec_data::on_chill_applied(int chill_amount)
@@ -1567,7 +1573,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
     }
 
     float combat_seconds = std::max(elapsed_combat_seconds, 0.5f);
-    float dps = total_damage_dealt / combat_seconds;
+    float dps = static_cast<float>(total_damage_dealt) / combat_seconds;
     message_writer << "-------------------------------------------------------------------------------" << std::endl;
     message_writer << "Total Damage: " << total_damage_dealt;
     message_writer << "; Combat Time: " << combat_seconds;

@@ -1651,6 +1651,9 @@ public:
 	// Resets all known skills and practice sessions for a character.
 	void reset_skills();
 
+	// returns true if the affected pointer is valid
+	bool is_affected() const;
+
 public:
     int abs_number; /* bit number in the control array */
     int player_index; /* Index in player table */

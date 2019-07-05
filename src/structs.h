@@ -371,6 +371,9 @@ struct waiting_type {
     struct char_data* next;
 };
 
+#define WEAPON_POISON_DUR 60
+
+
 struct obj_flag_data {
 public:
     int get_ob_coef() const { return value[0]; }
@@ -390,6 +393,12 @@ public:
     // Returns true if the object can be equipped.
     bool is_wearable() const;
 
+    // Poison information
+    bool is_weapon_poisoned() const { return poisoned; }
+    int get_poison_duration() const { return poisondata[0]; }
+    int get_poison_strength() const { return poisondata[1]; }
+    int get_poison_multipler() const { return poisondata[2]; }
+
 public:
     int value[5]; /* Values of the item (see list) */ /*changed*/
     byte type_flag; /* Type of item                     */
@@ -407,7 +416,10 @@ public:
     int prog_number; /* for special objects... */
     int script_number; /* identifies the script which is triggered under certain conditions */
     struct info_script* script_info; /* Pointer to char_script (protos.h) 0 if no script */
+    bool poisoned;
+    int poisondata[5];
 };
+
 
 /* Wraps the object_flag_data and exposes values that are used for weapons. */
 struct weapon_flag_data {
@@ -426,6 +438,8 @@ struct weapon_flag_data {
 private:
     obj_flag_data* object_flag_data;
 };
+
+
 
 /* Used in OBJ_FILE_ELEM *DO*NOT*CHANGE* */
 struct obj_affected_type {

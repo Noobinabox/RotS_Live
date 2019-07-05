@@ -55,6 +55,8 @@ extern void appear(struct char_data* ch);
 extern void check_break_prep(struct char_data*);
 extern void stop_hiding(struct char_data* ch, char);
 extern void update_pos(struct char_data* victim);
+int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
+extern void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon);
 
 const int GATHER_FOOD = 7218;
 const int GATHER_LIGHT = 7007;
@@ -845,6 +847,7 @@ ACMD(do_ambush)
     struct char_data* victim;
     int success;
     int dmg;
+    
 
     if (IS_AFFECTED(ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -876,8 +879,12 @@ ACMD(do_ambush)
         return;
     }
 
-    if ((ch->equipment[WIELD]->obj_flags.value[2] > 2)) {
-        if ((GET_RACE(ch) != RACE_HARADRIM) || (ch->equipment[WIELD]->obj_flags.value[3] != TYPE_SPEARS)) {
+    struct obj_data* weapon;
+    weapon = ch->equipment[WIELD];
+    game_types::weapon_type w_type = weapon->get_weapon_type();
+
+    if ((weapon->obj_flags.value[2] > 2)) {
+        if ((GET_RACE(ch) != RACE_HARADRIM) || (weapon_skill_num(w_type) != SKILL_SPEARS)) {
             send_to_char("You need to wield a smaller weapon to surprise your victim.\r\n", ch);
             return;
         }
@@ -2404,6 +2411,7 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
     sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
     mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
     damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
+    check_weapon_poison(archer, victim, arrow);
 }
 
 //============================================================================
@@ -3246,12 +3254,12 @@ char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
     return victim;
 }
 
-int dust_calculate_success(char_data* ch, char_data* victim)
+int harad_skill_calculate_save(char_data* ch, char_data* victim, int skill_check)
 {
     int random_roll = number(0, 99);
 
     // Attacker calculations
-    int ch_blind_skill = utils::get_skill(*ch, SKILL_BLINDING);
+    int ch_skill = utils::get_skill(*ch, skill_check);
     int ch_ranger_level = utils::get_prof_level(PROF_RANGER, *ch);
     int ch_dex = ch->get_cur_dex();
 
@@ -3262,7 +3270,7 @@ int dust_calculate_success(char_data* ch, char_data* victim)
     int victim_dodge = get_real_dodge(victim);
 
     // TODO: Needs to be tweaked / balanced
-    int attack_dc = ch_blind_skill + ch_ranger_level + ch_dex + random_roll;
+    int attack_dc = ch_skill + ch_ranger_level + ch_dex + random_roll;
     int victim_save = victim_dex + victim_dodge + victim_ranger_level + (victim_con / 4);
 
     return attack_dc - victim_save;
@@ -3385,7 +3393,7 @@ ACMD(do_blinding)
             return;
         }
 
-        int percent_hit = dust_calculate_success(ch, victim);
+        int percent_hit = harad_skill_calculate_save(ch, victim, SKILL_BLINDING);
         if (percent_hit < 0) {
             on_dust_miss(ch, victim, mana_cost);
         } else {
@@ -3408,7 +3416,7 @@ ACMD(do_blinding)
     }
 }
 
-bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
+bool can_harad_use_skill(char_data* ch, int mana_cost, int move_cost, int skill)
 {
     const room_data& room = world[ch->in_room];
     if (GET_RACE(ch) != RACE_HARADRIM) {
@@ -3432,7 +3440,7 @@ bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
         return false;
     }
 
-    if (utils::get_skill(*ch, SKILL_BEND_TIME) == 0) {
+    if (utils::get_skill(*ch, skill) == 0) {
         send_to_char("Learn how to bend time first.\r\n", ch);
         return false;
     }
@@ -3450,11 +3458,11 @@ bool can_ch_bendtime(char_data* ch, int mana_cost, int move_cost)
     return true;
 }
 
-bool check_bend_success(char_data* ch)
+bool check_skill_success(char_data* ch, int skill)
 {
-    int bend_skill = utils::get_skill(*ch, SKILL_BEND_TIME);
+    int skill_percent = utils::get_skill(*ch, skill);
     int roll = number(1, 99);
-    if (roll > bend_skill)
+    if (roll > skill_percent)
         return false;
     else
         return true;
@@ -3500,7 +3508,7 @@ ACMD(do_bendtime)
         return;
     }
 
-    if (!can_ch_bendtime(ch, mana_cost, move_cost)) {
+    if (!can_harad_use_skill(ch, mana_cost, move_cost, SKILL_BEND_TIME)) {
         return;
     }
 
@@ -3520,7 +3528,7 @@ ACMD(do_bendtime)
         WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
-        if (check_bend_success(ch))
+        if (check_skill_success(ch, SKILL_BEND_TIME))
             on_bend_success(ch, mana_cost, move_cost);
         else {
             GET_MANA(ch) -= (mana_cost / 2);
@@ -3534,5 +3542,158 @@ ACMD(do_bendtime)
         mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
         abort_delay(ch);
     } break;
+    }
+}
+
+
+void on_windblast_hit(char_data* ch)
+{
+    int i, attempt, res, die, move_cost = 0;
+    struct char_data* tmpch;
+    stop_riding(ch);
+    if (GET_TACTICS(ch) == TACTICS_BERSERK) {
+        send_to_char("You stand your ground against the blast of thunderous force!", ch);
+        return;
+    }
+
+    if(GET_POS(ch) < POSITION_FIGHTING)
+        return;
+
+    for (i = 0; i < 6; i++) {
+        attempt = number(0, NUM_OF_DIRS - 1);
+        res = CAN_GO(ch, attempt) && !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOFLEE) && !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOWALK);
+
+        if (res) {
+            res = !IS_SET(world[EXIT(ch, attempt)->to_room].room_flags, DEATH);
+            if (IS_NPC(ch)) {
+                res = res && ((!IS_SET(ch->specials2.act, MOB_STAY_ZONE) || (world[EXIT(ch, attempt)->to_room].zone == world[ch->in_room].zone)) && (!IS_SET(ch->specials2.act, MOB_STAY_TYPE) || (world[EXIT(ch, attempt)->to_room].sector_type == world[ch->in_room].sector_type)));
+            }
+        }
+
+        if (res) {
+            die = check_simple_move(ch, attempt, &move_cost, SCMD_FLEE);
+            if(!die) {
+                if(ch->specials.fighting) {
+                    for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                        if(tmpch->specials.fighting == ch) {
+                            stop_fighting(tmpch);
+                        }
+                    }
+                    stop_fighting(ch);
+                }
+
+                if (IS_AFFECTED(ch, AFF_HUNT)) {
+                    REMOVE_BIT(ch->specials.affected_by, AFF_HUNT);
+                }
+
+                send_to_char("A wave of thunderous force sweeps you out!", ch);
+                act("$n gets sweep out from the wave of thunderous force!", FALSE, ch, 0, 0, TO_ROOM);
+                do_move(ch, dirs[attempt], 0, attempt +1, SCMD_FLEE);
+                return;
+            }
+        }
+    }
+    send_to_char("A wave of thunderous force sweeps you off your feet!", ch);
+    act("$n gets sweep off their feet from a thunderous wave of force!", TRUE, ch, 0, 0, TO_ROOM);
+
+    return;
+}
+
+
+void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
+{
+    int dam_value, tmp, power_level;
+    struct char_data *tmpch, *tmpch_next;
+    room_data* cur_room;
+
+    GET_MANA(ch) -= mana_cost;
+    GET_MOVE(ch) -= move_cost;
+
+    if(ch->in_room == NOWHERE)
+        return;
+
+    power_level = utils::get_prof_level(PROF_RANGER, *ch) / 2;
+    
+    cur_room = &world[ch->in_room];
+
+    dam_value = number(1, 30) + power_level;
+
+    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+
+    for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
+        tmpch_next = tmpch->next_in_room;
+        if (tmpch != ch) {
+            
+            if (!bb_instance.is_target_valid(ch, tmpch)) {
+                send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+                continue;
+            }
+
+            int saved = harad_skill_calculate_save(ch, tmpch, 0);
+            if (saved < 0) {
+                dam_value >> 1;
+                damage(ch, tmpch, dam_value, SKILL_WINDBLAST, 0);
+            }
+            else {
+                on_windblast_hit(tmpch);
+                damage(ch, tmpch, dam_value, SKILL_WINDBLAST, 0);
+            }
+        }
+    }
+
+}
+
+/*=================================================================================
+  do_windblast:
+  This is a race specific harad ability. Each creature in the room must make a
+  saving throw. Any creature that fails their saving throw takes damage and are
+  pushed out of the room, random directions. On a successful save, they take reduced
+  damage.
+  ------------------------------Change Log---------------------------------------
+  slyon: Feb 17, 2019 - Created
+==================================================================================*/
+ACMD(do_windblast)
+{
+    const int mana_cost = skills[SKILL_BLINDING].min_usesmana;
+    const int move_cost = 40;
+
+    one_argument(argument, arg);
+
+    if(subcmd == -1) {
+        send_to_char("You could not concentrate anymore!\r\n", ch);
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
+        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+        return;
+    }
+
+    if (!can_harad_use_skill(ch, mana_cost, move_cost, SKILL_WINDBLAST)) {
+        return;
+    }
+
+    switch(subcmd) {
+        case 0: {
+            wtl->targ1.cleanup();
+            wtl->targ2.cleanup();
+
+            send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
+            act("$n begins quietly muttering some strange, foreign powerful words.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+            WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        } break;
+        case 1: {
+            if (check_skill_success(ch, SKILL_WINDBLAST)) {
+                on_windblast_success(ch, mana_cost, move_cost);
+            }
+            else {
+                GET_MANA(ch) -= (mana_cost / 2);
+                GET_MOVE(ch) -= (move_cost / 2);
+                send_to_char("You lost your concentration!\r\n", ch);
+            }
+        } break;
+        default: {
+            sprintf(buf2, "do_windblast: illegal subcommand '%d'.\r\n", subcmd);
+            mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+            abort_delay(ch);
+        } break;
     }
 }

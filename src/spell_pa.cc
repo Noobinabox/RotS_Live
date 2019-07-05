@@ -308,8 +308,8 @@ char saves_mystic(struct char_data* ch)
 char saves_poison(struct char_data* victim, struct char_data* caster)
 {
     int offence, defense;
-
-    offence = ((GET_WILLPOWER(caster) * 8) * GET_PERCEPTION(caster)) / 100;
+    int perception = IS_NPC(caster) ? 100 : GET_PERCEPTION(caster);
+    offence = ((GET_WILLPOWER(caster) * 8) * perception) / 100;
     /* wood elves get a bonus against poison */
     defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
 

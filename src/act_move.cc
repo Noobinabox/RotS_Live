@@ -1283,8 +1283,7 @@ ACMD(do_enter)
         for (door = 0; door < NUM_OF_DIRS; door++)
             if (EXIT(ch, door))
                 if (EXIT(ch, door)->to_room != NOWHERE)
-                    if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) && IS_SET(world[EXIT(ch, door)->to_room].room_flags,
-                                                                             INDOORS)) {
+                    if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) && IS_SET(world[EXIT(ch, door)->to_room].room_flags, INDOORS)) {
                         do_move(ch, "", wtl, ++door, 0);
                         return;
                     }

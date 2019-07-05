@@ -389,6 +389,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_SPEED:
+        GET_ENE_REGEN(ch) += mod;
         break;
 
     case APPLY_BEND: {
@@ -872,7 +873,7 @@ affected_type* affected_by_spell(const char_data* ch, byte skill, affected_type*
         start_affect = ch->affected;
 
     int count = 0;
-    for (affected_type *status_affect = start_affect; status_affect && (count < MAX_AFFECT); status_affect = status_affect->next, count++) {
+    for (affected_type* status_affect = start_affect; status_affect && (count < MAX_AFFECT); status_affect = status_affect->next, count++) {
         if (status_affect->type == skill) {
             return status_affect;
         }

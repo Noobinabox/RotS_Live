@@ -52,6 +52,7 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SKILL_NATURAL_ATTACK);
     m_harmful_skills.insert(SKILL_REND);
     m_harmful_skills.insert(SKILL_BLINDING);
+    m_harmful_skills.insert(SKILL_MARK);
     m_harmful_skills.insert(SPELL_HAZE);
     m_harmful_skills.insert(SPELL_FEAR);
     m_harmful_skills.insert(SPELL_POISON);
@@ -81,6 +82,7 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SPELL_BLACK_ARROW);
     m_harmful_skills.insert(SPELL_CONFUSE);
     m_harmful_skills.insert(SKILL_TRAP);
+    m_harmful_skills.insert(SKILL_WINDBLAST);
     m_harmful_skills.insert(TYPE_HIT);
     m_harmful_skills.insert(TYPE_BLUDGEON);
     m_harmful_skills.insert(TYPE_PIERCE);

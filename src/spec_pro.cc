@@ -341,7 +341,7 @@ ACMD(do_practice)
             else if (skills[tmp].type == PROF_CLERIC)
                 sprintf(str2, "(%3d time, %3d spirit)",
                     CASTING_TIME(ch, tmp), USE_SPIRIT(ch, tmp));
-            else if (tmp == SKILL_BEND_TIME )
+            else if (tmp == SKILL_BEND_TIME)
                 sprintf(str2, "(%3d time,   %3d stamina)",
                     skills[tmp].beats, ch->abilities.mana);
             else if (tmp == SKILL_MARK)
@@ -350,11 +350,10 @@ ACMD(do_practice)
             else if (tmp == SKILL_ARCHERY)
                 sprintf(str2, "(%3d time)",
                     shoot_calculate_wait(ch));
-            else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {                
+            else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {
                 sprintf(str2, "(%3d time,   %3d stamina)",
                     skills[tmp].beats, USE_MANA(ch, tmp));
-            }
-            else if (CASTING_TIME(ch, tmp))
+            } else if (CASTING_TIME(ch, tmp))
                 sprintf(str2, "(%3d time)",
                     skills[tmp].beats);
             else

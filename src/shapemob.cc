@@ -826,8 +826,7 @@ void shape_center_proto(struct char_data* ch, char* arg)
                 ch->specials.prompt_number = 3;
                 return;
             } else {
-                if (6 != sscanf(arg, "%d %d %d %d %d %d",
-                             &tmp, &tmp1, &tmp2, &tmp3, &tmp4, &tmp5)) {
+                if (6 != sscanf(arg, "%d %d %d %d %d %d", &tmp, &tmp1, &tmp2, &tmp3, &tmp4, &tmp5)) {
                     send_to_char("six numbers required. dropped\n\r", ch);
                     REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DIGIT_ACTIVE);
                     shape_standup(ch, SHAPE_PROTO(ch)->position);

@@ -73,7 +73,7 @@ private:
             , killer_id(-1)
             , player_id(0)
             , is_npc(false)
-            , is_killer_pc(false){};
+            , is_killer_pc(false) {};
         player_corpse_data(char_data* dead_man);
         player_corpse_data(char_data* dead_man, char_data* killer);
 

@@ -146,13 +146,13 @@ void show_command(char* str, struct zone_tree* zon)
 
         break;
 
-    //   case 'L':   /* Load object, random */
+        //   case 'L':   /* Load object, random */
 
-    //     sprintf(str,"%3d L:: Ld_flg(%d) Type:%d toRom:%d, MxToRom:%d Prb:%d LvlGen:%d Good:%d\n\r     %s\n\r",
-    // 	    zon->number,com->if_flag, com->arg1,com->arg2,com->arg3,
-    // 	    com->arg4,com->arg5,com->arg6,zon->comment);
+        //     sprintf(str,"%3d L:: Ld_flg(%d) Type:%d toRom:%d, MxToRom:%d Prb:%d LvlGen:%d Good:%d\n\r     %s\n\r",
+        // 	    zon->number,com->if_flag, com->arg1,com->arg2,com->arg3,
+        // 	    com->arg4,com->arg5,com->arg6,zon->comment);
 
-    //     break;
+        //     break;
 
     case 'G': /* give object to the last 'M' loaded mob */
 

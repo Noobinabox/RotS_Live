@@ -901,7 +901,7 @@ bool can_see_object(const char_data& character, const obj_data& object, const we
     } else {
         return can_see(character, weather, room)
             && (!utils::is_set(item_flags, ITEM_INVISIBLE)
-                   || is_affected_by(character, AFF_DETECT_INVISIBLE));
+                || is_affected_by(character, AFF_DETECT_INVISIBLE));
     }
 }
 

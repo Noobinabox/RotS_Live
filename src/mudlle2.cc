@@ -107,8 +107,7 @@ void TO_LIST(struct char_data* host, void* entr, int type)
 
     if (tmp == SPECIAL_STACKLEN) {
         for (tmp2 = 0, tmp = SPECIAL_LIST_HEAD(host);
-             (tmp2 < SPECIAL_STACKLEN) && (SPECIAL_LIST_AREA(host)->next[(int)tmp]
-                                              >= 0);
+             (tmp2 < SPECIAL_STACKLEN) && (SPECIAL_LIST_AREA(host)->next[(int)tmp] >= 0);
              tmp2++, tmp = SPECIAL_LIST_AREA(host)->next[(int)tmp])
             ;
     }
@@ -154,8 +153,7 @@ void TO_LIST(struct char_data* host, target_data* newtarg)
 
     if (tmp == SPECIAL_STACKLEN) {
         for (tmp2 = 0, tmp = SPECIAL_LIST_HEAD(host);
-             (tmp2 < SPECIAL_STACKLEN) && (SPECIAL_LIST_AREA(host)->next[(int)tmp]
-                                              >= 0);
+             (tmp2 < SPECIAL_STACKLEN) && (SPECIAL_LIST_AREA(host)->next[(int)tmp] >= 0);
              tmp2++, tmp = SPECIAL_LIST_AREA(host)->next[(int)tmp])
             ;
     }

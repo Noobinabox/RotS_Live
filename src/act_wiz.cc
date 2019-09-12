@@ -1535,8 +1535,7 @@ ACMD(do_advance)
                 GET_NAME(ch), GET_NAME(victim), newlevel, GET_LEVEL(victim));
             log(buf);
             if (adv > 0)
-                gain_exp_regardless(victim, (xp_to_level(GET_LEVEL(victim) + adv)
-                                                - GET_EXP(victim)));
+                gain_exp_regardless(victim, (xp_to_level(GET_LEVEL(victim) + adv) - GET_EXP(victim)));
 
             if (adv < 0) {
                 int n;

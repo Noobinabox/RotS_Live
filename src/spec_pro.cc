@@ -391,8 +391,12 @@ ACMD(do_pracreset)
         send_to_char("This person cannot learn anything, don't bother yourself.\n\r", ch);
         return;
     }
+    for (tmp = 0; tmp < MAX_SKILLS; tmp++) {
+        vict->knowledge[tmp] = 0;
+        vict->skills[tmp] = 0;
+        vict->specials2.spells_to_learn = GET_LEVEL(vict) * PRACS_PER_LEVEL + GET_LEVEL(vict) * GET_LEA(vict) / LEA_PRAC_FACTOR + 10;
+    }
 
-	vict->reset_skills();
     utils::set_specialization(*vict, game_types::PS_None);
 
     SET_SHOOTING(vict, SHOOTING_NORMAL);

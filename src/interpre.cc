@@ -32,8 +32,8 @@
 #include "char_utils.h"
 
 #define COMMANDO(number, min_pos, pointer, min_level,    \
-                 retired, subcommand, targfl1, targfl2,  \
-                 special_mask)                           \
+    retired, subcommand, targfl1, targfl2,               \
+    special_mask)                                        \
     {                                                    \
         cmd_info[(number)].command_pointer = (pointer);  \
         cmd_info[(number)].minimum_position = (min_pos); \

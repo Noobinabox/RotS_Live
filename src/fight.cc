@@ -1946,7 +1946,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
 }
 
 
-bool does_victim_save_on_weapon_poison(struct char_data *victim,struct obj_data *weapon)
+bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data* weapon)
 {
     int multipler = weapon->obj_flags.get_poison_multipler();
     int strength = weapon->obj_flags.get_poison_strength();
@@ -1958,15 +1958,17 @@ bool does_victim_save_on_weapon_poison(struct char_data *victim,struct obj_data 
 
 void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
 {
-    if(weapon == NULL) {
+
+    if (weapon == NULL) {
         return;
     }
 
-    if(!weapon->obj_flags.is_weapon_poisoned()) {
+    if (!weapon->obj_flags.is_weapon_poisoned()) {
         return;
     }
 
-    if(does_victim_save_on_weapon_poison(victim, weapon)) {
+    if (does_victim_save_on_weapon_poison(victim, weapon)) {
+
         act("You feel your body fend off the poison.", TRUE, attacker, 0, victim, TO_VICT);
         return;
     }
@@ -1980,11 +1982,9 @@ void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapo
     affect_join(victim, &af, FALSE, FALSE);
 
     damage(attacker, victim, 5, SPELL_POISON, 0);
-    
     weapon->obj_flags.poisoned = false;
     return;
 }
-
 
 
 /*UPDATE* integreate parry message with other messages */

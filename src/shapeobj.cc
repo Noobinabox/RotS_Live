@@ -142,7 +142,8 @@ void write_object(FILE* f, struct obj_data* obj, int num)
 
 	  obj->obj_flags.value[3],obj->obj_flags.value[4]);
 
-*/ fprintf(f, "%d %d %d %d %d\n\r", obj->obj_flags.value[0],
+*/
+    fprintf(f, "%d %d %d %d %d\n\r", obj->obj_flags.value[0],
 
         obj->obj_flags.value[1], obj->obj_flags.value[2],
 

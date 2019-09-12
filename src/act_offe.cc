@@ -967,6 +967,12 @@ ACMD(do_disengage)
 }
 
 //============================================================================
+ACMD(do_beorning)
+{
+    return;
+}
+
+//============================================================================
 bool can_bear_skill(char_data* ch, int skill)
 {
     using namespace utils;
@@ -976,7 +982,7 @@ bool can_bear_skill(char_data* ch, int skill)
     }
 
     if (is_shadow(*ch)) {
-        send_to_char("Hmm, perhaps you've spent too much time in the mortal lands.\r\n", ch);
+        send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
         return false;
     }
 

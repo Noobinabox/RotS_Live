@@ -1232,7 +1232,7 @@ ACMD(do_look)
                         if (IS_SET(world[ch->in_room].dir_option[i]->exit_info,
                                 EX_CLOSED)
                             && !IS_SET(world[ch->in_room].dir_option[i]->exit_info,
-                                   EX_ISBROKEN)) {
+                                EX_ISBROKEN)) {
                             exit_choice = 2; /* Denotes a normal, closed door */
 
                             if (IS_SET(world[ch->in_room].dir_option[i]->exit_info,
@@ -1259,8 +1259,7 @@ ACMD(do_look)
 	     * exit_choice 5 means a darkie is looking at an exit which
 	     * leads to a sunlit room
 	     */
-                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SUNLIT_EXIT(ch->in_room,
-                                                                                                                                                                 world[ch->in_room].dir_option[i]->to_room, i))
+                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SUNLIT_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i))
                             if (exit_choice != 4)
                                 exit_choice = 5;
 
@@ -1269,8 +1268,7 @@ ACMD(do_look)
 	     * leads to a shadowy room, AND the sun is shining in that
 	     * room.
 	     */
-                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SHADOWY_EXIT(ch->in_room,
-                                                                                                                                                                 world[ch->in_room].dir_option[i]->to_room, i)
+                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SHADOWY_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i)
                             && weather_info.sunlight == SUN_LIGHT)
                             if (exit_choice != 4)
                                 exit_choice = 6;
@@ -1426,8 +1424,7 @@ ACMD(do_exits)
             if (EXIT(ch, door)->to_room != NOWHERE) {
                 tmp = IS_SET(EXIT(ch, door)->exit_info, EX_NOWALK) && IS_SET(EXIT(ch, door)->exit_info, EX_ISHIDDEN);
 
-                if (!tmp && (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)
-                                || IS_SET(EXIT(ch, door)->exit_info, EX_ISBROKEN))) {
+                if (!tmp && (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) || IS_SET(EXIT(ch, door)->exit_info, EX_ISBROKEN))) {
                     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
                         sprintf(buf + strlen(buf), "%-7s - [%7d][w:%2d] %s\n\r",
                             exits[door], world[EXIT(ch, door)->to_room].number,
@@ -4189,84 +4186,186 @@ char* extra_messages[] = {
 char* value_array[][5] = {
 
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     },
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Light source handled by do_display_light */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Scroll not used */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Wand not used */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Staff not used*/
     {
-        "Offensive Bonus", "Parry Bonus    ", "Bulk           ",
-        "", "",
+        "Offensive Bonus",
+        "Parry Bonus    ",
+        "Bulk           ",
+        "",
+        "",
     }, /* Weapons Display */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Fire weapons ?, what the hell is this anyway */
     {
-        "To Hit", "To Damage", "Character ID", "Break Percentage", "",
+        "To Hit",
+        "To Damage",
+        "Character ID",
+        "Break Percentage",
+        "",
     }, /* Missile Weapon */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Treasure */
     {
-        "", "Min Absorbtion", "Encumberance  ",
-        "Dodge         ", "",
+        "",
+        "Min Absorbtion",
+        "Encumberance  ",
+        "Dodge         ",
+        "",
     }, /* Armour */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* small potion */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* worn ? */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* other */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Trash */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Trap */
     {
-        "Capacity", "Locktype", "", "", "",
+        "Capacity",
+        "Locktype",
+        "",
+        "",
+        "",
     }, /* Container */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* note */
     {
-        "Capacity    ", "Ammount Left", "", "", "",
+        "Capacity    ",
+        "Ammount Left",
+        "",
+        "",
+        "",
     }, /* Drink Container */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Key */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Food, handled by do_food_display */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Money */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Pen */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Money */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Fountain */
     {
-        "Dodge Bonus ", "Parry Bonus ", "Encumberance", "", "",
+        "Dodge Bonus ",
+        "Parry Bonus ",
+        "Encumberance",
+        "",
+        "",
     }, /* Shield */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Lever */
 };
 
@@ -4437,10 +4536,9 @@ void do_identify_object(struct char_data* ch, struct obj_data* j)
                  "This %s can be%s\r\n",
         item_messages[GET_ITEM_TYPE(j)],
         j->obj_flags.material >= 0 && j->obj_flags.material < num_of_object_materials ? material_messages
-                                                                                            [j->obj_flags.material]
+                [j->obj_flags.material]
                                                                                       : "an unknown substance",
-        j->obj_flags.weight / 100., item_messages
-                                        [GET_ITEM_TYPE(j)],
+        j->obj_flags.weight / 100., item_messages[GET_ITEM_TYPE(j)],
         buf2);
     send_to_char(buf, ch);
 

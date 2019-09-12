@@ -186,7 +186,7 @@ ACMD(do_wiztrack)
         break;
     default:
 
-/* 
+        /* 
 	  * if you want to make this into a skill instead of a command,
 	  * the next few lines make it give you a random direction if you
           * fail the random skill roll.

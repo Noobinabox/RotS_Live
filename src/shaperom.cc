@@ -836,7 +836,7 @@ void shape_center_room(struct char_data* ch, char* arg)
                     ->editflag
                     = room_chain[12];
             break;
-        /*-----------extra descriptions stuff-------------------*/
+            /*-----------extra descriptions stuff-------------------*/
 
         case 15:
             tmpdescr = mob->ex_description;
@@ -907,7 +907,7 @@ void shape_center_room(struct char_data* ch, char* arg)
                 = 0;
             break;
 
-        /*  Code below removed as it is unstable. fingolfin, december 2001
+            /*  Code below removed as it is unstable. fingolfin, december 2001
 
       if(!mob->affected){
 	send_to_char("No room affections found.\n\r",ch);
@@ -954,7 +954,7 @@ void shape_center_room(struct char_data* ch, char* arg)
                 = 0;
             break;
 
-        /*  Code below removed as it is unstable. fingolfin, december 2001
+            /*  Code below removed as it is unstable. fingolfin, december 2001
 
       tmpaf = get_from_affected_type_pool();
       tmpaf->next = SHAPE_ROOM(ch)->room->affected;
@@ -976,7 +976,7 @@ void shape_center_room(struct char_data* ch, char* arg)
                 = 0;
             break;
 
-/*  Code below removed as it is unstable. fingolfin, december 2001
+            /*  Code below removed as it is unstable. fingolfin, december 2001
 
       if(!SHAPE_ROOM(ch)->room->affected){
 	send_to_char("No affections exist on this room.\n\r",ch);

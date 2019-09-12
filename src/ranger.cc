@@ -1337,7 +1337,7 @@ ACMD(do_calm)
                 ch);
             return;
         }
-/* #define is here for readability only. */
+        /* #define is here for readability only. */
 
 #define CALM_WAIT_BEATS \
     skills[SKILL_CALM].beats * 2 * GET_LEVEL(victim) / (GET_PROF_LEVEL(PROF_RANGER, ch) + calm_skill / 15)
@@ -3556,7 +3556,9 @@ void on_windblast_hit(char_data* ch)
         return;
     }
 
-    if(GET_POS(ch) < POSITION_FIGHTING)
+
+    if (GET_POS(ch) < POSITION_FIGHTING)
+
         return;
 
     for (i = 0; i < 6; i++) {
@@ -3572,10 +3574,11 @@ void on_windblast_hit(char_data* ch)
 
         if (res) {
             die = check_simple_move(ch, attempt, &move_cost, SCMD_FLEE);
-            if(!die) {
-                if(ch->specials.fighting) {
-                    for(tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                        if(tmpch->specials.fighting == ch) {
+
+            if (!die) {
+                if (ch->specials.fighting) {
+                    for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                        if (tmpch->specials.fighting == ch) {
                             stop_fighting(tmpch);
                         }
                     }
@@ -3588,7 +3591,8 @@ void on_windblast_hit(char_data* ch)
 
                 send_to_char("A wave of thunderous force sweeps you out!", ch);
                 act("$n gets sweep out from the wave of thunderous force!", FALSE, ch, 0, 0, TO_ROOM);
-                do_move(ch, dirs[attempt], 0, attempt +1, SCMD_FLEE);
+
+                do_move(ch, dirs[attempt], 0, attempt + 1, SCMD_FLEE);
                 return;
             }
         }
@@ -3609,11 +3613,12 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     GET_MANA(ch) -= mana_cost;
     GET_MOVE(ch) -= move_cost;
 
-    if(ch->in_room == NOWHERE)
+
+    if (ch->in_room == NOWHERE)
         return;
 
     power_level = utils::get_prof_level(PROF_RANGER, *ch) / 2;
-    
+
     cur_room = &world[ch->in_room];
 
     dam_value = number(1, 30) + power_level;
@@ -3623,7 +3628,6 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
-            
             if (!bb_instance.is_target_valid(ch, tmpch)) {
                 send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
                 continue;
@@ -3633,14 +3637,12 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
             if (saved < 0) {
                 dam_value >> 1;
                 damage(ch, tmpch, dam_value, SKILL_WINDBLAST, 0);
-            }
-            else {
+            } else {
                 on_windblast_hit(tmpch);
                 damage(ch, tmpch, dam_value, SKILL_WINDBLAST, 0);
             }
         }
     }
-
 }
 
 /*=================================================================================
@@ -3659,7 +3661,8 @@ ACMD(do_windblast)
 
     one_argument(argument, arg);
 
-    if(subcmd == -1) {
+
+    if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\r\n", ch);
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
@@ -3671,29 +3674,28 @@ ACMD(do_windblast)
         return;
     }
 
-    switch(subcmd) {
-        case 0: {
-            wtl->targ1.cleanup();
-            wtl->targ2.cleanup();
+    switch (subcmd) {
+    case 0: {
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
 
-            send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
-            act("$n begins quietly muttering some strange, foreign powerful words.\r\n", FALSE, ch, 0, 0, TO_ROOM);
-            WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
-        } break;
-        case 1: {
-            if (check_skill_success(ch, SKILL_WINDBLAST)) {
-                on_windblast_success(ch, mana_cost, move_cost);
-            }
-            else {
-                GET_MANA(ch) -= (mana_cost / 2);
-                GET_MOVE(ch) -= (move_cost / 2);
-                send_to_char("You lost your concentration!\r\n", ch);
-            }
-        } break;
-        default: {
-            sprintf(buf2, "do_windblast: illegal subcommand '%d'.\r\n", subcmd);
-            mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
-            abort_delay(ch);
-        } break;
+        send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
+        act("$n begins quietly muttering some strange, foreign powerful words.\r\n", FALSE, ch, 0, 0, TO_ROOM);
+        WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+    } break;
+    case 1: {
+        if (check_skill_success(ch, SKILL_WINDBLAST)) {
+            on_windblast_success(ch, mana_cost, move_cost);
+        } else {
+            GET_MANA(ch) -= (mana_cost / 2);
+            GET_MOVE(ch) -= (move_cost / 2);
+            send_to_char("You lost your concentration!\r\n", ch);
+        }
+    } break;
+    default: {
+        sprintf(buf2, "do_windblast: illegal subcommand '%d'.\r\n", subcmd);
+        mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
+        abort_delay(ch);
+    } break;
     }
 }

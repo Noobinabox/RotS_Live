@@ -18,6 +18,7 @@ Skill list compiled by Vaitya, 01/19/2002
 |(2) Kick          |                  ||(2) Hide          |(20) Riposte      |
 |__________________|__________________||__________________|__________________|
 | See MAN SKILL BEORNING to see skill list specific to BEORNING.             |
+| See MAN SKILL HARADRIM to see skill list specific to HARADRIMS.             |
 \___________________________________________________________________________/
 #
 BEORNING
@@ -37,6 +38,77 @@ BEORNING SPECIFIC SKILLS__
 |__________________________|
 
 See also: MAN SKILL LIST
+
+#
+HARADRIM HARAD HARADRIMS
+
+See help on each Haradrim skill as "man skill <name of skill>"
+Note that Haradrim are also able to train several skills known to 
+other races. 
+
+BEORNING SPECIFIC SKILLS__
+/ (level)        skill    \
+|__________________________|
+| (15) Mark                |
+| (24) Wind Blast          |
+| (27) Blind               |
+| (30) Bend Time           |
+|__________________________|
+
+See also: MAN SKILL LIST
+
+#
+MARK
+
+[Syntax      ] mark <target>
+[Group       ] Ranger
+[Level       ] 15
+[Offensive   ] Yes
+[Description ]
+--- The Mark skill will create a festuring wound on the target. This skill has
+a mana and move requirement to be used. After using mark on a target that 
+target will leave a blood trail in any room they leave, and only the Haradrim
+are able to see it. In addition to leaving a blood trail, Mark will slow down
+the targets targets movement and health regeneration. If the target casts any
+health or movement regeneration spell it will reduce the duration of the current
+mark, and if the target is at full health it will reduce the duration even
+greater. It will also show a (marked) next to targets name.
+
+#
+BLIND
+
+[Syntax      ] blind <target>
+[Group       ] Ranger
+[Level       ] 27
+[Offensive   ] Yes
+[Description ]
+--- The Haradrim have an additional item they can gather called dust. This skill
+has a mana requirement to be used. Once you have some dust in your inventory, you
+can magically infuse it to blind and haze the target, for a short duration.
+
+#
+"BEND TIME"
+
+[Syntax      ] bend
+[Group       ] Ranger
+[Level       ] 30
+[Offensive   ] No
+[Description ]
+--- The skill Bend Time will increase the Haradrim's speed by 50% and increase their
+offensive bonus by 20. This skill requires 100 moves and that the players mana be at
+a 100% full. Bend Time has a very short duration.
+
+#
+"WIND BLAST"
+
+[Syntax      ] wind
+[Group       ] Ranger
+[Level       ] 24
+[Offensive   ] No
+[Description ]
+--- Wind Blast will conjurer a black vile wind to eminate from the caster
+damaging and forcing all living creatures out of the room. This skill has
+both a mana and move cost associated with it.
 
 #
 "NATURAL ATTACKS"

@@ -1309,6 +1309,28 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
             log("SYSERR: ch->in_room = NOWHERE when equipping char.");
     }
 
+	if ((IS_OBJ_STAT(item, ITEM_HARADRIM) && GET_RACE(ch) != RACE_HARADRIM) ||
+		(IS_OBJ_STAT(item, ITEM_HUMAN) && GET_RACE(ch) != RACE_HUMAN) ||
+		(IS_OBJ_STAT(item, ITEM_DWARF) && GET_RACE(ch) != RACE_DWARF) ||
+		(IS_OBJ_STAT(item, ITEM_WOODELF) && GET_RACE(ch) != RACE_WOOD) ||
+		(IS_OBJ_STAT(item, ITEM_HOBBIT) && GET_RACE(ch) != RACE_HOBBIT) || 
+		(IS_OBJ_STAT(item, ITEM_BEORNING) && GET_RACE(ch) != RACE_BEORNING) || 
+		(IS_OBJ_STAT(item, ITEM_URUK) && GET_RACE(ch) != RACE_URUK) || 
+		(IS_OBJ_STAT(item, ITEM_ORC) && GET_RACE(ch) != RACE_ORC) || 
+		(IS_OBJ_STAT(item, ITEM_MAGUS) && GET_RACE(ch) != RACE_MAGUS) || 
+		(IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(ch) != RACE_OLOGHAI) || )
+	{
+		if (character->in_room != NOWHERE) {
+
+			act("You are zapped by $p and instantly drop it.", FALSE, character, item, 0, TO_CHAR);
+			act("$n is zapped by $p and instantly drops it.", FALSE, character, item, 0, TO_ROOM);
+			obj_to_char(item, character); /* changed to drop in inventory instead of ground */
+			return;
+		}
+		else
+			log("SYSERR: ch->in_room = NOWHERE when equipping char.");
+	}
+
     character->equipment[item_slot] = item;
     item->carried_by = character;
     item->obj_flags.timer = -1;

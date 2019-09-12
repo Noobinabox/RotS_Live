@@ -373,6 +373,7 @@ struct waiting_type {
 
 #define WEAPON_POISON_DUR 60
 
+
 struct obj_flag_data {
 public:
     int get_ob_coef() const { return value[0]; }
@@ -419,6 +420,7 @@ public:
     int poisondata[5];
 };
 
+
 /* Wraps the object_flag_data and exposes values that are used for weapons. */
 struct weapon_flag_data {
     weapon_flag_data(obj_flag_data* data)
@@ -436,6 +438,8 @@ struct weapon_flag_data {
 private:
     obj_flag_data* object_flag_data;
 };
+
+
 
 /* Used in OBJ_FILE_ELEM *DO*NOT*CHANGE* */
 struct obj_affected_type {
@@ -1648,6 +1652,16 @@ public:
 
     /* Returns the leader of the character's group, if the character is in a group. */
     char_data* get_group_leader() const { return group ? group->get_leader() : NULL; }
+
+	int get_spent_practice_count() const;
+	int get_max_practice_count() const;
+
+	// Set's the character's available practice sessions to their max practice count
+	// less their used practice count.
+	void update_available_practices();
+
+	// Resets all known skills and practice sessions for a character.
+	void reset_skills();
 
 public:
     int abs_number; /* bit number in the control array */

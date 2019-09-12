@@ -1550,7 +1550,6 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.rarity = tmp2;
             obj_proto[i].obj_flags.material = tmp3;
             obj_proto[i].obj_flags.script_number = tmp4;
-
             /*fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
 	    obj_proto[i].obj_flags.poisoned = tmp;
 	    obj_proto[i].obj_flags.poisondata[0] = tmp2;

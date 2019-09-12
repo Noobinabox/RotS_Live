@@ -222,6 +222,7 @@ void update_pos(struct char_data* victim)
         GET_POS(victim) = POSITION_STUNNED;
 }
 
+
 /* start one char fighting another (yes, it is horrible, I know... )  */
 void set_fighting(struct char_data* ch, struct char_data* vict)
 {
@@ -1944,6 +1945,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     }
 }
 
+
 bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data* weapon)
 {
     int multipler = weapon->obj_flags.get_poison_multipler();
@@ -1951,10 +1953,12 @@ bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data
     int offense = (((strength * 2) * 8) * multipler) / 100;
     int defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
     return number(offense / 3, offense) < number(defense / 2, defense) ? false : true;
+
 }
 
 void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
 {
+
     if (weapon == NULL) {
         return;
     }
@@ -1964,6 +1968,7 @@ void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapo
     }
 
     if (does_victim_save_on_weapon_poison(victim, weapon)) {
+
         act("You feel your body fend off the poison.", TRUE, attacker, 0, victim, TO_VICT);
         return;
     }
@@ -1977,10 +1982,10 @@ void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapo
     affect_join(victim, &af, FALSE, FALSE);
 
     damage(attacker, victim, 5, SPELL_POISON, 0);
-
     weapon->obj_flags.poisoned = false;
     return;
 }
+
 
 /*UPDATE* integreate parry message with other messages */
 void do_parry(struct char_data* ch, struct char_data* victim, int type)
@@ -2837,6 +2842,7 @@ int check_overkill(struct char_data* ch)
 
     return 1;
 }
+
 
 int check_hallucinate(struct char_data* ch, struct char_data* victim)
 {

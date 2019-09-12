@@ -847,6 +847,7 @@ ACMD(do_ambush)
     struct char_data* victim;
     int success;
     int dmg;
+    
 
     if (IS_AFFECTED(ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -3544,6 +3545,7 @@ ACMD(do_bendtime)
     }
 }
 
+
 void on_windblast_hit(char_data* ch)
 {
     int i, attempt, res, die, move_cost = 0;
@@ -3554,7 +3556,9 @@ void on_windblast_hit(char_data* ch)
         return;
     }
 
+
     if (GET_POS(ch) < POSITION_FIGHTING)
+
         return;
 
     for (i = 0; i < 6; i++) {
@@ -3570,6 +3574,7 @@ void on_windblast_hit(char_data* ch)
 
         if (res) {
             die = check_simple_move(ch, attempt, &move_cost, SCMD_FLEE);
+
             if (!die) {
                 if (ch->specials.fighting) {
                     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
@@ -3586,6 +3591,7 @@ void on_windblast_hit(char_data* ch)
 
                 send_to_char("A wave of thunderous force sweeps you out!", ch);
                 act("$n gets sweep out from the wave of thunderous force!", FALSE, ch, 0, 0, TO_ROOM);
+
                 do_move(ch, dirs[attempt], 0, attempt + 1, SCMD_FLEE);
                 return;
             }
@@ -3597,6 +3603,7 @@ void on_windblast_hit(char_data* ch)
     return;
 }
 
+
 void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
 {
     int dam_value, tmp, power_level;
@@ -3605,6 +3612,7 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
 
     GET_MANA(ch) -= mana_cost;
     GET_MOVE(ch) -= move_cost;
+
 
     if (ch->in_room == NOWHERE)
         return;
@@ -3620,7 +3628,6 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
-
             if (!bb_instance.is_target_valid(ch, tmpch)) {
                 send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
                 continue;
@@ -3653,6 +3660,7 @@ ACMD(do_windblast)
     const int move_cost = 40;
 
     one_argument(argument, arg);
+
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\r\n", ch);

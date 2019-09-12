@@ -1318,7 +1318,7 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
 		(IS_OBJ_STAT(item, ITEM_URUK) && GET_RACE(character) != RACE_URUK) || 
 		(IS_OBJ_STAT(item, ITEM_ORC) && GET_RACE(character) != RACE_ORC) || 
 		(IS_OBJ_STAT(item, ITEM_MAGUS) && GET_RACE(character) != RACE_MAGUS) || 
-		(IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(character) != RACE_OLOGHAI) || )
+		(IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(character) != RACE_OLOGHAI))
 	{
 		if (character->in_room != NOWHERE) {
 

@@ -1,3 +1,4 @@
+
 #include "char_utils.h"
 #include "environment_utils.h"
 #include "object_utils.h"
@@ -167,8 +168,11 @@ int get_tactics(const char_data& character)
 //============================================================================
 void set_tactics(char_data& character, int value)
 {
+	if (value <= 0)
+		value = TACTICS_NORMAL;
+
     if (!is_npc(character)) {
-        character.specials.tactics = value;
+        character.specials.tactics = static_cast<ubyte>(value);
     }
 }
 
@@ -184,8 +188,11 @@ int get_shooting(const char_data& character)
 //============================================================================
 void set_shooting(char_data& character, int value)
 {
+	if (value <= 0)
+		value = SHOOTING_NORMAL;
+
     if (!is_npc(character))
-        character.specials.shooting = value;
+        character.specials.shooting = static_cast<ubyte>(value);
 }
 
 //============================================================================
@@ -200,8 +207,11 @@ int get_casting(const char_data& character)
 //============================================================================
 void set_casting(char_data& character, int value)
 {
+	if (value <= 0)
+		value = CASTING_NORMAL;
+
     if (is_pc(character)) {
-        character.specials.casting = value;
+        character.specials.casting = static_cast<ubyte>(value);
     }
 }
 
@@ -732,7 +742,7 @@ int get_dodge_penalty(const char_data& character)
 }
 
 //============================================================================
-int get_idnum(const char_data& character)
+long get_idnum(const char_data& character)
 {
     if (is_npc(character))
         return -1;
@@ -901,7 +911,7 @@ bool can_see_object(const char_data& character, const obj_data& object, const we
     } else {
         return can_see(character, weather, room)
             && (!utils::is_set(item_flags, ITEM_INVISIBLE)
-                || is_affected_by(character, AFF_DETECT_INVISIBLE));
+                   || is_affected_by(character, AFF_DETECT_INVISIBLE));
     }
 }
 
@@ -1023,7 +1033,7 @@ bool is_hostile_to(const char_data& character, const char_data& victim)
         return true;
 
     // An NPC is hostile if it has a preference for the victim's race set.
-    if (is_preference_flagged(character, (long)1 << victim.player.race))
+    if (is_preference_flagged(character, 1 << victim.player.race))
         return true;
 
     return false;
@@ -1032,7 +1042,7 @@ bool is_hostile_to(const char_data& character, const char_data& victim)
 //============================================================================
 bool is_rp_race_check(const char_data& character, const char_data& victim)
 {
-    return is_npc(character) && character.specials2.rp_flag != 0 || utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
+    return (is_npc(character) && character.specials2.rp_flag != 0) || utils::is_set(character.specials2.rp_flag, 1 << victim.player.race);
 }
 
 //============================================================================
@@ -1209,6 +1219,63 @@ bool is_guardian(const char_data& character)
 // Below here you will find various implementations from structs.h
 // TODO(drelidan): Create a structs.cpp file and put all of this code there.
 //============================================================================
+
+//============================================================================
+int char_data::get_spent_practice_count() const
+{
+	if (skills == NULL)
+		return 0;
+
+	int count = 0;
+	for (int index = 0; index < MAX_SKILLS; ++index)
+	{
+		count += skills[index];
+	}
+
+	return count;
+}
+
+//============================================================================
+int char_data::get_max_practice_count() const
+{
+	const int free_pracs = 10;
+
+	int base_pracs = player.level * PRACS_PER_LEVEL;
+	int bonus_lea_pracs = player.level * get_max_lea() / LEA_PRAC_FACTOR;
+
+	return base_pracs + bonus_lea_pracs + free_pracs;
+}
+
+//============================================================================
+void char_data::update_available_practices()
+{
+	int max_practice_count = get_max_practice_count();
+	int spent_practice_count = get_spent_practice_count();
+
+	// This value can be negative in the case a character loses a level.
+	specials2.spells_to_learn = max_practice_count - spent_practice_count;
+}
+
+//============================================================================
+void char_data::reset_skills()
+{
+	if (skills == nullptr || knowledge == nullptr)
+		return;
+
+	for (int index = 0; index < MAX_SKILLS; ++index)
+	{
+		skills[index] = 0;
+		knowledge[index] = 0;
+	}
+
+	specials2.spells_to_learn = get_max_practice_count();
+}
+
+//============================================================================
+bool char_data::is_affected() const
+{
+	return affected != nullptr;
+}
 
 //============================================================================
 // Specialization stuff!
@@ -1501,13 +1568,13 @@ std::string player_damage_details::get_damage_report(const char_data* character)
         message_writer << std::fixed;
         message_writer.precision(2);
         message_writer << ", Average: " << details.get_average_damage() << "> ";
-        message_writer << details.get_total_damage() / double(total_damage_dealt) * 100;
+        message_writer << details.get_total_damage() / double(total_damage_dealt* 100);
         message_writer << "% of damage";
         message_writer << std::endl;
     }
 
     float combat_seconds = std::max(elapsed_combat_seconds, 0.5f);
-    float dps = total_damage_dealt / combat_seconds;
+    float dps = static_cast<float>(total_damage_dealt) / combat_seconds;
     message_writer << "-------------------------------------------------------------------------------" << std::endl;
     message_writer << "Total Damage: " << total_damage_dealt;
     message_writer << "; Combat Time: " << combat_seconds;

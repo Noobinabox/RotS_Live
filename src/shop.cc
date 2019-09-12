@@ -447,8 +447,7 @@ void shopping_list(char* arg, struct char_data* ch,
                 found_obj = TRUE;
                 if (temp1->obj_flags.type_flag != ITEM_DRINKCON)
                     sprintf(buf2, "%d. %s for %s.\n\r",
-                        count, (temp1->short_description), money_message(
-                                                               (int)((long)temp1->obj_flags.cost * shop_index[shop_nr].profit_buy / 100)));
+                        count, (temp1->short_description), money_message((int)((long)temp1->obj_flags.cost * shop_index[shop_nr].profit_buy / 100)));
                 else {
                     if (temp1->obj_flags.value[1])
                         sprintf(buf3, "%d. %s of %s", count,
@@ -504,7 +503,8 @@ SPECIAL(shop_keeper)
     for (temp_char = world[ch->in_room].people; (!keeper) && (temp_char) ; temp_char = temp_char->next_in_room)
     if (IS_MOB(temp_char))
     if (mob_index[temp_char->nr].func == shop_keeper)
-    */ keeper = temp_char;
+    */
+    keeper = temp_char;
     keeper = host;
     for (shop_nr = 0; shop_index[shop_nr].keeper != keeper->nr; shop_nr++)
         ;

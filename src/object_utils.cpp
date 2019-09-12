@@ -85,10 +85,10 @@ namespace {
     struct weapon_coef_mod {
         weapon_coef_mod()
             : parry_coef_mod(0.0)
-            , OB_coef_mod(0.0){};
+            , OB_coef_mod(0.0) {};
         weapon_coef_mod(double parry_coef, double ob_coef)
             : parry_coef_mod(parry_coef)
-            , OB_coef_mod(ob_coef){};
+            , OB_coef_mod(ob_coef) {};
 
         double parry_coef_mod;
         double OB_coef_mod;

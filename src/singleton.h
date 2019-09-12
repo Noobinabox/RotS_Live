@@ -28,8 +28,8 @@ public:
 protected:
     virtual ~singleton() {}
 
-    virtual void on_instance_destroyed(){};
-    virtual void on_instance_not_created(){};
+    virtual void on_instance_destroyed() {};
+    virtual void on_instance_not_created() {};
 
 private:
     // Deleted functions.
@@ -81,8 +81,8 @@ protected:
     const weather_data& get_weather() const { return *m_weather; }
     const room_data* get_world() const { return m_world; }
 
-    virtual void on_instance_destroyed(){};
-    virtual void on_instance_not_created(){};
+    virtual void on_instance_destroyed() {};
+    virtual void on_instance_not_created() {};
 
 private:
     // Deleted functions.

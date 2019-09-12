@@ -720,9 +720,7 @@ void reset_zone(int zone)
             case 'O': /* read an object */
                 if ((!ZCMD.arg3 || obj_index[ZCMD.arg1].number < ZCMD.arg3) && (ZCMD.arg4 == 100 || ZCMD.arg4 > number(0, 99))) {
                     if (ZCMD.arg2 >= 0) {
-                        if (!ZCMD.arg5 || (count_obj_in_list(ZCMD.arg1,
-                                               world[ZCMD.arg2].contents)
-                                              < ZCMD.arg5)) {
+                        if (!ZCMD.arg5 || (count_obj_in_list(ZCMD.arg1, world[ZCMD.arg2].contents) < ZCMD.arg5)) {
                             obj = read_object(ZCMD.arg1, REAL);
                             obj_to_room(obj, ZCMD.arg2);
                             last_cmd = last_obj = 1;

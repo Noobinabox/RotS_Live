@@ -1436,8 +1436,7 @@ int CAN_SEE(struct char_data* sub)
     if (IS_SHADOW(sub))
         return 1;
 
-    if (!IS_LIGHT((sub)->in_room) && (!IS_AFFECTED((sub), AFF_INFRARED) && !PRF_FLAGGED((sub), PRF_HOLYLIGHT)
-                                         && !(OUTSIDE(sub) && IS_AFFECTED((sub), AFF_MOONVISION) && weather_info.moonlight)))
+    if (!IS_LIGHT((sub)->in_room) && (!IS_AFFECTED((sub), AFF_INFRARED) && !PRF_FLAGGED((sub), PRF_HOLYLIGHT) && !(OUTSIDE(sub) && IS_AFFECTED((sub), AFF_MOONVISION) && weather_info.moonlight)))
         return 0;
 
     return 1;
@@ -1932,8 +1931,7 @@ int compare_obj_to_proto(struct obj_data* obj)
                 tmp_flags += ITEM_ANTI_EVIL;
 
             // Now check the enchant.
-            if ((obj->obj_flags.extra_flags != tmp->obj_flags.extra_flags) && (obj->obj_flags.extra_flags - obj_flags + tmp_flags
-                                                                                  == tmp->obj_flags.extra_flags))
+            if ((obj->obj_flags.extra_flags != tmp->obj_flags.extra_flags) && (obj->obj_flags.extra_flags - obj_flags + tmp_flags == tmp->obj_flags.extra_flags))
                 diff--;
         }
     }

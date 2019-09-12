@@ -2128,7 +2128,7 @@ int shoot_calculate_wait(const char_data* archer)
     int total_beats = base_beats - ((archer->points.ENE_regen / base_beats) - base_beats);
     total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / base_beats);
 
-    if (archer->player.race == RACE_WOOD) {
+    if (archer->player.race == RACE_WOOD || archer->player.race == RACE_HARADRIM) {
         total_beats = total_beats - 1;
     }
 
@@ -2156,6 +2156,11 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, const ob
         // TODO(drelidan):  Figure out break contribution.  Perhaps this function
         // should be called and given an armor location or something.
     }
+
+	// haradrims get a bonus with crude arrows for being a primative race
+	if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
+		breakpercentage >>= 1;
+	}
 
     if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
         breakpercentage >>= 1;

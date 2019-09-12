@@ -67,7 +67,7 @@ int get_leg_encumbrance(const char_data& character);
 int get_skill_penalty(const char_data& character);
 int get_dodge_penalty(const char_data& character);
 
-int get_idnum(const char_data& character);
+long get_idnum(const char_data& character);
 bool is_awake(const char_data& character);
 
 int get_raw_skill(const char_data& character, int skill_index);

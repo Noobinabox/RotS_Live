@@ -105,21 +105,31 @@ struct command_info {
     unsigned char mask;
 
     int target_mask[32];
-    void add_target(int t1, int t2)
+    void add_target(int mask_in, int value)
     {
-        for (int tmp = 0; tmp < 32; tmp++)
-            if ((1 << tmp) & t1)
-                target_mask[tmp] |= t2;
+		for (int index = 0; index < 32; index++)
+		{
+			int bit_position_as_int = 1 << index;
+			if (bit_position_as_int & mask_in)
+			{
+				target_mask[index] |= value;
+			}
+		}
     }
 
     /* This is never used anywhere */
-    int valid_target(int t1, int t2)
+    bool valid_target(int mask_in, int value)
     {
-        for (int tmp = 0; tmp < 32; tmp++)
-            if (((1 << tmp) & t1) && (target_mask[tmp] & t2))
-                ;
-        return 1;
-        return 0;
+		for (int index = 0; index < 32; index++)
+		{
+			int bit_position_as_int = 1 << index;
+			if (bit_position_as_int & mask_in)
+			{
+				return (target_mask[index] & value) != 0;
+			}
+		}
+
+		return false;
     }
 };
 

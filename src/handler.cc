@@ -335,7 +335,10 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_MANA:
-        ch->abilities.mana += mod;
+        GET_MAX_MANA(ch) += mod;
+		if (GET_MANA(ch) >= GET_MAX_MANA(ch) - mod)
+			GET_MANA(ch) += mod;
+
         break;
 
     case APPLY_WILLPOWER:
@@ -343,11 +346,16 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_HIT:
-        ch->abilities.hit += mod;
+        GET_MAX_HIT(ch) += mod;
+		if (GET_HIT(ch) >= GET_MAX_HIT(ch) - mod)
+			GET_HIT(ch) += mod;
+
         break;
 
     case APPLY_MOVE:
-        ch->abilities.move += mod;
+        GET_MAX_MOVE(ch) += mod;
+		if (GET_MOVE(ch) >= GET_MAX_MOVE(ch) - mod)
+			GET_MOVE(ch) += mod;
         break;
 
     case APPLY_GOLD:

@@ -66,7 +66,12 @@ void say_spell(char_data* caster, int spell_index)
 
     // Reset the buffer.
     strcpy(buf, "");
-    sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+	if (GET_RACE(caster) != RACE_HARADRIM) {
+		sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+	}
+	else {
+		sprintf(buf, "$n utters a foreign command, '%s'", spell_name);
+	}
 
     const room_data& room = world[caster->in_room];
     char_data* receiver = room.people;
@@ -308,7 +313,7 @@ char saves_mystic(struct char_data* ch)
 char saves_poison(struct char_data* victim, struct char_data* caster)
 {
     int offence, defense;
-    int perception = IS_NPC(caster) ? 100 : GET_PERCEPTION(caster);
+    int perception = GET_PERCEPTION(caster);
     offence = ((GET_WILLPOWER(caster) * 8) * perception) / 100;
     /* wood elves get a bonus against poison */
     defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);

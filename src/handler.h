@@ -46,7 +46,7 @@ void affect_join(struct char_data* ch, struct affected_type* af,
 
 /* utility */
 struct obj_data* create_money(int amount);
-int isname(char* str, char* namelist, char full = 1);
+int isname(const char* str,const char* namelist, char full = 1);
 char* fname(char* namelist);
 
 /* ******** objects *********** */

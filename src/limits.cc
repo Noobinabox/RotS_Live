@@ -895,6 +895,11 @@ void check_breathing(char_data* ch)
     }
 }
 
+void do_haradrim_weather_power(char_data* ch)
+{
+
+}
+
 void do_power_of_arda(char_data* ch)
 {
     affected_type* tmpaf;

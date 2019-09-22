@@ -263,7 +263,7 @@ int loclife_add_rooms(loclife_coord room, loclife_coord* roomlist,
     }
     return count;
 }
-char* loclife_dirnames[216] = {
+const char* loclife_dirnames[216] = {
     /*
    *Lines - up/down here - farthest down - farthest up
    *columns - east/west
@@ -423,7 +423,7 @@ char* loclife_dir_convert(loclife_coord rm)
     if (rm.u > 0)
         ur += 2;
 
-    return loclife_dirnames[(nr * 5 + er) * 5 + ur];
+    return (char *)loclife_dirnames[(nr * 5 + er) * 5 + ur];
 }
 
 /*--------------------------------------------------------------------------------------------------------*/
@@ -682,7 +682,7 @@ ASPELL(spell_flash)
             GET_ENERGY(tmpch) -= 400;
         if (!saves_spell(tmpch, caster_level, 0)) {
             //  6-11-01 Errent attempts to make flash give power of arda to darkies - look out!
-            if (RACE_EVIL(tmpch)) {
+            if (RACE_EVIL(tmpch) && GET_RACE(tmpch) != RACE_HARADRIM) {
                 afflevel = 50;
                 maxlevel = afflevel * 25;
                 tmpaf = affected_by_spell(tmpch, SPELL_ARDA);

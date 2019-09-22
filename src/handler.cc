@@ -188,7 +188,7 @@ void recount_light_room(int room)
     world[room].light = count;
 }
 
-int isname(char* str, char* namelist, char full)
+int isname(const char* str,const char* namelist, char full)
 {
     register char *curname, *curstr;
     int tmp;
@@ -206,9 +206,9 @@ int isname(char* str, char* namelist, char full)
     if (!namelist)
         return 0;
 
-    curname = namelist;
+    curname = (char*)namelist;
     for (;;) {
-        for (curstr = str;; curstr++, curname++) {
+        for (curstr = (char*)str;; curstr++, curname++) {
             if (!*curstr && (!full || !isalpha(*curname)))
                 return 1;
 

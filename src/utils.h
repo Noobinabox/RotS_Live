@@ -45,7 +45,7 @@ char unaccent(char);
 char* str_dup(const char* source);
 int str_cmp(char* arg1, char* arg2);
 int strn_cmp(char* arg1, char* arg2, int n);
-void log(char* str);
+void log(const char* str);
 void mudlog(char* str, char type, sh_int level, byte file);
 void vmudlog(char type, char* format, ...);
 void log_death_trap(struct char_data* ch);
@@ -71,7 +71,7 @@ int find_player_in_table(char* name, int idnum);
 char* strcpy_lang(char* targ, char* src, byte freq, int maxlen);
 void reshuffle(int* arr, int len);
 
-void* create_function(int elem_size, int elem_num, int line, char* file);
+void* create_function(int elem_size, int elem_num, int line,const char* file);
 void free_function(void* pnt);
 
 int get_total_fame(char_data* ch);

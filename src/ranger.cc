@@ -57,6 +57,7 @@ extern void stop_hiding(struct char_data* ch, char);
 extern void update_pos(struct char_data* victim);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 extern void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon);
+extern void say_spell(char_data* caster, int spell_index);
 
 const int GATHER_FOOD = 7218;
 const int GATHER_LIGHT = 7007;
@@ -3149,6 +3150,7 @@ ACMD(do_mark)
 
         // Did we land our touch attack???
         int target_number = mark_calculate_success(ch, victim);
+		say_spell(ch, SKILL_MARK);
         if (target_number > 0) {
             on_mark_hit(ch, victim);
         } else {
@@ -3399,6 +3401,7 @@ ACMD(do_blinding)
         }
 
         int percent_hit = harad_skill_calculate_save(ch, victim, SKILL_BLINDING);
+		say_spell(ch, SKILL_BLINDING);
         if (percent_hit < 0) {
             on_dust_miss(ch, victim, mana_cost);
         } else {
@@ -3533,6 +3536,7 @@ ACMD(do_bendtime)
         WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
+		say_spell(ch, SKILL_BEND_TIME);
         if (check_skill_success(ch, SKILL_BEND_TIME))
             on_bend_success(ch, mana_cost, move_cost);
         else {
@@ -3629,7 +3633,9 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     dam_value = number(1, 30) + power_level;
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-
+	
+	send_to_char("Vile black wind eminates from you, slamming into all!\r\n", ch);
+	
     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
@@ -3689,6 +3695,7 @@ ACMD(do_windblast)
         WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
+		say_spell(ch, SKILL_WINDBLAST);
         if (check_skill_success(ch, SKILL_WINDBLAST)) {
             on_windblast_success(ch, mana_cost, move_cost);
         } else {

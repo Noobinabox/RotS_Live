@@ -16,7 +16,7 @@
 #include "utils.h" /* For the TRUE macro */
 
 /* comm.c */
-void send_to_all(char* messg);
+void send_to_all(const char* messg);
 void send_to_char(const char* messg, struct char_data* ch);
 void send_to_char(const char* message, int character_id);
 const char* get_char_name(int character_id);
@@ -25,8 +25,8 @@ void send_to_except(const char* messg, struct char_data* ch);
 void send_to_room(const char* messg, int room);
 void send_to_room_except(const char* messg, int room, struct char_data* ch);
 void send_to_room_except_two(const char* messg, int room, struct char_data* ch1, struct char_data* ch2);
-void send_to_outdoor(char* messg, int mode);
-void send_to_sector(char* messg, int sector_type);
+void send_to_outdoor(const char* messg, int mode);
+void send_to_sector(const char* messg, int sector_type);
 void perform_to_all(char* messg, struct char_data* ch);
 void close_socket(struct descriptor_data* d, int drop_all = TRUE);
 void break_spell(struct char_data* ch);
@@ -37,7 +37,7 @@ void put_to_txt_block_pool(struct txt_block*);
 
 void vsend_to_char(struct char_data* ch, char* format, ...);
 
-void act(char* str, int hide_invisible, struct char_data* ch,
+void act(const char* str, int hide_invisible, struct char_data* ch,
     struct obj_data* obj, void* vict_obj, int type, char spam_only = FALSE);
 
 #define TO_ROOM 0

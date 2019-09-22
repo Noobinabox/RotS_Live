@@ -3112,7 +3112,7 @@ const char* inv_sorting[] = {
 	"alpha",
 	"length",
 	"\n"
-}
+};
 
 // Perm starting affects for races
 long race_affect[] = {

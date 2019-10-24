@@ -151,7 +151,8 @@ ASPELL(spell_curse)
     }
 
     /* choosing the first stat to damage */
-    int last_stat, num = number(0, NUM_STATS);
+    int num = number(0, NUM_STATS);
+    int last_stat = num;
 
     damage_table[num] = 1;
     count--;

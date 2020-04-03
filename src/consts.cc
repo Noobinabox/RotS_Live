@@ -160,7 +160,8 @@ char* spell_wear_off_msg[] = {
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",
-    "!Searing Darkness!"
+    "!Searing Darkness!",
+    "The feel the empowerment of war leave your body!"
 };
 
 char* room_bits_message[32] = {
@@ -504,7 +505,9 @@ struct skill_data skills[MAX_SKILLS] = {
     { "nothing", PROF_GENERAL, 0, NULL,
         POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "wind blast", PROF_RANGER, 24, NULL,
-        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE }
+        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE },
+    { "Fame War", PROF_GENERAL, 1, NULL,
+        POSITION_STANDING, 5, 2, 6, 1, 1, 1, PLRSPEC_NONE}
 };
 
 byte language_number = 3;
@@ -2593,6 +2596,24 @@ char* pc_named_star_types[] = {
     "*%s the Undead*", "*%s the Olog-Hai*", "*%s the Haradrim*", "%s the UNDEFINED", "*%s the Troll*",
     /* Orc is 11, 16 total */
     "\n"
+};
+
+char* pc_arda_fame_identifier[] = {
+    "",
+    " (Warlord of Arda)", " (Noble Crusader)", " (Heroic Knight)", ""
+};
+
+char* pc_evil_fame_identifier[] =  {
+    "",
+    " (Chieftain of Evil)", " (Wicked Commander)", " (Sinister Patrol)", ""
+};
+
+char* pc_arda_fame_keywords[] = {
+    "arda", "warlord", "crusader", "knight", ""
+};
+
+char* pc_evil_fame_keywords[] = {
+    "evil", "chieftain", "commander", "patrol", ""
 };
 
 //const

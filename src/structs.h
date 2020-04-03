@@ -775,6 +775,11 @@ struct room_data {
 #define APPLY_MAUL 32
 #define APPLY_BEND 33
 
+#define APPLY_PK_MAGE 34
+#define APPLY_PK_MYSTIC 35
+#define APPLY_PK_RANGER 36
+#define APPLY_PK_WARRIOR 37
+
 #define ROOMAFF_SPELL 1
 #define ROOMAFF_EXIT 2
 
@@ -1014,6 +1019,7 @@ struct char_player_data {
     struct time_data time; /* PC s AGE in days                 	*/
     int weight; /* PC / NPC s weight                    	*/
     int height; /* PC / NPC s height                    	*/
+    int ranking;
 };
 
 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */ /*changed all from int*/

@@ -1309,7 +1309,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
         int capped_level = GET_LEVELB(character);
         int group_bonus = std::min(share * capped_level / 2, (level_total - npc_level_malus - capped_level) * share / 4);
-        int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus) * 1.3;
+        int tmp = exp_with_modifiers(character, dead_man, share * capped_level + group_bonus);
 
         vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);
         gain_exp(character, tmp);

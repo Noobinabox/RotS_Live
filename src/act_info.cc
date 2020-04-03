@@ -88,6 +88,8 @@ extern char* extra_bits[];
 extern int num_of_object_materials;
 extern char* apply_types[];
 extern char* drinks[];
+extern char* pc_arda_fame_identifier[];
+extern char* pc_evil_fame_identifier[];
 
 void symbol_to_map(int, int, int);
 void reset_small_map();
@@ -606,6 +608,13 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
         if (IS_EVIL(viewed)) {
             strcat(buf, " (red aura)");
         }
+    }
+
+    if (other_side(viewer, viewed) && (viewed->player.ranking > 0 && viewed->player.ranking < 3)) {
+        if (IS_EVIL(viewed))
+            strcat(character_message, pc_evil_fame_identifier[viewed->player.ranking]);
+        else
+            strcat(character_message, pc_arda_fame_identifier[viewed->player.ranking]);
     }
 
     if (IS_AFFECTED(viewed, AFF_HIDE)) {

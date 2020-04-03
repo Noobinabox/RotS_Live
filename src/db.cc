@@ -2214,6 +2214,7 @@ int create_entry(char* name)
     (player_table + top_of_p_table)->warpoints = 0;
     (player_table + top_of_p_table)->race = 0;
     (player_table + top_of_p_table)->rank = PKILL_UNRANKED;
+    (player_table + top_of_p_table)->totalrank = PKILL_UNRANKED;
     for (i = 0; (*(player_table[top_of_p_table].name + i) = LOWER(*(name + i))); i++)
         ;
     return (top_of_p_table);

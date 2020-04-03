@@ -22,6 +22,8 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "pkill.h"
+#include "char_utils.h"
 
 #include <iostream>
 #include <sstream>
@@ -521,6 +523,17 @@ FILE* Crash_load(char_data* character)
     return fl;
 }
 
+void get_highest_coeffs(const char_data& ch) {
+    
+}
+
+void load_ranking(struct char_data* ch) {
+    // get ranking total
+    // assign to ch->player.ranking
+    // get highest coeffs
+    // assign affect
+}
+
 void load_character(struct char_data* ch)
 {
     extern struct char_data* character_list;
@@ -533,6 +546,7 @@ void load_character(struct char_data* ch)
 
     ch->next = character_list;
     character_list = ch;
+    load_ranking(ch);
 
     char_to_room(ch, ch->specials2.load_room);
     act("$n has entered the game.", TRUE, ch, 0, 0, TO_ROOM);

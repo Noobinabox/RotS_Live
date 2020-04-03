@@ -97,6 +97,7 @@ void assign_mobiles(void)
     ASSIGNMOB(4612, receptionist);
     ASSIGNMOB(5701, guild);
     ASSIGNMOB(6000, guild);
+	ASSIGNMOB(6603, receptionist);
 	ASSIGNMOB(6604, receptionist); // haradrim innkeeper
     ASSIGNMOB(9903, guild);
 

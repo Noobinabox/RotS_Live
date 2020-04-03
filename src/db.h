@@ -192,6 +192,7 @@ struct player_index_element {
     long flags;
     int warpoints;
     int rank;
+    int totalrank;
     char ch_file[80]; /* for speed in locating the file to load */
 };
 

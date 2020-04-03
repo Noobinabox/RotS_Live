@@ -610,7 +610,7 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
         }
     }
 
-    if (other_side(viewer, viewed) && (viewed->player.ranking > 0 && viewed->player.ranking < 3)) {
+    if (other_side(viewer, viewed) && (viewed->player.ranking > 0 && viewed->player.ranking <= 3)) {
         if (IS_EVIL(viewed))
             strcat(character_message, pc_evil_fame_identifier[viewed->player.ranking]);
         else
@@ -3836,7 +3836,7 @@ ACMD(do_rank)
     size_t bufpt;
     LEADER* ldr;
 
-    r = pkill_get_rank_by_character(ch);
+    r = pkill_get_rank_by_character(ch, false);
 
     /* Unranked characters don't get much output */
     if (r == PKILL_UNRANKED) {

@@ -41,6 +41,9 @@
 #define FOL_TAMED 2
 #define FOL_GUARDIAN 3
 
+#define MIN_RANK 1
+#define MAX_RANK 10
+
 int cost_per_day(struct obj_data* obj);
 
 extern struct room_data world;
@@ -524,14 +527,27 @@ FILE* Crash_load(char_data* character)
 }
 
 void get_highest_coeffs(const char_data& ch) {
-    
+
 }
 
+
 void load_ranking(struct char_data* ch) {
-    // get ranking total
-    // assign to ch->player.ranking
-    // get highest coeffs
-    // assign affect
+    int ranking = pkill_get_rank_by_character(ch, true) + 1;
+    ch->player.ranking = ranking;
+    if (ranking < MIN_RANK && ranking > MAX_RANK)
+        return;
+
+    affected_type af;
+    af.type = SPELL_FAME_WAR;
+    af.duration = -1;
+    af.location = APPLY_PK_MAGE;
+    af.modifier = utils::get_ranking_tier(ranking);
+    af.bitvector = 0;
+    af.counter = 0;
+    get_highest_coeffs(*ch);
+
+    affect_join(ch, &af, FALSE, FALSE);
+
 }
 
 void load_character(struct char_data* ch)

@@ -69,6 +69,8 @@ int get_dodge_penalty(const char_data& character);
 
 long get_idnum(const char_data& character);
 bool is_awake(const char_data& character);
+int get_ranking_tier(const char_data& character);
+int get_ranking_tier(int ranking);
 
 int get_raw_skill(const char_data& character, int skill_index);
 int get_skill(const char_data& character, int skill_index);

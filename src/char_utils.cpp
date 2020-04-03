@@ -757,6 +757,19 @@ bool is_awake(const char_data& character)
 }
 
 //============================================================================
+int get_ranking_tier(const char_data& character) {
+    return get_ranking_tier(character.player.ranking);
+}
+
+//============================================================================
+int get_ranking_tier(int ranking) {
+    if (ranking <= 3)
+        return ranking;
+    
+    return 4;
+}
+
+//============================================================================
 // Functions in this namespace do not belong in this file and need to be moved
 // elsewhere.
 //============================================================================

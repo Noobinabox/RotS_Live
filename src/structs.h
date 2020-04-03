@@ -1019,7 +1019,7 @@ struct char_player_data {
     struct time_data time; /* PC s AGE in days                 	*/
     int weight; /* PC / NPC s weight                    	*/
     int height; /* PC / NPC s height                    	*/
-    int ranking;
+    int ranking; /* PC / NPC s ranking in fame war */
 };
 
 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */ /*changed all from int*/

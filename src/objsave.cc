@@ -526,28 +526,22 @@ FILE* Crash_load(char_data* character)
     return fl;
 }
 
-void get_highest_coeffs(const char_data& ch) {
-
-}
-
 
 void load_ranking(struct char_data* ch) {
     int ranking = pkill_get_rank_by_character(ch, true) + 1;
     ch->player.ranking = ranking;
-    if (ranking < MIN_RANK && ranking > MAX_RANK)
-        return;
+    if (ranking >= MIN_RANK && ranking <= MAX_RANK)
+    {
+        affected_type af;
+        af.type = SPELL_FAME_WAR;
+        af.duration = -1;
+        af.location = APPLY_NONE;
+        af.modifier = utils::get_ranking_tier(ranking);
+        af.bitvector = 0;
+        af.counter = 0;
 
-    affected_type af;
-    af.type = SPELL_FAME_WAR;
-    af.duration = -1;
-    af.location = APPLY_PK_MAGE;
-    af.modifier = utils::get_ranking_tier(ranking);
-    af.bitvector = 0;
-    af.counter = 0;
-    get_highest_coeffs(*ch);
-
-    affect_join(ch, &af, FALSE, FALSE);
-
+        affect_join(ch, &af, FALSE, FALSE);
+    }
 }
 
 void load_character(struct char_data* ch)

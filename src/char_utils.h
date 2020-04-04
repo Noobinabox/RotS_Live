@@ -52,6 +52,7 @@ int get_max_race_prof_level(int prof, const char_data& character);
 void set_prof_level(int prof, char_data& character, sh_int value);
 int get_prof_coof(int prof, const char_data& character);
 int get_prof_points(int prof, const char_data& character);
+int get_highest_coeffs(const char_data& character);
 
 // Returns a capped strength score to offset some of the unbalancing impacts of
 // overly high strength scores.

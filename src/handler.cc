@@ -408,8 +408,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     case APPLY_ARMOR:
         //     mod = (2*mod*GET_PERCEPTION(ch))/100;
         //     SET_DODGE(ch) += mod;
-        break;
-
+        break;   
     case APPLY_MAUL:
         if (!add) {
             SET_DODGE(ch) += counter * 5;

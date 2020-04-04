@@ -3166,7 +3166,7 @@ int max_race_str[MAX_RACES] = {
     22, // Human
     22, // Dwarf
     22, // Wood Elf
-    20, // Hobbit
+    22, // Hobbit
     22, // High Elf
     22, // Beorning
     22, // !UNUSED!

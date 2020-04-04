@@ -340,6 +340,25 @@ int get_prof_points(int prof, const char_data& character)
 }
 
 //============================================================================
+int get_highest_coeffs(const char_data& character) {
+    int coeffs[4];
+    int prof;
+    coeffs[0] = get_prof_level(PROF_MAGE, character);
+    coeffs[1] = get_prof_level(PROF_CLERIC, character);
+    coeffs[2] = get_prof_level(PROF_RANGER, character);
+    coeffs[3] = get_prof_level(PROF_WARRIOR, character);
+
+    for (int i = 1; i < (sizeof(coeffs)/sizeof(coeffs[0])); ++i) {
+        if (coeffs[0] < coeffs[i]) {
+            coeffs[0] = coeffs[i];
+            prof = i;
+        }
+    }
+
+    return prof;
+}
+
+//============================================================================
 int get_bal_strength(const char_data& character)
 {
     // dgurley:  I agree with the intent behind this function, but not it's implementation.

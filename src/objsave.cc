@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "pkill.h"
 #include "char_utils.h"
+#include "limits.h"
 
 #include <iostream>
 #include <sstream>
@@ -526,24 +527,6 @@ FILE* Crash_load(char_data* character)
     return fl;
 }
 
-
-void load_ranking(struct char_data* ch) {
-    int ranking = pkill_get_rank_by_character(ch, true) + 1;
-    ch->player.ranking = ranking;
-    if (ranking >= MIN_RANK && ranking <= MAX_RANK)
-    {
-        affected_type af;
-        af.type = SPELL_FAME_WAR;
-        af.duration = -1;
-        af.location = APPLY_NONE;
-        af.modifier = utils::get_ranking_tier(ranking);
-        af.bitvector = 0;
-        af.counter = 0;
-
-        affect_join(ch, &af, FALSE, FALSE);
-    }
-}
-
 void load_character(struct char_data* ch)
 {
     extern struct char_data* character_list;
@@ -556,7 +539,6 @@ void load_character(struct char_data* ch)
 
     ch->next = character_list;
     character_list = ch;
-    load_ranking(ch);
 
     char_to_room(ch, ch->specials2.load_room);
     act("$n has entered the game.", TRUE, ch, 0, 0, TO_ROOM);
@@ -1557,9 +1539,15 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
             act(buf, FALSE, recep, 0, ch, TO_VICT);
         }
 
+
         if (mode == RENT_FACTOR) {
+            affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
             act("$n stores your belongings and helps you into your private chamber.",
                 FALSE, recep, 0, ch, TO_VICT);
+            if(aff) {
+                remove_fame_war_bonuses(ch, aff);
+                affect_remove(ch, aff);
+            }
             Crash_rentsave(ch, cost);
             sprintf(buf, "%s has rented (%d/day, %d tot.)", GET_NAME(ch),
                 cost, GET_GOLD(ch));

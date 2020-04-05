@@ -887,7 +887,12 @@ ACMD(do_cast)
         }
         /* it's a cleric spell */
         else {
-            GET_SPIRIT(ch) -= USE_SPIRIT(ch, spell_index);
+            int spirit_cost = USE_SPIRIT(ch, spell_index);
+            affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
+            if (aff && utils::get_highest_coeffs(*ch) == PROF_CLERIC)  {
+                spirit_cost = spirit_cost * 0.80; 
+            }
+            GET_SPIRIT(ch) -= spirit_cost;
         }
 
         send_to_char("Ok.\n\r", ch);

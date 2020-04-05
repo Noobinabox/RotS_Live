@@ -924,6 +924,9 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
         REMOVE_BIT(dead_man->specials.affected_by, AFF_BASH);
 
     while (dead_man->affected) {
+        if (dead_man->affected->type == SPELL_FAME_WAR)
+            remove_fame_war_bonuses(dead_man, dead_man->affected);
+
         affect_remove(dead_man, dead_man->affected);
     }
     death_cry(dead_man);

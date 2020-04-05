@@ -611,7 +611,7 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
     }
 
     if (other_side(viewer, viewed) && (viewed->player.ranking > 0 && viewed->player.ranking <= 3)) {
-        if (IS_EVIL(viewed))
+        if (utils::is_race_evil(*viewed))
             strcat(character_message, pc_evil_fame_identifier[viewed->player.ranking]);
         else
             strcat(character_message, pc_arda_fame_identifier[viewed->player.ranking]);

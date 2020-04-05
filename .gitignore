@@ -43,3 +43,4 @@ log/
 # Visual Studio Crap Dump
 src/.vs/
 .vs/
+.vscode/

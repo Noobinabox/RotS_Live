@@ -56,6 +56,7 @@ ACMD(do_hit);
 ACMD(do_quit)
 {
     int tmp;
+    affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
     void die(struct char_data*, struct char_data*, int);
 
     if (IS_NPC(ch) || !ch->desc || !ch->desc->descriptor)
@@ -91,7 +92,13 @@ ACMD(do_quit)
     act("$n has left the game.", TRUE, ch, 0, 0, TO_ROOM);
 
     sprintf(buf, "%s has quit the game.", GET_NAME(ch));
+
     mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+
+    if(aff) {
+        remove_fame_war_bonuses(ch, aff);
+        affect_remove(ch, aff);
+    }
 
     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
         Crash_crashsave(ch, RENT_QUIT);

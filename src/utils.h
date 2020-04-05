@@ -356,6 +356,8 @@ void untrack_specialized_mage(char_data* mage);
 
 #define GET_CON(ch) ((ch)->tmpabilities.con)
 #define GET_CON_BASE(ch) ((ch)->abilities.con)
+#define SET_CON_BASE(ch, val) (ch)->abilities.con = (val)
+#define SET_CON(ch, val) (ch)->tmpabilities.str = (val)
 
 #define GET_SAVE(ch) ((ch)->specials2.saving_throw)
 

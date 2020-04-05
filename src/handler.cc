@@ -47,6 +47,8 @@
 #include "zone.h" /* For zone_table */
 
 #include "base_utils.h"
+#include "char_utils.h"
+#include "consts.cc"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -247,6 +249,17 @@ void affect_modify_room(struct room_data* room, byte loc, int mod,
     }
 }
 
+void assign_pk_mage_mana_regen(struct char_data* ch) {
+    affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
+    if (aff && (utils::get_highest_coeffs(*ch) == PROF_MAGE)) {
+       GET_MANA(ch) += (4 / aff->modifier) + 1;
+        if (GET_MANA(ch) < 0)
+            GET_MANA(ch) = 0;
+        if (GET_MANA(ch) > GET_MAX_MANA(ch))
+            GET_MANA(ch) = GET_MAX_MANA(ch);
+    }
+}
+
 void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add, sh_int counter)
 {
     int maxabil, tmp, tmp2;
@@ -269,6 +282,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     maxabil = (IS_NPC(ch) ? 25 : 25);
 
     if (add == AFFECT_MODIFY_TIME) {
+        assign_pk_mage_mana_regen(ch);
         switch (loc) {
         case APPLY_MANA_REGEN:
             GET_MANA(ch) += mod;
@@ -2097,12 +2111,6 @@ int keyword_matches_char(struct char_data* ch, struct char_data* vict, char* key
     int check;
 
     if (other_side(ch, vict)) {
-        /*
-		if (get_total_fame(ch) >= 40)
-			check = isname(keyword, vict->player.name)
-		if (!check)
-			check = isname(keyword, pc_race_types[GET_RACE(vict)];
-		*/
         check = isname(keyword, pc_race_keywords[GET_RACE(vict)]);
     } else
         check = isname(keyword, vict->player.name);

@@ -48,7 +48,6 @@
 
 #include "base_utils.h"
 #include "char_utils.h"
-#include "consts.cc"
 #include <iostream>
 #include <sstream>
 #include <string>

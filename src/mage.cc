@@ -45,6 +45,7 @@ int get_magic_power(const char_data* caster)
 {
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
+    caster_level += caster->points.spell_power;
 
     // Factor in intel values not divisible by 5.
     int intel_factor = caster->tmpabilities.intel / 5;
@@ -68,7 +69,7 @@ bool should_apply_spell_penetration(const char_data* caster)
 
 double get_spell_pen_value(const char_data* caster)
 {
-    int mage_level = utils::get_prof_level(PROF_MAGE, *caster);
+    int mage_level = utils::get_prof_level(PROF_MAGE, *caster) + caster->points.spell_pen;
     if (utils::is_npc(*caster) && utils::is_affected_by(*caster, AFF_CHARM) && caster->master) {
         mage_level += utils::get_prof_level(PROF_MAGE, *(caster->master)) / 3;
     }

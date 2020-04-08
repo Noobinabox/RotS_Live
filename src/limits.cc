@@ -1080,20 +1080,22 @@ void do_fame_war_bonuses(struct char_data* ch) {
         return;
 
     int ranking = pkill_get_rank_by_character(ch, true) + 1;
+    affected_type* pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
 
-    if (!is_rank_valid(ranking) && !is_rank_valid(ch->player.ranking)) {
+    if (!is_rank_valid(ranking) && !pkaff) {
+        if (ch->player.ranking != ranking) {
+            ch->player.ranking = ranking;
+        }
         return; // If the player doesn't have ranking don't give them bonuses
     }
 
-    affected_type* pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
     int coeff = utils::get_highest_coeffs(*ch);
     int tier = utils::get_ranking_tier(ranking);
 
     if (!is_rank_valid(ranking) && pkaff) // player has dropped bonuses
     {
-        assign_pk_bonuses(ch, coeff, pkaff->modifier, false);
-        pkaff->duration = 0;
-        pkaff->modifier = tier;
+        remove_fame_war_bonuses(ch, pkaff);
+        affect_remove(ch, pkaff);
     }
 
     if ((ranking == ch->player.ranking && pkaff) // ranking hasn't changed

@@ -2531,6 +2531,13 @@ char* apply_types[] = {
     "MANA_REGEN",
     "RESISTANCE",
     "VULNERAB",
+    "MAUL",
+    "BEND",
+    "PKMAGE",
+    "PKRANGER",
+    "PKWARRIOR",
+    "SPELLPEN",
+    "SPELLPOWER",
     "\n"
 };
 

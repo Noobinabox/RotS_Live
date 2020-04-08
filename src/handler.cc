@@ -385,6 +385,14 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         SET_OB(ch) += mod;
         break;
 
+    case APPLY_SPELL_PEN:
+        ch->points.spell_pen += mod;
+        break;
+
+    case APPLY_SPELL_POW:
+        ch->points.spell_power += mod;
+        break;
+
     case APPLY_DAMROLL:
         GET_DAMAGE(ch) += mod;
         break;

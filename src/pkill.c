@@ -249,7 +249,7 @@ void __delete_rank(RANKING* rnk, int r, bool totalrank)
 /*
 * Insert a reference to character 'idx' at rank 'a'.
 */
-void __insert_rank(RANKING* rnk, int a, long idx,bool totalrank)
+void __insert_rank(RANKING* rnk, int a, long idx, bool totalrank)
 {
     if (rnk->rank_tab == NULL || rnk->rank_len == 0) {
         CREATE(rnk->rank_tab, long, 1);
@@ -318,7 +318,7 @@ void pkill_update_rank(long idx)
         return;
     }
 
-    for (b = 0; a < trnk->rank_len;++b) {
+    for (b = 0; b < trnk->rank_len;++b) {
         if (trnk->rank_tab[b] == -1)
             break;
         

@@ -780,6 +780,9 @@ struct room_data {
 #define APPLY_PK_RANGER 36
 #define APPLY_PK_WARRIOR 37
 
+#define APPLY_SPELL_PEN 38
+#define APPLY_SPELL_POW 39
+
 #define ROOMAFF_SPELL 1
 #define ROOMAFF_EXIT 2
 
@@ -1057,6 +1060,8 @@ struct char_point_data {
     sh_int encumb; /* how encumbered a player is, affects casting and
 			  dex skills */
     sh_int willpower; /* strength in mental fights */
+    sh_int spell_pen;
+    sh_int spell_power;
 };
 
 /* char_special_data's fields are fields which are needed while the game

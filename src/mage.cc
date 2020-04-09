@@ -69,7 +69,7 @@ bool should_apply_spell_penetration(const char_data* caster)
 
 double get_spell_pen_value(const char_data* caster)
 {
-    int mage_level = utils::get_prof_level(PROF_MAGE, *caster) + caster->points.spell_pen;
+    int mage_level = utils::get_prof_level(PROF_MAGE, *caster);
     if (utils::is_npc(*caster) && utils::is_affected_by(*caster, AFF_CHARM) && caster->master) {
         mage_level += utils::get_prof_level(PROF_MAGE, *(caster->master)) / 3;
     }
@@ -1692,7 +1692,7 @@ ASPELL(spell_earthquake)
 
 ASPELL(spell_lightning_strike)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 30;
+    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 40;
 
     if (!OUTSIDE(caster)) {
         send_to_char("You can not call lightning inside!\n\r", caster);

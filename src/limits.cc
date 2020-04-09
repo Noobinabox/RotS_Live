@@ -1083,9 +1083,7 @@ void do_fame_war_bonuses(struct char_data* ch) {
     affected_type* pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
 
     if (!is_rank_valid(ranking) && !pkaff) {
-        if (ch->player.ranking != ranking) {
-            ch->player.ranking = ranking;
-        }
+        ch->player.ranking = ranking;
         return; // If the player doesn't have ranking don't give them bonuses
     }
 

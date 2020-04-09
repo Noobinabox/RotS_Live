@@ -1650,6 +1650,12 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         dam = maul_damage_reduction(victim, dam);
     }
 
+    affected_type* pkaff = affected_by_spell(victim, SPELL_FAME_WAR);
+
+    if (!IS_NPC(attacker) && pkaff && victim->player.ranking < 4 && victim->player.ranking != PKILL_UNRANKED) {
+        dam += dam * ((15 / victim->player.ranking) / 100);
+    } 
+
     /* Call special procs on damage */
     if (victim->specials.fighting != attacker) {
         tmpwtl.targ1.ptr.ch = victim;

@@ -2534,6 +2534,7 @@ char* apply_types[] = {
     "MAUL",
     "BEND",
     "PKMAGE",
+    "PKMYSTIC",
     "PKRANGER",
     "PKWARRIOR",
     "SPELLPEN",

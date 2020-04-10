@@ -1028,7 +1028,6 @@ void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode) {
             set_player_con(ch, 2, mode);
             set_player_hit(ch, 15, mode);
             set_player_ob(ch, 10, mode);
-            set_player_damage(ch, 1, mode);
             break;
         case 2:
             set_player_con(ch, 1, mode);

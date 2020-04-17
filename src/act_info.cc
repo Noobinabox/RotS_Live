@@ -384,8 +384,12 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
             strcat(buf, "..It glows red!");
             found = TRUE;
         }
-        if (IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
+        if (IS_OBJ_STAT(object, ITEM_MAGIC) && !IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
             strcat(buf, "..It glows blue!");
+            found = TRUE;
+        }
+        if (IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)){
+            strcat(buf, "..It glows red!");
             found = TRUE;
         }
         if (IS_OBJ_STAT(object, ITEM_WILLPOWER) && IS_SHADOW(ch)) {

@@ -2356,6 +2356,18 @@ char* extra_bits[] = {
     "<OLD !DONATE, REPORT TO IMPS>",
     "!INVIS",
     "WILLPOWER",
+    "IMM",
+    "HUMAN",
+    "DWARF",
+    "WOODELF",
+    "HOBBIT",
+    "BEORNING",
+    "URUK",
+    "ORC",
+    "ORCFOLLOWER",
+    "LHUTH",
+    "OLOGHAI",
+    "HARADRIM",
     "\n"
 };
 

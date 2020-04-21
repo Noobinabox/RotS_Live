@@ -2956,22 +2956,18 @@ void on_mark_miss(char_data* marker, char_data* victim)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
    slyon: June 12, 2018 - Remove archery and make success based on touch attack
+   slyon: April 21, 2020 - Changes success rate to a better formula
 ==================================================================================*/
 int mark_calculate_success(char_data* marker, char_data* victim)
 {
-    int mark_skill = utils::get_skill(*marker, SKILL_MARK);
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
-    int ranger_dex = marker->get_cur_dex();
-    int mark_ob = get_real_OB(marker);
-    int total_marker = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + mark_ob;
-
-    int vict_dex = victim->get_cur_dex();
-    int vict_ranger = utils::get_prof_level(PROF_RANGER, *victim);
-    int vict_dodge = utils::get_real_dodge(*victim);
-    int total_victim = vict_ranger + (vict_dex / 2) + vict_dodge;
-
-    int success_chance = total_marker - total_victim;
-    return success_chance;
+    int prob = GET_SKILL(marker, SKILL_MARK);
+    prob -= get_real_dodge(victim);
+    prob -= get_real_parry(victim) / 2;
+    prob += get_real_OB(marker) / 2;
+    prob += utils::get_prof_level(PROF_RANGER, *marker) / 2;
+    prob += number(1, 100);
+    prob -= 120;
+    return prob;
 }
 
 /*=================================================================================

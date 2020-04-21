@@ -1829,13 +1829,17 @@ void snuck_in(struct char_data* ch)
 	 */
 
     // Characters that are stealth spec do not have a sneak delay.
-    if (utils::get_specialization(*ch) != game_types::PS_Stealth) {
-        int wait = ch->delay.wait_value + 2;
-        if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
-            wait = wait - 1;
+    int wait = ch->delay.wait_value + 2;
+    if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
+        wait = wait - 1;
 
-        WAIT_STATE(ch, wait);
+
+
+    if (utils::get_specialization(*ch) == game_types::PS_Stealth) {
+        wait = wait * 0.5;
     }
+
+    WAIT_STATE(ch, wait);
 }
 
 /*

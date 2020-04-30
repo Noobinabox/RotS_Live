@@ -2216,14 +2216,11 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
             damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
         }
 
-        // TODO(drelidan): If heavy fighters need a buff, consider adding this.
         /* Heavy fighters get an extra 10% damage absorption. */
-        /*
 		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
 		{
 			damage_reduction += damage_reduction / 10;
 		}
-		*/
 
         damage -= damage_reduction;
 
@@ -2653,7 +2650,7 @@ bool can_double_hit(const char_data* character)
 bool does_double_hit_proc(const char_data* character)
 {
     // Double-hit has a 25% proc chance.
-    return number() >= 0.75;
+    return number() >= 0.80;
 }
 
 bool can_beorning_swipe(struct char_data* character)

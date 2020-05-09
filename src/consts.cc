@@ -409,7 +409,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "death ward", PROF_CLERIC, 20, spell_death_ward,
         POSITION_STANDING, 0, 72, 40, 1, 1, 0, PLRSPEC_PROT },
     { "dark bolt", PROF_MAGE, 9, spell_dark_bolt,
-        POSITION_FIGHTING, 12, 19, 18, 10, 1, 0, PLRSPEC_DARK },
+        POSITION_FIGHTING, 10, 17, 18, 10, 1, 0, PLRSPEC_DARK },
     { "mist of baazunga", PROF_MAGE, 27, spell_mist_of_baazunga,
         POSITION_STANDING, 50, 72, 36, 1, 1, 0, PLRSPEC_DARK },
     { "mind block", PROF_CLERIC, 3, spell_mind_block,

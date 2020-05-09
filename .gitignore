@@ -44,3 +44,4 @@ log/
 src/.vs/
 .vs/
 .vscode/
+.vscode/settings.json

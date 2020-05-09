@@ -957,19 +957,28 @@ void set_player_damage(struct char_data* ch, int mod, bool mode) {
     ch->points.damage += mod;
 }
 
+void set_player_spell_pen(struct char_data* ch, int mod, bool mode) {
+    if (!mode)
+        mod = -mod;
+    ch->points.spell_pen += mod;
+}
+
 void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode) {
     switch(tier) {
         case 1:
             set_player_mana(ch, 15, mode);
             set_player_con(ch, 2, mode);
+            set_player_spell_pen(ch, 3, mode);
             break;
         case 2:
             set_player_con(ch, 1, mode);
             set_player_mana(ch, 10, mode);
+            set_player_spell_pen(ch, 2, mode);
             break;
         case 3:
             set_player_con(ch, 1, mode);
             set_player_mana(ch, 5, mode);
+            set_player_spell_pen(ch, 1, mode);
             break;
         case 4:
             set_player_mana(ch, 3, mode);

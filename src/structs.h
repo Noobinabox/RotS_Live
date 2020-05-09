@@ -1062,6 +1062,9 @@ struct char_point_data {
     sh_int willpower; /* strength in mental fights */
     sh_int spell_pen;
     sh_int spell_power;
+    sh_int get_spell_power() const { return spell_power;  };
+    void set_spell_power(sh_int bonus) { spell_power += bonus; };
+    sh_int get_spell_pen() const { return spell_pen; };
 };
 
 /* char_special_data's fields are fields which are needed while the game

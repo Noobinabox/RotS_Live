@@ -2738,13 +2738,13 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
     // Characters cannot recover arrows if they are blind.
     if (!CAN_SEE(character)) {
-        send_to_char("You can't see anything in this darkness!", character);
+        send_to_char("You can't see anything in this darkness!\n\r", character);
         return;
     }
 
     // Characters cannot recover arrows if they are a shadow.
     if (utils::is_shadow(*character)) {
-        send_to_char("Try rejoining the corporal world first...", character);
+        send_to_char("Try rejoining the corporal world first...\n\r", character);
         return;
     }
 
@@ -2756,7 +2756,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     get_corpse_tagged_arrows(character, arrows_to_get);
 
     if (arrows_to_get.empty()) {
-        send_to_char("You have no expended arrows here.", character);
+        send_to_char("You have no expended arrows here.\n\r", character);
         return;
     }
 
@@ -2780,11 +2780,11 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
                     put_arrow_quiver(character, arrow, quiver);
                 }
             } else {
-                send_to_char("You can't carry that much weight!", character);
+                send_to_char("You can't carry that much weight!\n\r", character);
                 break;
             }
         } else {
-            send_to_char("You can't carry that many items!", character);
+            send_to_char("You can't carry that many items!\n\r", character);
             break;
         }
     }
@@ -2794,7 +2794,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     std::string message = message_writer.str();
     send_to_char(message.c_str(), character);
 
-    act("$n recovers some arrows.\r\n", FALSE, character, NULL, NULL, TO_ROOM);
+    act("$n recovers some arrows.\n\r", FALSE, character, NULL, NULL, TO_ROOM);
 }
 
 /*=================================================================================
@@ -2826,12 +2826,12 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
         return;
 
     if (!CAN_SEE(character)) {
-        send_to_char("You can't see anything in this darkness!", character);
+        send_to_char("You can't see anything in this darkness!\n\r", character);
         return;
     }
 
     if (utils::is_shadow(*character)) {
-        send_to_char("Try rejoining the corporal world first...", character);
+        send_to_char("Try rejoining the corporal world first...\n\r", character);
         return;
     }
 

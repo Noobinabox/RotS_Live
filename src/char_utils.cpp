@@ -1647,7 +1647,7 @@ std::string group_damaga_data::get_damage_report() const
     message_writer << "-------------------------------------------------------------------------------" << std::endl;
 
     for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter) {
-        char character_name[25];
+        char character_name[100];
 
         char_data* character = iter->first;
         sprintf(character_name, "%-24s", utils::get_name(*character));

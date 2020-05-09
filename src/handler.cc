@@ -77,6 +77,8 @@ void clear_memory(struct char_data*);
 ACMD(do_save);
 ACMD(do_return);
 
+#define MAX_MAUL_DODGE 50
+
 char char_control_array[MAX_CHARACTERS / 8 + 1];
 long last_control_set = -1;
 
@@ -420,11 +422,11 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;   
     case APPLY_MAUL:
         if (!add) {
-            SET_DODGE(ch) += counter * 5;
+            SET_DODGE(ch) += std::min((counter * 5), MAX_MAUL_DODGE);
         }
 
         if (add) {
-            SET_DODGE(ch) += -(counter * 5);
+            SET_DODGE(ch) += -(std::min((counter * 5), MAX_MAUL_DODGE));
         }
         break;
 

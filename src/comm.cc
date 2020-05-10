@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 #include "color.h"
 #include "comm.h"
@@ -711,6 +712,11 @@ void game_loop(SocketType s)
                 mins_since_crashsave = 0;
                 Crash_save_all();
             }
+        }
+
+        if (!(pulse % 4)) {
+            game_timer::skill_timer& st_instance = game_timer::skill_timer::instance();
+            st_instance.update_skill_timer();
         }
 
         if (!(pulse % 1200)) {

@@ -44,3 +44,6 @@ log/
 src/.vs/
 src/*.sln
 src/*.vcxproj*
+
+# Build files
+build/*

@@ -42,3 +42,5 @@ log/
 
 # Visual Studio Crap Dump
 src/.vs/
+src/*.sln
+src/*.vcxproj*

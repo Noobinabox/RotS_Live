@@ -46,4 +46,4 @@ src/*.sln
 src/*.vcxproj*
 
 # Build files
-build/*
+*build*/*

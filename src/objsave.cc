@@ -22,6 +22,9 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "pkill.h"
+#include "char_utils.h"
+#include "limits.h"
 
 #include <iostream>
 #include <sstream>
@@ -38,6 +41,9 @@
 #define FOL_ORC_FRIEND 1
 #define FOL_TAMED 2
 #define FOL_GUARDIAN 3
+
+#define MIN_RANK 1
+#define MAX_RANK 10
 
 int cost_per_day(struct obj_data* obj);
 
@@ -1533,9 +1539,15 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
             act(buf, FALSE, recep, 0, ch, TO_VICT);
         }
 
+
         if (mode == RENT_FACTOR) {
+            affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
             act("$n stores your belongings and helps you into your private chamber.",
                 FALSE, recep, 0, ch, TO_VICT);
+            if(aff) {
+                remove_fame_war_bonuses(ch, aff);
+                affect_remove(ch, aff);
+            }
             Crash_rentsave(ch, cost);
             sprintf(buf, "%s has rented (%d/day, %d tot.)", GET_NAME(ch),
                 cost, GET_GOLD(ch));

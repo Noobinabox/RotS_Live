@@ -425,7 +425,7 @@ int* get_int_param(int param, info_script* info)
             return 0;
     case SCRIPT_PARAM_CH1_RANK:
         if (info->ch[0])
-            r = pkill_get_rank_by_character(info->ch[0]);
+            r = pkill_get_rank_by_character(info->ch[0], false);
         else
             r = PKILL_UNRANKED;
 
@@ -434,7 +434,7 @@ int* get_int_param(int param, info_script* info)
         return &r;
     case SCRIPT_PARAM_CH2_RANK:
         if (info->ch[1])
-            r = pkill_get_rank_by_character(info->ch[1]);
+            r = pkill_get_rank_by_character(info->ch[1], false);
         else
             r = PKILL_UNRANKED;
 
@@ -443,7 +443,7 @@ int* get_int_param(int param, info_script* info)
         return &r;
     case SCRIPT_PARAM_CH3_RANK:
         if (info->ch[2])
-            r = pkill_get_rank_by_character(info->ch[2]);
+            r = pkill_get_rank_by_character(info->ch[2], false);
         else
             r = PKILL_UNRANKED;
 

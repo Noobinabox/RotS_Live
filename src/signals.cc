@@ -89,13 +89,12 @@ void reread_wizlists(int fake)
 void unrestrict_game(int fake)
 {
     extern int restrict;
-    extern struct ban_list_element* ban_list;
     extern int num_invalid;
 
     signal(SIGUSR2, unrestrict_game);
     mudlog("Received SIGUSR2 - unrestricting game (emergent)",
         BRF, LEVEL_IMMORT, TRUE);
-    ban_list = 0;
+    int ban_list = 0;
     restrict = 0;
     num_invalid = 0;
 }

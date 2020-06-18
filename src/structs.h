@@ -775,6 +775,14 @@ struct room_data {
 #define APPLY_MAUL 32
 #define APPLY_BEND 33
 
+#define APPLY_PK_MAGE 34
+#define APPLY_PK_MYSTIC 35
+#define APPLY_PK_RANGER 36
+#define APPLY_PK_WARRIOR 37
+
+#define APPLY_SPELL_PEN 38
+#define APPLY_SPELL_POW 39
+
 #define ROOMAFF_SPELL 1
 #define ROOMAFF_EXIT 2
 
@@ -1014,6 +1022,7 @@ struct char_player_data {
     struct time_data time; /* PC s AGE in days                 	*/
     int weight; /* PC / NPC s weight                    	*/
     int height; /* PC / NPC s height                    	*/
+    int ranking; /* PC / NPC s ranking in fame war */
 };
 
 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */ /*changed all from int*/
@@ -1051,6 +1060,11 @@ struct char_point_data {
     sh_int encumb; /* how encumbered a player is, affects casting and
 			  dex skills */
     sh_int willpower; /* strength in mental fights */
+    sh_int spell_pen;
+    sh_int spell_power;
+    sh_int get_spell_power() const { return spell_power;  };
+    void set_spell_power(sh_int bonus) { spell_power += bonus; };
+    sh_int get_spell_pen() const { return spell_pen; };
 };
 
 /* char_special_data's fields are fields which are needed while the game

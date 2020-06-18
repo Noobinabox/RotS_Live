@@ -1380,7 +1380,7 @@ int spell_list[][4] = {
     { SPELL_FIREBOLT, SPELL_CHILL_RAY, SPELL_BLACK_ARROW, SPELL_CURSE }, /*level 35*/
     { SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_TERROR }, /*level 40*/
     { SPELL_CONE_OF_COLD, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE }, /*level 45*/
-    { SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE }, /*level 50*/
+    { SPELL_FIREBALL, SPELL_SEARING_DARKNESS, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE }, /*level 50*/
 
 };
 
@@ -1707,9 +1707,9 @@ SPECIAL(mob_ranger)
         return 1;
     }
 
-    if ((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
-        do_hide(host, "", 0, 0, 0);
+	if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+		|| IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && ch->delay.wait_value == 0)
+		do_hide(host, "", 0, 0, 0);
 
     tmproom = &world[host->in_room];
     mintime = 999;

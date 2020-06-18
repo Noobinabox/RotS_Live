@@ -18,6 +18,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "pkill.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -47,6 +48,9 @@ void recalc_skills(struct char_data* ch);
 
 extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
 void one_mobile_activity(char_data* ch);
+
+#define MIN_RANK 1
+#define MAX_RANK 10
 
 ACMD(do_flee);
 char saves_spell(struct char_data* ch, sh_int level, int bonus);
@@ -895,6 +899,243 @@ void check_breathing(char_data* ch)
     }
 }
 
+bool is_rank_valid(int ranking) {
+    return (ranking != PKILL_UNRANKED)
+        && (ranking >= MIN_RANK)
+        && (ranking <= MAX_RANK);
+}
+
+void set_player_moves(struct char_data* ch, int mod, bool mode) {
+    if (!mode)
+        mod = -mod;
+    
+    ch->constabilities.move += mod;
+    ch->abilities.move += mod;
+    ch->tmpabilities.move += mod;
+}
+
+void set_player_ob(struct char_data* ch, int mod, bool mode) {
+    if (!mode)
+        mod = -mod;
+
+    SET_OB(ch) += mod;
+}
+
+void set_player_hit(struct char_data* ch, int mod, bool mode) {
+    if (mode == false)
+        mod = -mod;
+
+    ch->constabilities.hit += mod;
+    ch->abilities.hit += mod;
+    ch->tmpabilities.hit += mod;
+}
+
+void set_player_con(struct char_data* ch, int mod, bool mode) {
+    if (mode == false)
+        mod = -mod;
+
+    ch->constabilities.con += mod;
+    ch->abilities.con += mod;
+}
+
+void set_player_mana(struct char_data* ch, int mod, bool mode) {
+    if (mode == false)
+        mod = -mod;
+
+    ch->constabilities.mana += mod;
+    ch->abilities.mana += mod;
+    ch->tmpabilities.mana += mod;
+}
+
+void set_player_damage(struct char_data* ch, int mod, bool mode) {
+    if (!mode)
+        mod = -mod;
+
+    if (!mode && ch->points.damage == 0 )
+        return;
+
+    ch->points.damage += mod;
+}
+
+void set_player_spell_pen(struct char_data* ch, int mod, bool mode) {
+    if (!mode)
+        mod = -mod;
+    ch->points.spell_pen += mod;
+}
+
+void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode) {
+    switch(tier) {
+        case 1:
+            set_player_mana(ch, 15, mode);
+            set_player_con(ch, 2, mode);
+            set_player_spell_pen(ch, 3, mode);
+            break;
+        case 2:
+            set_player_con(ch, 1, mode);
+            set_player_mana(ch, 10, mode);
+            set_player_spell_pen(ch, 2, mode);
+            break;
+        case 3:
+            set_player_con(ch, 1, mode);
+            set_player_mana(ch, 5, mode);
+            set_player_spell_pen(ch, 1, mode);
+            break;
+        case 4:
+            set_player_mana(ch, 3, mode);
+            break;
+        default:
+            break;
+    }
+}
+
+void assign_pk_mystic_bonus(struct char_data* ch, int tier, bool mode) {
+    switch(tier) {
+        case 1:
+            set_player_con(ch, 2, mode);
+            break;
+        case 2:
+            set_player_con(ch, 2, mode);
+            break;
+        case 3:
+            set_player_con(ch, 1, mode);
+            break;
+        case 4:
+        default:
+            break;
+    }
+}
+
+void assign_pk_ranger_bonus(struct char_data* ch, int tier, bool mode) {
+    switch(tier) {
+        case 1:
+            set_player_con(ch, 2, mode);
+            set_player_moves(ch, 20, mode);
+            set_player_ob(ch, 10, mode);
+            break;
+        case 2:
+            set_player_con(ch, 1, mode);
+            set_player_moves(ch, 15, mode);
+            set_player_ob(ch, 7, mode);
+            break;
+        case 3:
+            set_player_con(ch, 1, mode);
+            set_player_moves(ch, 10, mode);
+            set_player_ob(ch, 5, mode);
+            break;
+        case 4:
+            set_player_moves(ch, 10, mode);
+            set_player_ob(ch, 3, mode);
+            break;;
+        default:
+            break;
+    }
+}
+
+void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode) {
+    switch (tier) {
+        case 1:
+            set_player_con(ch, 2, mode);
+            set_player_hit(ch, 15, mode);
+            set_player_ob(ch, 10, mode);
+            break;
+        case 2:
+            set_player_con(ch, 1, mode);
+            set_player_hit(ch, 10, mode);
+            set_player_ob(ch, 7, mode);
+            break;
+        case 3:
+            set_player_con(ch, 1, mode);
+            set_player_hit(ch, 5, mode);
+            set_player_ob(ch, 5, mode);
+            break;
+        case 4:
+            set_player_ob(ch, 3, mode);
+            set_player_hit(ch, 5, mode);
+            break;
+        default:
+            break;
+    }
+}
+
+void assign_pk_bonuses(struct char_data* ch, int coeff, int tier,bool mode) {
+    switch (coeff) {
+        case PROF_MAGE:
+            assign_pk_mage_bonus(ch, tier, mode);
+            break;
+        case PROF_CLERIC:
+            assign_pk_mystic_bonus(ch, tier, mode);
+            break;
+        case PROF_RANGER:
+            assign_pk_ranger_bonus(ch, tier, mode);
+            break;
+        case PROF_WARRIOR:
+            assign_pk_warrior_bonus(ch, tier, mode);
+            break;
+        default:
+            break;
+    }
+}
+
+void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff) {
+    int coeff = utils::get_highest_coeffs(*ch);
+    affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
+    assign_pk_bonuses(ch, coeff, aff->modifier, false);
+    recalc_abilities(ch);
+}
+
+void do_fame_war_bonuses(struct char_data* ch) {
+    if (IS_NPC(ch))
+        return;
+
+    int ranking = pkill_get_rank_by_character(ch, true) + 1;
+    affected_type* pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
+
+    if (!is_rank_valid(ranking) && !pkaff) {
+        ch->player.ranking = ranking;
+        return; // If the player doesn't have ranking don't give them bonuses
+    }
+
+    int coeff = utils::get_highest_coeffs(*ch);
+    int tier = utils::get_ranking_tier(ranking);
+
+    if (!is_rank_valid(ranking) && pkaff) // player has dropped bonuses
+    {
+        remove_fame_war_bonuses(ch, pkaff);
+        affect_remove(ch, pkaff);
+    }
+
+    if ((ranking == ch->player.ranking && pkaff) // ranking hasn't changed
+       || ((ranking != ch->player.ranking && pkaff) && (pkaff->modifier == tier))) // ranking has but tier hasn't
+    {
+        pkaff->duration = 100;
+    }
+
+    if (pkaff && pkaff->modifier != tier) {
+        assign_pk_bonuses(ch, coeff, pkaff->modifier, false);
+        assign_pk_bonuses(ch, coeff, tier, true);
+        if (tier < pkaff->modifier)
+            send_to_char("The power of war increases in your body!\n\r", ch);
+        else
+            send_to_char("The power of war decreases in your body!\n\r", ch);
+        pkaff->modifier = tier;
+    }
+
+    if (!pkaff) {
+        affected_type newpkaf;
+        assign_pk_bonuses(ch, coeff, tier, true);
+        newpkaf.type = SPELL_FAME_WAR;
+        newpkaf.duration = 100;
+        newpkaf.location = APPLY_NONE;
+        newpkaf.modifier = tier;
+        newpkaf.bitvector = 0;
+        newpkaf.counter = coeff;
+        affect_to_char(ch, &newpkaf);
+        send_to_char("The power of war empowers your body!\n\r", ch);
+    }
+    
+    ch->player.ranking = ranking;
+}
+
 void do_power_of_arda(char_data* ch)
 {
     affected_type* tmpaf;
@@ -1245,6 +1486,7 @@ void fast_update()
         if (EVIL_RACE(i))
             do_power_of_arda(i);
         check_breathing(i);
+        do_fame_war_bonuses(i);
 
         //     affect_update_person(i, 1);
     }

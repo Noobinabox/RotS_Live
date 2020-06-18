@@ -12,6 +12,7 @@
 #define LIMITS_H
 
 struct char_data;
+struct affected_type;
 
 /* Public Procedures */
 int mana_gain(const char_data* ch);
@@ -30,6 +31,7 @@ int check_idling(struct char_data* ch);
 // returns non-zero if ch was extracted
 void point_update(void);
 void update_pos(struct char_data* victim);
+void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff);
 
 struct title_type {
     char* title_m;

@@ -57,6 +57,7 @@ extern void stop_hiding(struct char_data* ch, char);
 extern void update_pos(struct char_data* victim);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 extern void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon);
+extern void say_spell(char_data* caster, int spell_index);
 
 const int GATHER_FOOD = 7218;
 const int GATHER_LIGHT = 7007;
@@ -1828,13 +1829,17 @@ void snuck_in(struct char_data* ch)
 	 */
 
     // Characters that are stealth spec do not have a sneak delay.
-    if (utils::get_specialization(*ch) != game_types::PS_Stealth) {
-        int wait = ch->delay.wait_value + 2;
-        if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
-            wait = wait - 1;
+    int wait = ch->delay.wait_value + 2;
+    if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
+        wait = wait - 1;
 
-        WAIT_STATE(ch, wait);
+
+
+    if (utils::get_specialization(*ch) == game_types::PS_Stealth) {
+        wait = wait * 0.5;
     }
+
+    WAIT_STATE(ch, wait);
 }
 
 /*
@@ -2128,7 +2133,7 @@ int shoot_calculate_wait(const char_data* archer)
     int total_beats = base_beats - ((archer->points.ENE_regen / base_beats) - base_beats);
     total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / base_beats);
 
-    if (archer->player.race == RACE_WOOD) {
+    if (archer->player.race == RACE_WOOD || archer->player.race == RACE_HARADRIM) {
         total_beats = total_beats - 1;
     }
 
@@ -2156,6 +2161,11 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, const ob
         // TODO(drelidan):  Figure out break contribution.  Perhaps this function
         // should be called and given an armor location or something.
     }
+
+	// haradrims get a bonus with crude arrows for being a primative race
+	if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
+		breakpercentage >>= 1;
+	}
 
     if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
         breakpercentage >>= 1;
@@ -2728,13 +2738,13 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
     // Characters cannot recover arrows if they are blind.
     if (!CAN_SEE(character)) {
-        send_to_char("You can't see anything in this darkness!", character);
+        send_to_char("You can't see anything in this darkness!\n\r", character);
         return;
     }
 
     // Characters cannot recover arrows if they are a shadow.
     if (utils::is_shadow(*character)) {
-        send_to_char("Try rejoining the corporal world first...", character);
+        send_to_char("Try rejoining the corporal world first...\n\r", character);
         return;
     }
 
@@ -2746,7 +2756,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     get_corpse_tagged_arrows(character, arrows_to_get);
 
     if (arrows_to_get.empty()) {
-        send_to_char("You have no expended arrows here.", character);
+        send_to_char("You have no expended arrows here.\n\r", character);
         return;
     }
 
@@ -2770,11 +2780,11 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
                     put_arrow_quiver(character, arrow, quiver);
                 }
             } else {
-                send_to_char("You can't carry that much weight!", character);
+                send_to_char("You can't carry that much weight!\n\r", character);
                 break;
             }
         } else {
-            send_to_char("You can't carry that many items!", character);
+            send_to_char("You can't carry that many items!\n\r", character);
             break;
         }
     }
@@ -2784,7 +2794,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     std::string message = message_writer.str();
     send_to_char(message.c_str(), character);
 
-    act("$n recovers some arrows.\r\n", FALSE, character, NULL, NULL, TO_ROOM);
+    act("$n recovers some arrows.\n\r", FALSE, character, NULL, NULL, TO_ROOM);
 }
 
 /*=================================================================================
@@ -2816,12 +2826,12 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
         return;
 
     if (!CAN_SEE(character)) {
-        send_to_char("You can't see anything in this darkness!", character);
+        send_to_char("You can't see anything in this darkness!\n\r", character);
         return;
     }
 
     if (utils::is_shadow(*character)) {
-        send_to_char("Try rejoining the corporal world first...", character);
+        send_to_char("Try rejoining the corporal world first...\n\r", character);
         return;
     }
 
@@ -2946,22 +2956,18 @@ void on_mark_miss(char_data* marker, char_data* victim)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Created
    slyon: June 12, 2018 - Remove archery and make success based on touch attack
+   slyon: April 21, 2020 - Changes success rate to a better formula
 ==================================================================================*/
 int mark_calculate_success(char_data* marker, char_data* victim)
 {
-    int mark_skill = utils::get_skill(*marker, SKILL_MARK);
-    int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
-    int ranger_dex = marker->get_cur_dex();
-    int mark_ob = get_real_OB(marker);
-    int total_marker = ranger_level + (ranger_dex / 2) + (mark_skill / 2) + mark_ob;
-
-    int vict_dex = victim->get_cur_dex();
-    int vict_ranger = utils::get_prof_level(PROF_RANGER, *victim);
-    int vict_dodge = utils::get_real_dodge(*victim);
-    int total_victim = vict_ranger + (vict_dex / 2) + vict_dodge;
-
-    int success_chance = total_marker - total_victim;
-    return success_chance;
+    int prob = GET_SKILL(marker, SKILL_MARK);
+    prob -= get_real_dodge(victim);
+    prob -= get_real_parry(victim) / 2;
+    prob += get_real_OB(marker) / 2;
+    prob += utils::get_prof_level(PROF_RANGER, *marker) / 2;
+    prob += number(1, 100);
+    prob -= 120;
+    return prob;
 }
 
 /*=================================================================================
@@ -3144,6 +3150,7 @@ ACMD(do_mark)
 
         // Did we land our touch attack???
         int target_number = mark_calculate_success(ch, victim);
+		say_spell(ch, SKILL_MARK);
         if (target_number > 0) {
             on_mark_hit(ch, victim);
         } else {
@@ -3394,6 +3401,7 @@ ACMD(do_blinding)
         }
 
         int percent_hit = harad_skill_calculate_save(ch, victim, SKILL_BLINDING);
+		say_spell(ch, SKILL_BLINDING);
         if (percent_hit < 0) {
             on_dust_miss(ch, victim, mana_cost);
         } else {
@@ -3528,6 +3536,7 @@ ACMD(do_bendtime)
         WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
+		say_spell(ch, SKILL_BEND_TIME);
         if (check_skill_success(ch, SKILL_BEND_TIME))
             on_bend_success(ch, mana_cost, move_cost);
         else {
@@ -3624,7 +3633,9 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     dam_value = number(1, 30) + power_level;
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-
+	
+	send_to_char("Vile black wind eminates from you, slamming into all!\r\n", ch);
+	
     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
@@ -3684,6 +3695,7 @@ ACMD(do_windblast)
         WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
+		say_spell(ch, SKILL_WINDBLAST);
         if (check_skill_success(ch, SKILL_WINDBLAST)) {
             on_windblast_success(ch, mana_cost, move_cost);
         } else {

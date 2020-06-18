@@ -45,7 +45,7 @@ char unaccent(char);
 char* str_dup(const char* source);
 int str_cmp(char* arg1, char* arg2);
 int strn_cmp(char* arg1, char* arg2, int n);
-void log(char* str);
+void log(const char* str);
 void mudlog(char* str, char type, sh_int level, byte file);
 void vmudlog(char type, char* format, ...);
 void log_death_trap(struct char_data* ch);
@@ -71,7 +71,7 @@ int find_player_in_table(char* name, int idnum);
 char* strcpy_lang(char* targ, char* src, byte freq, int maxlen);
 void reshuffle(int* arr, int len);
 
-void* create_function(int elem_size, int elem_num, int line, char* file);
+void* create_function(int elem_size, int elem_num, int line,const char* file);
 void free_function(void* pnt);
 
 int get_total_fame(char_data* ch);
@@ -356,6 +356,8 @@ void untrack_specialized_mage(char_data* mage);
 
 #define GET_CON(ch) ((ch)->tmpabilities.con)
 #define GET_CON_BASE(ch) ((ch)->abilities.con)
+#define SET_CON_BASE(ch, val) (ch)->abilities.con = (val)
+#define SET_CON(ch, val) (ch)->tmpabilities.str = (val)
 
 #define GET_SAVE(ch) ((ch)->specials2.saving_throw)
 
@@ -411,6 +413,12 @@ extern struct race_bodypart_data bodyparts[MAX_BODYTYPES];
 
 #define GET_OB(ch) ((ch)->points.OB)
 #define SET_OB(ch) ((ch)->points.OB)
+
+#define GET_SPELL_PEN(ch) ((ch)->points.spell_pen);
+#define SET_SPELL_PEN(ch) ((ch)->points.spell_pen);
+
+#define GET_SPELL_POWER(ch) ((ch)->points.spell_power);
+#define SET_SPELL_POWER(ch) ((ch)->points.spell_power);
 
 #define GET_WILLPOWER(ch) ((ch)->points.willpower)
 

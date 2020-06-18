@@ -340,6 +340,25 @@ int get_prof_points(int prof, const char_data& character)
 }
 
 //============================================================================
+int get_highest_coeffs(const char_data& character) {
+    int coeffs[4];
+    int prof = 0;
+    coeffs[0] = get_prof_level(PROF_MAGE, character);
+    coeffs[1] = get_prof_level(PROF_CLERIC, character);
+    coeffs[2] = get_prof_level(PROF_RANGER, character);
+    coeffs[3] = get_prof_level(PROF_WARRIOR, character);
+
+    for (int i = 1; i < 4; ++i) {
+        if (coeffs[0] < coeffs[i]) {
+            coeffs[0] = coeffs[i];
+            prof = i;
+        }
+    }
+
+    return prof + 1;
+}
+
+//============================================================================
 int get_bal_strength(const char_data& character)
 {
     // dgurley:  I agree with the intent behind this function, but not it's implementation.
@@ -757,6 +776,19 @@ bool is_awake(const char_data& character)
 }
 
 //============================================================================
+int get_ranking_tier(const char_data& character) {
+    return get_ranking_tier(character.player.ranking);
+}
+
+//============================================================================
+int get_ranking_tier(int ranking) {
+    if (ranking <= 3)
+        return ranking;
+    
+    return 4;
+}
+
+//============================================================================
 // Functions in this namespace do not belong in this file and need to be moved
 // elsewhere.
 //============================================================================
@@ -958,6 +990,12 @@ bool is_race_magi(const char_data& character)
 }
 
 //============================================================================
+bool is_race_haradrim(const char_data& character)
+{
+	return is_race_haradrim(character.player.race);
+}
+
+//============================================================================
 bool is_race_good(int race)
 {
     return race > 0 && race < 10;
@@ -979,6 +1017,12 @@ bool is_race_easterling(int race)
 bool is_race_magi(int race)
 {
     return race == 15;
+}
+
+//============================================================================
+bool is_race_haradrim(int race)
+{
+	return race == 18;
 }
 
 //============================================================================
@@ -1259,7 +1303,7 @@ void char_data::update_available_practices()
 //============================================================================
 void char_data::reset_skills()
 {
-	if (skills == nullptr || knowledge == nullptr)
+	if (skills == NULL || knowledge == NULL)
 		return;
 
 	for (int index = 0; index < MAX_SKILLS; ++index)
@@ -1274,7 +1318,7 @@ void char_data::reset_skills()
 //============================================================================
 bool char_data::is_affected() const
 {
-	return affected != nullptr;
+	return affected != NULL;
 }
 
 //============================================================================
@@ -1551,7 +1595,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
         char ability_name[25];
 
         int ability_index = iter->first;
-        if (ability_index > MAX_SKILLS && ability_index >= TYPE_HIT) {
+        if (ability_index > 128 && ability_index >= TYPE_HIT) {
             const attack_hit_type& hit_text = get_hit_text(ability_index);
             sprintf(ability_name, "%-24s", hit_text.singular);
         } else {
@@ -1568,7 +1612,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
         message_writer << std::fixed;
         message_writer.precision(2);
         message_writer << ", Average: " << details.get_average_damage() << "> ";
-        message_writer << details.get_total_damage() / double(total_damage_dealt* 100);
+        message_writer << (details.get_total_damage() / double(total_damage_dealt)) * 100;
         message_writer << "% of damage";
         message_writer << std::endl;
     }
@@ -1603,7 +1647,7 @@ std::string group_damaga_data::get_damage_report() const
     message_writer << "-------------------------------------------------------------------------------" << std::endl;
 
     for (map_iter iter = damage_map.begin(); iter != damage_map.end(); ++iter) {
-        char character_name[25];
+        char character_name[100];
 
         char_data* character = iter->first;
         sprintf(character_name, "%-24s", utils::get_name(*character));

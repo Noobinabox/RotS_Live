@@ -23,6 +23,7 @@
 #include "utils.h"
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 
 /* extern variables */
@@ -928,14 +929,11 @@ ACMD(do_kick)
     if (prob < 0)
         damage(ch, victim, 0, attacktype, 0);
     else {
-        //TODO(drelidan):  If heavy fighting needs any additional bonuses, start here.
         // Heavy fighters kick 20% harder.
-        /*
 		if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting)
 		{
 			dam += dam / 5;
 		}
-		*/
         damage(ch, victim, dam, attacktype, 0);
     }
 

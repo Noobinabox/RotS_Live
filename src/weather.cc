@@ -44,7 +44,7 @@ extern struct time_info_data time_info;
 // Weather messages should be moved to a special file like spell messages
 // once this code is settled.
 
-static char* weather_messages[8][13] = {
+const char* weather_messages[8][13] = {
     { "", // Indoors - no message
         "The sun rises behind the buildings.\n\r",
         "The sun rises across the fields.\n\r",

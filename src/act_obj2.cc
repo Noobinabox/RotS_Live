@@ -787,8 +787,10 @@ void perform_wear(char_data* character, obj_data* item, int item_slot, bool wear
             }
             return;
         }
-        if (IS_CARRYING_N(character) >= CAN_CARRY_N(character))
+        if (IS_CARRYING_N(character) >= CAN_CARRY_N(character)) {
             send_to_char("Your hands are already full!\n\r", character);
+	    return;
+        }
         else {
             perform_remove(character, item_slot);
         }

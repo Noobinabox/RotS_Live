@@ -66,7 +66,12 @@ void say_spell(char_data* caster, int spell_index)
 
     // Reset the buffer.
     strcpy(buf, "");
-    sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+	if (GET_RACE(caster) != RACE_HARADRIM) {
+		sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+	}
+	else {
+		sprintf(buf, "$n utters a foreign command, '%s'", spell_name);
+	}
 
     const room_data& room = world[caster->in_room];
     char_data* receiver = room.people;
@@ -215,7 +220,7 @@ int get_saving_throw_dc(const char_data* caster)
     int caster_dc = 10;
     caster_dc += utils::get_prof_level(PROF_MAGE, *caster) / 3;
     caster_dc += (caster->tmpabilities.intel - 8) / 4;
-    return caster_dc;
+    return caster_dc + caster->points.spell_pen;
 }
 
 //============================================================================
@@ -308,7 +313,7 @@ char saves_mystic(struct char_data* ch)
 char saves_poison(struct char_data* victim, struct char_data* caster)
 {
     int offence, defense;
-    int perception = IS_NPC(caster) ? 100 : GET_PERCEPTION(caster);
+    int perception = GET_PERCEPTION(caster);
     offence = ((GET_WILLPOWER(caster) * 8) * perception) / 100;
     /* wood elves get a bonus against poison */
     defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
@@ -882,7 +887,12 @@ ACMD(do_cast)
         }
         /* it's a cleric spell */
         else {
-            GET_SPIRIT(ch) -= USE_SPIRIT(ch, spell_index);
+            int spirit_cost = USE_SPIRIT(ch, spell_index);
+            affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
+            if (aff && utils::get_highest_coeffs(*ch) == PROF_CLERIC)  {
+                spirit_cost = spirit_cost * 0.80; 
+            }
+            GET_SPIRIT(ch) -= spirit_cost;
         }
 
         send_to_char("Ok.\n\r", ch);

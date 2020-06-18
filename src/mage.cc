@@ -45,6 +45,7 @@ int get_magic_power(const char_data* caster)
 {
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
+    caster_level += caster->points.spell_power;
 
     // Factor in intel values not divisible by 5.
     int intel_factor = caster->tmpabilities.intel / 5;
@@ -263,7 +264,7 @@ int loclife_add_rooms(loclife_coord room, loclife_coord* roomlist,
     }
     return count;
 }
-char* loclife_dirnames[216] = {
+const char* loclife_dirnames[216] = {
     /*
    *Lines - up/down here - farthest down - farthest up
    *columns - east/west
@@ -423,7 +424,7 @@ char* loclife_dir_convert(loclife_coord rm)
     if (rm.u > 0)
         ur += 2;
 
-    return loclife_dirnames[(nr * 5 + er) * 5 + ur];
+    return (char *)loclife_dirnames[(nr * 5 + er) * 5 + ur];
 }
 
 /*--------------------------------------------------------------------------------------------------------*/
@@ -682,7 +683,7 @@ ASPELL(spell_flash)
             GET_ENERGY(tmpch) -= 400;
         if (!saves_spell(tmpch, caster_level, 0)) {
             //  6-11-01 Errent attempts to make flash give power of arda to darkies - look out!
-            if (RACE_EVIL(tmpch)) {
+            if (RACE_EVIL(tmpch) && GET_RACE(tmpch) != RACE_HARADRIM) {
                 afflevel = 50;
                 maxlevel = afflevel * 25;
                 tmpaf = affected_by_spell(tmpch, SPELL_ARDA);
@@ -1691,7 +1692,7 @@ ASPELL(spell_earthquake)
 
 ASPELL(spell_lightning_strike)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 30;
+    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 40;
 
     if (!OUTSIDE(caster)) {
         send_to_char("You can not call lightning inside!\n\r", caster);

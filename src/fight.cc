@@ -924,6 +924,9 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
         REMOVE_BIT(dead_man->specials.affected_by, AFF_BASH);
 
     while (dead_man->affected) {
+        if (dead_man->affected->type == SPELL_FAME_WAR)
+            remove_fame_war_bonuses(dead_man, dead_man->affected);
+
         affect_remove(dead_man, dead_man->affected);
     }
     death_cry(dead_man);
@@ -1647,6 +1650,12 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         dam = maul_damage_reduction(victim, dam);
     }
 
+    affected_type* pkaff = affected_by_spell(victim, SPELL_FAME_WAR);
+
+    if (!IS_NPC(attacker) && pkaff && victim->player.ranking < 4 && victim->player.ranking != PKILL_UNRANKED) {
+        dam += dam * ((15 / victim->player.ranking) / 100);
+    } 
+
     /* Call special procs on damage */
     if (victim->specials.fighting != attacker) {
         tmpwtl.targ1.ptr.ch = victim;
@@ -2207,14 +2216,11 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
             damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
         }
 
-        // TODO(drelidan): If heavy fighters need a buff, consider adding this.
         /* Heavy fighters get an extra 10% damage absorption. */
-        /*
 		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
 		{
 			damage_reduction += damage_reduction / 10;
 		}
-		*/
 
         damage -= damage_reduction;
 
@@ -2644,7 +2650,7 @@ bool can_double_hit(const char_data* character)
 bool does_double_hit_proc(const char_data* character)
 {
     // Double-hit has a 25% proc chance.
-    return number() >= 0.75;
+    return number() >= 0.80;
 }
 
 bool can_beorning_swipe(struct char_data* character)

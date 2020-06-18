@@ -160,7 +160,8 @@ char* spell_wear_off_msg[] = {
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",
-    "!Searing Darkness!"
+    "!Searing Darkness!",
+    "You feel the empowerment of war leave your body!"
 };
 
 char* room_bits_message[32] = {
@@ -408,7 +409,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "death ward", PROF_CLERIC, 20, spell_death_ward,
         POSITION_STANDING, 0, 72, 40, 1, 1, 0, PLRSPEC_PROT },
     { "dark bolt", PROF_MAGE, 9, spell_dark_bolt,
-        POSITION_FIGHTING, 12, 19, 18, 10, 1, 0, PLRSPEC_DARK },
+        POSITION_FIGHTING, 10, 17, 18, 10, 1, 0, PLRSPEC_DARK },
     { "mist of baazunga", PROF_MAGE, 27, spell_mist_of_baazunga,
         POSITION_STANDING, 50, 72, 36, 1, 1, 0, PLRSPEC_DARK },
     { "mind block", PROF_CLERIC, 3, spell_mind_block,
@@ -504,7 +505,9 @@ struct skill_data skills[MAX_SKILLS] = {
     { "nothing", PROF_GENERAL, 0, NULL,
         POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "wind blast", PROF_RANGER, 24, NULL,
-        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE }
+        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE },
+    { "Fame War", PROF_GENERAL, 1, NULL,
+        POSITION_STANDING, 5, 2, 6, 1, 1, 1, PLRSPEC_NONE}
 };
 
 byte language_number = 3;
@@ -2353,6 +2356,18 @@ char* extra_bits[] = {
     "<OLD !DONATE, REPORT TO IMPS>",
     "!INVIS",
     "WILLPOWER",
+    "IMM",
+    "HUMAN",
+    "DWARF",
+    "WOODELF",
+    "HOBBIT",
+    "BEORNING",
+    "URUK",
+    "ORC",
+    "ORCFOLLOWER",
+    "LHUTH",
+    "OLOGHAI",
+    "HARADRIM",
     "\n"
 };
 
@@ -2528,6 +2543,14 @@ char* apply_types[] = {
     "MANA_REGEN",
     "RESISTANCE",
     "VULNERAB",
+    "MAUL",
+    "BEND",
+    "PKMAGE",
+    "PKMYSTIC",
+    "PKRANGER",
+    "PKWARRIOR",
+    "SPELLPEN",
+    "SPELLPOWER",
     "\n"
 };
 
@@ -2593,6 +2616,24 @@ char* pc_named_star_types[] = {
     "*%s the Undead*", "*%s the Olog-Hai*", "*%s the Haradrim*", "%s the UNDEFINED", "*%s the Troll*",
     /* Orc is 11, 16 total */
     "\n"
+};
+
+char* pc_arda_fame_identifier[] = {
+    "",
+    " (Warlord of Arda)", " (Noble Crusader)", " (Heroic Knight)", ""
+};
+
+char* pc_evil_fame_identifier[] =  {
+    "",
+    " (Chieftain of Evil)", " (Wicked Commander)", " (Sinister Patrol)", ""
+};
+
+char* pc_arda_fame_keywords[] = {
+    "arda", "warlord", "crusader", "knight", ""
+};
+
+char* pc_evil_fame_keywords[] = {
+    "evil", "chieftain", "commander", "patrol", ""
 };
 
 //const
@@ -3112,7 +3153,7 @@ const char* inv_sorting[] = {
 	"alpha",
 	"length",
 	"\n"
-}
+};
 
 // Perm starting affects for races
 long race_affect[] = {
@@ -3145,7 +3186,7 @@ int max_race_str[MAX_RACES] = {
     22, // Human
     22, // Dwarf
     22, // Wood Elf
-    20, // Hobbit
+    22, // Hobbit
     22, // High Elf
     22, // Beorning
     22, // !UNUSED!
@@ -3184,7 +3225,7 @@ int mortal_start_room[MAX_RACES] = {
     13626, // Uruk-Lhuth
     0, // !NPC - Undead!
     10263, // Olog-Hai
-    6614, // Haradrim
+    6604, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!
     0 // !UNUSED!

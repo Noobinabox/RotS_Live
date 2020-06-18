@@ -24,6 +24,7 @@
 #include "zone.h"
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 #include <iostream>
 #include <sstream>
@@ -448,6 +449,7 @@ void boot_db(void)
     // Initialize the Big Brother system after we have our weather data and
     // our map.
     game_rules::big_brother::create(weather_info, &world);
+    game_timer::skill_timer::create(weather_info, &world);
 }
 
 /* reset the time in the game from file */
@@ -2214,6 +2216,7 @@ int create_entry(char* name)
     (player_table + top_of_p_table)->warpoints = 0;
     (player_table + top_of_p_table)->race = 0;
     (player_table + top_of_p_table)->rank = PKILL_UNRANKED;
+    (player_table + top_of_p_table)->totalrank = PKILL_UNRANKED;
     for (i = 0; (*(player_table[top_of_p_table].name + i) = LOWER(*(name + i))); i++)
         ;
     return (top_of_p_table);

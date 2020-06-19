@@ -1152,6 +1152,11 @@ const char* get_race_abbrev(const char_data& character)
     return race_abbrevs[race];
 }
 
+
+int get_race(const char_data& character) {
+    return character.player.race;
+}
+
 //============================================================================
 int get_race_perception(const char_data& character)
 {

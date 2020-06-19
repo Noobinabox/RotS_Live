@@ -13,7 +13,7 @@ extern struct room_data world;
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FrenzyTimer = 600;
-const int SmashTimer = 60;
+const int SmashTimer = 30;
 const int StompTimer = 60;
 const int CleaveTimer = 30;
 const int OverrunTimer = 60;
@@ -129,8 +129,29 @@ namespace olog_hai {
         }
     }
 
-    const char_data* get_random_target(const char_data* ch, const char_data* original_victim) {
-        return original_victim;
+    char_data* get_random_target(char_data* ch, char_data* original_victim) {
+        char_data* t;
+        int num = 0;
+        for (t = world[ch->in_room].people; t != nullptr; t = t->next_in_room) {
+            if (t != ch && t != original_victim)
+                num++;
+        }
+
+        if (!num) {
+            return original_victim;
+        }
+
+        num = number(1, num);
+
+        for (t = world[ch->in_room].people; t != nullptr; t = t->next_in_room) {
+            if (t != ch && t != original_victim) {
+                --num;
+                if (!num) {
+                    break;
+                }
+            }
+        }
+        return t;
     }
 
     int calculate_smash_damage(const char_data& attacker, int prob) {
@@ -195,7 +216,11 @@ ACMD(do_smash)
     /* 5% chance to swing on the wrong target */
     if (olog_hai::does_skill_hit_random(SKILL_SMASH)) {
         // find our target.
-
+        char_data* new_target = olog_hai::get_random_target(ch, victim);
+        if (new_target != victim) {
+            damage(ch, victim, 0, SKILL_SMASH, 0);
+            victim = new_target;
+        }
     }
 
     damage(ch, victim, olog_hai::calculate_smash_damage(*ch, prob), SKILL_SMASH, 0);

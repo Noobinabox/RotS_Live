@@ -84,6 +84,7 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SKILL_TRAP);
     m_harmful_skills.insert(SKILL_WINDBLAST);
     m_harmful_skills.insert(SKILL_SMASH);
+    m_harmful_skills.insert(SKILL_CLEAVE);
     m_harmful_skills.insert(SKILL_OVERRUN);
     m_harmful_skills.insert(SKILL_STOMP);
     m_harmful_skills.insert(TYPE_HIT);

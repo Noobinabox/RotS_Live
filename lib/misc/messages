@@ -433,6 +433,20 @@ $N screams in pain as $n smashes $M face in!~
 ~
 ~
 M
+ 156
+You cleave $N's body in twain, from your might blow!~
+$n cleaves your body in twain, from $s might blow!~
+$n cleaves $N body in twain, from $s might blow!~
+$N dodges as you attempt to cleave them.~
+You swiftly dodge $n's attempt to cleave your body.~
+$N swiftly dodges $n's attempt to cleave their body.~
+You cleave $N's body with your might blow!~
+$n cleaves your body with $s might blow!~
+$n cleaves $N's body with their might blow!~
+~
+~
+~
+M
  201
 The stray heat of your fireball burns $N to death!~
 You are burnt to death by the sheer heat of $n's fireball!~

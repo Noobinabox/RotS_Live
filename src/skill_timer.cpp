@@ -12,9 +12,10 @@ bool world_singleton<game_timer::skill_timer>::m_bDestroyed(false);
 
 namespace game_timer {
     void skill_timer::add_skill_timer(const char_data& ch, const int skill_id, const int counter) {
-        if (utils::is_npc(ch)) {
+        if (utils::is_npc(ch) || !is_skill_allowed(ch, skill_id)) {
             return;
         }
+
         int player_id = utils::get_idnum(ch);
         skill_data data;
         data.player_id = player_id;

@@ -12,11 +12,11 @@
 extern struct room_data world;
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
-const int FrenzyTimer = 600;
-const int SmashTimer = 60;
-const int StompTimer = 60;
-const int CleaveTimer = 30;
-const int OverrunTimer = 60;
+const int FRENZY_TIMER = 600;
+const int SMASH_TIMER = 60;
+const int STOMP_TIMER = 60;
+const int CLEAVE_TIMER = 30;
+const int OVERRUN_TIMER = 60;
 
 namespace olog_hai {
     int get_prob_skill(char_data* attacker, char_data* victim, int skill) {
@@ -67,6 +67,12 @@ namespace olog_hai {
             }
 
             send_to_char(message.c_str(), ch);
+            return false;
+        }
+
+        obj_data* weapon = ch->equipment[WIELD];
+        if (!weapon) {
+            send_to_char("Wield a weapon first!\r\n", ch);
             return false;
         }
         return true;
@@ -120,6 +126,14 @@ namespace olog_hai {
         return victim;
     }
 
+    void do_sanctuary_check(char_data* ch) {
+        if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
+            appear(ch);
+            send_to_char("You cast off your santuary!\r\n", ch);
+            act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+        }
+    }
+
     bool does_skill_hit_random(int skill_id) {
         switch(skill_id) {
             case SKILL_SMASH:
@@ -142,7 +156,6 @@ namespace olog_hai {
         }
 
         num = number(1, num);
-
         for (t = world[ch->in_room].people; t != nullptr; t = t->next_in_room) {
             if (t != ch && t != original_victim) {
                 --num;
@@ -154,16 +167,80 @@ namespace olog_hai {
         return t;
     }
 
+    int get_base_skill_damage(const char_data& olog_hai, int prob) {
+        int base_damage = (2 + utils::get_prof_level(PROF_WARRIOR, olog_hai));
+        base_damage *= (100 + prob);
+        base_damage /= (1000 / utils::get_tactics(olog_hai));
+        if (utils::is_twohanded(olog_hai)) {
+            base_damage *= 3 / 2;
+        }
+        return base_damage;
+    }
+
     int calculate_smash_damage(const char_data& attacker, int prob) {
-        int damage;
+        int damage = get_base_skill_damage(attacker, prob);
 
-        damage = (2 + utils::get_prof_level(PROF_WARRIOR, attacker)) * (100 + prob) / 250;
-
-        if (utils::is_twohanded(attacker)) {
-            damage = damage * 3 / 2;
+        if (utils::get_specialization(attacker) == game_types::PS_WildFighting) {
+            damage += 5;
         }
         return damage;
     }
+
+    int calculate_cleave_damage(const char_data& attacker, int prob) {
+        int damage = get_base_skill_damage(attacker, prob);
+
+        if (utils::get_specialization(attacker) == game_types::PS_HeavyFighting) {
+            damage += 5;
+        }
+
+        return damage;
+    }
+
+    void apply_cleave_damage(char_data* attacker, char_data* victim) {
+        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+
+        if (!bb_instance.is_target_valid(attacker, victim)) {
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", attacker);
+            return;
+        }
+
+        int prob = get_prob_skill(attacker, victim, SKILL_CLEAVE);
+
+        if (prob < 0) {
+            damage(attacker, victim, 0, SKILL_CLEAVE, 0);
+            return;
+        }
+
+        damage(attacker, victim, calculate_cleave_damage(*attacker, prob), SKILL_CLEAVE, 0);
+    }
+}
+
+ACMD(do_cleave) 
+{
+    one_argument(argument, arg);
+    
+    if (!olog_hai::is_skill_valid(ch, SKILL_CLEAVE)) {
+        return;
+    }
+
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+
+    if (!timer.is_skill_allowed(*ch, SKILL_CLEAVE)) {
+        send_to_char("You can't use this skill yet.\r\n", ch);
+        return;
+    }
+
+    olog_hai::do_sanctuary_check(ch);
+    char_data* victim = nullptr;
+    char_data* nxt_victim = nullptr;
+
+    for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
+        nxt_victim = victim->next_in_room;
+        if (victim != ch) {
+            olog_hai::apply_cleave_damage(ch, victim);
+        }
+    }
+    timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);    
 }
 
 ACMD(do_smash) 
@@ -177,7 +254,7 @@ ACMD(do_smash)
     game_timer::skill_timer& timer = game_timer::skill_timer::instance();
 
     if (!timer.is_skill_allowed(*ch, SKILL_SMASH)) {
-        send_to_char("You can't use this skill yet.", ch);
+        send_to_char("You can't use this skill yet.\r\n", ch);
         return;
     }
 
@@ -193,19 +270,10 @@ ACMD(do_smash)
         return;
     }
 
-    if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
-        appear(ch);
-        send_to_char("You cast off your santuary!\r\n", ch);
-        act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
-    }
-
-    if (!check_overkill(victim)) {
-        send_to_char("You cannot get close enough!\n\r", ch);
-        return;
-    }
+    olog_hai::do_sanctuary_check(ch);
 
     int prob = olog_hai::get_prob_skill(ch, victim, SKILL_SMASH);
-    timer.add_skill_timer(*ch, SKILL_SMASH, SmashTimer);
+    timer.add_skill_timer(*ch, SKILL_SMASH, SMASH_TIMER);
 
     if (prob < 0 ) { 
         damage(ch, victim, 0, SKILL_SMASH, 0);
@@ -224,10 +292,6 @@ ACMD(do_smash)
     }
 
     damage(ch, victim, olog_hai::calculate_smash_damage(*ch, prob), SKILL_SMASH, 0);
-}
-ACMD(do_cleave) 
-{
-    return;
 }
 ACMD(do_overrun) 
 {

@@ -13,7 +13,7 @@ extern struct room_data world;
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FrenzyTimer = 600;
-const int SmashTimer = 30;
+const int SmashTimer = 60;
 const int StompTimer = 60;
 const int CleaveTimer = 30;
 const int OverrunTimer = 60;

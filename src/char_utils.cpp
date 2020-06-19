@@ -1600,7 +1600,7 @@ std::string player_damage_details::get_damage_report(const char_data* character)
         char ability_name[25];
 
         int ability_index = iter->first;
-        if (ability_index > 128 && ability_index >= TYPE_HIT) {
+        if (ability_index > 128 && ability_index >= TYPE_HIT && ability_index < 152) {
             const attack_hit_type& hit_text = get_hit_text(ability_index);
             sprintf(ability_name, "%-24s", hit_text.singular);
         } else {

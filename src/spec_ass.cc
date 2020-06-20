@@ -203,6 +203,8 @@ void assign_mobiles(void)
 
     ASSIGNMOB(2012, dragon);
     ASSIGNMOB(10312, receptionist); // Beorning Rent
+
+    ASSIGNMOB(32800, receptionist); // Olog-Hai Rent
     
 }
 

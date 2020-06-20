@@ -64,7 +64,7 @@ sh_int race_modifiers[MAX_RACES][8] = {
     { 0, 0, 0, 0, 0, 0, 0, 0 }, // !NPC - Easterling!
     { -1, -1, -3, 0, 1, -2, 0, 0 }, // Uruk-Lhuth
     { 0, 0, 0, 0, 0, 0, 0, 0 }, // !NPC - Undead!
-    { 4, -4, -3, -2, 4, -3, 0, 0 }, // Olog-Hai
+    { 4, -4, -4, -3, 4, -3, 0, 0 }, // Olog-Hai
     { 0, -2, -2, 2, 0, -3, 0, 0 }, // Haradrim
     { 0, 0, 0, 0, 0, 0, 0, 0 }, // Unused
     { 0, 0, 0, 0, 0, 0, 0, 0 } // !NPC - Troll!

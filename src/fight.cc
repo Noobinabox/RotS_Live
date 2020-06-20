@@ -510,6 +510,18 @@ void get_corpse_desc(struct obj_data* corpse, struct char_data* ch,
     case 124:
         strncpy(condition, "festering", BUF_LEN - 1);
         break;
+    case 152:
+        strncpy(condition, "badly beaten", BUF_LEN - 1);
+        break;
+    case 154:
+        strncpy(condition, "battered", BUF_LEN - 1);
+        break;
+    case 156:
+        strncpy(condition, "cleaved", BUF_LEN -1);
+        break;
+    case 157:
+        strncpy(condition, "trampled", BUF_LEN - 1);
+        break;
     default:
         strncpy(condition, "silent", BUF_LEN - 1);
     }

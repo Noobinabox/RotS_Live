@@ -7,9 +7,11 @@
 #include "handler.h"
 #include "big_brother.h"
 #include "skill_timer.h"
+#include "utils.h"
 #include <iostream>
 
 extern struct room_data world;
+extern struct char_data* waiting_list;
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FRENZY_TIMER = 600;
@@ -196,6 +198,30 @@ namespace olog_hai {
         return damage;
     }
 
+    int calculate_stomp_damage(const char_data& attacker, int prob) {
+        return get_base_skill_damage(attacker, prob) / 2;
+    }
+
+    void apply_stomp_affect(char_data* attacker, char_data* victim) {
+        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+        if (!bb_instance.is_target_valid(attacker, victim)) {
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", attacker);
+            return;
+        }
+
+        int prob = get_prob_skill(attacker, victim, SKILL_STOMP);
+
+        if (prob < 0) {
+            damage(attacker, victim, 0, SKILL_STOMP, 0);
+            return;
+        }
+        int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
+        damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
+        if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
+            WAIT_STATE_FULL(victim, wait_delay, CMD_STOMP, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH, TARGET_IGNORE);
+        }
+    }
+
     void apply_cleave_damage(char_data* attacker, char_data* victim) {
         game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 
@@ -215,7 +241,7 @@ namespace olog_hai {
     }
 }
 
-ACMD(do_cleave) 
+ACMD(do_cleave)
 {
     one_argument(argument, arg);
     
@@ -303,5 +329,25 @@ ACMD(do_frenzy)
 }
 ACMD(do_stomp) 
 {
-    return;
+    one_argument(argument, arg);
+    if (!olog_hai::is_skill_valid(ch, SKILL_STOMP)) {
+        return;
+    }
+
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    if (!timer.is_skill_allowed(*ch, SKILL_STOMP)) {
+        send_to_char("You cannot use this skill yet.\r\n", ch);
+        return;
+    }
+
+    olog_hai::do_sanctuary_check(ch);
+    char_data* victim = nullptr;
+    char_data* nxt_victim = nullptr;
+    for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
+        nxt_victim = victim->next_in_room;
+        if (victim != ch) {
+            olog_hai::apply_stomp_affect(ch, victim);
+        }
+    }
+    timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
 }

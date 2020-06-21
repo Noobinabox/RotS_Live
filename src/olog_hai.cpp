@@ -12,6 +12,7 @@
 
 extern struct room_data world;
 extern struct char_data* waiting_list;
+extern struct skill_data skills[];
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FRENZY_TIMER = 600;
@@ -268,6 +269,27 @@ namespace olog_hai {
 
         damage(attacker, victim, calculate_cleave_damage(*attacker, prob), SKILL_CLEAVE, 0);
     }
+
+    void generate_frenzy_message(char_data* character) {
+        sprintf(buf, "You enter a frenzied state, filling your body with overwhelming power!\r\n");
+        act(buf, FALSE, character, NULL, NULL, TO_CHAR);
+        sprintf(buf, "$n enters a frenzied state, making $s strikes grow with fervor!\r\n");
+        act(buf, TRUE, character, 0, NULL, TO_ROOM);
+    }
+
+    void apply_frenzy_affect(char_data* character) {
+        // generate messages
+        generate_frenzy_message(character);
+        // create affect
+        struct affected_type af;
+        af.type = SKILL_FRENZY;
+        af.duration = 15;
+        af.modifier = 20;
+        af.location = APPLY_NONE;
+        af.bitvector = 0;
+        // apply affect
+        affect_to_char(character, &af);
+    }
 }
 
 ACMD(do_cleave)
@@ -353,7 +375,35 @@ ACMD(do_overrun)
 }
 ACMD(do_frenzy) 
 {
-    return;
+    one_argument(argument, arg);
+
+    if (subcmd == -1) {
+        send_to_char("You could not concentrate anymore!\r\n", ch);
+        wtl->targ1.cleanup();
+        wtl->targ2.cleanup();
+        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
+        return;
+    }
+
+    if (!olog_hai::is_skill_valid(ch, SKILL_FRENZY)) {
+        return;
+    }
+
+    if (affected_by_spell(ch, SKILL_FRENZY)) {
+        send_to_char("You are already in a frenzy!\r\n", ch);
+        return;
+    }
+
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    if (!timer.is_skill_allowed(*ch, SKILL_FRENZY)) {
+        send_to_char("You cannot use this skill yet.\r\n", ch);
+        return;
+    }
+
+    olog_hai::do_sanctuary_check(ch);
+    olog_hai::apply_frenzy_affect(ch);
+    timer.add_skill_timer(*ch, SKILL_FRENZY, FRENZY_TIMER);
+
 }
 ACMD(do_stomp) 
 {

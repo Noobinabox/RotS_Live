@@ -2648,7 +2648,7 @@ bool can_double_hit(const char_data* character)
         return false;
 
     // Characters must be using a light weapon
-    if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF) {
+    if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)
         return false;
     
     // The character is no longer fighting anyone.  Can't double-hit.

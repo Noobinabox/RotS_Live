@@ -15,10 +15,11 @@ extern struct char_data* waiting_list;
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FRENZY_TIMER = 600;
-const int SMASH_TIMER = 60;
+const int SMASH_TIMER = 1;
 const int STOMP_TIMER = 60;
 const int CLEAVE_TIMER = 30;
 const int OVERRUN_TIMER = 60;
+ACMD(do_dismount);
 
 namespace olog_hai {
     int get_prob_skill(char_data* attacker, char_data* victim, int skill) {
@@ -181,11 +182,39 @@ namespace olog_hai {
 
     int calculate_smash_damage(const char_data& attacker, int prob) {
         int damage = get_base_skill_damage(attacker, prob);
-
         if (utils::get_specialization(attacker) == game_types::PS_WildFighting) {
             damage += 5;
         }
         return damage;
+    }
+
+    void generate_smash_dismount_messages(char_data* attacker, char_data* victim) {
+        sprintf(buf, "You smash into $N so hard, it knocks $M to the ground!");
+        act(buf, FALSE, attacker, NULL, victim, TO_CHAR);
+        sprintf(buf, "$n smashes into you so hard, it knocks prone to the ground!");
+        act(buf, FALSE, attacker, NULL, victim, TO_VICT);
+        sprintf(buf, "$n smashes into $N so hard, it knocks $M to the ground!");
+        act(buf, TRUE, attacker, 0, victim, TO_NOTVICT);
+    }
+
+    void apply_smash_damage(char_data* attacker, char_data* victim, int prob) {
+        int dam = calculate_smash_damage(*attacker, prob);
+        if (IS_RIDING(victim) && number() >= 0.80) {
+            dam *= 1.25;
+            char_data* mount = victim->mount_data.mount;
+            damage(attacker, victim, dam, SKILL_SMASH, 0);
+            generate_smash_dismount_messages(attacker, victim);
+            do_dismount(victim, "", 0, 0, 0);
+            if (number() >= 0.50) {
+                damage(attacker, mount, dam / 2, SKILL_SMASH, 0);
+            }
+            if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
+                int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
+                WAIT_STATE(victim, wait_delay);
+            }
+            return;
+        }
+        damage(attacker, victim, dam, SKILL_SMASH, 0);
     }
 
     int calculate_cleave_damage(const char_data& attacker, int prob) {
@@ -218,7 +247,7 @@ namespace olog_hai {
         int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
         damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            WAIT_STATE_FULL(victim, wait_delay, CMD_STOMP, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH, TARGET_IGNORE);
+            WAIT_STATE(victim, wait_delay);
         }
     }
 
@@ -306,7 +335,6 @@ ACMD(do_smash)
         return;
     }
 
-
     /* 5% chance to swing on the wrong target */
     if (olog_hai::does_skill_hit_random(SKILL_SMASH)) {
         // find our target.
@@ -316,9 +344,9 @@ ACMD(do_smash)
             victim = new_target;
         }
     }
-
-    damage(ch, victim, olog_hai::calculate_smash_damage(*ch, prob), SKILL_SMASH, 0);
+    olog_hai::apply_smash_damage(ch, victim, prob);
 }
+
 ACMD(do_overrun) 
 {
     return;

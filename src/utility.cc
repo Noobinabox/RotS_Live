@@ -223,7 +223,7 @@ int get_race_weight(struct char_data* ch)
         return 80000 * gender_mod / 10;
 
     case RACE_OLOGHAI:
-        return 80000 * gender_mod / 10;
+        return 40000 * gender_mod / 10;
 
     case RACE_HARADRIM:
         return 17000 * gender_mod / 10;
@@ -294,7 +294,7 @@ int get_race_height(struct char_data* ch)
         return 225 * gender_mod / 10;
 
     case RACE_OLOGHAI:
-        return 225 * gender_mod / 10;
+        return 200 * gender_mod / 10;
 
     default:
         return 200;

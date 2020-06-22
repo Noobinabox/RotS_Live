@@ -2288,6 +2288,19 @@ int heavy_fighting_effect(char_data& attacker, int damage)
     return damage;
 }
 
+bool is_frenzy_active(char_data& attacker) {
+    return utils::get_race(attacker) == RACE_OLOGHAI && utils::is_affected_by_spell(attacker, SKILL_FRENZY);
+}
+
+int frenzy_effect(char_data& attacker, int damage)
+{
+    if (is_frenzy_active(attacker)) {
+        return damage * 1.10;
+    }
+
+    return damage;
+}
+
 //============================================================================
 double get_wild_fighting_proc_chance(int tactics)
 {
@@ -2486,6 +2499,10 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
             return;
         }
 
+        if (is_frenzy_active(*ch)) {
+            tmp = 35;
+        }
+
         if (OB < 0 && tmp != 35) {
             if (number(0, dodge_malus) < evasion_malus)
                 do_evade(ch, victim, w_type);
@@ -2543,6 +2560,7 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
                 dam = wild_fighting_effect(ch, dam);
                 dam = heavy_fighting_effect(*ch, dam);
                 dam = defender_effect(ch, victim, dam);
+                dam = frenzy_effect(*ch, dam);
 
                 tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
                 dam = armor_effect(ch, victim, dam, tmp, w_type);
@@ -2555,7 +2573,6 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
                 damage(ch, victim, dam, w_type, location);
 
                 if (dam > 0) {
-                    check_weapon_poison(ch, victim, wielded);
                     check_grip(ch, wielded);
                 }
 

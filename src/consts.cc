@@ -18,7 +18,7 @@
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.4.0.1\n\r"
+    "Arda: The Fourth Age, version 1.5.0\n\r"
 };
 
 //const
@@ -161,7 +161,38 @@ char* spell_wear_off_msg[] = {
     "The white aura around your body fades.",
     "!Shocking Grasp!",
     "!Searing Darkness!",
-    "You feel the empowerment of war leave your body!"
+    "You feel the empowerment of war leave your body!",
+    "", // * 130 *
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 140 *
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 150 *
+    "",
+    "",
+    "The rage inside you slows down, allowing you to think clearly again.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 160 *
 };
 
 char* room_bits_message[32] = {

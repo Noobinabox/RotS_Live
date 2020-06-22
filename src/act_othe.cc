@@ -1351,6 +1351,11 @@ ACMD(do_tactics)
     char* s;
     int tmp, len;
 
+    if (utils::is_affected_by_spell(*ch, SKILL_FRENZY) && utils::get_race(*ch) == RACE_OLOGHAI) {
+        send_to_char("The rage inside you won't let you cool down!\r\n", ch);
+        return;
+    }
+
     if (!*argument)
         s = s1;
     else {

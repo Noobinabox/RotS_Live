@@ -16,7 +16,7 @@ extern struct skill_data skills[];
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
 const int FRENZY_TIMER = 600;
-const int SMASH_TIMER = 1;
+const int SMASH_TIMER = 60;
 const int STOMP_TIMER = 60;
 const int CLEAVE_TIMER = 30;
 const int OVERRUN_TIMER = 60;
@@ -171,17 +171,22 @@ namespace olog_hai {
         return t;
     }
 
-    int get_base_skill_damage(const char_data& olog_hai, int prob) {
+    int get_base_skill_damage(char_data& olog_hai, int prob) {
         int base_damage = (2 + utils::get_prof_level(PROF_WARRIOR, olog_hai));
         base_damage *= (100 + prob);
         base_damage /= (1000 / utils::get_tactics(olog_hai));
         if (utils::is_twohanded(olog_hai)) {
             base_damage *= 3 / 2;
         }
+
+        if (utils::is_affected_by_spell(olog_hai, SKILL_FRENZY)) {
+            base_damage *= 1.10;
+        }
+
         return base_damage;
     }
 
-    int calculate_smash_damage(const char_data& attacker, int prob) {
+    int calculate_smash_damage(char_data& attacker, int prob) {
         int damage = get_base_skill_damage(attacker, prob);
         if (utils::get_specialization(attacker) == game_types::PS_WildFighting) {
             damage += 5;
@@ -218,7 +223,7 @@ namespace olog_hai {
         damage(attacker, victim, dam, SKILL_SMASH, 0);
     }
 
-    int calculate_cleave_damage(const char_data& attacker, int prob) {
+    int calculate_cleave_damage(char_data& attacker, int prob) {
         int damage = get_base_skill_damage(attacker, prob);
 
         if (utils::get_specialization(attacker) == game_types::PS_HeavyFighting) {
@@ -228,7 +233,7 @@ namespace olog_hai {
         return damage;
     }
 
-    int calculate_stomp_damage(const char_data& attacker, int prob) {
+    int calculate_stomp_damage(char_data& attacker, int prob) {
         return get_base_skill_damage(attacker, prob) / 2;
     }
 
@@ -277,18 +282,20 @@ namespace olog_hai {
         act(buf, TRUE, character, 0, NULL, TO_ROOM);
     }
 
+
     void apply_frenzy_affect(char_data* character) {
         // generate messages
         generate_frenzy_message(character);
         // create affect
         struct affected_type af;
         af.type = SKILL_FRENZY;
-        af.duration = 15;
+        af.duration = 20;
         af.modifier = 20;
         af.location = APPLY_NONE;
         af.bitvector = 0;
         // apply affect
         affect_to_char(character, &af);
+        SET_TACTICS(character, TACTICS_BERSERK);
     }
 }
 
@@ -376,14 +383,6 @@ ACMD(do_overrun)
 ACMD(do_frenzy) 
 {
     one_argument(argument, arg);
-
-    if (subcmd == -1) {
-        send_to_char("You could not concentrate anymore!\r\n", ch);
-        wtl->targ1.cleanup();
-        wtl->targ2.cleanup();
-        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0);
-        return;
-    }
 
     if (!olog_hai::is_skill_valid(ch, SKILL_FRENZY)) {
         return;

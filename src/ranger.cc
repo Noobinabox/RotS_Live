@@ -1014,6 +1014,9 @@ trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
     if (victim == NULL)
         return NULL;
 
+    if (!CAN_SEE(ch, victim))
+        return NULL;
+
     if (victim->specials.fighting) {
         send_to_char("Your target is too alert!\n\r", ch);
         return NULL;

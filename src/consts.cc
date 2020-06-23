@@ -1958,7 +1958,7 @@ struct skill_teach_data guildmasters[] = {
             /*101*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*111*/ 0, 0, 100, 100, 100, 0, 0, 0, 0, 0,
             /*121*/ 100, 100, 100, 0, 0, 0, 0 } },
-    { /* Olog-Hai Guildmaster VNUM: (60)*/
+    { /* Olog-Hai Guildmaster VNUM: 32816 (60)*/
         "You can train in these skills:",
         "$n snarls 'Get out!'",
         "$n trains $N.",
@@ -3325,7 +3325,7 @@ int mortal_start_room[MAX_RACES] = {
     10263, // !NPC - Easterling!
     13626, // Uruk-Lhuth
     0, // !NPC - Undead!
-    10263, // Olog-Hai
+    1129, // Olog-Hai
     6604, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!

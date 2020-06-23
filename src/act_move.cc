@@ -256,7 +256,7 @@ int check_simple_move(struct char_data* ch, int cmd,
                 m = GET_PROF_LEVEL(PROF_RANGER, ch) + GET_SKILL(ch, SKILL_SWIM);
                 m /= 20;
 
-                need_movement = MAX(1, need_movement - m);
+                need_movement = std::max(1, need_movement - m);
             }
         }
     }

@@ -3098,19 +3098,19 @@ int new_player_select(struct descriptor_data* d, char* arg)
 
         switch (*arg) {
         case 'm':
-            GET_PROF_POINTS(PROF_MAGE, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_MAGE, d->character), 165));
+            GET_PROF_POINTS(PROF_MAGE, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_MAGE, d->character), 165));
             break;
 
         case 't':
-            GET_PROF_POINTS(PROF_CLERIC, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_CLERIC, d->character), 165));
+            GET_PROF_POINTS(PROF_CLERIC, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_CLERIC, d->character), 165));
             break;
 
         case 'r':
-            GET_PROF_POINTS(PROF_RANGER, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_RANGER, d->character), 165));
+            GET_PROF_POINTS(PROF_RANGER, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_RANGER, d->character), 165));
             break;
 
         case 'w':
-            GET_PROF_POINTS(PROF_WARRIOR, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_WARRIOR, d->character), 165));
+            GET_PROF_POINTS(PROF_WARRIOR, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_WARRIOR, d->character), 165));
             break;
 
         default:

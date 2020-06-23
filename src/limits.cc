@@ -344,13 +344,13 @@ void gain_exp(struct char_data* ch, int gain)
 
     /* Don't let LEVEL_IMMORT - 1 chars gain exp, otherwise they'll be imms */
     if (gain > 0 && GET_LEVEL(ch) < LEVEL_IMMORT - 1) {
-        gain = MIN(7000, gain);
+        gain = std::min(7000, gain);
         gain_exp_regardless(ch, gain);
     }
 
     /* Imms shouldn't lose experience */
     if (gain < 0 && GET_LEVEL(ch) < LEVEL_IMMORT) {
-        gain = MAX(-10000, gain); /* Never lose more than 10000 */
+        gain = std::max(-10000, gain); /* Never lose more than 10000 */
         gain_exp_regardless(ch, gain);
     }
 }
@@ -621,7 +621,7 @@ void point_update(void)
                 tmp = 1;
 
             if (GET_STR(i) != GET_STR_BASE(i)) {
-                SET_STR(i, MIN(GET_STR(i) + number(1, tmp), GET_STR_BASE(i)));
+                SET_STR(i, std::min(GET_STR(i) + number(1, tmp), GET_STR_BASE(i)));
                 recalc_flag++;
             }
             if (GET_INT(i) != GET_INT_BASE(i)) {

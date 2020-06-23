@@ -27,13 +27,17 @@ typedef int SocketType;
 
 #ifdef _WIN32
 
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+typedef int SocketType;
 #define COPY_COMMAND "xcopy"
+
+#undef max
+#undef min
 
 #endif
 

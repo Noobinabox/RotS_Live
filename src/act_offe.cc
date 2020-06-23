@@ -535,7 +535,7 @@ ACMD(do_bash)
         prob -= get_real_parry(victim) / 2;
         prob -= GET_LEVELA(victim) * 3;
         prob += GET_PROF_LEVEL(PROF_WARRIOR, ch);
-        prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
+        prob += number(0, std::max(1, 35 + get_real_OB(ch) / 4));
         prob += number(-40, 40);
         prob -= 160;
         if (prob < 0)

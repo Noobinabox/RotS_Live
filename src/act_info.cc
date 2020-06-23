@@ -3485,7 +3485,7 @@ ACMD(do_search)
             return;
         }
 
-        uncover_skill = MIN(200, (int)((float)(GET_SKILL(ch, SKILL_SEARCH) + see_hiding(ch)) * 1.50));
+        uncover_skill = std::min(200, (int)((float)(GET_SKILL(ch, SKILL_SEARCH) + see_hiding(ch)) * 1.50));
         uncover_skill = number(uncover_skill, uncover_skill * 7 / 6);
         search_res = 0;
         for (tmpch = world[ch->in_room].people; tmpch;
@@ -3857,7 +3857,7 @@ ACMD(do_rank)
     free(s);
 
     /* Show 7 characters: 3 above ch, ch and 3 below ch */
-    i = MAX(0, r - 3);
+    i = std::max(0, r - 3);
 
     /* We didn't start with the first ranked character */
     if (i > 0)
@@ -3865,7 +3865,7 @@ ACMD(do_rank)
 
     bufpt += sprintf(buf + bufpt, "\r\n");
 
-    for (i = MAX(0, r - 3); i < r + 3; ++i) {
+    for (i = std::max(0, r - 3); i < r + 3; ++i) {
         ldr = pkill_get_leader_by_rank(i, GET_RACE(ch));
         ldrvalid = !ldr->invalid;
         do_fame_leader_string(ldr, leaderstr);

@@ -117,7 +117,7 @@ int char_power(int lev)
     if (lev >= LEVEL_IMMORT)
         return 0;
 
-    return MIN((lev + 2), 16 + lev / 2) * MIN(lev + 2, 32);
+    return std::min((lev + 2), 16 + lev / 2) * std::min(lev + 2, 32);
 }
 
 /*
@@ -607,12 +607,12 @@ void affect_total(struct char_data* ch, int mode)
 
     i = (IS_NPC(ch) ? 100 : 100);
 
-    GET_DEX_BASE(ch) = MAX(1, MIN(GET_DEX_BASE(ch), i));
-    GET_INT_BASE(ch) = MAX(0, MIN(GET_INT_BASE(ch), i));
-    GET_WILL_BASE(ch) = MAX(0, MIN(GET_WILL_BASE(ch), i));
-    GET_CON_BASE(ch) = MAX(0, MIN(GET_CON_BASE(ch), i));
-    SET_STR_BASE(ch, MAX(1, MIN(GET_STR_BASE(ch), i)));
-    GET_LEA_BASE(ch) = MAX(0, MIN(GET_LEA_BASE(ch), i));
+    GET_DEX_BASE(ch) = (signed char)std::max(1, std::min((int)GET_DEX_BASE(ch), i));
+    GET_INT_BASE(ch) = (signed char)std::max(0, std::min((int)GET_INT_BASE(ch), i));
+    GET_WILL_BASE(ch) = (signed char)std::max(0, std::min((int)GET_WILL_BASE(ch), i));
+    GET_CON_BASE(ch) = (signed char)std::max(0, std::min((int)GET_CON_BASE(ch), i));
+    SET_STR_BASE(ch, (signed char)std::max(1, std::min((int)GET_STR_BASE(ch), i)));
+    GET_LEA_BASE(ch) = (signed char)std::max(0, std::min((int)GET_LEA_BASE(ch), i));
 }
 
 /*  If there is a structure of affected_type in the affected_type_pool list then

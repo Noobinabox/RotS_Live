@@ -167,10 +167,10 @@ ACMD(do_drink)
         amount = 1;
     }
 
-    amount = MIN(amount, temp->obj_flags.value[1]);
+    amount = std::min(amount, temp->obj_flags.value[1]);
 
     /* You can't subtract more than the object weighs */
-    weight = MIN(amount, temp->obj_flags.weight);
+    weight = std::min(amount, temp->obj_flags.weight);
     if (temp != &generic_water && temp != &generic_poison)
         weight_change_object(temp, -weight); /* Subtract amount */
 

@@ -852,9 +852,9 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
         // Evil whities kill evil - recover slowly -- especially of mob non-agg
         if ((GET_ALIGNMENT(victim) < 0) && GET_ALIGNMENT(ch) < 0) {
             if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) || IS_AGGR_TO(victim, ch))
-                align = MAX(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 100);
+                align = std::max(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 100);
             else
-                align = MAX(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 200);
+                align = std::max(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 200);
         }
         // whities kill good - tut tut
         if (GET_ALIGNMENT(victim) > 0)
@@ -2186,7 +2186,7 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
 
             if (number(0, 99) <= prob) {
                 do_riposte(victim, ch);
-                dam = get_weapon_damage(wielded) * MIN(GET_DEX(victim), 20) / number(50, 100);
+                dam = get_weapon_damage(wielded) * std::min((int)GET_DEX(victim), 20) / number(50, 100);
 
                 if (damage(victim, ch, dam,
                         weapon_hit_type(wielded->obj_flags.value[3]), 1))

@@ -93,7 +93,7 @@ ACMD(do_quit)
 
     sprintf(buf, "%s has quit the game.", GET_NAME(ch));
 
-    mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+    mudlog(buf, NRM, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
 
     if(aff) {
         remove_fame_war_bonuses(ch, aff);
@@ -199,7 +199,7 @@ ACMD(do_recruit)
    * We allow orcs such a large force due to the fact that
    * they can't follow or be followed by other players.
    */
-    if (level_total + GET_LEVEL(victim) > MIN(GET_LEVEL(ch), 48) || num_followers >= 4) {
+    if (level_total + GET_LEVEL(victim) > std::min(GET_LEVEL(ch), 48) || num_followers >= 4) {
         send_to_char("You have already recruited too powerful "
                      "a force for this target to be added.\n\r",
             ch);
@@ -1986,7 +1986,7 @@ ACMD(do_fish)
         send_to_char("You cast your line into the water and begin to wait.\n\r",
             ch);
 
-        WAIT_STATE_FULL(ch, MIN(20, 44 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5),
+        WAIT_STATE_FULL(ch, std::min(20, 44 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5),
             CMD_FISH, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL,
             TARGET_NONE);
         break;

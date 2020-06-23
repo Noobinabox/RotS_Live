@@ -2211,7 +2211,7 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
 
         /* Spears hit the armor, but then go right through it */
         if (w_type == TYPE_SPEARS) {
-            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 200;
+            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 150;
         } else {
             damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
         }

@@ -613,7 +613,7 @@ ACMD(do_move)
                     next_dude = k->next;
                     if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
                         // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
+                        ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                         tmpwtl.cmd = cmd + 1;
                         tmpwtl.subcmd = SCMD_FOLLOW;
                         command_interpreter(k->follower, argument, &tmpwtl);
@@ -771,7 +771,7 @@ ACMD(do_move)
                     next_dude = k->next;
                     if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
                         // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
+                        ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                         tmpwtl.cmd = cmd + 1;
                         tmpwtl.subcmd = SCMD_FOLLOW;
                         command_interpreter(k->follower, argument, &tmpwtl);
@@ -796,7 +796,7 @@ ACMD(do_move)
                 if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING)) {
                     //	  act("You follow $N.\n\r", FALSE, k->follower, 0, ch, TO_CHAR);
 
-                    bzero((char*)&tmpwtl, sizeof(waiting_type));
+                    ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                     tmpwtl.cmd = cmd + 1;
                     tmpwtl.subcmd = SCMD_FOLLOW;
                     //	  do_move(k->follower, argument, &tmpwtl, cmd + 1, SCMD_FOLLOW);

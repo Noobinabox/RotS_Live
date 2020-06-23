@@ -1234,7 +1234,7 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
     struct waiting_type *argument_info, interp_argument_info;
     extern int no_specials;
 
-    bzero((char*)&interp_argument_info, sizeof(waiting_type));
+    ZERO_MEMORY((char*)&interp_argument_info, sizeof(waiting_type));
     look_at = begin = mode = subcmd = 0;
 
     /* should only happen if someone other than ch causes this function call */
@@ -1264,7 +1264,7 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
 
     /* there's nothing special going on with this guy */
     if (!mode) {
-        bzero(argument, MAX_INPUT_LENGTH);
+        ZERO_MEMORY(argument, MAX_INPUT_LENGTH);
 
         /* Find first non blank */
         for (begin = 0; (*(argument_raw + begin) == ' '); begin++)

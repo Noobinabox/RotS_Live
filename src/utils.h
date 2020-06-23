@@ -185,10 +185,10 @@ void untrack_specialized_mage(char_data* mage);
             exit(0);\
           }\
           (result) = new type[number];\
-          bzero((char *) (result), ((number)*sizeof(type))); }while(0)
+          ZERO_MEMORY((char *) (result), ((number)*sizeof(type))); }while(0)
 
 #define CREATE1(result, type) do{(result) = new(type);\
-                              bzero((char *)(result), sizeof(type));}while(0)
+                              ZERO_MEMORY((char *)(result), sizeof(type));}while(0)
 
 #define RELEASE(pointer) do{\
          if (pointer) delete(pointer);\
@@ -677,7 +677,7 @@ void set_mental_delay(char_data* ch, int value);
 #ifdef SUNPROCESSING
 void bzero(char*, int);
 #endif
-#define CLEAR(x) bzero((char*)(x), sizeof(x))
+#define CLEAR(x) ZERO_MEMORY((char*)(x), sizeof(x))
 
 void show_char_to_char(struct char_data* i, struct char_data* ch, int mode,
     char* pos_line = 0);

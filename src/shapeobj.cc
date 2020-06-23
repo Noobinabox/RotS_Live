@@ -34,7 +34,7 @@ void new_obj(struct char_data* ch)
     int i;
     //    SHAPE_OBJECT(ch)->object=(struct obj_data *)calloc(1,sizeof(struct obj_data));
     CREATE1(SHAPE_OBJECT(ch)->object, obj_data);
-    //    bzero((char *)(SHAPE_OBJECT(ch)->object),sizeof(struct obj_data));
+    //    ZERO_MEMORY((char *)(SHAPE_OBJECT(ch)->object),sizeof(struct obj_data));
     SHAPE_OBJECT(ch)
         ->object->item_number
         = -1;
@@ -447,7 +447,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
             if (current_descr) {
                 //	current_descr->next=(struct extra_descr_data *)calloc(1,sizeof(struct extra_descr_data));
                 CREATE1(current_descr->next, extra_descr_data);
-                //bzero((char *)(current_descr->next),sizeof(struct extra_descr_data));
+                //ZERO_MEMORY((char *)(current_descr->next),sizeof(struct extra_descr_data));
                 current_descr = current_descr->next;
             } else {
                 CREATE1(SHAPE_OBJECT(ch)->object->ex_description, extra_descr_data);
@@ -1118,7 +1118,7 @@ int load_object(struct char_data* ch, char* arg)
 
         //  SHAPE_OBJECT(ch)->object=(struct obj_data *)calloc(1,sizeof(struct obj_data));
         CREATE1(SHAPE_OBJECT(ch)->object, obj_data);
-        //  bzero((char *)(SHAPE_OBJECT(ch)->object),sizeof(struct obj_data));
+        //  ZERO_MEMORY((char *)(SHAPE_OBJECT(ch)->object),sizeof(struct obj_data));
 
         SHAPE_OBJECT(ch)
             ->object->name

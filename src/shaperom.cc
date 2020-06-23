@@ -116,7 +116,7 @@ int new_room(struct char_data* ch, int number)
     if (!SHAPE_ROOM(ch)->room) {
         //    SHAPE_ROOM(ch)->room=(struct room_data *)calloc(1,sizeof(struct room_data));
         CREATE1(SHAPE_ROOM(ch)->room, room_data);
-        //    bzero((char *)(SHAPE_ROOM(ch)->room),sizeof(struct room_data));
+        //    ZERO_MEMORY((char *)(SHAPE_ROOM(ch)->room),sizeof(struct room_data));
         //    SHAPE_ROOM(ch)->room->name=(char *)calloc(1,1);
         //    SHAPE_ROOM(ch)->room->description=(char *)calloc(1,1);
         CREATE(SHAPE_ROOM(ch)->room->name, char, 1);
@@ -289,7 +289,7 @@ void implement_room(struct char_data* ch)
                 // 	real->dir_option[i]=(struct room_direction_data *)calloc(1,sizeof(struct room_direction_data));
                 CREATE1(real->dir_option[i], room_direction_data);
             }
-            //bzero((char *)(real->dir_option[i]),sizeof(struct room_direction_data));
+            //ZERO_MEMORY((char *)(real->dir_option[i]),sizeof(struct room_direction_data));
             if (*(curr->dir_option[i]->general_description)) {
                 SUBST(dir_option[i]->general_description);
             } else {
@@ -1175,7 +1175,7 @@ int load_room(struct char_data* ch, char* arg)
         if (!SHAPE_ROOM(ch)->room) {
             //    SHAPE_ROOM(ch)->room=(struct room_data *)calloc(1,sizeof(struct room_data));
             CREATE1(SHAPE_ROOM(ch)->room, room_data);
-            //bzero((char *)(SHAPE_ROOM(ch)->room), sizeof(struct room_data));
+            //ZERO_MEMORY((char *)(SHAPE_ROOM(ch)->room), sizeof(struct room_data));
         }
         SHAPE_ROOM(ch)
             ->room->name

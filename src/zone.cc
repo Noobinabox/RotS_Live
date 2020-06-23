@@ -50,7 +50,7 @@ void load_zones(FILE* fl)
     struct owner_list* owner;
     extern char* fread_string(FILE*, char*);
 
-    bzero(&zone_table[zone], sizeof(struct zone_data));
+    ZERO_MEMORY(&zone_table[zone], sizeof(struct zone_data));
     fscanf(fl, " #%d\n", &zone_table[zone].number);
     sprintf(buf2, "beginning of zone #%d", zone_table[zone].number);
 

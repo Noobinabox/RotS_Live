@@ -17,6 +17,8 @@
 typedef int SocketType;
 #define COPY_COMMAND "cp"
 
+#define ZERO_MEMORY(x, y) bzero(x, y)
+
 #endif
 
 #ifdef __bsdi__
@@ -35,6 +37,8 @@ typedef int SocketType;
 
 typedef int SocketType;
 #define COPY_COMMAND "xcopy"
+
+#define ZERO_MEMORY(x, y) ZeroMemory(x, y)
 
 #undef max
 #undef min

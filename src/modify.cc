@@ -91,7 +91,7 @@ char* format_string(char* str)
     int spacelen, wordlen;
 
     len = strlen(str);
-    bzero(buf, MAX_STRING_LENGTH);
+    ZERO_MEMORY(buf, MAX_STRING_LENGTH);
 
     linecount = 3;
     strcpy(buf, "   ");
@@ -134,7 +134,7 @@ int replace_pattern(descriptor_data* d, char* pattern, char* new_pattern)
     if (!pattern || !*pattern || !new_pattern)
         return 0;
 
-    bzero(buf, MAX_STRING_LENGTH);
+    ZERO_MEMORY(buf, MAX_STRING_LENGTH);
 
     bufscan = 0;
     len = strlen(*d->str);

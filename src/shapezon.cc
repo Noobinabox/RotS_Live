@@ -1174,7 +1174,7 @@ void shape_center_zone(struct char_data* ch, char* arg)
 
         case 11: /* insert before */
             CREATE1(tmpzon, zone_tree);
-            bzero((char*)(tmpzon), sizeof(struct zone_tree));
+            ZERO_MEMORY((char*)(tmpzon), sizeof(struct zone_tree));
             tmpzon->next = SHAPE_ZONE(ch)->curr;
             tmpzon->prev = SHAPE_ZONE(ch)->curr->prev;
             if (SHAPE_ZONE(ch)->curr->prev)
@@ -1746,7 +1746,7 @@ int load_zone(struct char_data* ch, char* arg)
             zon->comm.command = str[0];
             CREATE1(zon->next, zone_tree);
             zon->next->next = 0;
-            bzero((char*)(zon->next), sizeof(struct zone_tree));
+            ZERO_MEMORY((char*)(zon->next), sizeof(struct zone_tree));
             fscanf(f, "%d %d %d %d %d %d", &tmp1, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
             zon->comm.if_flag = tmp1;
             zon->comm.arg1 = tmp2;

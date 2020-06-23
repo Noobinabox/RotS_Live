@@ -2543,7 +2543,7 @@ char* fread_string(FILE* fl, char* error)
     register char *point, *tmppoint;
     int flag, markfirst;
 
-    bzero(buf, MAX_STRING_LENGTH);
+    ZERO_MEMORY(buf, MAX_STRING_LENGTH);
     markfirst = 0;
     do {
         *tmp = 0;
@@ -2899,7 +2899,7 @@ void clear_char(struct char_data* ch, int mode)
         CREATE(ch->skills, byte, MAX_SKILLS);
         CREATE(ch->knowledge, byte, MAX_SKILLS);
         if (ch->desc)
-            bzero(ch->desc->pwd, MAX_PWD_LENGTH);
+            ZERO_MEMORY(ch->desc->pwd, MAX_PWD_LENGTH);
     }
 }
 
@@ -3082,7 +3082,7 @@ void load_mudlle(FILE* fp)
         tmpstr++;
     do {
         sscanf(tmpstr + 1, "%d", &tmp);
-        bzero(str, MAX_STRING_LENGTH);
+        ZERO_MEMORY(str, MAX_STRING_LENGTH);
         if (tmp == 99999)
             break;
         num_of_programs++;

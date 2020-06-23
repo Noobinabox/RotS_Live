@@ -627,7 +627,7 @@ struct affected_type* get_from_affected_type_pool()
         afnew = affected_type_pool;
         affected_type_pool = afnew->next;
 
-        bzero(afnew, sizeof(affected_type));
+        ZERO_MEMORY(afnew, sizeof(affected_type));
     } else {
         CREATE(afnew, struct affected_type, 1);
         affected_type_counter++;

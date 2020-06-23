@@ -1677,7 +1677,7 @@ SPECIAL(mob_ranger)
     room_data* tmproom;
     int tmp, tmp2, mintime, mintmp;
 
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
 
     if (host->in_room == NOWHERE)
         return 0;

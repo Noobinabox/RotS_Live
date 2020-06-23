@@ -3,18 +3,44 @@
 #ifndef PLATDEF_H
 #define PLATDEF_H
 
+#if defined(__linux__) || defined(__unix__)
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
 
-#define SocketType int
+typedef int SocketType;
+#define COPY_COMMAND "cp"
+
+#endif
+
+#ifdef __bsdi__
+
+#include <sys/param.h>
+
+#endif
+
+#ifdef _WIN32
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define COPY_COMMAND "xcopy"
+
+#endif
+
+
+#include <sys/types.h>
+#include <time.h>
+
 
 typedef signed short int sh_int;
 typedef unsigned short int ush_int;
@@ -22,7 +48,5 @@ typedef unsigned short int ush_int;
 typedef unsigned char byte;
 typedef signed char sbyte;
 typedef unsigned char ubyte;
-
-#define COPY_COMMAND "cp"
 
 #endif /* PLATDEF_H */

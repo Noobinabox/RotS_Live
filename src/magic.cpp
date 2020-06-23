@@ -359,7 +359,7 @@ void mag_affects(int level, struct char_data* caster, struct char_data* victim,
 
     switch (spellnum) {
     case SPELL_POISON:
-        if (!victim && !(caster->specials.fightning)) {
+        if (!victim && !(caster->specials.fighting)) {
             affect_room = TRUE;
             af[0].type = ROOMAFF_SPELL;
             af[0].duration = (mystic_level) / 3;

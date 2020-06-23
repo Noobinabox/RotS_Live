@@ -410,7 +410,7 @@ ACMD(do_gather_food)
             return;
 
         /*And we've passed our conditions so we're going on now to try and gather */
-        WAIT_STATE_FULL(ch, MIN(25, 40 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5), CMD_GATHER_FOOD, GatherType,
+        WAIT_STATE_FULL(ch, std::min(25, 40 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5), CMD_GATHER_FOOD, GatherType,
             30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
         GET_MOVE(ch) -= move_use;
         break;
@@ -452,7 +452,7 @@ ACMD(do_gather_food)
                         ch);
                 break;
             case 3:
-                GET_HIT(ch) = MIN(GET_HIT(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) / 3
+                GET_HIT(ch) = std::min(GET_HIT(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) / 3
                         + GET_PROF_LEVEL(PROF_RANGER, ch),
                     GET_MAX_HIT(ch));
                 send_to_char("You look around, and manage to find some healing"
@@ -460,7 +460,7 @@ ACMD(do_gather_food)
                     ch);
                 break;
             case 4:
-                GET_MOVE(ch) = MIN(GET_MOVE(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) * 2 / 3 + GET_PROF_LEVEL(PROF_RANGER, ch), GET_MAX_MOVE(ch));
+                GET_MOVE(ch) = std::min(GET_MOVE(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) * 2 / 3 + GET_PROF_LEVEL(PROF_RANGER, ch), (int)GET_MAX_MOVE(ch));
 
                 send_to_char("You manage to find some herbs which have given you energy."
                              "\n\r",

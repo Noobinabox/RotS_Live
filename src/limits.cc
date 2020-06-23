@@ -625,23 +625,23 @@ void point_update(void)
                 recalc_flag++;
             }
             if (GET_INT(i) != GET_INT_BASE(i)) {
-                GET_INT(i) = MIN(GET_INT(i) + number(1, tmp), GET_INT_BASE(i));
+                GET_INT(i) = std::min(GET_INT(i) + number(1, tmp), (int)GET_INT_BASE(i));
                 recalc_flag++;
             }
             if (GET_WILL(i) != GET_WILL_BASE(i)) {
-                GET_WILL(i) = MIN(GET_WILL(i) + number(1, tmp), GET_WILL_BASE(i));
+                GET_WILL(i) = std::min(GET_WILL(i) + number(1, tmp), (int)GET_WILL_BASE(i));
                 recalc_flag++;
             }
             if (GET_DEX(i) != GET_DEX_BASE(i)) {
-                GET_DEX(i) = MIN(GET_DEX(i) + number(1, tmp), GET_DEX_BASE(i));
+                GET_DEX(i) = std::min(GET_DEX(i) + number(1, tmp), (int)GET_DEX_BASE(i));
                 recalc_flag++;
             }
             if (GET_CON(i) != GET_CON_BASE(i)) {
-                GET_CON(i) = MIN(GET_CON(i) + number(1, tmp), GET_CON_BASE(i));
+                GET_CON(i) = std::min(GET_CON(i) + number(1, tmp), (int)GET_CON_BASE(i));
                 recalc_flag++;
             }
             if (GET_LEA(i) != GET_LEA_BASE(i)) {
-                GET_LEA(i) = MIN(GET_LEA(i) + number(1, tmp), GET_LEA_BASE(i));
+                GET_LEA(i) = std::min(GET_LEA(i) + number(1, tmp), (int)GET_LEA_BASE(i));
                 recalc_flag++;
             }
             if (recalc_flag) {
@@ -1155,9 +1155,9 @@ void do_power_of_arda(char_data* ch)
         }
         if (tmpaf) {
             if (tmpaf->modifier > maxlevel)
-                tmpaf->modifier = MAX(tmpaf->modifier - level, 30); // if you are in a shady room, the affection can never disappear
+                tmpaf->modifier = std::max(tmpaf->modifier - level, 30); // if you are in a shady room, the affection can never disappear
             else
-                tmpaf->modifier = MIN(tmpaf->modifier + level, 400);
+                tmpaf->modifier = std::max(tmpaf->modifier + level, 400);
             tmpaf->duration = 100; // to keep the affection going
         } else {
             newaf.type = SPELL_ARDA;
@@ -1207,7 +1207,7 @@ void affect_update_person(struct char_data* i, int mode)
                 case SPELL_POISON:
                     otheraf = affected_by_spell(i, SPELL_RESIST_POISON);
                     if (otheraf) {
-                        af->duration = MAX(af->duration - otheraf->modifier, 0);
+                        af->duration = std::max(af->duration - otheraf->modifier, 0);
                         otheraf->duration = af->duration;
                     }
 
@@ -1302,7 +1302,7 @@ void affect_update_person(struct char_data* i, int mode)
                         if (af->modifier > 20) {
                             if (damage(i, i, (af->modifier / 5), SPELL_ASPHYXIATION, 0))
                                 return;
-                            GET_MOVE(i) = MAX(GET_MOVE(i) - 4, 10);
+                            GET_MOVE(i) = std::max(GET_MOVE(i) - 4, 10);
                         }
                     }
                     break;
@@ -1480,9 +1480,9 @@ void fast_update()
         moveregen = move_gain(i) / freq + ((roll <= move_gain(i) % freq) ? 1 : 0);
         manaregen = mana_gain(i) / freq + ((roll <= mana_gain(i) % freq) ? 1 : 0);
 
-        GET_HIT(i) = MIN(GET_HIT(i) + hitregen, GET_MAX_HIT(i));
-        GET_MANA(i) = MIN(GET_MANA(i) + manaregen, GET_MAX_MANA(i));
-        GET_MOVE(i) = MIN(GET_MOVE(i) + moveregen, GET_MAX_MOVE(i));
+        GET_HIT(i) = std::min(GET_HIT(i) + hitregen, GET_MAX_HIT(i));
+        GET_MANA(i) = std::min(GET_MANA(i) + manaregen, (int)GET_MAX_MANA(i));
+        GET_MOVE(i) = std::min(GET_MOVE(i) + moveregen, (int)GET_MAX_MOVE(i));
         if (GET_SPIRIT(i) < GET_WILL(i) / 3 + GET_PROF_LEVEL(PROF_CLERIC, i) / 3)
             GET_SPIRIT(i) += number(1, GET_WILL(i) + GET_PROF_LEVEL(PROF_CLERIC, i)) / (10 * freq);
 

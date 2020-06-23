@@ -1040,7 +1040,7 @@ void Crash_extract_expensive(struct obj_data* obj)
 void Crash_calculate_rent(struct obj_data* obj, int* cost)
 {
     if (obj) {
-        *cost += MAX(0, cost_per_day(obj) >> 4);
+        *cost += std::max(0, cost_per_day(obj) >> 4);
         Crash_calculate_rent(obj->contains, cost);
         Crash_calculate_rent(obj->next_content, cost);
     }
@@ -1216,7 +1216,7 @@ void Crash_report_rent(struct char_data* ch, struct char_data* recep,
     if (obj) {
         if (!Crash_is_unrentable(obj)) {
             (*nitems)++;
-            *cost += MAX(0, (cost_per_day(obj) >> 1) * factor);
+            *cost += std::max(0, (cost_per_day(obj) >> 1) * factor);
         }
         Crash_report_rent(ch, recep, obj->contains, cost, nitems, factor);
         Crash_report_rent(ch, recep, obj->next_content, cost, nitems, factor);
@@ -1560,7 +1560,7 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
                 cost, GET_GOLD(ch));
         }
 
-        mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, NRM, (sh_int)std::max(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
         act("$n helps $N into $S private chamber.", FALSE, recep, 0, ch, TO_NOTVICT);
         save_room = ch->in_room;
         extract_char(ch);
@@ -1613,7 +1613,7 @@ ACMD(do_rent)
     sprintf(buf, "%s has field-rented (%d total gold)", GET_NAME(ch),
         GET_GOLD(ch));
 
-    mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
+    mudlog(buf, NRM, (sh_int)std::max(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
 
     save_room = ch->in_room;
     extract_char(ch);

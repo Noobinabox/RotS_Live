@@ -140,7 +140,7 @@ void recalc_skills(struct char_data* ch)
             if (skill_level < 20)
                 tmps = tmps * (80 + skill_level) / 100 + 200 - skills[(int)skill_no].level * 10;
 
-            tmps = MIN(1000, tmps);
+            tmps = std::min(1000, tmps);
 
             pracs_used = pracs_used * tmps * 10;
         } else
@@ -597,7 +597,7 @@ SPECIAL(kit_room)
         level += 3;
     if (IS_SET(1 << GET_RACE(ch), KIT_THIRD))
         level += 3;
-    level = MIN(level, LEVEL_IMPL);
+    level = std::min(level, LEVEL_IMPL);
 
     num_items = 0;
     for (i = 0; i < kit_item_num; ++i) {
@@ -2659,7 +2659,7 @@ SPECIAL(thuringwethil)
         return 0;
 
     GET_HIT(host) += 10;
-    GET_HIT(host) = MIN(GET_HIT(host), GET_MAX_HIT(host));
+    GET_HIT(host) = std::min(GET_HIT(host), GET_MAX_HIT(host));
     if (affected_by_spell(host, SPELL_POISON))
         affect_from_char(host, SPELL_POISON);
     if (affected_by_spell(host, SPELL_CONFUSE))

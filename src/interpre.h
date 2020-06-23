@@ -303,6 +303,11 @@ struct command_info {
 #define CMD_BLINDING 238
 #define CMD_BENDTIME 239
 #define CMD_WINDBLAST 240
+#define CMD_SMASH 241
+#define CMD_FRENZY 242
+#define CMD_STOMP 243
+#define CMD_CLEAVE 244
+#define CMD_OVERRUN 245
 
 #define CMD_HIDE 86
 #define CMD_AMBUSH 87

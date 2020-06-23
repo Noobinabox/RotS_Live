@@ -1150,6 +1150,9 @@ void do_power_of_arda(char_data* ch)
     maxlevel = level * 25; // so if you are in a shady room, the penalty can never be too high
     tmpaf = affected_by_spell(ch, SPELL_ARDA);
     if (level) {
+        if (utils::get_race(*ch) == RACE_OLOGHAI) {
+            level *= 3;
+        }
         if (tmpaf) {
             if (tmpaf->modifier > maxlevel)
                 tmpaf->modifier = MAX(tmpaf->modifier - level, 30); // if you are in a shady room, the affection can never disappear

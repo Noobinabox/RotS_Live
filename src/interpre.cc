@@ -282,6 +282,11 @@ ACMD(do_bite);
 ACMD(do_maul);
 ACMD(do_bendtime);
 ACMD(do_windblast);
+ACMD(do_smash);
+ACMD(do_cleave);
+ACMD(do_overrun);
+ACMD(do_frenzy);
+ACMD(do_stomp);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
@@ -530,6 +535,11 @@ const char* command[] = {
     "blind",
     "bend",
     "windblast", //240
+    "smash",
+    "frenzy",
+    "stomp",
+    "cleave",
+    "overrun", //245
     "\n"
 };
 
@@ -2189,6 +2199,16 @@ void assign_command_pointers(void)
 		TAR_IGNORE, TAR_IGNORE, 0);
     COMMANDO(240, POSITION_FIGHTING, do_windblast, 0, TRUE, 0,
         TAR_IGNORE, TAR_IGNORE, 0);
+    COMMANDO(241, POSITION_FIGHTING, do_smash, 0, TRUE, 0,
+        TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(242, POSITION_FIGHTING, do_frenzy, 0, TRUE, 0,
+		TAR_IGNORE, TAR_IGNORE, 0);
+    COMMANDO(243, POSITION_FIGHTING, do_stomp, 0, TRUE, 0,
+        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(244, POSITION_FIGHTING, do_cleave, 0, TRUE, 0,
+        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(245, POSITION_STANDING, do_overrun, 0, TRUE, 0,
+        TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
 }
 
 /* *************************************************************************
@@ -2562,7 +2582,7 @@ void nanny(struct descriptor_data* d, char* arg)
                   "  [H]uman                * [U]ruk-hai Orc\n\r"
                   "  [D]warf                # [C]ommon Orc  \n\r"
                   "  [W]ood Elf             # Uruk-[L]huth  \n\r"
-                  "  Ho[B]bit               # [O]log-Hai    (Coming Soon)\n\r"
+                  "  Ho[B]bit               # [O]log-Hai    \n\r"
                   "* Beor[N]ing             # Harad[R]im    \n\r"
                   "\n\r"
                   "Races marked with a * are hard to play.\n\r"
@@ -2606,8 +2626,8 @@ void nanny(struct descriptor_data* d, char* arg)
             GET_RACE(d->character) = RACE_BEORNING;
             break;
         case 'o':
-            SEND_TO_Q("\r\nOlog-Hais are not available for play yet.\r\n", d);
-            return;
+            GET_RACE(d->character) = RACE_OLOGHAI;
+            break;
         // GET_RACE(d->character) = RACE_OLOGHAI;
         case 'r':
             GET_RACE(d->character) = RACE_HARADRIM;

@@ -1682,6 +1682,8 @@ public:
 	// returns true if the affected pointer is valid
 	bool is_affected() const;
 
+    int get_dodge() const { return points.dodge; }
+
 public:
     int abs_number; /* bit number in the control array */
     int player_index; /* Index in player table */

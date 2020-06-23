@@ -1446,6 +1446,13 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
                 retirer = 0;
             }
         } else if (is_abbrev("namechange", arg)) {
+            act("$n tells you, 'Sorry, we're having some internal technical "
+                "difficulties.  Please try again later.'",
+                FALSE, recep, 0, ch, TO_VICT);
+            *newname = 0;
+            *tmpname = 0;
+            namechanger = 0;
+            return TRUE;
             if (!ch->desc)
                 return TRUE;
 

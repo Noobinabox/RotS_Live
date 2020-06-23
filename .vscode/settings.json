@@ -13,6 +13,10 @@
         "xmemory0": "cpp",
         "initializer_list": "cpp",
         "list": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "ranges": "cpp"
     }
 }

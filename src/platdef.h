@@ -14,10 +14,12 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-typedef int SocketType;
 #define COPY_COMMAND "cp"
 
 #define ZERO_MEMORY(x, y) bzero(x, y)
+
+typedef int SocketType;
+#define CLOSE_SOCKET(x) close(x)
 
 #endif
 
@@ -35,10 +37,13 @@ typedef int SocketType;
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef int SocketType;
 #define COPY_COMMAND "xcopy"
 
 #define ZERO_MEMORY(x, y) ZeroMemory(x, y)
+
+
+typedef int SocketType;
+#define CLOSE_SOCKET(x) closesocket(x)
 
 #undef max
 #undef min

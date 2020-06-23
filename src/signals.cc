@@ -120,11 +120,11 @@ void badcrash(int fake)
     log("SIGSEGV or SIGBUS received.  Trying to shut down gracefully.");
     Emergency_save();
     if (!graceful_tried) {
-        close(mother_desc);
+        CLOSE_SOCKET(mother_desc);
         log("Trying to close all sockets.");
         graceful_tried = 1;
         for (desc = descriptor_list; desc; desc = desc->next)
-            close(desc->descriptor);
+            CLOSE_SOCKET(desc->descriptor);
     }
     abort();
 }

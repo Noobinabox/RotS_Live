@@ -71,6 +71,7 @@ ACMD(do_move);
 ACMD(do_hit);
 ACMD(do_gen_com);
 
+
 ACMD(do_ride)
 {
 
@@ -110,6 +111,7 @@ ACMD(do_ride)
             return;
         }
     } else {
+        
         potential_mount = get_char_room_vis(ch, argument);
         if (!potential_mount) {
             send_to_char("There is nobody by that name.\n\r", ch);
@@ -137,7 +139,10 @@ ACMD(do_ride)
         }
 
         if (affected_by_spell(potential_mount, SKILL_CALM)) {
-            if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
+            if ((IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) && !is_strong_enough_to_tame(ch->master, potential_mount, false)) {
+                send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
+                return;
+            } else if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
                 send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
                 return;
             }

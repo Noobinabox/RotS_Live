@@ -21,6 +21,7 @@ const int STOMP_TIMER = 60;
 const int CLEAVE_TIMER = 30;
 const int OVERRUN_TIMER = 60;
 ACMD(do_dismount);
+ACMD(do_move);
 
 namespace olog_hai {
     int get_prob_skill(char_data* attacker, char_data* victim, int skill) {
@@ -186,6 +187,19 @@ namespace olog_hai {
         return base_damage;
     }
 
+    int calculate_overrun_damage(char_data& attacker, int prob) {
+        int damage = get_base_skill_damage(attacker, prob);
+        if (utils::get_specialization(attacker) == game_types::PS_HeavyFighting) {
+            damage *= 1.10;
+        }
+
+        if (utils::is_riding(attacker)) {
+            damage *= 1.25;
+        }
+
+        return damage;
+    }
+
     int calculate_smash_damage(char_data& attacker, int prob) {
         int damage = get_base_skill_damage(attacker, prob);
         if (utils::get_specialization(attacker) == game_types::PS_WildFighting) {
@@ -251,10 +265,30 @@ namespace olog_hai {
             return;
         }
         int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
-        damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
             WAIT_STATE(victim, wait_delay);
         }
+        damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
+    }
+
+    void apply_overrun_damage(char_data* attacker, char_data* victim) {
+        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+        if (!bb_instance.is_target_valid(attacker, victim)) {
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", attacker);
+            return;
+        }
+        int prob = get_prob_skill(attacker, victim, SKILL_OVERRUN);
+
+        if (prob < 0) {
+            damage(attacker, victim, 0, SKILL_OVERRUN, 0);
+            return;
+        }
+
+        int wait_delay = PULSE_VIOLENCE;
+        if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
+            WAIT_STATE(victim, wait_delay);
+        }
+        damage(attacker, victim, calculate_overrun_damage(*attacker, prob), SKILL_OVERRUN, 0);
     }
 
     void apply_cleave_damage(char_data* attacker, char_data* victim) {
@@ -297,6 +331,17 @@ namespace olog_hai {
         affect_to_char(character, &af);
         SET_TACTICS(character, TACTICS_BERSERK);
     }
+
+    void room_target(char_data* ch, void (*skill_damage)(char_data* character, char_data* victim)) {
+        char_data* victim = nullptr;
+        char_data* nxt_victim = nullptr;
+        for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
+            nxt_victim = victim->next_in_room;
+            if (victim != ch) {
+                skill_damage(ch, victim);
+            }
+        }
+    }
 }
 
 ACMD(do_cleave)
@@ -315,15 +360,7 @@ ACMD(do_cleave)
     }
 
     olog_hai::do_sanctuary_check(ch);
-    char_data* victim = nullptr;
-    char_data* nxt_victim = nullptr;
-
-    for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
-        nxt_victim = victim->next_in_room;
-        if (victim != ch) {
-            olog_hai::apply_cleave_damage(ch, victim);
-        }
-    }
+    olog_hai::room_target(ch, &olog_hai::apply_cleave_damage);
     timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);    
 }
 
@@ -376,10 +413,121 @@ ACMD(do_smash)
     olog_hai::apply_smash_damage(ch, victim, prob);
 }
 
+
+bool is_direction_valid(char_data* ch, int cmd) {
+    if (!world[ch->in_room].dir_option[cmd]) {
+        send_to_char("You cannot go that way.\n\r", ch);
+        return false;
+    } else if (world[ch->in_room].dir_option[cmd]->to_room == NOWHERE) {
+        send_to_char("You cannot go that way.\n\r", ch);
+        return false;
+    }
+
+    if (!CAN_GO(ch, cmd))
+    {
+        if (IS_SET(EXIT(ch, cmd)->exit_info, EX_ISHIDDEN) && !PRF_FLAGGED(ch, PRF_HOLYLIGHT))
+        {
+            send_to_char("You cannot go that way.\n\r", ch);
+            return false;
+        }
+        else if (EXIT(ch, cmd)->keyword)
+        {
+            if (IS_SHADOW(ch))
+                sprintf(buf2, "You cannot pass through the %s.\n\r", fname(EXIT(ch, cmd)->keyword));
+            else
+                sprintf(buf2, "The %s seems to be closed.\n\r", fname(EXIT(ch, cmd)->keyword));
+            send_to_char(buf2, ch);
+            return false;
+        }
+        else
+        {
+            send_to_char("It seems to be closed.\n\r", ch);
+            return false;
+        }
+    }
+    else if (EXIT(ch, cmd)->to_room == NOWHERE)
+    {
+        send_to_char("You cannot go that way.\n\r", ch);
+        return false;
+    }
+    return true;
+}
+
+int get_direction(std::string direction) {
+    for(auto & c: direction) c = toupper(c);
+
+    if (direction == "WEST" || direction == "W") {
+        return WEST;
+    }
+    else if (direction == "EAST" || direction == "E") {
+        return EAST;
+    }
+    else if (direction == "NORTH" || direction == "N") {
+        return NORTH;
+    }
+    else if (direction == "SOUTH" || direction == "S") {
+        return SOUTH;
+    }
+    else if (direction == "UP" || direction == "U") {
+        return UP;
+    }
+    else if (direction == "DOWN" || direction == "D") {
+        return DOWN;
+    }
+
+    return -1;
+}
+
 ACMD(do_overrun) 
 {
-    return;
+    one_argument(argument, arg);
+    cmd = get_direction(arg);
+    
+    if (cmd == -1) {
+        send_to_char("You don't know what direction that is?!\r\n", ch);
+        return;
+    }
+    if (!olog_hai::is_skill_valid(ch, SKILL_OVERRUN)) {
+        return;
+    }
+    if (!is_direction_valid(ch, cmd)) {
+        return;
+    }
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    if (!timer.is_skill_allowed(*ch, SKILL_OVERRUN)) {
+        send_to_char("You cannot use this skill yet.\r\n", ch);
+        return;
+    }
+    int total_moves = utils::get_prof_level(PROF_WARRIOR, *ch) / 8;
+    int loop_moves = 0;
+    int dis;
+    char_data* tmpch = nullptr;
+    for (dis = 0; dis <= total_moves; dis++) {
+        olog_hai::room_target(ch, &olog_hai::apply_overrun_damage);
+
+        if (!CAN_GO(ch, cmd)) {
+            break;
+        }
+        for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+            if (tmpch->specials.fighting == ch) {
+                stop_fighting(tmpch);
+            }
+        }
+        
+        stop_fighting(ch);
+        do_move(ch, "", 0, cmd + 1, 0);
+    }
+
+    if (dis < total_moves) {
+        damage(ch, ch, 50, SKILL_OVERRUN, 0);
+    }
+    else {
+        olog_hai::room_target(ch, &olog_hai::apply_overrun_damage);
+    }
+    WAIT_STATE_FULL(ch, PULSE_VIOLENCE, 0, 0, 1, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+    timer.add_skill_timer(*ch, SKILL_OVERRUN, OVERRUN_TIMER);
 }
+
 ACMD(do_frenzy) 
 {
     one_argument(argument, arg);
@@ -418,13 +566,6 @@ ACMD(do_stomp)
     }
 
     olog_hai::do_sanctuary_check(ch);
-    char_data* victim = nullptr;
-    char_data* nxt_victim = nullptr;
-    for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
-        nxt_victim = victim->next_in_room;
-        if (victim != ch) {
-            olog_hai::apply_stomp_affect(ch, victim);
-        }
-    }
+    olog_hai::room_target(ch, &olog_hai::apply_stomp_affect);
     timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
 }

@@ -461,6 +461,20 @@ $n cleaves $N's body with their might blow!~
 ~
 ~
 M
+ 157
+You trample $N to death, as you charge by!~
+$N tramples you to death, as they charge by!~
+$n tramples $N to death, as they charge by!~
+$N dodges to the side, as you charge at them!~
+You dodge to the side, as $n charges at you!~
+$N dodges to the side, as $N charges at $M~
+You charge at $N, toppling $M over in your path of destruction!~
+$n charges at you, topping you over as you stand in $s path of destruction!~
+$n charges at $N, topping them over as $S stands in the path of destruction!~
+~
+You run out of room to charge, slamming full force into a dead end!~
+~
+M
  201
 The stray heat of your fireball burns $N to death!~
 You are burnt to death by the sheer heat of $n's fireball!~

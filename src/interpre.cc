@@ -2207,8 +2207,8 @@ void assign_command_pointers(void)
         TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(244, POSITION_FIGHTING, do_cleave, 0, TRUE, 0,
         TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-    COMMANDO(245, POSITION_FIGHTING, do_overrun, 0, TRUE, 0,
-        TAR_DIR_NAME, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(245, POSITION_STANDING, do_overrun, 0, TRUE, 0,
+        TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
 }
 
 /* *************************************************************************

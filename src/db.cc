@@ -2,7 +2,9 @@
 
 #include "platdef.h"
 #include <ctype.h>
+#if defined(__linux__) || (__unix__)
 #include <dirent.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +31,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 /**************************************************************************
 *  declarations of most of the 'global' variables                         *
@@ -491,7 +494,7 @@ int read_filename_field(int pos, char* field, char* fname)
         field_pos++;
         pos++;
     }
-    field[MAX(79, field_pos)] = '\n';
+    field[std::max(79, field_pos)] = '\n';
     return pos;
 }
 
@@ -538,7 +541,7 @@ void build_directory(char* TheDir)
         sprintf(player_table[top_of_p_table].ch_file, "%s%s",
             TheDir, dentry->d_name);
 
-        top_idnum = MAX(top_idnum, player_table[top_of_p_table].idnum);
+        top_idnum = std::max(top_idnum, (long)player_table[top_of_p_table].idnum);
 
         dentry = readdir(dp);
     } // while (dentry)
@@ -1807,7 +1810,7 @@ int load_player(char* name, struct char_file_u* char_element)
             line[tmp1] = *tmpchar;
         position = (position + tmp1 + 2);
 
-        for (tmp1 = 0; tmp1 < (int)(MIN(12, strlen(line))); tmp1++)
+        for (tmp1 = 0; tmp1 < (int)(std::min((size_t)12, strlen(line))); tmp1++)
             if (isspace(line[tmp1])) {
                 line[tmp1] = '\0';
                 break;

@@ -21,6 +21,10 @@
 typedef int SocketType;
 #define CLOSE_SOCKET(x) close(x)
 
+#define COMPARE_IGNORE_CASE(x, y) strcasecmp(x, y)
+
+
+
 #endif
 
 #ifdef __bsdi__
@@ -41,6 +45,7 @@ typedef int SocketType;
 
 #define ZERO_MEMORY(x, y) ZeroMemory(x, y)
 
+#define COMPARE_IGNORE_CASE(x, y) _stricmp(x, y)
 
 typedef int SocketType;
 #define CLOSE_SOCKET(x) closesocket(x)

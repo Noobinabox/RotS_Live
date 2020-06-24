@@ -2,7 +2,7 @@
 # this will create a build solution in the build directory
 # .gitignore exludes everything under /build.
 
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.10)
 project(RotS)
 
 # There's totally a better way to do this than simply listing every file
@@ -104,3 +104,6 @@ clock.h
 
 
 )
+
+
+set_target_properties(ageland PROPERTIES CXX_STANDARD 17)

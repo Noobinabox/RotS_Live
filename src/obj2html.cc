@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cstring>
+
+#ifdef _WIN32
+#include <filesystem>
+#endif
 
 #include "comm.h" /* For vsend_to_char() */
 #include "db.h" /* For REAL */
@@ -687,7 +692,7 @@ void build_output(struct obj2html_type* list, struct obj_data* o)
                         break;
 
                 /* Insert the item */
-                bcopy(list[i].to_output + j, list[i].to_output + j + 1,
+                std::memcpy(list[i].to_output + j, list[i].to_output + j + 1,
                     sizeof(struct obj_data*) * (list[i].num_to_output - j));
                 list[i].to_output[j] = o;
                 list[i].num_to_output++;
@@ -825,7 +830,12 @@ FILE* obj2html_start(void)
     }
 
     /* Shouldn't there be a way to do this on open()? */
+#if defined(__linux__) || defined(__unix__)
     chmod("../www/objects.html", S_IRWXU | S_IRWXG | S_IRWXO);
+#endif
+#ifdef _WIN32 
+    std::filesystem::permissions("../www/objects.html", std::filesystem::perms::all);
+#endif
 
     fprintf(f, "<HTML>"
                "\n"

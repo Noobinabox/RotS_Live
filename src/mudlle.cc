@@ -1137,37 +1137,37 @@ SPECIAL(intelligent)
             if (PROG_POINT(host) >= cmd_leng)
                 PROG_POINT(host) = 0;
             break;
-        //     case 'W':                       /* temporary command (?), cast spell */
-        //       if(SPECIAL_LIST_TYPE(host)!=SPECIAL_STR){
-        // 	   PRE_COMMAND;
-        // 	   do_say(host,"I can't cast what i am urged to.\n\r",0,0,0);
-        // 	   POST_COMMAND;
-        // 	   break;
-        //       }
-        //       if(SPECIAL_LIST_NEXT(host) >= 0 ) {
-        // 	   if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
-        // 	      == TARGET_CHAR)
-        // 	     sprintf(tmpstr,"'%s' %s",SPECIAL_LIST(host).str,
-        // 		     GET_NAME(SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].chr));
-        // 	   else if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
-        // 	           == TARGET_OBJ)
-        // 	  sprintf(tmpstr,"'%s' %s",SPECIAL_LIST(host).str,
-        // 		  SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].obj->name);
-        // 	else if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
-        // 	   ==SPECIAL_STR)
-        // 	  sprintf(tmpstr,"'%s' %s",SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].str,
-        // 		  SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].str);
-        // 	REMOVE_LIST(host);
-        // 	REMOVE_LIST(host);
-        //       }
-        //       else{
-        // 	sprintf(tmpstr,"'%s'",SPECIAL_LIST(host).str);
-        // 	REMOVE_LIST(host);
-        //       }
-        //       PRE_COMMAND;
-        //       do_cast(host,tmpstr,0,0,0);
-        //       POST_COMMAND;
-        //       break;
+            //     case 'W':                       /* temporary command (?), cast spell */
+            //       if(SPECIAL_LIST_TYPE(host)!=SPECIAL_STR){
+            // 	   PRE_COMMAND;
+            // 	   do_say(host,"I can't cast what i am urged to.\n\r",0,0,0);
+            // 	   POST_COMMAND;
+            // 	   break;
+            //       }
+            //       if(SPECIAL_LIST_NEXT(host) >= 0 ) {
+            // 	   if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
+            // 	      == TARGET_CHAR)
+            // 	     sprintf(tmpstr,"'%s' %s",SPECIAL_LIST(host).str,
+            // 		     GET_NAME(SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].chr));
+            // 	   else if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
+            // 	           == TARGET_OBJ)
+            // 	  sprintf(tmpstr,"'%s' %s",SPECIAL_LIST(host).str,
+            // 		  SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].obj->name);
+            // 	else if(SPECIAL_LIST_AREA(host)->type[SPECIAL_LIST_NEXT(host)]
+            // 	   ==SPECIAL_STR)
+            // 	  sprintf(tmpstr,"'%s' %s",SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].str,
+            // 		  SPECIAL_LIST_AREA(host)->field[SPECIAL_LIST_NEXT(host)].str);
+            // 	REMOVE_LIST(host);
+            // 	REMOVE_LIST(host);
+            //       }
+            //       else{
+            // 	sprintf(tmpstr,"'%s'",SPECIAL_LIST(host).str);
+            // 	REMOVE_LIST(host);
+            //       }
+            //       PRE_COMMAND;
+            //       do_cast(host,tmpstr,0,0,0);
+            //       POST_COMMAND;
+            //       break;
 
         default:
             PRE_COMMAND;

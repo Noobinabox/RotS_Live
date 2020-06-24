@@ -163,6 +163,16 @@
 #define SKILL_MARK 124
 #define SKILL_BLINDING 110
 #define SKILL_BEND_TIME 95
+#define SKILL_WINDBLAST 128
+#define SPELL_FAME_WAR 129
+
+/* Olog-Hai Race Specific Skills */
+#define SKILL_SMASH 152
+#define SKILL_FRENZY 153
+#define SKILL_STOMP 154
+#define SKILL_BLOODTHIRST 155
+#define SKILL_CLEAVE 156
+#define SKILL_OVERRUN 157
 
 #define SPELL_ASPHYXIATION 116
 #define SPELL_ARDA 117
@@ -179,7 +189,6 @@
 
 #define SKILL_UNUSED2 97
 #define SKILL_UNUSED3 59
-#define SKILL_UNUSED4 125
 #define SKILL_UNUSED5 126
 
 /* Don't remove this because it's use to remove spells */

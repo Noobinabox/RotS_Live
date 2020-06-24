@@ -32,8 +32,8 @@
 #include "char_utils.h"
 
 #define COMMANDO(number, min_pos, pointer, min_level,    \
-                 retired, subcommand, targfl1, targfl2,  \
-                 special_mask)                           \
+    retired, subcommand, targfl1, targfl2,               \
+    special_mask)                                        \
     {                                                    \
         cmd_info[(number)].command_pointer = (pointer);  \
         cmd_info[(number)].minimum_position = (min_pos); \
@@ -281,6 +281,12 @@ ACMD(do_blinding);
 ACMD(do_bite);
 ACMD(do_maul);
 ACMD(do_bendtime);
+ACMD(do_windblast);
+ACMD(do_smash);
+ACMD(do_cleave);
+ACMD(do_overrun);
+ACMD(do_frenzy);
+ACMD(do_stomp);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
@@ -528,7 +534,13 @@ const char* command[] = {
     "mark",
     "blind",
     "bend",
-    "\n" //240
+    "windblast", //240
+    "smash",
+    "frenzy",
+    "stomp",
+    "cleave",
+    "overrun", //245
+    "\n"
 };
 
 /* CEND: search for me when you're looking for the end of the cmd list! :) */
@@ -1222,7 +1234,7 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
     struct waiting_type *argument_info, interp_argument_info;
     extern int no_specials;
 
-    bzero((char*)&interp_argument_info, sizeof(waiting_type));
+    ZERO_MEMORY((char*)&interp_argument_info, sizeof(waiting_type));
     look_at = begin = mode = subcmd = 0;
 
     /* should only happen if someone other than ch causes this function call */
@@ -1252,7 +1264,7 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
 
     /* there's nothing special going on with this guy */
     if (!mode) {
-        bzero(argument, MAX_INPUT_LENGTH);
+        ZERO_MEMORY(argument, MAX_INPUT_LENGTH);
 
         /* Find first non blank */
         for (begin = 0; (*(argument_raw + begin) == ' '); begin++)
@@ -2183,8 +2195,20 @@ void assign_command_pointers(void)
         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
     COMMANDO(238, POSITION_FIGHTING, do_blinding, 0, TRUE, 0,
         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
-    COMMANDO(239, POSITION_STANDING, do_bendtime, 0, TRUE, 0,
-        FULL_TARGET, TAR_IGNORE, 0);
+    COMMANDO(239, POSITION_FIGHTING, do_bendtime, 0, TRUE, 0,
+		TAR_IGNORE, TAR_IGNORE, 0);
+    COMMANDO(240, POSITION_FIGHTING, do_windblast, 0, TRUE, 0,
+        TAR_IGNORE, TAR_IGNORE, 0);
+    COMMANDO(241, POSITION_FIGHTING, do_smash, 0, TRUE, 0,
+        TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(242, POSITION_FIGHTING, do_frenzy, 0, TRUE, 0,
+		TAR_IGNORE, TAR_IGNORE, 0);
+    COMMANDO(243, POSITION_FIGHTING, do_stomp, 0, TRUE, 0,
+        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(244, POSITION_FIGHTING, do_cleave, 0, TRUE, 0,
+        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(245, POSITION_STANDING, do_overrun, 0, TRUE, 0,
+        TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
 }
 
 /* *************************************************************************
@@ -2558,7 +2582,7 @@ void nanny(struct descriptor_data* d, char* arg)
                   "  [H]uman                * [U]ruk-hai Orc\n\r"
                   "  [D]warf                # [C]ommon Orc  \n\r"
                   "  [W]ood Elf             # Uruk-[L]huth  \n\r"
-                  "  Ho[B]bit               # [O]log-Hai    (Coming Soon)\n\r"
+                  "  Ho[B]bit               # [O]log-Hai    \n\r"
                   "* Beor[N]ing             # Harad[R]im    \n\r"
                   "\n\r"
                   "Races marked with a * are hard to play.\n\r"
@@ -2602,8 +2626,8 @@ void nanny(struct descriptor_data* d, char* arg)
             GET_RACE(d->character) = RACE_BEORNING;
             break;
         case 'o':
-            SEND_TO_Q("\r\nOlog-Hais are not available for play yet.\r\n", d);
-            return;
+            GET_RACE(d->character) = RACE_OLOGHAI;
+            break;
         // GET_RACE(d->character) = RACE_OLOGHAI;
         case 'r':
             GET_RACE(d->character) = RACE_HARADRIM;
@@ -3074,19 +3098,19 @@ int new_player_select(struct descriptor_data* d, char* arg)
 
         switch (*arg) {
         case 'm':
-            GET_PROF_POINTS(PROF_MAGE, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_MAGE, d->character), 165));
+            GET_PROF_POINTS(PROF_MAGE, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_MAGE, d->character), 165));
             break;
 
         case 't':
-            GET_PROF_POINTS(PROF_CLERIC, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_CLERIC, d->character), 165));
+            GET_PROF_POINTS(PROF_CLERIC, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_CLERIC, d->character), 165));
             break;
 
         case 'r':
-            GET_PROF_POINTS(PROF_RANGER, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_RANGER, d->character), 165));
+            GET_PROF_POINTS(PROF_RANGER, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_RANGER, d->character), 165));
             break;
 
         case 'w':
-            GET_PROF_POINTS(PROF_WARRIOR, d->character) = MAX(0, MIN(classpoints + GET_PROF_POINTS(PROF_WARRIOR, d->character), 165));
+            GET_PROF_POINTS(PROF_WARRIOR, d->character) = std::max(0, std::min(classpoints + GET_PROF_POINTS(PROF_WARRIOR, d->character), 165));
             break;
 
         default:

@@ -222,6 +222,7 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
         act(buf, TRUE, ch, 0, victim, TO_NOTVICT);
 
         damage_result = damage_stat(ch, victim, tmp, damg);
+        gain_exp(ch, (1 + GET_LEVEL(victim)) * std::min(20 + GET_LEVEL(ch) * 2, damg * 5) / (1 + GET_LEVEL(ch)));
         if (!damage_result.will_die) {
             if (IS_AFFECTED(victim, AFF_WAITWHEEL) && victim->delay.priority <= 40) {
                 break_spell(victim);

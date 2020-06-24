@@ -1535,8 +1535,7 @@ ACMD(do_advance)
                 GET_NAME(ch), GET_NAME(victim), newlevel, GET_LEVEL(victim));
             log(buf);
             if (adv > 0)
-                gain_exp_regardless(victim, (xp_to_level(GET_LEVEL(victim) + adv)
-                                                - GET_EXP(victim)));
+                gain_exp_regardless(victim, (xp_to_level(GET_LEVEL(victim) + adv) - GET_EXP(victim)));
 
             if (adv < 0) {
                 int n;
@@ -1546,7 +1545,7 @@ ACMD(do_advance)
                 GET_EXP(victim) = xp_to_level(GET_LEVEL(victim));
                 SPELLS_TO_LEARN(victim) += adv * PRACS_PER_LEVEL + (adv * GET_LEA_BASE(victim)) / LEA_PRAC_FACTOR;
                 for (n = 1; n <= MAX_PROFS; n++)
-                    SET_PROF_LEVEL(n, victim, ((int)(GET_PROF_COOF(n, victim) * MIN(GET_MINI_LEVEL(victim), 3000)) / 100000));
+                    SET_PROF_LEVEL(n, victim, ((int)(GET_PROF_COOF(n, victim) * std::min(GET_MINI_LEVEL(victim), 3000)) / 100000));
             }
 
             save_char(victim, NOWHERE, 0);
@@ -1940,7 +1939,7 @@ ACMD(do_wiznet)
             one_argument(argument + 1, buf1);
             if (is_number(buf1)) {
                 half_chop(argument + 1, buf1, argument);
-                level = MAX(atoi(buf1), LEVEL_IMMORT);
+                level = std::max(atoi(buf1), LEVEL_IMMORT);
                 if (level > GET_LEVEL(ch)) {
                     send_to_char("You can't wizline above your own level.\n\r", ch);
                     return;
@@ -2064,7 +2063,7 @@ ACMD(do_zreset)
         sprintf(buf, "Reset zone %d: %s.\n\r", i, zone_table[i].name);
         send_to_char(buf, ch);
         sprintf(buf, "(GC) %s reset zone %d (%s)", GET_NAME(ch), zone_table[i].number, zone_table[i].name);
-        mudlog(buf, NRM, (sh_int)MAX(LEVEL_GRGOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, NRM, (sh_int)std::max(LEVEL_GRGOD, GET_INVIS_LEV(ch)), TRUE);
     } else
         send_to_char("Invalid zone number.\n\r", ch);
 }
@@ -2160,19 +2159,19 @@ ACMD(do_wizutil)
         send_to_char("Pardoned.\n\r", ch);
         send_to_char("You have been pardoned by the Gods!\n\r", vict);
         sprintf(buf, "(GC) %s pardoned by %s", GET_NAME(vict), GET_NAME(ch));
-        mudlog(buf, BRF, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, BRF, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
         break;
     case SCMD_NOTITLE:
         result = PLR_TOG_CHK(vict, PLR_NOTITLE);
         sprintf(buf, "(GC) Notitle %s for %s by %s.", ONOFF(result), GET_NAME(vict), GET_NAME(ch));
-        mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, NRM, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
         strcat(buf, "\n\r");
         send_to_char(buf, ch);
         break;
     case SCMD_SQUELCH:
         result = PLR_TOG_CHK(vict, PLR_NOSHOUT);
         sprintf(buf, "(GC) Squelch %s for %s by %s.", ONOFF(result), GET_NAME(vict), GET_NAME(ch));
-        mudlog(buf, BRF, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, BRF, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
         strcat(buf, "\n\r");
         send_to_char(buf, ch);
         break;
@@ -2191,7 +2190,7 @@ ACMD(do_wizutil)
         send_to_char("Frozen.\n\r", ch);
         act("A sudden cold wind conjured from nowhere freezes $n!", FALSE, vict, 0, 0, TO_ROOM);
         sprintf(buf, "(GC) %s frozen by %s.", GET_NAME(vict), GET_NAME(ch));
-        mudlog(buf, BRF, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, BRF, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
         break;
     case SCMD_THAW:
         if (!PLR_FLAGGED(vict, PLR_FROZEN)) {
@@ -2205,7 +2204,7 @@ ACMD(do_wizutil)
             return;
         }
         sprintf(buf, "(GC) %s un-frozen by %s.", GET_NAME(vict), GET_NAME(ch));
-        mudlog(buf, BRF, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, BRF, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
         REMOVE_BIT(PLR_FLAGS(vict), PLR_FROZEN);
         send_to_char("A fireball suddenly explodes in front of you, melting the ice!\n\rYou feel thawed.\n\r", vict);
         send_to_char("Thawed.\n\r", ch);
@@ -2549,7 +2548,7 @@ ACMD(do_show)
             REMOVE_BIT(flagset, flags); \
     }
 
-#define RANGE(low, high) (value = MAX((low), MIN((high), (value))))
+#define RANGE(low, high) (value = std::max((low), std::min((high), (value))))
 /*
   ...Moved a bit lower...
   ACMD(do_wizset)
@@ -2705,9 +2704,9 @@ ACMD(do_wizset)
                 send_to_char("Sorry, you can't do that.\n\r", ch);
                 return;
             }
-            bzero(descr.pwd, MAX_PWD_LENGTH);
+            ZERO_MEMORY(descr.pwd, MAX_PWD_LENGTH);
             strcpy(descr.pwd, tmp_store.pwd);
-            bzero(descr.host, 50);
+            ZERO_MEMORY(descr.host, 50);
             strcpy(descr.host, tmp_store.host);
             cbuf->desc = &descr;
             vict = cbuf;
@@ -2794,11 +2793,11 @@ ACMD(do_wizset)
         affect_total(vict);
         break;
     case 8:
-        vict->tmpabilities.mana = RANGE(0, vict->abilities.mana);
+		vict->tmpabilities.mana = (sh_int)RANGE(0, (int)vict->abilities.mana);
         affect_total(vict);
         break;
     case 9:
-        vict->tmpabilities.move = RANGE(0, vict->abilities.move);
+        vict->tmpabilities.move = (sh_int)RANGE(0, (int)vict->abilities.move);
         affect_total(vict);
         break;
     case 10:

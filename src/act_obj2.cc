@@ -167,10 +167,10 @@ ACMD(do_drink)
         amount = 1;
     }
 
-    amount = MIN(amount, temp->obj_flags.value[1]);
+    amount = std::min(amount, temp->obj_flags.value[1]);
 
     /* You can't subtract more than the object weighs */
-    weight = MIN(amount, temp->obj_flags.weight);
+    weight = std::min(amount, temp->obj_flags.weight);
     if (temp != &generic_water && temp != &generic_poison)
         weight_change_object(temp, -weight); /* Subtract amount */
 
@@ -787,10 +787,13 @@ void perform_wear(char_data* character, obj_data* item, int item_slot, bool wear
             }
             return;
         }
-        if (IS_CARRYING_N(character) >= CAN_CARRY_N(character))
+        if (IS_CARRYING_N(character) >= CAN_CARRY_N(character)) {
             send_to_char("Your hands are already full!\n\r", character);
-        else
+	    return;
+        }
+        else {
             perform_remove(character, item_slot);
+        }
     }
 
     obj_from_char(item);

@@ -47,6 +47,7 @@
 #include "zone.h" /* For zone_table */
 
 #include "base_utils.h"
+#include "char_utils.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -75,6 +76,8 @@ void clear_memory(struct char_data*);
 
 ACMD(do_save);
 ACMD(do_return);
+
+#define MAX_MAUL_DODGE 50
 
 char char_control_array[MAX_CHARACTERS / 8 + 1];
 long last_control_set = -1;
@@ -114,7 +117,7 @@ int char_power(int lev)
     if (lev >= LEVEL_IMMORT)
         return 0;
 
-    return MIN((lev + 2), 16 + lev / 2) * MIN(lev + 2, 32);
+    return std::min((lev + 2), 16 + lev / 2) * std::min(lev + 2, 32);
 }
 
 /*
@@ -188,7 +191,7 @@ void recount_light_room(int room)
     world[room].light = count;
 }
 
-int isname(char* str, char* namelist, char full)
+int isname(const char* str,const char* namelist, char full)
 {
     register char *curname, *curstr;
     int tmp;
@@ -206,9 +209,9 @@ int isname(char* str, char* namelist, char full)
     if (!namelist)
         return 0;
 
-    curname = namelist;
+    curname = (char*)namelist;
     for (;;) {
-        for (curstr = str;; curstr++, curname++) {
+        for (curstr = (char*)str;; curstr++, curname++) {
             if (!*curstr && (!full || !isalpha(*curname)))
                 return 1;
 
@@ -335,7 +338,10 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_MANA:
-        ch->abilities.mana += mod;
+        GET_MAX_MANA(ch) += mod;
+		if (GET_MANA(ch) >= GET_MAX_MANA(ch) - mod)
+			GET_MANA(ch) += mod;
+
         break;
 
     case APPLY_WILLPOWER:
@@ -343,11 +349,16 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_HIT:
-        ch->abilities.hit += mod;
+        GET_MAX_HIT(ch) += mod;
+		if (GET_HIT(ch) >= GET_MAX_HIT(ch) - mod)
+			GET_HIT(ch) += mod;
+
         break;
 
     case APPLY_MOVE:
-        ch->abilities.move += mod;
+        GET_MAX_MOVE(ch) += mod;
+		if (GET_MOVE(ch) >= GET_MAX_MOVE(ch) - mod)
+			GET_MOVE(ch) += mod;
         break;
 
     case APPLY_GOLD:
@@ -362,6 +373,14 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
 
     case APPLY_OB:
         SET_OB(ch) += mod;
+        break;
+
+    case APPLY_SPELL_PEN:
+        ch->points.spell_pen += mod;
+        break;
+
+    case APPLY_SPELL_POW:
+        ch->points.spell_power += mod;
         break;
 
     case APPLY_DAMROLL:
@@ -389,6 +408,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_SPEED:
+        GET_ENE_REGEN(ch) += mod;
         break;
 
     case APPLY_BEND: {
@@ -399,15 +419,14 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     case APPLY_ARMOR:
         //     mod = (2*mod*GET_PERCEPTION(ch))/100;
         //     SET_DODGE(ch) += mod;
-        break;
-
+        break;   
     case APPLY_MAUL:
         if (!add) {
-            SET_DODGE(ch) += counter * 5;
+            SET_DODGE(ch) += std::min((counter * 5), MAX_MAUL_DODGE);
         }
 
         if (add) {
-            SET_DODGE(ch) += -(counter * 5);
+            SET_DODGE(ch) += -(std::min((counter * 5), MAX_MAUL_DODGE));
         }
         break;
 
@@ -588,12 +607,12 @@ void affect_total(struct char_data* ch, int mode)
 
     i = (IS_NPC(ch) ? 100 : 100);
 
-    GET_DEX_BASE(ch) = MAX(1, MIN(GET_DEX_BASE(ch), i));
-    GET_INT_BASE(ch) = MAX(0, MIN(GET_INT_BASE(ch), i));
-    GET_WILL_BASE(ch) = MAX(0, MIN(GET_WILL_BASE(ch), i));
-    GET_CON_BASE(ch) = MAX(0, MIN(GET_CON_BASE(ch), i));
-    SET_STR_BASE(ch, MAX(1, MIN(GET_STR_BASE(ch), i)));
-    GET_LEA_BASE(ch) = MAX(0, MIN(GET_LEA_BASE(ch), i));
+    GET_DEX_BASE(ch) = (signed char)std::max(1, std::min((int)GET_DEX_BASE(ch), i));
+    GET_INT_BASE(ch) = (signed char)std::max(0, std::min((int)GET_INT_BASE(ch), i));
+    GET_WILL_BASE(ch) = (signed char)std::max(0, std::min((int)GET_WILL_BASE(ch), i));
+    GET_CON_BASE(ch) = (signed char)std::max(0, std::min((int)GET_CON_BASE(ch), i));
+    SET_STR_BASE(ch, (signed char)std::max(1, std::min((int)GET_STR_BASE(ch), i)));
+    GET_LEA_BASE(ch) = (signed char)std::max(0, std::min((int)GET_LEA_BASE(ch), i));
 }
 
 /*  If there is a structure of affected_type in the affected_type_pool list then
@@ -608,7 +627,7 @@ struct affected_type* get_from_affected_type_pool()
         afnew = affected_type_pool;
         affected_type_pool = afnew->next;
 
-        bzero(afnew, sizeof(affected_type));
+        ZERO_MEMORY(afnew, sizeof(affected_type));
     } else {
         CREATE(afnew, struct affected_type, 1);
         affected_type_counter++;
@@ -872,7 +891,7 @@ affected_type* affected_by_spell(const char_data* ch, byte skill, affected_type*
         start_affect = ch->affected;
 
     int count = 0;
-    for (affected_type *status_affect = start_affect; status_affect && (count < MAX_AFFECT); status_affect = status_affect->next, count++) {
+    for (affected_type* status_affect = start_affect; status_affect && (count < MAX_AFFECT); status_affect = status_affect->next, count++) {
         if (status_affect->type == skill) {
             return status_affect;
         }
@@ -1307,6 +1326,28 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
         } else
             log("SYSERR: ch->in_room = NOWHERE when equipping char.");
     }
+
+	if ((IS_OBJ_STAT(item, ITEM_HARADRIM) && GET_RACE(character) != RACE_HARADRIM) ||
+		(IS_OBJ_STAT(item, ITEM_HUMAN) && GET_RACE(character) != RACE_HUMAN) ||
+		(IS_OBJ_STAT(item, ITEM_DWARF) && GET_RACE(character) != RACE_DWARF) ||
+		(IS_OBJ_STAT(item, ITEM_WOODELF) && GET_RACE(character) != RACE_WOOD) ||
+		(IS_OBJ_STAT(item, ITEM_HOBBIT) && GET_RACE(character) != RACE_HOBBIT) || 
+		(IS_OBJ_STAT(item, ITEM_BEORNING) && GET_RACE(character) != RACE_BEORNING) || 
+		(IS_OBJ_STAT(item, ITEM_URUK) && GET_RACE(character) != RACE_URUK) || 
+		(IS_OBJ_STAT(item, ITEM_ORC) && GET_RACE(character) != RACE_ORC) || 
+		(IS_OBJ_STAT(item, ITEM_MAGUS) && GET_RACE(character) != RACE_MAGUS) || 
+		(IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(character) != RACE_OLOGHAI))
+	{
+		if (character->in_room != NOWHERE) {
+
+			act("You are zapped by $p and instantly drop it.", FALSE, character, item, 0, TO_CHAR);
+			act("$n is zapped by $p and instantly drops it.", FALSE, character, item, 0, TO_ROOM);
+			obj_to_char(item, character); /* changed to drop in inventory instead of ground */
+			return;
+		}
+		else
+			log("SYSERR: ch->in_room = NOWHERE when equipping char.");
+	}
 
     character->equipment[item_slot] = item;
     item->carried_by = character;
@@ -2067,12 +2108,6 @@ int keyword_matches_char(struct char_data* ch, struct char_data* vict, char* key
     int check;
 
     if (other_side(ch, vict)) {
-        /*
-		if (get_total_fame(ch) >= 40)
-			check = isname(keyword, vict->player.name)
-		if (!check)
-			check = isname(keyword, pc_race_types[GET_RACE(vict)];
-		*/
         check = isname(keyword, pc_race_keywords[GET_RACE(vict)]);
     } else
         check = isname(keyword, vict->player.name);

@@ -223,7 +223,7 @@ int get_race_weight(struct char_data* ch)
         return 80000 * gender_mod / 10;
 
     case RACE_OLOGHAI:
-        return 80000 * gender_mod / 10;
+        return 40000 * gender_mod / 10;
 
     case RACE_HARADRIM:
         return 17000 * gender_mod / 10;
@@ -294,7 +294,7 @@ int get_race_height(struct char_data* ch)
         return 225 * gender_mod / 10;
 
     case RACE_OLOGHAI:
-        return 225 * gender_mod / 10;
+        return 200 * gender_mod / 10;
 
     default:
         return 200;
@@ -1038,7 +1038,7 @@ void log_death_trap(struct char_data* ch)
 }
 
 /* writes a string to the log */
-void log(char* str)
+void log(const char* str)
 {
     //time_t ct(0);
     //char* time_string = asctime(localtime(&ct));
@@ -1279,7 +1279,7 @@ void echo_on(int sock)
 
 void* create_pointer = 0;
 
-void* create_function(int elem_size, int elem_num, int line, char* file)
+void* create_function(int elem_size, int elem_num, int line,const char* file)
 {
 
     //  printf("want to allocate size=%d, num=%d\n",elem_size,elem_num);
@@ -1436,8 +1436,7 @@ int CAN_SEE(struct char_data* sub)
     if (IS_SHADOW(sub))
         return 1;
 
-    if (!IS_LIGHT((sub)->in_room) && (!IS_AFFECTED((sub), AFF_INFRARED) && !PRF_FLAGGED((sub), PRF_HOLYLIGHT)
-                                         && !(OUTSIDE(sub) && IS_AFFECTED((sub), AFF_MOONVISION) && weather_info.moonlight)))
+    if (!IS_LIGHT((sub)->in_room) && (!IS_AFFECTED((sub), AFF_INFRARED) && !PRF_FLAGGED((sub), PRF_HOLYLIGHT) && !(OUTSIDE(sub) && IS_AFFECTED((sub), AFF_MOONVISION) && weather_info.moonlight)))
         return 0;
 
     return 1;
@@ -1932,8 +1931,7 @@ int compare_obj_to_proto(struct obj_data* obj)
                 tmp_flags += ITEM_ANTI_EVIL;
 
             // Now check the enchant.
-            if ((obj->obj_flags.extra_flags != tmp->obj_flags.extra_flags) && (obj->obj_flags.extra_flags - obj_flags + tmp_flags
-                                                                                  == tmp->obj_flags.extra_flags))
+            if ((obj->obj_flags.extra_flags != tmp->obj_flags.extra_flags) && (obj->obj_flags.extra_flags - obj_flags + tmp_flags == tmp->obj_flags.extra_flags))
                 diff--;
         }
     }

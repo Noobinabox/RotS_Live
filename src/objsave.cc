@@ -22,6 +22,9 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "pkill.h"
+#include "char_utils.h"
+#include "limits.h"
 
 #include <iostream>
 #include <sstream>
@@ -38,6 +41,9 @@
 #define FOL_ORC_FRIEND 1
 #define FOL_TAMED 2
 #define FOL_GUARDIAN 3
+
+#define MIN_RANK 1
+#define MAX_RANK 10
 
 int cost_per_day(struct obj_data* obj);
 
@@ -1034,7 +1040,7 @@ void Crash_extract_expensive(struct obj_data* obj)
 void Crash_calculate_rent(struct obj_data* obj, int* cost)
 {
     if (obj) {
-        *cost += MAX(0, cost_per_day(obj) >> 4);
+        *cost += std::max(0, cost_per_day(obj) >> 4);
         Crash_calculate_rent(obj->contains, cost);
         Crash_calculate_rent(obj->next_content, cost);
     }
@@ -1210,7 +1216,7 @@ void Crash_report_rent(struct char_data* ch, struct char_data* recep,
     if (obj) {
         if (!Crash_is_unrentable(obj)) {
             (*nitems)++;
-            *cost += MAX(0, (cost_per_day(obj) >> 1) * factor);
+            *cost += std::max(0, (cost_per_day(obj) >> 1) * factor);
         }
         Crash_report_rent(ch, recep, obj->contains, cost, nitems, factor);
         Crash_report_rent(ch, recep, obj->next_content, cost, nitems, factor);
@@ -1440,6 +1446,13 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
                 retirer = 0;
             }
         } else if (is_abbrev("namechange", arg)) {
+            act("$n tells you, 'Sorry, we're having some internal technical "
+                "difficulties.  Please try again later.'",
+                FALSE, recep, 0, ch, TO_VICT);
+            *newname = 0;
+            *tmpname = 0;
+            namechanger = 0;
+            return TRUE;
             if (!ch->desc)
                 return TRUE;
 
@@ -1533,15 +1546,21 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
             act(buf, FALSE, recep, 0, ch, TO_VICT);
         }
 
+
         if (mode == RENT_FACTOR) {
+            affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
             act("$n stores your belongings and helps you into your private chamber.",
                 FALSE, recep, 0, ch, TO_VICT);
+            if(aff) {
+                remove_fame_war_bonuses(ch, aff);
+                affect_remove(ch, aff);
+            }
             Crash_rentsave(ch, cost);
             sprintf(buf, "%s has rented (%d/day, %d tot.)", GET_NAME(ch),
                 cost, GET_GOLD(ch));
         }
 
-        mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
+        mudlog(buf, NRM, (sh_int)std::max(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
         act("$n helps $N into $S private chamber.", FALSE, recep, 0, ch, TO_NOTVICT);
         save_room = ch->in_room;
         extract_char(ch);
@@ -1594,7 +1613,7 @@ ACMD(do_rent)
     sprintf(buf, "%s has field-rented (%d total gold)", GET_NAME(ch),
         GET_GOLD(ch));
 
-    mudlog(buf, NRM, (sh_int)MAX(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
+    mudlog(buf, NRM, (sh_int)std::max(LEVEL_IMMORT, GET_INVIS_LEV(ch)), TRUE);
 
     save_room = ch->in_room;
     extract_char(ch);

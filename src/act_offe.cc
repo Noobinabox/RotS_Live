@@ -23,6 +23,7 @@
 #include "utils.h"
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 
 /* extern variables */
@@ -534,7 +535,7 @@ ACMD(do_bash)
         prob -= get_real_parry(victim) / 2;
         prob -= GET_LEVELA(victim) * 3;
         prob += GET_PROF_LEVEL(PROF_WARRIOR, ch);
-        prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
+        prob += number(0, std::max(1, 35 + get_real_OB(ch) / 4));
         prob += number(-40, 40);
         prob -= 160;
         if (prob < 0)
@@ -928,14 +929,11 @@ ACMD(do_kick)
     if (prob < 0)
         damage(ch, victim, 0, attacktype, 0);
     else {
-        //TODO(drelidan):  If heavy fighting needs any additional bonuses, start here.
         // Heavy fighters kick 20% harder.
-        /*
 		if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting)
 		{
 			dam += dam / 5;
 		}
-		*/
         damage(ch, victim, dam, attacktype, 0);
     }
 
@@ -967,6 +965,12 @@ ACMD(do_disengage)
 }
 
 //============================================================================
+ACMD(do_beorning)
+{
+    return;
+}
+
+//============================================================================
 bool can_bear_skill(char_data* ch, int skill)
 {
     using namespace utils;
@@ -976,7 +980,7 @@ bool can_bear_skill(char_data* ch, int skill)
     }
 
     if (is_shadow(*ch)) {
-        send_to_char("Hmm, perhaps you've spent too much time in the mortal lands.\r\n", ch);
+        send_to_char("Hmm, perhaps you've spent to much time in the mortal lands.\r\n", ch);
         return false;
     }
 

@@ -5,7 +5,6 @@
 *  be sent this.                                                          *
 ************************************************************************ */
 
-#include "magic.h"
 #include "char_utils.h"
 #include "comm.h"
 #include "db.h"
@@ -24,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-namespace magic {
 /* external variables */
 extern struct skill_data skills[];
 
@@ -328,6 +326,9 @@ int mag_damage(int level, struct char_data* caster, struct char_data* victim, in
     return (apply_spell_damage(caster, victim, dam, spellnum, 0));
 }
 
+/* Currently the game only supports one affect from the same spell but if this is ever fixed increase this number */
+#define MAX_SPELL_AFFECTS 1
+
 /*
  * Every spell that does an affect comes through here.  This determines
  * the effect, whether it is added or replacement, whether it is legal or
@@ -358,7 +359,7 @@ void mag_affects(int level, struct char_data* caster, struct char_data* victim,
 
     switch (spellnum) {
     case SPELL_POISON:
-        if (!victim && !(caster->specials.fightning)) {
+        if (!victim && !(caster->specials.fighting)) {
             affect_room = TRUE;
             af[0].type = ROOMAFF_SPELL;
             af[0].duration = (mystic_level) / 3;
@@ -694,4 +695,3 @@ void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
         GET_MOVE(victim) = std::min(GET_MAX_MOVE(victim), GET_MOVE(victim) + move);
         update_pos(victim);
     }
-}

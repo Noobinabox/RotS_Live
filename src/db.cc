@@ -2,7 +2,9 @@
 
 #include "platdef.h"
 #include <ctype.h>
+#if defined(__linux__) || (__unix__)
 #include <dirent.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,10 +26,12 @@
 #include "zone.h"
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 /**************************************************************************
 *  declarations of most of the 'global' variables                         *
@@ -448,6 +452,7 @@ void boot_db(void)
     // Initialize the Big Brother system after we have our weather data and
     // our map.
     game_rules::big_brother::create(weather_info, &world);
+    game_timer::skill_timer::create(weather_info, &world);
 }
 
 /* reset the time in the game from file */
@@ -489,7 +494,7 @@ int read_filename_field(int pos, char* field, char* fname)
         field_pos++;
         pos++;
     }
-    field[MAX(79, field_pos)] = '\n';
+    field[std::max(79, field_pos)] = '\n';
     return pos;
 }
 
@@ -536,7 +541,7 @@ void build_directory(char* TheDir)
         sprintf(player_table[top_of_p_table].ch_file, "%s%s",
             TheDir, dentry->d_name);
 
-        top_idnum = MAX(top_idnum, player_table[top_of_p_table].idnum);
+        top_idnum = std::max(top_idnum, (long)player_table[top_of_p_table].idnum);
 
         dentry = readdir(dp);
     } // while (dentry)
@@ -1550,6 +1555,11 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.rarity = tmp2;
             obj_proto[i].obj_flags.material = tmp3;
             obj_proto[i].obj_flags.script_number = tmp4;
+            /*fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
+	    obj_proto[i].obj_flags.poisoned = tmp;
+	    obj_proto[i].obj_flags.poisondata[0] = tmp2;
+	    obj_proto[i].obj_flags.poisondata[1] = tmp3;
+	    obj_proto[i].obj_flags.poisondata[2] = tmp4;*/
 
             /* *** extra descriptions *** */
 
@@ -1800,7 +1810,7 @@ int load_player(char* name, struct char_file_u* char_element)
             line[tmp1] = *tmpchar;
         position = (position + tmp1 + 2);
 
-        for (tmp1 = 0; tmp1 < (int)(MIN(12, strlen(line))); tmp1++)
+        for (tmp1 = 0; tmp1 < (int)(std::min((size_t)12, strlen(line))); tmp1++)
             if (isspace(line[tmp1])) {
                 line[tmp1] = '\0';
                 break;
@@ -2209,6 +2219,7 @@ int create_entry(char* name)
     (player_table + top_of_p_table)->warpoints = 0;
     (player_table + top_of_p_table)->race = 0;
     (player_table + top_of_p_table)->rank = PKILL_UNRANKED;
+    (player_table + top_of_p_table)->totalrank = PKILL_UNRANKED;
     for (i = 0; (*(player_table[top_of_p_table].name + i) = LOWER(*(name + i))); i++)
         ;
     return (top_of_p_table);
@@ -2535,7 +2546,7 @@ char* fread_string(FILE* fl, char* error)
     register char *point, *tmppoint;
     int flag, markfirst;
 
-    bzero(buf, MAX_STRING_LENGTH);
+    ZERO_MEMORY(buf, MAX_STRING_LENGTH);
     markfirst = 0;
     do {
         *tmp = 0;
@@ -2891,7 +2902,7 @@ void clear_char(struct char_data* ch, int mode)
         CREATE(ch->skills, byte, MAX_SKILLS);
         CREATE(ch->knowledge, byte, MAX_SKILLS);
         if (ch->desc)
-            bzero(ch->desc->pwd, MAX_PWD_LENGTH);
+            ZERO_MEMORY(ch->desc->pwd, MAX_PWD_LENGTH);
     }
 }
 
@@ -3074,7 +3085,7 @@ void load_mudlle(FILE* fp)
         tmpstr++;
     do {
         sscanf(tmpstr + 1, "%d", &tmp);
-        bzero(str, MAX_STRING_LENGTH);
+        ZERO_MEMORY(str, MAX_STRING_LENGTH);
         if (tmp == 99999)
             break;
         num_of_programs++;

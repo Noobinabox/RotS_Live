@@ -140,7 +140,7 @@ void recalc_skills(struct char_data* ch)
             if (skill_level < 20)
                 tmps = tmps * (80 + skill_level) / 100 + 200 - skills[(int)skill_no].level * 10;
 
-            tmps = MIN(1000, tmps);
+            tmps = std::min(1000, tmps);
 
             pracs_used = pracs_used * tmps * 10;
         } else
@@ -391,8 +391,12 @@ ACMD(do_pracreset)
         send_to_char("This person cannot learn anything, don't bother yourself.\n\r", ch);
         return;
     }
+    for (tmp = 0; tmp < MAX_SKILLS; tmp++) {
+        vict->knowledge[tmp] = 0;
+        vict->skills[tmp] = 0;
+        vict->specials2.spells_to_learn = GET_LEVEL(vict) * PRACS_PER_LEVEL + GET_LEVEL(vict) * GET_LEA(vict) / LEA_PRAC_FACTOR + 10;
+    }
 
-	vict->reset_skills();
     utils::set_specialization(*vict, game_types::PS_None);
 
     SET_SHOOTING(vict, SHOOTING_NORMAL);
@@ -593,7 +597,7 @@ SPECIAL(kit_room)
         level += 3;
     if (IS_SET(1 << GET_RACE(ch), KIT_THIRD))
         level += 3;
-    level = MIN(level, LEVEL_IMPL);
+    level = std::min(level, LEVEL_IMPL);
 
     num_items = 0;
     for (i = 0; i < kit_item_num; ++i) {
@@ -1376,7 +1380,7 @@ int spell_list[][4] = {
     { SPELL_FIREBOLT, SPELL_CHILL_RAY, SPELL_BLACK_ARROW, SPELL_CURSE }, /*level 35*/
     { SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_TERROR }, /*level 40*/
     { SPELL_CONE_OF_COLD, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE }, /*level 45*/
-    { SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE }, /*level 50*/
+    { SPELL_FIREBALL, SPELL_SEARING_DARKNESS, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE }, /*level 50*/
 
 };
 
@@ -1673,7 +1677,7 @@ SPECIAL(mob_ranger)
     room_data* tmproom;
     int tmp, tmp2, mintime, mintmp;
 
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
 
     if (host->in_room == NOWHERE)
         return 0;
@@ -1703,9 +1707,9 @@ SPECIAL(mob_ranger)
         return 1;
     }
 
-    if ((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
-        do_hide(host, "", 0, 0, 0);
+	if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+		|| IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && ch->delay.wait_value == 0)
+		do_hide(host, "", 0, 0, 0);
 
     tmproom = &world[host->in_room];
     mintime = 999;
@@ -2655,7 +2659,7 @@ SPECIAL(thuringwethil)
         return 0;
 
     GET_HIT(host) += 10;
-    GET_HIT(host) = MIN(GET_HIT(host), GET_MAX_HIT(host));
+    GET_HIT(host) = std::min(GET_HIT(host), GET_MAX_HIT(host));
     if (affected_by_spell(host, SPELL_POISON))
         affect_from_char(host, SPELL_POISON);
     if (affected_by_spell(host, SPELL_CONFUSE))

@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "big_brother.h"
+#include "skill_timer.h"
 #include "char_utils.h"
 #include "color.h"
 #include "comm.h"
@@ -713,6 +714,11 @@ void game_loop(SocketType s)
             }
         }
 
+        if (!(pulse % 4)) {
+            game_timer::skill_timer& st_instance = game_timer::skill_timer::instance();
+            st_instance.update_skill_timer();
+        }
+
         if (!(pulse % 1200)) {
             sockets_connected = sockets_playing = 0;
 
@@ -955,7 +961,7 @@ SocketType init_socket(sh_int port)
     struct sockaddr* saddr;
 
     saddr = (struct sockaddr*)&sa;
-    bzero((char*)saddr, sizeof(struct sockaddr_in));
+    ZERO_MEMORY((char*)saddr, sizeof(struct sockaddr_in));
     if (gethostname(hostname, MAX_HOSTNAME)) {
         perror("gethostname");
         exit(1);
@@ -1682,7 +1688,7 @@ void vsend_to_char(char_data* character, char* format, ...)
     send_to_char(buf, character);
 }
 
-void send_to_all(char* message)
+void send_to_all(const char* message)
 {
     if (message) {
         for (descriptor_data* i = descriptor_list; i; i = i->next) {
@@ -1693,7 +1699,7 @@ void send_to_all(char* message)
     }
 }
 
-void send_to_outdoor(char* messg, int mode)
+void send_to_outdoor(const char* messg, int mode)
 {
     struct descriptor_data* i;
 
@@ -1705,7 +1711,7 @@ void send_to_outdoor(char* messg, int mode)
 }
 
 //  For weather messages - sends to outdoor sector
-void send_to_sector(char* messg, int sector_type)
+void send_to_sector(const char* messg, int sector_type)
 {
     struct descriptor_data* i;
 
@@ -1773,9 +1779,9 @@ void send_to_room_except_two(const char* messg, int room,
  * But we don't want to have:
  *   <NORM>You wield <OBJ>a shadowy blade<NORM><NORM>.<NORM>
  */
-void convert_string(char* str, int hide_invisible, struct char_data* ch,
+void convert_string(const char* str, int hide_invisible, struct char_data* ch,
     struct obj_data* obj, void* vict_obj,
-    struct char_data* to, char* buf)
+    struct char_data* to,const char* buf)
 {
     int clobbered_color;
     char* used_color;
@@ -1786,7 +1792,7 @@ void convert_string(char* str, int hide_invisible, struct char_data* ch,
     used_color = NULL;
     clobbered_color = FALSE;
 
-    for (strp = str, point = buf;;)
+    for (strp = (char*)str, point = (char*)buf;;)
         if (*strp == '$') {
             switch (*(++strp)) {
             case 'C': /* This is a two-letter color code */
@@ -1917,7 +1923,7 @@ void convert_string(char* str, int hide_invisible, struct char_data* ch,
         sprintf(point, CC_NORM(to));
 
     /* Find the first character in the string, ignoring ANSI colors */
-    for (strp = buf; *strp == '\x1B'; ++strp)
+    for (strp = (char*)buf; *strp == '\x1B'; ++strp)
         while (*strp != 'm')
             ++strp;
 
@@ -1926,7 +1932,7 @@ void convert_string(char* str, int hide_invisible, struct char_data* ch,
 }
 
 char act_buffer[MAX_STRING_LENGTH];
-void act(char* str, int hide_invisible, struct char_data* ch,
+void act(const char* str, int hide_invisible, struct char_data* ch,
     struct obj_data* obj, void* vict_obj, int type, char spam_only)
 {
     struct char_data* to;

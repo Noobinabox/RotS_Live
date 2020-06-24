@@ -75,7 +75,7 @@ int isbanned(char* hostname)
 
     for (banned_node = ban_list; banned_node; banned_node = banned_node->next)
         if (strstr(hostname, banned_node->site)) /* if hostname is a substring */
-            i = MAX(i, banned_node->type);
+            i = std::max(i, banned_node->type);
 
     return i;
 }
@@ -185,7 +185,7 @@ ACMD(do_ban)
 
     sprintf(buf, "%s has banned %s for %s players.", GET_NAME(ch), site,
         ban_types[ban_node->type]);
-    mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+    mudlog(buf, NRM, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
     send_to_char("Site banned.\n\r", ch);
     write_ban_list();
 }
@@ -233,7 +233,7 @@ ACMD(do_unban)
     send_to_char("Site unbanned.\n\r", ch);
     sprintf(buf, "%s removed the %s-player ban on %s.",
         GET_NAME(ch), ban_types[ban_node->type], ban_node->site);
-    mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
+    mudlog(buf, NRM, (sh_int)std::max(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
 
     RELEASE(ban_node);
     write_ban_list();

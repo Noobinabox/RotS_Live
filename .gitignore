@@ -42,3 +42,11 @@ log/
 
 # Visual Studio Crap Dump
 src/.vs/
+src/*.sln
+src/*.vcxproj*
+.vs/
+.vscode/
+.vscode/settings.json
+
+# Build files
+*build*/*

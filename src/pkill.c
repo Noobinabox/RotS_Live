@@ -43,6 +43,7 @@ typedef struct {
 
 RANKING good_ranking = { NULL, 0, 0, 0 };
 RANKING evil_ranking = { NULL, 0, 0, 0 };
+RANKING total_ranking = { NULL, 0, 0, 0 };
 
 /*
 * Return > 0 if 'race' is a good race; otherwise return -1.
@@ -194,7 +195,7 @@ int pkill_level(struct char_data* c)
 * Note that the caller of this function has to take care of
 * refilling all of the values obliterated by this shift!
 */
-void __shift_rank(RANKING* rnk, int a, int b, int shift)
+void __shift_rank(RANKING* rnk, int a, int b, int shift, bool total)
 {
     int i, n;
     long x; /* Dummy index to player table */
@@ -224,7 +225,10 @@ void __shift_rank(RANKING* rnk, int a, int b, int shift)
         if (x == PKILL_UNRANKED)
             break;
 
-        player_table[x].rank = a + shift + i; /* Old rank + shift */
+        if (!total)
+            player_table[x].rank = a + shift + i; /* Old rank + shift */
+        else
+            player_table[x].totalrank = a + shift + i;
     }
 }
 
@@ -233,10 +237,10 @@ void __shift_rank(RANKING* rnk, int a, int b, int shift)
 * into the position [r, ranklen - 2] and filling in the reference
 * at rank_tab[rank_len - 1] with an invalid marker (-1).
 */
-void __delete_rank(RANKING* rnk, int r)
+void __delete_rank(RANKING* rnk, int r, bool totalrank)
 {
     if (r != PKILL_UNRANKED) {
-        __shift_rank(rnk, r + 1, rnk->rank_len - 1, -1);
+        __shift_rank(rnk, r + 1, rnk->rank_len - 1, -1, totalrank);
         rnk->rank_tab[rnk->rank_len - 1] = -1;
         --rnk->rank_used;
     }
@@ -245,7 +249,7 @@ void __delete_rank(RANKING* rnk, int r)
 /*
 * Insert a reference to character 'idx' at rank 'a'.
 */
-void __insert_rank(RANKING* rnk, int a, long idx)
+void __insert_rank(RANKING* rnk, int a, long idx, bool totalrank)
 {
     if (rnk->rank_tab == NULL || rnk->rank_len == 0) {
         CREATE(rnk->rank_tab, long, 1);
@@ -257,7 +261,7 @@ void __insert_rank(RANKING* rnk, int a, long idx)
         ++rnk->rank_len;
     }
 
-    __shift_rank(rnk, a, rnk->rank_len - 1, 1);
+    __shift_rank(rnk, a, rnk->rank_len - 1, 1, totalrank);
     rnk->rank_tab[a] = idx;
     ++rnk->rank_used;
 }
@@ -280,9 +284,12 @@ void __insert_rank(RANKING* rnk, int a, long idx)
 void pkill_update_rank(long idx)
 {
     int a;
+    int b;
+    int t;
     int r;
     int npoints;
     RANKING* rnk;
+    RANKING* trnk;
     extern struct player_index_element* player_table;
     extern int top_of_p_table;
 
@@ -290,6 +297,7 @@ void pkill_update_rank(long idx)
         return;
 
     r = player_table[idx].rank;
+    t = player_table[idx].totalrank;
     npoints = player_table[idx].warpoints;
 
     /* Point at the correct RANKING structure */
@@ -298,12 +306,24 @@ void pkill_update_rank(long idx)
     else
         rnk = &evil_ranking;
 
-    __delete_rank(rnk, r);
+    trnk = &total_ranking;
+
+    __delete_rank(rnk, r, false);
+    __delete_rank(trnk, t, true);
 
     /* Don't re-add people with negative fame.  Leave them out */
     if (npoints < 0) {
         player_table[idx].rank = PKILL_UNRANKED;
+        player_table[idx].totalrank = PKILL_UNRANKED;
         return;
+    }
+
+    for (b = 0; b < trnk->rank_len;++b) {
+        if (trnk->rank_tab[b] == -1)
+            break;
+        
+        if (npoints > player_table[trnk->rank_tab[b]].warpoints)
+            break;
     }
 
     /* Find where to reinsert the guy we just deleted */
@@ -315,9 +335,11 @@ void pkill_update_rank(long idx)
             break;
     }
 
-    __insert_rank(rnk, a, idx);
+    __insert_rank(trnk, b, idx, true);
+    __insert_rank(rnk, a, idx, false);
 
     player_table[idx].rank = a;
+    player_table[idx].totalrank = b;
 }
 
 long pkill_update_character_by_id(long idnum, int points)
@@ -572,9 +594,14 @@ void pkill_unref_character_by_index(int idx)
     r = player_table[idx].rank;
     if (r != PKILL_UNRANKED) {
         if (__pkill_side(player_table[idx].race) > 0)
-            __delete_rank(&good_ranking, r);
+            __delete_rank(&good_ranking, r, false);
         else
-            __delete_rank(&evil_ranking, r);
+            __delete_rank(&evil_ranking, r, false);
+    }
+
+    int t = player_table[idx].totalrank;
+    if (t != PKILL_UNRANKED) {
+        __delete_rank(&total_ranking, t, true);
     }
 }
 
@@ -788,17 +815,20 @@ pkill_get_leader_by_rank(int rank, int race)
 * Given a char_data structure, return the character's rank in
 * O(1) time.
 */
-int pkill_get_rank_by_character(struct char_data* c)
+int pkill_get_rank_by_character(struct char_data* c, bool totalRank)
 {
-    int idx;
+    return pkill_get_totalrank_by_character_id(GET_INDEX(c), totalRank);
+}
+
+int pkill_get_totalrank_by_character_id(int idx, bool totalRank) {
     extern struct player_index_element* player_table;
     extern int top_of_p_table;
 
-    idx = GET_INDEX(c);
-
-    /* Mobiles have index -1 */
     if (idx < 0 || idx > top_of_p_table)
         return PKILL_UNRANKED;
+    
+    if (totalRank)
+        return player_table[idx].totalrank;
 
     return player_table[idx].rank;
 }

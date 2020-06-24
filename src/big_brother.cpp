@@ -52,6 +52,7 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SKILL_NATURAL_ATTACK);
     m_harmful_skills.insert(SKILL_REND);
     m_harmful_skills.insert(SKILL_BLINDING);
+    m_harmful_skills.insert(SKILL_MARK);
     m_harmful_skills.insert(SPELL_HAZE);
     m_harmful_skills.insert(SPELL_FEAR);
     m_harmful_skills.insert(SPELL_POISON);
@@ -81,6 +82,11 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SPELL_BLACK_ARROW);
     m_harmful_skills.insert(SPELL_CONFUSE);
     m_harmful_skills.insert(SKILL_TRAP);
+    m_harmful_skills.insert(SKILL_WINDBLAST);
+    m_harmful_skills.insert(SKILL_SMASH);
+    m_harmful_skills.insert(SKILL_CLEAVE);
+    m_harmful_skills.insert(SKILL_OVERRUN);
+    m_harmful_skills.insert(SKILL_STOMP);
     m_harmful_skills.insert(TYPE_HIT);
     m_harmful_skills.insert(TYPE_BLUDGEON);
     m_harmful_skills.insert(TYPE_PIERCE);
@@ -401,14 +407,14 @@ bool big_brother::is_same_side_race_war(int attacker_race, int victim_race) cons
 
     // Lhuths and easterlings are on the same side.  Note, this must be checked before
     // is_race_evil, since lhuths and easterlings are also considered evil races.
-    if (utils::is_race_easterling(attacker_race) || utils::is_race_magi(attacker_race)) {
-        return utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race);
+    if (utils::is_race_easterling(attacker_race) || utils::is_race_magi(attacker_race) || utils::is_race_haradrim(attacker_race)) {
+        return utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race) || utils::is_race_haradrim(victim_race);
     }
 
     // Evil races are only on the side of other evil races that are not lhuths or easterlings.
     if (utils::is_race_evil(attacker_race)) {
         if (utils::is_race_evil(victim_race)) {
-            return !(utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race));
+            return !(utils::is_race_easterling(victim_race) || utils::is_race_magi(victim_race) || utils::is_race_haradrim(victim_race));
         } else {
             return false;
         }

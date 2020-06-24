@@ -146,13 +146,13 @@ void show_command(char* str, struct zone_tree* zon)
 
         break;
 
-    //   case 'L':   /* Load object, random */
+        //   case 'L':   /* Load object, random */
 
-    //     sprintf(str,"%3d L:: Ld_flg(%d) Type:%d toRom:%d, MxToRom:%d Prb:%d LvlGen:%d Good:%d\n\r     %s\n\r",
-    // 	    zon->number,com->if_flag, com->arg1,com->arg2,com->arg3,
-    // 	    com->arg4,com->arg5,com->arg6,zon->comment);
+        //     sprintf(str,"%3d L:: Ld_flg(%d) Type:%d toRom:%d, MxToRom:%d Prb:%d LvlGen:%d Good:%d\n\r     %s\n\r",
+        // 	    zon->number,com->if_flag, com->arg1,com->arg2,com->arg3,
+        // 	    com->arg4,com->arg5,com->arg6,zon->comment);
 
-    //     break;
+        //     break;
 
     case 'G': /* give object to the last 'M' loaded mob */
 
@@ -1174,7 +1174,7 @@ void shape_center_zone(struct char_data* ch, char* arg)
 
         case 11: /* insert before */
             CREATE1(tmpzon, zone_tree);
-            bzero((char*)(tmpzon), sizeof(struct zone_tree));
+            ZERO_MEMORY((char*)(tmpzon), sizeof(struct zone_tree));
             tmpzon->next = SHAPE_ZONE(ch)->curr;
             tmpzon->prev = SHAPE_ZONE(ch)->curr->prev;
             if (SHAPE_ZONE(ch)->curr->prev)
@@ -1746,7 +1746,7 @@ int load_zone(struct char_data* ch, char* arg)
             zon->comm.command = str[0];
             CREATE1(zon->next, zone_tree);
             zon->next->next = 0;
-            bzero((char*)(zon->next), sizeof(struct zone_tree));
+            ZERO_MEMORY((char*)(zon->next), sizeof(struct zone_tree));
             fscanf(f, "%d %d %d %d %d %d", &tmp1, &tmp2, &tmp3, &tmp4, &tmp5, &tmp6);
             zon->comm.if_flag = tmp1;
             zon->comm.arg1 = tmp2;

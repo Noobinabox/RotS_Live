@@ -45,6 +45,7 @@ int get_magic_power(const char_data* caster)
 {
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
+    caster_level += caster->points.spell_power;
 
     // Factor in intel values not divisible by 5.
     int intel_factor = caster->tmpabilities.intel / 5;
@@ -263,42 +264,142 @@ int loclife_add_rooms(loclife_coord room, loclife_coord* roomlist,
     }
     return count;
 }
-char* loclife_dirnames[216] = {
+const char* loclife_dirnames[216] = {
     /*
    *Lines - up/down here - farthest down - farthest up
    *columns - east/west
    * groups - north/south
    * (n/s, e/w, u/d)
    */
-    "here", "down", "down", "up", "up",
-    "west", "west and down", "west and down", "west and up", "up and west and up",
-    "west", "west and down", "west and down", "west and up", "up and west and up",
-    "east", "east and down", "east and down", "east and up", "up and east and up",
-    "east", "east and down", "east and down", "east and up", "up and east and up",
+    "here",
+    "down",
+    "down",
+    "up",
+    "up",
+    "west",
+    "west and down",
+    "west and down",
+    "west and up",
+    "up and west and up",
+    "west",
+    "west and down",
+    "west and down",
+    "west and up",
+    "up and west and up",
+    "east",
+    "east and down",
+    "east and down",
+    "east and up",
+    "up and east and up",
+    "east",
+    "east and down",
+    "east and down",
+    "east and up",
+    "up and east and up",
 
-    "south", "south and down", "south and down", "south and up", "up and south",
-    "southwest", "southwest and down", "southwest and down", "southwest and up", "up and southwest",
-    "west-southwest", "west-southwest and down", "west-southwest and down", "west-southwest and up", "up and west-southwest",
-    "southeast", "southeast and down", "southeast and down", "southeast and up", "up and southeast",
-    "east-southeast", "east-southeast and down", "east-southeast and down", "east-southeast and up", "up and east-southeast",
+    "south",
+    "south and down",
+    "south and down",
+    "south and up",
+    "up and south",
+    "southwest",
+    "southwest and down",
+    "southwest and down",
+    "southwest and up",
+    "up and southwest",
+    "west-southwest",
+    "west-southwest and down",
+    "west-southwest and down",
+    "west-southwest and up",
+    "up and west-southwest",
+    "southeast",
+    "southeast and down",
+    "southeast and down",
+    "southeast and up",
+    "up and southeast",
+    "east-southeast",
+    "east-southeast and down",
+    "east-southeast and down",
+    "east-southeast and up",
+    "up and east-southeast",
 
-    "south", "south and down", "south and down", "south and up", "up and south",
-    "south-southwest", "south-southwest and down", "south-southwest and down", "south-southwest and up", "up and south-southwest",
-    "southwest", "southwest and down", "southwest and down", "southwest and up", "up and southwest",
-    "south-southeast", "south-southeast and down", "south-southeast and down", "south-southeast and up", "up and south-southeast",
-    "southeast", "southeast and down", "southeast and down", "southeast and up", "up and southeast",
+    "south",
+    "south and down",
+    "south and down",
+    "south and up",
+    "up and south",
+    "south-southwest",
+    "south-southwest and down",
+    "south-southwest and down",
+    "south-southwest and up",
+    "up and south-southwest",
+    "southwest",
+    "southwest and down",
+    "southwest and down",
+    "southwest and up",
+    "up and southwest",
+    "south-southeast",
+    "south-southeast and down",
+    "south-southeast and down",
+    "south-southeast and up",
+    "up and south-southeast",
+    "southeast",
+    "southeast and down",
+    "southeast and down",
+    "southeast and up",
+    "up and southeast",
 
-    "north", "north and down", "north and down", "north and up", "up and north",
-    "northwest", "northwest and down", "northwest and down", "northwest and up", "up and northwest",
-    "west-northwest", "west-northwest and down", "west-northwest and down", "west-northwest and up", "up and west-northwest",
-    "northeast", "northeast and down", "northeast and down", "northeast and up", "up and northeast",
-    "east-northeast", "east-northeast and down", "east-northeast and down", "east-northeast and up", "up and east-northeast",
+    "north",
+    "north and down",
+    "north and down",
+    "north and up",
+    "up and north",
+    "northwest",
+    "northwest and down",
+    "northwest and down",
+    "northwest and up",
+    "up and northwest",
+    "west-northwest",
+    "west-northwest and down",
+    "west-northwest and down",
+    "west-northwest and up",
+    "up and west-northwest",
+    "northeast",
+    "northeast and down",
+    "northeast and down",
+    "northeast and up",
+    "up and northeast",
+    "east-northeast",
+    "east-northeast and down",
+    "east-northeast and down",
+    "east-northeast and up",
+    "up and east-northeast",
 
-    "north", "north and down", "north and down", "north and up", "up and north and up",
-    "north-northwest", "north-northwest and down", "north-northwest and down", "north-northwest and up", "up and north-northwest",
-    "northwest", "northwest and down", "northwest and down", "northwest and up", "up and northwest",
-    "north-northeast", "anorth-northeast nd down", "north-northeast and down", "north-northeast and up", "up and north-northeast",
-    "northeast", "northeast and down", "northeast and down", "northeast and up", "up and northeast",
+    "north",
+    "north and down",
+    "north and down",
+    "north and up",
+    "up and north and up",
+    "north-northwest",
+    "north-northwest and down",
+    "north-northwest and down",
+    "north-northwest and up",
+    "up and north-northwest",
+    "northwest",
+    "northwest and down",
+    "northwest and down",
+    "northwest and up",
+    "up and northwest",
+    "north-northeast",
+    "anorth-northeast nd down",
+    "north-northeast and down",
+    "north-northeast and up",
+    "up and north-northeast",
+    "northeast",
+    "northeast and down",
+    "northeast and down",
+    "northeast and up",
+    "up and northeast",
 
 };
 char* loclife_dir_convert(loclife_coord rm)
@@ -323,7 +424,7 @@ char* loclife_dir_convert(loclife_coord rm)
     if (rm.u > 0)
         ur += 2;
 
-    return loclife_dirnames[(nr * 5 + er) * 5 + ur];
+    return (char *)loclife_dirnames[(nr * 5 + er) * 5 + ur];
 }
 
 /*--------------------------------------------------------------------------------------------------------*/
@@ -366,8 +467,7 @@ ASPELL(spell_locate_living)
                 tmp2++;
 
         isscanned[tmp] = 1;
-        notscanned += -1 + loclife_add_rooms(roomlist[tmp], roomlist, &roomnum,
-                               caster->in_room);
+        notscanned += -1 + loclife_add_rooms(roomlist[tmp], roomlist, &roomnum, caster->in_room);
         bigcount++;
     }
 
@@ -583,7 +683,7 @@ ASPELL(spell_flash)
             GET_ENERGY(tmpch) -= 400;
         if (!saves_spell(tmpch, caster_level, 0)) {
             //  6-11-01 Errent attempts to make flash give power of arda to darkies - look out!
-            if (RACE_EVIL(tmpch)) {
+            if (RACE_EVIL(tmpch) && GET_RACE(tmpch) != RACE_HARADRIM) {
                 afflevel = 50;
                 maxlevel = afflevel * 25;
                 tmpaf = affected_by_spell(tmpch, SPELL_ARDA);
@@ -1592,7 +1692,7 @@ ASPELL(spell_earthquake)
 
 ASPELL(spell_lightning_strike)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 30;
+    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 40;
 
     if (!OUTSIDE(caster)) {
         send_to_char("You can not call lightning inside!\n\r", caster);

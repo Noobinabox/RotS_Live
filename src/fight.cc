@@ -222,6 +222,7 @@ void update_pos(struct char_data* victim)
         GET_POS(victim) = POSITION_STUNNED;
 }
 
+
 /* start one char fighting another (yes, it is horrible, I know... )  */
 void set_fighting(struct char_data* ch, struct char_data* vict)
 {
@@ -508,6 +509,18 @@ void get_corpse_desc(struct obj_data* corpse, struct char_data* ch,
         break;
     case 124:
         strncpy(condition, "festering", BUF_LEN - 1);
+        break;
+    case 152:
+        strncpy(condition, "badly beaten", BUF_LEN - 1);
+        break;
+    case 154:
+        strncpy(condition, "battered", BUF_LEN - 1);
+        break;
+    case 156:
+        strncpy(condition, "cleaved", BUF_LEN -1);
+        break;
+    case 157:
+        strncpy(condition, "trampled", BUF_LEN - 1);
         break;
     default:
         strncpy(condition, "silent", BUF_LEN - 1);
@@ -839,9 +852,9 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
         // Evil whities kill evil - recover slowly -- especially of mob non-agg
         if ((GET_ALIGNMENT(victim) < 0) && GET_ALIGNMENT(ch) < 0) {
             if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) || IS_AGGR_TO(victim, ch))
-                align = MAX(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 100);
+                align = std::max(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 100);
             else
-                align = MAX(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 200);
+                align = std::max(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 200);
         }
         // whities kill good - tut tut
         if (GET_ALIGNMENT(victim) > 0)
@@ -923,6 +936,9 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
         REMOVE_BIT(dead_man->specials.affected_by, AFF_BASH);
 
     while (dead_man->affected) {
+        if (dead_man->affected->type == SPELL_FAME_WAR)
+            remove_fame_war_bonuses(dead_man, dead_man->affected);
+
         affect_remove(dead_man, dead_man->affected);
     }
     death_cry(dead_man);
@@ -1646,6 +1662,12 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         dam = maul_damage_reduction(victim, dam);
     }
 
+    affected_type* pkaff = affected_by_spell(victim, SPELL_FAME_WAR);
+
+    if (!IS_NPC(attacker) && pkaff && victim->player.ranking < 4 && victim->player.ranking != PKILL_UNRANKED) {
+        dam += dam * ((15 / victim->player.ranking) / 100);
+    } 
+
     /* Call special procs on damage */
     if (victim->specials.fighting != attacker) {
         tmpwtl.targ1.ptr.ch = victim;
@@ -1944,6 +1966,48 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     }
 }
 
+
+bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data* weapon)
+{
+    int multipler = weapon->obj_flags.get_poison_multipler();
+    int strength = weapon->obj_flags.get_poison_strength();
+    int offense = (((strength * 2) * 8) * multipler) / 100;
+    int defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
+    return number(offense / 3, offense) < number(defense / 2, defense) ? false : true;
+
+}
+
+void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
+{
+
+    if (weapon == NULL) {
+        return;
+    }
+
+    if (!weapon->obj_flags.is_weapon_poisoned()) {
+        return;
+    }
+
+    if (does_victim_save_on_weapon_poison(victim, weapon)) {
+
+        act("You feel your body fend off the poison.", TRUE, attacker, 0, victim, TO_VICT);
+        return;
+    }
+
+    struct affected_type af;
+    af.type = SPELL_POISON;
+    af.duration = weapon->obj_flags.get_poison_duration();
+    af.modifier = 0;
+    af.location = APPLY_NONE;
+    af.bitvector = AFF_POISON;
+    affect_join(victim, &af, FALSE, FALSE);
+
+    damage(attacker, victim, 5, SPELL_POISON, 0);
+    weapon->obj_flags.poisoned = false;
+    return;
+}
+
+
 /*UPDATE* integreate parry message with other messages */
 void do_parry(struct char_data* ch, struct char_data* victim, int type)
 {
@@ -2122,7 +2186,7 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
 
             if (number(0, 99) <= prob) {
                 do_riposte(victim, ch);
-                dam = get_weapon_damage(wielded) * MIN(GET_DEX(victim), 20) / number(50, 100);
+                dam = get_weapon_damage(wielded) * std::min((int)GET_DEX(victim), 20) / number(50, 100);
 
                 if (damage(victim, ch, dam,
                         weapon_hit_type(wielded->obj_flags.value[3]), 1))
@@ -2159,19 +2223,16 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
 
         /* Spears hit the armor, but then go right through it */
         if (w_type == TYPE_SPEARS) {
-            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 200;
+            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 150;
         } else {
             damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
         }
 
-        // TODO(drelidan): If heavy fighters need a buff, consider adding this.
         /* Heavy fighters get an extra 10% damage absorption. */
-        /*
 		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
 		{
 			damage_reduction += damage_reduction / 10;
 		}
-		*/
 
         damage -= damage_reduction;
 
@@ -2222,6 +2283,19 @@ int heavy_fighting_effect(char_data& attacker, int damage)
 
             return damage + extra_damage;
         }
+    }
+
+    return damage;
+}
+
+bool is_frenzy_active(char_data& attacker) {
+    return utils::get_race(attacker) == RACE_OLOGHAI && utils::is_affected_by_spell(attacker, SKILL_FRENZY);
+}
+
+int frenzy_effect(char_data& attacker, int damage)
+{
+    if (is_frenzy_active(attacker)) {
+        return damage * 1.10;
     }
 
     return damage;
@@ -2425,6 +2499,10 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
             return;
         }
 
+        if (is_frenzy_active(*ch)) {
+            tmp = 35;
+        }
+
         if (OB < 0 && tmp != 35) {
             if (number(0, dodge_malus) < evasion_malus)
                 do_evade(ch, victim, w_type);
@@ -2482,6 +2560,7 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
                 dam = wild_fighting_effect(ch, dam);
                 dam = heavy_fighting_effect(*ch, dam);
                 dam = defender_effect(ch, victim, dam);
+                dam = frenzy_effect(*ch, dam);
 
                 tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
                 dam = armor_effect(ch, victim, dam, tmp, w_type);
@@ -2493,8 +2572,9 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
 
                 damage(ch, victim, dam, w_type, location);
 
-                if (dam > 0)
+                if (dam > 0) {
                     check_grip(ch, wielded);
+                }
 
                 /* so we won't check engagement for hit people */
                 return;
@@ -2584,6 +2664,10 @@ bool can_double_hit(const char_data* character)
     if (!weapon || utils::is_twohanded(*character))
         return false;
 
+    // Characters must be using a light weapon
+    if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)
+        return false;
+    
     // The character is no longer fighting anyone.  Can't double-hit.
     if (character->specials.fighting == NULL)
         return false;
@@ -2599,7 +2683,7 @@ bool can_double_hit(const char_data* character)
 bool does_double_hit_proc(const char_data* character)
 {
     // Double-hit has a 25% proc chance.
-    return number() >= 0.75;
+    return number() >= 0.80;
 }
 
 bool can_beorning_swipe(struct char_data* character)
@@ -2797,6 +2881,7 @@ int check_overkill(struct char_data* ch)
 
     return 1;
 }
+
 
 int check_hallucinate(struct char_data* ch, struct char_data* victim)
 {

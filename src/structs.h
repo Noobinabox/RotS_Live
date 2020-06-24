@@ -234,10 +234,10 @@ typedef char_set::const_iterator const_char_set_iter;
 struct combat_result_struct {
     combat_result_struct()
         : wants_to_flee(false)
-        , will_die(false){};
+        , will_die(false) {};
     combat_result_struct(bool wimpy, bool dead)
         : wants_to_flee(wimpy)
-        , will_die(dead){};
+        , will_die(dead) {};
 
     bool wants_to_flee;
     bool will_die;
@@ -371,6 +371,9 @@ struct waiting_type {
     struct char_data* next;
 };
 
+#define WEAPON_POISON_DUR 60
+
+
 struct obj_flag_data {
 public:
     int get_ob_coef() const { return value[0]; }
@@ -390,6 +393,12 @@ public:
     // Returns true if the object can be equipped.
     bool is_wearable() const;
 
+    // Poison information
+    bool is_weapon_poisoned() const { return poisoned; }
+    int get_poison_duration() const { return poisondata[0]; }
+    int get_poison_strength() const { return poisondata[1]; }
+    int get_poison_multipler() const { return poisondata[2]; }
+
 public:
     int value[5]; /* Values of the item (see list) */ /*changed*/
     byte type_flag; /* Type of item                     */
@@ -407,7 +416,10 @@ public:
     int prog_number; /* for special objects... */
     int script_number; /* identifies the script which is triggered under certain conditions */
     struct info_script* script_info; /* Pointer to char_script (protos.h) 0 if no script */
+    bool poisoned;
+    int poisondata[5];
 };
+
 
 /* Wraps the object_flag_data and exposes values that are used for weapons. */
 struct weapon_flag_data {
@@ -426,6 +438,8 @@ struct weapon_flag_data {
 private:
     obj_flag_data* object_flag_data;
 };
+
+
 
 /* Used in OBJ_FILE_ELEM *DO*NOT*CHANGE* */
 struct obj_affected_type {
@@ -761,6 +775,14 @@ struct room_data {
 #define APPLY_MAUL 32
 #define APPLY_BEND 33
 
+#define APPLY_PK_MAGE 34
+#define APPLY_PK_MYSTIC 35
+#define APPLY_PK_RANGER 36
+#define APPLY_PK_WARRIOR 37
+
+#define APPLY_SPELL_PEN 38
+#define APPLY_SPELL_POW 39
+
 #define ROOMAFF_SPELL 1
 #define ROOMAFF_EXIT 2
 
@@ -1000,6 +1022,7 @@ struct char_player_data {
     struct time_data time; /* PC s AGE in days                 	*/
     int weight; /* PC / NPC s weight                    	*/
     int height; /* PC / NPC s height                    	*/
+    int ranking; /* PC / NPC s ranking in fame war */
 };
 
 /* Used in CHAR_FILE_U *DO*NOT*CHANGE* */ /*changed all from int*/
@@ -1037,6 +1060,11 @@ struct char_point_data {
     sh_int encumb; /* how encumbered a player is, affects casting and
 			  dex skills */
     sh_int willpower; /* strength in mental fights */
+    sh_int spell_pen;
+    sh_int spell_power;
+    sh_int get_spell_power() const { return spell_power;  };
+    void set_spell_power(sh_int bonus) { spell_power += bonus; };
+    sh_int get_spell_pen() const { return spell_pen; };
 };
 
 /* char_special_data's fields are fields which are needed while the game
@@ -1348,7 +1376,7 @@ struct defender_data : public specialization_info {
         : last_block_time(0)
         , next_block_available(0)
         , is_blocking(false)
-        , blocked_damage(0){};
+        , blocked_damage(0) {};
 
     /* The last time the player used the "block" command. */
     time_t last_block_time;
@@ -1372,7 +1400,7 @@ private:
 struct wild_fighting_data : public specialization_info {
     wild_fighting_data()
         : is_frenzying(false)
-        , rush_forward_damage(0){};
+        , rush_forward_damage(0) {};
 
     /* True if the character is currently in a frenzy. */
     bool is_frenzying;
@@ -1395,7 +1423,7 @@ private:
 
 struct light_fighting_data : public specialization_info {
     light_fighting_data()
-        : light_fighting_extra_hits(0){};
+        : light_fighting_extra_hits(0) {};
 
     /* Weapon that is currently being used in the off-hand. */
     obj_data* off_hand_weapon;
@@ -1418,7 +1446,7 @@ private:
 
 struct heavy_fighting_data : public specialization_info {
     heavy_fighting_data()
-        : heavy_fighting_damage(0){};
+        : heavy_fighting_damage(0) {};
 
     void add_heavy_fighting_damage(int damage) { heavy_fighting_damage += damage; }
     unsigned int get_total_heavy_fighting_damage() { return heavy_fighting_damage; }
@@ -1434,7 +1462,7 @@ private:
 struct specialization_data {
     specialization_data()
         : current_spec_info(NULL)
-        , current_spec(game_types::PS_None){};
+        , current_spec(game_types::PS_None) {};
 
     ~specialization_data() { reset(); }
 
@@ -1519,7 +1547,7 @@ class player_damage_details {
 public:
     player_damage_details()
         : damage_map()
-        , elapsed_combat_seconds(0){};
+        , elapsed_combat_seconds(0) {};
 
     void add_damage(int skill_id, int damage) { damage_map[skill_id].add_damage(damage); }
     void tick(float delta) { elapsed_combat_seconds += delta; }
@@ -1562,7 +1590,7 @@ private:
 class group_damaga_data {
 public:
     group_damaga_data()
-        : damage_map(){};
+        : damage_map() {};
 
     void add_damage(struct char_data* character, int damage) { damage_map[character].add_damage(damage); }
     void track_time(struct char_data* character, float elapsed_seconds) { damage_map[character].tick(elapsed_seconds); }
@@ -1653,6 +1681,8 @@ public:
 
 	// returns true if the affected pointer is valid
 	bool is_affected() const;
+
+    int get_dodge() const { return points.dodge; }
 
 public:
     int abs_number; /* bit number in the control array */

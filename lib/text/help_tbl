@@ -196,7 +196,7 @@ Welcome to Return of the Shadow, Arda the Fourth Age;
 better known as simply ROTS. This is a guide that will give someone a
 basic knowledge of the game and its workings. It is meant to show you 
 how things work and point you towards areas where you may learn more
-You can find formatted version at our website http://www.rots.org.
+You can find formatted version at our website http://www.rotsmud.org.
 
 To help you along until you learn your way around, the following are 
 questions that are frequently asked me along with their answers:
@@ -1887,9 +1887,9 @@ not exist.
 #
 PORT 3791
 
-The current address of this mud is "rots.org 3791".
-"rots.org" is also known as hostname.
-current ip is "18.241.0.123" (subject to change)
+The current address of this mud is "rotsmud.org 3791".
+"rotsmud.org" is also known as hostname.
+current ip is "50.116.33.203" (subject to change)
 "3791" is also known as port.
 
 There is a very simple reason for the choice of our port number.  Thanks to

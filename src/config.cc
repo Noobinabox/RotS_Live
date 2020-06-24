@@ -99,7 +99,7 @@ char* GREETINGS = "\n\r"
                   "                  Hans Henrik Staerfeldt, Katja Nyboe,\n\r"
                   "           Tom Madsen, Michael Seifert, and Sebastian Hammer\n\r"
                   "       Currently maintained by Maga, Lowtheim, Drelidan, and others\n\r\n\r"
-                  "                       Webpage: http://www.rots.us\n\r"
+                  "                       Webpage: http://www.rotsmud.org\n\r"
                   "\n\r";
 
 char* WELC_MESSG = "\n\r"

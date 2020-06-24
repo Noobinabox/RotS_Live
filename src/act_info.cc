@@ -1,3 +1,4 @@
+
 /* ************************************************************************
 *   File: act.informative.c                             Part of CircleMUD *
 *  Usage: Player-level commands of an informative nature                  *
@@ -87,6 +88,8 @@ extern char* extra_bits[];
 extern int num_of_object_materials;
 extern char* apply_types[];
 extern char* drinks[];
+extern char* pc_arda_fame_identifier[];
+extern char* pc_evil_fame_identifier[];
 
 void symbol_to_map(int, int, int);
 void reset_small_map();
@@ -381,8 +384,12 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
             strcat(buf, "..It glows red!");
             found = TRUE;
         }
-        if (IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
+        if (IS_OBJ_STAT(object, ITEM_MAGIC) && !IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
             strcat(buf, "..It glows blue!");
+            found = TRUE;
+        }
+        if (IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)){
+            strcat(buf, "..It glows red!");
             found = TRUE;
         }
         if (IS_OBJ_STAT(object, ITEM_WILLPOWER) && IS_SHADOW(ch)) {
@@ -605,6 +612,13 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
         if (IS_EVIL(viewed)) {
             strcat(buf, " (red aura)");
         }
+    }
+
+    if (other_side(viewer, viewed) && (viewed->player.ranking > 0 && viewed->player.ranking <= 3)) {
+        if (utils::is_race_evil(*viewed))
+            strcat(character_message, pc_evil_fame_identifier[viewed->player.ranking]);
+        else
+            strcat(character_message, pc_arda_fame_identifier[viewed->player.ranking]);
     }
 
     if (IS_AFFECTED(viewed, AFF_HIDE)) {
@@ -1690,14 +1704,11 @@ int get_percent_absorb(char_data* character)
         absorb += (10 - dam) * bodyparts[GET_BODYTYPE(character)].percent[hit_location];
     }
 
-    // TODO(drelidan):  If heavy fighters need a buff, consider adding this.
     // Characters specialized in heavy fighting absorb 10% more damage.
-    /*
 	if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
 	{
 		absorb += absorb / 10;
 	}
-	*/
 
     return absorb / 10;
 }
@@ -1815,6 +1826,11 @@ ACMD(do_info)
                             "willpower: %d,\r\n",
         GET_PERCEPTION(ch),
         GET_WILLPOWER(ch));
+
+    bufpt += sprintf(bufpt, "Your spell penetration is %d, "
+                            "and your spell power is %d,\n\r",
+        ch->points.get_spell_pen(),
+        ch->points.get_spell_power());
 
     /* `ch's skill encumbrance and leg encumbrance */
     bufpt += sprintf(bufpt, "Your skill encumbrance is %d, and your "
@@ -3469,7 +3485,7 @@ ACMD(do_search)
             return;
         }
 
-        uncover_skill = MIN(200, (int)((float)(GET_SKILL(ch, SKILL_SEARCH) + see_hiding(ch)) * 1.50));
+        uncover_skill = std::min(200, (int)((float)(GET_SKILL(ch, SKILL_SEARCH) + see_hiding(ch)) * 1.50));
         uncover_skill = number(uncover_skill, uncover_skill * 7 / 6);
         search_res = 0;
         for (tmpch = world[ch->in_room].people; tmpch;
@@ -3826,7 +3842,7 @@ ACMD(do_rank)
     size_t bufpt;
     LEADER* ldr;
 
-    r = pkill_get_rank_by_character(ch);
+    r = pkill_get_rank_by_character(ch, false);
 
     /* Unranked characters don't get much output */
     if (r == PKILL_UNRANKED) {
@@ -3841,7 +3857,7 @@ ACMD(do_rank)
     free(s);
 
     /* Show 7 characters: 3 above ch, ch and 3 below ch */
-    i = MAX(0, r - 3);
+    i = std::max(0, r - 3);
 
     /* We didn't start with the first ranked character */
     if (i > 0)
@@ -3849,7 +3865,7 @@ ACMD(do_rank)
 
     bufpt += sprintf(buf + bufpt, "\r\n");
 
-    for (i = MAX(0, r - 3); i < r + 3; ++i) {
+    for (i = std::max(0, r - 3); i < r + 3; ++i) {
         ldr = pkill_get_leader_by_rank(i, GET_RACE(ch));
         ldrvalid = !ldr->invalid;
         do_fame_leader_string(ldr, leaderstr);

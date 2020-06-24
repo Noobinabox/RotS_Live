@@ -2087,7 +2087,7 @@ void shape_center_script(struct char_data* ch, char* arg)
 
         case 11: // Case 11: insert new command before current
             CREATE1(script, script_data);
-            bzero((char*)(script), sizeof(struct script_data));
+            ZERO_MEMORY((char*)(script), sizeof(struct script_data));
             script->next = SHAPE_SCRIPT(ch)->script;
             script->prev = SHAPE_SCRIPT(ch)->script->prev;
             if (SHAPE_SCRIPT(ch)->script->prev)

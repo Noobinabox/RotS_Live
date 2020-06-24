@@ -52,6 +52,8 @@ int get_max_race_prof_level(int prof, const char_data& character);
 void set_prof_level(int prof, char_data& character, sh_int value);
 int get_prof_coof(int prof, const char_data& character);
 int get_prof_points(int prof, const char_data& character);
+int get_race(const char_data& character);
+int get_highest_coeffs(const char_data& character);
 
 // Returns a capped strength score to offset some of the unbalancing impacts of
 // overly high strength scores.
@@ -69,6 +71,8 @@ int get_dodge_penalty(const char_data& character);
 
 long get_idnum(const char_data& character);
 bool is_awake(const char_data& character);
+int get_ranking_tier(const char_data& character);
+int get_ranking_tier(int ranking);
 
 int get_raw_skill(const char_data& character, int skill_index);
 int get_skill(const char_data& character, int skill_index);
@@ -93,11 +97,13 @@ bool is_race_good(const char_data& character);
 bool is_race_evil(const char_data& character);
 bool is_race_easterling(const char_data& character);
 bool is_race_magi(const char_data& character);
+bool is_race_haradrim(const char_data& character);
 
 bool is_race_good(int race);
 bool is_race_evil(int race);
 bool is_race_easterling(int race);
 bool is_race_magi(int race);
+bool is_race_haradrim(int race);
 
 const char* get_object_string(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room);
 const char* get_object_name(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room);

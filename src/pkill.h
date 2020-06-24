@@ -53,6 +53,7 @@ typedef struct {
 LEADER* pkill_get_leader_by_rank(int, int);
 void pkill_free_leader(LEADER*);
 
-int pkill_get_rank_by_character(struct char_data*);
+int pkill_get_rank_by_character(struct char_data* c, bool totalRank);
+int pkill_get_totalrank_by_character_id(int idx, bool totalRank);
 
 #endif /* __PKILL_H__ */

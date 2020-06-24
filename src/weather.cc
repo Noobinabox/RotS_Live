@@ -44,7 +44,7 @@ extern struct time_info_data time_info;
 // Weather messages should be moved to a special file like spell messages
 // once this code is settled.
 
-static char* weather_messages[8][13] = {
+const char* weather_messages[8][13] = {
     { "", // Indoors - no message
         "The sun rises behind the buildings.\n\r",
         "The sun rises across the fields.\n\r",
@@ -429,13 +429,13 @@ void weather_change(void)
 
     weather_info.change += (dice(1, 4) * diff + dice(2, 6) - dice(2, 6));
 
-    weather_info.change = MIN(weather_info.change, 12);
-    weather_info.change = MAX(weather_info.change, -12);
+    weather_info.change = std::min(weather_info.change, 12);
+    weather_info.change = std::max(weather_info.change, -12);
 
     weather_info.pressure += weather_info.change;
 
-    weather_info.pressure = MIN(weather_info.pressure, 1040);
-    weather_info.pressure = MAX(weather_info.pressure, 960);
+    weather_info.pressure = std::min(weather_info.pressure, 1040);
+    weather_info.pressure = std::max(weather_info.pressure, 960);
 
     change = 0;
     /*
@@ -498,7 +498,7 @@ void weather_change(void)
     weather_info.sky[SECT_CITY] = (weather_info.sky[SECT_FIELD] == SKY_CLOUDLESS ? SKY_CLOUDLESS : weather_info.sky[SECT_FIELD] - 1);
     weather_info.sky[SECT_FOREST] = weather_info.sky[SECT_FIELD];
     weather_info.sky[SECT_HILLS] = ((get_season() == SEASON_WINTER) && (dice(1, 4) == 1) ? weather_info.sky[SECT_FIELD] + 1 : weather_info.sky[SECT_FIELD]);
-    weather_info.sky[SECT_MOUNTAIN] = ((dice(1, 6) == 1) ? MIN(weather_info.sky[SECT_HILLS] + 1, 5) : weather_info.sky[SECT_HILLS]);
+    weather_info.sky[SECT_MOUNTAIN] = ((dice(1, 6) == 1) ? std::min(weather_info.sky[SECT_HILLS] + 1, 5) : weather_info.sky[SECT_HILLS]);
     weather_info.sky[SECT_WATER_SWIM] = weather_info.sky[SECT_FIELD];
     weather_info.sky[SECT_WATER_NOSWIM] = weather_info.sky[SECT_FIELD];
     weather_info.sky[SECT_ROAD] = weather_info.sky[SECT_FIELD];

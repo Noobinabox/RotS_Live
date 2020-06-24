@@ -89,13 +89,12 @@ void reread_wizlists(int fake)
 void unrestrict_game(int fake)
 {
     extern int restrict;
-    extern struct ban_list_element* ban_list;
     extern int num_invalid;
 
     signal(SIGUSR2, unrestrict_game);
     mudlog("Received SIGUSR2 - unrestricting game (emergent)",
         BRF, LEVEL_IMMORT, TRUE);
-    ban_list = 0;
+    int ban_list = 0;
     restrict = 0;
     num_invalid = 0;
 }
@@ -121,11 +120,11 @@ void badcrash(int fake)
     log("SIGSEGV or SIGBUS received.  Trying to shut down gracefully.");
     Emergency_save();
     if (!graceful_tried) {
-        close(mother_desc);
+        CLOSE_SOCKET(mother_desc);
         log("Trying to close all sockets.");
         graceful_tried = 1;
         for (desc = descriptor_list; desc; desc = desc->next)
-            close(desc->descriptor);
+            CLOSE_SOCKET(desc->descriptor);
     }
     abort();
 }

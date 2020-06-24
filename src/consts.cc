@@ -18,7 +18,7 @@
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.4.0.1\n\r"
+    "Arda: The Fourth Age, version 1.5.0\n\r"
 };
 
 //const
@@ -160,7 +160,39 @@ char* spell_wear_off_msg[] = {
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",
-    "!Searing Darkness!"
+    "!Searing Darkness!",
+    "You feel the empowerment of war leave your body!",
+    "", // * 130 *
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 140 *
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 150 *
+    "",
+    "",
+    "The rage inside you slows down, allowing you to think clearly again.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "", // * 160 *
 };
 
 char* room_bits_message[32] = {
@@ -408,7 +440,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "death ward", PROF_CLERIC, 20, spell_death_ward,
         POSITION_STANDING, 0, 72, 40, 1, 1, 0, PLRSPEC_PROT },
     { "dark bolt", PROF_MAGE, 9, spell_dark_bolt,
-        POSITION_FIGHTING, 12, 19, 18, 10, 1, 0, PLRSPEC_DARK },
+        POSITION_FIGHTING, 10, 17, 18, 10, 1, 0, PLRSPEC_DARK },
     { "mist of baazunga", PROF_MAGE, 27, spell_mist_of_baazunga,
         POSITION_STANDING, 50, 72, 36, 1, 1, 0, PLRSPEC_DARK },
     { "mind block", PROF_CLERIC, 3, spell_mind_block,
@@ -463,7 +495,7 @@ struct skill_data skills[MAX_SKILLS] = {
         POSITION_STANDING, 5, 9, 32, 10, 1, 0, PLRSPEC_NONE },
     { "detect evil", PROF_MAGE, 3, spell_detect_evil,
         POSITION_STANDING, 2, 12, 1, 5, 1, 0, PLRSPEC_NONE },
-    { "blind", PROF_RANGER, 24, NULL,
+    { "blind", PROF_RANGER, 27, NULL,
         POSITION_FIGHTING, 40, 20, 16, 24, 1, 1, PLRSPEC_NONE },
 
     /* 111 */
@@ -502,7 +534,70 @@ struct skill_data skills[MAX_SKILLS] = {
     { "trash", PROF_MAGE, 1, NULL,
         POSITION_STANDING, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "nothing", PROF_GENERAL, 0, NULL,
-        POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE }
+        POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
+    { "wind blast", PROF_RANGER, 24, NULL,
+        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE },
+    { "Fame War", PROF_GENERAL, 1, NULL,
+        POSITION_STANDING, 5, 2, 6, 1, 1, 1, PLRSPEC_NONE},
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    /* 131 */
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    /* 141 */
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    /* 151 */
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "smash", PROF_WARRIOR, 20, NULL,
+        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+    { "frenzy", PROF_WARRIOR, 30, NULL,
+        POSITION_FIGHTING, 0, 6, 65, 10, 1, 1, PLRSPEC_NONE },
+    { "stomp", PROF_GENERAL, 27, NULL,
+        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
+    { "cleave", PROF_WARRIOR, 25, NULL,
+        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+    { "overrun", PROF_WARRIOR, 25, NULL,
+        POSITION_STANDING, 0, 6, 65, 10, 1, 1, PLRSPEC_NONE },
 };
 
 byte language_number = 3;
@@ -536,7 +631,10 @@ struct skill_teach_data guildmasters[] = {
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
             100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-            100, 100, 100, 100, 100, 100, 100 } },
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 100  } },
     { // VINYANOST WARRIOR (2)
         "Hello, $N! I can teach you these skills:",
         "Sorry, I may not teach you.",
@@ -557,7 +655,8 @@ struct skill_teach_data guildmasters[] = {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0 } },
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
     { // VINYANOST RANGER (3)
         "Hello, $N! I can teach you these skills:",
         "Sorry, I may not teach you.",
@@ -1867,19 +1966,26 @@ struct skill_teach_data guildmasters[] = {
         "The guildmaster tells you 'I won't teach you any better.'",
         "You're already perfect in this.",
         { 0,
-            /*01*/ 100, 100, 100, 100, 100, 100, 100, 10, 100, 100,
-            /*11*/ 100, 100, 100, 0, 100, 100, 0, 100, 0, 100,
-            /*21*/ 100, 100, 40, 45, 0, 100, 100, 100, 70, 0,
-            /*31*/ 0, 100, 100, 0, 100, 100, 100, 60, 100, 0,
-            /*41*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*51*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*61*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*71*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*81*/ 0, 0, 0, 0, 0, 60, 0, 0, 100, 0,
-            /*91*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*101*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*111*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*121*/ 0, 100, 0, 0, 0, 0, 0 } },
+            /*01*/ 100, 100, 100, 100, 100, 100, 100,  10, 100, 100,
+            /*11*/ 100, 100, 100,   0, 100, 100,   0, 100,   0,   0,
+            /*21*/ 100, 100,  40,  45,   0, 100, 100, 100,  70,   0,
+            /*31*/   0, 100, 100,   0, 100, 100, 100,  60, 100,   0,
+            /*41*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+            /*51*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+            /*61*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+            /*61*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+            /*71*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+            /*81*/   0,   0,   0,   0,   0,  60,   0,   0, 100,   0,
+            /*91*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*101*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*111*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*121*/   0, 100,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*131*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*141*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*151*/   0, 100, 100, 100, 100, 100, 100,   0,   0,   0,
+           /*161*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*171*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+           /*181*/   0,   0,   0,   0,   0,   0,   0,   0,   0,   0} },
     { /* Haradrim Guildmaster VNUM:6605 (61) */
         "You can train in these skills:",
         "$n snarls 'Get out!'",
@@ -1893,14 +1999,14 @@ struct skill_teach_data guildmasters[] = {
             /*21*/ 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
             /*31*/ 100, 100, 100, 100, 100, 100, 100, 100, 100, 0,
             /*41*/ 0, 0, 0, 30, 0, 0, 0, 0, 0, 0,
-            /*51*/ 30, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            /*51*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*61*/ 100, 0, 0, 0, 100, 0, 0, 0, 60, 0,
-            /*71*/ 0, 0, 0, 80, 0, 0, 0, 0, 65, 0,
+            /*71*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*81*/ 0, 0, 0, 0, 0, 25, 0, 0, 100, 0,
-            /*91*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*101*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            /*91*/ 0, 0, 0, 0, 100, 0, 0, 0, 0, 0,
+            /*101*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 100,
             /*111*/ 100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            /*121*/ 100, 100, 100, 0, 0, 0, 0 } }
+            /*121*/ 100, 100, 100, 100, 0, 0, 0, 100 } }
 };
 
 struct race_bodypart_data bodyparts[MAX_BODYTYPES] = {
@@ -2351,6 +2457,18 @@ char* extra_bits[] = {
     "<OLD !DONATE, REPORT TO IMPS>",
     "!INVIS",
     "WILLPOWER",
+    "IMM",
+    "HUMAN",
+    "DWARF",
+    "WOODELF",
+    "HOBBIT",
+    "BEORNING",
+    "URUK",
+    "ORC",
+    "ORCFOLLOWER",
+    "LHUTH",
+    "OLOGHAI",
+    "HARADRIM",
     "\n"
 };
 
@@ -2526,6 +2644,14 @@ char* apply_types[] = {
     "MANA_REGEN",
     "RESISTANCE",
     "VULNERAB",
+    "MAUL",
+    "BEND",
+    "PKMAGE",
+    "PKMYSTIC",
+    "PKRANGER",
+    "PKWARRIOR",
+    "SPELLPEN",
+    "SPELLPOWER",
     "\n"
 };
 
@@ -2591,6 +2717,24 @@ char* pc_named_star_types[] = {
     "*%s the Undead*", "*%s the Olog-Hai*", "*%s the Haradrim*", "%s the UNDEFINED", "*%s the Troll*",
     /* Orc is 11, 16 total */
     "\n"
+};
+
+char* pc_arda_fame_identifier[] = {
+    "",
+    " (Warlord of Arda)", " (Noble Crusader)", " (Heroic Knight)", ""
+};
+
+char* pc_evil_fame_identifier[] =  {
+    "",
+    " (Chieftain of Evil)", " (Wicked Commander)", " (Sinister Patrol)", ""
+};
+
+char* pc_arda_fame_keywords[] = {
+    "arda", "warlord", "crusader", "knight", ""
+};
+
+char* pc_evil_fame_keywords[] = {
+    "evil", "chieftain", "commander", "patrol", ""
 };
 
 //const
@@ -2750,23 +2894,176 @@ char* ban_types[] = {
 
 sh_int square_root[171] = {
     0,
-    100, 141, 173, 200, 223, 244, 264, 282, 300, 316,
-    331, 346, 360, 374, 387, 400, 412, 424, 435, 447,
-    458, 469, 479, 489, 500, 509, 519, 529, 538, 547,
-    556, 565, 574, 583, 591, 600, 608, 616, 624, 632,
-    640, 648, 655, 663, 670, 678, 685, 692, 700, 707,
-    714, 721, 728, 734, 741, 748, 754, 761, 768, 774,
-    781, 787, 793, 800, 806, 812, 818, 824, 830, 836,
-    842, 848, 854, 860, 866, 871, 877, 883, 888, 894,
-    900, 905, 911, 916, 921, 927, 932, 938, 943, 948,
-    953, 959, 964, 969, 974, 979, 984, 989, 994, 1000,
-    1004, 1009, 1014, 1019, 1024, 1029, 1034, 1039, 1044, 1048,
-    1053, 1058, 1063, 1067, 1072, 1077, 1081, 1086, 1090, 1095,
-    1100, 1104, 1109, 1113, 1118, 1122, 1126, 1131, 1135, 1140,
-    1144, 1148, 1153, 1157, 1161, 1166, 1170, 1174, 1178, 1183,
-    1187, 1191, 1195, 1200, 1204, 1208, 1212, 1216, 1220, 1224,
-    1228, 1232, 1236, 1240, 1244, 1248, 1252, 1256, 1260, 1264,
-    1268, 1272, 1276, 1280, 1284, 1288, 1292, 1296, 1300, 1303,
+    100,
+    141,
+    173,
+    200,
+    223,
+    244,
+    264,
+    282,
+    300,
+    316,
+    331,
+    346,
+    360,
+    374,
+    387,
+    400,
+    412,
+    424,
+    435,
+    447,
+    458,
+    469,
+    479,
+    489,
+    500,
+    509,
+    519,
+    529,
+    538,
+    547,
+    556,
+    565,
+    574,
+    583,
+    591,
+    600,
+    608,
+    616,
+    624,
+    632,
+    640,
+    648,
+    655,
+    663,
+    670,
+    678,
+    685,
+    692,
+    700,
+    707,
+    714,
+    721,
+    728,
+    734,
+    741,
+    748,
+    754,
+    761,
+    768,
+    774,
+    781,
+    787,
+    793,
+    800,
+    806,
+    812,
+    818,
+    824,
+    830,
+    836,
+    842,
+    848,
+    854,
+    860,
+    866,
+    871,
+    877,
+    883,
+    888,
+    894,
+    900,
+    905,
+    911,
+    916,
+    921,
+    927,
+    932,
+    938,
+    943,
+    948,
+    953,
+    959,
+    964,
+    969,
+    974,
+    979,
+    984,
+    989,
+    994,
+    1000,
+    1004,
+    1009,
+    1014,
+    1019,
+    1024,
+    1029,
+    1034,
+    1039,
+    1044,
+    1048,
+    1053,
+    1058,
+    1063,
+    1067,
+    1072,
+    1077,
+    1081,
+    1086,
+    1090,
+    1095,
+    1100,
+    1104,
+    1109,
+    1113,
+    1118,
+    1122,
+    1126,
+    1131,
+    1135,
+    1140,
+    1144,
+    1148,
+    1153,
+    1157,
+    1161,
+    1166,
+    1170,
+    1174,
+    1178,
+    1183,
+    1187,
+    1191,
+    1195,
+    1200,
+    1204,
+    1208,
+    1212,
+    1216,
+    1220,
+    1224,
+    1228,
+    1232,
+    1236,
+    1240,
+    1244,
+    1248,
+    1252,
+    1256,
+    1260,
+    1264,
+    1268,
+    1272,
+    1276,
+    1280,
+    1284,
+    1288,
+    1292,
+    1296,
+    1300,
+    1303,
 };
 
 char* prompt_text[] = {
@@ -2957,7 +3254,7 @@ const char* inv_sorting[] = {
 	"alpha",
 	"length",
 	"\n"
-}
+};
 
 // Perm starting affects for races
 long race_affect[] = {
@@ -2990,7 +3287,7 @@ int max_race_str[MAX_RACES] = {
     22, // Human
     22, // Dwarf
     22, // Wood Elf
-    20, // Hobbit
+    22, // Hobbit
     22, // High Elf
     22, // Beorning
     22, // !UNUSED!
@@ -3029,7 +3326,7 @@ int mortal_start_room[MAX_RACES] = {
     13626, // Uruk-Lhuth
     0, // !NPC - Undead!
     10263, // Olog-Hai
-    6614, // Haradrim
+    6604, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!
     0 // !UNUSED!

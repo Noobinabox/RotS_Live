@@ -256,7 +256,7 @@ int check_simple_move(struct char_data* ch, int cmd,
                 m = GET_PROF_LEVEL(PROF_RANGER, ch) + GET_SKILL(ch, SKILL_SWIM);
                 m /= 20;
 
-                need_movement = MAX(1, need_movement - m);
+                need_movement = std::max(1, need_movement - m);
             }
         }
     }
@@ -613,7 +613,7 @@ ACMD(do_move)
                     next_dude = k->next;
                     if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
                         // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
+                        ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                         tmpwtl.cmd = cmd + 1;
                         tmpwtl.subcmd = SCMD_FOLLOW;
                         command_interpreter(k->follower, argument, &tmpwtl);
@@ -771,7 +771,7 @@ ACMD(do_move)
                     next_dude = k->next;
                     if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
                         // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
+                        ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                         tmpwtl.cmd = cmd + 1;
                         tmpwtl.subcmd = SCMD_FOLLOW;
                         command_interpreter(k->follower, argument, &tmpwtl);
@@ -796,7 +796,7 @@ ACMD(do_move)
                 if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING)) {
                     //	  act("You follow $N.\n\r", FALSE, k->follower, 0, ch, TO_CHAR);
 
-                    bzero((char*)&tmpwtl, sizeof(waiting_type));
+                    ZERO_MEMORY((char*)&tmpwtl, sizeof(waiting_type));
                     tmpwtl.cmd = cmd + 1;
                     tmpwtl.subcmd = SCMD_FOLLOW;
                     //	  do_move(k->follower, argument, &tmpwtl, cmd + 1, SCMD_FOLLOW);
@@ -1283,8 +1283,7 @@ ACMD(do_enter)
         for (door = 0; door < NUM_OF_DIRS; door++)
             if (EXIT(ch, door))
                 if (EXIT(ch, door)->to_room != NOWHERE)
-                    if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) && IS_SET(world[EXIT(ch, door)->to_room].room_flags,
-                                                                             INDOORS)) {
+                    if (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) && IS_SET(world[EXIT(ch, door)->to_room].room_flags, INDOORS)) {
                         do_move(ch, "", wtl, ++door, 0);
                         return;
                     }

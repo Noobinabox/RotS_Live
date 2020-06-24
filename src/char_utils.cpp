@@ -1258,7 +1258,7 @@ void char_data::update_available_practices()
 //============================================================================
 void char_data::reset_skills()
 {
-	if (skills == NULL || knowledge == NULL)
+	if (skills == nullptr || knowledge == nullptr)
 		return;
 
 	for (int index = 0; index < MAX_SKILLS; ++index)
@@ -1273,7 +1273,7 @@ void char_data::reset_skills()
 //============================================================================
 bool char_data::is_affected() const
 {
-	return affected != NULL;
+	return affected != nullptr;
 }
 
 //============================================================================

@@ -198,7 +198,8 @@ void assign_mobiles(void)
     ASSIGNMOB(2041, guild); //ALT RotS Puke
     ASSIGNMOB(2043, guild); //ALT RotS Uruk
 
-    ASSIGNMOB(10310, guild);
+    ASSIGNMOB(10310, guild); // Beorning guildmaster
+    ASSIGNMOB(32816, guild); // Olog-Hai guildmaster
     ASSIGNMOB(6605, guild);
 
     ASSIGNMOB(2012, dragon);

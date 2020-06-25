@@ -10,7 +10,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <execinfo.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +41,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#if defined(__linux__) || defined(__unix__)
+#include <execinfo.h>
+#endif
 
 #define MAX_HOSTNAME 256
 #define OPT_USEC 250000 /* time delay corresponding to 4 passes/sec */

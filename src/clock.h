@@ -6,7 +6,10 @@
 #pragma once
 
 #include <ctime>
+
+#if defined(__linux__) || defined(__unix__)
 #include <sys/time.h>
+#endif
 
 class rots_clock {
 public:

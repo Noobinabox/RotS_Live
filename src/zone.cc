@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> /* memmove */
-#include <strings.h>
 
 #include "comm.h" /* For TO_ROOM */
 #include "db.h" /* For buf2 and struct reset_com */
@@ -12,6 +11,10 @@
 #include "structs.h" /* For struct owner_list */
 #include "utils.h" /* For CREATE */
 #include "zone.h"
+
+#if defined(__linux__) || defined(__unix__)
+#include <strings.h>
+#endif
 
 struct zone_data* zone_table;
 int top_of_zone_table;

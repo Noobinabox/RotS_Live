@@ -8,9 +8,7 @@
 #include <string.h>
 #include <cstring>
 
-#ifdef _WIN32
 #include <filesystem>
-#endif
 
 #include "comm.h" /* For vsend_to_char() */
 #include "db.h" /* For REAL */
@@ -632,7 +630,6 @@ int check_keywords(struct obj2html_type* list, char* arg)
 {
     int i, j;
     int types_selected;
-    char* c;
 
     types_selected = 0;
 
@@ -830,12 +827,7 @@ FILE* obj2html_start(void)
     }
 
     /* Shouldn't there be a way to do this on open()? */
-#if defined(__linux__) || defined(__unix__)
-    chmod("../www/objects.html", S_IRWXU | S_IRWXG | S_IRWXO);
-#endif
-#ifdef _WIN32 
     std::filesystem::permissions("../www/objects.html", std::filesystem::perms::all);
-#endif
 
     fprintf(f, "<HTML>"
                "\n"

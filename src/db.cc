@@ -503,10 +503,9 @@ void build_directory(char* TheDir)
 {
     DIR* dp;
     struct dirent* dentry;
-    char* tmpch;
+    char local_buffer[128];
     int i;
 
-    CREATE(tmpch, char, 100);
     dp = opendir(TheDir);
     if (dp)
         dentry = readdir(dp);
@@ -519,24 +518,24 @@ void build_directory(char* TheDir)
             continue;
         }
 
-        i = read_filename_field(0, tmpch, dentry->d_name);
-        tmpch[i] = 0;
-        create_entry(tmpch);
+        i = read_filename_field(0, local_buffer, dentry->d_name);
+        local_buffer[i] = 0;
+        create_entry(local_buffer);
 
-        i = read_filename_field(i + 1, tmpch, dentry->d_name);
-        player_table[top_of_p_table].level = atoi(tmpch);
+        i = read_filename_field(i + 1, local_buffer, dentry->d_name);
+        player_table[top_of_p_table].level = atoi(local_buffer);
 
-        i = read_filename_field(i + 1, tmpch, dentry->d_name);
-        player_table[top_of_p_table].race = atoi(tmpch);
+        i = read_filename_field(i + 1, local_buffer, dentry->d_name);
+        player_table[top_of_p_table].race = atoi(local_buffer);
 
-        i = read_filename_field(i + 1, tmpch, dentry->d_name);
-        player_table[top_of_p_table].idnum = atoi(tmpch);
+        i = read_filename_field(i + 1, local_buffer, dentry->d_name);
+        player_table[top_of_p_table].idnum = atoi(local_buffer);
 
-        i = read_filename_field(i + 1, tmpch, dentry->d_name);
-        player_table[top_of_p_table].log_time = atoi(tmpch);
+        i = read_filename_field(i + 1, local_buffer, dentry->d_name);
+        player_table[top_of_p_table].log_time = atoi(local_buffer);
 
-        i = read_filename_field(i + 1, tmpch, dentry->d_name);
-        player_table[top_of_p_table].flags = atoi(tmpch);
+        i = read_filename_field(i + 1, local_buffer, dentry->d_name);
+        player_table[top_of_p_table].flags = atoi(local_buffer);
 
         sprintf(player_table[top_of_p_table].ch_file, "%s%s",
             TheDir, dentry->d_name);
@@ -546,7 +545,6 @@ void build_directory(char* TheDir)
         dentry = readdir(dp);
     } // while (dentry)
     closedir(dp);
-    RELEASE(tmpch);
 }
 
 void build_player_index(void)

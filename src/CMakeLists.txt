@@ -46,8 +46,6 @@ interpre.h
 limits.cc
 limits.h
 mage.cc
-magic.cpp
-magic.h
 mail.cc
 mail.h
 

@@ -2,9 +2,6 @@
 
 #include "platdef.h"
 #include <ctype.h>
-#if defined(__linux__) || (__unix__)
-#include <dirent.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +29,8 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+
+#include <filesystem>
 
 /**************************************************************************
 *  declarations of most of the 'global' variables                         *
@@ -483,7 +482,7 @@ void inc_p_table(void)
 
 //  Reads a field from the player filename format (using FAT as index)
 
-int read_filename_field(int pos, char* field, char* fname)
+int read_filename_field(int pos, char* field, const char* fname)
 {
     int field_pos;
 
@@ -499,18 +498,62 @@ int read_filename_field(int pos, char* field, char* fname)
 }
 
 /* New index build for the new player files */
-void build_directory(char* TheDir)
+void build_directory(const char* directory_path)
 {
-    DIR* dp;
-    struct dirent* dentry;
-    char local_buffer[128];
-    int i;
+    namespace fs = std::filesystem;
 
-    dp = opendir(TheDir);
-    if (dp)
+    char local_buffer[128];
+    for (auto& directory_entry : fs::recursive_directory_iterator(directory_path)) {
+        
+        // Continue iterating past all non-regular files.
+        if (!directory_entry.is_regular_file()) {
+            continue;
+        }
+
+        // RotS character files are formatted to encode information about that character.
+        // Format is <name>.<level>.<race>.<idnum>.<log_time>.<flags>
+        const auto& file_path = directory_entry.path();
+        auto file_name = file_path.filename().string();
+
+		const char* file_name_pointer = file_name.c_str();
+
+        // Get the name of the character.
+        int filename_index = read_filename_field(0, local_buffer, file_name_pointer);
+        local_buffer[filename_index] = 0;
+
+        int table_index = create_entry(local_buffer);
+
+        player_index_element& table_entry = player_table[table_index];
+
+        // Get the level.
+        filename_index = read_filename_field(filename_index + 1, local_buffer, file_name_pointer);
+        table_entry.level = atoi(local_buffer);
+
+        filename_index = read_filename_field(filename_index + 1, local_buffer, file_name_pointer);
+        table_entry.race = atoi(local_buffer);
+
+        filename_index = read_filename_field(filename_index + 1, local_buffer, file_name_pointer);
+        table_entry.idnum = atoi(local_buffer);
+
+        filename_index = read_filename_field(filename_index + 1, local_buffer, file_name_pointer);
+        table_entry.log_time = atoi(local_buffer);
+
+        filename_index = read_filename_field(filename_index + 1, local_buffer, file_name_pointer);
+        table_entry.flags = atoi(local_buffer);
+
+		sprintf(table_entry.ch_file, "%s%s", directory_path, file_name_pointer);
+
+		top_idnum = std::max(top_idnum, (long)table_entry.idnum);
+    }
+
+    /*
+
+    // The entry being pointed to within the directory.
+	dirent* dentry = nullptr;
+    DIR* dp = opendir(directory_path);
+    if (dp) {
         dentry = readdir(dp);
-    else
-        dentry = 0;
+    }
 
     while (dentry) {
         if (dentry->d_name[0] == '.' || !strncmp(dentry->d_name, "CVS", 3)) {
@@ -518,7 +561,7 @@ void build_directory(char* TheDir)
             continue;
         }
 
-        i = read_filename_field(0, local_buffer, dentry->d_name);
+        int i = read_filename_field(0, local_buffer, dentry->d_name);
         local_buffer[i] = 0;
         create_entry(local_buffer);
 
@@ -537,14 +580,14 @@ void build_directory(char* TheDir)
         i = read_filename_field(i + 1, local_buffer, dentry->d_name);
         player_table[top_of_p_table].flags = atoi(local_buffer);
 
-        sprintf(player_table[top_of_p_table].ch_file, "%s%s",
-            TheDir, dentry->d_name);
+        sprintf(player_table[top_of_p_table].ch_file, "%s%s", directory_path, dentry->d_name);
 
         top_idnum = std::max(top_idnum, (long)player_table[top_of_p_table].idnum);
 
         dentry = readdir(dp);
     } // while (dentry)
     closedir(dp);
+    */
 }
 
 void build_player_index(void)
@@ -2201,26 +2244,27 @@ void char_to_store(struct char_data* ch, struct char_file_u* st)
     affect_total(ch, AFFECT_TOTAL_SET);
 } /* Char to store */
 
-int create_entry(char* name)
+int create_entry(const char* name)
 {
-    int i;
-
     if (top_of_p_table == -1) {
         CREATE(player_table, struct player_index_element, 1);
         top_of_p_table = 0;
     } else {
         inc_p_table();
     }
+
     CREATE(player_table[top_of_p_table].name, char, strlen(name) + 1);
-    (player_table + top_of_p_table)->flags = 0;
-    (player_table + top_of_p_table)->ch_file[0] = 0;
-    (player_table + top_of_p_table)->warpoints = 0;
-    (player_table + top_of_p_table)->race = 0;
-    (player_table + top_of_p_table)->rank = PKILL_UNRANKED;
-    (player_table + top_of_p_table)->totalrank = PKILL_UNRANKED;
-    for (i = 0; (*(player_table[top_of_p_table].name + i) = LOWER(*(name + i))); i++)
+    player_index_element& table_entry = player_table[top_of_p_table];
+    table_entry.flags = 0;
+    table_entry.ch_file[0] = 0;
+    table_entry.warpoints = 0;
+    table_entry.race = 0;
+    table_entry.rank = PKILL_UNRANKED;
+    table_entry.totalrank = PKILL_UNRANKED;
+    for (int i = 0; (*(table_entry.name + i) = LOWER(*(name + i))); i++)
         ;
-    return (top_of_p_table);
+
+    return top_of_p_table;
 }
 
 /* create a new entry in the in-memory index table for the player file */

@@ -105,7 +105,7 @@ void char_to_store(struct char_data*, struct char_file_u*);
 void store_to_char(struct char_file_u*, struct char_data*);
 int load_char(char*, struct char_file_u*);
 void save_char(struct char_data*, int, int);
-int create_entry(char*);
+int create_entry(const char*);
 void init_char(struct char_data*);
 void clear_char(struct char_data*, int);
 void clear_object(struct obj_data*);

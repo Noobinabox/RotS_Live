@@ -45,3 +45,6 @@ src/.vs/
 .vs/
 .vscode/
 .vscode/settings.json
+
+# CMake build stuff
+*build*/

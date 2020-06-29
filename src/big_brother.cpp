@@ -117,8 +117,7 @@ bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* it
     if (looter == NULL || corpse == NULL || item == NULL)
         return true;
 
-    typedef corpse_map::iterator iter;
-    iter corpse_iter = m_corpse_map.find(corpse);
+    auto corpse_iter = m_corpse_map.find(corpse);
 
     // If we aren't tracking this corpse - you can loot from it.
     if (corpse_iter == m_corpse_map.end())
@@ -178,8 +177,7 @@ bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* it
                 mudlog(local_buf, NRM, LEVEL_GRGOD, TRUE);
             }
 
-            typedef character_id_set::iterator char_iter;
-            char_iter protected_character = m_looting_characters.find(corpse_data.player_id);
+            auto protected_character = m_looting_characters.find(corpse_data.player_id);
             if (m_looting_characters.end() != protected_character) {
                 m_looting_characters.erase(protected_character);
             }
@@ -242,8 +240,7 @@ bool big_brother::is_corpse_protected(const char_data* looter, obj_data* corpse)
     if (corpse == NULL)
         return false;
 
-    typedef corpse_map::const_iterator iter;
-    iter corpse_iter = m_corpse_map.find(corpse);
+    auto corpse_iter = m_corpse_map.find(corpse);
 
     // If we aren't tracking this corpse - it's not protected.
     if (corpse_iter == m_corpse_map.end())
@@ -427,7 +424,7 @@ bool big_brother::is_same_side_race_war(int attacker_race, int victim_race) cons
 char_data* big_brother::get_valid_target(char_data* attacker, const char_data* victim, const char* argument) const
 {
     // TODO(drelidan):  Implement logic here.
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================
@@ -497,11 +494,10 @@ void big_brother::on_character_afked(const char_data* character)
     // This is one possible implementation.  Another is to do the time-check in the
     // "is-character-afk" test.
     const double CUTOFF_SECS = 900;
-    typedef time_map::iterator map_iter;
-
+    
     bool insert = true;
 
-    map_iter attack_time = m_last_engaged_pk_time.find(character);
+    auto attack_time = m_last_engaged_pk_time.find(character);
     if (attack_time != m_last_engaged_pk_time.end()) {
         time_t current_time;
         time(&current_time);
@@ -544,15 +540,12 @@ void big_brother::on_character_disconnected(const char_data* character)
     remove_character_from_afk_set(character);
     remove_character_from_looting_set(character->abs_number);
 
-    typedef time_map::iterator map_iter;
-
-    map_iter char_map_iter = m_last_engaged_pk_time.find(character);
+    auto char_map_iter = m_last_engaged_pk_time.find(character);
     if (char_map_iter != m_last_engaged_pk_time.end()) {
         m_last_engaged_pk_time.erase(char_map_iter);
     }
 
-    typedef corpse_map::iterator corpse_iter;
-    for (corpse_iter iter = m_corpse_map.begin(); iter != m_corpse_map.end(); ++iter) {
+    for (auto iter = m_corpse_map.begin(); iter != m_corpse_map.end(); ++iter) {
         if (!iter->second.is_npc && iter->second.player_id == character->abs_number) {
             char local_buf[80];
             sprintf(local_buf, "%s no longer has looting protection.  Player disconnected.", character->player.name);
@@ -570,9 +563,8 @@ void big_brother::remove_character_from_afk_set(const char_data* character)
 {
 #if USE_BIG_BROTHER
     assert(character);
-    typedef character_set::iterator iter;
 
-    iter char_iter = m_afk_characters.find(character);
+    auto char_iter = m_afk_characters.find(character);
     if (char_iter != m_afk_characters.end()) {
         m_afk_characters.erase(character);
     }
@@ -583,9 +575,8 @@ void big_brother::remove_character_from_afk_set(const char_data* character)
 void big_brother::remove_character_from_looting_set(int char_id)
 {
 #if USE_BIG_BROTHER
-    typedef character_id_set::iterator iter;
 
-    iter char_iter = m_looting_characters.find(char_id);
+    auto char_iter = m_looting_characters.find(char_id);
     if (char_iter != m_looting_characters.end()) {
         send_to_char("You feel the protection of the Gods fade from you...\r\n", *char_iter);
 
@@ -606,9 +597,8 @@ void big_brother::on_corpse_decayed(obj_data* corpse)
 {
 #if USE_BIG_BROTHER
     assert(corpse);
-    typedef corpse_map::iterator map_iter;
 
-    map_iter corpse_iter = m_corpse_map.find(corpse);
+    auto corpse_iter = m_corpse_map.find(corpse);
     if (corpse_iter == m_corpse_map.end())
         return;
 

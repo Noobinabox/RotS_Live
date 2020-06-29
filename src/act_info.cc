@@ -128,22 +128,6 @@ namespace
 		int count;
 	};
 
-	struct inventory_data_sort_alphabetically
-	{
-		bool operator()(const inventory_data& left, const inventory_data& right)
-		{
-			return left.description < right.description;
-		}
-	};
-
-	struct inventory_data_sort_by_length
-	{
-		bool operator()(const inventory_data& left, const inventory_data& right)
-		{
-			return left.description.size() < right.description.size();
-		}
-	};
-
 	bool use_inventory_formatter(char_data* character)
 	{
 		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
@@ -197,15 +181,19 @@ namespace
 
 			if (sort_alpha)
 			{
-				inventory_data_sort_alphabetically sorter;
-				std::sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+				std::sort(m_seen_items.begin(), m_seen_items.end(), [](const inventory_data& left, const inventory_data& right) -> bool
+					{
+						return left.description < right.description;
+					});
 			}
 			else if (sort_length)
 			{
 				// stable sort is used for length because we want to maintain as much of
 				// the original order as possible.
-				inventory_data_sort_by_length sorter;
-				std::stable_sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+                std::stable_sort(m_seen_items.begin(), m_seen_items.end(), [](const inventory_data& left, const inventory_data& right) -> bool
+                    {
+                        return left.description.length() < right.description.length();
+                    });
 			}
 
 			std::ostringstream inventory_writer;
@@ -230,20 +218,22 @@ namespace
 		{
 			get_item_description(object, m_working_data);
 
-			for (size_t index = 0; index < m_seen_items.size(); ++index)
-			{
-				inventory_data& item_data = m_seen_items[index];
-				if (m_working_data == item_data.description)
-				{
-					++item_data.count;
-					return;
-				}
-			}
+            auto item = std::find_if(m_seen_items.begin(), m_seen_items.end(), [this](const inventory_data& data) -> bool
+                {
+                    return data.description == m_working_data;
+                });
 
-			inventory_data new_item;
-			new_item.description.assign(m_working_data);
-			new_item.count = 1;
-			m_seen_items.push_back(new_item);
+            if (item != m_seen_items.end())
+            {
+                item->count++;
+            }
+            else
+            {
+				inventory_data new_item;
+				new_item.description.assign(m_working_data);
+				new_item.count = 1;
+				m_seen_items.push_back(new_item);
+            }
 		}
 
 		void get_item_description(obj_data* object, std::string& working_data)

@@ -2150,6 +2150,11 @@ int shoot_calculate_wait(const char_data* archer)
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
         total_beats = total_beats * 2;
     }
+
+    if (affected_by_spell(archer, SKILL_BEND_TIME)) {
+        total_beats *= 1.25;
+    }
+
     total_beats = std::max(total_beats, min_beats);
     /*total_beats = std::min(total_beats, base_beats);*/
     return total_beats;

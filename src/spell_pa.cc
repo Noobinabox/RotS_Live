@@ -384,7 +384,7 @@ char* skip_spaces(char* string)
 namespace {
 bool can_orc_follower_cast_spell(int spell_index)
 {
-    const int MAX_SPELLS = 15;
+    const int MAX_SPELLS = 17;
 
     // Orc followers cannot cast any "whitie" or "lhuth" only spells.
     // Assume any other spell is valid.
@@ -392,7 +392,8 @@ bool can_orc_follower_cast_spell(int spell_index)
     static int invalid_spells[MAX_SPELLS] = { SPELL_CREATE_LIGHT, SPELL_DETECT_EVIL,
         SPELL_FLASH, SPELL_LIGHTNING_BOLT, SPELL_LIGHTNING_STRIKE, SPELL_WORD_OF_AGONY,
         SPELL_WORD_OF_PAIN, SPELL_WORD_OF_SHOCK, SPELL_BLACK_ARROW, SPELL_WORD_OF_SIGHT,
-        SPELL_SPEAR_OF_DARKNESS, SPELL_LEACH, SPELL_SHOUT_OF_PAIN, SPELL_SANCTUARY };
+        SPELL_SPEAR_OF_DARKNESS, SPELL_LEACH, SPELL_SHOUT_OF_PAIN, SPELL_SANCTUARY,
+        SPELL_CONFUSE, SPELL_PROTECTION, SPELL_GUARDIAN };
 
     for (int i = 0; i < MAX_SPELLS; ++i) {
         if (spell_index == invalid_spells[i]) {

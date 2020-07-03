@@ -2,7 +2,7 @@
 CC = g++ -m32
 
 #compiler flags you want to use (other than profiling, such as -Wall)
-MYFLAGS = -fstrict-aliasing -Wall -funsigned-char
+MYFLAGS = -fstrict-aliasing -Wall -funsigned-char -std=c++17
 
 #flags for profiling (see hacker.doc for more information)
 PROFILE = -g -rdynamic
@@ -25,7 +25,7 @@ CFLAGS = $(MYFLAGS) $(PROFILE) $(OSFLAGS)
 OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
 	act_othe.o act_soci.o act_wiz.o ban.o big_brother.o boards.o char_utils.o char_utils_combat.o clerics.o clock.o color.o combat_manager.o \
 	comm.o config.o consts.o db.o delayed_command_interpreter.o fight.o graph.o handler.o interpre.o environment_utils.o \
-	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o olog-hai.o\
+	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o \
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \
 	signals.o skill_timer.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weather.o zone.o
 

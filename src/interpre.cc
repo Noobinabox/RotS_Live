@@ -2199,16 +2199,6 @@ void assign_command_pointers(void)
 		TAR_IGNORE, TAR_IGNORE, 0);
     COMMANDO(240, POSITION_FIGHTING, do_windblast, 0, TRUE, 0,
         TAR_IGNORE, TAR_IGNORE, 0);
-    COMMANDO(241, POSITION_FIGHTING, do_smash, 0, TRUE, 0,
-        TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-    COMMANDO(242, POSITION_FIGHTING, do_frenzy, 0, TRUE, 0,
-		TAR_IGNORE, TAR_IGNORE, 0);
-    COMMANDO(243, POSITION_FIGHTING, do_stomp, 0, TRUE, 0,
-        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-    COMMANDO(244, POSITION_FIGHTING, do_cleave, 0, TRUE, 0,
-        TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
-    COMMANDO(245, POSITION_STANDING, do_overrun, 0, TRUE, 0,
-        TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
 }
 
 /* *************************************************************************

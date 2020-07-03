@@ -74,7 +74,7 @@ double get_spell_pen_value(const char_data* caster)
         mage_level += utils::get_prof_level(PROF_MAGE, *(caster->master)) / 3;
     }
 
-    return mage_level / 5.0;
+    return (mage_level / 5.0) + caster->points.get_spell_pen();
 }
 
 double get_victim_saving_throw(const char_data* caster, const char_data* victim)

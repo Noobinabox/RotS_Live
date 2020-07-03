@@ -77,7 +77,7 @@ double get_spell_pen_value(const char_data* caster)
     return (mage_level / 5.0) + caster->points.get_spell_pen();
 }
 
-double get_victim_saving_throw(const char_data* caster, const char_data* victim)
+double get_victim_spell_resist(const char_data* caster, const char_data* victim)
 {
     double saving_throw = victim->specials2.saving_throw; // this value comes from gear and/or spells.
 
@@ -97,13 +97,13 @@ double get_victim_saving_throw(const char_data* caster, const char_data* victim)
 
 int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, int spell_number, int hit_location)
 {
-    double saving_throw = get_victim_saving_throw(caster, victim);
+    double spell_resist = get_victim_spell_resist(caster, victim);
 
     double damage_multiplier = 1.0;
-    if (saving_throw > 0) {
-        damage_multiplier = 20.0 / (20.0 + saving_throw);
-    } else if (saving_throw < 0) {
-        damage_multiplier = 2.0 - (20.0 / (20.0 - saving_throw));
+    if (spell_resist > 0) {
+        damage_multiplier = 20.0 / (20.0 + spell_resist);
+    } else if (spell_resist < 0) {
+        damage_multiplier = 2.0 - (20.0 / (20.0 - spell_resist));
     }
 
     damage_dealt = int(damage_dealt * damage_multiplier);

@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <array>
+#include <algorithm>
 
 #include "char_utils.h"
 #include "color.h"
@@ -1244,7 +1246,8 @@ ACMD(do_shooting)
     send_to_char(buf, ch);
 }
 
-extern const char* inv_sorting[];
+std::array<std::string_view, 4> inv_sorting = { "default", "grouped", "alpha", "length" };
+
 namespace
 {
 	bool has_argument(const char* argument)
@@ -1254,15 +1257,13 @@ namespace
 
 	int get_sort_index(const char* argument)
 	{
-		size_t arg_len = strlen(argument);
-		for (int sort_index = 0; inv_sorting[sort_index][0] != '\n'; ++sort_index)
-		{
-			const char* sort_type = inv_sorting[sort_index];
-			if (strncmp(sort_type, argument, arg_len) == 0)
-			{
-				return sort_index;
-			}
-		}
+        for (int index = 0; index < inv_sorting.size(); ++index)
+        {
+            if (inv_sorting[index].find(argument) != std::string::npos)
+            {
+                return index;
+            }
+        }
 
 		return -1;
 	}
@@ -1294,12 +1295,12 @@ namespace
 	void report_sort_choices_to(char_data* character)
 	{
 		sprintf(buf, "Possible sort choices are:\n\r   ");
-		for (int index = 0; inv_sorting[index][0] != '\n'; index++)
-		{
-			strcat(buf, inv_sorting[index]);
+        for (const auto& sort_name : inv_sorting)
+        {
+			strcat(buf, sort_name.data());
 			strcat(buf, " sorting.");
 			strcat(buf, "\n\r    ");
-		}
+        }
 
 		send_to_char(buf, character);
 	}
@@ -1311,7 +1312,7 @@ namespace
 
 		int sort_value = high_bit_set << 1 | low_bit_set;
 
-		const char* sort_name = inv_sorting[sort_value];
+		const char* sort_name = inv_sorting[sort_value].data();
 
 		sprintf(buf, "'%s' '%s'.", sort_name);
 		send_to_char(buf, character);

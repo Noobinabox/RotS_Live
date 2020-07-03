@@ -3248,14 +3248,6 @@ char* moon_phase[8] = {
     "dying"
 };
 
-const char* inv_sorting[] = {
-	"default",
-	"grouped",
-	"alpha",
-	"length",
-	"\n"
-};
-
 // Perm starting affects for races
 long race_affect[] = {
     0, // God

@@ -220,7 +220,7 @@ int get_saving_throw_dc(const char_data* caster)
     int caster_dc = 10;
     caster_dc += utils::get_prof_level(PROF_MAGE, *caster) / 3;
     caster_dc += (caster->tmpabilities.intel - 8) / 4;
-    return caster_dc + caster->points.spell_pen;
+    return caster_dc;
 }
 
 //============================================================================

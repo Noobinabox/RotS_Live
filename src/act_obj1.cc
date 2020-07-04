@@ -235,7 +235,11 @@ void get_from_container(struct char_data* ch, struct obj_data* cont, char* arg, 
 {
     struct obj_data *obj, *next_obj;
     int obj_dotmode, found = 0;
-    obj_dotmode = find_all_dots(arg);
+
+    // find_all_dots is destructive on arg, so make a copy of arg and use that.
+    char arg_copy[128];
+    strcpy(arg_copy, arg);
+    obj_dotmode = find_all_dots(arg_copy);
 
     if (IS_SET(cont->obj_flags.value[1], CONT_CLOSED)) {
         act("The $p is closed.", FALSE, ch, cont, 0, TO_CHAR);
@@ -257,14 +261,14 @@ void get_from_container(struct char_data* ch, struct obj_data* cont, char* arg, 
             act("$p seems to be empty.", FALSE, ch, cont, 0, TO_CHAR);
         }
     } else if (obj_dotmode == FIND_ALLDOT) {
-        if (!*arg) {
+        if (!*arg_copy) {
             send_to_char("Get all of what?\n\r", ch);
             return;
         }
 
-        obj = get_obj_in_list(arg, cont->contains);
+        obj = get_obj_in_list(arg_copy, cont->contains);
         while (obj) {
-            next_obj = get_obj_in_list_vis(ch, arg, obj->next_content, 9999);
+            next_obj = get_obj_in_list_vis(ch, arg_copy, obj->next_content, 9999);
             if (CAN_SEE_OBJ(ch, obj)) {
                 found = 1;
                 perform_get_from_container(ch, obj, cont, mode);
@@ -273,12 +277,12 @@ void get_from_container(struct char_data* ch, struct obj_data* cont, char* arg, 
         }
 
         if (!found) {
-            sprintf(buf, "You can't find any %ss in $p.", arg);
+            sprintf(buf, "You can't find any %ss in $p.", arg_copy);
             act(buf, FALSE, ch, cont, 0, TO_CHAR);
         }
     } else {
-        if (!(obj = get_obj_in_list(arg, cont->contains))) {
-            sprintf(buf, "There doesn't seem to be %s %s in $p.", AN(arg), arg);
+        if (!(obj = get_obj_in_list(arg_copy, cont->contains))) {
+            sprintf(buf, "There doesn't seem to be %s %s in $p.", AN(arg_copy), arg_copy);
             act(buf, FALSE, ch, cont, 0, TO_CHAR);
         } else {
             perform_get_from_container(ch, obj, cont, mode);

@@ -16,6 +16,8 @@
 #include <time.h>
 #include <array>
 #include <algorithm>
+#include <iostream>
+#include <sstream>
 
 #include "char_utils.h"
 #include "color.h"
@@ -1275,46 +1277,46 @@ namespace
 
 		if (high_bit_value != 0)
 		{
-			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+			SET_BIT(character->specials2.pref, PRF_INV_SORT2);
 		}
 		else
 		{
-			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+			REMOVE_BIT(character->specials2.pref, PRF_INV_SORT2);
 		}
 
 		if (low_bit_value != 0)
 		{
-			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+            SET_BIT(character->specials2.pref, PRF_INV_SORT1);
 		}
 		else
 		{
-			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+            REMOVE_BIT(character->specials2.pref, PRF_INV_SORT1);
 		}
 	}
 
 	void report_sort_choices_to(char_data* character)
 	{
-		sprintf(buf, "Possible sort choices are:\n\r   ");
-        for (const auto& sort_name : inv_sorting)
-        {
-			strcat(buf, sort_name.data());
-			strcat(buf, " sorting.");
-			strcat(buf, "\n\r    ");
-        }
+		std::ostringstream message_writer;
+		message_writer << "Possible sort choices are:" << std::endl;
+		for (const auto& sort_name : inv_sorting)
+		{
+            message_writer << "\t" << sort_name << std::endl;
+		}
+        message_writer << std::endl;
 
-		send_to_char(buf, character);
+		send_to_char(message_writer.str().c_str(), character);
 	}
 
 	void report_inventory_sorting_to(char_data* character, const char* intro_string)
 	{
-		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
-		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+		bool high_bit_set = PRF_FLAGGED(character, PRF_INV_SORT2) != 0;
+		bool low_bit_set = PRF_FLAGGED(character, PRF_INV_SORT1) != 0;
 
 		int sort_value = high_bit_set << 1 | low_bit_set;
 
 		const char* sort_name = inv_sorting[sort_value].data();
 
-		sprintf(buf, "'%s' '%s'.", sort_name);
+		sprintf(buf, "%s %s.\r\n", intro_string, sort_name);
 		send_to_char(buf, character);
 	}
 }
@@ -1340,6 +1342,7 @@ ACMD(do_inventory_sort)
 	{
 		static const char* report_sort_string = "Your current inventory sorting method is";
 		report_inventory_sorting_to(ch, report_sort_string);
+		report_sort_choices_to(ch);
 	}
 }
 

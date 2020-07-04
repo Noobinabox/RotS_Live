@@ -423,7 +423,7 @@ void list_obj_to_char(obj_data* list, char_data* ch, int mode, bool show)
 	bool use_formatter = use_inventory_formatter(ch);
 	if (show && use_formatter)
 	{
-		inventory_formatter formatter(ch->carrying, ch);
+		inventory_formatter formatter(list, ch);
 		std::string inventory_message = formatter.format_inventory();
 		send_to_char(inventory_message.c_str(), ch);
 	}

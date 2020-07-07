@@ -416,9 +416,32 @@ ACMD(do_gather_food)
         break;
     default:
         if (number(0, 100) > (subcmd < 3 ? percent : percent - 10)) {
-            send_to_char("You tried to gather some herbs, but could not find"
-                         " anything useful.\n\r",
-                ch);
+            
+            const char* gather_type = nullptr;
+            switch (subcmd) {
+            case 2:
+		gather_type = "a torch";
+		break;
+            case 5:
+                gather_type = "a bow";
+                break;
+            case 6:
+                gather_type = "an arrow";
+                break;
+            case 7:
+                gather_type = "some dust";
+                break;
+	    case 1:
+	    case 3:
+	    case 4:
+            default:
+                gather_type = "some herbs";
+                break;
+            }
+
+            sprintf(buf, "You tried to gather %s, but could not find anything useful.\n\r", gather_type);
+            send_to_char(buf, ch);
+
             return;
         } else {
             /*

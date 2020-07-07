@@ -420,8 +420,8 @@ ACMD(do_gather_food)
             const char* gather_type = nullptr;
             switch (subcmd) {
             case 2:
-				gather_type = "a torch";
-				break;
+		gather_type = "a torch";
+		break;
             case 5:
                 gather_type = "a bow";
                 break;
@@ -431,9 +431,9 @@ ACMD(do_gather_food)
             case 7:
                 gather_type = "some dust";
                 break;
-			case 1:
-			case 3:
-			case 4:
+	    case 1:
+	    case 3:
+	    case 4:
             default:
                 gather_type = "some herbs";
                 break;

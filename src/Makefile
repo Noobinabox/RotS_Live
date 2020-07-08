@@ -1,5 +1,5 @@
 #compiler name
-CC = g++ -m32 -w
+CC = g++ -m32 -w -std=c++1z
 
 #compiler flags you want to use (other than profiling, such as -Wall)
 MYFLAGS = -fstrict-aliasing -funsigned-char

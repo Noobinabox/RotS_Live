@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <array>
+#include <algorithm>
+#include <iostream>
+#include <sstream>
 
 #include "char_utils.h"
 #include "color.h"
@@ -1244,7 +1248,8 @@ ACMD(do_shooting)
     send_to_char(buf, ch);
 }
 
-extern const char* inv_sorting[];
+std::array<std::string_view, 4> inv_sorting = { "default", "grouped", "alpha", "length" };
+
 namespace
 {
 	bool has_argument(const char* argument)
@@ -1254,15 +1259,13 @@ namespace
 
 	int get_sort_index(const char* argument)
 	{
-		size_t arg_len = strlen(argument);
-		for (int sort_index = 0; inv_sorting[sort_index][0] != '\n'; ++sort_index)
-		{
-			const char* sort_type = inv_sorting[sort_index];
-			if (strncmp(sort_type, argument, arg_len) == 0)
-			{
-				return sort_index;
-			}
-		}
+        for (int index = 0; index < inv_sorting.size(); ++index)
+        {
+            if (inv_sorting[index].find(argument) != std::string::npos)
+            {
+                return index;
+            }
+        }
 
 		return -1;
 	}
@@ -1274,46 +1277,46 @@ namespace
 
 		if (high_bit_value != 0)
 		{
-			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+			SET_BIT(character->specials2.pref, PRF_INV_SORT2);
 		}
 		else
 		{
-			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT2));
+			REMOVE_BIT(character->specials2.pref, PRF_INV_SORT2);
 		}
 
 		if (low_bit_value != 0)
 		{
-			utils::set_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+            SET_BIT(character->specials2.pref, PRF_INV_SORT1);
 		}
 		else
 		{
-			utils::remove_bit(character->specials2.pref, static_cast<long>(PRF_INV_SORT1));
+            REMOVE_BIT(character->specials2.pref, PRF_INV_SORT1);
 		}
 	}
 
 	void report_sort_choices_to(char_data* character)
 	{
-		sprintf(buf, "Possible sort choices are:\n\r   ");
-		for (int index = 0; inv_sorting[index][0] != '\n'; index++)
+		std::ostringstream message_writer;
+		message_writer << "Possible sort choices are:" << std::endl;
+		for (const auto& sort_name : inv_sorting)
 		{
-			strcat(buf, inv_sorting[index]);
-			strcat(buf, " sorting.");
-			strcat(buf, "\n\r    ");
+            message_writer << "\t" << sort_name << std::endl;
 		}
+        message_writer << std::endl;
 
-		send_to_char(buf, character);
+		send_to_char(message_writer.str().c_str(), character);
 	}
 
 	void report_inventory_sorting_to(char_data* character, const char* intro_string)
 	{
-		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
-		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+		bool high_bit_set = PRF_FLAGGED(character, PRF_INV_SORT2) != 0;
+		bool low_bit_set = PRF_FLAGGED(character, PRF_INV_SORT1) != 0;
 
 		int sort_value = high_bit_set << 1 | low_bit_set;
 
-		const char* sort_name = inv_sorting[sort_value];
+		const char* sort_name = inv_sorting[sort_value].data();
 
-		sprintf(buf, "'%s' '%s'.", sort_name);
+		sprintf(buf, "%s %s.\r\n", intro_string, sort_name);
 		send_to_char(buf, character);
 	}
 }
@@ -1339,6 +1342,7 @@ ACMD(do_inventory_sort)
 	{
 		static const char* report_sort_string = "Your current inventory sorting method is";
 		report_inventory_sorting_to(ch, report_sort_string);
+		report_sort_choices_to(ch);
 	}
 }
 

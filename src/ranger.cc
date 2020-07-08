@@ -2159,7 +2159,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 int shoot_calculate_wait(const char_data* archer)
 {
     const int base_beats = 12;
-    int min_beats = 6;
+    int min_beats = 5;
 
     int total_beats = base_beats - ((archer->points.ENE_regen / base_beats) - base_beats);
     total_beats = total_beats - (utils::get_prof_level(PROF_RANGER, *archer) / base_beats);
@@ -2173,7 +2173,7 @@ int shoot_calculate_wait(const char_data* archer)
         min_beats = 3;
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
         total_beats = total_beats * 2;
-        min_beats = 12;
+        min_beats = 9;
     }
 
     total_beats = std::max(total_beats, min_beats);

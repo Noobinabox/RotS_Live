@@ -1296,6 +1296,12 @@ int char_data::get_max_practice_count() const
 }
 
 //============================================================================
+void char_data::update_available_practice_sessions()
+{
+    specials2.spells_to_learn = get_max_practice_count() - get_spent_practice_count();
+}
+
+//============================================================================
 void char_data::update_available_practices()
 {
 	int max_practice_count = get_max_practice_count();

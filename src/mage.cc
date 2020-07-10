@@ -1287,19 +1287,16 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
 ASPELL(spell_magic_missile)
 {
     int mag_power = get_magic_power(caster);
-    int dam = number(1, mag_power / 6) + 12;
+    int dam = 12 + number(1, mag_power / 6);
 
     bool saved = new_saves_spell(caster, victim, 0);
-    if (saved) {
+	if (saved) {
+		act("$N ignores most of the impact.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You ignore most of the impact.", FALSE, caster, 0, victim, TO_VICT);
         dam = dam >> 1;
     }
 
     apply_spell_damage(caster, victim, dam, SPELL_MAGIC_MISSILE, 0);
-
-    if (saved) {
-        act("$N ignores most of the impact.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You ignore most of the impact.", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 void apply_chilled_effect(char_data* caster, char_data* victim)
@@ -1326,7 +1323,7 @@ void apply_chilled_effect(char_data* caster, char_data* victim)
 ASPELL(spell_chill_ray)
 {
     int mag_power = get_magic_power(caster);
-    int dam = number(1, mag_power) / 2 + 20;
+    int dam = 20 + number(1, mag_power) / 2;
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
 
@@ -1343,7 +1340,10 @@ ASPELL(spell_chill_ray)
             cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
             data->on_chill_ray_success(dam);
         }
-    } else {
+	}
+	else {
+		act("$N shrugs off the cold, withstanding most of the chill.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
         if (is_cold_spec) {
             cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
@@ -1352,11 +1352,6 @@ ASPELL(spell_chill_ray)
     }
 
     apply_spell_damage(caster, victim, dam, SPELL_CHILL_RAY, 0);
-
-    if (saved) {
-        act("$N shrugs off the cold, withstanding most of the chill.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1373,10 +1368,10 @@ ASPELL(spell_chill_ray)
 
 ASPELL(spell_lightning_bolt)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 + 25;
+    int dam = 25 + number(0, get_magic_power(caster)) / 2;
 
     if (OUTSIDE(caster) || (utils::get_specialization(*caster) == game_types::PS_Lightning)) {
-        dam += number(0, get_magic_power(caster) / 4) + 4;
+        dam += 4 + number(0, get_magic_power(caster)) / 4;
     } else {
         send_to_char("Your lightning is weaker inside, as you can not call on nature's full force here.\n\r", caster);
     }
@@ -1388,14 +1383,13 @@ ASPELL(spell_lightning_bolt)
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Lightning, game_types::PS_Darkness);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N dodges off to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
     }
+
     apply_spell_damage(caster, victim, dam, SPELL_LIGHTNING_BOLT, 0);
-    if (saved) {
-        act("$N dodges off to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_CHAR);
-        act("You dodge to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1408,9 +1402,9 @@ ASPELL(spell_lightning_bolt)
 
 ASPELL(spell_dark_bolt)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 + 25;
+    int dam = 25 + number(0, get_magic_power(caster)) / 2;
     if (!SUN_PENALTY(caster)) {
-        dam += number(0, get_magic_power(caster) / 4) + 4;
+        dam += 4 + number(0, get_magic_power(caster)) / 4;
     } else {
         send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
     }
@@ -1422,15 +1416,13 @@ ASPELL(spell_dark_bolt)
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Darkness, game_types::PS_Lightning);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N seems unfazed by the darkness.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You are unfazed by the darkness.", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
     }
-    apply_spell_damage(caster, victim, dam, SPELL_DARK_BOLT, 0);
 
-    if (saved) {
-        act("$N seems unfazed by the darkness.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You are unfazed by the darkness.", FALSE, caster, 0, victim, TO_VICT);
-    }
+    apply_spell_damage(caster, victim, dam, SPELL_DARK_BOLT, 0);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1442,7 +1434,10 @@ ASPELL(spell_dark_bolt)
 
 ASPELL(spell_firebolt)
 {
-    int dam = number(1, get_magic_power(caster)) / 4 + number(1, get_magic_power(caster)) / 4 + number(1, get_magic_power(caster)) / 8 + number(1, get_magic_power(caster)) / 8 + number(1, get_magic_power(caster)) / 16 + number(1, get_magic_power(caster)) / 16 + number(1, 65);
+    int dam = number(1, 65) + 
+        number(1, get_magic_power(caster)) / 4 + number(1, get_magic_power(caster)) / 4 + 
+        number(1, get_magic_power(caster)) / 8 + number(1, get_magic_power(caster)) / 8 + 
+        number(1, get_magic_power(caster)) / 16 + number(1, get_magic_power(caster)) / 16;
 
     // Fire spec mages get a minimum damage value on firebolt.
     if (utils::get_specialization(*caster) == game_types::PS_Fire) {
@@ -1451,15 +1446,13 @@ ASPELL(spell_firebolt)
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N dodges off to the side, avoiding part of the bolt!", FALSE, caster, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the bolt!", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
     }
-    apply_spell_damage(caster, victim, dam, SPELL_FIREBOLT, 0);
 
-    if (saved) {
-        act("$N dodges off to the side, avoiding part of the bolt!", FALSE, caster, 0, victim, TO_CHAR);
-        act("You dodge to the side, avoiding part of the bolt!", FALSE, caster, 0, victim, TO_VICT);
-    }
+    apply_spell_damage(caster, victim, dam, SPELL_FIREBOLT, 0);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1474,14 +1467,16 @@ ASPELL(spell_firebolt)
 
 ASPELL(spell_cone_of_cold)
 {
-    int dam = number(1, get_magic_power(caster)) / 2 + get_magic_power(caster) / 4 + 25;
+    int dam = 25 + number(1, get_magic_power(caster)) / 2 + get_magic_power(caster) / 4;
 
     if (victim) {
         bool is_cold_spec = utils::get_specialization(*caster) == game_types::PS_Cold;
 
         int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Cold, game_types::PS_Fire);
         bool saved = new_saves_spell(caster, victim, save_bonus);
-        if (saved) {
+		if (saved) {
+			act("$N shrugs off the cold, withstanding most of the chill.", FALSE, caster, 0, victim, TO_CHAR);
+			act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, caster, 0, victim, TO_VICT);
             dam = dam * 2 / 3;
             if (is_cold_spec) {
                 cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
@@ -1493,12 +1488,8 @@ ASPELL(spell_cone_of_cold)
             cold_spec_data* data = static_cast<cold_spec_data*>(caster->extra_specialization_data.current_spec_info);
             data->on_cone_of_cold_success(dam);
         }
-        apply_spell_damage(caster, victim, dam, SPELL_CONE_OF_COLD, 0);
 
-        if (saved) {
-            act("$N shrugs off the cold, withstanding most of the chill.", FALSE, caster, 0, victim, TO_CHAR);
-            act("You shrug off the cold, withstanding the brunt of the chill.", FALSE, caster, 0, victim, TO_VICT);
-        }
+        apply_spell_damage(caster, victim, dam, SPELL_CONE_OF_COLD, 0);
         return;
     }
 
@@ -1607,10 +1598,10 @@ ASPELL(spell_earthquake)
         tmpch_next = tmpch->next_in_room;
         if (tmpch != caster) {
             bool saved = new_saves_spell(caster, tmpch, 0);
-            if (saved) {
+			if (saved) {
+				act("$N withstands the vibrating earth.", FALSE, caster, 0, tmpch, TO_CHAR);
+				act("You withstand the tremors shaking your body.", FALSE, caster, 0, tmpch, TO_VICT);
                 apply_spell_damage(caster, tmpch, dam_value / 2, SPELL_EARTHQUAKE, 0);
-                act("$N withstands the vibrating earth.", FALSE, caster, 0, tmpch, TO_CHAR);
-                act("You withstand the tremors shaking your body.", FALSE, caster, 0, tmpch, TO_VICT);
             } else {
                 apply_spell_damage(caster, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
             }
@@ -1667,10 +1658,10 @@ ASPELL(spell_earthquake)
                 act("$n falls in.", TRUE, tmpch, 0, 0, TO_ROOM);
                 tmpch->specials.position = POSITION_SITTING;
 
-                if (new_saves_spell(caster, tmpch, 0)) {
+				if (new_saves_spell(caster, tmpch, 0)) {
+					act("$N manages to land on his feet!", FALSE, caster, 0, tmpch, TO_CHAR);
+					act("You manage to land on your feet!", FALSE, caster, 0, tmpch, TO_VICT);
                     apply_spell_damage(caster, tmpch, dam_value, SPELL_EARTHQUAKE, 0);
-                    act("$N manages to land on his feet!", FALSE, caster, 0, tmpch, TO_CHAR);
-                    act("You manage to land on your feet!", FALSE, caster, 0, tmpch, TO_VICT);
                 } else {
                     apply_spell_damage(caster, tmpch, dam_value * 2, SPELL_EARTHQUAKE, 0);
                 }
@@ -1692,7 +1683,7 @@ ASPELL(spell_earthquake)
 
 ASPELL(spell_lightning_strike)
 {
-    int dam = number(0, get_magic_power(caster)) / 2 * 2 + number(0, get_magic_power(caster)) / 2 + 40;
+    int dam = 40 + number(0, get_magic_power(caster)) + number(0, get_magic_power(caster)) / 2;
 
     if (!OUTSIDE(caster)) {
         send_to_char("You can not call lightning inside!\n\r", caster);
@@ -1711,15 +1702,13 @@ ASPELL(spell_lightning_strike)
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Lightning, game_types::PS_Darkness);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N dodges off to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_VICT);
         dam = dam * 2 / 3;
     }
-    apply_spell_damage(caster, victim, dam, SPELL_LIGHTNING_STRIKE, 0);
 
-    if (saved) {
-        act("$N dodges off to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_CHAR);
-        act("You dodge to the side, avoiding part of the lightning!", FALSE, caster, 0, victim, TO_VICT);
-    }
+    apply_spell_damage(caster, victim, dam, SPELL_LIGHTNING_STRIKE, 0);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1734,23 +1723,10 @@ ASPELL(spell_searing_darkness)
 {
     game_types::player_specs caster_spec = utils::get_specialization(*caster);
 
-    int fire_damage = number(0, get_magic_power(caster)) / 2 + 15;
-
-    // Fire spec adds an additional 50% fire damage.
-    if (caster_spec == game_types::PS_Fire) {
-        fire_damage += fire_damage / 2;
-    }
-
-    int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
-    bool saves_fire = new_saves_spell(caster, victim, save_bonus);
-    if (saves_fire) {
-        fire_damage = fire_damage * 1 / 3;
-    }
-
-    int darkness_damage = number(0, get_magic_power(caster)) / 2 + 15;
+    int darkness_damage = 15 + number(0, get_magic_power(caster)) / 2;
 
     if (!SUN_PENALTY(caster)) {
-        darkness_damage += number(0, get_magic_power(caster) / 4) + 5;
+        darkness_damage += 5 + number(0, get_magic_power(caster) / 4);
     } else {
         send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
     }
@@ -1760,14 +1736,24 @@ ASPELL(spell_searing_darkness)
         darkness_damage += darkness_damage / 10;
     }
 
+	int fire_damage = 15 + number(0, get_magic_power(caster)) / 2;
+
+	// Fire spec adds an additional 50% fire damage.
+	if (caster_spec == game_types::PS_Fire) {
+		fire_damage += fire_damage / 2;
+	}
+
+	int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
+	bool saves_fire = new_saves_spell(caster, victim, save_bonus);
+	if (saves_fire) {
+		act("$N avoids most of the fire, but is still consumed by the darkness.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You avoid most of the fire, but the darkness consumes you.", FALSE, caster, 0, victim, TO_VICT);
+		fire_damage = fire_damage * 1 / 3;
+	}
+
     int damage_dealt = fire_damage + darkness_damage;
 
     apply_spell_damage(caster, victim, damage_dealt, SPELL_SEARING_DARKNESS, 0);
-
-    if (saves_fire) {
-        act("$N avoids most of the fire, but is still consumed by the darkness.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You avoid most of the fire, but the darkness consumes you.", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1790,12 +1776,10 @@ bool is_friendly_taget(const char_data* caster, const char_data* victim)
 
 ASPELL(spell_fireball)
 {
-    int fireball_damage;
-
     if (caster->in_room == NOWHERE)
         return;
 
-    fireball_damage = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 30;
+    int fireball_damage = 30 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2;
 
     if (RACE_SOME_ORC(caster))
         fireball_damage -= 5;
@@ -1809,51 +1793,44 @@ ASPELL(spell_fireball)
 
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_CHAR);
+		act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_VICT);
         apply_spell_damage(caster, victim, fireball_damage * 2 / 3, SPELL_FIREBALL, 0);
-        act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_CHAR);
-        act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, victim, TO_VICT);
     } else {
         apply_spell_damage(caster, victim, fireball_damage, SPELL_FIREBALL, 0);
     }
 
-    char_data* next_character = NULL;
+    char_data* next_character = nullptr;
     for (char_data* potential_victim = world[caster->in_room].people; potential_victim; potential_victim = next_character) {
         next_character = potential_victim->next_in_room;
         if (potential_victim == caster || potential_victim == victim)
             continue;
 
+        /* Fire specialization mages won't hit friendly targets. */
+        if (is_fire_spec && is_friendly_taget(caster, victim))
+            continue;
+
         double random_roll = number();
-        bool splashed = false;
-        int damage_divisor = 1;
-        if (potential_victim->specials.fighting == caster && random_roll <= 0.8) {
-            splashed = true;
+        // target_number and damage are higher if the victim is fighting with the caster
+        double target_number = 0.2;
+        int damage_divisor = 5;
+        if (potential_victim->specials.fighting == caster || caster->specials.fighting == potential_victim) {
+            target_number = 0.8;
             damage_divisor = 3;
         }
 
-        if (potential_victim->specials.fighting != caster && random_roll <= 0.2) {
-            /* Fire specialization mages won't hit friendly targets. */
-            if (is_fire_spec) {
-                if (!is_friendly_taget(caster, victim)) {
-                    splashed = true;
-                    damage_divisor = 5;
-                }
-            } else {
-                splashed = true;
-                damage_divisor = 5;
+        if (random_roll <= target_number) {
+            int splash_damage = fireball_damage / damage_divisor;
+            int splash_save_bonus = get_save_bonus(*caster, *potential_victim, game_types::PS_Fire, game_types::PS_Cold);
+            bool splash_saved = new_saves_spell(caster, potential_victim, splash_save_bonus);
+			if (splash_saved) {
+				act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_CHAR);
+				act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_VICT);
+                splash_damage = splash_damage >> 1;
             }
-        }
 
-        if (splashed) {
-            int tmp_save_bonus = get_save_bonus(*caster, *potential_victim, game_types::PS_Fire, game_types::PS_Cold);
-            bool tmp_saved = new_saves_spell(caster, potential_victim, tmp_save_bonus);
-            if (tmp_saved) {
-                apply_spell_damage(caster, potential_victim, fireball_damage / (damage_divisor * 2), SPELL_FIREBALL2, 0);
-                act("$N dodges off to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_CHAR);
-                act("You dodge to the side, avoiding part of the blast!", FALSE, caster, 0, potential_victim, TO_VICT);
-            } else {
-                apply_spell_damage(caster, potential_victim, fireball_damage / damage_divisor, SPELL_FIREBALL2, 0);
-            }
+            apply_spell_damage(caster, potential_victim, splash_damage, SPELL_FIREBALL2, 0);
         }
     }
 }
@@ -1878,18 +1855,16 @@ ASPELL(spell_fireball)
  */
 ASPELL(spell_word_of_pain)
 {
-    int dam = number(1, get_magic_power(caster) / 6) + 12;
+    int dam = 12 + number(1, get_magic_power(caster) / 6);
 
     bool saved = new_saves_spell(caster, victim, 0);
-    if (saved) {
+	if (saved) {
+		act("$N ignores some of your phantom words.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You realize, almost too late, that the words are false.", FALSE, caster, 0, victim, TO_VICT);
         dam = dam >> 1;
     }
-    apply_spell_damage(caster, victim, dam, SPELL_WORD_OF_PAIN, 0);
 
-    if (saved) {
-        act("$N ignores some of your phantom words.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You realize, almost too late, that the words are false.", FALSE, caster, 0, victim, TO_VICT);
-    }
+    apply_spell_damage(caster, victim, dam, SPELL_WORD_OF_PAIN, 0);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1901,10 +1876,12 @@ ASPELL(spell_word_of_pain)
 ASPELL(spell_leach)
 {
     int mag_power = get_magic_power(caster);
-    int dam = number(1, mag_power / 4) + 18;
+    int dam = 18 + number(1, mag_power / 4);
 
     bool saved = new_saves_spell(caster, victim, 0);
-    if (saved) {
+	if (saved) {
+		act("$N fights off the leeching energy.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You fight off the leeching energy.", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
     } else {
         int moves = std::min((int)GET_MOVE(victim), number(0, 5));
@@ -1915,11 +1892,6 @@ ASPELL(spell_leach)
     }
 
     apply_spell_damage(caster, victim, dam, SPELL_LEACH, 0);
-
-    if (saved) {
-        act("$N fights off the leeching energy.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You fight off the leeching energy.", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -2020,10 +1992,7 @@ ASPELL(spell_word_of_shock)
  */
 ASPELL(spell_black_arrow)
 {
-    int level = get_mage_caster_level(caster);
-
-    int min_poison_dam = 5;
-    int dam = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 13;
+    int dam = 13 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2;
 
     if (!SUN_PENALTY(caster) || utils::get_specialization(*caster) == game_types::PS_Darkness) {
         dam += number(0, get_magic_power(caster) / 6) + 2;
@@ -2031,11 +2000,17 @@ ASPELL(spell_black_arrow)
         send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
     }
 
+	const int level = get_mage_caster_level(caster);
+	const int min_poison_dam = 5;
+
     int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Darkness, game_types::PS_Lightning);
     bool saved = new_saves_spell(caster, victim, save_bonus);
-    if (saved) {
+	if (saved) {
+		act("$N seems to resist the effects of your black arrow.", FALSE, caster, 0, victim, TO_CHAR);
+		act("You resist the dark energies of the black arrow.", FALSE, caster, 0, victim, TO_VICT);
         dam >>= 1;
     } else if (number(1, 50) < level && GET_HIT(victim) > min_poison_dam) {
+        // TODO(drelidan):  Should this conditional poison apply after damage is applied?
         affected_type af;
         af.type = SPELL_POISON;
         af.duration = level + 1;
@@ -2045,15 +2020,10 @@ ASPELL(spell_black_arrow)
         affect_join(victim, &af, FALSE, FALSE);
 
         send_to_char("The vile magic poisons you!\n\r", victim);
-        apply_spell_damage((caster) ? caster : victim, victim, min_poison_dam, SPELL_POISON, 0);
+        apply_spell_damage(caster, victim, min_poison_dam, SPELL_POISON, 0);
     }
 
     apply_spell_damage(caster, victim, dam, SPELL_BLACK_ARROW, 0);
-
-    if (saved) {
-        act("$N seems to resist the effects of your black arrow.", FALSE, caster, 0, victim, TO_CHAR);
-        act("You resist the dark energies of the black arrow.", FALSE, caster, 0, victim, TO_VICT);
-    }
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -2063,13 +2033,13 @@ ASPELL(spell_black_arrow)
  */
 ASPELL(spell_word_of_agony)
 {
-    int dam = number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2 + 20;
+    int dam = 20 + number(1, get_magic_power(caster)) / 2 + number(1, get_magic_power(caster)) / 2;
 
     bool saved = new_saves_spell(caster, victim, -2);
-    if (saved) {
+	if (saved) {
+		act("$N seems to resist some of the agony.", FALSE, caster, 0, victim, TO_CHAR);
+		act("Your mind resists some of the agony.", FALSE, caster, 0, victim, TO_VICT);
         apply_spell_damage(caster, victim, dam * 2 / 3, SPELL_WORD_OF_AGONY, 0);
-        act("$N seems to resist some of the agony.", FALSE, caster, 0, victim, TO_CHAR);
-        act("Your mind resists some of the agony.", FALSE, caster, 0, victim, TO_VICT);
     } else {
         apply_chilled_effect(caster, victim);
         apply_spell_damage(caster, victim, dam, SPELL_WORD_OF_AGONY, 0);
@@ -2093,10 +2063,10 @@ ASPELL(spell_shout_of_pain)
         tmpch_next = tmpch->next_in_room;
         if (tmpch != caster) {
             bool saved = new_saves_spell(caster, tmpch, 0);
-            if (saved) {
+			if (saved) {
+				act("$N seems to resist some of the agony.", FALSE, caster, 0, tmpch, TO_CHAR);
+				act("Your mind resists some of the agony.", FALSE, caster, 0, tmpch, TO_VICT);
                 apply_spell_damage(caster, tmpch, dam_value / 2, SPELL_SHOUT_OF_PAIN, 0);
-                act("$N seems to resist some of the agony.", FALSE, caster, 0, tmpch, TO_CHAR);
-                act("Your mind resists some of the agony.", FALSE, caster, 0, tmpch, TO_VICT);
             } else {
                 apply_spell_damage(caster, tmpch, dam_value, SPELL_SHOUT_OF_PAIN, 0);
             }
@@ -2113,23 +2083,22 @@ ASPELL(spell_shout_of_pain)
  */
 ASPELL(spell_spear_of_darkness)
 {
-    int dam = number(0, get_magic_power(caster)) / 5 + number(8, get_magic_power(caster)) / 2 + number(8, get_magic_power(caster)) / 2;
-
-    if (!SUN_PENALTY(caster)) {
-        dam += number(8, get_magic_power(caster)) / 2 + 30;
-    } else {
+    int dam = 0;
+    if (SUN_PENALTY(caster)) {
         send_to_char("Your spell is weakened by the intensity of light.\n\r", caster);
     }
+    else {
+        dam = 30 + number(8, get_magic_power(caster)) / 2;
+    }
+    dam += number(8, get_magic_power(caster)) / 2 + number(8, get_magic_power(caster)) / 2 + number(0, get_magic_power(caster)) / 5;
 
     // Dark spec deals an extra 5% damage with spear of darkness.
     if (utils::get_specialization(*caster) == game_types::PS_Darkness) {
         dam += dam / 20;
     }
 
+    // Just run through new_saves_spell for logging.
     bool saved = new_saves_spell(caster, victim, -20);
-    if (saved) {
-        // characters can't save vs spear
-    }
     damage(caster, victim, dam, SPELL_SPEAR_OF_DARKNESS, 0);
 }
 

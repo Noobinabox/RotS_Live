@@ -2830,6 +2830,13 @@ void nanny(struct descriptor_data* d, char* arg)
                 do_start(d->character);
                 send_to_char(START_MESSG, d->character);
             }
+            
+            /* set character's energy to full on log-in */
+            d->character->specials.ENERGY = ENE_TO_HIT;
+
+            /* ensure character has correct practice sessions available on log-in */
+            d->character->update_available_practices();
+
             do_look(d->character, "", 0, 0, 0);
 
             /* report how long they must wait until unretire */

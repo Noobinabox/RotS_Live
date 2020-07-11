@@ -228,7 +228,7 @@ void update_obj_file(void)
     return;
 }
 
-extern const int generic_scalp;
+extern int generic_scalp;
 
 obj_data* load_scalp(int number);
 
@@ -256,7 +256,8 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
                 head_number = object->extra_flags;
             }
 			obj = load_scalp(head_number);
-        } else {
+        }
+        else {
             obj = read_object(object->item_number, VIRT);
             obj->obj_flags.extra_flags = object->extra_flags;
             obj->obj_flags.timer = object->timer;

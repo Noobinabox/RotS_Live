@@ -877,7 +877,7 @@ ACMD(do_butcher)
 
 /* scalping is changed to beheading, but all the names remain as is */
 
-const int generic_scalp = 1122;
+int generic_scalp = 1122;
 
 obj_data* load_scalp(int number)
 {

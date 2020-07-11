@@ -228,7 +228,7 @@ void update_obj_file(void)
     return;
 }
 
-extern int generic_scalp;
+extern const int generic_scalp;
 
 obj_data* load_scalp(int number);
 
@@ -247,9 +247,16 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
 
     if (real_object(object->item_number) > -1) {
         /* somewhat awkward, accounting for scalps... */
-        if (object->item_number == generic_scalp)
-            obj = load_scalp(object->value[4]);
-        else {
+        if (object->item_number == generic_scalp) {
+            
+            /* player id numbers exceed sh_int size, so we started stashing the id in extra_flags. 
+             * scalp items don't use them, and load scalp knows where to put it. */
+            int head_number = object->value[4];
+            if (object->extra_flags != 0) {
+                head_number = object->extra_flags;
+            }
+			obj = load_scalp(head_number);
+        } else {
             obj = read_object(object->item_number, VIRT);
             obj->obj_flags.extra_flags = object->extra_flags;
             obj->obj_flags.timer = object->timer;
@@ -310,6 +317,12 @@ void Crash_listrent(struct char_data* ch, char* name)
             return;
         }
         if (!feof(fl))
+
+            if (object.item_number_deprecated != DEPRECATED_ID_VALUE) {
+                object.item_number = object.item_number_deprecated;
+                object.item_number_deprecated = DEPRECATED_ID_VALUE;
+            }
+
             if (real_object(object.item_number) > -1) {
                 obj = read_object(object.item_number, VIRT);
 
@@ -472,7 +485,12 @@ FILE* Crash_load(char_data* character)
             return fl;
         }
 
-        if (object.item_number == -17) /* the alias marker */
+        if (object.item_number_deprecated != DEPRECATED_ID_VALUE) {
+            object.item_number = object.item_number_deprecated;
+            object.item_number_deprecated = DEPRECATED_ID_VALUE;
+        }
+
+        if (object.item_number == SENTINEL_ITEM_ID_VALUE) /* the alias marker */
             break;
 
         if (!feof(fl) && !equip_lost) {
@@ -614,18 +632,20 @@ int calc_load_room(struct char_data* ch, int load_result)
     return load_room;
 }
 
-int Crash_obj2store(struct obj_data* obj, struct char_data* ch,
+int Crash_obj2store(obj_data* obj, char_data* ch,
     int pos, FILE* fl)
 {
-    int j;
-    struct obj_file_elem object;
+    obj_file_elem object;
 
-    if (obj->item_number >= 0)
+    // Assign this the deprecation value so we know that this is a new save.
+	object.item_number_deprecated = DEPRECATED_ID_VALUE;
+
+    if (obj->item_number >= 0) {
         object.item_number = obj_index[obj->item_number].virt;
-    else {
-        //  printf("writing -1 obj\n");
+    } else {
         object.item_number = obj->item_number;
     }
+
     object.value[0] = obj->obj_flags.value[0];
     object.value[1] = obj->obj_flags.value[1];
     object.value[2] = obj->obj_flags.value[2];
@@ -636,11 +656,19 @@ int Crash_obj2store(struct obj_data* obj, struct char_data* ch,
     object.timer = obj->obj_flags.timer;
     object.bitvector = obj->obj_flags.bitvector;
     object.loaded_by = obj->loaded_by;
-    object.spare2 = 0;
-    for (j = 0; j < MAX_OBJ_AFFECT; j++)
-        object.affected[j] = obj->affected[j];
+    for (int index = 0; index < MAX_OBJ_AFFECT; index++)
+        object.affected[index] = obj->affected[index];
     object.wear_pos = pos;
-    if (fwrite(&object, sizeof(struct obj_file_elem), 1, fl) < 1) {
+
+    // Stash the player_id in extra_flags for scalps, since we have an array of shorts and player
+    // ids can exceed that.  Scalp loading knows how to interpret this, and assigns the in-game object
+    // an extra_flags of 0.
+    if (object.item_number == generic_scalp)
+    {
+        object.extra_flags = obj->obj_flags.value[4];
+    }
+
+    if (fwrite(&object, sizeof(obj_file_elem), 1, fl) < 1) {
         perror("Writing crash data Crash_obj2store");
         return 0;
     }
@@ -658,7 +686,7 @@ void Crash_follower_save(struct char_data* ch, FILE* fp)
     int x;
     struct obj_file_elem dummy_object;
 
-    dummy_object.item_number = -17;
+    dummy_object.item_number= SENTINEL_ITEM_ID_VALUE;
     for (k = ch->followers; k; k = next_fol) {
         next_fol = k->next;
         if (!IS_NPC(k->follower))
@@ -756,10 +784,18 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
                 perror("Reading crash file: Crash_load.");
                 fclose(fp);
             }
-            if (object.item_number == -17)
+
+            if (object.item_number_deprecated != DEPRECATED_ID_VALUE) {
+                object.item_number = object.item_number_deprecated;
+                object.item_number_deprecated = DEPRECATED_ID_VALUE;
+            }
+
+            if (object.item_number == SENTINEL_ITEM_ID_VALUE)
                 break;
+
             if (object.wear_pos > MAX_WEAR || object.wear_pos < 0)
                 continue;
+
             obj = Crash_obj2char(mob, &object);
             if (!obj) {
                 sprintf(buf, "LOAD ERROR, equipment lost for follower of %s.", GET_NAME(ch));

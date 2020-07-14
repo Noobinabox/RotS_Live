@@ -2230,6 +2230,7 @@ ACMD(do_wizutil)
             act("$n just rerolled you.", FALSE, ch, 0, vict, TO_VICT);
         sprintf(buf, "(GC) %s has rerolled %s.", GET_NAME(ch), GET_NAME(vict));
         log(buf);
+        vict->update_available_practice_sessions();
         break;
     case SCMD_RETIRE:
         if (PLR_FLAGGED(vict, PLR_RETIRED)) {

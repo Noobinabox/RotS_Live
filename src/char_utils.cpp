@@ -1302,16 +1302,6 @@ void char_data::update_available_practice_sessions()
 }
 
 //============================================================================
-void char_data::update_available_practices()
-{
-	int max_practice_count = get_max_practice_count();
-	int spent_practice_count = get_spent_practice_count();
-
-	// This value can be negative in the case a character loses a level.
-	specials2.spells_to_learn = max_practice_count - spent_practice_count;
-}
-
-//============================================================================
 void char_data::reset_skills()
 {
 	if (skills == NULL || knowledge == NULL)

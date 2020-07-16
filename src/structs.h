@@ -471,7 +471,7 @@ public:
     bool is_ranged_weapon() const;
 
 public:
-    sh_int item_number; /* Where in data-base               */
+    int item_number; /* Where in data-base               */
     int in_room; /* In what room -1 when conta/carr  */
 
     struct obj_flag_data obj_flags; /* Object information               */
@@ -1010,7 +1010,7 @@ struct char_player_data {
     char* title; /* PC / NPC s title                     	*/
     char* death_cry; /* NPC - message to give in death        */
     char* death_cry2; /* NPC - message to other rooms         */
-    sh_int corpse_num; /* what object to use as a corpse        */
+    int corpse_num; /* what object to use as a corpse        */
     int race; /* PC /NPC's race                       	*/
     byte sex; /* PC / NPC s sex                       	*/
     byte bodytype; /* PC / NPC hit locations                */
@@ -1839,8 +1839,11 @@ struct follower_file_elem {
 *  file element for object file. BEWARE: Changing it will ruin rent files *
 ************************************************************************ */
 
+constexpr const sh_int SENTINEL_ITEM_ID_VALUE = -17;
+constexpr const sh_int DEPRECATED_ID_VALUE = -255;
 struct obj_file_elem {
-    sh_int item_number;
+
+    sh_int item_number_deprecated; // this used to be the ID number, but it wasn't big enough.
 
     sh_int value[5];
     int extra_flags;
@@ -1850,7 +1853,7 @@ struct obj_file_elem {
     struct obj_affected_type affected[MAX_OBJ_AFFECT];
     sh_int wear_pos;
     int loaded_by; // idnum of immortal who loaded object.  0 if loaded by a zone command etc.
-    int spare2;
+    int item_number; // this used to be spare2, but we needed more item numbers.
 };
 
 #define RENT_UNDEF 0

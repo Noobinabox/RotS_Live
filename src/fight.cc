@@ -2772,7 +2772,7 @@ void perform_violence(int mini_tics)
 
         if (!IS_AFFECTED(fighter, AFF_WAITING) || (GET_WAIT_PRIORITY(fighter) == 29) || (GET_WAIT_PRIORITY(fighter) == 59)) {
             if ((GET_POS(fighter) >= POSITION_FIGHTING) && (fighter->specials.ENERGY <= ENE_TO_HIT)) {
-                fighter->specials.ENERGY += fighter->points.ENE_regen;
+                fighter->specials.ENERGY += utils::get_energy_regen(*fighter);
             } else if (IS_NPC(fighter) && !fighter->delay.wait_value) {
                 do_stand(fighter, "", 0, 0, 0);
             }

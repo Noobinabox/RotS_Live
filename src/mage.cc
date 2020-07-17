@@ -1301,7 +1301,7 @@ ASPELL(spell_magic_missile)
 
 void apply_chilled_effect(char_data* caster, char_data* victim)
 {
-    int energy_lost = victim->specials.ENERGY / 2 + victim->points.ENE_regen * 4;
+    int energy_lost = victim->specials.ENERGY / 2 + utils::get_energy_regen(*victim) * 4;
     victim->specials.ENERGY -= energy_lost;
 
     if (utils::get_specialization(*caster) == game_types::PS_Cold) {

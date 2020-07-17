@@ -832,7 +832,7 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
     send_to_char(buf, ch);
 
     sprintf(buf, "ENERGY: %d, ENE_regen: %d, damage: %d, null_speed: %d, str_speed %d\n\r",
-        k->specials.ENERGY, k->points.ENE_regen, k->points.damage, k->specials.null_speed, k->specials.str_speed);
+        k->specials.ENERGY, utils::get_energy_regen(*k), k->points.damage, k->specials.null_speed, k->specials.str_speed);
     send_to_char(buf, ch);
 
     sprinttype(GET_POS(k), position_types, buf2);

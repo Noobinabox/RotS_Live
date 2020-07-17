@@ -1673,10 +1673,6 @@ public:
 	int get_max_practice_count() const;
     void update_available_practice_sessions();
 
-	// Set's the character's available practice sessions to their max practice count
-	// less their used practice count.
-	void update_available_practices();
-
 	// Resets all known skills and practice sessions for a character.
 	void reset_skills();
 

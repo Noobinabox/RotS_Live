@@ -1806,7 +1806,7 @@ ACMD(do_info)
                             "and your attack speed is %d.\r\n"
                             "Your armour absorbs about %d%% damage, and ",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
-        GET_ENE_REGEN(ch) / 5, get_percent_absorb(ch));
+        utils::get_energy_regen(*ch) / 5, get_percent_absorb(ch));
 
     /* A small blurb on `ch's spellsave; should be its own function */
     if (ch->specials2.saving_throw < 0)
@@ -1956,7 +1956,7 @@ ACMD(do_score)
 
     bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
-        GET_ENE_REGEN(ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
+        utils::get_energy_regen(*ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
 
     /* No XP blurb for immortals */
     if (GET_LEVEL(ch) < LEVEL_IMMORT - 1) {
@@ -1979,6 +1979,11 @@ ACMD(do_score)
         obj_data* weapon = ch->equipment[WIELD];
         if (weapon && (weapon->get_bulk() >= 4 || (weapon->get_bulk() == 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF))) {
             bufpt += sprintf(bufpt, "The heft of your weapon lends power to your blows.\r\n");
+        }
+    } else if(utils::get_specialization(*ch) == game_types::PS_WildFighting && ch->specials.tactics == TACTICS_BERSERK) {
+		float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
+        if (health_percentage <= 0.45f) {
+            bufpt += sprintf(bufpt, "Your fury lends speed to your attacks!\r\n");
         }
     }
 

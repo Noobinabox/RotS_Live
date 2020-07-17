@@ -1262,6 +1262,23 @@ bool is_guardian(const char_data& character)
     return is_npc(character) && is_affected_by(character, AFF_CHARM)
         && character.master != NULL && is_mob_flagged(character, MOB_GUARDIAN);
 }
+
+//============================================================================
+int get_energy_regen(const char_data& character)
+{
+    int regen = character.points.ENE_regen;
+    if (get_specialization(character) == game_types::PS_WildFighting && character.specials.tactics == TACTICS_BERSERK)
+    {
+        float health_percentage = character.tmpabilities.hit / (float)character.abilities.hit;
+        if (health_percentage <= 0.45f)
+        {
+            float bonus_regen = 1.0f - health_percentage - 0.4f; // 15% bonus at 45% health, scaling to 59% at 1% health.
+            regen = regen + static_cast<int>(bonus_regen * regen);
+        }
+        
+    }
+    return regen;
+}
 }
 
 //============================================================================

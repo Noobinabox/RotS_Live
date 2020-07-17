@@ -1237,11 +1237,11 @@ void group_gain(char_data* killer, char_data* dead_man)
         }
     }
 
-    for (char_iter killer_iter = involved_killers.begin(); killer_iter != involved_killers.end(); ++killer_iter) {
+    for (auto killer_iter = involved_killers.begin(); killer_iter != involved_killers.end(); ++killer_iter) {
         // Iterate over the group of each killer.
         char_data* local_killer = *killer_iter;
         if (local_killer->group) {
-            for (char_iter group_iter = local_killer->group->begin(); group_iter != local_killer->group->end(); ++group_iter) {
+            for (auto group_iter = local_killer->group->begin(); group_iter != local_killer->group->end(); ++group_iter) {
                 char_data* groupee = *group_iter;
                 if (groupee->in_room == dead_man->in_room) {
                     if (utils::is_pc(*groupee)) {
@@ -1260,7 +1260,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
                 // Master is in a different group than its pet.  Add credit to the master's group too.
                 if (master->group && (master->group != local_killer->group)) {
-                    for (char_iter group_iter = master->group->begin(); group_iter != master->group->end(); ++group_iter) {
+                    for (auto group_iter = master->group->begin(); group_iter != master->group->end(); ++group_iter) {
                         char_data* groupee = *group_iter;
                         if (groupee->in_room == dead_man->in_room) {
                             if (utils::is_pc(*groupee)) {
@@ -1278,7 +1278,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
     int perception_total = 0;
     int level_total = 0;
-    for (char_set_iter iter = player_killers.begin(); iter != player_killers.end(); ++iter) {
+    for (auto iter = player_killers.begin(); iter != player_killers.end(); ++iter) {
         level_total += GET_LEVELB(*iter);
         perception_total += GET_PERCEPTION(*iter);
     }
@@ -1304,7 +1304,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
     share = share / level_total;
 
-    for (char_set_iter killer_iter = player_killers.begin(); killer_iter != player_killers.end(); ++killer_iter) {
+    for (auto killer_iter = player_killers.begin(); killer_iter != player_killers.end(); ++killer_iter) {
         char_data* character = *killer_iter;
         if (character->player.level >= LEVEL_IMMORT)
             continue;
@@ -1329,6 +1329,23 @@ void group_gain(char_data* killer, char_data* dead_man)
         vsend_to_char(character, "You receive your share of experience -- %d points.\r\n", tmp);
         gain_exp(character, tmp);
         change_alignment(character, dead_man);
+
+        if (utils::get_specialization(*character) == game_types::PS_WildFighting && character->specials.tactics == TACTICS_BERSERK) {
+            int killer_level = utils::get_level_legend_cap(*character);
+            int victim_level = utils::get_level_legend_cap(*dead_man);
+
+            // grant healing regen if the victim is at least half the killer's level
+            if (victim_level * 2 >= killer_level)
+            {
+                // let people know that shit's getting real
+				act("%s roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
+				act("You roar and feel a rush of vigor as your bloodlust is satisfied!", FALSE, character, nullptr, 0, TO_CHAR);
+
+                // restore 20% of the killer's missing health.
+                int missing_health = character->abilities.hit - character->tmpabilities.hit;
+                character->tmpabilities.hit += missing_health / 5;
+            }
+        }
 
         /* save only 10% of the time to avoid lag in big groups */
         if (number(0, 9) == 0) {

@@ -893,38 +893,25 @@ ACMD(do_kick)
         return;
     }
 
-    /* %20 chance to swing the wrong person */
-    if (attacktype == SKILL_SWING && !number(0, 4)) {
-        num = 0;
-        for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-            if (t != ch && t != victim)
-                num++;
-
-        if (!num) {
-            damage(ch, victim, 0, attacktype, 0);
-            goto delay;
-        }
-
-        num = number(1, num);
-
-        for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-            if (t != ch && t != victim) {
-                --num;
-                if (!num)
-                    break;
-            }
-
-        damage(ch, victim, 0, attacktype, 0);
-
-        victim = t;
-    }
-
+    
     prob = get_prob_skill(ch, victim, attacktype);
-
     dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250;
 
-    if (attacktype == SKILL_SWING)
-        dam = dam * 3 / 2;
+    if (attacktype == SKILL_SWING) {
+        dam *= 1.5f;
+
+        // if berserking and low on health, boost swing damage
+        if (ch->specials.tactics == TACTICS_BERSERK) {
+            float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
+            if (health_percentage <= 0.1f) {
+                dam *= 1.5f;
+            } else if (health_percentage <= 0.25f ) { 
+                dam *= 1.3f;
+            } else if (health_percentage <= 0.45f) {
+                dam *= 1.1f;
+            }
+        }
+    }
 
     if (prob < 0)
         damage(ch, victim, 0, attacktype, 0);

@@ -1334,8 +1334,8 @@ void group_gain(char_data* killer, char_data* dead_man)
             int killer_level = utils::get_level_legend_cap(*character);
             int victim_level = utils::get_level_legend_cap(*dead_man);
 
-            // grant healing regen if the victim is at least half the killer's level
-            if (victim_level * 2 >= killer_level)
+            // grant healing regen if the victim is at least 60% the killer's level
+            if (victim_level * 6 / 10 >= killer_level)
             {
                 // let people know that shit's getting real
 				act("%s roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
@@ -1885,7 +1885,20 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     /* Spell damage logging */
     record_spell_damage(attacker, victim, attacktype, dam);
 
+    int previous_health = GET_HIT(victim);
     GET_HIT(victim) -= dam;
+
+    // if victim is a berserker, let people know that rage may be entered.
+    if (victim->specials.tactics == TACTICS_BERSERK && utils::get_specialization(*victim) == game_types::PS_WildFighting) {
+        float previous_health_percentage = previous_health / (float)victim->abilities.hit;
+        if (previous_health_percentage >= 0.45f) {
+            float current_health_percentage = victim->tmpabilities.hit / (float)victim->abilities.hit;
+            if (current_health_percentage <= 0.45f && current_health_percentage >= 0.0f) {
+                utils::broadcast_rage_to_room(victim);
+            }
+        }
+    }
+
     if (utils::is_pc(*attacker) || (attacker->master && utils::is_affected_by(*attacker, AFF_CHARM))) {
         attacker->damage_details.add_damage(attacktype, dam);
     }

@@ -1279,6 +1279,15 @@ int get_energy_regen(const char_data& character)
     }
     return regen;
 }
+
+//============================================================================
+void broadcast_rage_to_room(char_data* character)
+{
+	// let people know that shit's getting real
+	act("%s roars and enters a battle frenzy!", FALSE, character, nullptr, 0, TO_ROOM);
+	act("You feel your pulse quicken as you enter a battle frenzy!", FALSE, character, nullptr, 0, TO_CHAR);
+}
+
 }
 
 //============================================================================

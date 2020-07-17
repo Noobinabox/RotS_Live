@@ -1380,38 +1380,56 @@ ACMD(do_tactics)
             send_to_char(buf, ch);
             return;
         }
-        if ((GET_TACTICS(ch) == TACTICS_BERSERK))
-            if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
-                send_to_char("You failed to cool down.\n\r", ch);
-                return;
-            }
+
+        if ((GET_TACTICS(ch) == TACTICS_BERSERK)) {
+			if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
+				send_to_char("You failed to cool down.\n\r", ch);
+				return;
+			}
+        }
+        
+        int current_tactics = GET_TACTICS(ch);
+        int target_tactics = TACTICS_NORMAL;
 
         switch (tmp) {
         case 0:
-            SET_TACTICS(ch, TACTICS_DEFENSIVE);
+            target_tactics = TACTICS_DEFENSIVE;
             break;
 
         case 1:
-            SET_TACTICS(ch, TACTICS_CAREFUL);
+            target_tactics = TACTICS_CAREFUL;
             break;
 
         case 2:
-            SET_TACTICS(ch, TACTICS_NORMAL);
+            target_tactics = TACTICS_NORMAL;
             break;
 
         case 3:
-            SET_TACTICS(ch, TACTICS_AGGRESSIVE);
+            target_tactics = TACTICS_AGGRESSIVE;
             break;
 
         case 4:
-            SET_TACTICS(ch, TACTICS_BERSERK);
+            target_tactics = TACTICS_BERSERK;
             break;
 
         default:
+            target_tactics = 99;
             SET_TACTICS(ch, 99);
             break;
         }
+
+
+        if (target_tactics != current_tactics) {
+            SET_TACTICS(ch, target_tactics);
+            if (target_tactics == TACTICS_BERSERK && utils::get_specialization(*ch) == game_types::PS_WildFighting) {
+                float current_health = ch->tmpabilities.hit / (float)ch->abilities.hit;
+                if (current_health <= 0.45f) {
+                    utils::broadcast_rage_to_room(ch);
+                }
+            }
+        }
     }
+
 
     switch (GET_TACTICS(ch)) {
     case TACTICS_DEFENSIVE:

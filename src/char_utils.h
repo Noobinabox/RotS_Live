@@ -138,5 +138,6 @@ void split_gold(const group_data& group, int gold);
 void split_exp(const group_data& group, int exp);
 
 int get_energy_regen(const char_data& character);
+void broadcast_rage_to_room(char_data* character);
 
 }

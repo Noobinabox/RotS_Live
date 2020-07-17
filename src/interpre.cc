@@ -2835,7 +2835,7 @@ void nanny(struct descriptor_data* d, char* arg)
             d->character->specials.ENERGY = ENE_TO_HIT;
 
             /* ensure character has correct practice sessions available on log-in */
-            d->character->update_available_practices();
+            d->character->update_available_practice_sessions();
 
             do_look(d->character, "", 0, 0, 0);
 

@@ -1261,8 +1261,9 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
     int save_bonus = 0;
     game_types::player_specs caster_spec = utils::get_specialization(caster);
     game_types::player_specs victim_spec = utils::get_specialization(victim);
+    game_types::player_specs arcane_spec = game_types::player_specs::PS_Arcane;
 
-    if (caster_spec == primary_spec) {
+    if (caster_spec == primary_spec || caster_spec == arcane_spec) {
         save_bonus -= 2;
     } else if (caster_spec == opposing_spec) {
         save_bonus += 2;
@@ -1270,7 +1271,7 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
 
     if (victim_spec == primary_spec) {
         save_bonus += 2;
-    } else if (victim_spec == opposing_spec) {
+    } else if (victim_spec == opposing_spec || victim_spec == arcane_spec) {
         save_bonus -= 2;
     }
 

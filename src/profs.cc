@@ -763,11 +763,21 @@ void recalc_abilities(char_data* character)
 
             game_types::weapon_type w_type = weapon->get_weapon_type();
             GET_ENE_REGEN(character) = do_squareroot(tmp / 100, character) / 20;
+
+            // Custom energy regen based on race, etc.
             if (GET_RACE(character) == RACE_DWARF && weapon_skill_num(w_type) == SKILL_AXE) {
                 GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
             } else if (GET_RACE(character) == RACE_HARADRIM && weapon_skill_num(w_type) == SKILL_SPEARS) {
                 GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 20, 20);
             }
+
+            // weapon masters get +10% attack speed with piercers and whips.
+            if (utils::get_specialization(*character) == game_types::PS_WeaponMaster) {
+                if (w_type == game_types::WT_PIERCING || w_type == game_types::WT_WHIPPING) {
+                    GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
+                }
+            }
+
         } else {
             GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);
 

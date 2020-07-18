@@ -2251,11 +2251,30 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         /* First, remove minimum absorb */
         int damage_reduction = armor->obj_flags.value[1];
 
-        /* Spears hit the armor, but then go right through it */
-        if (w_type == TYPE_SPEARS) {
-            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 200;
-        } else {
-            damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / 100;
+        int divisor = 100;
+		if (w_type == TYPE_SPEARS) {
+			/* Spears hit the armor, but then go right through it */
+            divisor += 50;
+
+            // Weapon masters have a chance to double their armor punching with spears.
+            if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+                if (number() <= weapon_master::stabbing_proc_chance) {
+                    divisor *= 2;
+                    // TODO(drelidan):  Some nifty message here.
+                }
+            }
+        }
+
+        damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / divisor;
+
+        // Weapon masters have a chance to bypass the vast majority of armor with daggers.
+        if (w_type == TYPE_PIERCE) {
+			if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+				if (number() <= weapon_master::piercing_proc_chance) {
+					damage_reduction = armor->obj_flags.value[1];
+                    // TODO(drelidan):  Some nifty message here.
+				}
+			}
         }
 
         /* Heavy fighters get an extra 10% damage absorption. */
@@ -2516,6 +2535,30 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
     dodge_malus = get_real_dodge(victim) + evasion_malus;
     OB -= dodge_malus;
 
+    bool ignore_shield = false;
+
+    // Weapon masters have a chance to ignore a shield's contribution to dodge (and parry, but that's handled later).
+	if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+		if (w_type == TYPE_WHIP) {
+            if (number() <= weapon_master::whipping_proc_chance) {
+                ignore_shield = true;
+                // TODO(drelidan):  Some nifty message here.
+            }
+        } else if (w_type == TYPE_FLAIL) {
+            if (number() <= weapon_master::flail_proc_chance) {
+                ignore_shield = true;
+                // TODO(drelidan):  Some nifty message here.
+            }
+        }
+	}
+
+    if (ignore_shield) {
+        obj_data* shield = victim->equipment[WEAR_SHIELD];
+        if (shield != nullptr) {
+            OB += shield->obj_flags.value[1];
+        }
+    }
+
     if (GET_POS(victim) < POSITION_FIGHTING)
         OB += 10 * (POSITION_FIGHTING - GET_POS(victim));
 
@@ -2539,8 +2582,17 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
             else
                 do_dodge(ch, victim, w_type);
         } else {
-            if (GET_POS(victim) > POSITION_STUNNED)
+            if (GET_POS(victim) > POSITION_STUNNED) {
                 OB -= get_real_parry(victim) * GET_CURRENT_PARRY(victim) / 100;
+
+				if (ignore_shield) {
+					obj_data* shield = victim->equipment[WEAR_SHIELD];
+					if (shield != nullptr) {
+						OB += shield->obj_flags.value[0];
+					}
+				}
+            }
+                
 
             SET_CURRENT_PARRY(victim) = GET_CURRENT_PARRY(victim) * 2 / 3;
 
@@ -2582,6 +2634,23 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
 				   */
                 dam += GET_DAMAGE(ch) * 10;
                 tmp = number(0, 100);
+
+				// Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
+				if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+					if (wielded != nullptr) {
+						auto wielded_type = wielded->get_weapon_type();
+						if (wielded_type == game_types::WT_CLEAVING || wielded_type == game_types::WT_CLEAVING_TWO) {
+							if (number() <= weapon_master::cleave_proc_chance) {
+								int new_roll = number(0, 100);
+								if (new_roll > tmp) {
+                                    // TODO(drelidan):  Add "act" message so people know this proc'd.
+                                    tmp = new_roll;
+								}
+							}
+						}
+					}
+				}
+
                 /* damage divided again by 10 */
                 dam = (dam * (OB + 100) * (10000 + (tmp * tmp) + (IS_TWOHANDED(ch) ? 2 : 1) * 133 * GET_BAL_STR(ch))) / 13300000;
 
@@ -2681,6 +2750,20 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
     }
 }
 
+bool is_victim_around(const char_data* character)
+{
+	// The character is no longer fighting anyone.  Can't double-hit.
+	if (character->specials.fighting == NULL)
+		return false;
+
+	// The character's enemy is no longer in the room (probably wimpied out).  Can't
+	// attack an enemy that isn't there.
+	if (character->specials.fighting->in_room != character->in_room)
+		return false;
+
+    return true;
+}
+
 bool can_double_hit(const char_data* character)
 {
     assert(character);
@@ -2698,21 +2781,12 @@ bool can_double_hit(const char_data* character)
     if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)
         return false;
     
-    // The character is no longer fighting anyone.  Can't double-hit.
-    if (character->specials.fighting == NULL)
-        return false;
-
-    // The character's enemy is no longer in the room (probably wimpied out).  Can't
-    // attack an enemy that isn't there.
-    if (character->specials.fighting->in_room != character->in_room)
-        return false;
-
-    return true;
+    return is_victim_around(character);
 }
 
 bool does_double_hit_proc(const char_data* character)
 {
-    // Double-hit has a 25% proc chance.
+    // Double-hit has a 20% proc chance.
     return number() >= 0.80;
 }
 
@@ -2723,13 +2797,7 @@ bool can_beorning_swipe(struct char_data* character)
     if (GET_RACE(character) != RACE_BEORNING)
         return false;
 
-    if (character->specials.fighting == NULL)
-        return false;
-
-    if (character->specials.fighting->in_room != character->in_room)
-        return false;
-
-    return true;
+	return is_victim_around(character);
 }
 
 bool does_beorning_swipe_proc(struct char_data* character)
@@ -2741,6 +2809,30 @@ bool does_beorning_swipe_proc(struct char_data* character)
     chance = (skill_level * (warrior_level + 4)) / 100;
     chance = (100 - chance) / 100;
     return number() >= chance;
+}
+
+bool can_weapon_master_double_strike(const char_data* character)
+{
+	assert(character);
+
+	if (utils::get_specialization(*character) != game_types::PS_WeaponMaster)
+		return false;
+
+	obj_data* weapon = character->equipment[WIELD];
+	if (!weapon)
+		return false;
+
+    // Only slashers can double strike
+    auto weapon_type = weapon->get_weapon_type();
+    if (weapon_type != game_types::WT_SLASHING && weapon_type != game_types::WT_SLASHING_TWO)
+        return false;
+
+	return is_victim_around(character);
+}
+
+bool does_weapon_master_double_strike(const char_data* character)
+{
+    return number() >= weapon_master::slashing_proc_chance;
 }
 
 namespace {
@@ -2826,13 +2918,24 @@ void perform_violence(int mini_tics)
                         hit(fighter, victim, TYPE_UNDEFINED);
                     }
 
-                    if (can_beorning_swipe(fighter) && does_beorning_swipe_proc(fighter)) {
+                    else if (can_beorning_swipe(fighter) && does_beorning_swipe_proc(fighter)) {
                         char_data* victim = fighter->specials.fighting;
                         act("You rear back and extend your foreleg swiping at $N!", FALSE, fighter, NULL, victim, TO_CHAR);
                         act("$n rears back and extends $s foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
                         act("$n rears back and extends $s foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
+
                         fighter->specials.ENERGY = current_energy;
                         hit(fighter, victim, TYPE_UNDEFINED);
+                    }
+                    
+                    else if (can_weapon_master_double_strike(fighter) && does_weapon_master_double_strike(fighter)) {
+						char_data* victim = fighter->specials.fighting;
+						act("You rear back and extend your foreleg swiping at $N!", FALSE, fighter, NULL, victim, TO_CHAR);
+						act("$n rears back and extends $s foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
+						act("$n rears back and extends $s foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
+
+						fighter->specials.ENERGY = current_energy;
+						hit(fighter, victim, TYPE_UNDEFINED);
                     }
                 } else /* Not in same room */
                 {

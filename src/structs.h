@@ -828,9 +828,32 @@ enum player_specs {
     PS_Archery,
     PS_Darkness,
     PS_Arcane,
+    PS_WeaponMaster,
     PS_Count,
 };
 }
+
+namespace weapon_master {
+	constexpr float calc_bludgeon_chance(int damage)
+    {
+        return damage * 0.01f;
+	}
+
+    constexpr float calc_smiting_chance(int damage) 
+    {
+        return damage * 0.005f;
+    }
+
+	constexpr const float cleave_proc_chance = 0.25f;
+
+	constexpr const float flail_proc_chance = 0.40f;
+	constexpr const float piercing_proc_chance = 0.25f;
+	constexpr const float slashing_proc_chance = 0.25f;
+	constexpr const float stabbing_proc_chance = 0.50f;
+	constexpr const float whipping_proc_chance = 0.40f;
+
+}
+
 
 #define PLRSPEC_NONE 0
 #define PLRSPEC_FIRE 1
@@ -850,6 +873,7 @@ enum player_specs {
 #define PLRSPEC_ARCH 15
 #define PLRSPEC_DARK 16
 #define PLRSPEC_ARCANE 17
+#define PLRSPEC_WMSR 18
 
 /* Races for PCS */
 #define RACE_GOD 0

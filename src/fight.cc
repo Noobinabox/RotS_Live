@@ -2472,16 +2472,16 @@ int natural_attack_dam(struct char_data* attacker)
 }
 
 //============================================================================
-void hit(struct char_data* ch, struct char_data* victim, int type)
+void hit(char_data* ch, char_data* victim, int type)
 {
-    struct obj_data* wielded = 0; /* weapon that ch wields */
+    obj_data* wielded = 0; /* weapon that ch wields */
     int w_type; /* weapon type, like TYPE_SLASH */
     int OB;
     int dam = 0, dodge_malus, evasion_malus;
     int location;
     int tmp; /* rolled number stored as the chance to hit, adds OB */
-    struct waiting_type tmpwtl;
-    extern struct race_bodypart_data bodyparts[16];
+    waiting_type tmpwtl;
+    extern race_bodypart_data bodyparts[16];
 
     if (ch->in_room != victim->in_room) {
         log("SYSERR: NOT SAME ROOM WHEN FIGHTING!");
@@ -2633,7 +2633,7 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
 				   * 1 and 2, with  numbers close to 1 more probable
 				   */
                 dam += GET_DAMAGE(ch) * 10;
-                tmp = number(0, 100);
+                int damage_roll = number(0, 100);
 
 				// Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
 				if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
@@ -2642,9 +2642,9 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
 						if (wielded_type == game_types::WT_CLEAVING || wielded_type == game_types::WT_CLEAVING_TWO) {
 							if (number() <= weapon_master::cleave_proc_chance) {
 								int new_roll = number(0, 100);
-								if (new_roll > tmp) {
+								if (new_roll > damage_roll) {
                                     // TODO(drelidan):  Add "act" message so people know this proc'd.
-                                    tmp = new_roll;
+                                    damage_roll = new_roll;
 								}
 							}
 						}
@@ -2652,7 +2652,7 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
 				}
 
                 /* damage divided again by 10 */
-                dam = (dam * (OB + 100) * (10000 + (tmp * tmp) + (IS_TWOHANDED(ch) ? 2 : 1) * 133 * GET_BAL_STR(ch))) / 13300000;
+                dam = (dam * (OB + 100) * (10000 + (damage_roll * damage_roll) + (IS_TWOHANDED(ch) ? 2 : 1) * 133 * GET_BAL_STR(ch))) / 13300000;
 
                 // Add in "specialization" damage before armor.
                 dam = check_find_weakness(ch, victim, dam);
@@ -2668,6 +2668,43 @@ void hit(struct char_data* ch, struct char_data* victim, int type)
                     dam += dam / 2;
 
                 dam = std::max(0, dam); /* Not less than 0 damage */
+
+				// Weapon masters with clubs and smiters have a chance to proc additional effects based on damage dealt.
+				if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+					if (wielded != nullptr) {
+						auto wielded_type = wielded->get_weapon_type();
+						if (wielded_type == game_types::WT_BLUDGEONING || wielded_type == game_types::WT_BLUDGEONING_TWO) {
+							if (number() <= weapon_master::bludgeon_proc_chance) {
+                                int lost_energy = dam * 10; // victim loses 10x damage taken as energy
+                                victim->specials.ENERGY -= lost_energy;
+                                // TODO(drelidan):  Add "act" messages here.
+							}
+						} else if(wielded_type == game_types::WT_SMITING) {
+                            // damage influences chance to inflict haze
+							if (number() <= weapon_master::smiting_proc_chance(dam)) {
+                                // victim is afflicted with haze
+								
+                                auto haze = affected_by_spell(victim, SPELL_HAZE);
+                                if (haze == nullptr) {
+                                    affected_type af;
+									af.type = SPELL_HAZE;
+									af.duration = 1; // the spell's default duration
+									af.modifier = 1;
+									af.location = APPLY_NONE;
+									af.bitvector = AFF_HAZE;
+
+									affect_to_char(victim, &af);
+
+                                    // TODO(drelidan):  change message
+									act("You feel dizzy as your surroundings seem to blur and twist.\n\r", TRUE, victim, 0, ch, TO_CHAR);
+									act("$n staggers, overcome by dizziness!", FALSE, victim, 0, 0, TO_ROOM);
+								} else {
+                                    haze->duration = 1; // refresh duration
+                                }
+							}
+                        }
+					}
+				}
 
                 damage(ch, victim, dam, w_type, location);
 

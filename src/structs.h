@@ -834,16 +834,11 @@ enum player_specs {
 }
 
 namespace weapon_master {
-	constexpr float calc_bludgeon_chance(int damage)
-    {
-        return damage * 0.01f;
-	}
-
-    constexpr float calc_smiting_chance(int damage) 
+    constexpr float smiting_proc_chance(int damage) 
     {
         return damage * 0.005f;
     }
-
+    constexpr const float bludgeon_proc_chance = 0.25f;
 	constexpr const float cleave_proc_chance = 0.25f;
 
 	constexpr const float flail_proc_chance = 0.40f;

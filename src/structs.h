@@ -839,7 +839,7 @@ namespace weapon_master {
         return damage * 0.005f;
     }
     constexpr const float bludgeon_proc_chance = 0.25f;
-	constexpr const float cleave_proc_chance = 0.25f;
+	constexpr const float cleave_proc_chance = 0.50f;
 
 	constexpr const float flail_proc_chance = 0.40f;
 	constexpr const float piercing_proc_chance = 0.25f;

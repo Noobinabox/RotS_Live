@@ -2261,6 +2261,8 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
                 if (number() <= weapon_master::stabbing_proc_chance) {
                     divisor *= 2;
                     // TODO(drelidan):  Some nifty message here.
+                    sprintf(buf, "Spear proc!\r\n");
+                    send_to_char(buf, ch);
                 }
             }
         }
@@ -2273,6 +2275,8 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
 				if (number() <= weapon_master::piercing_proc_chance) {
 					damage_reduction = armor->obj_flags.value[1];
                     // TODO(drelidan):  Some nifty message here.
+					sprintf(buf, "Dagger proc!\r\n");
+					send_to_char(buf, ch);
 				}
 			}
         }
@@ -2543,11 +2547,15 @@ void hit(char_data* ch, char_data* victim, int type)
             if (number() <= weapon_master::whipping_proc_chance) {
                 ignore_shield = true;
                 // TODO(drelidan):  Some nifty message here.
+				sprintf(buf, "Whip proc!  Shield is ignored for this hit.\r\n");
+				send_to_char(buf, ch);
             }
         } else if (w_type == TYPE_FLAIL) {
             if (number() <= weapon_master::flail_proc_chance) {
                 ignore_shield = true;
                 // TODO(drelidan):  Some nifty message here.
+				sprintf(buf, "Flail proc!  Shield is ignored for this hit.\r\n");
+				send_to_char(buf, ch);
             }
         }
 	}
@@ -2588,7 +2596,8 @@ void hit(char_data* ch, char_data* victim, int type)
 				if (ignore_shield) {
 					obj_data* shield = victim->equipment[WEAR_SHIELD];
 					if (shield != nullptr) {
-						OB += shield->obj_flags.value[0];
+                        // scale the shield's parry from the user's current parry
+						OB += shield->obj_flags.value[0] * GET_CURRENT_PARRY(victim) / 100;
 					}
 				}
             }
@@ -2644,7 +2653,10 @@ void hit(char_data* ch, char_data* victim, int type)
 								int new_roll = number(0, 100);
 								if (new_roll > damage_roll) {
                                     // TODO(drelidan):  Add "act" message so people know this proc'd.
+									sprintf(buf, "Axe proc!  Replaced '%d' with '%d'\r\n", damage_roll, new_roll);
+									send_to_char(buf, ch);
                                     damage_roll = new_roll;
+                                    
 								}
 							}
 						}
@@ -2660,6 +2672,18 @@ void hit(char_data* ch, char_data* victim, int type)
                 dam = heavy_fighting_effect(*ch, dam);
                 dam = defender_effect(ch, victim, dam);
                 dam = frenzy_effect(*ch, dam);
+
+                if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
+                    if (wielded != nullptr) {
+                        auto wielded_type = wielded->get_weapon_type();
+                        if (wielded_type == game_types::WT_CLEAVING || wielded_type == game_types::WT_CLEAVING_TWO ||
+                            wielded_type == game_types::WT_FLAILING) {
+                            // increase damage by 15% for axes and flails
+                            dam = dam * 115 / 100;
+                        }
+                    }
+                }
+
 
                 tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
                 dam = armor_effect(ch, victim, dam, tmp, w_type);
@@ -2677,6 +2701,11 @@ void hit(char_data* ch, char_data* victim, int type)
 							if (number() <= weapon_master::bludgeon_proc_chance) {
                                 int lost_energy = dam * 10; // victim loses 10x damage taken as energy
                                 victim->specials.ENERGY -= lost_energy;
+                                victim->specials.ENERGY = std::max(victim->specials.ENERGY, 0);
+
+								sprintf(buf, "Club proc!  Sapped '%d' energy.\r\n", lost_energy);
+								send_to_char(buf, ch);
+
                                 // TODO(drelidan):  Add "act" messages here.
 							}
 						} else if(wielded_type == game_types::WT_SMITING) {
@@ -2869,7 +2898,7 @@ bool can_weapon_master_double_strike(const char_data* character)
 
 bool does_weapon_master_double_strike(const char_data* character)
 {
-    return number() >= weapon_master::slashing_proc_chance;
+    return number() <= weapon_master::slashing_proc_chance;
 }
 
 namespace {

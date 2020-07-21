@@ -452,7 +452,6 @@ int get_weapon_damage(struct obj_data* obj)
 	 *   (2) If the wielder has low weapon skill for the object, then
 	 *       we reduce the damage.
 	 */
-    bool bApplySpecBonus = false;
     if (owner != NULL) {
         /* Case (1) */
         if (obj_level > (GET_LEVEL(owner) * 4 / 3 + 7))
@@ -460,15 +459,6 @@ int get_weapon_damage(struct obj_data* obj)
 
         /* Case (2): for skill=100, use full obj_level; skill=0, use obj_level/2 */
         obj_level = obj_level * GET_SKILL(owner, skill_type) / 100;
-
-        // Weapon masters get +10% damage with flails and axes.
-        if (utils::get_specialization(*owner) == game_types::PS_WeaponMaster) {
-            auto weapon_type = obj->obj_flags.get_weapon_type();
-            if (weapon_type == game_types::WT_CLEAVING || weapon_type == game_types::WT_CLEAVING_TWO ||
-                weapon_type == game_types::WT_FLAILING) {
-                bApplySpecBonus = true;
-            }
-        }
     }
 
     switch (obj->obj_flags.value[3]) {
@@ -526,10 +516,6 @@ int get_weapon_damage(struct obj_data* obj)
 
     if (dam_coef > 90)
         dam_coef = 90 + (dam_coef - 90) * 3 / 4;
-
-    // Weapon masters get +10% damage in certain conditions.
-    if (bApplySpecBonus)
-        dam_coef = dam_coef * 11 / 10;
 
     return dam_coef; /* returning damage * 10 */
 }

@@ -900,17 +900,9 @@ ACMD(do_kick)
     if (attacktype == SKILL_SWING) {
         dam *= 1.5f;
 
-        // if berserking and low on health, boost swing damage
-        if (ch->specials.tactics == TACTICS_BERSERK) {
-            float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
-            if (health_percentage <= 0.1f) {
-                dam *= 1.5f;
-            } else if (health_percentage <= 0.25f ) { 
-                dam *= 1.3f;
-            } else if (health_percentage <= 0.45f) {
-                dam *= 1.1f;
-            }
-        }
+        // potential bonus damage from wild fighting
+        wild_fighting_handler wild_fighting(ch);
+        dam *= wild_fighting.get_wild_swing_damage_multiplier();
     }
 
     if (prob < 0)

@@ -1388,7 +1388,7 @@ ACMD(do_tactics)
 			}
         }
         
-        int current_tactics = GET_TACTICS(ch);
+        wild_fighting_handler wild_fighting(ch);
         int target_tactics = TACTICS_NORMAL;
 
         switch (tmp) {
@@ -1414,20 +1414,11 @@ ACMD(do_tactics)
 
         default:
             target_tactics = 99;
-            SET_TACTICS(ch, 99);
             break;
         }
 
-
-        if (target_tactics != current_tactics) {
-            SET_TACTICS(ch, target_tactics);
-            if (target_tactics == TACTICS_BERSERK && utils::get_specialization(*ch) == game_types::PS_WildFighting) {
-                float current_health = ch->tmpabilities.hit / (float)ch->abilities.hit;
-                if (current_health <= 0.45f) {
-                    utils::broadcast_rage_to_room(ch);
-                }
-            }
-        }
+        SET_TACTICS(ch, target_tactics);
+        wild_fighting.update_tactics(target_tactics);
     }
 
 

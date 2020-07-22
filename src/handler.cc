@@ -1371,23 +1371,13 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
         SET_DODGE(character) += item->obj_flags.value[3];
 
     else if (GET_ITEM_TYPE(item) == ITEM_WEAPON) {
-        SET_OB(character) += item->obj_flags.value[0];
-        SET_PARRY(character) += item->obj_flags.value[1];
-
-        if (utils::get_specialization(*character) == game_types::PS_WeaponMaster) {
-            auto weapon_type = item->obj_flags.get_weapon_type();
-
-            // weapon masters get +5 OB with slashers, bludgeoners, and smiters.
-            if (weapon_type == game_types::WT_SLASHING || weapon_type == game_types::WT_SLASHING_TWO ||
-                weapon_type == game_types::WT_BLUDGEONING || weapon_type == game_types::WT_BLUDGEONING_TWO ||
-                weapon_type == game_types::WT_SMITING) {
-                SET_OB(character) += 5;
-            }
-            // weapon masters get +10 parry with spears
-            else if (weapon_type == game_types::WT_STABBING) {
-                SET_PARRY(character) += 10;
-            }
-        }
+        // weapon masters get bonus ob/pb with some weapons.
+		weapon_master_handler weapon_master(character);
+		int bonus_ob = weapon_master.get_bonus_OB(item);
+		int bonus_pb = weapon_master.get_bonus_PB(item);
+        
+        SET_OB(character) += item->obj_flags.value[0] + bonus_ob;
+        SET_PARRY(character) += item->obj_flags.value[1] + bonus_pb;
 
         if (GET_OBJ_WEIGHT(item) > (GET_BAL_STR(character) * 50) && !IS_TWOHANDED(character))
             send_to_char("This weapon seems too heavy for one hand.\n\r", character);

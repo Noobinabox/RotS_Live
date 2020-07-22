@@ -1987,6 +1987,9 @@ ACMD(do_score)
         }
     }
 
+    weapon_master_handler weapon_master(ch);
+    bufpt += weapon_master.append_score_message(bufpt);
+
     if (GET_COND(ch, DRUNK) > 10) {
         bufpt += sprintf(bufpt, "You are intoxicated.\n\r");
     }

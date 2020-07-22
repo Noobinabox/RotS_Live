@@ -833,23 +833,6 @@ enum player_specs {
 };
 }
 
-namespace weapon_master {
-    constexpr float smiting_proc_chance(int damage) 
-    {
-        return damage * 0.005f;
-    }
-    constexpr const float bludgeon_proc_chance = 0.25f;
-	constexpr const float cleave_proc_chance = 0.50f;
-
-	constexpr const float flail_proc_chance = 0.40f;
-	constexpr const float piercing_proc_chance = 0.25f;
-	constexpr const float slashing_proc_chance = 0.25f;
-	constexpr const float stabbing_proc_chance = 0.50f;
-	constexpr const float whipping_proc_chance = 0.40f;
-
-}
-
-
 #define PLRSPEC_NONE 0
 #define PLRSPEC_FIRE 1
 #define PLRSPEC_COLD 2

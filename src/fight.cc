@@ -1330,22 +1330,9 @@ void group_gain(char_data* killer, char_data* dead_man)
         gain_exp(character, tmp);
         change_alignment(character, dead_man);
 
-        if (utils::get_specialization(*character) == game_types::PS_WildFighting && character->specials.tactics == TACTICS_BERSERK) {
-            int killer_level = utils::get_level_legend_cap(*character);
-            int victim_level = utils::get_level_legend_cap(*dead_man);
-
-            // grant healing regen if the victim is at least 60% the killer's level
-            if (victim_level * 6 / 10 >= killer_level)
-            {
-                // let people know that shit's getting real
-				act("%s roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
-				act("You roar and feel a rush of vigor as your bloodlust is satisfied!", FALSE, character, nullptr, 0, TO_CHAR);
-
-                // restore 20% of the killer's missing health.
-                int missing_health = character->abilities.hit - character->tmpabilities.hit;
-                character->tmpabilities.hit += missing_health / 5;
-            }
-        }
+        // Allow wild fighting to handle this kill.
+        wild_fighting_handler wild_fighting(character);
+        wild_fighting.on_unit_killed(dead_man);
 
         /* save only 10% of the time to avoid lag in big groups */
         if (number(0, 9) == 0) {
@@ -1885,19 +1872,13 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     /* Spell damage logging */
     record_spell_damage(attacker, victim, attacktype, dam);
 
-    int previous_health = GET_HIT(victim);
+    // Create wild fighting data to handle rage effects.
+    wild_fighting_handler wild_fighting(victim);
+
     GET_HIT(victim) -= dam;
 
     // if victim is a berserker, let people know that rage may be entered.
-    if (victim->specials.tactics == TACTICS_BERSERK && utils::get_specialization(*victim) == game_types::PS_WildFighting) {
-        float previous_health_percentage = previous_health / (float)victim->abilities.hit;
-        if (previous_health_percentage >= 0.45f) {
-            float current_health_percentage = victim->tmpabilities.hit / (float)victim->abilities.hit;
-            if (current_health_percentage <= 0.45f && current_health_percentage >= 0.0f) {
-                utils::broadcast_rage_to_room(victim);
-            }
-        }
-    }
+    wild_fighting.update_health(victim->tmpabilities.hit);
 
     if (utils::is_pc(*attacker) || (attacker->master && utils::is_affected_by(*attacker, AFF_CHARM))) {
         attacker->damage_details.add_damage(attacktype, dam);
@@ -2216,7 +2197,7 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
 
             if (number(0, 99) <= prob) {
                 do_riposte(victim, ch);
-                dam = get_weapon_damage(wielded) * MIN(GET_DEX(victim), 20) / number(50, 100);
+                dam = get_weapon_damage(wielded) * std::min(static_cast<int>(GET_DEX(victim)), 20) / number(50, 100);
 
                 if (damage(victim, ch, dam,
                         weapon_hit_type(wielded->obj_flags.value[3]), 1))
@@ -2251,34 +2232,24 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         /* First, remove minimum absorb */
         int damage_reduction = armor->obj_flags.value[1];
 
+        weapon_master_handler weapon_master(ch);
+
         int divisor = 100;
 		if (w_type == TYPE_SPEARS) {
 			/* Spears hit the armor, but then go right through it */
             divisor += 50;
 
             // Weapon masters have a chance to double their armor punching with spears.
-            if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-                if (number() <= weapon_master::stabbing_proc_chance) {
-                    divisor *= 2;
-                    // TODO(drelidan):  Some nifty message here.
-                    sprintf(buf, "Spear proc!\r\n");
-                    send_to_char(buf, ch);
-                }
+            if (weapon_master.does_spear_proc(victim)) {
+                divisor *= 2;
             }
         }
 
         damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / divisor;
 
-        // Weapon masters have a chance to bypass the vast majority of armor with daggers.
-        if (w_type == TYPE_PIERCE) {
-			if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-				if (number() <= weapon_master::piercing_proc_chance) {
-					damage_reduction = armor->obj_flags.value[1];
-                    // TODO(drelidan):  Some nifty message here.
-					sprintf(buf, "Dagger proc!\r\n");
-					send_to_char(buf, ch);
-				}
-			}
+		// Weapon masters have a chance to bypass the vast majority of armor with daggers.
+        if (weapon_master.ignores_armor(victim)) {
+            damage_reduction = armor->obj_flags.value[1];
         }
 
         /* Heavy fighters get an extra 10% damage absorption. */
@@ -2355,45 +2326,10 @@ int frenzy_effect(char_data& attacker, int damage)
 }
 
 //============================================================================
-double get_wild_fighting_proc_chance(int tactics)
-{
-    switch (tactics) {
-    case TACTICS_DEFENSIVE:
-    case TACTICS_CAREFUL:
-        return 0.0;
-    case TACTICS_NORMAL:
-        return 0.05;
-    case TACTICS_AGGRESSIVE:
-        return 0.10;
-    case TACTICS_BERSERK:
-        return 0.15;
-    default:
-        return 0.0;
-    }
-}
-
-//============================================================================
 int wild_fighting_effect(char_data* attacker, int damage)
 {
-    /* 10% chance for wild fighters to rush when they hit */
-    if (utils::get_specialization(*attacker) == game_types::PS_WildFighting) {
-        int tactics = utils::get_tactics(*attacker);
-        double proc_chance = get_wild_fighting_proc_chance(tactics);
-
-        if (number() < proc_chance) {
-            send_to_char("You rush forward wildly.\n\r", attacker);
-            act("$n rushes forward wildly.", TRUE, attacker, 0, 0, TO_ROOM);
-
-            int extra_damage = int(damage * 0.5);
-
-            wild_fighting_data* data = static_cast<wild_fighting_data*>(attacker->extra_specialization_data.current_spec_info);
-            data->add_rush_damage(extra_damage);
-
-            return damage + extra_damage;
-        }
-    }
-
-    return damage;
+    wild_fighting_handler handler(attacker);
+    return handler.do_rush(damage);
 }
 
 //============================================================================
@@ -2517,6 +2453,9 @@ void hit(char_data* ch, char_data* victim, int type)
         return;
     }
 
+    // create weapon master struct to handle this spec's logic if it applies.
+    weapon_master_handler weapon_master(ch);
+
     /*
 	 * Calculate hits/misses/damage
 	 *
@@ -2539,27 +2478,8 @@ void hit(char_data* ch, char_data* victim, int type)
     dodge_malus = get_real_dodge(victim) + evasion_malus;
     OB -= dodge_malus;
 
-    bool ignore_shield = false;
-
-    // Weapon masters have a chance to ignore a shield's contribution to dodge (and parry, but that's handled later).
-	if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-		if (w_type == TYPE_WHIP) {
-            if (number() <= weapon_master::whipping_proc_chance) {
-                ignore_shield = true;
-                // TODO(drelidan):  Some nifty message here.
-				sprintf(buf, "Whip proc!  Shield is ignored for this hit.\r\n");
-				send_to_char(buf, ch);
-            }
-        } else if (w_type == TYPE_FLAIL) {
-            if (number() <= weapon_master::flail_proc_chance) {
-                ignore_shield = true;
-                // TODO(drelidan):  Some nifty message here.
-				sprintf(buf, "Flail proc!  Shield is ignored for this hit.\r\n");
-				send_to_char(buf, ch);
-            }
-        }
-	}
-
+	// Weapon masters have a chance to ignore a shield's contribution to dodge (and parry, but that's handled later).
+    bool ignore_shield = weapon_master.ignores_shields(victim);
     if (ignore_shield) {
         obj_data* shield = victim->equipment[WEAR_SHIELD];
         if (shield != nullptr) {
@@ -2645,23 +2565,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 int damage_roll = number(0, 100);
 
 				// Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
-				if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-					if (wielded != nullptr) {
-						auto wielded_type = wielded->get_weapon_type();
-						if (wielded_type == game_types::WT_CLEAVING || wielded_type == game_types::WT_CLEAVING_TWO) {
-							if (number() <= weapon_master::cleave_proc_chance) {
-								int new_roll = number(0, 100);
-								if (new_roll > damage_roll) {
-                                    // TODO(drelidan):  Add "act" message so people know this proc'd.
-									sprintf(buf, "Axe proc!  Replaced '%d' with '%d'\r\n", damage_roll, new_roll);
-									send_to_char(buf, ch);
-                                    damage_roll = new_roll;
-                                    
-								}
-							}
-						}
-					}
-				}
+                damage_roll = weapon_master.do_on_damage_rolled(damage_roll);
 
                 /* damage divided again by 10 */
                 dam = (dam * (OB + 100) * (10000 + (damage_roll * damage_roll) + (IS_TWOHANDED(ch) ? 2 : 1) * 133 * GET_BAL_STR(ch))) / 13300000;
@@ -2672,18 +2576,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 dam = heavy_fighting_effect(*ch, dam);
                 dam = defender_effect(ch, victim, dam);
                 dam = frenzy_effect(*ch, dam);
-
-                if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-                    if (wielded != nullptr) {
-                        auto wielded_type = wielded->get_weapon_type();
-                        if (wielded_type == game_types::WT_CLEAVING || wielded_type == game_types::WT_CLEAVING_TWO ||
-                            wielded_type == game_types::WT_FLAILING) {
-                            // increase damage by 15% for axes and flails
-                            dam = dam * 115 / 100;
-                        }
-                    }
-                }
-
+                dam = weapon_master.get_total_damage(dam);
 
                 tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];
                 dam = armor_effect(ch, victim, dam, tmp, w_type);
@@ -2694,46 +2587,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 dam = std::max(0, dam); /* Not less than 0 damage */
 
 				// Weapon masters with clubs and smiters have a chance to proc additional effects based on damage dealt.
-				if (utils::get_specialization(*ch) == game_types::PS_WeaponMaster) {
-					if (wielded != nullptr) {
-						auto wielded_type = wielded->get_weapon_type();
-						if (wielded_type == game_types::WT_BLUDGEONING || wielded_type == game_types::WT_BLUDGEONING_TWO) {
-							if (number() <= weapon_master::bludgeon_proc_chance) {
-                                int lost_energy = dam * 10; // victim loses 10x damage taken as energy
-                                victim->specials.ENERGY -= lost_energy;
-                                victim->specials.ENERGY = std::max(victim->specials.ENERGY, 0);
-
-								sprintf(buf, "Club proc!  Sapped '%d' energy.\r\n", lost_energy);
-								send_to_char(buf, ch);
-
-                                // TODO(drelidan):  Add "act" messages here.
-							}
-						} else if(wielded_type == game_types::WT_SMITING) {
-                            // damage influences chance to inflict haze
-							if (number() <= weapon_master::smiting_proc_chance(dam)) {
-                                // victim is afflicted with haze
-								
-                                auto haze = affected_by_spell(victim, SPELL_HAZE);
-                                if (haze == nullptr) {
-                                    affected_type af;
-									af.type = SPELL_HAZE;
-									af.duration = 1; // the spell's default duration
-									af.modifier = 1;
-									af.location = APPLY_NONE;
-									af.bitvector = AFF_HAZE;
-
-									affect_to_char(victim, &af);
-
-                                    // TODO(drelidan):  change message
-									act("You feel dizzy as your surroundings seem to blur and twist.\n\r", TRUE, victim, 0, ch, TO_CHAR);
-									act("$n staggers, overcome by dizziness!", FALSE, victim, 0, 0, TO_ROOM);
-								} else {
-                                    haze->duration = 1; // refresh duration
-                                }
-							}
-                        }
-					}
-				}
+                weapon_master.do_on_damage_dealt(dam, victim);
 
                 damage(ch, victim, dam, w_type, location);
 
@@ -2877,30 +2731,6 @@ bool does_beorning_swipe_proc(struct char_data* character)
     return number() >= chance;
 }
 
-bool can_weapon_master_double_strike(const char_data* character)
-{
-	assert(character);
-
-	if (utils::get_specialization(*character) != game_types::PS_WeaponMaster)
-		return false;
-
-	obj_data* weapon = character->equipment[WIELD];
-	if (!weapon)
-		return false;
-
-    // Only slashers can double strike
-    auto weapon_type = weapon->get_weapon_type();
-    if (weapon_type != game_types::WT_SLASHING && weapon_type != game_types::WT_SLASHING_TWO)
-        return false;
-
-	return is_victim_around(character);
-}
-
-bool does_weapon_master_double_strike(const char_data* character)
-{
-    return number() <= weapon_master::slashing_proc_chance;
-}
-
 namespace {
 timeval last_time;
 timeval current_time;
@@ -2994,14 +2824,9 @@ void perform_violence(int mini_tics)
                         hit(fighter, victim, TYPE_UNDEFINED);
                     }
                     
-                    else if (can_weapon_master_double_strike(fighter) && does_weapon_master_double_strike(fighter)) {
-						char_data* victim = fighter->specials.fighting;
-						act("You rear back and extend your foreleg swiping at $N!", FALSE, fighter, NULL, victim, TO_CHAR);
-						act("$n rears back and extends $s foreleg swiping at you!", FALSE, fighter, NULL, victim, TO_VICT);
-						act("$n rears back and extends $s foreleg swiping at $N!", FALSE, fighter, 0, victim, TO_NOTVICT, FALSE);
-
-						fighter->specials.ENERGY = current_energy;
-						hit(fighter, victim, TYPE_UNDEFINED);
+                    else {
+                        weapon_master_handler weapon_master(fighter);
+                        weapon_master.do_double_strike(fighter->specials.fighting);
                     }
                 } else /* Not in same room */
                 {

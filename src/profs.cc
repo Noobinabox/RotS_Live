@@ -771,12 +771,9 @@ void recalc_abilities(char_data* character)
                 GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 20, 20);
             }
 
-            // weapon masters get +10% attack speed with piercers and whips.
-            if (utils::get_specialization(*character) == game_types::PS_WeaponMaster) {
-                if (w_type == game_types::WT_PIERCING || w_type == game_types::WT_WHIPPING) {
-                    GET_ENE_REGEN(character) += std::min(GET_ENE_REGEN(character) / 10, 10);
-                }
-            }
+            // weapon masters get bonus attack speed with some weapons.
+            weapon_master_handler weapon_master(character);
+            character->points.ENE_regen *= weapon_master.get_attack_speed_multiplier();
 
         } else {
             GET_ENE_REGEN(character) = 60 + 5 * GET_DEX(character);

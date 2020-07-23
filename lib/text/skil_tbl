@@ -18,8 +18,30 @@ Skill list compiled by Vaitya, 01/19/2002
 |(2) Kick          |                  ||(2) Hide          |(20) Riposte      |
 |__________________|__________________||__________________|__________________|
 | See MAN SKILL BEORNING to see skill list specific to BEORNING.             |
-| See MAN SKILL HARADRIM to see skill list specific to HARADRIMS.             |
+| See MAN SKILL HARADRIM to see skill list specific to HARADRIMS.            |
+| See MAN SKILL OLOG-HAI to see skill list specific to OLOG-HAIS.            |
 \___________________________________________________________________________/
+#
+OLOG OLOG-HAI
+
+See help on each Olog-Hai skill as "man skill <name of skill>"
+Note that Olog-Hais are alos able to train several skills known to
+other races.
+
+OLOG-HAI SPECIFIC SKILLS__
+/ (level)        skill    \
+|__________________________|
+| (1)  Natural Attacks     |
+| (15) Overun              |
+| (20) Smash               |
+| (25) Cleave              |
+| (27) Stomp               | 
+| (30) Frenzy              |
+|__________________________|
+
+See also: MAN SKILL LIST
+
+
 #
 BEORNING
 
@@ -46,7 +68,7 @@ See help on each Haradrim skill as "man skill <name of skill>"
 Note that Haradrim are also able to train several skills known to 
 other races. 
 
-BEORNING SPECIFIC SKILLS__
+HARADRIM SPECIFIC SKILLS__
 / (level)        skill    \
 |__________________________|
 | (15) Mark                |
@@ -56,6 +78,77 @@ BEORNING SPECIFIC SKILLS__
 |__________________________|
 
 See also: MAN SKILL LIST
+
+#
+OVERRUN
+
+[Syntax      ] overrun <direction>
+[Group       ] Warrior
+[Level       ] 15
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+--- When given a direction the Olog-Hai will charge through each room bashing
+every mob as they move throught it. If the Olog-Hai can't charge the full
+distance they will charge into the wall at full force taking damage. The skill
+is on a cooldown and can be used every 60 seconds.
+
+#
+FRENZY
+
+[Syntax      ] frenzy
+[Group       ] Warrior
+[Level       ] 30
+[Offensive   ] Yes
+[Cooldown    ] 10 Minutes
+[Description ]
+--- The Frenzy ability will cause the Olog-Hai to have a 100% success hit rate,
+and increase the damage done by 10% for a short duration. While frenzy is active
+the Olog-Hai can't change tactics from berserk or flee. This skill is on a
+cooldown of 10 minutes.
+
+#
+SMASH
+
+[Syntax      ] smash <target>
+[Group       ] Warrior
+[Level       ] 20
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+---The Smash skill makes an attempt to slam into a chosen target, causing a descent
+amount of damage, and possibly dismounting the target. The success of a smash
+depends on how well you are learned in the skill, and your warrior level. There is a
+small chance this skill can hit a random target in the room. This skill is on a 
+cooldown of 60 seconds.
+
+#
+CLEAVE
+
+[Syntax      ] cleave
+[Group       ] Warrior
+[Level       ] 25
+[Offensive   ] Yes
+[Cooldown    ] 30 Seconds
+[Description ]
+---The Cleave skill makes an attempt to damage every creature in the same room as the
+Olog-Hai. The success of a cleave depends on how well you are learned in the skill,
+and your warrior level. The damage is greatly increased with the weight of your weapon.
+This skills is on a cooldown of 30 seconds.
+
+#
+STOMP
+
+[Syntax      ] stomp
+[Group       ] Warrior
+[Level       ] 27
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+---The Stomp skill makes an attempt to damage and stun every create in the same room as
+the Olog-Hai. The success of a stomp depends on how well you are learned in the skill,
+and your warrior level. The damage is greately increased with the weight of your weapon.
+This skill is on a cooldown of 60 seconds.
 
 #
 MARK

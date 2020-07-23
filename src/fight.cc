@@ -1771,11 +1771,12 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         send_to_char("You step out of your cover.\n\r", attacker);
         REMOVE_BIT(attacker->specials.affected_by, AFF_HIDE);
     }
-
+    battle_mage_handler battle_mage_handler(victim);
     /* Remove delay if wait_wheel */
     if (dam > 0) {
         if (IS_AFFECTED(victim, AFF_WAITWHEEL) && GET_WAIT_PRIORITY(victim) <= 40)
-            break_spell(victim);
+            if (battle_mage_handler.does_spell_get_interrupted())
+                break_spell(victim);
     }
 
     if (IS_NPC(victim) && victim->specials.attacked_level < GET_LEVELB(attacker))

@@ -217,10 +217,11 @@ int get_character_saving_throw(const char_data* victim)
 //============================================================================
 int get_saving_throw_dc(const char_data* caster)
 {
+    battle_mage_handler battle_mage_handler(caster);
     int caster_dc = 10;
     caster_dc += utils::get_prof_level(PROF_MAGE, *caster) / 3;
     caster_dc += (caster->tmpabilities.intel - 8) / 4;
-    return caster_dc + caster->points.spell_pen;
+    return caster_dc + battle_mage_handler.get_bonus_spell_pen(caster->points.spell_pen);
 }
 
 //============================================================================
@@ -527,10 +528,16 @@ ACMD(do_cast)
     int casting_time;
 
     tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
+    battle_mage_handler battle_mage_handler(ch);
 
     if (subcmd == -1) {
-        send_to_char("You could not concentrate anymore!\n\r", ch);
-        return;
+        if (battle_mage_handler.does_spell_get_interrupted()) {
+            subcmd = 1;
+        }
+        else {
+            send_to_char("You could not concentrate anymore!\n\r", ch);
+            return;
+        }
     }
 
     if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
@@ -838,7 +845,7 @@ ACMD(do_cast)
         }
 
         /* encumberance spell penalty, about 10% at max. encumberance */
-        if (skills[spell_index].type == PROF_MAGE) {
+        if (skills[spell_index].type == PROF_MAGE && battle_mage_handler.does_armor_fail_spell()) {
             tmp -= utils::get_encumbrance(*ch) / 3 - 1;
         }
 
@@ -947,6 +954,11 @@ ACMD(do_prepare)
     char* arg;
     int i, tmp, spl, qend, spell_prof;
     void abort_delay(struct char_data*);
+    battle_mage_handler battle_mage_handler(ch);
+    if (!battle_mage_handler.can_prepare_spell()) {
+        send_to_char("Battle mages can't prepare spells.\n\r", ch);
+        return;
+    }
 
     if (subcmd == -1) {
         send_to_char("Your preparations were ruined.\n\r", ch);

@@ -829,6 +829,7 @@ enum player_specs {
     PS_Darkness,
     PS_Arcane,
     PS_WeaponMaster,
+    PS_BattleMage,
     PS_Count,
 };
 }
@@ -852,6 +853,7 @@ enum player_specs {
 #define PLRSPEC_DARK 16
 #define PLRSPEC_ARCANE 17
 #define PLRSPEC_WMSR 18
+#define PLRSPEC_BTLEMS 19
 
 /* Races for PCS */
 #define RACE_GOD 0
@@ -1357,6 +1359,7 @@ private:
     long total_energy_sapped;
 };
 
+
 struct fire_spec_data : public elemental_spec_data {
     virtual std::string to_string(char_data& character) const;
 };
@@ -1397,6 +1400,10 @@ struct defender_data : public specialization_info {
 private:
     /* Total damage blocked by defender spec this session. */
     unsigned int blocked_damage;
+};
+
+struct battle_mage_spec_data : public specialization_info {
+    virtual std::string to_string(char_data& character) const;
 };
 
 struct wild_fighting_data : public specialization_info {

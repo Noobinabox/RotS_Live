@@ -1827,10 +1827,11 @@ ACMD(do_info)
         GET_PERCEPTION(ch),
         GET_WILLPOWER(ch));
 
+    battle_mage_handler battle_mage_handler(ch);
     bufpt += sprintf(bufpt, "Your spell penetration is %d, "
                             "and your spell power is %d,\n\r",
-        ch->points.get_spell_pen(),
-        ch->points.get_spell_power());
+        battle_mage_handler.get_bonus_spell_pen(ch->points.get_spell_pen()),
+        battle_mage_handler.get_bonus_spell_power(ch->points.get_spell_power()));
 
     /* `ch's skill encumbrance and leg encumbrance */
     bufpt += sprintf(bufpt, "Your skill encumbrance is %d, and your "

@@ -203,3 +203,21 @@ private:
 	game_types::weapon_type weapon_type;
 
 };
+
+
+class battle_mage_handler {
+public:
+	battle_mage_handler(const char_data* in_character);
+	int get_bonus_spell_pen(int spell_pen) const;
+	int get_bonus_spell_power(int spell_power) const;
+	bool does_spell_get_interrupted() const;
+	bool does_armor_fail_spell() const;
+	bool can_prepare_spell() const;
+private:
+	char_data* character = nullptr;
+	bool is_battle_spec = false;
+	int tactics = 0;
+	int mage_level = 0;
+	int warrior_level = 0;
+	const float base_chance = 0.25;
+};

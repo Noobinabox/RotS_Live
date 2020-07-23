@@ -43,9 +43,10 @@ int get_mage_caster_level(const char_data* caster)
 
 int get_magic_power(const char_data* caster)
 {
+    battle_mage_handler battle_mage_handler(caster);
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
-    caster_level += caster->points.spell_power;
+    caster_level += battle_mage_handler.get_bonus_spell_power(caster->points.spell_power);
 
     // Factor in intel values not divisible by 5.
     int intel_factor = caster->tmpabilities.intel / 5;
@@ -2129,6 +2130,7 @@ ASPELL(spell_blaze)
     int dam;
 
     int level = get_mage_caster_level(caster);
+    bool is_fire_spec = utils::get_specialization(*caster) == game_types::PS_Fire;
 
     if (!victim && !obj) { /* there was no target, hit the room */
         if (!caster)
@@ -2140,6 +2142,12 @@ ASPELL(spell_blaze)
         /* Damage everyone in the room */
         for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch_next) {
             tmpch_next = tmpch->next_in_room;
+            
+
+            // friends don't burn friends, at first...
+            if (is_friendly_taget(caster, tmpch)) {
+                continue;
+            }
             dam = number(1, 30) + get_magic_power(caster) / 2; /* same as earthquake */
 
             int save_bonus = get_save_bonus(*caster, *tmpch, game_types::PS_Fire, game_types::PS_Cold);

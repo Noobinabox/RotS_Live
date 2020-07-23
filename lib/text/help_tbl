@@ -160,7 +160,7 @@ ANGER was formerly known as NOQUIT.
 
 See also: RENT QUIT PK
 #
-STATS RACES DWARF ELF HOBBIT BEORNING "WOOD ELF" URUK ORC "COMMON ORC" HUMAN LHUTH "URUK-LHUTH" HARADRIM
+STATS RACES DWARF ELF HOBBIT BEORNING "WOOD ELF" URUK ORC "COMMON ORC" HUMAN LHUTH "URUK-LHUTH" HARADRIM "OLOG-HAI"
 
 Different races in Arda have varying abilities and disadvantages; here
 is a basic chart comparing the attributes of all player controllable
@@ -177,6 +177,7 @@ Uruk-Hai   | Normal   | Very Low | Very Low | Normal   | High     | Very Low
 Common Orc | Low      | Very Low | Very Low | Low      | Very Low | Very Low
 Uruk-Lhuth | Low      | Normal   | Very Low | Normal   | Normal   | Low
 Haradrim   | Normal   | Low      | Very Low | High     | Normal   | Low
+Olog-Hai   | Very High| Low      | Low      | Very Low | High     | Very Low 
 #
 RECRUIT
 
@@ -2067,6 +2068,19 @@ put them in your quiver you are wearing it or into your inventory.
 Examples:
 
 >recover
+#
+OLOG OLOG-HAI
+
+They were bred by Sauron in the late Third Age, possibly for the same
+reason Saruman bred the Uruk-Hai, for improvement and less vulnerability
+to sunlight. They lived primarily in Mordor and in southern Mirkwood.
+
+Olog-Hais receive a bonus to bashing and have a natural health and
+move regeneration. This race is intended for seasoned players because
+of their complete lack of mystic and mage skills. Olog-Hais are an
+extreme warrior race and can't be targeted by any healing spells due
+to their natural regeneration.
+
 #
 LHUTH URUK-LHUTH MAGUS
 

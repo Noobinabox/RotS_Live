@@ -1424,7 +1424,7 @@ namespace {
 
 	constexpr const float flail_proc_chance = 0.40f;
 	constexpr const float piercing_proc_chance = 0.25f;
-	constexpr const float slashing_proc_chance = 0.25f;
+	constexpr const float slashing_proc_chance = 0.20f;
 	constexpr const float stabbing_proc_chance = 0.50f;
 	constexpr const float whipping_proc_chance = 0.40f;
 
@@ -1471,7 +1471,7 @@ int weapon_master_handler::get_total_damage(int starting_damage) const
     return starting_damage;
 }
 
-int weapon_master_handler::do_on_damage_rolled(int damage_roll)
+int weapon_master_handler::do_on_damage_rolled(int damage_roll, char_data* victim)
 {
 	if (spec != game_types::PS_WeaponMaster)
 		return damage_roll;
@@ -1480,7 +1480,8 @@ int weapon_master_handler::do_on_damage_rolled(int damage_roll)
         if (number() < cleave_proc_chance) {
             int new_roll = number(1, 100);
             if (new_roll > damage_roll) {
-                // act message
+
+                act("$N leaves $s vulnerable, and you capitalize with a devastating strike!", FALSE, character, NULL, victim, TO_CHAR);
                 return new_roll;
             }
         }
@@ -1503,12 +1504,14 @@ bool weapon_master_handler::ignores_shields(char_data* victim)
 
     if (weapon_type == game_types::WT_FLAILING) {
         if (number() <= flail_proc_chance) {
-            // do act so people know shield is ignored
+			act("Your flail wraps around $N's shield, rendering it immaterial!", FALSE, character, NULL, victim, TO_CHAR);
+			act("$n's flail wraps around your shield, rendering it immaterial!.", FALSE, character, NULL, victim, TO_VICT);
             return true;
         }
     } else if (weapon_type == game_types::WT_WHIPPING) {
 		if (number() <= whipping_proc_chance) {
-			// do act so people know shield is ignored
+			act("Your whip snakes past $N's shield, rendering it immaterial!", FALSE, character, NULL, victim, TO_CHAR);
+			act("$n's whip snakes past your shield, rendering it immaterial!", FALSE, character, NULL, victim, TO_VICT);
 			return true;
 		}
     }
@@ -1528,6 +1531,8 @@ bool weapon_master_handler::ignores_armor(char_data* victim)
         return false;
 
     // act so people know armor is ignored
+	act("You find a weakness in %N's armor and slip your weapon right through!", FALSE, character, NULL, victim, TO_CHAR);
+    act("$n finds a weakness in your armor and slips $s weapon right through!", FALSE, character, NULL, victim, TO_VICT);
     return true;
 }
 
@@ -1542,7 +1547,8 @@ bool weapon_master_handler::does_spear_proc(char_data* victim)
 	if (number() > stabbing_proc_chance)
 		return false;
 
-	// act so people know armor is reduced
+	act("Your spear punches through $N's armor!", FALSE, character, nullptr, victim, TO_CHAR);
+	act("$n thrusts $s spear forcefully, punching a hole in your armor!", FALSE, character, nullptr, victim, TO_VICT);
 	return true;
 }
 
@@ -1551,9 +1557,9 @@ void weapon_master_handler::do_double_strike(char_data* victim)
     if (!does_double_strike())
         return;
 
-	act("You rear back and extend your foreleg swiping at $N!", FALSE, character, NULL, victim, TO_CHAR);
-	act("$n rears back and extends $s foreleg swiping at you!", FALSE, character, NULL, victim, TO_VICT);
-	act("$n rears back and extends $s foreleg swiping at $N!", FALSE, character, 0, victim, TO_NOTVICT, FALSE);
+	act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, character, NULL, victim, TO_CHAR);
+	act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, character, NULL, victim, TO_VICT);
+	act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, character, 0, victim, TO_NOTVICT, FALSE);
 
     character->specials.ENERGY += ENE_TO_HIT;
     hit(character, victim, TYPE_UNDEFINED);
@@ -1590,10 +1596,8 @@ void weapon_master_handler::do_on_damage_dealt(int damage, char_data* victim)
 			victim->specials.ENERGY -= lost_energy;
 			victim->specials.ENERGY = std::max(victim->specials.ENERGY, 0);
 
-			sprintf(buf, "Club proc!  Sapped '%d' energy.\r\n", lost_energy);
-			send_to_char(buf, character);
-
-			// TODO(drelidan):  Add "act" messages here.
+			act("Your crushing blow knocks the wind from $N!", FALSE, character, NULL, victim, TO_CHAR);
+			act("$n's blow staggers you and knocks the wind from your chest!", FALSE, character, NULL, victim, TO_VICT);
 		}
     } else if(weapon_type == game_types::WT_SMITING) {
 		// damage influences chance to inflict haze
@@ -1611,9 +1615,9 @@ void weapon_master_handler::do_on_damage_dealt(int damage, char_data* victim)
 
                 affect_to_char(victim, &af);
 
-                // TODO(drelidan):  change message
-                act("You feel dizzy as your surroundings seem to blur and twist.\n\r", TRUE, victim, 0, character, TO_CHAR);
-                act("$n staggers, overcome by dizziness!", FALSE, victim, 0, 0, TO_ROOM);
+				act("You stagger $N with your crushing blow!", FALSE, character, NULL, victim, TO_CHAR);
+				act("$n blow crushes into you, causing your world to spin!", FALSE, character, NULL, victim, TO_VICT);
+				act("$N staggers from $n's crushing blow, overcome by dizziness!", FALSE, character, 0, victim, TO_NOTVICT, FALSE);
             } else {
                 haze->duration = 1; // refresh duration
             }

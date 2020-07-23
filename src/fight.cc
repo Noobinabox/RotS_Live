@@ -2565,7 +2565,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 int damage_roll = number(0, 100);
 
 				// Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
-                damage_roll = weapon_master.do_on_damage_rolled(damage_roll);
+                damage_roll = weapon_master.do_on_damage_rolled(damage_roll, victim);
 
                 /* damage divided again by 10 */
                 dam = (dam * (OB + 100) * (10000 + (damage_roll * damage_roll) + (IS_TWOHANDED(ch) ? 2 : 1) * 133 * GET_BAL_STR(ch))) / 13300000;

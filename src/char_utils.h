@@ -182,7 +182,7 @@ public:
 
 	float get_attack_speed_multiplier() const;
 	int get_total_damage(int starting_damage) const;
-	int do_on_damage_rolled(int damage_roll);
+	int do_on_damage_rolled(int damage_roll, char_data* victim);
 	bool ignores_shields(char_data* victim);
 	bool ignores_armor(char_data* victim);
 	bool does_spear_proc(char_data* victim);

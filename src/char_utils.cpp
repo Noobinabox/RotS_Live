@@ -1465,7 +1465,7 @@ float wild_fighting_handler::get_attack_speed_multiplier() const
     if (health_percentage > 0.45f)
         return 1.0f;
 
-    return 1.0f - health_percentage - 0.4f; // 15% bonus at 45% health, scaling to 59% at 1% health.
+    return 1.0f + 1.0f - health_percentage - 0.4f; // 15% bonus at 45% health, scaling to 59% at 1% health.
 }
 
 void wild_fighting_handler::on_enter_rage()

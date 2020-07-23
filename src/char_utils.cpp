@@ -1278,6 +1278,67 @@ int get_energy_regen(const char_data& character)
 }
 
 //============================================================================
+// Battle Mage Implementation
+//============================================================================
+battle_mage_handler::battle_mage_handler(const char_data* in_character) {
+    is_battle_spec = utils::get_specialization(*in_character) == game_types::PS_BattleMage;
+    tactics = in_character->specials.tactics;
+    mage_level = utils::get_prof_level(PROF_MAGE, *in_character);
+    warrior_level = utils::get_prof_level(PROF_WARRIOR, *in_character);
+}
+
+int battle_mage_handler::get_bonus_spell_pen(int spell_pen) const {
+    if (!is_battle_spec) {
+        return spell_pen;
+    }
+
+    return spell_pen + tactics + mage_level / 10;
+}
+
+int battle_mage_handler::get_bonus_spell_power(int spell_power) const {
+    if (!is_battle_spec) {
+        return spell_power;
+    }
+
+    return spell_power + tactics + mage_level / 10;
+}
+
+bool battle_mage_handler::can_prepare_spell() const {
+    return !is_battle_spec;
+}
+
+bool battle_mage_handler::does_spell_get_interrupted() const {
+    if (!is_battle_spec) {
+        return true;
+    }
+
+    if (tactics < 4) {
+        return number() > base_chance;
+    }
+    
+    float warrior_bonus = warrior_level / 100;
+    float mage_bonus = mage_level / 100;
+    float tactic_bonus = tactic_bonus / 100;
+    float total_bonus = + base_chance + warrior_bonus + mage_bonus + tactic_bonus;
+    return number() > total_bonus;
+}
+
+bool battle_mage_handler::does_armor_fail_spell() const {
+    if (!is_battle_spec) {
+        return true;
+    }
+
+    if (tactics < 4) {
+        return number() > base_chance;
+    }
+
+    float tactic_bonus = (tactics * 2) / 100;
+    float warrior_bonus = warrior_level / 100;
+    float total_bonus = base_chance + tactic_bonus + warrior_bonus;
+    return number() > total_bonus;
+}
+
+//============================================================================
 // Wild fighting implementation
 //============================================================================
 wild_fighting_handler::wild_fighting_handler(char_data* in_character)
@@ -1304,7 +1365,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
         character->tmpabilities.hit += missing_health * 0.2f;
 
 		// let people know that shit's getting real
-		act("%s roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
+		act("%n roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
 		act("You roar and feel a rush of vigor as your bloodlust is satisfied!", FALSE, character, nullptr, 0, TO_CHAR);
 
         update_health(character->tmpabilities.hit);
@@ -1313,6 +1374,10 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
 
 void wild_fighting_handler::update_health(int new_value)
 {
+    if (spec != game_types::PS_WildFighting) {
+        return;
+    }
+
     current_health = new_value;
     health_percentage = current_health / (float)max_health;
 
@@ -1406,7 +1471,7 @@ float wild_fighting_handler::get_attack_speed_multiplier() const
 void wild_fighting_handler::on_enter_rage()
 {
 	// let people know that shit's getting real
-	act("%s roars and enters a battle frenzy!", FALSE, character, nullptr, 0, TO_ROOM);
+	act("%n roars and enters a battle frenzy!", FALSE, character, nullptr, 0, TO_ROOM);
 	act("You feel your pulse quicken as you enter a battle frenzy!", FALSE, character, nullptr, 0, TO_CHAR);
 }
 
@@ -1821,6 +1886,8 @@ void specialization_data::set(char_data& character)
         current_spec_info = new heavy_fighting_data();
     } else if (spec == game_types::PS_WildFighting) {
         current_spec_info = new wild_fighting_data();
+    } else if (spec == game_types::PS_BattleMage) {
+        current_spec_info = new battle_mage_spec_data();
     }
 
     current_spec = spec;
@@ -1982,6 +2049,10 @@ std::string light_fighting_data::to_string(char_data& character) const
 std::string defender_data::to_string(char_data& character) const
 {
     return std::string("You are specialized in defending.");
+}
+
+std::string battle_mage_spec_data::to_string(char_data& character) const {
+    return std::string("You are specialized in battle mage.");
 }
 
 //============================================================================

@@ -3462,7 +3462,8 @@ const char* specialize_name[game_types::PS_Count] = {
     "archery",
     "darkness",
     "arcane",
-    "weapon master"
+    "weapon master",
+    "battle mage"
 };
 
 char* resistance_name[] = {

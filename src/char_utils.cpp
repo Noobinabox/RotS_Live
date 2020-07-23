@@ -2042,23 +2042,23 @@ std::string heavy_fighting_data::to_string(char_data& character) const
 //============================================================================
 std::string light_fighting_data::to_string(char_data& character) const
 {
-    return std::string("You are specialized in light fighting.");
+    return std::string("You are specialized in light fighting.\n\r");
 }
 
 //============================================================================
 std::string defender_data::to_string(char_data& character) const
 {
-    return std::string("You are specialized in defending.");
+    return std::string("You are specialized in defending.\n\r");
 }
 
 std::string battle_mage_spec_data::to_string(char_data& character) const {
-    return std::string("You are specialized in battle mage.");
+    return std::string("You are specialized in battle mage.\n\r");
 }
 
 //============================================================================
 std::string wild_fighting_data::to_string(char_data& character) const
 {
-    return std::string("You are specialized in wild fighting.");
+    return std::string("You are specialized in wild fighting.\n\r");
 }
 
 //============================================================================

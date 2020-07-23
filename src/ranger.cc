@@ -2902,7 +2902,7 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
                     }
                 }
             }
-            if (!CAN_GO(character, dir) || (world[character->in_room].dir_option[dir]->to_room == is_in))
+            if (!CAN_GO(character, dir) || (world[character->in_room].dir_option[dir]->to_room == is_in) || (IS_SET(EXIT(character, dir)->exit_info, EX_NO_LOOK)))
                 break;
             else
                 character->in_room = world[character->in_room].dir_option[dir]->to_room;

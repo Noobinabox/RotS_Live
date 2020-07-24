@@ -1454,12 +1454,10 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
     if (GET_ITEM_TYPE(obj) == ITEM_ARMOR) {
         SET_DODGE(ch) -= obj->obj_flags.value[3];
 
-    } else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {
-        SET_OB(ch) -= obj->obj_flags.value[0];
-        SET_PARRY(ch) -= obj->obj_flags.value[1];
-        //     if(IS_SET(ch->specials.affected_by, AFF_TWOHANDED)){
-        //       REMOVE_BIT(ch->specials.affected_by, AFF_TWOHANDED);
-        //     }
+    } else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {        
+        weapon_master_handler weapon_master(ch, obj);
+        SET_OB(ch) -= obj->obj_flags.value[0] + weapon_master.get_bonus_OB(obj);
+        SET_PARRY(ch) -= obj->obj_flags.value[1] + weapon_master.get_bonus_PB(obj);
 
     } else if (GET_ITEM_TYPE(obj) == ITEM_SHIELD) {
         SET_DODGE(ch) -= obj->obj_flags.value[0];

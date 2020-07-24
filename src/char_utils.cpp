@@ -1316,9 +1316,9 @@ bool battle_mage_handler::does_spell_get_interrupted() const {
         return number() > base_chance;
     }
     
-    float warrior_bonus = warrior_level / 100;
-    float mage_bonus = mage_level / 100;
-    float tactic_bonus = tactic_bonus / 100;
+    float warrior_bonus = warrior_level / 100.00;
+    float mage_bonus = mage_level / 100.00;
+    float tactic_bonus = tactic_bonus / 100.00;
     float total_bonus = + base_chance + warrior_bonus + mage_bonus + tactic_bonus;
     return number() > total_bonus;
 }

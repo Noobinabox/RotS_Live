@@ -531,13 +531,8 @@ ACMD(do_cast)
     battle_mage_handler battle_mage_handler(ch);
 
     if (subcmd == -1) {
-        if (battle_mage_handler.does_spell_get_interrupted()) {
-            subcmd = 1;
-        }
-        else {
-            send_to_char("You could not concentrate anymore!\n\r", ch);
-            return;
-        }
+        send_to_char("You could not concentrate anymore!\n\r", ch);
+        return;
     }
 
     if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {

@@ -1365,7 +1365,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
         character->tmpabilities.hit += missing_health * 0.2f;
 
 		// let people know that shit's getting real
-		act("%n roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
+		act("$n roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
 		act("You roar and feel a rush of vigor as your bloodlust is satisfied!", FALSE, character, nullptr, 0, TO_CHAR);
 
         update_health(character->tmpabilities.hit);
@@ -1471,7 +1471,7 @@ float wild_fighting_handler::get_attack_speed_multiplier() const
 void wild_fighting_handler::on_enter_rage()
 {
 	// let people know that shit's getting real
-	act("%n roars and enters a battle frenzy!", FALSE, character, nullptr, 0, TO_ROOM);
+	act("$n roars and enters a battle frenzy!", FALSE, character, nullptr, 0, TO_ROOM);
 	act("You feel your pulse quicken as you enter a battle frenzy!", FALSE, character, nullptr, 0, TO_CHAR);
 }
 
@@ -1596,7 +1596,7 @@ bool weapon_master_handler::ignores_armor(char_data* victim)
         return false;
 
     // act so people know armor is ignored
-	act("You find a weakness in %N's armor and slip your weapon right through!", FALSE, character, NULL, victim, TO_CHAR);
+	act("You find a weakness in $N's armor and slip your weapon right through!", FALSE, character, NULL, victim, TO_CHAR);
     act("$n finds a weakness in your armor and slips $s weapon right through!", FALSE, character, NULL, victim, TO_VICT);
     return true;
 }

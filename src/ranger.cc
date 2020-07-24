@@ -3302,7 +3302,7 @@ int harad_skill_calculate_save(char_data* ch, char_data* victim, int skill_check
     // Attacker calculations
     int ch_skill = utils::get_skill(*ch, skill_check);
     int ch_ranger_level = utils::get_prof_level(PROF_RANGER, *ch);
-    int ch_dex = ch->get_cur_dex();
+    int ch_dex = ch->get_cur_dex() * 2;
 
     // Victim calculation saves
     int victim_ranger_level = utils::get_prof_level(PROF_RANGER, *victim);

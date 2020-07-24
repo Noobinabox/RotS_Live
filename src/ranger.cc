@@ -123,7 +123,7 @@ ACMD(do_ride)
             return;
         }
 
-        if (IS_AGGR_TO(potential_mount, ch)) {
+        if (IS_AGGR_TO(potential_mount, ch) && !affected_by_spell(potential_mount, SKILL_CALM)) {
             act("$N doesn't want you to ride $M.", FALSE, ch, 0, potential_mount, TO_CHAR);
             return;
         }
@@ -139,12 +139,16 @@ ACMD(do_ride)
         }
 
         if (affected_by_spell(potential_mount, SKILL_CALM)) {
-            if ((IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) && !is_strong_enough_to_tame(ch->master, potential_mount, false)) {
-                send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
-                return;
-            } else if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
-                send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
-                return;
+            if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) {
+                if (!is_strong_enough_to_tame(ch->master, potential_mount, false)) {
+                  send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
+                  return;
+                }
+            } else {
+                if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
+                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
+                    return;
+                }
             }
         }
 

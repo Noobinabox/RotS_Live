@@ -1692,36 +1692,30 @@ void weapon_master_handler::do_on_damage_dealt(int damage, char_data* victim)
     }
 }
 
-int weapon_master_handler::get_bonus_OB(const obj_data* in_weapon) const
+int weapon_master_handler::get_bonus_OB() const
 {
     if (spec != game_types::PS_WeaponMaster)
         return 0;
 
-    if (in_weapon != nullptr) {
-        game_types::weapon_type in_weapon_type = in_weapon->get_weapon_type();
-        if (in_weapon_type == game_types::WT_BLUDGEONING || game_types::WT_BLUDGEONING_TWO || game_types::WT_SMITING) {
-            return 10;
-        } else if (in_weapon_type == game_types::WT_SLASHING || in_weapon_type == game_types::WT_SLASHING_TWO) {
-            return 5;
-        }
-    }
+	if (weapon_type == game_types::WT_BLUDGEONING || weapon_type == game_types::WT_BLUDGEONING_TWO || weapon_type == game_types::WT_SMITING) {
+		return 10;
+	} else if (weapon_type == game_types::WT_SLASHING || weapon_type == game_types::WT_SLASHING_TWO) {
+		return 5;
+	}
 
     return 0;
 }
 
-int weapon_master_handler::get_bonus_PB(const obj_data* in_weapon) const
+int weapon_master_handler::get_bonus_PB() const
 {
 	if (spec != game_types::PS_WeaponMaster)
 		return 0;
 
-    if (in_weapon != nullptr) {
-        game_types::weapon_type in_weapon_type = in_weapon->get_weapon_type();
-        if (in_weapon_type == game_types::WT_STABBING) {
-            return 10;
-        } else if(in_weapon_type == game_types::WT_SLASHING || in_weapon_type == game_types::WT_SLASHING_TWO) {
-            return 5;
-        }
-    }
+	if (weapon_type == game_types::WT_STABBING) {
+		return 10;
+	} else if (weapon_type == game_types::WT_SLASHING || weapon_type == game_types::WT_SLASHING_TWO) {
+		return 5;
+	}
 
     return 0;
 }

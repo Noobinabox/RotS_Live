@@ -188,8 +188,8 @@ public:
 	bool does_spear_proc(char_data* victim);
 	void do_double_strike(char_data* victim);
 	void do_on_damage_dealt(int damage, char_data* victim);
-	int get_bonus_OB(const obj_data* in_weapon) const;
-	int get_bonus_PB(const obj_data* in_weapon) const;
+	int get_bonus_OB() const;
+	int get_bonus_PB() const;
 	int append_score_message(char* message_buffer) const;
 
 

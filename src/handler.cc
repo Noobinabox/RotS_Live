@@ -1371,13 +1371,8 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
         SET_DODGE(character) += item->obj_flags.value[3];
 
     else if (GET_ITEM_TYPE(item) == ITEM_WEAPON) {
-        // weapon masters get bonus ob/pb with some weapons.
-		weapon_master_handler weapon_master(character);
-		int bonus_ob = weapon_master.get_bonus_OB(item);
-		int bonus_pb = weapon_master.get_bonus_PB(item);
-        
-        SET_OB(character) += item->obj_flags.value[0] + bonus_ob;
-        SET_PARRY(character) += item->obj_flags.value[1] + bonus_pb;
+        SET_OB(character) += item->obj_flags.value[0];
+        SET_PARRY(character) += item->obj_flags.value[1];
 
         if (GET_OBJ_WEIGHT(item) > (GET_BAL_STR(character) * 50) && !IS_TWOHANDED(character))
             send_to_char("This weapon seems too heavy for one hand.\n\r", character);
@@ -1454,10 +1449,9 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
     if (GET_ITEM_TYPE(obj) == ITEM_ARMOR) {
         SET_DODGE(ch) -= obj->obj_flags.value[3];
 
-    } else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {        
-        weapon_master_handler weapon_master(ch, obj);
-        SET_OB(ch) -= obj->obj_flags.value[0] + weapon_master.get_bonus_OB(obj);
-        SET_PARRY(ch) -= obj->obj_flags.value[1] + weapon_master.get_bonus_PB(obj);
+    } else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {
+        SET_OB(ch) -= obj->obj_flags.value[0];
+        SET_PARRY(ch) -= obj->obj_flags.value[1];
 
     } else if (GET_ITEM_TYPE(obj) == ITEM_SHIELD) {
         SET_DODGE(ch) -= obj->obj_flags.value[0];

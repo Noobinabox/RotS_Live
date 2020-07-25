@@ -1378,11 +1378,13 @@ void wild_fighting_handler::update_health(int new_value)
         return;
     }
 
+    float old_health_percentage = health_percentage;
+
     current_health = new_value;
     health_percentage = current_health / (float)max_health;
 
     // broadcast rage message
-    if (health_percentage <= 0.45f) {
+    if (old_health_percentage > 0.45f && health_percentage <= 0.45f) {
         on_enter_rage();
     }
 }

@@ -1362,7 +1362,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
     if (victim->get_level() * 6 / 10 >= character->get_capped_level())
     {
         int missing_health = max_health - current_health;
-        character->tmpabilities.hit += missing_health * 0.2f;
+        character->tmpabilities.hit += missing_health * 0.1f;
 
 		// let people know that shit's getting real
 		act("$n roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);

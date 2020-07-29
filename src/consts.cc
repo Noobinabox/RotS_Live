@@ -2832,7 +2832,12 @@ char* preference_bits[] = {
     "SPAM",
     "AUTOEX",
     "LATIN1",
-    "!UNUS",
+    "SPINNER",
+    "SORT1",
+    "SORT2",
+    "!UNUS1",
+    "!UNUS2",
+    "!UNUS3",
     "\n"
 };
 

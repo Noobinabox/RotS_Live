@@ -1491,7 +1491,7 @@ namespace {
 
 	constexpr const float flail_proc_chance = 0.40f;
 	constexpr const float piercing_proc_chance = 0.25f;
-	constexpr const float slashing_proc_chance = 0.20f;
+	constexpr const float slashing_proc_chance = 0.40f;
 	constexpr const float stabbing_proc_chance = 0.50f;
 	constexpr const float whipping_proc_chance = 0.40f;
 
@@ -1619,35 +1619,24 @@ bool weapon_master_handler::does_spear_proc(char_data* victim)
 	return true;
 }
 
-void weapon_master_handler::do_double_strike(char_data* victim)
+void weapon_master_handler::regain_energy(char_data* victim)
 {
-    if (!does_double_strike())
+    if (!does_sword_proc())
         return;
 
-	act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, character, NULL, victim, TO_CHAR);
-	act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, character, NULL, victim, TO_VICT);
-	act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, character, 0, victim, TO_NOTVICT, FALSE);
+	act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
+	act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
 
-    character->specials.ENERGY += ENE_TO_HIT;
-    hit(character, victim, TYPE_UNDEFINED);
+    character->specials.ENERGY += ENE_TO_HIT / 2;
 }
 
-bool weapon_master_handler::does_double_strike() const
+bool weapon_master_handler::does_sword_proc() const
 {
     if (spec != game_types::PS_WeaponMaster)
         return false;
 
     if (weapon_type != game_types::WT_SLASHING && weapon_type != game_types::WT_SLASHING_TWO)
         return false;
-
-	// The character is no longer fighting anyone.  Can't double-hit.
-	if (character->specials.fighting == NULL)
-		return false;
-
-	// The character's enemy is no longer in the room (probably wimpied out).  Can't
-	// attack an enemy that isn't there.
-	if (character->specials.fighting->in_room != character->in_room)
-		return false;
 
     return number() <= slashing_proc_chance;
 }

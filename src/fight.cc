@@ -2827,7 +2827,7 @@ void perform_violence(int mini_tics)
                     
                     else {
                         weapon_master_handler weapon_master(fighter);
-                        weapon_master.do_double_strike(fighter->specials.fighting);
+                        weapon_master.regain_energy(fighter->specials.fighting);
                     }
                 } else /* Not in same room */
                 {

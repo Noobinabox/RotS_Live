@@ -186,7 +186,7 @@ public:
 	bool ignores_shields(char_data* victim);
 	bool ignores_armor(char_data* victim);
 	bool does_spear_proc(char_data* victim);
-	void do_double_strike(char_data* victim);
+	void regain_energy(char_data* victim);
 	void do_on_damage_dealt(int damage, char_data* victim);
 	int get_bonus_OB() const;
 	int get_bonus_PB() const;
@@ -195,7 +195,7 @@ public:
 
 private:
 
-	bool does_double_strike() const;
+	bool does_sword_proc() const;
 
 	char_data* character = nullptr;
 	const obj_data* weapon = nullptr;

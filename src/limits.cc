@@ -1504,7 +1504,7 @@ void fast_update()
 
         // Characters can die to negative regen values (think restlessness)
         GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
-        if (GET_HIT(character) < 0) {
+        if (GET_HIT(character) < 0 && hitregen < 0) {
 			act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
 			send_to_char("Your body failed to the magic.\n\r", character);
 			raw_kill(character, NULL, TYPE_UNDEFINED);

@@ -698,7 +698,7 @@ void game_loop(SocketType s)
             was_updated = 1;
         }
         if (!(pulse % (PULSE_FAST_UPDATE)) /*&& !was_updated*/) {
-            //now increasing hp/mp/mana/spirit fast in fast_update..
+			//now increasing hp/mp/mana/spirit fast in fast_update..
             fast_update();
             affect_update();
 

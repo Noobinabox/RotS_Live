@@ -763,8 +763,8 @@ ASPELL(spell_curing)
     if (!affected_by_spell(victim, SPELL_CURING)) {
         affected_type effect;
         effect.type = SPELL_CURING;
-        effect.duration = healing_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
-        effect.modifier = -healing_level;
+        effect.duration = healing_level * FAST_UPDATE_RATE / 2;
+        effect.modifier = healing_level;
         effect.location = APPLY_NONE;
         effect.bitvector = 0;
 
@@ -792,7 +792,7 @@ ASPELL(spell_restlessness)
     if (!affected_by_spell(victim, SPELL_RESTLESSNESS)) {
         affected_type effect;
         effect.type = SPELL_RESTLESSNESS;
-        effect.duration = healing_level * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE / 2;
+        effect.duration = healing_level * FAST_UPDATE_RATE / 2;
         effect.modifier = healing_level;
         effect.location = APPLY_NONE;
         effect.bitvector = 0;
@@ -939,7 +939,7 @@ ASPELL(spell_regeneration)
         regen_level += 6;
     }
 
-    regen_level = regen_level / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
+    regen_level = regen_level / 2 * FAST_UPDATE_RATE;
 
     affected_type* current_regen_effect = affected_by_spell(victim, SPELL_REGENERATION);
     if (!current_regen_effect) {

@@ -574,7 +574,7 @@ struct room_direction_data {
 
     ubyte exit_width; /* 1-6, default should be 4 */
     int exit_info; /* Exit info    changed from sh_int                   */
-    sh_int key; /* Key's number (-1 for no key)    */
+    int key; /* Key's number (-1 for no key)    */
     int to_room; /* Where direction leeds (NOWHERE) */
 };
 

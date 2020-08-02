@@ -482,6 +482,7 @@ ACMD(do_overrun)
 {
     one_argument(argument, arg);
     cmd = get_direction(arg);
+    int olog_delay = PULSE_VIOLENCE;
     
     if (cmd == -1) {
         send_to_char("You don't know what direction that is?!\r\n", ch);
@@ -520,11 +521,12 @@ ACMD(do_overrun)
 
     if (dis < total_moves) {
         damage(ch, ch, 50, SKILL_OVERRUN, 0);
+        olog_delay *= 1.5;
     }
     else {
         olog_hai::room_target(ch, &olog_hai::apply_overrun_damage);
     }
-    WAIT_STATE_FULL(ch, PULSE_VIOLENCE, 0, 0, 1, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+    WAIT_STATE_FULL(ch, olog_delay, 0, 0, 1, 0, 0, 0, AFF_WAITING, TARGET_NONE);
     timer.add_skill_timer(*ch, SKILL_OVERRUN, OVERRUN_TIMER);
 }
 

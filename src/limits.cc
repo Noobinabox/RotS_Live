@@ -1387,7 +1387,7 @@ void affect_update_room(struct room_data* room)
             sprintf(buf, "check mist movement");
             mudlog(buf, NRM, LEVEL_GOD, FALSE);
             if (movechance < 75) {
-                direction = number(0, NUM_OF_DIRS);
+                direction = number(0, NUM_OF_DIRS -1);
                 /* Decide if the random direction is legal, if so, move the mist */
                 if (!(room->dir_option[direction])) {
                     sprintf(buf, "no option for movement");

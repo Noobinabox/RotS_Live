@@ -23,6 +23,7 @@ namespace game_timer {
         data.counter = counter;
         vmudlog(CMP, "Skill cooldown set: char:[%s] skill:[%d] counter:[%d]", utils::get_name(ch), skill_id, counter);
         m_skill_timer.push_back(data);
+        add_global_cooldown(player_id);
     }
 
     void skill_timer::update_skill_timer() {
@@ -38,6 +39,15 @@ namespace game_timer {
         }
     }
 
+    void skill_timer::add_global_cooldown(int ch_id) {
+        skill_data data;
+        data.player_id = ch_id;
+        data.skill_id = GLOBAL_SKILL;
+        data.counter = GLOBAL_COOLDOWN_COUNTER;
+        vmudlog(CMP, "Skill cooldown set: char[%d] counter[%d]", ch_id, GLOBAL_COOLDOWN_COUNTER);
+        m_skill_timer.push_back(data);
+    }
+
     bool skill_timer::is_skill_allowed(const char_data& ch, const int skill_id) {
         if (utils::is_npc(ch)) {
             return true;
@@ -47,7 +57,7 @@ namespace game_timer {
 
         for(int i = 0; i < m_skill_timer.size(); ++i) {
             auto data = m_skill_timer[i];
-            if (data.player_id == player_id && data.skill_id == skill_id) {
+            if (data.player_id == player_id && (data.skill_id == skill_id || data.skill_id == GLOBAL_SKILL)) {
                 return false;
             }
         }

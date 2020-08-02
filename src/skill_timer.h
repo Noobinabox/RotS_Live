@@ -16,6 +16,8 @@ namespace game_timer {
             void update_skill_timer();
         private:
             friend class world_singleton<skill_timer>;
+            const int GLOBAL_SKILL = -1;
+            const int GLOBAL_COOLDOWN_COUNTER = 2;
             struct skill_data {
                 int player_id;
                 int skill_id;
@@ -27,6 +29,7 @@ namespace game_timer {
                     , counter(0) {};
             };
             std::vector<skill_data> m_skill_timer;
+            void add_global_cooldown(int ch_id);
             skill_timer(const weather_data* weather, const room_data* world)
                 : world_singleton<skill_timer>(weather, world) { };
     };

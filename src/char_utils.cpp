@@ -85,6 +85,7 @@ bool is_affected_by(const char_data& character, long skill_id)
     return utils::is_set(character.specials.affected_by, skill_id);
 }
 
+
 //============================================================================
 affected_type* is_affected_by_spell(char_data& character, int skill_id)
 {
@@ -248,6 +249,14 @@ const char* get_name(const char_data& character)
         return character.player.short_descr;
 
     return character.player.name;
+}
+
+//============================================================================
+const char* get_skill_name(const int skill_id) 
+{
+    const skill_data* skills = get_skill_array();
+    const char* skill_name = skills[skill_id].name;
+    return skill_name;
 }
 
 //============================================================================

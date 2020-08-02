@@ -14,6 +14,8 @@ namespace game_timer {
             bool is_skill_allowed(const char_data& ch, const int skill_id);
             // Updates the skill timer list and removes any that have expired.
             void update_skill_timer();
+            // Reports all skills for a specific player and the time left on it.
+            int report_skill_status(int player_id, char* buffer);
         private:
             friend class world_singleton<skill_timer>;
             const int GLOBAL_SKILL = -1;

@@ -29,6 +29,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h" /* For zone_table */
+#include "skill_timer.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -3612,6 +3613,11 @@ void report_affection(affected_type* aff, char* str)
     sprintf(str, "%-30s (%s)\n\r", skill_name, duration_text);
 }
 
+void report_skill_timer(const char_data& ch, char* buf) {
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    buf += timer.report_skill_status(utils::get_idnum(ch), buf);
+}
+
 ACMD(do_affections)
 {
 
@@ -3640,6 +3646,7 @@ ACMD(do_affections)
             sprintf(buf, "%s%s", buf, str);
         }
     }
+    report_skill_timer(*ch, buf);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (bb_instance.is_target_looting(ch)) {

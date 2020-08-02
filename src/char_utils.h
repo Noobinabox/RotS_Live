@@ -42,6 +42,7 @@ void set_condition(char_data& character, int index, sh_int value);
 
 int get_index(const char_data& character);
 const char* get_name(const char_data& character);
+const char* get_skill_name(const int skill_id);
 
 int get_level_a(const char_data& character);
 int get_level_legend_cap(const char_data& character);
@@ -76,6 +77,7 @@ int get_ranking_tier(int ranking);
 
 int get_raw_skill(const char_data& character, int skill_index);
 int get_skill(const char_data& character, int skill_index);
+const char* get_skill_name(const int skill_id);
 void set_skill(char_data& character, int skill_index, byte value);
 
 int get_raw_knowledge(const char_data& character, int skill_index);

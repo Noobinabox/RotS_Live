@@ -360,6 +360,7 @@ ACMD(do_cleave)
     }
 
     olog_hai::do_sanctuary_check(ch);
+    send_to_char("You arch back and swing your weapon with great velocity!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_cleave_damage);
     timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);    
 }
@@ -568,6 +569,7 @@ ACMD(do_stomp)
     }
 
     olog_hai::do_sanctuary_check(ch);
+    send_to_char("You jump into the air and slam down feet first onto the ground!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_stomp_affect);
     timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
 }

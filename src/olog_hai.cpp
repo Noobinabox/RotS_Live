@@ -34,6 +34,10 @@ namespace olog_hai {
         return prob;
     }
 
+    void apply_victim_delay(char_data* victim, int delay) {
+        WAIT_STATE_FULL(victim, delay, 0, 0, 100, 0, 0, 0, AFF_WAITING, TAR_IGNORE);
+    }
+
     bool is_skill_valid(char_data* ch, const int& skill_id) {
         if (utils::get_race(*ch) != RACE_OLOGHAI) {
             send_to_char("Unrecognized command.\r\n", ch);
@@ -230,7 +234,7 @@ namespace olog_hai {
             }
             if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
                 int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
-                WAIT_STATE(victim, wait_delay);
+                apply_victim_delay(victim, wait_delay);
             }
             return;
         }
@@ -266,7 +270,7 @@ namespace olog_hai {
         }
         int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            WAIT_STATE(victim, wait_delay);
+            apply_victim_delay(victim, wait_delay);
         }
         damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
     }
@@ -286,7 +290,7 @@ namespace olog_hai {
 
         int wait_delay = PULSE_VIOLENCE;
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            WAIT_STATE(victim, wait_delay);
+            apply_victim_delay(victim, wait_delay);
         }
         damage(attacker, victim, calculate_overrun_damage(*attacker, prob), SKILL_OVERRUN, 0);
     }

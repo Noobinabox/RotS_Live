@@ -239,7 +239,7 @@ float hit_gain(const char_data* character)
     }
 
     if (GET_RACE(character) == RACE_OLOGHAI) {
-        gain *= 3.0;
+        gain *= 1.5;
     }
 
     gain = adjust_regen_for_level(character->player.level, gain);
@@ -336,7 +336,7 @@ float move_gain(const char_data* character)
         }
 
         if (race == RACE_OLOGHAI) {
-            gain *= 3.0;
+            gain *= 1.50;
         }
 
         if (is_affected_by(*character, AFF_POISON)) {

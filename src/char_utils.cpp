@@ -1301,7 +1301,7 @@ int battle_mage_handler::get_bonus_spell_pen(int spell_pen) const {
         return spell_pen;
     }
 
-    return spell_pen + tactics + mage_level / 10;
+    return spell_pen + (tactics / 2) + (mage_level / 12);
 }
 
 int battle_mage_handler::get_bonus_spell_power(int spell_power) const {
@@ -1309,7 +1309,7 @@ int battle_mage_handler::get_bonus_spell_power(int spell_power) const {
         return spell_power;
     }
 
-    return spell_power + tactics + mage_level / 10;
+    return spell_power + (tactics / 2) + (mage_level / 12);
 }
 
 bool battle_mage_handler::can_prepare_spell() const {

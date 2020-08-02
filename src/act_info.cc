@@ -1798,6 +1798,27 @@ ACMD(do_info)
         GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
         GET_MOVE(ch), GET_MAX_MOVE(ch), GET_SPIRIT(ch));
 
+    /* ch's resource regeneration */
+    {
+        float health_regen = hit_gain(ch);
+        float bonus_health_regen = get_bonus_hit_gain(ch);
+        const char* health_symbol = bonus_health_regen > 0.0f ? "+" : "";
+
+		float mana_regen = mana_gain(ch);
+		float bonus_mana_regen = get_bonus_mana_gain(ch);
+		const char* mana_symbol = bonus_mana_regen > 0.0f ? "+" : "";
+
+		float move_regen = move_gain(ch);
+		float bonus_move_regen = get_bonus_move_gain(ch);
+		const char* move_symbol = bonus_move_regen > 0.0f ? "+" : "";
+        
+        bufpt += sprintf(bufpt, "You regain %.0f (%s%.0f) health, %.0f (%s%.0f) stamina, and %.0f (%s%.0f) moves per hour.\n\r",
+            health_regen, health_symbol, bonus_health_regen,
+            mana_regen, mana_symbol, bonus_mana_regen,
+            move_regen, move_symbol, bonus_move_regen);
+    }
+    
+
     /* `ch's wealth */
     bufpt += sprintf(bufpt, "You have %s.\n\r", money_message(GET_GOLD(ch), 1));
 

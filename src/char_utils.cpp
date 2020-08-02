@@ -1362,7 +1362,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
     if (victim->get_level() * 6 / 10 >= character->get_capped_level())
     {
         int missing_health = max_health - current_health;
-        character->tmpabilities.hit += missing_health * 0.2f;
+        character->tmpabilities.hit += missing_health * 0.1f;
 
 		// let people know that shit's getting real
 		act("$n roars and seems invigorated after the kill!", FALSE, character, nullptr, 0, TO_ROOM);
@@ -1378,11 +1378,13 @@ void wild_fighting_handler::update_health(int new_value)
         return;
     }
 
+    float old_health_percentage = health_percentage;
+
     current_health = new_value;
     health_percentage = current_health / (float)max_health;
 
     // broadcast rage message
-    if (health_percentage <= 0.45f) {
+    if (old_health_percentage > 0.45f && health_percentage <= 0.45f) {
         on_enter_rage();
     }
 }
@@ -1489,7 +1491,7 @@ namespace {
 
 	constexpr const float flail_proc_chance = 0.40f;
 	constexpr const float piercing_proc_chance = 0.25f;
-	constexpr const float slashing_proc_chance = 0.20f;
+	constexpr const float slashing_proc_chance = 0.40f;
 	constexpr const float stabbing_proc_chance = 0.50f;
 	constexpr const float whipping_proc_chance = 0.40f;
 
@@ -1617,35 +1619,24 @@ bool weapon_master_handler::does_spear_proc(char_data* victim)
 	return true;
 }
 
-void weapon_master_handler::do_double_strike(char_data* victim)
+void weapon_master_handler::regain_energy(char_data* victim)
 {
-    if (!does_double_strike())
+    if (!does_sword_proc())
         return;
 
-	act("You find an opening in $N's defenses, and strike again rapidly.", FALSE, character, NULL, victim, TO_CHAR);
-	act("$n finds an opening in your defenses, and strikes again rapidly.", FALSE, character, NULL, victim, TO_VICT);
-	act("$n finds an opening in $N's defenses, and strikes again rapidly.", FALSE, character, 0, victim, TO_NOTVICT, FALSE);
+	act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
+	act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
 
-    character->specials.ENERGY += ENE_TO_HIT;
-    hit(character, victim, TYPE_UNDEFINED);
+    character->specials.ENERGY += ENE_TO_HIT / 2;
 }
 
-bool weapon_master_handler::does_double_strike() const
+bool weapon_master_handler::does_sword_proc() const
 {
     if (spec != game_types::PS_WeaponMaster)
         return false;
 
     if (weapon_type != game_types::WT_SLASHING && weapon_type != game_types::WT_SLASHING_TWO)
         return false;
-
-	// The character is no longer fighting anyone.  Can't double-hit.
-	if (character->specials.fighting == NULL)
-		return false;
-
-	// The character's enemy is no longer in the room (probably wimpied out).  Can't
-	// attack an enemy that isn't there.
-	if (character->specials.fighting->in_room != character->in_room)
-		return false;
 
     return number() <= slashing_proc_chance;
 }
@@ -1690,36 +1681,30 @@ void weapon_master_handler::do_on_damage_dealt(int damage, char_data* victim)
     }
 }
 
-int weapon_master_handler::get_bonus_OB(const obj_data* in_weapon) const
+int weapon_master_handler::get_bonus_OB() const
 {
     if (spec != game_types::PS_WeaponMaster)
         return 0;
 
-    if (in_weapon != nullptr) {
-        game_types::weapon_type in_weapon_type = in_weapon->get_weapon_type();
-        if (in_weapon_type == game_types::WT_BLUDGEONING || game_types::WT_BLUDGEONING_TWO || game_types::WT_SMITING) {
-            return 10;
-        } else if (in_weapon_type == game_types::WT_SLASHING || in_weapon_type == game_types::WT_SLASHING_TWO) {
-            return 5;
-        }
-    }
+	if (weapon_type == game_types::WT_BLUDGEONING || weapon_type == game_types::WT_BLUDGEONING_TWO || weapon_type == game_types::WT_SMITING) {
+		return 10;
+	} else if (weapon_type == game_types::WT_SLASHING || weapon_type == game_types::WT_SLASHING_TWO) {
+		return 5;
+	}
 
     return 0;
 }
 
-int weapon_master_handler::get_bonus_PB(const obj_data* in_weapon) const
+int weapon_master_handler::get_bonus_PB() const
 {
 	if (spec != game_types::PS_WeaponMaster)
 		return 0;
 
-    if (in_weapon != nullptr) {
-        game_types::weapon_type in_weapon_type = in_weapon->get_weapon_type();
-        if (in_weapon_type == game_types::WT_STABBING) {
-            return 10;
-        } else if(in_weapon_type == game_types::WT_SLASHING || in_weapon_type == game_types::WT_SLASHING_TWO) {
-            return 5;
-        }
-    }
+	if (weapon_type == game_types::WT_STABBING) {
+		return 10;
+	} else if (weapon_type == game_types::WT_SLASHING || weapon_type == game_types::WT_SLASHING_TWO) {
+		return 5;
+	}
 
     return 0;
 }

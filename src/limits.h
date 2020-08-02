@@ -15,9 +15,14 @@ struct char_data;
 struct affected_type;
 
 /* Public Procedures */
-int mana_gain(const char_data* ch);
-int hit_gain(const char_data* ch);
-int move_gain(const char_data* ch);
+float mana_gain(const char_data* ch);
+float get_bonus_mana_gain(const char_data* character);
+
+float hit_gain(const char_data* ch);
+float get_bonus_hit_gain(const char_data* character);
+
+float move_gain(const char_data* ch);
+float get_bonus_move_gain(const char_data* character);
 //int spirit_gain(const char_data* ch);
 
 int xp_to_level(int level);

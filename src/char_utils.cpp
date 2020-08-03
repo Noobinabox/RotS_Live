@@ -1557,7 +1557,7 @@ int weapon_master_handler::do_on_damage_rolled(int damage_roll, char_data* victi
             int new_roll = number(1, 100);
             if (new_roll > damage_roll) {
 
-                act("$N leaves $s vulnerable, and you capitalize with a devastating strike!", FALSE, character, NULL, victim, TO_CHAR);
+                act("Your axe strikes hard and true!", FALSE, character, NULL, victim, TO_CHAR);
                 return new_roll;
             }
         }

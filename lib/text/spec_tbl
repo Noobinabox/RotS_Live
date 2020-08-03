@@ -87,22 +87,43 @@ individual spells in unique ways, as described by the specialization.
 
   Wild fighting - Grants you an occasional rush of ferocity in battle,
                   which significantly increases the damage of your next swing.
+				  When low on health and berserk, attack speed is increased.
+				  Recover some missing health when scoring a meaningful kill on berserk.
 				  Also gaints the skill "wild swing".  See SKILL WILD SWING.
 				 
   Light fighting- Makes you a master of fighting with light weapons.
-                  * When wielding a light sword, daggers, light whips, and
-				    other light weapons, you will occasionally find an opening
-					in your enemy's defense and swing twice.
+				  * Gain the following benefits when using light one-handed weapons:
+				    + Use dexterity instead of strength for OB.
+					+ Add 1/3 of ranger level to warrior level for OB calculations.
+					+ Occasionally double-strike.
+				  * Reduce encumbrance of all armor and shields by a small amount.
 
   Heavy fighting- Makes you a master of fighting with heavy weapons and armor.
-                  * Swing faster with heavy one-handed weapons, and swing
-				    harder with two-handed weapons.
+                  * Small damage bonus with heavy one or two-handed weapons.
 				  * Armor reduces more damage for you.
 				  * Your 'kick' skill lands more heavily, dealing more damage.
+				  * Reduced heavy armor encumbrance
 
   Defender      - Makes you a master of fighting with shields.
                   * Occasionally block an attack that would have otherwise
 				    hit you, significantly reducing the damage of the attack.
+				
+  Weapon Master - Makes you a master of a variety of weapons, each granting a passive
+                  and active effect.
+				  * Axes: +15% damage, chance to reroll damage rolls and take the higher value
+				  * Clubs/Hammers: +10 OB, chance to sap the speed of your opponent on hit
+				  * Smiters: +10 OB, chance to haze on hit.
+				  + Spears: +10 PB, chance to double spear armor penetration.
+				  + Whips: +15% attack speed, chance to ignore your target's shield.
+				  + Flails: +15% damage, chance to ignore your target's shield.
+				  + Daggers: +15% attack speed, chance to ignore your target's armor.
+				  + Swords: +5 OB/+5 PB, chance to double your attack speed for your next swing.
+				  
+  Battle Mage - Makes you a master of casting spells in combat.
+                + Lose ability to prepare spells.
+                + Gain bonus spell power and spell penetration based on tactics and mage level.
+                + Chance to ignore armor effects when casting.
+                + Chance to continue casting after taking damage.				
 		  
    Once made, the selection cannot be changed. Appropriate guildmasters
 will teach you your new skills at your own time.

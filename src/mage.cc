@@ -2376,6 +2376,7 @@ const char* get_expose_spell_message(int spell_id)
 
 void spell_expose_elements(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object)
 {
+    const int max_valid_specs = 6;
     if (!victim || !caster)
         return;
 
@@ -2384,13 +2385,13 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
         return;
     }
 
-    game_types::player_specs valid_specs[5] = { game_types::PS_Arcane,
+    game_types::player_specs valid_specs[max_valid_specs] = { game_types::PS_Arcane,
         game_types::PS_Cold, game_types::PS_Darkness, game_types::PS_Fire,
-        game_types::PS_Lightning };
+        game_types::PS_Lightning, game_types::PS_BattleMage };
 
     bool valid_spec = false;
     game_types::player_specs caster_spec = utils::get_specialization(*caster);
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < max_valid_specs; ++i) {
         if (caster_spec == valid_specs[i]) {
             valid_spec = true;
         }
@@ -2409,6 +2410,13 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
     int weather_type = weather_info.sky[current_room.sector_type];
 
     switch (caster_spec) {
+    case game_types::PS_BattleMage: {
+        if (utils::is_evil_race(*caster)) {
+            spec_data->spell_id = SPELL_DARK_BOLT;
+        } else {
+            spec_data->spell_id = SPELL_FIREBOLT;
+        }
+    } break;
     case game_types::PS_Arcane: {
         if (utils::is_evil_race(*caster)) {
             if (caster->player.race == RACE_MAGUS) {

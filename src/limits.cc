@@ -239,7 +239,7 @@ float hit_gain(const char_data* character)
     }
 
     if (GET_RACE(character) == RACE_OLOGHAI) {
-        gain *= 3.0;
+        gain *= 1.5;
     }
 
     gain = adjust_regen_for_level(character->player.level, gain);
@@ -336,7 +336,7 @@ float move_gain(const char_data* character)
         }
 
         if (race == RACE_OLOGHAI) {
-            gain *= 3.0;
+            gain *= 1.50;
         }
 
         if (is_affected_by(*character, AFF_POISON)) {
@@ -1395,7 +1395,7 @@ void affect_update_room(struct room_data* room)
             sprintf(buf, "check mist movement");
             mudlog(buf, NRM, LEVEL_GOD, FALSE);
             if (movechance < 75) {
-                direction = number(0, NUM_OF_DIRS);
+                direction = number(0, NUM_OF_DIRS -1);
                 /* Decide if the random direction is legal, if so, move the mist */
                 if (!(room->dir_option[direction])) {
                     sprintf(buf, "no option for movement");

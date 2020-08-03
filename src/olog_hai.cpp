@@ -34,6 +34,10 @@ namespace olog_hai {
         return prob;
     }
 
+    void apply_victim_delay(char_data* victim, int delay) {
+        WAIT_STATE_FULL(victim, delay, 0, 0, 100, 0, 0, 0, AFF_WAITING, TAR_IGNORE);
+    }
+
     bool is_skill_valid(char_data* ch, const int& skill_id) {
         if (utils::get_race(*ch) != RACE_OLOGHAI) {
             send_to_char("Unrecognized command.\r\n", ch);
@@ -230,7 +234,7 @@ namespace olog_hai {
             }
             if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
                 int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
-                WAIT_STATE(victim, wait_delay);
+                apply_victim_delay(victim, wait_delay);
             }
             return;
         }
@@ -266,7 +270,7 @@ namespace olog_hai {
         }
         int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            WAIT_STATE(victim, wait_delay);
+            apply_victim_delay(victim, wait_delay);
         }
         damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
     }
@@ -286,7 +290,7 @@ namespace olog_hai {
 
         int wait_delay = PULSE_VIOLENCE;
         if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            WAIT_STATE(victim, wait_delay);
+            apply_victim_delay(victim, wait_delay);
         }
         damage(attacker, victim, calculate_overrun_damage(*attacker, prob), SKILL_OVERRUN, 0);
     }
@@ -360,6 +364,7 @@ ACMD(do_cleave)
     }
 
     olog_hai::do_sanctuary_check(ch);
+    send_to_char("You arch back and swing your weapon with great velocity!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_cleave_damage);
     timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);    
 }
@@ -482,6 +487,7 @@ ACMD(do_overrun)
 {
     one_argument(argument, arg);
     cmd = get_direction(arg);
+    int olog_delay = PULSE_VIOLENCE;
     
     if (cmd == -1) {
         send_to_char("You don't know what direction that is?!\r\n", ch);
@@ -520,11 +526,12 @@ ACMD(do_overrun)
 
     if (dis < total_moves) {
         damage(ch, ch, 50, SKILL_OVERRUN, 0);
+        olog_delay *= 1.5;
     }
     else {
         olog_hai::room_target(ch, &olog_hai::apply_overrun_damage);
     }
-    WAIT_STATE_FULL(ch, PULSE_VIOLENCE, 0, 0, 1, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+    WAIT_STATE_FULL(ch, olog_delay, 0, 0, 1, 0, 0, 0, AFF_WAITING, TARGET_NONE);
     timer.add_skill_timer(*ch, SKILL_OVERRUN, OVERRUN_TIMER);
 }
 
@@ -566,6 +573,7 @@ ACMD(do_stomp)
     }
 
     olog_hai::do_sanctuary_check(ch);
+    send_to_char("You jump into the air and slam down feet first onto the ground!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_stomp_affect);
     timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
 }

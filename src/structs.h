@@ -1499,7 +1499,7 @@ struct specialization_data {
         if (current_spec == game_types::PS_None)
             return false;
 
-        return current_spec == game_types::PS_Darkness || current_spec == game_types::PS_Arcane || current_spec == game_types::PS_Fire || current_spec == game_types::PS_Cold || current_spec == game_types::PS_Lightning;
+        return current_spec == game_types::PS_Darkness || current_spec == game_types::PS_Arcane || current_spec == game_types::PS_Fire || current_spec == game_types::PS_Cold || current_spec == game_types::PS_Lightning || current_spec == game_types::PS_BattleMage;
     }
 
     elemental_spec_data* get_mage_spec() const

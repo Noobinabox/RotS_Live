@@ -1485,21 +1485,21 @@ void fast_update()
         int hitregen = int(health_regen_base);
         if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base))))
         {
-            hitregen += hitregen > 0 ? 1 : -1;
+            hitregen += hitregen >= 0 ? 1 : -1;
         }
 
 		float move_regen_base = move_gain(character) / freq;
 		int moveregen = int(move_regen_base);
         if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base))))
 		{
-            moveregen += moveregen > 0 ? 1 : -1;
+            moveregen += moveregen >= 0 ? 1 : -1;
 		}
 
 		float mana_regen_base = mana_gain(character) / freq;
 		int manaregen = int(mana_regen_base);
         if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base))))
 		{
-            manaregen += manaregen > 0 ? 1 : -1;
+            manaregen += manaregen >= 0 ? 1 : -1;
 		}
 
         // Characters can die to negative regen values (think restlessness)

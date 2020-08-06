@@ -43,9 +43,10 @@ int get_mage_caster_level(const char_data* caster)
 
 int get_magic_power(const char_data* caster)
 {
+    battle_mage_handler battle_mage_handler(caster);
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
-    caster_level += caster->points.spell_power;
+    caster_level += battle_mage_handler.get_bonus_spell_power(caster->points.spell_power);
 
     // Factor in intel values not divisible by 5.
     int intel_factor = caster->tmpabilities.intel / 5;
@@ -1261,8 +1262,9 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
     int save_bonus = 0;
     game_types::player_specs caster_spec = utils::get_specialization(caster);
     game_types::player_specs victim_spec = utils::get_specialization(victim);
+    game_types::player_specs arcane_spec = game_types::player_specs::PS_Arcane;
 
-    if (caster_spec == primary_spec) {
+    if (caster_spec == primary_spec || caster_spec == arcane_spec) {
         save_bonus -= 2;
     } else if (caster_spec == opposing_spec) {
         save_bonus += 2;
@@ -1270,7 +1272,7 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
 
     if (victim_spec == primary_spec) {
         save_bonus += 2;
-    } else if (victim_spec == opposing_spec) {
+    } else if (victim_spec == opposing_spec || victim_spec == arcane_spec) {
         save_bonus -= 2;
     }
 
@@ -1301,7 +1303,7 @@ ASPELL(spell_magic_missile)
 
 void apply_chilled_effect(char_data* caster, char_data* victim)
 {
-    int energy_lost = victim->specials.ENERGY / 2 + victim->points.ENE_regen * 4;
+    int energy_lost = victim->specials.ENERGY / 2 + utils::get_energy_regen(*victim) * 4;
     victim->specials.ENERGY -= energy_lost;
 
     if (utils::get_specialization(*caster) == game_types::PS_Cold) {
@@ -2128,6 +2130,7 @@ ASPELL(spell_blaze)
     int dam;
 
     int level = get_mage_caster_level(caster);
+    bool is_fire_spec = utils::get_specialization(*caster) == game_types::PS_Fire;
 
     if (!victim && !obj) { /* there was no target, hit the room */
         if (!caster)
@@ -2139,6 +2142,12 @@ ASPELL(spell_blaze)
         /* Damage everyone in the room */
         for (tmpch = world[caster->in_room].people; tmpch; tmpch = tmpch_next) {
             tmpch_next = tmpch->next_in_room;
+            
+
+            // friends don't burn friends, at first...
+            if (is_friendly_taget(caster, tmpch)) {
+                continue;
+            }
             dam = number(1, 30) + get_magic_power(caster) / 2; /* same as earthquake */
 
             int save_bonus = get_save_bonus(*caster, *tmpch, game_types::PS_Fire, game_types::PS_Cold);
@@ -2367,6 +2376,7 @@ const char* get_expose_spell_message(int spell_id)
 
 void spell_expose_elements(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object)
 {
+    const int max_valid_specs = 6;
     if (!victim || !caster)
         return;
 
@@ -2375,13 +2385,13 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
         return;
     }
 
-    game_types::player_specs valid_specs[5] = { game_types::PS_Arcane,
+    game_types::player_specs valid_specs[max_valid_specs] = { game_types::PS_Arcane,
         game_types::PS_Cold, game_types::PS_Darkness, game_types::PS_Fire,
-        game_types::PS_Lightning };
+        game_types::PS_Lightning, game_types::PS_BattleMage };
 
     bool valid_spec = false;
     game_types::player_specs caster_spec = utils::get_specialization(*caster);
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < max_valid_specs; ++i) {
         if (caster_spec == valid_specs[i]) {
             valid_spec = true;
         }
@@ -2400,6 +2410,13 @@ void spell_expose_elements(char_data* caster, char* arg, int type, char_data* vi
     int weather_type = weather_info.sky[current_room.sector_type];
 
     switch (caster_spec) {
+    case game_types::PS_BattleMage: {
+        if (utils::is_evil_race(*caster)) {
+            spec_data->spell_id = SPELL_DARK_BOLT;
+        } else {
+            spec_data->spell_id = SPELL_FIREBOLT;
+        }
+    } break;
     case game_types::PS_Arcane: {
         if (utils::is_evil_race(*caster)) {
             if (caster->player.race == RACE_MAGUS) {

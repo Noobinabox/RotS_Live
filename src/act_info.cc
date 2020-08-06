@@ -29,6 +29,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h" /* For zone_table */
+#include "skill_timer.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -1798,6 +1799,27 @@ ACMD(do_info)
         GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
         GET_MOVE(ch), GET_MAX_MOVE(ch), GET_SPIRIT(ch));
 
+    /* ch's resource regeneration */
+    {
+        float health_regen = hit_gain(ch);
+        float bonus_health_regen = get_bonus_hit_gain(ch);
+        const char* health_symbol = bonus_health_regen > 0.0f ? "+" : "";
+
+		float mana_regen = mana_gain(ch);
+		float bonus_mana_regen = get_bonus_mana_gain(ch);
+		const char* mana_symbol = bonus_mana_regen > 0.0f ? "+" : "";
+
+		float move_regen = move_gain(ch);
+		float bonus_move_regen = get_bonus_move_gain(ch);
+		const char* move_symbol = bonus_move_regen > 0.0f ? "+" : "";
+        
+        bufpt += sprintf(bufpt, "You regain %.0f (%s%.0f) health, %.0f (%s%.0f) stamina, and %.0f (%s%.0f) moves per hour.\n\r",
+            health_regen, health_symbol, bonus_health_regen,
+            mana_regen, mana_symbol, bonus_mana_regen,
+            move_regen, move_symbol, bonus_move_regen);
+    }
+    
+
     /* `ch's wealth */
     bufpt += sprintf(bufpt, "You have %s.\n\r", money_message(GET_GOLD(ch), 1));
 
@@ -1806,7 +1828,7 @@ ACMD(do_info)
                             "and your attack speed is %d.\r\n"
                             "Your armour absorbs about %d%% damage, and ",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
-        GET_ENE_REGEN(ch) / 5, get_percent_absorb(ch));
+        utils::get_energy_regen(*ch) / 5, get_percent_absorb(ch));
 
     /* A small blurb on `ch's spellsave; should be its own function */
     if (ch->specials2.saving_throw < 0)
@@ -1827,10 +1849,11 @@ ACMD(do_info)
         GET_PERCEPTION(ch),
         GET_WILLPOWER(ch));
 
+    battle_mage_handler battle_mage_handler(ch);
     bufpt += sprintf(bufpt, "Your spell penetration is %d, "
                             "and your spell power is %d,\n\r",
-        ch->points.get_spell_pen(),
-        ch->points.get_spell_power());
+        battle_mage_handler.get_bonus_spell_pen(ch->points.get_spell_pen()),
+        battle_mage_handler.get_bonus_spell_power(ch->points.get_spell_power()));
 
     /* `ch's skill encumbrance and leg encumbrance */
     bufpt += sprintf(bufpt, "Your skill encumbrance is %d, and your "
@@ -1956,7 +1979,7 @@ ACMD(do_score)
 
     bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
-        GET_ENE_REGEN(ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
+        utils::get_energy_regen(*ch) / 5, GET_GOLD(ch) / COPP_IN_GOLD);
 
     /* No XP blurb for immortals */
     if (GET_LEVEL(ch) < LEVEL_IMMORT - 1) {
@@ -1980,7 +2003,15 @@ ACMD(do_score)
         if (weapon && (weapon->get_bulk() >= 4 || (weapon->get_bulk() == 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF))) {
             bufpt += sprintf(bufpt, "The heft of your weapon lends power to your blows.\r\n");
         }
+    } else if(utils::get_specialization(*ch) == game_types::PS_WildFighting && ch->specials.tactics == TACTICS_BERSERK) {
+		float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
+        if (health_percentage <= 0.45f) {
+            bufpt += sprintf(bufpt, "Your fury lends speed to your attacks!\r\n");
+        }
     }
+
+    weapon_master_handler weapon_master(ch);
+    bufpt += weapon_master.append_score_message(bufpt);
 
     if (GET_COND(ch, DRUNK) > 10) {
         bufpt += sprintf(bufpt, "You are intoxicated.\n\r");
@@ -3582,6 +3613,11 @@ void report_affection(affected_type* aff, char* str)
     sprintf(str, "%-30s (%s)\n\r", skill_name, duration_text);
 }
 
+void report_skill_timer(const char_data& ch, char* buf) {
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    buf += timer.report_skill_status(utils::get_idnum(ch), buf);
+}
+
 ACMD(do_affections)
 {
 
@@ -3610,6 +3646,7 @@ ACMD(do_affections)
             sprintf(buf, "%s%s", buf, str);
         }
     }
+    report_skill_timer(*ch, buf);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (bb_instance.is_target_looting(ch)) {

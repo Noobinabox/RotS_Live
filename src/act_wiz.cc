@@ -816,10 +816,10 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
         GET_LEA(k), GET_LEA_BASE(k), (k)->constabilities.lea);
     send_to_char(buf, ch);
 
-    sprintf(buf, "HP :[%d/%d+%d]  Stamina :[%d/%d+%d]  Move :[%d/%d+%d] Spirit:[%d/%d+%d]   Consts(hit/stamina/move): %d/%d/%d\n\r",
-        GET_HIT(k), GET_MAX_HIT(k), hit_gain(k),
-        GET_MANA(k), GET_MAX_MANA(k), mana_gain(k),
-        GET_MOVE(k), GET_MAX_MOVE(k), move_gain(k),
+    sprintf(buf, "HP :[%d/%d+%0.f(%0.f)]  Stamina :[%d/%d+%0.f(%0.f)]  Move :[%d/%d+%0.f(%0.f)] Spirit:[%d/%d+%d]   Consts(hit/stamina/move): %d/%d/%d\n\r",
+        GET_HIT(k), GET_MAX_HIT(k), hit_gain(k), get_bonus_hit_gain(k),
+        GET_MANA(k), GET_MAX_MANA(k), mana_gain(k), get_bonus_mana_gain(k),
+        GET_MOVE(k), GET_MAX_MOVE(k), move_gain(k), get_bonus_move_gain(k),
         GET_SPIRIT(k), 0, 0, /*GET_MAX_SPIRIT(k), spirit_gain(k),*/
         (k)->constabilities.hit, (k)->constabilities.mana, (k)->constabilities.move);
     send_to_char(buf, ch);
@@ -832,7 +832,7 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
     send_to_char(buf, ch);
 
     sprintf(buf, "ENERGY: %d, ENE_regen: %d, damage: %d, null_speed: %d, str_speed %d\n\r",
-        k->specials.ENERGY, k->points.ENE_regen, k->points.damage, k->specials.null_speed, k->specials.str_speed);
+        k->specials.ENERGY, utils::get_energy_regen(*k), k->points.damage, k->specials.null_speed, k->specials.str_speed);
     send_to_char(buf, ch);
 
     sprinttype(GET_POS(k), position_types, buf2);

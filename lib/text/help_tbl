@@ -160,7 +160,7 @@ ANGER was formerly known as NOQUIT.
 
 See also: RENT QUIT PK
 #
-STATS RACES DWARF ELF HOBBIT BEORNING "WOOD ELF" URUK ORC "COMMON ORC" HUMAN LHUTH "URUK-LHUTH" HARADRIM
+STATS RACES 
 
 Different races in Arda have varying abilities and disadvantages; here
 is a basic chart comparing the attributes of all player controllable
@@ -168,15 +168,102 @@ races.
 
 Race       | Str      | Int      | Wil      | Dex      | Con      | Lea
 ---------------------------------------------------------------------------
-Human      | Normal   | Normal   | Normal   | Normal   | Normal   | Normal
-Dwarf      | High     | Normal   | Low      | Very Low | Very High| Low
-Wood Elf   | Low      | High     | Normal   | High     | Low      | Normal
-Hobbit     | Very Low | Low      | Normal   | High     | High     | Normal
-Beorning   | Very High| Very Low | Low      | Normal   | Very High| Low
-Uruk-Hai   | Normal   | Very Low | Very Low | Normal   | High     | Very Low
-Common Orc | Low      | Very Low | Very Low | Low      | Very Low | Very Low
-Uruk-Lhuth | Low      | Normal   | Very Low | Normal   | Normal   | Low
-Haradrim   | Normal   | Low      | Very Low | High     | Normal   | Low
+Human      | +0       | +0       | +0       | +0       | +0       | +0    
+Dwarf      | +2       | +0       | -2       | -3       | +4       | -1  
+Wood Elf   | -1       | +2       | +0       | +2       | -2       | +0    
+Hobbit     | -3       | -2       | +0       | +2       | +2       | +0    
+Beorning   | +4       | -4       | -2       | +0       | +4       | -2 
+Uruk-Hai   | +0       | -4       | -3       | +0       | +2       | -3    
+Common Orc | -1       | -3       | -3       | -1       | -1       | -5
+Uruk-Lhuth | -1       | -1       | -3       | +0       | +1       | -2
+Haradrim   | +0       | -2       | -2       | +2       | +0       | -3 
+Olog-Hai   | +4       | -4       | -4       | -3       | +4       | -3  
+#
+HUMAN
+There are no bonuses or maluses associated with playing humans.
+
+#
+DWARF
+Dwarves have a bonus to the bash skill and +10% weapon speed on axes,
+with a minimum of +2 speed. They also get a small stealth penalty.
+
+#
+ELF "WOOD ELF"
+Wood elves have moonlight vision, eliminating the need for a light source
+in a shadowy room. They have an increased chance to resist poison. Wood 
+elves cannot bash doors. Wood elves receive a small bonus to movement
+points and movement regeneration. They receive a small bonus to finding
+hidden characters. They also shoot slightly faster with archery.
+
+#
+HOBBIT
+Hobbits have a bonus to sneak and ambush. They also receive a +1 bonus
+to spell saves.
+
+#
+BEORNING
+Beornings do not use weapons, they attack only with claws. Beornings do not
+need a light source, because they have infravision. They gain a small
+'scent' bonus on track. They receive a bonus to the bash skill, and 
+sneaking. Beornings are limited in what they can practice for warrior and 
+ranger skills. They are extremely limited in mystic and mage abilities. In 
+exchange, they have a special set of warrior skills that only Beornings can 
+learn. See: 
+
+MAN SKILL BEORNING
+
+#
+URUK
+Uruk-hai can see in the dark, but they cannot see into sunny rooms. While
+in the sun they are affected the power of Arda, and receive penalties to
+their OB, DB, and PB. They also cannot hunt in the sun. Uruks receive a 
+bonus to the bash skill.
+
+#
+ORC "COMMON ORC"
+Orcs can see in the dark, but they cannot see into sunny rooms. While
+in the sun they are affected the power of Arda, and receive penalties to
+their OB, DB, and PB. They also cannot hunt in the sun. Orcs only get 2/3 
+the class levels of other races. For example, at level 30, a default 
+warrior would be 20 warrior, 10 ranger, 9 mystic, and 6 mage. Orcs also 
+have the unique ability to lead an army of lesser orcs. They may have up 
+to 4 orc followers, with a combined level equal to the players level, 
+maxing out at level 48.
+
+#
+LHUTH "URUK-LHUTH"
+Uruk-lhuth are a third side race and are only allied with the Haradrim.
+Uruk-lhuth can see in the dark, but they cannot see into sunny rooms. While
+in the sun they are affected the power of Arda, and receive penalties to
+their OB, DB, and PB. They also cannot hunt in the sun. Uruk-lhuth have
+extremely limited access to warrior, mystic, and ranger skills. They are
+primarily mages with access to a set of unique spells, available only to
+Uruk-lhuth. See: MAN SPELL LHUTH
+
+#
+HARADRIM
+Haradrim are a third side race and are only allied with Uruk-lhuths.
+Haradrim receive a small bonus in the sun in the summer and a small malus
+at night in the winter. Haradrim are the only race able to ambush with a
+spear. Haradrim receive a speed bonus to archery and arrows are less likely
+to break for them. Haradrim are able to ride any horse mount in game. 
+Haradrim have extremely limited access to mystic spells and no access to 
+mage spells, although some of their unique abilities use both movement 
+points and stamina points. They have a number of unique ranger abilities 
+that are Haradrim only. See: MAN SKILLS HARAD
+
+#
+OLOG "OLOG-HAI"
+Ologs can see in the dark, but they cannot see into sunny rooms. While
+in the sun they are affected the power of Arda, and receive penalties to
+their OB, DB, and PB. They also cannot hunt in the sun. They suffer 
+twice the normal sun penalty of any other dark race. Olog-hai have natural
+regeneration and as such cannot be affected by regenerative spells.
+Olog-hai are unable to wield one handed/low bulk weapons with their large
+hands. Olog-hai access to almost no mystic and mage spells, as well as
+limited access to warrior and ranger skills. In exchange, they have their
+own unique warrior skills. See: MAN SKILLS OLOG
+
 #
 RECRUIT
 
@@ -2067,6 +2154,19 @@ put them in your quiver you are wearing it or into your inventory.
 Examples:
 
 >recover
+#
+OLOG OLOG-HAI
+
+They were bred by Sauron in the late Third Age, possibly for the same
+reason Saruman bred the Uruk-Hai, for improvement and less vulnerability
+to sunlight. They lived primarily in Mordor and in southern Mirkwood.
+
+Olog-Hais receive a bonus to bashing and have a natural health and
+move regeneration. This race is intended for seasoned players because
+of their complete lack of mystic and mage skills. Olog-Hais are an
+extreme warrior race and can't be targeted by any healing spells due
+to their natural regeneration.
+
 #
 LHUTH URUK-LHUTH MAGUS
 

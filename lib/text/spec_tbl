@@ -87,22 +87,30 @@ individual spells in unique ways, as described by the specialization.
 
   Wild fighting - Grants you an occasional rush of ferocity in battle,
                   which significantly increases the damage of your next swing.
+				  When low on health and berserk, attack speed is increased.
+				  Recover some missing health when scoring a meaningful kill on berserk.
 				  Also gaints the skill "wild swing".  See SKILL WILD SWING.
+				  Ideal for warriors.
 				 
-  Light fighting- Makes you a master of fighting with light weapons.
-                  * When wielding a light sword, daggers, light whips, and
-				    other light weapons, you will occasionally find an opening
-					in your enemy's defense and swing twice.
+  Light fighting- Makes you a master of fighting with light weapons and armor.
+                  Your ranger levels and dexterity contribute to offense, and light
+				  armor does not restrict your movement or skills.  Ideal for
+				  warriors, swashbucklers, and rangers.
 
-  Heavy fighting- Makes you a master of fighting with heavy weapons and armor.
-                  * Swing faster with heavy one-handed weapons, and swing
-				    harder with two-handed weapons.
-				  * Armor reduces more damage for you.
-				  * Your 'kick' skill lands more heavily, dealing more damage.
+  Heavy fighting- Makes you a master of fighting with heavy weapons and armor,
+                  making the armor more effective and less restrictive on your 
+				  movement and skills.  Ideal for warriors and anyone that wants
+				  extra defense in heavy armor.
 
-  Defender      - Makes you a master of fighting with shields.
-                  * Occasionally block an attack that would have otherwise
-				    hit you, significantly reducing the damage of the attack.
+  Defender      - Makes you a master of fighting with shields, allowing you to
+                  take reduced damage.  Ideal for warriors and swashbucklers.
+				
+  Weapon Master - Makes you a master of a variety of weapons, each granting a passive
+                  and active effect.  Ideal for warriors.
+				  
+				  
+  Battle Mage - Makes you a master of casting spells in combat.
+                Ideal for mages and mage/warriors.
 		  
    Once made, the selection cannot be changed. Appropriate guildmasters
 will teach you your new skills at your own time.
@@ -241,18 +249,20 @@ SEE ALSO: "SKILLS WHISTLE TAME CALM ANIMALS"
 #
 "LIGHT FIGHTING"
 
-Specializing in light fighting makes you a master of fighting with light weapons
-such as light swords, daggers, light whips, and other light weapons. You will
-occasionally find an opening in your enemy's defenses and swing twice at them.
+Specializing in light fighting makes you a master of fighting with light, one-handed 
+weapons. You will occasionally find an opening in your enemy's defenses and swing 
+twice at them.  This spec allows you to move and fight more easily in
+light armor, and to use your dexterity instead of your strength for offense with light weapons
+(if it is higher).  You also get to add a percentage of your ranger level to your warrior
+level for determining your offensive bonus.  
 
 #
 "HEAVY FIGHTING"
 
-Makes you a master of fighting with heavy weapons and heavy armor. This specialization
-also you to swing heavy one-handed weapons faster and swing much harder with
-two-handed weapons. Heavy armor has less of a negative effect on you and blocks
-more damage. Also this specialization increases the success and damage of the skill
-"kick".
+Makes you a master of fighting with heavy weapons and heavy armor.  Your weapon attacks
+with heavy weapons deal more damage. Heavy armor has less of a negative effect on you 
+and blocks more damage. Also this specialization increases the success and damage of the 
+skill "kick".
 
 SEE ALSO: "SKILLS KICK WEAPON MASTERY"
 #
@@ -261,4 +271,32 @@ DEFENDER
 Specializing in defender makes you a master of fighting with shields. You have a 
 chance to occassionally block an attack that would have otherwise hit you, and
 significantly reducing the damage of the attack.
+#~
+
+#
+WEAPON MASTER
+This specialization makes you a master of a variety of weapons, granting bonuses
+based on the weapon that is wielded.  This spec is intended to offer high passive
+damage and strategic options, allowing you to choose the right tool for the job
+depending on the situation that you're in.
+
+* Axes: Deal increased, and more consistent, damage.
+* Clubs/Hammers: Extra OB, chance to slow your opponent on hit.
+* Smiters: Extra OB, chance to haze on hit.
+* Spears: Extra PB, chance to double armor penetration on hit.
+* Whips: Extra attack speed, chance to ignore your opponent's shield.
+* Flails: Increased damage, chance to ignore your opponent's shield.
+* Daggers: Extra attack speed, chance to ignore your opponent's armor.
+* Swords: Small extra OB and PB, chance to double your attack speed 
+          for your next attack.
+#~
+
+#
+BATTLE MAGE
+This specialization makes you more proficient at staying in battle while casting spells.
+It provides the following benefits and drawbacks.
++ Lose ability to prepare spells.
++ Gain bonus spell power and spell penetration based on tactics and mage level.
++ Chance to ignore armor effects when casting.
++ Chance to continue casting after taking damage.
 #~

@@ -272,14 +272,6 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     maxabil = (IS_NPC(ch) ? 25 : 25);
 
     if (add == AFFECT_MODIFY_TIME) {
-        switch (loc) {
-        case APPLY_MANA_REGEN:
-            GET_MANA(ch) += mod;
-            if (GET_MANA(ch) < 0)
-                GET_MANA(ch) = 0;
-            if (GET_MANA(ch) > GET_MAX_MANA(ch))
-                GET_MANA(ch) = GET_MAX_MANA(ch);
-        }
         return; /* so, usual affects are not modified in this call */
     }
 
@@ -467,6 +459,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_MANA_REGEN:
+        ch->points.mana_regen += mod;
         break;
 
     case APPLY_RESIST:
@@ -505,114 +498,79 @@ void affect_naked(char_data* ch)
     GET_WILLPOWER(ch) = get_naked_willpower(ch);
     ch->specials.affected_by |= race_affect[GET_RACE(ch)];
 
-    //switch (GET_SPEC(ch))
-    //{
-    //case PLRSPEC_FIRE:
-    //{
-    //	GET_RESISTANCES(ch) = 1 << PLRSPEC_FIRE;
-    //	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_COLD;
-    //	break;
-    //}
-    //case PLRSPEC_COLD:
-    //{
-    //	GET_RESISTANCES(ch) = 1 << PLRSPEC_COLD;
-    //	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_FIRE;
-    //	break;
-    //}
-    //case PLRSPEC_LGHT:
-    //{
-    //	GET_RESISTANCES(ch) = 1 << PLRSPEC_LGHT;
-    //	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_DARK;
-    //	break;
-    //}
-    //case PLRSPEC_DARK:
-    //{
-    //	GET_RESISTANCES(ch) = 1 << PLRSPEC_DARK;
-    //	GET_VULNERABILITIES(ch) = 1 << PLRSPEC_LGHT;
-    //	break;
-    //}
-    //default:
-    //{
-    //
-    //	break;
-    //}
-    //}
-
     if (!IS_NPC(ch)) {
         GET_RESISTANCES(ch) = 0;
         GET_VULNERABILITIES(ch) = 0;
     }
 }
 
+void apply_gear_affects(char_data* character, const obj_data* item, int modify_flag)
+{
+	for (int count = 0; count < MAX_OBJ_AFFECT; ++count) {
+		const obj_affected_type& obj_affect = item->affected[count];
+		if (obj_affect.location == APPLY_SPELL)
+			continue;
+
+		affect_modify(character, obj_affect.location, obj_affect.modifier, item->obj_flags.bitvector, modify_flag, 0);
+	}
+}
+
+void apply_gear_affects(char_data* character, int modify_flag)
+{
+	for (int item_index = 0; item_index < MAX_WEAR; ++item_index) {
+		const obj_data* item = character->equipment[item_index];
+		if (item == nullptr)
+			continue;
+
+		if (item_index == HOLD && !CAN_WEAR(item, ITEM_HOLD))
+			continue;
+
+        apply_gear_affects(character, item, modify_flag);
+	}
+}
+
+void modify_affects(char_data* character, int modify_flag)
+{
+    int count = 0;
+    affected_type* af = character->affected;
+    while (count < MAX_AFFECT && af != nullptr) {
+        affect_modify(character, af->location, af->modifier, af->bitvector, modify_flag, af->counter);
+        ++count;
+        af = af->next;
+    }
+}
+
 void affect_total(struct char_data* ch, int mode)
 {
-    struct affected_type* af;
-    int i, j;
-
     if (mode & AFFECT_TOTAL_REMOVE) {
-        for (i = 0; i < MAX_WEAR; i++) {
-            if (ch->equipment[i] && ((i != HOLD) || CAN_WEAR(ch->equipment[i], ITEM_HOLD)))
-                for (j = 0; j < MAX_OBJ_AFFECT; j++) {
-                    if (ch->equipment[i]->affected[j].location != APPLY_SPELL)
-                        affect_modify(ch, ch->equipment[i]->affected[j].location,
-                            ch->equipment[i]->affected[j].modifier,
-                            ch->equipment[i]->obj_flags.bitvector,
-                            AFFECT_MODIFY_REMOVE, 0);
-                }
-        }
-
-        for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next, i++)
-            affect_modify(ch, af->location, af->modifier, af->bitvector,
-                AFFECT_MODIFY_REMOVE, af->counter);
+        apply_gear_affects(ch, AFFECT_MODIFY_REMOVE);
+        modify_affects(ch, AFFECT_MODIFY_REMOVE);
 
         recalc_abilities(ch);
-
         affect_naked(ch);
     }
 
-    if (mode & AFFECT_TOTAL_SET) {
-        for (i = 0; i < MAX_WEAR; i++) {
-            if (ch->equipment[i] && ((i != HOLD) || CAN_WEAR(ch->equipment[i], ITEM_HOLD)))
-                for (j = 0; j < MAX_OBJ_AFFECT; j++) {
-                    if (ch->equipment[i]->affected[j].location != APPLY_SPELL)
-                        affect_modify(ch, ch->equipment[i]->affected[j].location,
-                            ch->equipment[i]->affected[j].modifier,
-                            ch->equipment[i]->obj_flags.bitvector,
-                            AFFECT_MODIFY_SET, 0);
-                }
-        }
-
-        for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next, i++)
-            affect_modify(ch, af->location, af->modifier, af->bitvector,
-                AFFECT_MODIFY_SET, af->counter);
+	if (mode & AFFECT_TOTAL_SET) {
+		apply_gear_affects(ch, AFFECT_MODIFY_SET);
+		modify_affects(ch, AFFECT_MODIFY_SET);
     }
 
-    if (mode & AFFECT_TOTAL_TIME) {
-        for (i = 0; i < MAX_WEAR; i++) {
-            if (ch->equipment[i] && ((i != HOLD) || CAN_WEAR(ch->equipment[i], ITEM_HOLD)))
-                for (j = 0; j < MAX_OBJ_AFFECT; j++) {
-                    if (ch->equipment[i]->affected[j].location != APPLY_SPELL)
-                        affect_modify(ch, ch->equipment[i]->affected[j].location,
-                            ch->equipment[i]->affected[j].modifier,
-                            ch->equipment[i]->obj_flags.bitvector,
-                            AFFECT_MODIFY_TIME, 0);
-                }
-        }
-
-        for (af = ch->affected, i = 0; af && (i < MAX_AFFECT); af = af->next, i++)
-            affect_modify(ch, af->location, af->modifier, af->bitvector,
-                AFFECT_MODIFY_TIME, af->counter);
+	if (mode & AFFECT_TOTAL_TIME) {
+		apply_gear_affects(ch, AFFECT_MODIFY_TIME);
+		modify_affects(ch, AFFECT_MODIFY_TIME);
     }
     /* Make certain values are between 0..100, not < 0 and not > 100! */
 
-    i = (IS_NPC(ch) ? 100 : 100);
+    signed char max_value = 100;
+    signed char min_dex_str = 1;
+    signed char min_others = 0;
 
-    GET_DEX_BASE(ch) = MAX(1, MIN(GET_DEX_BASE(ch), i));
-    GET_INT_BASE(ch) = MAX(0, MIN(GET_INT_BASE(ch), i));
-    GET_WILL_BASE(ch) = MAX(0, MIN(GET_WILL_BASE(ch), i));
-    GET_CON_BASE(ch) = MAX(0, MIN(GET_CON_BASE(ch), i));
-    SET_STR_BASE(ch, MAX(1, MIN(GET_STR_BASE(ch), i)));
-    GET_LEA_BASE(ch) = MAX(0, MIN(GET_LEA_BASE(ch), i));
+    ch->abilities.dex = std::max(min_dex_str, std::min(ch->abilities.dex, max_value));
+    ch->abilities.intel = std::max(min_others, std::min(ch->abilities.intel, max_value));
+    ch->abilities.wil = std::max(min_others, std::min(ch->abilities.wil, max_value));
+    ch->abilities.con = std::max(min_others, std::min(ch->abilities.con, max_value));
+    ch->abilities.str = std::max(min_dex_str, std::min(ch->abilities.str, max_value));
+    ch->abilities.lea = std::max(min_others, std::min(ch->abilities.lea, max_value));
 }
 
 /*  If there is a structure of affected_type in the affected_type_pool list then
@@ -1452,9 +1410,6 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
     } else if (GET_ITEM_TYPE(obj) == ITEM_WEAPON) {
         SET_OB(ch) -= obj->obj_flags.value[0];
         SET_PARRY(ch) -= obj->obj_flags.value[1];
-        //     if(IS_SET(ch->specials.affected_by, AFF_TWOHANDED)){
-        //       REMOVE_BIT(ch->specials.affected_by, AFF_TWOHANDED);
-        //     }
 
     } else if (GET_ITEM_TYPE(obj) == ITEM_SHIELD) {
         SET_DODGE(ch) -= obj->obj_flags.value[0];

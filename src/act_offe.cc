@@ -893,38 +893,17 @@ ACMD(do_kick)
         return;
     }
 
-    /* %20 chance to swing the wrong person */
-    if (attacktype == SKILL_SWING && !number(0, 4)) {
-        num = 0;
-        for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-            if (t != ch && t != victim)
-                num++;
-
-        if (!num) {
-            damage(ch, victim, 0, attacktype, 0);
-            goto delay;
-        }
-
-        num = number(1, num);
-
-        for (t = world[ch->in_room].people; t != NULL; t = t->next_in_room)
-            if (t != ch && t != victim) {
-                --num;
-                if (!num)
-                    break;
-            }
-
-        damage(ch, victim, 0, attacktype, 0);
-
-        victim = t;
-    }
-
+    
     prob = get_prob_skill(ch, victim, attacktype);
-
     dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250;
 
-    if (attacktype == SKILL_SWING)
-        dam = dam * 3 / 2;
+    if (attacktype == SKILL_SWING) {
+        dam *= 1.5f;
+
+        // potential bonus damage from wild fighting
+        wild_fighting_handler wild_fighting(ch);
+        dam *= wild_fighting.get_wild_swing_damage_multiplier();
+    }
 
     if (prob < 0)
         damage(ch, victim, 0, attacktype, 0);

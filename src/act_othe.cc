@@ -1380,38 +1380,47 @@ ACMD(do_tactics)
             send_to_char(buf, ch);
             return;
         }
-        if ((GET_TACTICS(ch) == TACTICS_BERSERK))
-            if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
-                send_to_char("You failed to cool down.\n\r", ch);
-                return;
-            }
+
+        if ((GET_TACTICS(ch) == TACTICS_BERSERK)) {
+			if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
+				send_to_char("You failed to cool down.\n\r", ch);
+				return;
+			}
+        }
+        
+        wild_fighting_handler wild_fighting(ch);
+        int target_tactics = TACTICS_NORMAL;
 
         switch (tmp) {
         case 0:
-            SET_TACTICS(ch, TACTICS_DEFENSIVE);
+            target_tactics = TACTICS_DEFENSIVE;
             break;
 
         case 1:
-            SET_TACTICS(ch, TACTICS_CAREFUL);
+            target_tactics = TACTICS_CAREFUL;
             break;
 
         case 2:
-            SET_TACTICS(ch, TACTICS_NORMAL);
+            target_tactics = TACTICS_NORMAL;
             break;
 
         case 3:
-            SET_TACTICS(ch, TACTICS_AGGRESSIVE);
+            target_tactics = TACTICS_AGGRESSIVE;
             break;
 
         case 4:
-            SET_TACTICS(ch, TACTICS_BERSERK);
+            target_tactics = TACTICS_BERSERK;
             break;
 
         default:
-            SET_TACTICS(ch, 99);
+            target_tactics = 99;
             break;
         }
+
+        SET_TACTICS(ch, target_tactics);
+        wild_fighting.update_tactics(target_tactics);
     }
+
 
     switch (GET_TACTICS(ch)) {
     case TACTICS_DEFENSIVE:

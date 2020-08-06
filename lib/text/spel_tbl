@@ -44,6 +44,39 @@ other races.  Spell list created by El and Prami, 2/24/98.
 See also: MAN SPELL LIST
 
 #
+"EXPOSE ELEMENTS"
+[Syntax      ] cast 'expose elements'
+[Group       ] Magic-User
+[Level       ] 0
+[Minumun Cost] 70 mana
+[Offensive   ] Yes
+
+  Casting 'expose elements' on the target will make them vulnerable to a spell
+based on the specialization of hte caster and the potentially the room the mob
+is in. Being vulnerable to the spells mean that the specific spell will cost
+0 mana while casting it on that mob. Leaving the mobs room for more than a
+second causes 'expose elements' to fade. Only people specializing in an 
+elemental specialization can learn it.
+
+In game prompts:
+Your target is now exposed to 'Fireball'
+This means that all subsequent castings of fireball on that mob will cost 0 mana.
+
+Your target is no longer vulnerable to your spells.
+This means that spell will be full mana cost on the mob again.
+
+Examples:
+A lightning specialized mage that casts this indoors will expose the mob to
+'lightning bolt' if known.
+A lightning specialized mage that casts this outdoors will expose the mob
+to 'lightning strike' if known.
+A fire specialized mage will expose the mob to the highest level fire spell 
+they know.
+A cold specialized mage will expose the mob to the highest level cold spell
+they know.
+
+See: SPECIALIZATIONS
+#
 SPELL BEACON
 [Syntax      ] cast 'beacon' set | return | release
 [Group       ] Magic-User, Teleportation

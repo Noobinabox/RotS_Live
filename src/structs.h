@@ -48,12 +48,12 @@ const int MYSTIC_GUARDIAN = 2;
 
 #define LEVEL_FREEZE LEVEL_PERMIMM
 
-#define NUM_OF_DIRS 6
-#define PULSE_ZONE 12
-#define PULSE_MOBILE 24
-#define PULSE_VIOLENCE 12
-#define PULSE_FAST_UPDATE 12
-#define PULSE_MENTAL_FIGHT 8
+const int constexpr NUM_OF_DIRS = 6;
+const int constexpr PULSE_ZONE = 12;
+const int constexpr PULSE_MOBILE = 24;
+const int constexpr PULSE_VIOLENCE = 12;
+const int constexpr PULSE_FAST_UPDATE = 12;
+const int constexpr PULSE_MENTAL_FIGHT = 8;
 
 #define MAX_CHARACTERS 64000
 #define MAX_PCCHARACTERS 32000
@@ -82,15 +82,18 @@ const int MYSTIC_GUARDIAN = 2;
 #define MESS_VICTIM 2
 #define MESS_ROOM 3
 
-#define SECS_PER_REAL_MIN 60
-#define SECS_PER_REAL_HOUR (60 * SECS_PER_REAL_MIN)
-#define SECS_PER_REAL_DAY (24 * SECS_PER_REAL_HOUR)
-#define SECS_PER_REAL_YEAR (365 * SECS_PER_REAL_DAY)
+const int constexpr SECS_PER_REAL_MIN = 60;
+const int constexpr SECS_PER_REAL_HOUR = (60 * SECS_PER_REAL_MIN);
+const int constexpr SECS_PER_REAL_DAY = (24 * SECS_PER_REAL_HOUR);
+const int constexpr SECS_PER_REAL_YEAR = (365 * SECS_PER_REAL_DAY);
 
-#define SECS_PER_MUD_HOUR 60
-#define SECS_PER_MUD_DAY (24 * SECS_PER_MUD_HOUR)
-#define SECS_PER_MUD_MONTH (30 * SECS_PER_MUD_DAY)
-#define SECS_PER_MUD_YEAR (12 * SECS_PER_MUD_MONTH)
+const int constexpr SECS_PER_MUD_HOUR = 60;
+const int constexpr TICS_PER_SECOND = 4;
+const int constexpr FAST_UPDATE_RATE = SECS_PER_MUD_HOUR * TICS_PER_SECOND / PULSE_FAST_UPDATE;
+
+const int constexpr SECS_PER_MUD_DAY = (24 * SECS_PER_MUD_HOUR);
+const int constexpr SECS_PER_MUD_MONTH = (30 * SECS_PER_MUD_DAY);
+const int constexpr SECS_PER_MUD_YEAR = (12 * SECS_PER_MUD_MONTH);
 
 #define COPP_IN_GOLD 1000
 #define COPP_IN_SILV 100
@@ -571,7 +574,7 @@ struct room_direction_data {
 
     ubyte exit_width; /* 1-6, default should be 4 */
     int exit_info; /* Exit info    changed from sh_int                   */
-    sh_int key; /* Key's number (-1 for no key)    */
+    int key; /* Key's number (-1 for no key)    */
     int to_room; /* Where direction leeds (NOWHERE) */
 };
 
@@ -828,6 +831,8 @@ enum player_specs {
     PS_Archery,
     PS_Darkness,
     PS_Arcane,
+    PS_WeaponMaster,
+    PS_BattleMage,
     PS_Count,
 };
 }
@@ -850,6 +855,8 @@ enum player_specs {
 #define PLRSPEC_ARCH 15
 #define PLRSPEC_DARK 16
 #define PLRSPEC_ARCANE 17
+#define PLRSPEC_WMSR 18
+#define PLRSPEC_BTLEMS 19
 
 /* Races for PCS */
 #define RACE_GOD 0
@@ -1025,7 +1032,9 @@ struct char_player_data {
     int ranking; /* PC / NPC s ranking in fame war */
 };
 
-/* Used in CHAR_FILE_U *DO*NOT*CHANGE* */ /*changed all from int*/
+/* Used in CHAR_FILE_U;
+ * Changes may require serialization updates in loading code if we want to persist new data
+ */
 struct char_ability_data {
     signed char str;
     signed char lea;
@@ -1044,13 +1053,18 @@ struct char_ability_data {
     sh_int move;
 };
 
-/* Used in CHAR_FILE_U *DO*NOT*CHANGE* */
+/* Used in CHAR_FILE_U; 
+ * Changes may require serialization updates in loading code if we want to persist new data 
+ */
 struct char_point_data {
 
     ubyte bodypart_hit[MAX_BODYPARTS]; /* hit points of individual body parts */
     int gold; /* Money carried                           */
     int exp; /* The experience of the player            */
     int spirit; /* well, the spirit */
+    int mana_regen = 0; /* bonus mana regen from gear/spells/etc.  can be negative */
+    int health_regen = 0; /* bonus health regen from spells etc. */
+    int move_regen = 0; /* bonus move regen from spells etc. */
 
     sh_int OB; /* OB in normal tactics   */
     sh_int damage; /*  damage in normal tactics */
@@ -1163,6 +1177,9 @@ struct char_special_data {
 #define HIDING_WELL 0x01
 #define HIDING_SNUCK_IN 0x04
 
+/* Used in CHAR_FILE_U;
+ * Changes may require serialization updates in loading code if we want to persist new data
+ */
 struct char_special2_data {
     long idnum; /* player's idnum			*/
     int load_room; /* Which room to place char in		*/
@@ -1355,6 +1372,7 @@ private:
     long total_energy_sapped;
 };
 
+
 struct fire_spec_data : public elemental_spec_data {
     virtual std::string to_string(char_data& character) const;
 };
@@ -1395,6 +1413,10 @@ struct defender_data : public specialization_info {
 private:
     /* Total damage blocked by defender spec this session. */
     unsigned int blocked_damage;
+};
+
+struct battle_mage_spec_data : public specialization_info {
+    virtual std::string to_string(char_data& character) const;
 };
 
 struct wild_fighting_data : public specialization_info {
@@ -1477,7 +1499,7 @@ struct specialization_data {
         if (current_spec == game_types::PS_None)
             return false;
 
-        return current_spec == game_types::PS_Darkness || current_spec == game_types::PS_Arcane || current_spec == game_types::PS_Fire || current_spec == game_types::PS_Cold || current_spec == game_types::PS_Lightning;
+        return current_spec == game_types::PS_Darkness || current_spec == game_types::PS_Arcane || current_spec == game_types::PS_Fire || current_spec == game_types::PS_Cold || current_spec == game_types::PS_Lightning || current_spec == game_types::PS_BattleMage;
     }
 
     elemental_spec_data* get_mage_spec() const
@@ -1673,10 +1695,6 @@ public:
 	int get_max_practice_count() const;
     void update_available_practice_sessions();
 
-	// Set's the character's available practice sessions to their max practice count
-	// less their used practice count.
-	void update_available_practices();
-
 	// Resets all known skills and practice sessions for a character.
 	void reset_skills();
 
@@ -1780,8 +1798,9 @@ struct weather_data {
 };
 
 /* ***********************************************************************
-*  file element for player file. BEWARE: Changing it will ruin the file  *
-*********************************************************************** */
+   File element for player file.  Changes here require changes in 
+   save/load code in the database.
+*************************************************************************/
 struct char_file_u {
     byte sex;
     byte prof;

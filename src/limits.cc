@@ -28,6 +28,7 @@
 #include "big_brother.h"
 #include "char_utils.h"
 #include <algorithm>
+#include <cmath>
 
 extern char* pc_race_types[];
 
@@ -127,12 +128,17 @@ double adjust_regen_for_level(int character_level, double regen_amount)
     return adjusted_amount;
 }
 
+float get_bonus_mana_gain(const char_data* character)
+{
+    return character->points.mana_regen;
+}
+
 /* manapoint gain pr. game hour */
-int mana_gain(const char_data* character)
+float mana_gain(const char_data* character)
 {
     using namespace utils;
 
-    double gain(character->player.level);
+    float gain(character->player.level);
     if (is_pc(*character)) {
         const char_ability_data& abils = character->tmpabilities;
         gain = 8.0 + abils.intel / 2.0 + abils.wil / 5.0;
@@ -166,16 +172,42 @@ int mana_gain(const char_data* character)
 
     gain = adjust_regen_for_level(character->player.level, gain);
 
-    // Cast back into an integer when we're done.
-    return int(gain);
+    // add bonus regen after all modifiers
+    gain += get_bonus_mana_gain(character);
+
+    return gain;
+}
+
+float get_bonus_hit_gain(const char_data* character)
+{
+    float perception_modifier = std::min(character->specials2.perception, 100) / 100.0f;
+    
+    // Early out if we have no perception.
+    if (perception_modifier <= 0.0f)
+        return character->points.health_regen;
+
+    // Iterate through affect list for regeneration spells.
+    float bonus_gain = 0.0f;
+    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next)
+    {
+        if (affect->type == SPELL_CURING) {
+            bonus_gain += affect->modifier;
+        } else if (affect->type == SPELL_RESTLESSNESS) {
+            bonus_gain -= affect->modifier;
+        } else if (affect->type == SPELL_REGENERATION) {
+            bonus_gain += affect->duration * 6 / (float)FAST_UPDATE_RATE;
+        }
+    }
+
+    return (bonus_gain * perception_modifier) + character->points.health_regen;
 }
 
 /* Hitpoint gain pr. game hour */
-int hit_gain(const char_data* character)
+float hit_gain(const char_data* character)
 {
     using namespace utils;
 
-    double gain(character->player.level);
+    float gain(character->player.level);
 
     if (is_pc(*character)) {
         gain = 8.0 + character->tmpabilities.con / 2.0 + get_prof_level(PROF_WARRIOR, *character) / 3.0 + get_prof_level(PROF_RANGER, *character) / 5.0;
@@ -207,16 +239,42 @@ int hit_gain(const char_data* character)
     }
 
     if (GET_RACE(character) == RACE_OLOGHAI) {
-        gain *= 3.0;
+        gain *= 1.5;
     }
 
     gain = adjust_regen_for_level(character->player.level, gain);
 
-    // Cast back into an integer when we're done.
-    return int(gain);
+	// add bonus health regen after all modifiers
+    gain += get_bonus_hit_gain(character);
+
+    return gain;
 }
 
-int move_gain(const char_data* character)
+float get_bonus_move_gain(const char_data* character)
+{
+	float perception_modifier = std::min(character->specials2.perception, 100) / 100.0f;
+
+	// Early out if we have no perception.
+	if (perception_modifier <= 0.0f)
+		return character->points.move_regen;
+
+	// Iterate through affect list for regeneration spells.
+	float bonus_gain = 0.0f;
+	for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next)
+	{
+		if (affect->type == SPELL_CURING) {
+            bonus_gain -= affect->modifier;
+		} else if (affect->type == SPELL_RESTLESSNESS) {
+            bonus_gain += affect->modifier;
+		} else if (affect->type == SPELL_VITALITY) {
+            bonus_gain += affect->duration * 6 / (float)FAST_UPDATE_RATE;
+		}
+	}
+
+	return (bonus_gain * perception_modifier) + character->points.move_regen;
+}
+
+float move_gain(const char_data* character)
 /* move gain pr. game hour */
 {
     using namespace utils;
@@ -228,7 +286,7 @@ int move_gain(const char_data* character)
         }
     }
 
-    double gain = 7.0;
+    float gain = 7.0f;
 
     // Animals get move regen bonus
     if (GET_BODYTYPE(character) == 2) {
@@ -238,7 +296,7 @@ int move_gain(const char_data* character)
     /* Prof/Level calculations */
     gain += (stats.con + stats.dex) / 2.0;
 
-    double expertise_modifier = get_prof_level(PROF_RANGER, *character) / 6.0 + get_raw_knowledge(*character, SKILL_TRAVELLING) / 10.0;
+    float expertise_modifier = get_prof_level(PROF_RANGER, *character) / 6.0 + get_raw_knowledge(*character, SKILL_TRAVELLING) / 10.0;
     gain += expertise_modifier;
 
     /* Skill/Spell calculations */
@@ -278,7 +336,7 @@ int move_gain(const char_data* character)
         }
 
         if (race == RACE_OLOGHAI) {
-            gain *= 3.0;
+            gain *= 1.50;
         }
 
         if (is_affected_by(*character, AFF_POISON)) {
@@ -293,7 +351,10 @@ int move_gain(const char_data* character)
             gain *= 0.25;
         }
 
-        return int(gain);
+        // Add flat regen after all modifiers
+        gain += get_bonus_move_gain(character);
+
+        return gain;
     }
 }
 
@@ -1207,7 +1268,7 @@ void affect_update_person(struct char_data* i, int mode)
                 case SPELL_POISON:
                     otheraf = affected_by_spell(i, SPELL_RESIST_POISON);
                     if (otheraf) {
-                        af->duration = MAX(af->duration - otheraf->modifier, 0);
+                        af->duration = std::max(af->duration - otheraf->modifier, 0);
                         otheraf->duration = af->duration;
                     }
 
@@ -1217,25 +1278,7 @@ void affect_update_person(struct char_data* i, int mode)
                     break;
                 case SPELL_CURING:
                 case SPELL_RESTLESSNESS:
-                    if (!(char_perception_check(i)))
-                        break;
-                    freq = (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
-                    tmp = af->modifier / freq;
-                    if (af->modifier > 0)
-                        tmp += ((af->modifier % freq) >= number(1, freq)) ? 1 : 0;
-                    else
-                        tmp -= (-(af->modifier % freq) >= number(1, freq)) ? 1 : 0;
-
-                    if (((GET_HIT(i) >= GET_MAX_HIT(i)) && (tmp < 0)) || ((GET_MOVE(i) >= GET_MAX_MOVE(i)) && (tmp > 0)) || ((GET_HIT(i) <= 1) && (tmp > 0)) || ((GET_MOVE(i) <= 0) && (tmp < 0)))
-                        break;
-                    GET_HIT(i) -= tmp;
-                    if (GET_HIT(i) > GET_MAX_HIT(i))
-                        GET_HIT(i) = GET_MAX_HIT(i);
-                    GET_MOVE(i) += tmp;
-                    if (GET_MOVE(i) > GET_MAX_MOVE(i))
-                        GET_MOVE(i) = GET_MAX_MOVE(i);
-                    if (GET_MOVE(i) < 0)
-                        GET_MOVE(i) = 0;
+                    // handled by hit_gain and move_gain now.
                     break;
                 case SPELL_FEAR:
                     do_flee(i, "", 0, 0, 0);
@@ -1243,45 +1286,10 @@ void affect_update_person(struct char_data* i, int mode)
                         af->duration = 0;
                     break;
                 case SPELL_VITALITY:
-                    if (!(char_perception_check(i)))
-                        break;
-                    freq = (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
-                    val = af->duration * 6 / freq;
-                    tmp = val / freq;
-                    if (af->modifier > 0)
-                        tmp += ((val % freq) >= number(1, freq)) ? 1 : 0;
-                    else if (af->modifier < 0)
-                        tmp -= ((val % freq) >= number(1, freq)) ? 1 : 0;
-                    GET_MOVE(i) += tmp;
-                    if (GET_MOVE(i) > GET_MAX_MOVE(i))
-                        GET_MOVE(i) = GET_MAX_MOVE(i);
-                    if (GET_MOVE(i) < 0) {
-                        GET_MOVE(i) = 0;
-                    }
+                    // handled by move_gain now.
                     break;
                 case SPELL_REGENERATION:
-                    if (!(char_perception_check(i)))
-                        break;
-                    freq = (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
-                    val = af->duration * 6 / freq;
-                    tmp = val / freq;
-                    if (af->modifier > 0)
-                        tmp += ((val % freq) >= number(1, freq)) ? 1 : 0;
-                    else if (af->modifier < 0)
-                        tmp = -tmp - ((val % freq) >= number(1, freq)) ? 1 : 0;
-                    else
-                        tmp = 0;
-                    GET_HIT(i) += tmp;
-                    if (GET_HIT(i) > GET_MAX_HIT(i))
-                        GET_HIT(i) = GET_MAX_HIT(i);
-                    if (GET_HIT(i) <= 0) {
-                        act("$n suddenly collapses on the ground.",
-                            TRUE, i, 0, 0, TO_ROOM);
-                        send_to_char("Your body failed to the magic.\n\r", i);
-                        raw_kill(i, NULL, TYPE_UNDEFINED);
-                        add_exploit_record(EXPLOIT_REGEN_DEATH, i, 0, NULL);
-                        return;
-                    }
+                    // handled by hit_gain now.
                     break;
                 case SPELL_ACTIVITY:
                     if (IS_NPC(i))
@@ -1387,7 +1395,7 @@ void affect_update_room(struct room_data* room)
             sprintf(buf, "check mist movement");
             mudlog(buf, NRM, LEVEL_GOD, FALSE);
             if (movechance < 75) {
-                direction = number(0, NUM_OF_DIRS);
+                direction = number(0, NUM_OF_DIRS -1);
                 /* Decide if the random direction is legal, if so, move the mist */
                 if (!(room->dir_option[direction])) {
                     sprintf(buf, "no option for movement");
@@ -1468,29 +1476,59 @@ void affect_update()
 
 void fast_update()
 {
-    struct char_data* i;
-    struct char_data* next_dude;
-    int freq, hitregen, moveregen, manaregen, roll;
+    int freq = FAST_UPDATE_RATE;
+    for (char_data* character = character_list; character != nullptr; character = character->next) {
+        
+        // Note:  Regen values can be negative, so we can't test if a character is below max as an optimization.
 
-    freq = (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
-    roll = number(1, freq);
-    for (i = character_list; i; i = next_dude) {
-        next_dude = i->next;
-        hitregen = hit_gain(i) / freq + ((roll <= hit_gain(i) % freq) ? 1 : 0);
-        moveregen = move_gain(i) / freq + ((roll <= move_gain(i) % freq) ? 1 : 0);
-        manaregen = mana_gain(i) / freq + ((roll <= mana_gain(i) % freq) ? 1 : 0);
+        float health_regen_base = hit_gain(character) / freq;
+        int hitregen = int(health_regen_base);
+        if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base))))
+        {
+            hitregen += hitregen >= 0 ? 1 : -1;
+        }
 
-        GET_HIT(i) = MIN(GET_HIT(i) + hitregen, GET_MAX_HIT(i));
-        GET_MANA(i) = MIN(GET_MANA(i) + manaregen, GET_MAX_MANA(i));
-        GET_MOVE(i) = MIN(GET_MOVE(i) + moveregen, GET_MAX_MOVE(i));
-        if (GET_SPIRIT(i) < GET_WILL(i) / 3 + GET_PROF_LEVEL(PROF_CLERIC, i) / 3)
-            GET_SPIRIT(i) += number(1, GET_WILL(i) + GET_PROF_LEVEL(PROF_CLERIC, i)) / (10 * freq);
+		float move_regen_base = move_gain(character) / freq;
+		int moveregen = int(move_regen_base);
+        if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base))))
+		{
+            moveregen += moveregen >= 0 ? 1 : -1;
+		}
 
-        if (EVIL_RACE(i))
-            do_power_of_arda(i);
-        check_breathing(i);
-        do_fame_war_bonuses(i);
+		float mana_regen_base = mana_gain(character) / freq;
+		int manaregen = int(mana_regen_base);
+        if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base))))
+		{
+            manaregen += manaregen >= 0 ? 1 : -1;
+		}
 
-        //     affect_update_person(i, 1);
+        // Characters can die to negative regen values (think restlessness)
+        GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
+        if (GET_HIT(character) < 0 && hitregen < 0) {
+			act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
+			send_to_char("Your body failed to the magic.\n\r", character);
+			raw_kill(character, NULL, TYPE_UNDEFINED);
+			add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
+			return;
+        }
+
+        GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
+        GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
+
+        // Commented out because this will always add 0 spirit based on the math.
+        // If we want to give clerics a minimum spirit amount, change the divisor from
+        // 10 * freq to just 10.
+        /*
+        if (GET_SPIRIT(character) < GET_WILL(character) / 3 + GET_PROF_LEVEL(PROF_CLERIC, character) / 3) {
+            GET_SPIRIT(character) += number(1, GET_WILL(character) + GET_PROF_LEVEL(PROF_CLERIC, character)) / (10 * freq);
+        } 
+        */
+
+        if (EVIL_RACE(character)) {
+            do_power_of_arda(character);
+        }
+
+        check_breathing(character);
+        do_fame_war_bonuses(character);
     }
 }

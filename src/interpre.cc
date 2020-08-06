@@ -2582,7 +2582,7 @@ void nanny(struct descriptor_data* d, char* arg)
                   "  [H]uman                * [U]ruk-hai Orc\n\r"
                   "  [D]warf                # [C]ommon Orc  \n\r"
                   "  [W]ood Elf             # Uruk-[L]huth  \n\r"
-                  "  Ho[B]bit               # [O]log-Hai    \n\r"
+                  "  Ho[B]bit               # [O]log-Hai (Coming Soon)    \n\r"
                   "* Beor[N]ing             # Harad[R]im    \n\r"
                   "\n\r"
                   "Races marked with a * are hard to play.\n\r"
@@ -2624,9 +2624,6 @@ void nanny(struct descriptor_data* d, char* arg)
             break;
         case 'n':
             GET_RACE(d->character) = RACE_BEORNING;
-            break;
-        case 'o':
-            GET_RACE(d->character) = RACE_OLOGHAI;
             break;
         // GET_RACE(d->character) = RACE_OLOGHAI;
         case 'r':
@@ -2835,7 +2832,7 @@ void nanny(struct descriptor_data* d, char* arg)
             d->character->specials.ENERGY = ENE_TO_HIT;
 
             /* ensure character has correct practice sessions available on log-in */
-            d->character->update_available_practices();
+            d->character->update_available_practice_sessions();
 
             do_look(d->character, "", 0, 0, 0);
 

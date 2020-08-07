@@ -101,6 +101,8 @@ clerics.cc
 clock.cpp
 clock.h
 
+skill_timer.h
+skill_timer.cpp
 
 )
 

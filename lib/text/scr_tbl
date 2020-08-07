@@ -1,0 +1,1056 @@
+INTRO
+
+Scripts are small sequences of COMMANDS which can be
+attached to mobs and objects (currently only mobs impl-
+emented) which execute under certain conditions called
+TRIGGERS: when somebody enters, when somebody speaks etc.
+A script may have many triggers contained within it.
+
+Currently scripts are implemented in a very paranoid way:
+any data that a script may have is lost as soon as it stops
+executing.  This includes delays, returns and other exits.
+This means that if a script's trigger sets some variable,
+say ch1, then ch1 will only be known to the script until it
+either pauses, delays or ends.
+
+SEE ALSO: COMMANDS TRIGGERS VARIABLES "FLOW CONTROL" RETURN 
+#
+COMMANDS
+
+Commands make up the majority of almost every script.  Even
+triggers are commands, in some sense, but they are different
+enough to merit their own manual page.  Generally speaking,
+a trigger will cause your script to start running---it is the
+ENTRY POINT to your script---and commands will do all of the
+work you wish your script to do, including when the script
+should finish.
+
+Commands do various things: they get values from the MUD,
+they set values in the MUD; the calculate new values; through
+the use of RETURNs, they cause the MUD to handle certain sit-
+uations differently; they allow you to control the FLOW of
+your script; and they allow you to exit your script.  To
+learn more about each of these broad types of commands, see
+the related manual pages.
+
+Commands are far too broad to describe in one page, but there
+is a list of all recognized commands and their respective arg-
+uments.  To view this list, see COMMAND LIST in the script
+manual.
+
+SEE ALSO: INTRO TRIGGERS VARIABLES "FLOW CONTROL" RETURN
+#
+"COMMAND LIST"
+
+The following is a list of all commands recognized by the script
+system, except for triggers.  The list of triggers is available
+separately under the manual page TRIGGER LIST.
+
+We have divided commands into 6 rough categories:
+
+FLOW CONTROL
+Any command which can cause your script to take different
+actions based on some set of conditions (like the race of the
+character who triggered the script, the value of someone's rank,
+etc.).
+
+PLAYER COMMANDS
+These are exactly the same commands that any player can use:
+only a certain subset of these commands is allowed because not
+all of them are safe for mobiles to use.  Keep in mind that most
+of these commands cannot be used if the script owner is an object.
+
+CREATING/REMOVING
+Creating and removing refers to any sort of loading or purging of
+mobiles or objects.  Every immortal should be well aware of how
+this process works before using these commands.
+
+SETTING VALUES
+Setting values refers to setting any of the basic variable types.
+These commands should almost ALWAYS be used with the variables
+intx and strx.  Using these commands on things like chx.hit will
+directly set someone's hit points, so be careful.  Keep in mind
+that not all chx, obx and rmx fields are allowed to be set.  This
+is true of chx.level and chx.rank, for example.  If you try to
+set these values, the script will silently fail and the values
+will not be set.
+
+MODIFYING
+Modifying is very similar to setting values--it is just a bit more
+complex.  For example, the room someone is in is simply stored as
+a number by the MUD.  Changing that room is as simple as changing
+the number.  However, there are many things that must be done by
+the MUD in order to correctly move someone to another room: for
+example, messages must be sent to everyone else in the room that
+the character is leaving and the character must be removed from
+the room's list of characters that it holds.  The modification
+commands perform these complex actions for you.
+
+SENDING MESSAGES
+Sending messages is one of the most fundamental operations: it
+allows you to send a message directly to a character.  Note that
+these messages appear in the same way that the "echo" immortal
+command would cause them to appear.  If you wish for a mob to
+perform some social, then perhaps you should use DO_SOCIAL or
+DO_EMOTE.  If you need to create text completely unique to your
+script, then you will need to use a SEND function.
+
+
+    Flow control:        Player commands:    Creating/removing:
+    ABORT                DO_WEAR             EXTRACT_CHAR
+    RETURN_FALSE         DO_DROP             EXTRACT_OBJ
+    IF_INT_EQUAL         DO_EMOTE            LOAD_MOB
+    IF_INT_LESS          DO_FLEE             LOAD_OBJ
+    IF_IS_NPC            DO_FOLLOW           OBJ_FROM_CHAR
+    IF_STR_CONTAINS      DO_GIVE             OBJ_FROM_ROOM
+    IF_STR_EQUAL         DO_HIT              OBJ_TO_CHAR
+                         DO_REMOVE           OBJ_TO_ROOM
+                         DO_SAY
+                         DO_SOCIAL
+                         DO_WAIT
+                         DO_YELL
+
+    Setting values:      Modifying:          Sending messages:
+    ASSIGN_STR           ASSIGN_EQ           PAGE_ZONE_MAP
+    SET_INT_SUM          ASSIGN_INV          SEND_TO_CHAR
+    SET_INT_SUB          ASSIGN_ROOM         SEND_TO_ROOM
+    SET_INT_MULT         EQUIP_CHAR          SEND_TO_ROOM_X
+    SET_INT_DIV          GAIN_EXP
+    SET_INT_RANDOM       TELEPORT_CHAR
+    SET_INT_VALUE        TELEPORT_CHAR_X
+    SET_INT_WAR_STATUS   RAW_KILL
+    SET_EXIT_STATE
+    CHANGE_EXIT_TO
+
+SEE ALSO: COMMANDS
+#
+TRIGGERS
+
+When a situation which could fire a trigger occurs, the mud
+will look to see if any script is available to be triggered.
+It will first check the characters in the room and then the
+objects in the room. Characters cannot execute scripts if
+they are 'waiting', eg, casting a spell, bashed etc.  Exactly
+which situations can cause triggers will be listed shortly.
+
+Triggers have a number of VARIABLES for use during execution.
+To refer to characters the script has ch1, ch2, ch3.  Objects
+are ob1, ob2, ob3 and rooms are rm1, rm2 and rm3. Each trigger
+sets these variables in a different way, so be sure to read
+the documentation for each trigger to understand which var-
+iables mean what in the context of your trigger!
+
+To see the full list of triggers, please see the manual page
+for TRIGGER LIST.
+
+SEE ALSO: INTRO COMMANDS VARIABLES "FLOW CONTROL" RETURN
+          "TRIGGER LIST"
+#
+"TRIGGER LIST"
+
+The following is simply a list of all triggers.  To learn more
+about a specific trigger, please refer to its manual page.
+
+    ON_ENTER
+    ON_BEFORE_ENTER
+    ON_DIE
+    ON_EXAMINE_OBJECT
+    ON_RECEIVE
+    ON_DAMAGE
+    ON_DRINK
+    ON_EAT
+    ON_HEAR_SAY
+    ON_PULL
+    ON_WEAR
+
+SEE ALSO: TRIGGERS
+#
+VARIABLES
+
+Variables refer to characters, objects, rooms, whole numbers
+or strings.  You can store up to 3 different values for each
+of these types by using the following variable names:
+  Characters:    ch1, ch2 or ch3
+  Objects:       ob1, ob2 or ob3
+  Rooms:         rm1, rm2 or rm3
+  Integers:      int1, int2 or int3
+  Strings:       str1, str2 or str3
+
+In the documentation, we refer to ch1, ch2 and ch3 by simply
+saying chx.  The same goes for ob1, ob2 and ob3 as obx and
+rm1, rm2 and rm3 as rmx.  When it is important to specify
+exactly which one of these variables we are talking about,
+then we will say so explicitly.
+
+Aside from the chx, obx and rmx variables, there are two
+other sets of variables available: the intx and strx var-
+iables.
+
+For more information on each of these type of variables, see
+the appropriate manual page.
+
+SEE ALSO: INTRO INTEGERS STRINGS CHARACTERS OBJECTS ROOMS
+#
+CHARACTERS
+
+Character variables refer to either mobiles or player
+characters.  The chx variables have the following fields:
+
+    chx.name    (String) Character's name
+    chx.room    (Room) The room the character is in.
+    chx.level   (READ ONLY Integer) Character's level.
+    chx.hit     (Integer) Character's current hit points.
+    chx.race    (READ ONLY Integer) For example, 11 is Uruk-hai.
+    chx.exp     (READ ONLY Integer) Character's total exp.
+    chx.rank    (READ ONLY Integer) Character's rank.
+
+Fields marked as READ ONLY cannot be set by script
+commands such as SET_INT_VALUE or SET_INT_ADD.
+
+SEE ALSO: VARIABLES INTEGERS STRINGS OBJECTS ROOMS
+#
+ROOMS
+
+Rooms refer to rooms in the world.  Room variables have
+the following fields:
+
+    rmx.name    (String) The room's name.
+
+SEE ALSO: VARIABLES INTEGERS STRINGS CHARACTERS OBJECTS
+#
+OBJECTS
+
+Objects refer to objects in the world such as weapons,
+armor, bags, keys and other things.  Object variables
+have the following fields:
+
+    obx.name    (String) The object's short description.
+    obx.vnum    (READ ONLY Integer) The virtual number of the object.
+
+SEE ALSO: VARIABLES INTEGERS STRINGS CHARACTERS ROOMS
+#
+INTEGERS
+
+Integers are whole numbers.  They can be either positive
+or negative, but they cannot contain decimals.  Therefore,
+1, -1 and 37 are all integers; however, 0.5, 17.3333 and
+pi are not integers.
+
+There is no way to store decimals using this scripting
+system.  If you feel like you need to store a decimal val-
+ue, then it is likely that you can do something similar by
+storing a much larger integer and dividing it into a smaller
+value later.
+
+SEE ALSO: VARIABLES STRINGS CHARACTERS OBJECTS ROOMS
+#
+STRINGS
+
+Strings are sequences of letters, numbers and punctuation
+symbols.  Strings are the fundamental way that RotS sends
+information to players and receives input from players.
+
+For example, the following is a string:
+    "Welcome to RotS!"
+
+However, keep in mind that there is a large difference be-
+tween strings and integers.  The integer 1 is an object
+whose value is 1, the string "1" is a different object which
+tells us to display a 1.
+
+SEE ALSO: VARIABLES INTEGERS CHARACTERS OBJECTS ROOMS
+#
+RETURN
+
+Scripts are executed as subroutines in the regular MUD code.
+This means that the MUD gives your script the ability to
+execute commands as you see fit (for a short period of time).
+When you "return" from a script, you are returning control of
+the game to the regular MUD code.
+
+Returning is important to understand because when you return
+from a script, you may also return a value.  The value is
+either TRUE or FALSE, and the MUD may act differently depend-
+ing on what value you return.  In general, if you return true,
+then the MUD continues executing as if your script never
+happened.  If you return FALSE, then you will cause the MUD
+to act differently, depending on what trigger called your
+script.  Consult the manual pages for each trigger to see
+what a return value of FALSE will cause.
+
+For example, the ON_BEFORE_ENTER trigger can cause the MUD to
+act differently depending on what value you return: if you
+return TRUE, then it continues doing whatever it was doing
+before your script was called.  If you return FALSE, then the
+character who was attempting to enter your script's room is
+not allowed to enter the room.  This is how your return value
+can affect the way the game is played.
+
+SEE ALSO: INTRO COMMANDS VARIABLES "FLOW CONTROL" RETURN 
+#
+ON_ENTER
+
+Called whenever any character enters a room.  Keep in mind
+that if 4 characters enter a room with an ON_ENTER script,
+then the script will be triggered 4 times, for each char-
+acter who has entered.
+
+The variables set by this trigger depend on whether the
+script is on a mob or an object:
+
+Mobiles:
+    ch1   The mobile that owns the script.
+    ch2   The character who is entering the room.
+    rm1   The room that ch2 is entering.
+Objects:
+    ob1   The object that owns the script
+    ch1   The character who is entering the room.
+    rm1   The room that ch1 is entering.
+
+Return value: Ignored.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST" ON_BEFORE_ENTER
+#
+ON_BEFORE_ENTER
+
+This trigger is very much like ON_ENTER, except that it is
+called BEFORE the character is allowed to enter the room
+that it is trying to move into.
+
+Mobiles:
+    ch1   The mobile that owns the script.
+    ch2   The character who is entering the room.
+    rm1   The room that ch2 is entering.
+Objects:
+    ob1   The object that owns the script
+    ch1   The character who is entering the room.
+    rm1   The room that ch1 is entering.
+
+Return value:
+  FALSE   If the script returns FALSE, then the character
+          will not be allowed to enter the room.
+   TRUE   The character is allowed to enter the room as
+          usual.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST" ON_ENTER
+#
+ON_DIE
+
+Triggered when a character dies in the same room as the
+mob or object who owns the script.  The trigger works the
+same when it is owned by a mob or object.
+
+REMEMBER: Scripts cannot execute when a character is in
+the waiting state.  Thus, if this script resides on a mob,
+the script will not execute if the mob is bashed, casting
+or otherwise delayed.
+
+Variables:
+    ch1    The character who is dying.
+
+Return value:
+  FALSE    The MUD does NOT kill the character.  Be care-
+           ful with this case.  If the character is not
+           killed then it is the script's job to make sure
+           his stats, hit points, etc are all positive
+           values.
+   TRUE    The character is killed as normal after the
+           script exits.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_EXAMINE_OBJECT
+
+If an object owns a script with this trigger, then it will
+trigger whenever that object is examined by a player.  The
+trigger will not trigger if some other nearby object is
+examined by a player.
+
+Variables:
+    ob1    The object calling the script (also the script owner)
+    ch1    The character looking at ob1
+
+Return values:
+  FALSE    If this trigger returns false, then the long
+           description of ob1 will NOT be sent to ch1.  You
+           may supply your own description instead.  This
+           is most commonly used for zone maps.
+   TRUE    ch1 views the object as usual as soon as the script
+           returns.
+
+SEE ALSO: TRIGGERS
+#
+ON_RECEIVE
+
+This trigger is called just after a character receives a new
+object and it is added into his or her inventory.  Be careful
+to realize that this trigger may not always set ch2.  If the
+script is owned by an object, then the object may be picked
+up off of the ground, in which case there is no giving char-
+acter.
+
+Variables:
+    ch1    The character receiving the object.
+    ch2    The character giving the object.  (Does not always exist)
+    ob1    The object being given.
+
+Return value: ignored.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_DAMAGE
+
+If owned by a mobile, then this trigger will occur when the
+mobile damages another character.  If owned by an object, the
+script will trigger when some character damages another char-
+acter while WIELDING that object.  Keep in mind: if a mobile
+owns a script which triggers ON_DAMAGE and is wielding an
+object which triggers ON_DAMAGE, these two scripts will be
+triggered back to back!
+
+Also keep in mind that the trigger occurs before any damage
+is dealt and also before any messages are sent.
+
+Mobile:
+    ch1    The character being damaged
+    ch2    The character doing the damage
+Object:
+    ch1    The character being damaged
+    ch2    The character doing the damage
+    ob1    The object doing the damage
+
+Return values:
+  FALSE    The MUD will not do any damage or send any messages
+           indicating that damage has been done.  This must be
+           taken care of by the script.  Keep in mind that the
+           script system updates both characters after the
+           script, so neither may die during the script's ex-
+           ecution.
+   TRUE    The MUD damages the character and sends a damage
+           message as usual.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_DRINK
+
+When a characters drinks from an object.  This trigger does
+not make any sense on a mobile--it must be used only on ob-
+jects.
+
+Variables:
+    ch1    The character doing the drinking
+    ob1    The object containing the drink
+
+Return value: Ignored
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_EAT
+
+Similar to ON_DRINK: but when a character eats an object.  It
+does not make sense to put a script which triggers ON_EAT on
+a character.  Such a trigger will never occur.
+
+Variables:
+    ch1    The character eating ob1
+    ob1    The object being eaten by ch1
+
+Return value: Ignored
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_HEAR_SAY
+
+When a character hears another character use the 'say' command.
+Currently, this does not support objects.  Keep in mind that
+whenever anyone in a room speaks, it will attempt to trigger a
+script on every character in the room that has a script.
+
+Variables:
+    ch1    The character who owns the script
+    ch2    The character who is using 'say'
+    str1   The text said by ch2.  This is only the text spoken,
+           not the "X says" part.  The commands IF_TEXT_EQUAL
+           and IF_TEXT_CONTAINS are commonly used to test what
+           is in str1 after this trigger occurs.
+
+Return value: ignored.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_PULL
+
+Called right before a character pulls an object with type LEVER.
+Note that this trigger is only operational when attached to an
+object.  A script owned by a mobile with an ON_PULL trigger will
+never execute.
+
+Variables:
+    ch1    The character pulling the lever.
+    ob1    The object being pulled.
+
+Return values:
+  FALSE    If the script returns false, then the lever object
+           will not be pulled.  The script must take care of
+           sending a failure message to the ch1.
+   TRUE    ch1 pulls the lever ob1 as usual.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ON_WEAR
+
+Directly before a character wears, wields or lights an object.
+A script triggered by ON_WEAR will only execute if it is on an
+object.
+
+Variables:
+    ch1    The character attempting to wear ob1
+    ob1    The object being worn, wielded or lit by ch1
+
+Return values:
+  FALSE    If the script returns false, then ch1 will not be
+           allowed to wear ob1.  It is the script's job to
+           send a message to ch1 as to why this is the case.
+   TRUE    ch1 wears the object as usual.
+
+SEE ALSO: TRIGGERS "TRIGGER LIST"
+#
+ABORT
+
+Abort is the opposite of RETURN_FALSE.  It would have been
+better called RETURN_TRUE, but unfortunately that's not the
+case.  Abort causes the script to stop executing and return
+TRUE.  If you don't understand the difference between a
+script returning TRUE and FALSE, read the RETURN manual page.
+
+SEE ALSO: COMMANDS "COMMAND LIST" RETURN_FALSE RETURN
+#
+ASSIGN_EQ
+
+Similar to the ASSIGN_INV and ASSIGN_ROOM commands.  Return
+an object in the specified slot in a certain character's
+equipment.  To learn which integers refer to which equipment
+slots, read MAN SCRIPT EQUIPMENT.
+
+Argument 1:
+    A character to search.  This should be ch1, ch2 or ch3.
+Argument 2:
+    An object to store the result of the search.  This should
+    be ob1, ob2 or ob3.  The result will only be stored here
+    if the search was successful.
+Argument 3:
+    The equipment position to look in.  Each slot in a char-
+    acter's equipment has a corresponding number.  See the
+    manual page for EQUIPMENT in the script chapter.
+Argument 4:
+    An integer: int1, int2 or int3.  The command will put a
+    value of 1 in this integer if the search succeeded.  Thus,
+    if this argument is set to 1, then you know that your obx
+    argument contains a valid object.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+ASSIGN_INV
+
+Search for an object in a character's inventory by virtual
+number.  This command also searches through any containers in
+the player's inventory.
+
+Argument 1:
+    The virtual number of the object to look for.
+Argument 2:
+    The obx variable to assign the object to if it is found.
+Argument 3:
+    The character to search.  Should be a chx variable.
+Argument 4:
+    An integer variable.  If the object is found, then this
+    variable is set to 1, if not it is set to 0.  Should be
+    an intx variable.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+ASSSIGN_ROOM
+
+Very similar to the ASSIGN_INV command, except this command
+searches a room, not a character's inventory.  The script must
+supply a virtual number and a room to look in, as well as an
+obx variable to store the result in.  You must also supply an
+int variable to store whether or not the command succeeded.
+
+Argument 1:
+    An integer which holds the vnum to look for.
+Argument 2:
+    An obx variable to store the object in, if it is found.
+Argument 3:
+    An rmx variable denoting which room is to be searched.
+Argument 4:
+    An integer (intx should always be used) to store whether
+    the search failed or succeeded.  If the search was succ-
+    essful, then a 1 is stored in the int.  Otherwise 0 is
+    stored in the int.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+ASSIGN_STR
+
+Assign a string to a string variable.  Keep in mind that this
+command allows you to store a string that YOU input into a
+string variable.  You cannot use this command to store, for
+example, the value of chx.name into the variable str1.  You
+can use this command to store the string "whitie" into str1.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+CHANGE_EXIT_TO
+
+Change the room which an exit leads to.  The room should be
+supplied as an rmx variable, but the exit is an integer.
+See MAN SCRIPT EXITS to see which integers correspond to
+which exits.
+
+Argument 1:
+    The room the exit is in.
+Argument 2:
+    The direction of the exit as an integer.
+
+SEE ALSO: COMMANDS "COMMAND LIST" EXITS
+#
+DO_DROP
+
+Force a character drop an object.
+
+Argument 1:
+    The character who will be forced to drop the object.
+    This should be a character in a chx variable.
+Argument 2:
+    The object to drop.  This should be an obx variable
+    obtained by the ASSIGN_INV command.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_EMOTE
+
+Force a character to emote.
+
+Argument 1:
+    The character who will emote.  Should be a chx var-
+    iable.
+Argument 2:
+    The text to emote.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_FLEE
+
+Force a character to attempt to flee.
+
+Argument 1:
+    The character who will try to flee.  Should be a chx
+    variable.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_FOLLOW
+
+Force one character to follow another character.
+
+Argument 1:
+    The character who will follow.  Should be a chx var-
+    iable.
+Argument 2:
+    The character who will be followed.  Should be a chx
+    variable.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_GIVE
+
+Force a character to give an object to another character.
+
+Argument 1:
+    The character who will give the object.  Should be a
+    chx variable.
+Argument 2:
+    The character who will receive the object.  Should be
+    a chx variable.
+Argument 3:
+    The object which is to be given.  This should be an obx
+    variable which has been gotten by an ASSIGN_* command.
+
+SEE ALSO: COMMANDS "COMMAND LIST" ASSIGN_EQ ASSIGN_INV
+          ASSIGN_ROOM
+#
+DO_HIT
+
+Force one character to hit another character.
+
+Argument 1:
+    The character who will attack.  Should be a chx variable.
+Argument 2:
+    The character who will be attacked.  Should be a chx var-
+    iable.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_REMOVE
+
+Force a character to remove an item from their equipment.  Unlike
+players, who specify which item to remove by using a keyword for
+the item, this command requires an equipment slot integer.  To see
+the list of equipment slots, see MAN SCRIPT EQUIPMENT.
+
+Argument 1:
+    The character who will remove the object.  Should be a chx var-
+    iable.
+Argument 2:
+    An integer corresponding to the equipment slot the character
+    should be remove from.
+
+SEE ALSO: COMMANDS "COMMAND LIST" EQUIPMENT
+#
+DO_SAY
+
+Force a character to say something.  This command allows you to
+insert one string inside of another before saying the string.
+The first argument is the string the character will say.  If
+it contains "%s" (lower case s), then before the character says
+the string, the MUD will insert another string where the %s is.
+The string that will be inserted is the second argument.
+
+Argument 1:
+    The character who will speak.  This should be a chx variable.
+Argument 2:
+    The text to be spoken.  The %s placeholder should be put in
+    this argument if you wish to include another string inside
+    of this one.
+Argument 3:
+    This argument is optional: it should be a variable with type
+    STRING.  I.e., a strx variable or part of a chx, obx or rmx
+    variable that is a string: like chx.name.
+
+SEE ALSO: COMMANDS "COMMAND LIST" VARIABLES
+#
+DO_SOCIAL
+
+Force a character to perform a social.  An optional argument
+allows the scriptor to specify a character target for the
+social.
+
+Argument 1:
+    The character who will perform the social.  This should be
+    a chx variable.
+Argument 2:
+    An optional character who will be the target of the social.
+    For example, the "nod" social can be given a target, in
+    which case the first character will nod at the second.
+    This should be a chx variable.
+Argument 3:
+    This argument is the command for the social.  If you wish
+    for the character to nod, then this argument must be "nod".
+    If you wish for the character to wave, this should be
+    "wave", and so on.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+DO_WEAR
+
+Force a character to wear an object.  The position for this
+object will be automatically calculated (just like when the
+game automatically calculates the correct position for a
+player).
+
+Argument 1:
+    The character who will wear the object.  This should be a
+    chx variable.
+Argument 2:
+    The object to be worn.  This should be an obx variable
+    found by ASSIGN_EQ, ASSIGN_INV or ASSIGN_ROOM.
+
+SEE ALSO: COMMANDS "COMMAND LIST" ASSIGN_EQ ASSIGN_INV
+          ASSIGN_ROOM
+#
+DO_YELL
+
+Force a character to yell.  This command works exactly the
+same as the DO_SAY command.  Please see MAN SCRIPT DO_SAY.
+
+SEE ALSO: COMMANDS "COMMAND LIST"
+#
+"EVERYTHING ELSE"
+
+DO_WAIT - places ch1 on the waiting_list for a time period specified in the
+parameter. Script execution is halted, returning TRUE. When the character
+comes off the waiting_list, execution is continued at the next command. Note
+that all variables which might have been set from the trigger will be set to
+0. This is to ensure the script does not try to use pointers which are now
+invalid.
+
+
+EQUIP_CHAR - Loads up to 5 objects to a character and then performs "wear all".
+- Parameters: up to 5 vnums of items to load
+ch1, ch2, ch3 - the character to receive and wear the items
+
+
+EXTRACT_CHAR - extracts a character from the game - can only be used on
+mobiles. Leaves equipment behind in the room. No message to the room - the
+script must handle this.
+- Parameter: ch1, ch2, ch3 - the character to extract
+
+
+EXTRACT_OBJ - extracts an object from the game - whether it is carried, in a
+room etc. No message is displayed.
+- Parameter: ob1, ob2, ob3 - the object to extract
+
+
+GAIN_EXP - gives/subtracts exp from a character.  Also deals with advance/losses of level.
+- Parameters: character, integer variable (eg ch1 int1)
+
+
+IF_INT_EQUAL - compares one integer with another. If they are equal the next
+command is executed, if not it is skipped. Use BEGIN as the next command to
+mark the beginning of a block of commands and END to mark their end. The
+script will skip the whole block if the integers are not equal.
+- Parameters: two integers (eg int1, ch1.hit, ch1.race...)
+
+
+IF_INT_LESS - compares two integers to see if one is less than the other.
+Works in the same way as above.
+
+
+IF_IS_NPC - if the character is an npc the next command is executed
+- Paramters: ch1, ch2, ch3
+
+
+IF_STR_CONTAINS - if a text field contains the specified text the next command is executed. Enter the specified text in UPPERCASE.
+- Parameters: ch1.name, ch2.name, txt1 etc.
+the text which is to be compared.
+
+
+IF_STR_EQUAL - as above, except the text must be equal
+
+
+LOAD_MOB - load a mobile and assign it to a chx variable
+- Paramters: vnum of mobile
+ch1, ch2, ch3 (variable to assign new mob to)
+
+LOAD_OBJ - load an object and assign it to an obx variable
+- Parameters: vnum of object
+ob1, ob2, ob3 (variable to assign new obj to)
+
+
+OBJ_FROM_CHAR - removes an object from a character's inventory and puts it into
+"limbo".  Useful for teleporting objects around.
+- Parameters: ob1, ob2, ob3 - object to remove
+ch1, ch2, ch3 - which character's inventory to move from
+
+
+OBJ_FROM_ROOM - removes an object from the contents of a room and puts it into
+"limbo".  Useful for teleporting objects around (eg combine this command with
+obj_to_room or obj_to_char to move an object from a room into a character's
+inventory or into another room).
+- Parameters: ob1, ob2, ob3 - object to remove
+rm1, rm2, rm3 - the room from which the object is to be moved
+
+
+OBJ_TO_CHAR - move an object which -mustn't- be in a character's inventory to
+a character
+- Parameters: ob1, ob2, ob3 - object to move
+ch1, ch2, ch3 - which inventory to move to
+
+
+OBJ_TO_ROOM - as obj_to_char except the object is placed in a room's contents
+- Parameters: ob1, ob2, ob3
+rm1, rm2, rm3
+
+
+PAGE_ZONE_MAP - sends a zone map (as shaped by an immortal) to a character
+(mortal or otherwise). Used especially for maze maps.
+- Paramters: integer - the number of the zone
+ch1, ch2, ch2 - the character who is to see the map
+
+
+RAW_KILL - kill a mobile or player (corpse is "silent" variety for now)
+- Parameters: ch1, ch2, ch3 (character to be killed)
+
+
+RETURN_FALSE - Halts execution of the script and returns program to normal
+execution with the value FALSE. For example, some mobs will have a script for
+their ON_DIE trigger. Normal execution of the script will return TRUE and the
+mob will die as normal. Returning FALSE to an ON_DIE trigger will stop the
+mud killing the character and creating the corpse. The script must deal with
+the circumstances surrounding the character's death to make this work
+properly. For example, if the mob has died due to lack of hits, the script
+should at the very least return the mob's hitpoints to +ve and give a reason
+(send_to_room etc) as to why the mob is still alive.
+
+
+SEND_TO_CHAR - send text to a character
+- Parameters ch1, ch2, ch3 (the character to send the text to)
+Any text field to be inserted via %s (optional)
+
+
+SEND_TO_ROOM - send text to room
+- Parameters: rm1, rm2, rm3 (the room to send the text to)
+Any text field to be inserted via %s (optional)
+
+
+SEND_TO_ROOM_X - send text to room except ch
+- Parameters: rm1, rm3, rm3 (the room to send the text to)
+ch1, ch2, ch3 (the character who is not to recieve the text)
+Any text field to be inserted via %s (optional)
+
+
+SET_EXIT_STATE - change exits (open, closed, locked) This command sends
+messages to the room(s) concerned and also deals with the "other side" of the
+door as in zone files.
+- Parameters: rm1, rm2, rm3 (the room with the exits)
+exit direction (0-5)
+exit state (0-2) (see zone help)
+
+SET_INT_SUM - assigns the sum of two integers to an integer. For example, entering as values: ch1.hit ch1.hit int1 will add the value of int1 to ch1.hit; entering ch1.hit ch2.hit ch3.hit will make ch1's hit points equal to the sum of ch2 and ch3 (not very useful... ).
+- Parameters: integers: the int to assign to, and the two integers to sum.
+
+SET_INT_DIV - as above, except the 2nd integer is divided by the 3rd
+
+SET_INT_RANDOM - as above, except the 1st integer is set to a random number between the 2nd and 3rd
+
+SET_INT_SUB - as above, except the 3rd integer is subtracted from the 2nd
+
+SET_INT_MULT - as above, except the two integers are multiplied
+
+SET_INT_VALUE - set a value to an integer. This is one very powerful command!
+It only takes up a few lines of code, but since integer parameters can be
+pointers to for example, a character's hit points or level, great care must be
+exercised when using this command.
+- Parameters: integer variable (int1, int2, int3, ch1.hit.., ch1.level..,
+ch1.race)
+integer value (entered by script writer)
+
+SET_INT_WAR_STATUS - set an integer to a value which signifies the state of
+fame war.  
+
+TELEPORT_CHAR - take a character and all npc followers from a room and move to another room. NB no
+messages are sent to the rooms - the script must handle messages.
+- Parameters: vnum of room to move to
+ch1, ch2, ch3 (the character to move)
+
+
+TELEPORT_CHAR_X - take a character (leave followers behind) from a room and move to another room. NB no messages are sent to the rooms - the script must handle messages.
+- Parameters: vnum of room to move to
+ch1, ch2, ch3 (the character to move)
+#
+EXAMPLE
+
+The following is an example script.  It is meant to be attached
+to a mobile and will trigger when any character enters the room.
+When the character enters the room, a scimitar is loaded (line 3),
+given to the mobile who owns the script (line 4) and finally given
+to the character who entered the room (line 5).
+
+[1] TRIGGER: ON ENTER (null)
+[2] COMMAND: DO_SAY Good evening %s. (ch1)(ch2.name)
+[3] CMD: LOAD_OBJ vnum: 5104, obj variable: ob1 (load scimitar)
+[4] CMD: OBJ_TO_CHAR object: ob1, character: ch1 (scimitar to mob)
+[5] CMD: DO_GIVE from: ch1, to: ch2, object: ob1 (give scimitar)
+[6] COMMAND: DO_SAY Please receive this scimitar as a gift.(ch1)((null))
+
+SEE ALSO: INTRO TRIGGERS VARIABLES RETURN
+#
+"FLOW CONTROL"
+
+Flow control, in programming, refers to the ability to use
+conditional statements such as "if int1 is greater than 7" or
+"if str1 contains ch1's name".  Whenever the if statement is
+satisfied, you may control the script to execute a particular
+command.  To correctly use the if command, you must follow it
+with a BEGIN command.  Follow the BEGIN command with the list
+of commands that you wish to execute when your conditional
+statement is satisfied.  Use the special END command to end the
+list of commands to execute when your if command is satisfied.
+
+In general, your conditional statements will look like this:
+
+    ...
+[3] IF_*
+[4] BEGIN
+[5] ...
+[6] END
+    ...
+
+In this case, IF_* could be IF_INT_EQUALS, IF_STR_EQUALS or
+any of the other commands beginning with IF_.  Note that the
+above code does not do anything if the IF_* statement is not
+satisfied.  If you would rather perform something when the
+if statement is not satisfied, then you should use the
+END_ELSE_BEGIN command on line 6 instead of END.  For example,
+suppose that the following script has already loaded the value
+of ch2.race into int1 and the constant value 10 into int2.
+
+[3] IF_INT_LESS      int1 int2
+[4] BEGIN
+[5] SEND_TO_CHAR     "You are a whitie!" to: ch2
+[6] END_ELSE_BEGIN
+[7] SEND_TO_CHAR     "You are a darkie!" to: ch2
+[8] END
+
+Keep in mind thatt here is currently a bug with the
+END_ELSE_BEGIN command which keeps it from working in nested
+situations.  That means that if you are already inside of an
+IF statement, you cannot make another IF statement that uses
+END_ELSE_BEGIN.  You are free to make a new IF statement--but
+not to use END_ELSE_BEGIN.
+
+SEE ALSO: INTRO TRIGGERS VARIABLES RETURN
+#
+EQUIPMENT
+
+The following integer values correspond to equipment slots:
+    0    Light
+    1    Right finger
+    2    Left finger
+    3    First neck slot
+    4    Second neck slot
+    5    Body
+    6    Head
+    7    Legs
+    8    Feet
+    9    Hands
+   10    Arms
+   11    Shield
+   12    Cloak
+   13    Belt
+   14    Right wrist
+   15    Left wrist
+   18    Back
+   19    Belt slot 1
+   20    Belt slot 2
+   21    Belt slot 3
+#
+RACES
+
+The following integers correspond to races:
+
+    0    God
+    1    Human
+    2    Dwarf
+    3    Wood elf
+    4    Hobbit
+    5    High elf (Unused)
+   11    Uruk-hai
+   12    Haradrim (Unused)
+   13    Orc
+   14    Easterling (Unused)
+   15    Uruk-lhuth
+   16    Undead
+   20    Troll
+#
+EXITS
+
+The following integers correspond to exit directions:
+    0    North
+    1    East
+    2    South
+    3    West
+    4    Up
+    5    Down
+#~

@@ -1,0 +1,228 @@
+PUNISHMENT
+
+   Offense                      1       2       3       4+
+--------------------------------------------------------------
+1)  Multiplaying*               5      10    deletion  ban
+2)  Equip transfer**            &       3       5    deletion
+3)  General bug/ban abuse***    &       3       5    deletion
+4)  %Whitie-whitie pk           3       5      10    deletion
+5)  20-minute rule              5      10    deletion  ban
+5)  5-minute rule               3       5      10    deletion
+6)  Cross-race info             5      10      15    deletion
+7)  Character trade****         5      10      15    deletion
+8)  %Kill steal                 &       1       3       5
+9)  %Equip steal (mob)          &       1       3       5
+10) %Equip steal (player)       3       5      10    deletion
+11) %Spam                       &     ****      1       3
+(Note: Immort handling punishment may consider reduced sentence if
+he/she feels the situation warrants this.)
+
+&     = warning
+%     = Watch issue. Please allow Watch members to handle if they are
+        present. Otherwise, consider this list.
+*     = Punishment shall be carried out on both characters involved.
+**    = Also includes a purging of all equipment that was transferred or
+        all equipment on the receiving character.
+***   = This includes the temporary ban on whitie city mobs.
+****  = Demotions and deletions are of the character that was traded.
+***** = Noshout
+
+Also, if offense is sufficiently severe, consider adding the
+punishment into wizutil note.
+
+#
+REGISTER
+
+Register <mob|obj|room|player|script> [number] will list the following
+   
+   mob      - shows the mobs in zone number [number], or current zone
+              if you omit [number]
+   obj      - shows the objects in zone number [number], or current zone
+              if you omit [number]
+   room     - shows the rooms in zone number [number], or current zone
+              if you omit [number]
+   player   - shows the player of level [number]
+   script   - shows the scripts existing in a zone [number]
+#
+FINDZONE
+Returns zone number(s) of zone(s) with given coordinates.
+
+EXAMPLES:
+findzone           - lists zones with their coords and titles.
+findzone 17        - lists zones with their coord x == 17
+findzone * 17      - lists zones with their coord y == 17
+findzone 15 17     - lists zone(s) with x == 15, y == 17.
+#
+GOTO
+goto <room number> takes you to a room with that number.
+goto <alias of mobile or an object> will take you to the first
+     mobile/object with this alias.
+goto <player> Takes you to the specified player.
+You can abbreviate goto to go.
+
+SEE ALSO: WHERE
+#
+RELOAD
+Usage: reload <argument>
+
+For mysterious reasons, the only option that works is "reload xhelp".
+It will correctly load help files from machine's hard drive to the memory.
+#
+WHERE
+Usage: where <arguement>
+
+Where for 93+ immortals doesn't work the same as for mortals. If you use
+'where' without arguments, you will get listing of all players in the game,
+not only in your zone.  If you put an argument, then mud will show you all
+mobiles/objects/players who have your argument as alias or vnum; for example,
+'where rabbit' or 'where 1513'.
+
+#
+SET
+You can set many of your own flags. Type 'set' to list them.
+You should probably 'SET HOLYLIGHT ON' in the begining. 
+SET ROOMFLAGS will show you room number in the room you are in.
+The rest of the flags should be self explanatory.
+#
+STAT VNUM VSTAT
+STAT is used to get information about an object, a mob, or a room.
+STAT <object|mob|player> Will stat that object or mob or player.
+STAT ROOM will show stats of the room you're in.
+VNUM <keyword> lists all existing objects and mobs with a given keyword.
+  Usage: vnum obj <keyword> --or-- vnum mob <keyword>
+VSTAT stats object or mob by it's virtual number.
+#
+LOAD
+Usage: load { obj | mob } <number>
+Loads a given mob or object with given virtual number.
+
+All objects loaded by immortals now show which imm loaded if you STAT them.
+#
+SLAY PURGE
+Slay will instantly kill the target.
+Purge disintegrates a given object or mob. Purge without argument will purge
+all non-PC mobs, and all objects from the room.
+Note: Command kill will engage immortal in a regular combat.
+#
+ZRESET
+Usage: zreset <zone number>
+Resets a given zone.
+Note that you should always purge a zone before resetting it.
+
+This only works properly if done in the zone to be reset.
+#
+WIZSET
+Usage: Wizset <Your name> <parameters>
+Use this command to set your stats (hit points/stats/etc.).
+You can abbreviate wizset to wiz.
+See also: STAT
+#
+SAY TELL REPLY ASK WHISPER YELL NARRATE CHAT PETITION SING WIZNET ; '
+
+For general channels immortals can control to whom their messages are
+sent - that is to whities or to darkies.
+
+<narrate | sing | chat> < -a | -w | -d | -m> <string>
+
+The string is sent do all/whities only/darkies only /lhuth only
+correspondingly. The default is -w
+
+Another immortal only channel is wiznet (short version is semicolon)
+<wiznet | ; > <string>
+
+> chat -w Hi everyone          
+> nar -d Who just killed a ferry captain?      
+> sing -a Jingle bell jingle bell
+> nar -l There's actually someone on here? :)
+> wiznet Hey everyone.
+
+You can use ' as a shorthand for say, as in: ' hello there.
+You can use ; as a shorthand for wiznet, as in: ; hello there.
+
+Note for immortals: See HELP <CHANNEL> for more information.
+See also: SET
+#
+BOARDS IDEAS
+Boards are there mainly for you to write your ideas on.
+
+1101: General God Board -- usually really spammy
+1103: Shaping and Bug board
+1104: Zone board -- used for cell maps and etc.
+1105: Dim's Coding Board -- This is stuff waiting to be coded
+1106: News Board -- don't post on this. Only important news go here
+1107: Assignment Board -- for zone assignments and zone management
+1111: Object Board -- everything about objects
+1112: Mobile Board -- everything about mobiles
+1113: Prami's Help Board -- post things that need be added to help here
+1114: Post your ideas here! Try to avoid spam on 1101!
+1116: Maze Board/New World Board -- local board about Maze and zones 100+
+
+See also: HELP NEWS 
+#
+ZONE
+Usage: zone <number>
+It will show you description and map (if made) of a zone.
+
+   All Numbering goes according to zones. Thus, say, in zone 25, all objects,
+rooms, and monsters should be numbered from 2500 to 2599. Of course you can
+load objects/mobs from other zones, and if you need more rooms, another zone
+can always be given to you.
+#
+SYSLOG
+
+Gives you on-screen system log.  Choose your option depending on how
+much spam you can tolerate. Most of this information can be
+semi-useful for most gods.
+
+Usage:
+> syslog [none/brief/normal/full]
+
+#
+INVIS
+Usage: invis <number>
+
+
+Makes you invisible to player and mobs below that level. Useful so that agg
+mobs don't attack you (because they don't see you). You can type 'invis 30'
+for that.
+
+Note that talking to mortals and imms below your invis status is considered
+quite rude and should not be done.
+#
+NOHASSLE
+Usage: set nohas on
+
+Makes agg mobs ignore you.  Very helpful when making a zone and loading
+agg mobs.
+#
+BAN UNBAN
+
+Ultra high god command. Consult Dim before using it!!!
+
+These commands prevent anyone from a site with a hostname containing the
+site substring from logging in to the game. You may ban a site to ALL, NEW
+or SELECT players.  Banning a site to NEW players prevents any new players
+from registering.  Banning a site to ALL players disallows ANY connections
+from that site.  Banning a site SELECTively allows only players with site-ok
+flags to log in from that site. Ban with no argument returns a list of
+currently banned sites.
+Unban removes the ban.
+ban [<'ALL' | 'NEW' | 'SELECT'> <site>]
+unban <site>
+> ban new ai.mit.edu
+> unban ai.mit.edu
+
+If you ban select, you have to turn select on (that is, ban selected players).
+Don't know how to do that... just don't use it.
+#~
+
+
+
+
+
+
+
+
+
+
+

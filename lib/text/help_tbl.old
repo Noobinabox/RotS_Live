@@ -1,0 +1,1981 @@
+NAMECHANGE
+
+If you are in the same room as an innkeeper, you may now RENT NAMCHANGE in
+order to permanently change your character's name. Remember that you may only
+change a character's name once in his lifetime, and that the immortal staff
+will not reimburse you for a carelessly changed name.
+
+> rent namechange <newname>
+
+You must enter the RENT NAMECHANGE syntax twice in order for the change to
+take place.
+
+See also: RENT
+#
+LATIN1
+
+Latin-1 is the extension of UTF-7 that allows one to display letters with
+accents.
+
+See also: SET
+#
+AUTODELETE
+
+Over time, characters of level 20 and below will be subject to automatic
+deletion.  The time to delete is roughly one week per level. Keep in mind that
+retired characters will never delete with time.
+
+See also: RETIRE
+#
+SWIM DROWNING
+
+Swim is a ranger skill that allows one to pass over water-filled rooms 
+without the aid of a boat. One must "set swim on" to enter one of these rooms.
+By default, this setting is turned off so a player does not accidently wander
+into a water-filled room.  A check is made upon entering the room and every
+so often afterwards. A failed check will result in the player struggling to
+remain swimming. If the player continues to fail these checks, he/she may
+drown. Drowning occurs after a certain amount of time has passed and does not
+consider HP.	
+
+See also: SET
+#
+POISON
+
+A player may find that they are poisoned at some point throughout the game.
+Mobs, objects, spells, and possibly other sources can cause this to occur.
+The effects of being poisoned are a loss of strength, decrease in regen
+rates of hp, stamina, and moves, and minor damage every "tick". The effects
+of poison will wear off with time or with the help of spells/powers.
+
+See also: "MAN POWERS RESIST POISON" "MAN POWERS REMOVE POISON"
+#
+MONEY GOLD
+
+Money is found in the form of gold, silver, and copper coins. It can be used
+for several purposes including buying equipment and (eventually) to pay for
+rent. The conversions between coin types is as follows:
+     1 Gold = 10 Silver = 1000 Copper
+     1 Silver = 100 Copper = 1/10 Gold
+     1 Copper = 1/100 Silver = 1/1000 Gold
+#
+NEWBIE
+    Use help by typing 'help <topic>' or 'man <chapter> <topic>'.
+    If you are new to muds, type 'help help'
+    If you have experienced with muds in general, type 'help start'
+#
+RETIRE RETIRED
+
+If you are retired, you will never autodelete with time, and you do not have
+to pay for rent. However, retired players are not allowed to play the game,
+but are placed in a secluded room away from the world, where they can talk
+with players, and read news, and send and receive mail. Retired players must
+remain retired for at least one month.
+
+In order to retire, you must visit your local innkeeper, and request a
+retirement. To do this, simply type RENT RETIRE.
+
+> rent retire
+
+Keep in mind that you must enter the RENT RETIRE syntax twice in order to
+go through with the retirement process.
+
+After thirty days of retirement, you will be allowed to leave the retirement
+home via the LEAVE command.
+
+> leave
+
+See also: RENT
+#
+HERO LEGEND
+
+At level 30, players reach Legend status. When you become a legend,
+your class levels no longer increase, experience is much harder to
+gain, and you gain less hit points over time.
+
+See also: LEVEL
+#
+ANGER NOQUIT
+
+If you engage in a fight, your adrenalin level becomes very high and
+you get affected by ANGER.
+
+From OOC prospective, ANGER is a feature in the game that keeps any
+player from renting or quitting after a fight. This is to make sure
+that people do not quit in the middle of a fight (especially PK
+fight). ANGER lasts about 2 minutes for attacking an NPC, and for
+about 5 minutes for attacking a player.
+
+ANGER was formerly known as NOQUIT.
+
+See also: RENT QUIT PK
+#
+STATS RACES DWARF ELF HOBBIT "WOOD ELF" URUK ORC HARADRIM HUMAN LHUTH
+
+Different races about Arda have different abilities and disadvantages,
+here is a basic chart comparing different races to each other.
+
+Race      | Str      | Int      | Wil      | Dex      | Con      | Lea
+---------------------------------------------------------------------------
+Human     | Normal   | Normal   | Normal   | Normal   | Normal   | Normal
+Dwarf     | High     | Normal   | Low      | Very Low | Very High| Low
+Wood Elf  | Low      | High     | Normal   | High     | Low      | Normal
+Hobbit    | Very Low | Low      | Normal   | High     | High     | Normal
+High Elf  | Normal   | High     | Normal   | High     | Low      | Normal
+Uruk-Hai  | Normal   | Very Low | Very Low | Normal   | High     | Very Low
+Haradrim  | Normal   | Normal   | Low      | Normal   | High     | Normal
+Common Orc| Low      | Very Low | Very Low | Low      | Very Low | Very Low
+Easterling| N/A      | N/A      | N/A      | N/A      | N/A      | N/A
+Uruk-Lhuth| Low      | Normal   | Very Low | Normal   | Normal   | Low
+
+Please note that currently Haradrim, Easterlings, and High Elves are disabled.  
+#
+RECRUIT
+
+Usage: recruit <name of a mobile>
+
+Common orcs have a unique ability to "recruit" followers.  Some mobiles of
+common orc race will gladly join the group of a player.  They will listen to
+the leader's commands and assinst in a fight. Also, common orc enemies (all
+good races and Uruk-Lhuth) will not be able to distinguish a common orc from
+his/her followers. 
+#
+WATCH
+
+This information concerns "good" characters only.  Uruks and their
+bretheren are free to act as they please towards one another.
+
+The Watch are mortals that have been specially chosen to keep the peace
+in Arda. They have been given special commands that allow them to deal
+with rule breakers in a peaceful manner (see JAIL). If you wish to
+become a member of the Watch, state your intention to a Watchman or
+an Immortal.
+
+See also: PKILL
+#
+QUEST QUESTS
+
+Quests are availble for your character. Each character is allowed
+one and only one quest, even if the quest is failed. To recieve a
+quest, simply ask either some high god (see WIZLIST) to run one for you. 
+It will involve god interference, and the god will have total control over
+the quest. Gods are not obligated to run a quest for you, but they 
+are obligated to observe the entire quest. The maximum reward for 
+completion of any quest is 100,000 experience points. The reward
+is also given at the god's discretion. If you are involved in a
+quest, I would suggest you log it, and send it to another high god
+if you have any problems with the god running the quest's actions.
+
+Quests may, or may not go away in the future.
+#
+START FAQ
+
+Greetings, fellow traveller!
+
+Welcome to Return of the Shadow, Arda the Fourth Age;
+better known as simply ROTS. This is a guide that will give someone a
+basic knowledge of the game and its workings. It is meant to show you 
+how things work and point you towards areas where you may learn more
+You can find formatted version at our website http://www.rots.org.
+
+To help you along until you learn your way around, the following are 
+questions that are frequently asked me along with their answers:
+
+Q1.  Where do I find newbie eq?
+
+A1. Newbie equipment may be found in a number of areas within each city:
+junkyards, training grounds, storage huts, among other things. Each area may
+have a different type of newbie equipment that is based upon the area where it
+is found.  Newbie equipment generally consists of discarded items: Rusted
+weapons and worn out armor.
+
+Q2.  Where do I get money and buy things?
+
+A2. Money is fairly difficult to come by in ROTS, at first. Each character
+starts with enough money to buy some basic things such as a waterskin and some
+cotton clothes. There are a number of weak enemies nearby that may have
+money. There are things to look when finding a creature with cash. The main
+thing to look for is whether or not the enemy is humanoid. The killing of good
+people is generally frowned upon by other players and guards will not stand
+for it and attack you. But the killing of thieves, brigands, and other
+miscreants will go by unpunished.
+
+Q3.  Where do I practice my skills and spells?
+
+A3. There are teachers spread across Arda, hidden in towns, forests, and other
+areas. Many are open and easy to find, it's best to ask another player where a
+guildmaster may be found. Teachers usually specialize in a specific type of
+abilities and spells and seldom learn others. To see the sort of spells you
+can learn type "MAN SPELL LIST" To see the mystical powers that maybe learned
+type "MAN POWER LIST" To see the skills that one may practice type "MAN SKILL
+LIST". When at a guildmaster type "Practice" to see a list of the skills and
+spells that may be learned. Type "Practice <skill>" and you will spend one
+practic e session on that skill.
+
+Q4.  Where is it safe to xp (get experience)?
+
+A4. Experience plays a vital role in how the game works.  There are a number
+creatures found everywhere on Arda. The generally safe areas to gain
+experienceare near towns and in wide open areas.  Remember to type "consider
+<target>" to see a creatures strength and level compared to yours. Keep an eye
+on your health level and "flee" when it drops low, "Wounded" is generally a
+safe time to flee so that leaves leeway for failed attempts. Keep in mind that
+consider can be decieving as to the actual strength of an opponent. Generally
+farms that support life are a great place to sharpen ones skill and butcher
+food "Butcher <target>" for one to eat. Remember dark areas are not usually a
+good place to be without a light, there are spells that allow you to create
+lights and see in the dark, and torches and other lights can be purchased in
+various dry goods shops in each city.
+
+Q5.  How does PKILLING work here?
+
+A5. PKilling is possibly one of the most important things involved in the
+game, but pkill must not be stepped upon with a light touch. Good Race
+vs. Good Race is not allowed and any member of a "good" race who is caught
+attacking another member of the "good" race will be dealt with harshly.
+On the other hand, there is the other side of the war, two other
+groups of players that play the game. These are the Orcs and Uruk-hai and the
+Third Side, the Magi, or Uruk-Lhuth, These players will pkill each other and
+will pkill the Good Races for fame and equipment. This is a major factor in
+the game. As a beginner you should avoid encountering these races but when you
+are a mature character and have experience in the game and its commands you
+may find yourself to be a very good PKer. Keep in mind Pkilling is a
+preference and is not a required part of the game.
+
+Q6.  How do I get the gates of a city open?
+
+A6.  There are a number of ways for a person to open a gate. First if you are
+in a city you may attempt to open the gate or if that does not work "say open"
+near a gatekeeper and he will open the door or gate that he is posted to. If
+you are on the other side of a door or gate that has a gatekeeper try knocking
+on the gate or door and the gatekeeper may open it.
+
+Q7.  Other sources of information?
+
+A7.  The game has a built-in manual that uses a ladder/topic system. To open
+the manual type "MANUAL" and the proceed with "MANUAL <CHAPTER> <TOPIC>". (see
+help Manual) The game also maintains a news system that can be read
+anywhere. "NEWS" will bring up a list of the current news topics.  "News
+<topic #> will bring up that specific news article. There are also bulletin
+boards for mortal news, and in-character topics, stationed throughout the
+towns, to use the board system "look board" and then "read board <topic #>.
+
+Q8.   What are some of the more useful commands we may use on here?
+
+A8.  A list of the various commands can be seen by typing "commands". Further
+help on each command can be gained by typing "help <command>".  Some of the
+more useful commands that you will want to read about are: Alias, assist,
+butcher, compare, equipment, flee, inventory, rent, quit, rest,score, info,
+set, sleep, where, and who. These are commands you will find yourself using
+quite often during your travels through Arda so it is best to get familiar
+with them as quickly as possible.
+
+Q9.  Why won't some people help me?
+
+A9. While it is generally nice to help people, there is no law that dictates
+that higher levels should help newibes. Certain people have a belief system
+that says that they shouldn't help newbies, others dont concern themselves
+with it. As a newbie, it is important to realize that higher levels may or may
+not help you with equipment or gold - its their choice. Usually, if anyone
+feels like giving out some equipment or gold, they will give it
+freely. Begging is highly disliked and if you plan on getting along with
+others, do NOT beg.
+
+Q10. What is spam?
+
+A10. Spam is generally considered the repetition of some action that causes
+someones screen to be full of useless information. If someone accuses you of
+"spamming" them, it means that your constant yelling/narrating/shouting/
+etc. has made them unable to do anything. As you might have already guessed,
+spamming is frowned upon by management.
+
+Good Luck and Have fun! But be nice for crying out loud.
+
+-- Rocke the Ranger
+Adapted from the original by Tork the Ranger
+
+#
+EDITOR
+
+  The editor commands are executed only if typed in the beginning of
+the line - otherwise they are treated as a part of the text.
+  You can also use '~' instead of '%' in all commands.
+
+The following commands are available:
+
+%e   - to finish the text;
+%q   - to cancel the text;
+%d   - to remove the previous line;
+%d<+/-num> - to remove several lines back or forward;
+%l   - to set the cursor at the end of the text;
+%l<num> - to set the cursor after the line <num>;
+%r   - to redisplay the text;
+%s<old_string>~<new_string> - to replace all substrings;
+%f   - to reformat the whole text;
+%%   - to insert % sign;
+%h   - to see this help.
+
+Text is appended after the current position, at the end by default.
+#
+ANGEL PRACRESET RESET
+
+A little temporary feature we have for the convenince of our players:
+"tell angel pracreset" will reset all your practices
+
+#
+ALIAS
+
+Syntax: alias                           - to list aliases
+        alias <word> <substitution>     - to create an alias
+        alias <word>                    - to clear alias
+
+The alias command allows limited shortening of command names.  At this
+time, aliases cannot call other aliases, and cannot generate more than
+one command.  Alias by itself lists your current aliases, and alias
+with both a word and and argument produces a new alias.  You can alias
+either alias or existing command to a new command, so beware of
+consequences.  Alias <word> removes alias (if such exists).  Examples
+of use (and misuse):
+
+Good use:
+alias gc get all corpse --> typing gc will equal typing 'get all corpse'
+alias cc cast 'chill ray' --> cc orc will equal "cast 'chill ray orc'
+
+Poor use: 
+alias alias smile --> typing 'alias' will equal typing 'smile'
+Consequent typing 'alias gc get all corpse' will equal typing 'smile
+gc get all corpse', interpreted as 'smile gc' and will return 'Nobody
+here by that name.'.  To clean this misunderstanding, type: "al alias"
+
+Only the first word on the line will be subsituted at this time.
+#
+LOOK
+For studying your surroundings. Examples:
+look                                      
+look AT angel
+look IN bag
+look to south   (or just: look south)
+
+Note that if you LOOK AT CORPSE you will not see its inventory.
+To see what's inside a container (i.e. a corpse) use LOOK IN <OBJECT>.
+
+If you want to see the condition of your friend or enemy, you can
+look person
+to see the condition and that person's equipment, or just
+diagnose person.
+
+See also: EXAMINE, READ, DIAGNOSE
+#
+AC
+
+AC (armor coefficient) was removed from this mud. 
+
+See also: DODGE, PARRY, SCORE, INFO
+#
+OB "OFFENSIVE BONUS"
+
+This number shows how well you can attack your enemies. The higher
+your OB is compared to DB and PB of your enemy, the more chance you have 
+to hit your foe. Learning and using weapons can greatly increase your OB. 
+Also, learning how to use weapons TWO-HANDED can increase your OB.
+
+See also: DODGE, PARRY, SCORE, INFO, WIELD, MAN SKILL WEAPON TYPE
+#
+DODGE "DODGE BONUS" DB
+
+This number shows how well you can dodge the enemy blows. Dodge bonus
+can be increased by learning the corresponding ranger's skill
+(MAN SKILL DODGE)
+
+Note that heavy equipment will encumber your ability to dodge.
+
+See also: PARRY, SCORE, INFO
+#
+PARRY "PARRY BONUS" PB
+
+Parrying bonus (PB) displays how well you can parry enemy hits with your
+weapon and shield. After you deflect an enemy blow, it will take you some
+time to raise your shield back into its original position. During that time,
+you will not be able to parry as well as you do with the shield up.
+Parrying bonus can be increased by learning the corresponding warrior's
+skill (MAN SKILL PARRY)
+
+See also: DODGE, SCORE, INFO
+#
+"ATTACK SPEED" SPEED
+
+This value shows you how fast you can lift your weapon and deliver a blow.
+The heavier weapon you have, the more your strength affects this speed.
+The lighter weapon you have, the more your dexterity affects this speed.
+Rangers are famous for hitting very often, while delivering fairly small
+damage each hit.  Fast hits significantly lower opponent's defense.
+Warriors are known for using large (often two handed) weapons.  They hit
+rarely, but when they do, they hit very hard and very accurate.
+
+See also: MAN SKILL FAST ATTACK
+#
+STAMINA SPIRIT
+
+Stamina is your "magical" capacity.  It determines amount of magical
+spells you can cast.  Spirit is your "mystic" capacity (see MAN POWER
+GENERAL).  It determines amount of mystical spells you can cast. Stamina
+regenerates with time. Spirit can be gained by concentrating with
+powerful mystic, killing spirits or enemy mystics, and many other
+ways.
+
+See also: SCORE, INFO
+#
+OPEN CLOSE LOCK UNLOCK
+
+To open, close, lock, and unlock doors, of course.
+
+<open | close | lock | unlock> <door> [direction]
+
+> open portal
+> lock door
+> unlock door south
+> close gate
+#
+DIRECTIONS NORTH SOUTH EAST WEST UP DOWN
+To walk in a given direction.
+Can be abbreviated to n, s, e, w, u, d.
+
+See also: EXITS
+#
+EAT DRINK SIP TASTE
+If you're hungry or thirsty, these commands are for you!
+
+> eat bread
+> taste bread
+> drink from cup (can be contracted: drink cup)
+> sip fountain
+
+You can drink from skins or from fountains. If you have a skin, and you
+wish to refill it from fountain, POUR fountain skin.
+#
+WHO
+
+Lists the people currently in the game on your side.  Some players can be
+on the other side (e.g. orcs will not see elves on who).  Command-line 
+options can be used to limit the listing.  The parameters can be specified 
+on the command-line in any order.
+
+who [minlev[-maxlev]] [-n sname] [-s] [-q] [-r] [-z]
+
+minlev, maxlev : list only people whose level is at or above minlev, and
+     optionally, at or below maxlev
+-n : list only people whose names or titles contain sname
+-s : list names in the short form (4 columns of names, without titles or flags)
+-r : list only people who are in your room
+-z : list only people in your zone
+
+> who 20 -s
+	List, in short form, players at or above level 20
+> who 15-25 -z
+	List all players between levels 15 and 25 who are in your zone.
+#
+TITLE
+
+Usage: set title <title>
+
+Sets the title people see on the WHO list and when you're in the room with
+them.  You can't use parentheses (the "(" and ")" characters) because those
+are reserved for flags. Titles are designed to increase roleplaying and are
+not intended to make statements about real life, opinions on people places
+or things, nor are they to be used for communicating with anyone else.
+
+Titles may only be set after a character reaches level 20.
+
+See also: FLAGS, SET
+#
+FLAGS
+
+Players sometimes have FLAGS after their names in the WHO list.  These
+flags are always in parentheses, not brackets or braces.
+
+FLAG        MEANING
+----------- ---------------------------------------------------------
+(writing)   Player is writing on the board; do not disturb.
+(mailing)   Player is writing mail; do not disturb.
+(sleeping)  Player is sleeping; can't hear your tells/chat/narrates.
+(deaf)      Player has chosen not to hear chat and narrates.
+(notell)    Player has chosen not to accept tells.
+(retired)   Player is no longer active.
+(linkless)  Player link (connection) is down.
+(AFK)       Player is currently away from the keyboard.
+(watch)     Player is a member of the Watch (see WATCH).
+(jailed)    Player has been jailed by a member of the Watch (see JAIL).
+(shadow)    Player has cast the "shift" power upon themselves.
+
+See also: SET
+#
+GIVE
+If you feel benevolent, you may give some stuff to someone in need.
+
+give <object> <victim>
+give <number> coins <victim>
+
+> give all ras
+> give bread onivel
+> give all.bread romulus
+> give 400 coins aramina
+#
+SAVE AUTOSAVE
+ 
+Your persona will be autosaved from time to time. You are also saved
+when you rent.
+
+#
+DISPLAY PROMPT
+
+Usage: set prompt <parameters>
+
+Modify your prompt to show your hit points, mana, and/or movement points.
+
+set prompt <on | off | toggle>
+
+> set prompt off        Display no prompt
+> set prompt on         Display hit, mana, and move points
+
+Note that your prompt is empty if you are full.
+
+See also: SET
+#
+INVENTORY
+
+If you're uncertain about what you're carrying, or simply want to check
+that no thieves have got to your backpack.
+
+See also: EQUIPMENT
+#
+EQUIPMENT
+
+Gives you a list of all the equipment you're wearing, holding, and wielding.
+
+See also: INVENTORY
+#
+"REMOVE EQUIPMENT" REMOVE
+If you tire of wearing some armor or wielding a weapon.
+
+> remove boots
+> remove sword
+> remove all
+> remove all.metal
+
+See also: WEAR, WIELD
+#
+WEAR
+If you want to wear some clothes, armor or the likes.
+
+Also, to wear everything in your inventory (or at least try to, as wearing 
+things like loaves of bread is not a good way to win friends and influence
+people) you can type "wear all".
+
+Optionally, you can specify what part of your body to wear the equipment on.
+
+> wear boots
+> wear all.metal
+> wear all
+> wear ring finger
+
+See also: EQUIPMENT, REMOVE
+#
+WIELD
+When you get tired of bashing monsters with your fists, you might consider
+wielding a weapon.  Weapons can greatly increase your OB.
+
+> wield sword
+
+See also: EQUIPMENT, REMOVE, OB, MAN SKILL ONE-HANDED, MAN SKILL TWO-HANDED, 
+MAN SKILL WEAPON TYPE
+#
+SCORE AFFECTIONS
+Short versions of command INFO.
+
+Score:
+Whenever you want to check whether you're still alive and healthy
+or simply want to see how much money you have left.
+
+Command affections reports spells cast on you, and several other effects, like
+noquit and sun penalties for uruks/orcs.  
+Shorthand for AFFECTIONS is 
+> aff
+
+See also: INFO
+#
+INFO
+Gives more detailed information about your character then score.
+This inculdes stats, experience, playing times, you levels in different
+classes, etc.
+
+One of the line mentions specialization - see SPECIALIZE (man spec all) 
+for more details.
+
+See also: SCORE, MAN SPECIALIZION ALL (short: man spec all)
+#
+ENCUMBERANCE
+
+If you were naked all the time, you would be able to anything you want.
+However, you would normally wear something and carry some INVENTORY.  Items
+that you wear add to your encumberance.  In fact, the heavier and bulkier your
+item is, the harder it will be for you to move around (MOVE ENCUMBERANCE) and
+to use your skills and spells properly (SKILL ENCUMBERANCE).  See INFO how
+much you are encumbered.
+
+See also: INFO.
+#
+PREPARE
+
+To prepare a spell, just simply type "prepare <spell name>". When you
+cast a prepared spell, it has a short delay *after* you cast the
+spell.  The delay length is random, but always much shorter than the
+spell casting time itself.  While you have a prepared spell, you can
+only perform basic things, such as walking and talking, without
+ruining your prepared spell.
+
+Currently, there is no skill involved in preparing (besides knowing of
+the spell of course), but this will probably change sometime in the future.
+
+NOTE that anything that requires concentration or confuses you will
+ruin your prepared spell. Particularly, "concentrate" command and hunting
+will do it.
+
+See also: CAST
+#
+MAP ZONE
+
+Type command "map" to see the latest map of the game.
+Legend:
+   - Road                 E - Erebor/Lonely Mountain
+   * Forest               D - Dale
+   h Hills                T - Thranduil's Halls
+   " Plains               M - Maethelburg
+   % Swamps/wetlands      R - Ranger outpost
+   ^ Mountains            L - Lake-town (Esgaroth)
+   ~ Water                + - crossroads/intersection
+   
+   X - this where you are
+
+#
+GSAY GTELL
+
+Usage: gtell <your message>
+Gsay command is disabled - use gtell instead.
+
+Tell something to all the members of your group, even if they're not
+in the room.  The people in a room with you will also hear what you say.
+# 
+KILL HIT 
+
+A good way to start a fight.  Not a good idea to hit other players.
+You will engage in "regular fight".
+
+To engage into mental fight, use command WILL.
+
+See also: PKILL BUTCHER BEHEAD WILL
+#
+WILL MENTAL AUTOMENTAL
+
+Mystics have the ability to force their mind against others'.  This is
+most useful against foes from the spirit world, but can also be used
+against normal mobs and other players.  To do this, the mystic must
+WILL his/her opponent.  This is equivalent to Kill or Hit.  A
+successful hit will reduce the opponent's stats or could result in a
+gain of spirit.  The mystic's will, perception, and mystic level
+determines success.  Automental mode can be turned on and off by
+typing "set mental on/off" or toggled by typing "set mental toggle".
+Being in mental mode is not necessary, as one can WILL during regular
+combat.  The use of mental abilities causes a short mental delay
+during which time no other mental abilities may be used.
+
+See also: HELP MYSTIC, HELP CONCENTRATE, MAN POWERS GENERAL
+#
+MURDER
+
+This command is gone.  
+See also: PK
+#
+PK "PLAYER KILL" PKILL "RACE WAR"
+
+Return of the Shadow has a race war. All "good" races vs "evil" races. If
+you are to come accross a race that is the member of the opposite side of
+the war, you will see that player by his or her race name only, such as
+*an Uruk* or *a Hobbit*. If you are to come accross a member of the opposite
+race you have two choices: Kill or be Killed. There is no mercy. If you win
+you can become famous (see FAME). If losing, flee for your life!
+
+There are rules pertaining to the race war :
+
+- No communication.
+     You cannot give any vital, or useful, or any kind information to
+     a member of the opposite side. Taunting and Antagonizing is quite 
+     alright, provided it is presented in a roleplaying manner.
+
+- The 20 Minute Rule.
+     You must be out of the game (all characters rented) for at least 20
+     minutes before changing sides of the race war. You also cannot carry
+     over any information you might know about the opposite side when you
+     log on. For details, see "POLICY"
+
+- No Help.
+     You cannot assist a member of the opposite race in any way. This means
+     Trading/Giving equipment or gold, assisting killing a mob, or casting
+     a useful spell on them (unless that useful spell might also have its
+     drawbacks, such as curing saturation and restlessness). Leaving a
+     victims equipment on their corpse is not considered helping them, yet
+     taking it and dropping it somewhere else for them to reaquire is
+     considered helping them.
+
+IMPORTANT: Use command "policy" to see applicable latest rules.
+
+Side note: Players of good races should not kill each other.
+Killing good race player by another good race player is considered a crime
+and punishable by the Watch or the Immortals.
+
+See also: FAME, WATCH
+#
+FAME
+
+   Fame is currently in testing, so please report all bugs and
+incostincies you find with it.  Fame measures the achievements of that
+person.  Player kills of the opposite side have the most value, but
+level and gold amount matters as well.
+   Your fights with other people are recorded, and can be seen by others, as 
+well as by yourself. The fame received in a fight depends on the relative 
+levels of the killer and the victim. The time your fight will be remembered 
+also depends on that. If several people overcame one, their effective level 
+is a sum of their levels, and the resulting fame is divided between killers.
+  INCOGNITO option affects the fame greatly. If the killer is incognito,
+no fame is gained, since he prefers to remain unknown. If there are
+incognito people in a group of killers, their deed is known, but only
+for two days. If an incognito person dies, curiosity and exaggerrations
+will make the fight remembered for longer, as if the victim was level 40.
+The fame gained or lost, though, is not affected.
+   You can type "fame <name>" to see waht is known about other people,
+or type "fame all" to see the list of all known fights.
+
+See also: PKILL
+#
+EXPLOITS
+
+Usage: exploits
+
+  This command gives you history of your character. Exploits
+record all player kills, all deathes and all stat increases.
+  The final line in exploits shows various total figures. Thes include:
+
+pdeaths    - the total number of times you've died to other players.
+pkills     - the total number of times you've killed another player.
+mobdeaths  - the total number of times you've died to a computer mob.
+notes      - notes the management uses for managing purposes.
+
+Common question: A * before words "Died to <name>" means a group
+including the <name> killed you. Exploits do not remember everyone
+in the group, however, FAME does.
+
+See also: FAME.
+#
+TACTICS BERSERK AGGRESSIVE NORMAL CAREFUL DEFENSIVE
+Usage: set tactics ?       to see tactics available
+       set tactics agg     to use aggressive tactics
+
+You can determine the way your character fights by setting your tactics.
+Tactics make your defensive and offensive ability increase or decrease,
+depending on your setting. These are the possible tactics:
+ 
+Berserk
+Aggressive
+Normal
+Careful
+Defensive
+ 
+The higher on this scale your tactics are set to, the more likely you will hit
+your opponent, but you are also more likely to get hit. As for more defensive
+tactics, you will be less likely to hit, but will be much harder to hit as
+compensation.
+
+Note that effective usage of berserk tactics requires berserk skill.
+For example, you cannot flee while employing berserk tactics without 
+knowing the skill.
+
+See also: SET, MAN SKILL BERSERK
+#
+RIDE HORSES MOUNTS WARGS
+
+To ride on a mount. Use DISMOUNT to get off the mount.  The mount will 
+automatically follow you.
+ 
+If you type 'ride' without any commands, you will try to ride a mount that
+is following you.  If you currently don't have a mount following you, 
+find one and 'ride <name of mount>'
+
+You may not be able to ride indoors.
+
+Note that riding a mount if fairly exhausting process, but the better you
+know RIDE skill (man skill ride) the better you are in control of your horse,
+and the less tired you get from controling your horse.
+
+Note: There is also a bug that allows you to ride mounts for other races, making use of this bug is considered illegal and is punishable. The following are the mounts that are permitted for the respective races:
+
+Horses        - Humans and Elves
+Wild Horses   - Humans and Elves
+Mules         - Hobbits and Dwarves
+Ponies        - Hobbits and Dwarves
+Wargs         - Uruk-Hai, Orcs and Orc followers
+Spotted Wargs - Uruk-Lhuth
+Dark Horses   - Uruk-Lhuth
+ 
+See Also: DISMOUNT, LOSE, MAN SKILL RIDE
+#
+DISMOUNT
+ 
+Use this command to get down if you are riding something, like a horse. 
+The mount will automatically follow you.  
+
+If you wish to abandon your mount, use command LOSE.
+ 
+See also: RIDE, LOSE, MAN SKILL RIDE 
+#
+LOSE
+
+Makes someone who follows you to unfollow.
+
+> lose horse
+> lose prami
+
+See also: FOLLOW, RIDE, DISMOUNT
+#
+SEARCH
+
+See MAN SKILL SEARCH.
+#
+TRAP AMBUSH
+
+See MAN SKILL AMBUSH.
+#
+BUTCHER
+
+You can attempt to butcher a corpse that lies on the ground by
+simply typing 'butcher'. If the corpse you want to butcher is not
+the first corpse on the ground you can type 'butcher X.corpse' where
+X is the number of the corpse.
+ 
+Rangers are better at butchering.
+Daggers make butchering easier.
+Food is easier to butcher.
+
+See also: BEHEAD
+#
+BEHEAD
+
+You can attempt to take off the head of the corpse as a souvenir.
+Be sure to use an edged weapon.
+
+See also: BUTCHER
+#
+BLOCK
+
+***Note - This skill is unfinished and is -NOT- to be used during pk. It will
+          also be removed from the game pending its completion.
+
+>block <direction>      - to start blocking that way.
+>block                  - to check what you are blocking, if any.
+>block none             - stop blocking, if you were.
+
+You need to know warrior's skill block to be successfull.
+
+See also: MAN SKILL BLOCK 
+#
+CAST SPELL SPELLS POWERS
+
+For "magical" people. If you want to throw a spell at someone or something.
+Example : cast 'burning hands' <player>
+If a name of the spell is short, or obvious, you can omit '
+Example: cast firebolt <player>
+Same syntax applies to mystical powers.
+
+As you cast your spell, you get a delay while concentrating on your
+spell.  Make sure not to get hit - any damage to you while
+concentrating will ruin your spell.
+
+To see the list of spells/powers see "man spell/power list".  To see help 
+on an individual spell/power, use "man spell/power <spell name>", for example
+  > man spell magic missile
+  > man spell fireb
+  > man power evasion
+
+#
+DROP
+If you lose interest in a carried item, you can drop it on the ground.
+
+drop <item>
+drop all.<item>
+drop all
+drop <number> coins
+
+> drop bottle
+> drop all.bread
+> drop all
+> drop 1000 coins
+
+See also: GET
+#
+BUY SELL LIST VALUE
+Commands for the shops - very useful too!
+#
+WEATHER
+If you're uncertain whether the sun is shining or the rain is pouring down.
+#
+READ
+When you want to read something.
+#
+SHOPS
+Shops are places where the adventurer may purchase equipment for his quests,
+and where he may sell his treasure if he should manage to survive the perils
+with his life and sanity intact. Many shops trade only in a specific type of
+merchandise. Thus, a baker may well refuse to buy your armor, even if it is of
+high quality!
+   To some people, the prospect of obtaining the entire inventory of a shop by
+murdering the keeper may appear tempting - but beware: The shopkeepers are 
+often rugged, capable men; roughened by years of trading and, indeed, surviving
+in a world where the only safe prospect is death in the end.
+
+See also: BUY, SELL, LIST, VALUE
+#
+COMMANDS
+
+A canonical list of all the known verbs.
+
+> commands
+#
+WARRIOR BARBARIAN FIGHTER
+   WARRIOR is very proficient in warrior's skills, somewhat proficient in
+ranger's skills, has limited mystical abilities and very limited magic user
+abilities.  BARBARIANS are extreme warriors, more proficient with warrior's
+skills than warriors, but less with rangers and magical abilities. Barbarians
+do not have magical abilities.
+
+See also: CLASS
+#
+RANGER THIEF SWASHBUCKLER
+   RANGER is very proficient in ranger's skills, somewhat proficient in
+warrior's skills, has limited magical abilities and very limited mystical
+abilities.  THIEVES do not exist in this game, though some "highwaymen"
+abilities like hide, ambush, and a few others are tought by rangers.
+SWASHBUCKLER is a hybrid between WARRIOR and RANGER, being well skilled in
+warrior and ranger abilities, and somewhat proficient with mystical and magic
+abilities.
+
+See also: CLASS
+#
+MYSTIC HEALER
+
+Description of mystic as a class that is available at character creation:
+   MYSTIC is very proficient in mystical abilities, somewhat proficient in
+magic, has limited warrior skills and very limited ranger skills.  Note that
+mystical powers can have positive or negative effect on the target, most of
+them last for some time, and none of them can do damage (see MAGE). HEALERS
+are extreme mystics, more proficient in mystical art than mystics, but less
+proficient in magic and warrior skills. Healers do not have ranger skills.
+
+Description of mystical abilities is avialable at "MAN POWERS GENERAL".
+
+See also: CLASS
+#
+MAGE "MAGIC USER" WIZARD
+   MAGE (also called MAGIC USER) is very proficient in magic, somewhat
+proficient in mystical art, has limited ranger skills and very limited warrior
+skills. Note that magical spells have instant effect, and at least half of
+them do damage on the victim (see MYSTIC). WIZARDS are extreme mages, more
+proficient in magic than mages, but less proficient in other 3 classes.
+
+See also: CLASS
+#
+CONJURER
+   CONJURER is a hybrid between MAGE and MYSTIC, fairly skillful in magic and
+mystical art, and somewhat proficient in warrior and ranger skills.
+
+See also: CLASS, MAGE, MYSTIC
+#
+ADVENTURER
+   ADVENTURER is "jack of all trades". Adventurers are fairly proficient in 
+all 4 classes, which doesn't make great in any particular class, but they get
+to learn tricks of all 4 trades. Adventures are slightly more proficient in
+the warrior and ranger classes, than in mystic and mage. They are useful to
+start the game with, and learn the advantages of each class, although they
+will not be extremely powerful at higher levels.
+
+See also: CLASS
+#
+CLASS PROFESSION
+This mud doesn't have classes in their classic sense. You can choose one of
+the classes close to standard ones (like WARRIOR, MYSTIC, RANGER, BARBARIAN,
+or others) at the entering prompt. For advanced players, the ability to design
+OWN CLASS is available. Any class in the mud is to some percent warrior,
+some percent mystic, some percent ranger, and some percent magic user. That
+means that any class can practice in any guild, but your percentage in the
+class affects how well you practice in certain guild. If you have 0% in some
+class, you can't practice in corresponding guild.
+   You can improve your skills by using the practice command.
+
+See also: PRACTICE
+#
+PRACTICE PRACTISE
+
+Practice is the way you improve your spells and skills. You must go to
+*any* guildmaster to let him/her help you improve. If you type practice, 
+you will see which skills you can improve upon in this certain guild, and
+how good you already are at these. 
+
+You can then use practice <skill>, to practice the appropriate skill.
+
+You can only practise a certain amount for each level you gain (depending on
+your LEARNING ability), and you do not have to save this, it can be
+accumulated.
+#
+EXITS
+Gives you a list of the obvious exits from your location. Of course, the less
+obvious ones won't show up here - you have to THINK in order to locate those.
+
+Example:
+North - Main Road.
+
+If you are a sun-hating uruk, you will see # characters around sunlit exits.
+
+For example: #West#  - Before the Guard Post
+#
+LEAVE
+If you feel claustrophobic, typing 'leave' will make you use the nearest
+obvious exit to the outside.
+#
+ENTER
+If you type 'enter' while you are outdoors, you'll enter any nearby shelter.
+You can also follow 'enter' with an argument; for example, 'enter window'.
+#
+TIME MONTH
+  Gives you the current game time.  Your initial reaction to the output 
+of this command may be one of surprise, but you'll get used to it.  You'll
+have to, at any rate, since certain things in the game depend on this
+particular notion of time; the opening hours of the shops, and the length
+of days and nights, for example.
+  The time is counted in Tolkien system.  The monthes and days you see 
+are used by humans on the Middle Earth.
+  Westron monthes:        English translation:
+   Narvinye                January
+   Nenime                  February
+   Sulime                  March
+   Viresse                 April
+   Lotesse                 May
+   Narie                   June
+   Cermie                  July
+   Urime                   August
+   Yavannie                September
+   Narquelie               October
+   Hisime                  November
+   Ringare                 December
+#
+BUG TYPO IDEA
+
+These standard circle muds are disabled on the Return of the Shadow.
+The most common way to report bugs, typos and ideas is to post them on boards
+or MAIL them to the corresponding gods.
+
+Ideas:
+-- Long Drawn out ideas need to be posted on the mortal boards, but
+   minor ones dealing with the world, like add an object here, or a
+   mob here, or a room here, should go to Death & Loman if on the west
+   side of the Anduin, and to Fingolfin if on the East side. Minor coding
+   ideas should be posted or sent to Seether or Dim, but I'm warning you,
+   the "To Be Coded" list is very long, so you may not recieve your
+   wish nor a response for quite a while if you mail, if you post
+   one of our many high gods is bound to make some remarks about it.
+ 
+Typos:
+-- All typos in room names, and room/mob/object descriptions should go to
+   Fingolfin, Loman or Death. All typoes in a social should go to Erika, and 
+   all other typoes dealing with messages that you are sent should be sent to
+   Dim or Prami, as they are more than likely located in the code... However 
+   remember that Dim and other Imms are very busy people, so don't expect 
+   typos in unimportant messages in the code to be changed very quickly.
+ 
+Bugs:
+-- Bugs dealing with mobs loading in bad places, and objects loading in the
+   wrong places, and other such world problems should be sent to Fingolfin, 
+   Loman or Death, all other bugs are in the code, and should be mailed more 
+   than likely to Seether, our bug expert.  If the bug is severe (like 50 
+   Innkeepers loading in the Inn), be sure you narrate this bug.
+
+See: BOARD
+#
+BOARD NEXT
+
+Boards are ways of communications between mortals and immortals.
+The main boards are located at the innkeeper (2 boards for good/evil
+races at the corresponding rooms).
+To write a message on board:
+
+write <title of the message>
+> write Idea for the new spell
+
+When you start a message, you are put into EDITOR (See help EDITOR).
+
+To see contents of the board, do
+> look board
+It will show only unread messages on that board. To see all messages, do
+> look board all
+
+To read messages, use commands:
+> read <number of the message>
+or 
+> next
+to read the next unread message.
+
+If you have a number of unread message, and you wish to catchup, 
+> next <number of the message>
+will show you the corresponding message, and mark this message as
+last read.
+
+Note that command bug/idea/typo are currently NOT working.
+Please use boards or mail to write bugs/ideas/typos. (help idea)
+#
+QUIT
+When you get tired of playing, you can leave the game by typing 'quit'.
+Note that quitting this way causes any items you might be carrying to
+simply be left on the ground.  If you wish to have your equipment stored (and
+you *really* do), you'll have to find an inn and pay rent.
+
+See also: INN RENT
+#
+GET TAKE
+If you find something interesting on the ground, you may use 'get' to pick
+it up.  GET can also be used to extract items from containers.
+
+> get sword corpse
+> get all corpse
+> get all all.bag
+> get all.bread all.bag
+
+See also: DROP PUT
+#
+PUT
+For putting items into containers.
+
+> put bread bag
+> put all.bread bag
+> put all chest
+
+See also: GET
+#
+EXAMINE
+
+'examine <item>' may give you some valuable information about an item.
+
+'examine <n/s/w/e/u/d>' will give you detailed information about the
+room over there.
+
+'examine' will give you detailed information about the room you are in.
+
+See also: LOOK
+#
+WRITE
+In order to write a note, you need a piece of blank paper (or similar), and
+a pen of some sort. You can then type something like "write on the paper with
+the pen", whereupon you'll be asked to type in your note at the keyboard.
+
+See also: BOARD
+#
+WAKE SLEEPING REST SIT STAND
+For changing your position.  If you feel weary, it's probably a good idea
+to sit and rest for a while, or maybe even take a nap.
+#
+CONCENTRATE
+  Concentrate: if you type "concentrate", you will fall into trance
+similar to spellcasting. In this state, you cannot do anything, and
+if you are fighting, you will not hit your opponent. However, if
+you are fighting mentally, you will find your mental defense improved.
+Other beneficial effects will be added shortly. This trance will not
+be broken by a succesful hit upon you. You can break your concentration
+by pressing "enter" over an empty line, similar to spellcasting.
+Concentrate will also shorten the duration of confuse.
+
+See also: HELP MENTAL
+#
+POUR
+If you want to pour some liquid from one container to another.
+
+> pour fountain cup
+
+If you want to empty a container, pour it out.
+
+> pour skin out
+
+See also: DRINK
+#
+GRAB HOLD
+For getting a good grip on something; a torch, for example.
+
+> hold torch
+> grab stone
+
+See also: WEAR, WIELD, EQUIPMENT, REMOVE
+#
+FOLLOW
+
+Use FOLLOW to automatically follow someone else.
+
+> follow ras
+> follow self
+
+If someone follows you, and you don't wish for that someone to follow you,
+just lose that someone.
+
+> lose horse
+
+See also: LOSE
+#
+FLEE
+
+   If you are in a fight and things are beginning to get a little
+uncomfortable (maybe your are dying), just type 'flee', and presto!
+you are out of harm's way - that is, IF there is a suitable exit
+nearby, and IF that exit doesn't simply bring you from the ashes to
+the fire... but then, who wants to live forever?  Fleeing requires
+calm mind so make sure you are not in uncontrollable rage.
+
+#
+IMPLEMENTOR
+
+The most powerful beings in existence.
+
+See also: WIZLIST
+#
+GUILD
+Guilds are the places where people come to learn and practice the skills of 
+the trade. You can practise in any guild.
+
+See also: PRACTICE
+#
+WHERE
+
+Tells the room of every player in your zone, excluding players of
+the other side of the war. (Eg. if an Elf types where, he won't see
+the locate of an Uruk-Hai)
+#
+LEVELS
+Lists the levels of your class. 
+
+Note that levels are unlimited, but after level 30 you are considered a legend.
+
+See also: LEGEND
+#
+BRIEF SPAM
+Toggle "brief mode".  When in brief mode, you don't see the descriptions of
+the room you are in; only the name of the room and the people and objects
+there.  Unless you're very familiar with the area in which you're travelling,
+however, it is not advisable to use this command.  Frequently, you will find
+small but vital hints in the descriptions of the rooms: An extra peek at your
+surroundings could mean the difference between life and death!
+"Spam mode", or to be more precise, "No-spam mode" is even shorter version
+of brief mode. In spam mode you don't see people following you, and
+you see only those messages during the fight which do damage (all parry/
+dodge/miss messages are skipped).
+To switch into "brief mode", do
+> set brief on     (the default for brief mode is off)
+To switch into "spam mode", do
+> set spam off     (the default for spam mode is on)
+
+See also: COMPACT, SET
+#
+! ^
+
+Use ! to repeat the last command typed at the keyboard.
+
+Use ^ to replace a string from the last command with a new string.  The
+syntax is the same as in csh: "^old-string^replacement"  For example:
+
+> tell rasmusse Hi there, how are you?
+No-one by that name here.
+
+> ^rasmusse^rasmussen
+You tell Rasmussen, 'Hi there, how are you?'
+
+> ^you^you doing^
+You tell Rasmussen, 'Hi there, how are you doing?'
+#
+COMPARE
+Using this command, you will try to compare two pieces of comparable equipment
+you have in your inventory.  Note that the comparison may be very approximate.
+
+Usage: compare <one object> <another object>
+
+Example: compare sword 2.sword
+
+Note: The command is not fool-proof. If you wish to compare a shield and an
+axe, and you "compare shield axe", you will try to compare them... just 
+expect stupid results.
+#
+CONSIDER
+Usage : consider <monster>
+This command will compare your Level with the <monsters> level. You will then
+receive a rough estimate, which is by no means exact. Consider does not take
+hitpoints/special attacks/damage into accout.
+
+> consider wolf
+#
+EXPERIENCE XP
+
+Whenever you kill a monster or a player, you earn experience points. When
+enough experience points are earned, you raise a level.
+Things you should know about experience points:
+
+  * When damaging a monster, you get experience points.
+
+  * If you kill a monster of higher level than yourself, you get bonus
+    experience points. If killing a monster of lower level you'll gain
+    less experience points
+
+See Also: GROUP
+#
+GROUP
+
+/* WILL BE CHANGED */
+
+Usage : GROUP [player]
+	GROUP all
+
+GROUP with no arguments shows the status of your group.  GROUP <player>
+adds or removes <player> from your group.  GROUP ALL adds everyone who is
+following you to your group.
+
+If you are a group member, then you will share experience points for killing
+monsters equally among the group. Experience points will only be shared among
+group members that are in the same location, at the time of the killing
+blow. Sharing is regardless of wherther the group members have been
+participating in the fight.
+
+Group with no argument shows a list of people with whom you are grouped.
+"group all" groups all people who are following you.
+
+Example:
+
+Quifael and Redferne wishes to group with Dragon.
+
+Dragon  : "group redferne"
+Dragon  : "group quifael"
+
+Later when Dragon get upset at Quifael (because he is sleeping all the time)
+he types : "Group Quifael" to kick Quifael out of the group.
+
+See Also: XP EXPERIENCE UNGROUP
+#
+UNGROUP
+
+UNGROUP can be used by group leaders to disband the entire group, or
+to kick a specific group member out of the group (and stop him/her from
+following the leader).
+
+> ungroup
+> ungroup homer
+
+See also: GROUP
+#
+QUAFF POTION POTIONS
+
+Use : Quaff <Potion>
+
+Quaff is used to "drink" a (magical) potion.
+#
+RECITE SCROLL SCROLLS
+
+Use : Recite <Scroll> [Target]
+
+Is used to "read" a magical scroll. Target can be an object, character or
+nothing (which may be yourself).
+#
+USE WAND STAFF STAFFS WANDS
+
+Use : Use <Staff>
+      Use <Wand> <Target>
+
+Using staff's will automatically target everybody (or everything) in a
+room, execpt yourself. Therefore staff's are naturally very powerful, and
+yet may be very dangerous to use around other players.
+
+Using wands require that you point it at a target, which can be eihter a
+character or an object.
+
+Both staff's and wand's must be HELD in the hand prior to use! (Use the
+grab or hold commands). You must still supply the name of the staff or
+wand to avoid confusion.
+#
+HELP MAN MANUAL
+
+Following help is available:
+
+HELP help       - This text.
+HELP            - A list of some of the most useful commands.
+MAN             - A list of chapters in MAN (manual)
+MAN <CHAPTER>   - A list of topics in that chapter
+MAN <CHAPTER> <TOPIC> - to get help on topic in that chapter
+
+Help searches for a partial match of the entered word, including any
+spaces that may follow the word.
+
+Example:
+> 'man spell'
+    will list all the spells (which have help)
+> 'man spell magic mis'
+    will show the help text for the magic missile spell.
+
+See also:  COMMANDS
+#
+NOSUMMON
+Due to problems we've had with players killing other players by summoning
+them to Bad Places, all characters now have SUMMON PROTECTION turned on by
+default.  This prevents people from summoning you and gives you a warning
+message if someone tries.  If you want to let someone summon you (i.e. if
+someone wants to summon you for a legitamate reason), turn off NOSUMMON to turn
+off summon protection.  You can then turn NOSUMMON on again to turn protection
+back on.
+> set nosum on    -- turn nosummon on
+> set nosum off   -- everyone will be able to summon you
+> set nosum       -- tell you the current stats of summon protection.
+
+See also: SET
+#
+WIMP WIMPY
+
+Use the WIMP command to automatically wimp out of a fight.
+
+SET WIMP 35 will make your character automatically flee a fight if he/she has
+	    less than 35 hit points.
+SET WIMP 0  will turn off wimpy mode.
+SET WIMP    will show you your current wimp status.
+
+Note: A character will also automatically flee during mental combat when any
+stat reaches 2 or less. There is no method of changing this value.
+
+See also:  SET
+#
+TOGGLE
+
+TOGGLE HAS BEEN REMOVED. USE SET 
+#
+SPLIT
+
+Usage:  SPLIT <amount to split>
+
+SPLIT is used to split money among people in your group who are in the same
+room as you.  When you split coins, you split them between everyone, including
+yourself, in equal amounts.
+
+See also: GROUP FOLLOW
+#
+ASSIST
+
+Usage: ASSIST <person in need>
+
+If Quifael is being beaten senseless by a warg and you feel brave enough
+to help him, type ASSIST QUIFAEL to hit the warg.  Note that the warg will
+keep hitting Quifael; assist only makes you start to fight whomever you're
+trying to assist.
+
+> assist quifael
+
+See also:  RESCUE, FLEE
+#
+NOCHAT NONARRATE
+
+NOCHAT/NONARRATE modes toggle whether or not you hear chat.  (deaf) will 
+appear after your name in the WHO list.
+
+> set chat off      (the default is on, that is you hear chat)
+> set nar off       (the default is on, that is you hear narrates)
+
+See also: FLAGS CHAT NARRATE WHO
+#
+ECHO NOREPEAT REPEAT
+
+Some command, for example, tell, will repeat your input if you have echo
+on.  If you turn echo off, your input will not be repeated.
+Usage:
+>set echo on/off/toggle
+
+Example:
+If you have echo on:
+>tell prami hi
+You tell Prami 'hi'
+
+If you have echo off:
+>tell prami hi
+Ok.
+
+Command carries no gameplay value, just for your convinience.
+See also: SET
+#
+NOTELL
+
+Use NOTELL if you wish to prevent other players from using "tell" to
+communicate with you.  (notell) will appear after your name in the WHO
+list if you have notell on.
+> set notell on    (the default is off, that is you hear tells)
+
+See also: FLAGS TELL WHO SET
+#
+AUTOEXIT
+
+Autoexit will automatically show you the exits from the room
+when you enter it.  This option is extremely convinient.
+> set autoexit on 
+
+If you are a sun-hating uruk, you will see # characters around sunlit exits.
+
+For example:
+The Old Forest Road    Exits are: #E# #S# #W#
+
+See also: SET
+#
+INCOGNITO
+
+Other players will not see your level on who, however, you will gain no
+fame while incognito.
+
+> set incognito on/off/toggle
+
+See also: WHO SET FAME
+#
+LINK LINKLESS LINKRENT
+
+A lot of players have problems with their links to the game.  This can be
+very hazardous to your health in the middle of a battle, of course.
+
+ I. If your link is broken, you will automatically attempt to flee each time
+    someone attempts to hit you.  If you manage to survive by fleeing for
+    about 20-30 minutes, then you will be saved by divine forces, and put in
+    a safe place until you reconnect to the game.
+
+II. If your link jams (freezes), you have a problem.  The only solution we
+    can give is that you break your link as quickly as possible.  By
+    breaking the link you can hope that the above procedure is initiated.
+
+    Do not try to get out of a fight by breaking link.  You will be not
+    reimbursed for any experience or equipment if you purposefully
+    cut your link.
+
+    If you lose a link, it's highly recommended that you login back into the
+    game and RENT properly.
+
+Note also that linkrenting will cost you astronomically more money than a
+correct rental.
+
+See also: RENT
+#
+COMPACT
+This mode toggles the extra blank line output to your screen after each
+command.  Useful if you have a small display.
+To switch into compact mode, do
+> set compact on    (the default is off).
+
+See also: BRIEF, SPAM, SET
+#
+EMOTE :
+Show people what you're feeling.  The shorthand is ":".
+
+"emote <string>" will display your name, then the string.  For example,
+if your name is "Quifael",
+
+> emote is feeling very sad today.
+
+will display:
+
+Quifael is feeling very sad today.
+
+See also: SOCIALS
+#
+MAIL SEND
+
+ Mail may be sent and received only at postmaster mobs. There is one of these
+in each city or town for all races. A player must be level 10 or greater to
+be able to use the mail system, and it costs 2 silver per stamp to send a
+letter.
+
+ Every time you log a character in there is a line displayed telling you if
+you have new mail messages waiting.
+ Example: You have new mail wainting.
+                --or--
+          There is no new mail for you.
+
+ The rules for using mail are simple. Use mail to contact others for personal
+reasons, do not use the message boards. Use mail to contact immortals in order
+to report bugs, compliments, or complaints, though you may also use boards for
+these purposes. Do not use mail for flames or other offensive remarks, doing
+so will result in losing the use of the mail system.
+
+ Commands:
+
+mail <player> - Use this command at a postmaster mob to send another player
+                 a message.
+               - type write <player> to enter the mail editor. Then type the 
+                 message you wish to send. Remember to hit %f to format the
+                 message so that it appears intelligable to the recipient.
+                 To finish and send the message type %e.
+                 Example:
+                   write Vaitya <enter>
+                   hello. <enter>
+                   %f <enter>
+                   %e <enter>
+
+Receive        - Use this command at a post master to receive all of your new
+                 messages.
+
+Look mail      - Use this to view a letter. If you have multiple letters, use
+                 look letter, look 2.letter etc.
+#
+SAY TELL ASK WHISPER YELL NARRATE CHAT PETITION SING '
+
+If you consider communicating with other beings, you might be understood
+better if you start your sentences with any of these commands.
+
+The "say" command is heard by everone in your room. 
+You can use ' as a shorthand for say, as in: ' hello there.
+example: say hello, my name is Bob
+
+The "narrate","chat",and "sing" commands are heard by everyone in the world,
+excluding people on the other side of the race war.
+Examples: 
+  narrate There is a Uruk near the ferry!
+  chat Hello World
+  sing There is a lady who is sure, all that glitters is gold...
+
+The "petition" command is heard by gods only. Please do not abuse this
+command.  Its content should be dedicated to problems that demand immediate 
+attention of immortals. For minor bugs and problems please use boards.
+Example: petition For some reason when I eat, I lose half my moves!
+
+The "tell","whisper", and "ask" commands are heard by the given player only.
+You can tell to anyone in the world, you can only whisper and ask people in
+your room.
+Examples:
+  tell Fuor where are you?
+  ask Tork could you loan me some gold?
+  whisper Kiri don't let them know where we are going.
+  
+The "yell" command is heard by everyone in your zone, including people on
+the other side of the race war. This is a good way to insult your enemies.
+Example: yell go ahead and flee, wimp!
+
+Note for immortals: See MAN WIZ <CHANNEL> for more information.
+See also: SET, AFK, GTELL, REPLY
+#
+REPLY
+
+if someone tells you something, you may simply reply to that person, rather
+than typing tell <person> <string>. A reply always goes to the person that
+last told you something, to see who that person is, just type reply with
+an arguement.
+Example:
+reply Sorry, I missed your tell.
+
+See also: TELL
+#
+BEEP
+
+Usage: beep <person>
+
+The command will try to produce a beep on the person's computer.  Note that
+this is purely out-of-character command.
+#
+SET
+
+set <paramater> [on|off|number|toggle]
+
+> set       -- lists some parameters and their values,
+> set ?     -- to get list of all possible parameters. 
+> set <paramater>     -- will display the status of this parameter.
+> set <paramater> on/off   
+> set <parameter> toggle    -- will toggle from on to off and from off to on.
+
+See also: PROMPT, WIMPY, BRIEF, COMPACT, SPAM, NOTELL, NOCHAT, NONARRATE,
+NOSUMMON, ECHO, AUTOEXIT, INCOGNITO, SWIM, LATIN1
+#
+AFK
+
+If you want to go away from the keyboard (go AFK), it's nice to other
+people to set flag afk by typing: afk
+People who try to tell to you will get reply that you are afk, and
+not likely to hear their tell. Any command made by you while afk 
+will remove afk flag.
+
+See also: TELL
+#
+AUCTION GOSSIP GRATS NOAUCTION NOGOSSIP NOGRATS
+
+These channels has been removed. Please use NARRATE or CHAT.
+
+See also:  SAY GSAY NOREPEAT NARRATE
+#
+SOCIALS
+
+Socials are commands used to show your affective state to others.  The
+actor, victim and bystanders may receive different messages.  Generally,
+social commands are used only to express emotion, but it is possible that
+some mobs (or players) will take action based on the social.
+
+<social> [<victim>]
+
+> shake homer
+> applaud marge
+> stare 
+
+The SOCIALS command generates a canonical listing of all available socials.
+
+> socials
+
+See also: EMOTE
+#
+INN INNS CRYOGENIC CRYO RECEPTION
+Inns are places where the weary traveler may rest while the innkeeper looks
+after his equipment and treasure.
+
+Specifically, the game will save your equipment while you are logged out.
+There is a daily cost for renting, based on your equipment.  Each item has
+a per diem charge.  The per diem charge is calculated to the nearest second,
+however -- if you rent at the rate of 2400 coins per day, and you come back
+39 hours later, you will be charged 3900 coins.
+NOTE: RENT IS FREE NOW.
+
+There are no CRYOGENIC CENTER in the game because they contradict Tolkien
+theme.  
+
+Rent files are deleted if you run out of money to pay the per diem charges
+or after 30 days. 
+
+See also: OFFER RENT
+#
+OFFER RENT
+For use in the receptions of inns.
+
+Offer makes the innkeeper tell you the cost of storing your belongings
+for one day.  Rent stores your belongings and exits you from the game.
+When you re-enter, you will start where you rented. Remember that the
+price you are given by the innkeeper is the price for only the first
+day of rent. For every day after the first, you will be charged
+substantially less to remain rented.
+
+See INNS for details on the rent policy.
+
+> offer
+> rent
+
+RENT also recognizes two options: RETIRE and NAMECHANGE.
+
+See also: INNS RETIRE NAMECHANGE
+#
+NEWS POLICY CREDITS VERSION RULES
+
+These commands show you important information about Return of the Shadow.  
+It is a good idea to keep yourself updated on these information often.
+
+news     - latest changes to the code and areas - KEEP TRACK OF THIS!!
+policy   - rules of the game. 
+credits  - the people who made CircleMUD possible!
+version  - displays the current version number of the Return of the Shadow
+
+Syntax:
+news - lists unread news messages.
+news next - lets you read the next unready news.
+news all - shows a list of all news messages
+news <number> - allows you to read a news message by number.
+news next <number> - sets message <number> as a last read message
+Example: news 583
+
+It is critical to keep track of the news messages as they contain
+information that _will_ affect your game play. You will be told when
+you enter the game how many unread news messages exit.
+
+Also, note that these important commands work from anywhere in Arda,
+so you do not need to find a news board, or news mob, such things do
+not exist.
+#
+PORT 3791
+
+The current address of this mud is "rots.org 3791".
+"rots.org" is also known as hostname.
+current ip is "18.241.0.123" (subject to change)
+"3791" is also known as port.
+
+There is a very simple reason for the choice of our port number.  Thanks to
+Mickey for suggesting it.  It comes from one of the most important parts of
+Lord of the Rings:
+
+"Three Rings for the Elven-kings under the sky,
+   Seven for the Dwarf-lords in their halls of stone,
+ Nine for Mortal Men doomed to die,
+   One for the Dark Lord on his dark throne
+ In the Land of Mordor where the Shadows lie.
+   One Ring to rule them all, One Ring to find them,
+   One Ring to bring them all and in the darkness bind them
+ In the Land of Mordor where the Shadows lie."
+
+(3 Elven rings, 7 Dwarven rings, 9 Human Rings, and the One Ring = 3791)
+#
+WIZLIST IMMLIST
+
+Lists the most powerful beings on the MUD.
+#
+REPORT
+This command sends a report of your current and max hp and mana to your
+group and to everyone in your room.  You can use this command to let 
+potential rescuers know how low your hps are without forcing them to use 
+the "group" command.  It is designed as a convenience for groups with 
+members who get lag or have slow modems. 
+
+> report
+#
+DIAGNOSE
+
+diagnose
+diagnose <character>
+
+The DIAGNOSE command tells you how wounded a character looks.  If you are
+fighting someone, you can use DIAGNOSE with no arguments to diagnose the
+person you're fighting.
+
+> diagnose
+> diagnose rasmussen
+
+See also: LOOK
+#
+TRACK HUNT
+
+See: MAN SKILL TRACK, MAN SKILL HUNT
+#
+GATHER FISH
+
+See: MAN SKILL GATHER
+#
+CLEAR CLS
+
+Clears the screen on many terminals.
+#
+ANSI COLOR COLOUR
+
+If you have a color-capable terminal and wish to see useful color-coding
+of information, use the COLOR command to set the colors you see.
+If you don't want to have color, disable all colors:
+> color off
+If you have a color terminal, turn the colors on:
+> color on
+You can fully customize your colors in this mud! Type:
+> color
+to see the available fields. Each field can assigned one of the following
+standard colors: normal red green yellow blue magenta cyan white
+To assign the certain color to a certain field do 
+> color <field> <color>
+Enjoy the colors!
+
+Using color will slow down the speed at which you see messages VERY slightly.
+The effect is more noticable on slower connections.  Even if you have
+color turned on, non-colorized messages will not be slowed down at all.
+
+Colors Available: Normal, Blue, Green, Red, Cyan, Magenta, Yellow, White.
+Fields Available: narrate, chat, yell, tell, say, hit, damage,
+		  roomname, character, object.
+#
+FRENCH
+Don't you know how they kiss in France?? -- try it!
+#
+SMILE
+Whenever you feel like smiling...
+#
+KISS
+Well can't you guess?
+#
+JIG
+Let's dance, my friend!
+#
+SHAPE
+   The world here is built by builders through an online interface.
+For help on how to start shaping, read MAN SHAPE GENERAL.
+For shaping room/mobile/object/zone read MAN SHAPE ROOM/MOB/OBJ/ZONE
+For FAQ, read MAN SHAPE FAQ
+For current updates, read the shaper boards in room 1101.
+
+See also: SHAPE OBJECT, SHAPE MOB, SHAPE ZONE
+#
+PERCEPTION
+
+   Your Perception determines how sensitive you are to the Unseen world.
+This includes your ability to see and be seen by Wraiths and your reaction
+to the powers of Mystics. Higher Perception makes you more resistant to
+most powers, but also vulnerable to Will attacks.
+   Elves have higher Perception, Dwarves - the lowest. More experienced
+Mystics are also more perceptive.
+   Note: your Perception does NOT define your strength in Will fighting,
+only the speed of fighting. See WILL and WILLPOWER for details.
+
+See also: MYSTIC, WILL, WILLPOWER
+#
+WILLPOWER
+   This is the strength of your mind, your ability to strike your opponents
+mentally and to resist their Will attack.
+#
+STRENGTH
+
+   Strength is the raw physical power your character possess. The higher your
+strength the more damage you will do in hand to hand combat. Strength also
+determines how much wieght your character can carry.
+
+#
+INTELLIGENCE
+
+Intelligence affects your spellcasting. The higher your intelligence the
+better your spells come out, that is the more damage some complicated spells
+do, the lower the chance of spells fail.
+#
+DEXTERITY
+
+Dexterity more comonly known as agility determines how quick your character 
+can react in some situations, the higher your dexterity the better the chance 
+to dodge an attack, and to flee from the fight.
+
+See also: FLEE
+#
+CONSTITUTION
+
+Constitution determines the amount of physical damage your character can 
+take, the higher your constitution is the higher your health will be.
+#
+LEARNING "LEARNING ABILITY"
+
+Learning ability determines the amount of knowledge you gain from your
+experience. The higher your learning is the more skills you will be 
+able to learn.
+#
+PULL
+
+>pull <lever>
+
+   Pulling a lever will cause a door somewhere in the world to open or close.
+Pulling other things has no effect.
+#
+LHUTH URUK-LHUTH MAGUS
+
+These creatures are a form of orcs bred by the dreaded Magus after
+the War of the Betrayal. They are weaker than normal Uruks, but more
+intelligent.  They are known as Uruk-Lhuth, or spell-uruks.
+
+Uruk-Lhuth have an insane number of penalties, and are meant to be a
+challenge for the most elite of our players. First, they have
+no allies in the race war. Their main enemy are the good races
+of Arda, such as Elves and Hobbits, but they hate the Uruks, Common
+Orc, and Harads as well.
+
+Uruk-Lhuth may not practice any warrior skills, and have a VERY limited
+select of Ranger and Mystic art. However, they have a very large
+selection of magic spells to choose from, more so than any other evil
+race. They also do not have any shops.
+Uruk-Lhuth are resistant to poison.
+
+See also: PKILL
+#~

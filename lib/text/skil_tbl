@@ -1,0 +1,841 @@
+ALL LIST
+See help on each skill as "man skill <name of the skill>"
+Skill list compiled by Vaitya, 01/19/2002
+
+
+ _WARRIOR_____________________________________________________________RANGER_
+/(level)   skill   |(level)   skill   ||(level)   skill   |(level)   skill   \
+|_____________________________________||_____________________________________|
+|(0) Axes          |(3)  Rescue       ||(0) Ride          |(2)  Stealth      |
+|(0) Concussion    |(5)  Bash         ||(0) Search        |(2)  Tame         |
+|(0) Parry         |(7)  Berserk      ||(0) Track         |(2)  Swim         |
+|(0) Piercing      |(20) Find Weakness||(1) Archery       |(3)  Fast Attack  |
+|(0) Slashing      |                  ||(1) Awareness     |(5)  Sneak        |
+|(0) Spears        |                  ||(1) Calm          |(6)  Ambush       |
+|(0) Whips/Flails  |                  ||(1) Dodge         |(6)  Travelling   |
+|(1) Two-handed    |                  ||(1) Gather Herbs  |(10) Animals      |
+|(1) Weapon Mastery|                  ||(1) Pick Lock     |(15) Accuracy     |
+|(2) Kick          |                  ||(2) Hide          |(20) Riposte      |
+|__________________|__________________||__________________|__________________|
+| See MAN SKILL BEORNING to see skill list specific to BEORNING.             |
+| See MAN SKILL HARADRIM to see skill list specific to HARADRIMS.            |
+| See MAN SKILL OLOG-HAI to see skill list specific to OLOG-HAIS.            |
+\___________________________________________________________________________/
+#
+OLOG OLOG-HAI
+
+See help on each Olog-Hai skill as "man skill <name of skill>"
+Note that Olog-Hais are alos able to train several skills known to
+other races.
+
+OLOG-HAI SPECIFIC SKILLS__
+/ (level)        skill    \
+|__________________________|
+| (1)  Natural Attacks     |
+| (15) Overun              |
+| (20) Smash               |
+| (25) Cleave              |
+| (27) Stomp               | 
+| (30) Frenzy              |
+|__________________________|
+
+See also: MAN SKILL LIST
+
+
+#
+BEORNING
+
+See help on each Beorning skill as "man skill <name of skill>"
+Note that Beorning are also able to train several skills known to 
+other races. 
+
+BEORNING SPECIFIC SKILLS__
+/ (level)        skill    \
+|__________________________|
+| (1)  Natural Attacks     |
+| (1)  Swipe               |
+| (9)  Bite                |
+| (12) Maul                |
+| (21) Rend                |
+|__________________________|
+
+See also: MAN SKILL LIST
+
+#
+HARADRIM HARAD HARADRIMS
+
+See help on each Haradrim skill as "man skill <name of skill>"
+Note that Haradrim are also able to train several skills known to 
+other races. 
+
+HARADRIM SPECIFIC SKILLS__
+/ (level)        skill    \
+|__________________________|
+| (15) Mark                |
+| (24) Wind Blast          |
+| (27) Blind               |
+| (30) Bend Time           |
+|__________________________|
+
+See also: MAN SKILL LIST
+
+#
+OVERRUN
+
+[Syntax      ] overrun <direction>
+[Group       ] Warrior
+[Level       ] 15
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+--- When given a direction the Olog-Hai will charge through each room bashing
+every mob as they move throught it. If the Olog-Hai can't charge the full
+distance they will charge into the wall at full force taking damage. The skill
+is on a cooldown and can be used every 60 seconds.
+
+#
+FRENZY
+
+[Syntax      ] frenzy
+[Group       ] Warrior
+[Level       ] 30
+[Offensive   ] Yes
+[Cooldown    ] 10 Minutes
+[Description ]
+--- The Frenzy ability will cause the Olog-Hai to have a 100% success hit rate,
+and increase the damage done by 10% for a short duration. While frenzy is active
+the Olog-Hai can't change tactics from berserk or flee. This skill is on a
+cooldown of 10 minutes.
+
+#
+SMASH
+
+[Syntax      ] smash <target>
+[Group       ] Warrior
+[Level       ] 20
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+---The Smash skill makes an attempt to slam into a chosen target, causing a descent
+amount of damage, and possibly dismounting the target. The success of a smash
+depends on how well you are learned in the skill, and your warrior level. There is a
+small chance this skill can hit a random target in the room. This skill is on a 
+cooldown of 60 seconds.
+
+#
+CLEAVE
+
+[Syntax      ] cleave
+[Group       ] Warrior
+[Level       ] 25
+[Offensive   ] Yes
+[Cooldown    ] 30 Seconds
+[Description ]
+---The Cleave skill makes an attempt to damage every creature in the same room as the
+Olog-Hai. The success of a cleave depends on how well you are learned in the skill,
+and your warrior level. The damage is greatly increased with the weight of your weapon.
+This skills is on a cooldown of 30 seconds.
+
+#
+STOMP
+
+[Syntax      ] stomp
+[Group       ] Warrior
+[Level       ] 27
+[Offensive   ] Yes
+[Cooldown    ] 60 Seconds
+[Description ]
+---The Stomp skill makes an attempt to damage and stun every create in the same room as
+the Olog-Hai. The success of a stomp depends on how well you are learned in the skill,
+and your warrior level. The damage is greately increased with the weight of your weapon.
+This skill is on a cooldown of 60 seconds.
+
+#
+MARK
+
+[Syntax      ] mark <target>
+[Group       ] Ranger
+[Level       ] 15
+[Offensive   ] Yes
+[Description ]
+--- The Mark skill will create a festuring wound on the target. This skill has
+a mana and move requirement to be used. After using mark on a target that 
+target will leave a blood trail in any room they leave, and only the Haradrim
+are able to see it. In addition to leaving a blood trail, Mark will slow down
+the targets targets movement and health regeneration. If the target casts any
+health or movement regeneration spell it will reduce the duration of the current
+mark, and if the target is at full health it will reduce the duration even
+greater. It will also show a (marked) next to targets name.
+
+#
+BLIND
+
+[Syntax      ] blind <target>
+[Group       ] Ranger
+[Level       ] 27
+[Offensive   ] Yes
+[Description ]
+--- The Haradrim have an additional item they can gather called dust. This skill
+has a mana requirement to be used. Once you have some dust in your inventory, you
+can magically infuse it to blind and haze the target, for a short duration.
+
+#
+"BEND TIME"
+
+[Syntax      ] bend
+[Group       ] Ranger
+[Level       ] 30
+[Offensive   ] No
+[Description ]
+--- The skill Bend Time will increase the Haradrim's speed by 50% and increase their
+offensive bonus by 20. This skill requires 100 moves and that the players mana be at
+a 100% full. Bend Time has a very short duration.
+
+#
+"WIND BLAST"
+
+[Syntax      ] wind
+[Group       ] Ranger
+[Level       ] 24
+[Offensive   ] No
+[Description ]
+--- Wind Blast will conjurer a black vile wind to eminate from the caster
+damaging and forcing all living creatures out of the room. This skill has
+both a mana and move cost associated with it.
+
+#
+"NATURAL ATTACKS"
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+--- The following skills helps with using claws to successfully
+attack opponents. Damage is based off your strength score, warrior level,
+and character level.
+
+#
+SWIPE
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 1
+[Offensive   ] Yes
+[Description ]
+--- The Swipe skill allows you to make an additional attack with your 
+offhand. The skill heavily depends on how good your warrior training
+is.
+
+#
+BITE
+
+>bite <target>
+
+[Syntax      ] bite <target>
+[Group       ] Warrior
+[Level       ] 9
+[Offensive   ] Yes
+[Description ]
+---The Bite skill makes an attempt to bite the chosen target, causing a
+small amount of damage. The success of a bite depends on how well you are
+learned in the skill, and your warrior level. There is a small delay after
+biting to the target and the player, along with the normal waiting time
+before.
+
+#
+MAUL
+
+>maul <target>
+
+[Syntax      ] maul <target>
+[Group       ] Warrior
+[Level       ] 12
+[Offensive   ] Yes
+[Description ]
+---The Maul skill makes an attempt to maul the chosen target, causing a
+small amount of damage. Maul will also apply a debuff to the target of 
+-5 dodge, and apply a buff to the Beorning reducing the amount of
+physical damage they take, this stacks up to five times. The success
+of maul depends on how well you are learned in the skill, and your
+warrior level. The use of this skill has a move cost to it.
+
+#
+REND
+
+>rend <target>
+
+[Syntax      ] rend <target>
+[Group       ] Warrior
+[Level       ] 21
+[Offensive   ] Yes
+[Description ]
+---The rend skill makes an attempt to rend the chosen target, causing a
+large amount of damage. Rend can only be used while the target is bashed
+and the success of rend depends on how well you are learned in the skill,
+and your warrior level. There is a small delay after rending, along with
+the normal waiting time before.
+
+#
+SWIM
+
+  Swimming allows one to enter water-filled rooms without the aid of a boat.
+To enable the skill, one must "set swim on".
+
+See also: SET SWIM
+#
+WHISTLE
+
+>whistle
+
+   If you have a pet and you got separated, the whistle will summon it
+back to you. Of course, you can be heard only from reasonable distance,
+and may need to whistle more than once.
+
+   You need to specialize in animals to learn this skill.
+
+   Common orcs can whistle to gather their recruits without learning
+the skill.
+
+See: SPECIALIZATIONS
+  
+#
+STALK
+
+>stalk <direction>
+
+  The skill lets you move between rooms without leaving tracks.
+
+Side note: you can try to stalk without knowing the skill. It will result
+in funny results.
+
+  You need to specialize in stealth to learn this skill.
+
+See: SPECIALIZATIONS
+#
+COVER
+
+>cover
+
+  You will attempt to cover all the tracks in this room.  If you
+succeed, the tracks will look much older, or may not be seen at all.
+
+  You need to specialize in stealth to learn this skill.
+
+See: SPECIALIZATIONS
+#
+"WILD SWING" "SWING"
+
+>swing <victim>
+>swing
+
+   Those specialized in Wild fighting can learn this move to damage
+their opponents. More effective than kick, this skill is unreliable
+and can hurt your friends sometimes.
+
+   You need to specialize in wild fighting to learn this skill.
+
+See SPECIALIZATIONS
+#
+LEADERSHIP
+
+[Syntax      ] N/A (automatic effect)
+[Group       ] N/A
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+---Characters who have high leadership will find that so long as they
+show no signs of fear, that their followers will also stand firm in
+the face of their enemies. 
+
+For now, only common orcs can learn this skill.
+
+#
+TRACK
+
+[Syntax      ] track / track <target> / hunt
+[Group       ] Ranger
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+---Tracking will have you attempt to find tracks of things that have passed
+through the room you are in.  The command 'track', without a target, will
+attempt to show all the tracks found in the room.  Tracking a chosen <target>
+will attempt to show any tracks of the target that are in the room.
+
+Tracks do disappear over time.  Tracks can be more or less visible depending
+on the weather and the terrain.
+
+Also, one can use the command 'hunt'.  Based on one's tracking ability, they
+can attempt to see the tracks in a room upon 'look'ing in and entering rooms.
+The chance to successfully see tracks while hunting is less than while
+tracking normally, and one will only find fresh tracks.  Also, there is a
+small delay associated with hunting, which happens after looking/entering
+a room.
+
+> track                  - searches for tracks in the room.
+> track <target>         - searches for tracks of <target> in the room.
+> hunt                   - Toggles hunting on and off.
+
+#
+RIDE
+
+[Syntax      ] ride <target> / ride
+[Group       ] Ranger
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+---Riding will mount one upon chosen <target>, if the target is a mount
+mob.  Without the use of this skill, riding will not benefit one much,
+and might even be worse than walking normally.  Rangers who know how
+to deal with animals will also find riding easier.
+Typing just 'ride' while a mount is following you will have you ride
+the mount.
+
+> ride                      - rides the first following mount.
+> ride <target>             - rides target, if target is a mount mob.
+> dismount                  - dismounts, mount starts following you.
+> lose <target>             - "loses" target following mob/person.
+
+#
+BERSERK
+
+[Syntax      ] N/A
+[Group       ] Warrior
+[Level       ] 7
+[Offensive   ] No
+[Description ]
+---Berserk helps warriors control themselves while using berserk
+tactics.  This skill is necessary for effective use of berserk tactics.
+It also helps warriors to calm down when they need to.
+
+#
+"FAST ATTACK"
+
+[Syntax      ]
+[Group       ] Ranger
+[Level       ] 3
+[Offensive   ] No
+[Description ]
+---The Fast Attack skill increases one's attack speed under certain
+conditions.  The increase in speed depends on the percent learned in
+the skill and the weight of the wielded weapon.  Effect while wielding
+a heavy weapon will be low to none, while it could be quite a bit with
+a light weight weapon.
+ 
+#
+SEARCH
+
+[Syntax      ] search / search <direction>
+[Group       ] Ranger
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+Searching in a room without a chosen target will search for
+hidden people in the room, uncovering friends and enemies alike.
+With a chosen direction, it will search in the direction for a
+hidden exit.  The success of a search depends primarily upon the
+amount of experience the searcher has with the search skill;
+however, it is also heavily based on the searcher's awareness and
+intelligence.  
+
+If you fail to uncover a hidden character in your room after
+searching it, that character's hide will be less effective for
+evading further detection.
+
+Examples:
+
+> search north
+
+searches for a hidden exit to the north.
+
+> search
+
+searches for hidden characters in the room.
+
+SEE ALSO: AWARENESS
+#
+STEALTH
+
+[Syntax      ] N/A
+[Group       ] Ranger
+[Level       ] 2
+[Offensive   ] No
+[Description ]
+The stealth skill increases one's ability to perform skills
+that require an element of surprise or concealment, such as:
+hiding, sneaking, riposting and ambushing.  To become a master
+of stealth, however, requires a rather hefty sacrifice of
+physical constitution.
+
+SEE ALSO: AMBUSH "GENERAL STEALTH" HIDE RIPOSTE SNEAK
+#
+TRAVELLING
+
+[Syntax      ] N/A
+[Group       ] Ranger
+[Level       ] 6
+[Offensive   ] No
+[Description ]
+---Experts in travelling are told to be able to run days and nights with no
+rest and travel great distances in amazingly little amount of times.
+#
+AWARENESS
+
+[Syntax      ] N/A
+[Group       ] Ranger
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+The awareness skill heightens one's senses, helping them to be
+aware of hiding life and notice oncoming ambushes.  A ranger's
+awareness is dependent on many factors, including: proficiency
+as a ranger, proficiency in the awareness skill, specialization,
+intelligence, and race.
+#
+"GATHER" "GATHER FOOD" "GATHER ENERGY" "GATHER HEALING" "GATHER LIGHT"
+"GATHER ARROW" "GATHER BOW"
+
+[Syntax      ] gather [food/energy/healing/light/bow/arrow]  OR  fish
+[Group       ] Ranger
+[Level       ] 5
+[Offensive   ] No
+[Description ]
+---The Gather Herbs skill allows a ranger to find useful materials on the land
+(not only herbs). "Gather food" lets one attempt to find some edible roots and
+berries, and "gather light" finds something that burns well. "Gather energy"
+and "gather healing" puts you in a mode of gathering useful herbs that help
+you replentish moves or hit points. "Gather bow" will find some twigs and
+branches to fashon into a crude bow. "Gather arrow" will search the room for
+items that you can make into a crude arrow. Fish" command is a version of "gather
+food", that allows one to fish, while holding a fishing pole and riding a
+boat, if in a water room. The outcome of the gathering is strongly affected by
+the terrain in which one is gathering.
+
+> gather food     - attempts to gather food from current location.
+> fish            - attempts to fish from current location.
+
+Mail your ideas about fishing to Death.
+#
+"PICK LOCK"
+
+[Syntax      ] pick <door/container>
+[Group       ] Ranger
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+---The Pick Lock skill allows one to try and pick a lock, unlocking whatever
+was chosen as a target if successful.  Not all locks can be picked.
+
+> pick <door>          - attempts to pick the lock of a locked target door.
+> pick <container>     - attempts to pick the lock of a locked target
+                         contianer.
+
+#
+SNEAK
+
+[Syntax      ] sneak
+[Group       ] Ranger
+[Level       ] 5
+[Offensive   ] No
+[Description ]
+Sneaking allows one to move between rooms without anyone taking
+notice to the sneaker's entrance or exit.  When someone enters
+a room without being noticed, they are effectively hidden - but
+very poorly.  However, since the sneaker did not forfeit his
+element of surprise by entering haphazardly, he receives quite
+a formidable bonus to any stealth* related abilities that he may
+perform while still unnoticed.  Since the moving character is
+paying far more attention to his movements than in casual motion,
+there is a small delay associated with any movement while sneak
+is enabled. 
+
+A successful discreet passage from one room to the next depends
+on the sneaker's knowledge of the sneak skill and their stealth.
+
+To toggle sneak on or off, simply type 'sneak':
+
+> sneak
+
+* - See SKILLS STEALTH for a description of 'stealth related
+    abilities.'
+
+SEE ALSO: STEALTH
+#
+HIDE
+
+[Syntax      ] hide
+[Group       ] Ranger
+[Level       ] 2
+[Offensive   ] No
+[Description ]
+The hide skill allows one to hide from others.  While hidden,
+there is a chance people will not notice you, based on your
+hide skill, ranger level, whether you entered the room with a
+successful sneak, stealth, and terrain, versus the other player
+or mob's awareness.  It is skill versus skill; anyone may
+attempt to hide, as well as anyone can possibly see a hidden
+player.  While hidden, most actions will cause you to reveal
+yourself.
+
+You may also choose to specify the WELL option when hiding.
+By using HIDE WELL, you will take a substantially greater care
+in choosing your hiding spot, resulting in a long wait and
+enhanced concealment.
+
+> hide well
+
+SEE ALSO: AWARENESS SNEAK STEALTH
+#
+AMBUSH TRAP
+
+[Syntax      ] ambush <target> OR trap <target>
+[Group       ] Ranger
+[Level       ] 6
+[Offensive   ] Yes
+[Description ]
+Ambush is the favored attack of rangers; and it can be used with
+any weapon type.  The chance of performing a successful ambush is
+determined by the attacker's ambush skill, stealth, encumbrance
+and ranger level.
+
+A successful ambush removes a percentage of target's health based
+on the factors stated above for percentage chance; additionally,
+the damage depends upon the damage of the weapon the ranger is
+wielding and the encumbrance of the victim of the ambush.  It
+should be noted that although heavy weapons increase the power of
+an ambush, they increase the challenge of landing an ambush 
+considerably.  In addition to damaging the victim, the surprise
+and force of the ambush generally leaves the victim rather
+confused, making it more difficult for him to parry.
+ 
+> ambush wolf
+
+The trap ability allows rangers to prepare an ambush for a target
+not yet present.  When the target enters the room where a ranger
+has laid a trap, the ranger will instantly spring his trap, causing
+the victim a good deal of damage.  Additionally, due to the nature
+of surprising a victim with such force and pain, the victim of a
+successful trap will become stunned for a short period of time,
+while it tries to make sense of what is happening around it.
+
+You may choose to trap N.target; if you choose to do this, then
+you will spring your trap when the Nth number of that target has
+entered the trapped room.
+
+
+> trap warg
+> trap 2.orc
+
+SEE ALSO: STEALTH
+#
+ANIMALS
+
+[Syntax      ]
+[Group       ] Ranger
+[Level       ] 10
+[Offensive   ] No
+[Description ]
+---The Animals skill is one's ability to communicate with animals.
+The skill increases a person's effectiveness with the tame and calm
+skills, as well as with ride.
+
+#
+TAME
+
+[Syntax      ] tame <target>
+[Group       ] Ranger
+[Level       ] 2
+[Offensive   ] No
+[Description ]
+---The Tame skill allows one to tame most animals.  A tamed animal
+will follow you, and obey your commands.  The animals you can tame
+are determined by your tame skill, ranger level, whether the animal
+has been calmed, and whether you have any animals tamed already.
+Note that because of the way this skill is coded, some things
+which are actually animals are untamable as of now.
+
+#
+CALM
+
+[Syntax      ] calm <target>
+[Group       ] Ranger
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+---The Calm skill allows one to calm animals, stopping them from
+aggressive action for a period of time, and making them easier
+to tame.
+
+#
+KICK
+
+[Syntax      ] kick <target>
+[Group       ] Warrior
+[Level       ] 2
+[Offensive   ] Yes
+[Description ]
+---The Kick skill makes an attempt to kick chosen target, causing a small
+amount of damage.  The success of a kick depends on how well you are learned
+in the skill, and your warrior level.  There is also a small delay after
+kicking, along with the normal waiting time before.
+
+#
+BASH
+
+[Syntax      ] bash <target/door>
+[Group       ] Warrior
+[Level       ] 5
+[Offensive   ] Yes
+[Description ]
+---The Bash skill allows one to bash mobs/players, or doors.
+--To bash a person is an attempt to knock them over.  If you succeed
+you will inflict minor damage, and cause the victim to topple.  The
+victim will be unable to do anything for a short while.  The success
+of a bash depends on how well you are learned in the skill, your
+warrior level, your offensive abilities, your weight, and whether you
+wear a shield or not.
+--To bash a door is an attempt to bash the door in, breaking it open.
+Your strength and bashing skill are depended on for success.  Dwarves
+and Uruk-Hai orcs have a slight bonus, and Elves and Hobbits cannot
+bash doors at all.  Not all doors can be bashed, for example, gates
+and magical doors.
+
+> bash wolf
+> bash woodendoor
+
+#
+RESCUE
+
+[Syntax      ] rescue <target>
+[Group       ] Warrior
+[Level       ] 3
+[Offensive   ] Yes
+[Description ]
+---The Rescue skill allows one to rescue a target from a battle,
+replacing the target in combat with you.  It only works against
+one enemy, though, and it does not work at all for mental combat.
+
+> rescue quifael
+
+#
+"FIND WEAKNESS"
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 20
+[Offensive   ] No
+[Description ]
+---The Find Weakness skill allows you to find weaknesses in your
+enemy's defense.  If successful, it gives you additional damage
+with your hits.  The skill heavily depends on how good your warrior
+training is.
+
+#
+RIPOSTE
+
+[Syntax      ] None - works automatically
+[Group       ] Ranger
+[Level       ] 20
+[Offensive   ] Yes
+[Description ]
+---Riposte is a high level skill which gives rangers the chance of an
+automatic hit when they parry an attack.  Its success depends on the
+ranger level of the player, their stealth, riposte skill and dexterity.
+
+
+#
+"WEAPON MASTERY"
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+---The Weapon Mastery skill gives you knowledge in all weapon types
+and the two-handed skill.  It is quite hard to learn, but easier than
+all of the skill seperatly.
+
+#
+DODGE
+
+[Syntax      ]
+[Group       ] Ranger
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+---The Dodge skill improves your dodging bonus (DB).  Effectivness
+depends on your ranger level.
+
+#
+PARRY
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+--The Parry skill improves your parry bonus (PB).  Effectiveness
+depends on your warrior level.
+
+#
+"WEAPON TYPES" SLASHING CONCUSSION POLEARMS PIERCING SPEARS AXES WHIPS/FLAILS
+
+[Syntax      ]
+[Group       ] Warrior
+[Level       ] 0
+[Offensive   ] No
+[Description ]
+--- The following weapon skills are available: slashing, concussion, spears,
+piercing, axes, and whips/flails.  It's not trivial to determine which weapon
+is better (though comparing can give you some idea), or which good weapon you
+will find in your adventures. Slashing weapons are most common, so many people
+learn how to use only slashing weapons. If you want to know how to use any type
+of weapons, consider learning "weapon mastery".
+
+#
+TWO-HANDED
+
+[Syntax      ] twohanded
+[Group       ] Warrior
+[Level       ] 1
+[Offensive   ] No
+[Description ]
+---The Two-Handed skill helps with wielding weapons with both hands
+successfully.  You can wield any weapon in one or two hands with the
+commands "onehanded" and "twohanded" ("one and "two" being the shortcuts).
+Some weapons are worse onehanded, while some are worse twohanded.
+When wielding weapons twohanded, though, your effective skill is about
+the average between your skill with the weapon's type and your skill
+in two-handed weapons.
+
+#
+ARCHERY
+
+[Syntax      ] shoot <target>
+[Group       ] Ranger
+[Level       ] 1
+[Offensive   ] Yes
+[Description ]
+---The Archery skill allows you to utilize a bow and arrow. The chance
+of having a successul shot is determined by the attacker's archery skill,
+accuracy skill, and ranger level. The attack must also be wielding a bow
+or crossbow, have a quiver on his/her back, arrows inside the quiver, and
+wield the bow/crossbow with both hands. 
+
+> shoot troll
+
+SEE ALSO: ACCURACY, TWO-HANDED
+#
+ACCURACY
+
+[Syntax      ]
+[Group       ] Ranger
+[Level       ] 15
+[Offensive   ] No
+[Description ]
+--The Accuracy skill allows you to shoot your bow/crossbow with better
+accuracy and find weaknesses in your enemy's armor. If successful, it 
+will allow an arrow to bypass your enemy's armor absorption.
+#~
+

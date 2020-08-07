@@ -1,0 +1,538 @@
+ALL LIST
+See help on each spell as "man spell <name of the spell>"
+Spell list reformatted by Kilrain, 7/19/99, modified by Prami, 1/12/00.
+ MAGIC-USER_________________________________________________________________
+/ Lvl  Spell Name     Min Cost   Off  | Lvl  Spell Name     Min Cost   Off  \
+|_____________________________________|_____________________________________|
+|  0   Magic Missile      6       Y   |  9 # Dark Bolt         12       Y   |
+|  1 * Create Light       5       N   |  9   Vitalize Self     12       N   |
+|  2   Locate Living      5       N   | 11 * Firebolt          13       Y   |
+|  2   Shield             5       N   | 14   Cone of Cold      15       Y   |
+|  3   Cure Self         15       N   | 17   Summon            50       N   |
+|  3 * Detect Evil        2       N   | 18   Identify          70       N   |
+|  4   Chill Ray          8       Y   | 19 * Lightning Strike  10       Y   |
+|  5   Blink              5       N   | 20   Earthquake        15       Y   | 
+|  5   Reveal Life        3       N   | 21 * Fireball          18       Y   |
+|  6   Flash              5       N   | 21 # Searing Darkness  18       Y   | 
+|  7 * Lightning Bolt    10       Y   | 24   Relocate          30       N   |
+|_____________________________________|_____________________________________|
+| * = only good races can practice                                          |
+| # = only uruk-hai can practice                                            |
+| See MAN SPELL LHUTH to see spell list specific to URUK-LHUTH.
+| See MAN FIRE/COLD/LIGHTNING for help on the appropriate realm             |
+\___________________________________________________________________________/
+#
+LHUTH
+
+See help on each Lhuth spell as "man spell <name of the spell>"
+Note that Uruk-Lhuth are also able to train several spells known to
+other races.  Spell list created by El and Prami, 2/24/98.
+
+ URUK-LHUTH SPECIFIC SPELLS_______
+/ (level) spellname         Off   \
+|_________________________________|
+|(0) Word of Pain            Y    |
+|(4) Leach                   Y    |   
+|(5) Word of Sight           N    |
+|(6) Word of Shock           Y    |
+|(11) Black Arrow            Y    |
+|(14) Word of Agony          Y    |
+|(20) Shout of Pain          Y    |
+|(21) Spear of Darkness      Y    |
+\---------------------------------/
+
+See also: MAN SPELL LIST
+
+#
+"EXPOSE ELEMENTS"
+[Syntax      ] cast 'expose elements'
+[Group       ] Magic-User
+[Level       ] 0
+[Minumun Cost] 70 mana
+[Offensive   ] Yes
+
+  Casting 'expose elements' on the target will make them vulnerable to a spell
+based on the specialization of hte caster and the potentially the room the mob
+is in. Being vulnerable to the spells mean that the specific spell will cost
+0 mana while casting it on that mob. Leaving the mobs room for more than a
+second causes 'expose elements' to fade. Only people specializing in an 
+elemental specialization can learn it.
+
+In game prompts:
+Your target is now exposed to 'Fireball'
+This means that all subsequent castings of fireball on that mob will cost 0 mana.
+
+Your target is no longer vulnerable to your spells.
+This means that spell will be full mana cost on the mob again.
+
+Examples:
+A lightning specialized mage that casts this indoors will expose the mob to
+'lightning bolt' if known.
+A lightning specialized mage that casts this outdoors will expose the mob
+to 'lightning strike' if known.
+A fire specialized mage will expose the mob to the highest level fire spell 
+they know.
+A cold specialized mage will expose the mob to the highest level cold spell
+they know.
+
+See: SPECIALIZATIONS
+#
+SPELL BEACON
+[Syntax      ] cast 'beacon' set | return | release
+[Group       ] Magic-User, Teleportation
+[Level       ] 0
+[Minumun Cost] ? mana
+[Offensive   ] No
+
+  After you set up your beacon, you will retain some connection with it,
+and will be able to return to your beacon at any time while it lasts.
+  Only people specializing in Teleportation can learn it.
+
+See: SPECIALIZATIONS
+#
+"MAGIC MISSILE"
+
+[Syntax      ] cast 'magic missile' <target>
+[Group       ] Magic-User
+[Level       ] 0
+[Minumun Cost] 6 mana
+[Offensive   ] Yes
+[Description ]
+---The simplest offensive spell, "Magic Missile" is just that: a magical
+missile casted at a target.  It does a small amount of damage, costs
+a low amount of mana to cast, and can be cast very quickly.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"CREATE LIGHT"
+
+[Syntax      ] cast 'create light'
+[Group       ] Magic-User
+[Level       ] 1
+[Minimum Cost] 5 mana
+[Offensive   ] No
+[Description ]
+---Casting "Create Light" will create a brilliant orb of light into your
+inventory.  This orb will provide light for approximatly 20 hours (game-
+time.)
+
+#
+"REVEAL LIFE"
+
+[Syntax      ] cast 'reveal life'
+[Group       ] Magic-User
+[Level       ] 5
+[Minimum Cost] 3
+[Offensive   ] No
+[Description ]
+Casting "reveal life" will create a quick surge of light which has a
+a chance of revealing anyone hidden in the room; if reveal life fails
+to bring a hidden target to sight, there inlies a chance that it will
+make subsequent castings more likely to succeed. It does not, however,
+prevent people from hiding after the spell is cast.
+
+#
+"DETECT EVIL"
+
+[Syntax      ] cast 'detect evil'
+[Group       ] Magic-User
+[Level       ] 3
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Detect Evil" will give the caster warning if the forces of evil
+characters are significantly higher than those of "good" in the area.
+
+#
+"LOCATE LIVING"
+
+[Syntax      ] cast 'locate living'
+[Group       ] Magic-User
+[Level       ] 2
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Locate Living" will tell the caster the approximate direction
+and distance of N closest living things, where N is about 2 + level/5.
+This will only work for a distance up to about 2 + level/10 rooms.
+
+#
+"CURE SELF"
+
+[Syntax      ] cast 'cure self'
+[Group       ] Magic-User
+[Level       ] 3
+[Minimum Cost] 15
+[Offensive   ] No
+[Description ]
+---Casting "Cure Self" will restore a small amount of hit points to the
+caster.
+
+#
+SHIELD
+
+[Syntax      ] cast 'shield'
+[Group       ] Magic-User
+[Level       ] 2
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Shield" surrounds the caster with a protective shield.  It is
+invisible, but will absorb some physical or magical damage at the cost of the
+caster's mana. The effectiveness of the spell depends on the caster's mage
+level. The caster must be aware of the attack - so shield is no protection
+against ambush or if the victim is asleep.
+ 
+#
+"CHILL RAY"
+
+[Syntax      ] cast 'chill ray' <target>
+[Group       ] Magic-User
+[Level       ] 4
+[Minimum Cost] 8
+[Offensive   ] Yes
+[Description ]
+---Casting "Chill Ray" fires a cold ray at a target, causing a small amount
+of damage, but more than a Magic Missile.  If the target fails it's saving
+throw, it will delay the target's next attack in addition to inflicting the
+damage.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"BLINK"
+
+[Syntax      ] cast 'blink'
+[Group       ] Magic-User
+[Level       ] 5
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Blink" teleports the caster of the spell to a random room
+nearby, usually one to three rooms away.  It is even possible to blink
+through some doors.
+
+#
+"LIGHTNING BOLT"
+
+[Syntax      ] cast 'lightning bolt' <target>
+[Group       ] Magic-User
+[Level       ] 7
+[Minimum Cost] 10
+[Offensive   ] Yes
+[Description ]
+---Casting "Lightning Bolt" will fire a bolt of lightning at the chosen
+target, damaging him.  It is quite potent outside, but it's effectivness
+is lowered inside.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"VITALIZE SELF"
+
+[Syntax      ] cast 'vitalize self'
+[Group       ] Magic-User
+[Level       ] 9
+[Minimum Cost] 12
+[Offensive   ] No
+[Description ]
+---Casting "Vitalize Self" will restore a small amount of movement points
+to the caster.
+
+#
+"FLASH"
+
+[Syntax      ] cast 'flash'
+[Group       ] Magic-User
+[Level       ] 6
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Flash" produces a bright flash of light.  It will delay the
+next attack of everyone in the room, and will disengage from combat all
+who fail their saving throw. When flash is cast by powerful Wizards, it
+has been known to have an adverse affect on the servants of the shadow.
+
+#
+"FIREBOLT"
+
+[Syntax      ] cast 'firebolt' <target>
+[Group       ] Magic-User
+[Level       ] 11
+[Minimum Cost] 13
+[Offensive   ] Yes
+[Description ]
+---Casting "Firebolt" will send a searing bolt of fire at the target,
+damaging them.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"RELOCATE"
+
+[Syntax      ] cast 'relocate' <direction>
+[Group       ] Magic-User
+[Level       ] 24
+[Minimum Cost] 30
+[Offensive   ] No
+[Description ]
+---Casting "Relocate" teleports the caster a great distance in the
+specified direction.  While this spell attempts to choose a safe room,
+a dangerous reappearing location is still possible.  Note that uruks
+cannot relocate to the west due to limitations of their magical
+understanding.
+
+
+#
+"CONE OF COLD"
+
+[Syntax      ] cast 'cone of cold' <target>
+[Group       ] Magic-User
+[Level       ] 14
+[Minimum Cost] 15
+[Offensive   ] Yes
+[Description ]
+---Casting "Cone of Cold" shoots a cone of wintery coldness at a chosen
+target, damaging them.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"IDENTIFY"
+
+[Syntax      ] cast 'identify' <object>
+[Group       ] Magic-User
+[Level       ] 18
+[Minimum Cost] 70
+[Offensive   ] No
+[Description ]
+---Casting "Identify" on an object grants to the caster a deep and
+profound knowledge of the item they hold. Being magical in nature,
+this insight also reveals any innate magical attributes possessed by
+the item. This spell being one of great power, costs the caster a great
+deal of stamina to cast.
+
+#
+"FIREBALL"
+
+[Syntax      ] cast 'fireball' <target>
+[Group       ] Magic-User
+[Level       ] 21
+[Minimum Cost] 18
+[Offensive   ] Yes
+[Description ]
+---Casting "Fireball" fires a large ball of fire at chosen target, causing
+a large amount of damage.  The fireball also has a chance of damaging anyone
+else in the room of the chosen target, though with much less damage (this
+includes the caster of the spell, if the spell is cast during combat).
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"LIGHTNING STRIKE"
+
+[Syntax      ] cast 'lightning strike' <target>
+[Group       ] Magic-User
+[Level       ] 19
+[Minimum Cost] 10
+[Offensive   ] Yes
+[Description ]
+---Casting "Lightning Strike" calls upon lightning to strike a chosen
+target.  This powerful spell, while not working indoors and being
+severely affected by weather, can produce an effect well worth the
+effort.
+
+#
+"DARK BOLT"
+
+[Syntax      ] cast 'dark bolt' <target>
+[Group       ] Magic-User
+[Level       ] 9
+[Minimum Cost] 12
+[Offensive   ] Yes
+[Description ]
+---Casting "Dark Bolt" will fire a bolt of darkness at a chosen target.
+This spell is available to evil only.  If cast in sunlight, it's
+effectivness is lowered.
+
+#
+"SEARING DARKNESS"
+
+[Syntax      ] cast 'searing darkness' <target>
+[Group       ] Magic-User
+[Level       ] 21
+[Minimum Cost] 18
+[Offensive   ] Yes
+[Description ]
+---Casting "Searing Darkness" will fire a bolt of darkness and flame
+at a chosen target. This spell is available to evil only. If cast in
+sunlight, it's effectivness is lowered.
+
+#
+"EARTHQUAKE"
+
+[Syntax      ] cast 'earthquake'
+[Group       ] Magic-User
+[Level       ] 20
+[Minimum Cost] 15
+[Offensive   ] Yes
+[Description ]
+---Casting "Earthquake" will cause just that, an earthquake, in the room
+it is cast in.  Sometimes it may only cause trembles in the ground, damaging
+the living things in the room, while others it may even create a crevice
+into the ground and cause all in the room to fall down into it.
+#
+"WORD OF PAIN"
+
+[Syntax      ] cast 'word of pain ' <target>
+[Group       ] Magic-User
+[Level       ] 0
+[Minumun Cost] 6 mana
+[Offensive   ] Yes
+[Description ]
+--- The simplest word of power available to a learning Uruk-Lhuth, a
+word of pain calls upon the dark forces to enter into a being's soul
+and give the impression of pain directly into one's mind.  The result
+is actual damage to the body for it believes it has been dealt a blow.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"LEACH"
+
+[Syntax      ] cast 'leach' <target>
+[Group       ] Magic-User
+[Level       ] 4
+[Minumun Cost] 8 mana
+[Offensive   ] Yes
+[Description ]
+--- Casting leach upon a victim will allow the Uruk-Lhuth to literally
+drain the life energy from an opponent, and is some cases be so
+successful as to add the life energy unto himself healing any wounds
+or even fatigue.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"WORD OF SIGHT"
+
+[Syntax      ] cast 'word of sight'
+[Group       ] Magic-User
+[Level       ] 5
+[Minumun Cost] 3 mana
+[Offensive   ] No
+[Description ]
+This word of power endows the ability to probe an area with the Uruk-
+Lhuth's mind and uncover possibly hiding targets.  The word of power
+is so effective that everything in the area is also alerted to the
+hidden beings; however, if the soul fails to completely uncover its
+target, there is a chance for the spell to cause the hidden being to
+be more easily uncovered in future attempts.  The word does not stop
+anyone from re-attempting to hide.
+
+#
+"WORD OF SHOCK"
+
+[Syntax      ] cast 'word of shock'
+[Group       ] Magic-User
+[Level       ] 9
+[Minumun Cost] 5 mana
+[Offensive   ] No
+[Description ]
+--- Word of Shock is a word of power that lets the practices
+Uruk-Lhuth lash out with his evil magic and mentally stun other beings
+in the room confusing them and forcing them to stop what they are
+doing. Combat is halted and any next attack is delayed while the
+initial shock wears off and beings regain their senses.
+
+#
+"BLACK ARROW"
+
+[Syntax      ] cast 'black arrow' <target>
+[Group       ] Magic-User
+[Level       ] 11
+[Minumun Cost] 13 mana
+[Offensive   ] Yes
+[Description ]
+--- This vile spell conjures a magical black arrow that is then
+propelled towards the Uruk-Lhuth's victim with enough speed and
+precision to pierce through any substance and wound to the bone. The
+dark magics used in the creation of the arrow give it a deadly tip
+that has the chance to poison the victim if they do not resist the
+effects immediately.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"WORD OF AGONY"
+
+[Syntax      ] cast 'word of agony' <target>
+[Group       ] Magic-User
+[Level       ] 14
+[Minumun Cost] 15 mana
+[Offensive   ] Yes
+[Description ]
+--- Uttering this word of power, an Uruk-Lhuth is able to penetrate a
+victim's mind more deeply than their simpler WORD OF PAIN allowed.
+This power inflicts much more damage and also has an ingredient to
+halt brain wave activity where the victim has to recover before being
+able to attack again.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"SHOUT OF PAIN"
+
+[Syntax      ] cast 'shout of pain'
+[Group       ] Magic-User
+[Level       ] 20
+[Minumun Cost] 15 mana
+[Offensive   ] Yes
+[Description ]
+--- This word of power is another upgrade the basic word of pain. 
+Uttering these incantations however allows the Uruk-Lhuth to
+project their mind in a circle around the caster effectively reaching 
+every creature in the room.
+
+#
+"SPEAR OF DARKNESS"
+
+[Syntax      ] cast 'spear of darkness' <target>
+[Group       ] Magic-User
+[Level       ] 21
+[Minumun Cost] 18 mana
+[Offensive   ] Yes
+[Description ]
+--- This powerful spell creates an utter blackness in front of the
+Uruk-Lhuth and fine tunes it to a narrow point in front of him and is
+thus propelled unerringly towards it's victim inflicting maximum
+damage as the diameter of the spear can become quite large. The
+darkness is able to make an extremely narrow edge and can thus
+penetrate any hide and leave gaping wounds. The darkness of the spear
+can be dissolved by the sunlight.
+Syntax note: <target> is not needed if caster is fighting the <target>.
+
+#
+"SUMMON"
+
+[Syntax      ] cast 'summon' <target>
+[Group       ] Magic-User
+[Level       ] 17
+[Minumun Cost] 50 Mana
+[Offensive   ] No
+[Description]
+--- Casting "Summon" will attempt to teleport another player to
+the room of the caster. If the target has summon protection on
+the spell will fail. 
+
+#
+FIRE
+
+Fire spells, such as fireball or firebolt tend to be unpredictable, as is
+the nature of fire, and have a large range of possible damage.
+
+#
+COLD
+
+Cold spells, such as cone of cold or chill touch, tend to be the most
+consistent offensive spells. Such is the nature of cold.
+
+#
+LIGHTNING
+
+Lighting spells, such as lightning bolt, are more powerful outside than
+inside, since outside one is closer to the natural sources of lightning.
+
+#~
+

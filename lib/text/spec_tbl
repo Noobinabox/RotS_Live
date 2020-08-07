@@ -1,0 +1,302 @@
+ALL LIST
+
+>specialize <spec_name>
+>specialize
+
+   After you become reknown and proficient in your abilities, you can
+choose an area to concentrate on, in your life. The effects of your
+selection vary, and can add to your abilities no matter what class you
+belong to.
+
+   Typing "specialize" without arguments will list your options. Once
+you have chosen, you stay with this specialization thereon. However,
+pracreset will purge your specialization, too.  (Free pracreset is a
+test feature, and will be eventually disabled).
+
+   Elemental specializations make your spells cast from the associated element
+harder to save against and your spells cast from the opposing element easier to
+save against.  Additionally, you are better at saving against spells from your
+chosen element (and take reduced damage from such spells), but have a harder
+time saving against spells from the opposing element (and take increased 
+damage from such spells).  Each elemental specialization also enhances 
+individual spells in unique ways, as described by the specialization.
+
+   Currently, you can specialize in the following:
+   
+  Fire          - * Increases the minimum damage of "firebolt".
+                  * Increases the damage of "fireball".
+				  * Increase the fire portion of "searing darkness".
+				  * Opposes: Cold
+
+  Cold          - * Increases the damage of "chill ray".
+                  * "Cone of cold" now applies a chilling effect to its target.
+				  * Opposes: Fire
+  
+  Lightning     - * Increases the damage of "lightning bolt".
+                  * Allows "lightning strike" to be cast outdoors without 
+				    lightning at reduced effectiveness.
+				  * Opposes: Darkness
+
+  Darkness      - * Increases the damage of "dark bolt".
+                  * Increases the darkness portion of "searing darkness".
+				  * Slightly increases the damage of "spear of darkness".
+				  * Opposes: Lightning
+				  
+  Teleportation - On this way of a traveler, your transportation spells
+                  will carry you farther. See SPELL BEACON
+ 
+  Regeneration  - This specialization enhances healing magic.  Specifically:
+                  * Increases the effectiveness of "curing saturation",
+                    "restlessness", "vitality", "regeneration", "cure self",
+					and "vitalize self".
+				  * Be warned that some negative effects of
+				    those spells also increase proportionally. The spec
+                    does not grant you higher spells/powers.
+
+  Protection    - This specialization enhances defensive magic.  Specifically:
+                  * Grants the "protection" power.  See POWER PROTECTION.
+                  * Makes "evasion" power more effective.
+				  * Makes "resist magic" power more effective.
+				  * Makes "shield" spell more effective.
+				  
+  Illusion      - The art of confusing and misguiding everybody.
+                  * Grants the "confuse" power.  See POWER CONFUSE.
+				  * Makes the "fear", "terror", and "haze" powers last longer.
+				  * Makes "halluciation" stronger.
+
+  Guardian      - The powerful art of summoning a Guardian mob to aid you
+                  through your adventures. See POWER GUARDIAN
+				 
+  Animals       - This specialization enhances your bond with animals.  
+                  Specifically:
+                  * Grants "whistle" skill.  See SKILL WHISTLE.
+				  * Allows you to tame more powerful animals.
+				  * The "calm" skill is faster and more successful.
+				  * Tamed pets can keep up with you better.
+
+  Stealth       - Will help you to avoid and cheat your enemies. 
+                  * Grants new skills, "stalk" and "cover".
+                    See SKILL STALK and SKILL COVER.
+				  * Increases the success of hiding, sneaking, and ambushing.
+  
+  Archery       - Makes you more effective using bows.
+                  * Allows you to set your shooting speed.
+
+  Arcane	- Makes you a master of all mage spells.
+  		  * Allows you to set your casting speed.
+
+  Wild fighting - Grants you an occasional rush of ferocity in battle,
+                  which significantly increases the damage of your next swing.
+				  When low on health and berserk, attack speed is increased.
+				  Recover some missing health when scoring a meaningful kill on berserk.
+				  Also gaints the skill "wild swing".  See SKILL WILD SWING.
+				  Ideal for warriors.
+				 
+  Light fighting- Makes you a master of fighting with light weapons and armor.
+                  Your ranger levels and dexterity contribute to offense, and light
+				  armor does not restrict your movement or skills.  Ideal for
+				  warriors, swashbucklers, and rangers.
+
+  Heavy fighting- Makes you a master of fighting with heavy weapons and armor,
+                  making the armor more effective and less restrictive on your 
+				  movement and skills.  Ideal for warriors and anyone that wants
+				  extra defense in heavy armor.
+
+  Defender      - Makes you a master of fighting with shields, allowing you to
+                  take reduced damage.  Ideal for warriors and swashbucklers.
+				
+  Weapon Master - Makes you a master of a variety of weapons, each granting a passive
+                  and active effect.  Ideal for warriors.
+				  
+				  
+  Battle Mage - Makes you a master of casting spells in combat.
+                Ideal for mages and mage/warriors.
+		  
+   Once made, the selection cannot be changed. Appropriate guildmasters
+will teach you your new skills at your own time.
+#
+ARCHERY
+
+If you specialize in archery you will be able to set your shooting speed. There
+are three shooting modes FAST, NORMAL, and SLOW. Setting your speed to FAST
+will reduce the tics of shooting by half and decrease the damage by half. While
+setting your speed to SLOW will double the tics of shooting and double the damage
+of your shots, and NORMAL setting keep your archery speed to normal tics and damage.
+
+Syntax:
+
+> set shooting fast
+> set shooting normal
+> set shooting slow
+
+SEE ALSO: "SKILLS ARCHERY"
+#
+STEALTH
+
+Specializing in stealth will help you avoid being detected while sneaking and
+hiding. This specialization grants you two skills "stalk" and "cover". In
+addition it also increases the damage done by ambush.
+
+SEE ALSO: "SKILLS STEALTH STALK COVER AMBUSH"
+#
+"WILD FIGHTING"
+
+Specializing in wild fighting will grant you an occasional rush of ferocity
+in battle, which significantly increases the damage of your next swing. The
+probability of this happening is based on your warrior level. Wild fighting
+speicialization also grants you access to the "swing" skill.
+
+SEE ALSO: "SKILLS SWING"
+#
+ARCANE
+
+If you specialize in arcane you will be able to set your mage spells casting
+time. There are three casting modes FAST, NORMAL, and SLOW. Setting your 
+casting time to FAST will decrease the tics required to cast a spell by half,
+while increasing the mana cost by double. Setting your casting time to SLOW
+will increase the tics required to cast a spell by double and reducing the
+mana cost by half. While setting your casting speed to normal will have
+your mage spells function as they typically do.
+
+Syntax:
+> set casting fast
+> set casting normal
+> set casting slow
+#
+FIRE
+
+Specializing in fire will make all mage spells of the fire type more effective
+against your opponents. Fire spec also increases the minimal damage done by 
+the spells "firebolt" and "fireball". When you specialize in fire saving
+against cold spells is harder to do, and players specializaed in cold have
+a harder time saving against your spells.
+
+#
+COLD
+
+Specializing in cold will make all mage spells of the cold type more effective
+against your opponents. Cold spec also adds a freeze affect to the spell
+"cone of cold". When you specialize in cold saving against fire spells is harder
+to do, and players specialized in fire have a harder time saving against your
+spells.
+
+#
+DARKNESS
+
+Specializing in the darkness will make all mage spells with the dark descriptor
+more effective against your opponents. When you specialize in darkness saving
+against lightning spells is harder to do, and players specialized in lightning
+have a harder time saving against your spells.
+
+#
+LIGHTNING
+
+Specializing in lightning will make all mage spells of the lightning type more
+effective against your opponents. This specialization allows you to cast 
+"lightning bolt" inside and "lightning strike" outside of a lightning storm.
+When you specialize in lightning saving against darkness spells is harder to
+do, and players specialized in darkness have a harder time saving against your
+spells.
+
+#
+TELEPORTATION
+
+The teleportation specialization increases the distance one can travel with
+their transportation spells. This specialization also grants you access to
+the "beacon spell".
+
+SEE ALSO: "SPELLS BEACON"
+#
+REGENERATION
+
+This specialization increase the effectiveness of all healing magic, be
+warned that some negative effects of the healing spells are also increased.
+The following spells and powers are effected by this specialization: 
+"curing saturation", "restlessness", "vitality", "regeneration", "cure self",
+"vitalize self".
+
+#
+PROTECTION
+
+Specializing in protection enchances all defensive magic such as "resist magic",
+"shield", and "evasion". This specialization also grants you access to the 
+"protection" power.
+
+SEE ALSO: "POWERS PROTECTION"
+#
+ILLUSION
+
+The illusion specialization increases all mystic powers that are mind affecting
+such as "fear", "terror", "halluciation", and "haze". This specializations also
+grants you access to the "confuse" power.
+
+SEE ALSO: "POWERS FEAR TERROR HAZE CONFUSE HALLUCIATION"
+#
+GUARDIAN
+
+The powerful art of summoning a Guardian mob that is race specific to aid you
+through your adventures. 
+
+SEE ALSO: "POWERS GUARDIAN"
+#
+ANIMALS
+
+Allows you to tame more powerful animals and giving them a slight boost to their
+strength and damage. This specialization grants you the "whistle" skill and makes
+calming animals faster and easier.
+
+SEE ALSO: "SKILLS WHISTLE TAME CALM ANIMALS"
+#
+"LIGHT FIGHTING"
+
+Specializing in light fighting makes you a master of fighting with light, one-handed 
+weapons. You will occasionally find an opening in your enemy's defenses and swing 
+twice at them.  This spec allows you to move and fight more easily in
+light armor, and to use your dexterity instead of your strength for offense with light weapons
+(if it is higher).  You also get to add a percentage of your ranger level to your warrior
+level for determining your offensive bonus.  
+
+#
+"HEAVY FIGHTING"
+
+Makes you a master of fighting with heavy weapons and heavy armor.  Your weapon attacks
+with heavy weapons deal more damage. Heavy armor has less of a negative effect on you 
+and blocks more damage. Also this specialization increases the success and damage of the 
+skill "kick".
+
+SEE ALSO: "SKILLS KICK WEAPON MASTERY"
+#
+DEFENDER
+
+Specializing in defender makes you a master of fighting with shields. You have a 
+chance to occassionally block an attack that would have otherwise hit you, and
+significantly reducing the damage of the attack.
+#~
+
+#
+WEAPON MASTER
+This specialization makes you a master of a variety of weapons, granting bonuses
+based on the weapon that is wielded.  This spec is intended to offer high passive
+damage and strategic options, allowing you to choose the right tool for the job
+depending on the situation that you're in.
+
+* Axes: Deal increased, and more consistent, damage.
+* Clubs/Hammers: Extra OB, chance to slow your opponent on hit.
+* Smiters: Extra OB, chance to haze on hit.
+* Spears: Extra PB, chance to double armor penetration on hit.
+* Whips: Extra attack speed, chance to ignore your opponent's shield.
+* Flails: Increased damage, chance to ignore your opponent's shield.
+* Daggers: Extra attack speed, chance to ignore your opponent's armor.
+* Swords: Small extra OB and PB, chance to double your attack speed 
+          for your next attack.
+#~
+
+#
+BATTLE MAGE
+This specialization makes you more proficient at staying in battle while casting spells.
+It provides the following benefits and drawbacks.
++ Lose ability to prepare spells.
++ Gain bonus spell power and spell penetration based on tactics and mage level.
++ Chance to ignore armor effects when casting.
++ Chance to continue casting after taking damage.
+#~

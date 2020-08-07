@@ -1,0 +1,115 @@
+INTRODUCTION
+
+  ASIMA is the Assembler-Style Intepreter for Mobile Activity.
+
+  ASIMA is a built-in interpreter for programs in formall commands, that can
+be independently assigned for mobiles to perform. The commands include simple
+math and logic, data handling and execution of standard MUD commands.
+  All procedure data is saved between calls, allowing for involved mobile
+behaviour.
+
+  This language has no formal variables, but instead uses a stack for numerical
+data and a circular list for other data - references to characters, objects,
+etc. See the "STACK" and "LIST" articles for details. For example, to half
+the hitpoints of your opponent, you'll have to do the following:
+1) get your opponent to list;      2) get to stack the hps of the char in list;
+3) half the value in stack;        4) set from stack hps of the char in list;
+5) remove the char from list (you do have to be neat).
+
+  Written in ASIMA, the above sequence will look like "fFvh2/VhSD" -
+two letters per paragraph in this case.
+
+  For the reasoning behind this approach to mobile language, see WHY.
+#
+WHY
+
+  As I see it, a language for mobile activity must be optimal by the following
+parameters: 
+  it MUST be safe for use both with erroneous and malicious programs;
+  it must be sparing in its use of CPU and memory, because mobiles are many;
+  it must be flexible enough to meet user fantasies;
+  it should be compact in the source code, and easy to upgrade;
+  it should be easy to use by non-professionals.
+
+  Desire to answer this list resulted in the formal commands and stack logics.
+The last requirement is obviously not met, and I regret that.
+
+  The reason for the eerie outer appearance of ASIMA is that there is almost no
+precompilation of programs. All commands are performed as you put them down.
+Essentially, you write an executable code. This traded coding simplicity for
+much higher performance of the resulting program.
+
+   Why interpreter, and not something more effective? To let multiple builders
+write their small procedures directly into the source code would be extremely
+unsecure, subject to confusion and would crowd the program with hordes of
+small, very similar pieces of code. To write some C-like compiler that will
+produce actual executable code and incorporate it to the main program is
+beyond me, frankly, and very vulnerable to erroneous programs.
+   One happy day, maybe, we'll make some more friendly language that will be
+compiled into ASIMA before execution.
+#
+STACK
+
+   The digital data in ASIMA is treated in stack, also known as bracket-free
+or polish arithmetics.
+   "A stack" is a sequence of numbers, to which you can add element, remove
+element and perform operation with the "lowest" elements. When you add an
+element, it becomes the lowest, and will be the first to be retrieved when
+you request an element from the stack.
+   Here is an example of stack arithmetics. Suppose you want to calculate
+the value of 3*(15+2). In bracket-free notation, it will look as "3.15.2+*".
+Note the dot symbol between 3 and 15. It is a "no-command" operator, that
+causes no actions, but can separate 3 and 15, saving you from entering 315.
+Another way to calculate it would be "15.2+3*".
+This is how the stack looks while processing those sequences:
+
+Command:  3  .  1  5  .  2  +  *  |  1  5  .  2  +  3  *
+                                  |
+   S	  3  3  3  3  3  3  3 51  |  1 15 15 15 17 17 51
+   T            1 15 15 15 17     |           2     3
+   A                     2        |
+   C
+   K
+
+   All traditional arithmetic operatinos are supported
+
+   Another small group of stack operations is rotations and duplication.
+Rotation up takes the highest element in and puts it to the stack bottom,
+closest to the stack "entrance". Rotation down takes the lowest element
+and places it on top. Duplication, well, duplicates the lowest element,
+while removal removes it. The "exchange" command switches the two lowest
+elements.
+
+Operation:  Rotate_up  Duplicate Rotate_down  Remove  Exchange
+
+  S     1      3           3          2         2         2
+  T     2      1           1          3         3         1
+  A     3      2           2          1         1         3
+  C                        2          2
+  K
+
+   The actual rotation commands in ASIMA are somewhat more intricate. Both
+rotation up and rotation down retrieve the lowest element in stack as their
+index, and then perform rotation "index-1" times. If "index" is either 0
+or 1, no rotation is performed.
+   This unusual syntax is used for compatibility with the "search list"
+command that scans the List for a particular element in it. The commands
+are used as follows:
+
+Operation  Rotate up (index=3) 0  Rotate up (index=0) 2   Rotate down(index=2)
+
+  S    11              13      13          13         13         12
+  T    12              14      14          14         14         13
+  A    13              11      11          11         11         14
+  C    14              12      12          12         12         11
+  K     3                       0                      2
+
+Note, that when index is 0 (or 1), no rotation is performed, but the 0
+is removed from stack anyway.
+
+#
+LIST
+
+   The List in ASIMA serves for storage and interaction with  non-numerical
+information. It contains records of "target" type, that is also used to
+transfer information in the code.

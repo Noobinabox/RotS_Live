@@ -1,0 +1,440 @@
+ALL LIST
+See help on each power as "man power <name of the spell>"
+Mystic power list modified by Prami, 09/16/98.
+
+ MYSTIC______________________________________________________________________
+/(level) powername |(level) powername |(level) powername |(level) powername \
+|_____________________________________|_____________________________________|
+|(1) Curse         |(6)  Pragmatism   |(17)~Infravision  |  ~ = good races  |
+|(1) Detect Hidden |(6)  Restlessness |(18) Terror       |      only.       |
+|(1) Detect Magic  |(8)  Remove Poison|(20) Enchant      |                  |
+|(1) Revive        |(8)  Resist Magic |       Weapon     |  # = evil races  |
+|(2) Evasion       |(11) Slow         |(20) Death Ward   |      only.       |
+|(3) Hallucinate   |       Digestion  |(27) Guardian     |                  |
+|(3)#Mind Block    |(11) Vitality     |                  |                  |
+|(3) Resist Poison |(12) Fear         |                  |                  |
+|(4) Curing        |(13) Dispel Regen |                  |                  | 
+|      Saturation  |(13) Divination   |                  |                  |
+|(5) Haze          |(14) Poison       |                  |                  |
+|(6) Insight       |(15) Regeneration |                  |                  |
+|                  |(16)~Sanctuary    |                  |                  |
+|__________________|__________________|__________________|__________________|
+#
+HELP GENERAL LEVEL
+   The Valar no longer interfere with the mortal lands of Middle-Earth,
+thus there are no longer any true clerics or priests.  The system of
+religeon found in parts of the world still exist, but not in a pure form,
+more that of a former truth held together as a lie of strength.
+   But those that realized the leave of the Valar had come, and chose
+to except it, still retained their habitual studies.  And so was born
+the Mystic.
+   Mystics are students of the "Wraith-world", specializing in the affects
+of the mind and the body, using the power of their soul, their being, to
+destroy their opponents.  Their tremendous will power, combined with the
+ability to fight via their mind, allows them to wage battles even against
+non-physical beings.
+   Unlike Magic-Users, the Mystic does not need mana to use their powers,
+instead drawing from Spirit, which they gain on their life path. Mystical
+powers gain in strength as the Mystic gains in experience.  Note that when
+using powers for other's benefit, actual benefit of the power will be an
+average between the Mystic and the target's mystical ability.   
+
+
+#
+"MIND BLOCK"
+
+[Syntax      ] cast 'mind block'
+[Group       ] Mystic
+[Level       ] 3
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Mind block will give the caster some protection against mental attacks
+which affect their mental stats.  
+
+That's all it does for now, but it may make it more difficult to attack other
+people's mental stats too in time.
+
+This spell is not available to good races.
+
+#
+PROTECTION
+[Syntax      ] cast 'protection' <fire | cold | lightning | attack> [victim]
+[Group       ] Mystic, Protection
+[Level       ] 1
+[Minimum Cost] ?
+[Offensive   ] No
+{Description ]
+
+  This convoluted spell grants resistance to one kind of damage to you, or
+to your friend. Nobody can have more than one protection at once, and some
+people will not accept some kinds of protection.
+  You need to specialize in protection to learn this spell.
+
+See: SPECIALIZATIONS
+#
+"DETECT HIDDEN"
+
+[Syntax      ] cast 'detect hidden'
+[Group       ] Mystic
+[Level       ] 1
+[Minimum Cost] 0
+[Offensive   ] No
+{Description ]
+---Casting "Detect Hidden" increases one's ability to see hidden life forms
+around them.  This affect does not guarantee success in finding hidden life,
+but does help.
+
+#
+"DETECT MAGIC"
+
+[Syntax      ] cast 'detect magic'
+[Group       ] Mystic
+[Level       ] 1
+[Minimum Cost] 0
+[Offensive   ] No
+[Description ]
+---Casting "Detect Magic" endows one with the ability to see a magical aura
+surrounding items of magical nature, as well as the ability to see what magic
+spells or mystical powers are affecting a player or mob.
+
+#
+INSIGHT
+
+[Syntax      ] cast 'insight' <target>
+[Group       ] Mystic
+[Level       ] 6
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Insight" will increase the perception of chosen target, bringing
+one closer to the wraith-world.
+
+#
+PRAGMATISM
+
+[Syntax      ] cast 'pragmatism' <target>
+[Group       ] Mystic
+[Level       ] 6
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Pragmatism" will decrease the perception of chose target.
+
+#
+CURSE
+
+[Syntax      ] cast 'curse' <target>
+[Group       ] Mystic
+[Level       ] 1
+[Minimum Cost] 1
+[Offensive   ] Yes
+[Description ]
+---Casting "Curse" will damage the statistics of chosen <target>.  This
+is mainly of use in mental combat.  The power's opposite is revive.
+
+#
+REVIVE
+
+[Syntax      ] cast 'revive' <target>
+[Group       ] Mystic
+[Level       ] 1
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Revive" will replenish damaged statistics of chosen <target>.
+This is mainly of use after mental combat.  The power's opposite is curse.
+
+#
+EVASION
+
+[Syntax      ] cast 'evasion'
+[Group       ] Mystic
+[Level       ] 2
+[Minimum Cost] 0
+[Offensive   ] No
+[Description ]
+---Casting "Evasion" improves the caster's ability to dodge physical
+attacks from creatures with low perception.  Note that it's effect does
+not show up in the 'score' command.
+
+#
+POISON
+
+[Syntax      ] cast 'poison' <target>
+[Group       ] Mystic
+[Level       ] 14
+[Minimum Cost] 5
+[Offensive   ] Yes
+[Description ]
+---Casting "Poison" will poison the chosen target, inflicting small
+amounts of damage at intervals of time and lowering the target's rate
+of regeneration for a period of time.
+
+Elves and Uruk-Lhuth are known to be very resistant to poison.
+#
+"REMOVE POISON"
+
+[Syntax      ] cast 'remove poison' <target>
+[Group       ] Mystic
+[Level       ] 8
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Remove Poison" will attempt to remove the poison from the
+chosen target.
+
+#
+"CURING SATURATION"
+
+[Syntax      ] cast 'curing saturation' <target>
+[Group       ] Mystic
+[Level       ] 4
+[Minimum Cost] 1
+[Offensive   ] No
+[Description ]
+---Casting "Curing Saturation" increases the chosen target's healing rate,
+at the cost of movement points.
+
+#
+RESTLESSNESS
+
+[Syntax      ] cast 'restlessness' <target>
+[Group       ] Mystic
+[Level       ] 6
+[Minimum Cost] 0
+[Offensive   ] No
+[Description ]
+---Casting "Reslessness" increases the chosen target's movement regeneration,
+at the cost of hit points.
+
+#
+"RESIST MAGIC"
+
+[Syntax      ] cast 'resist magic'
+[Group       ] Mystic
+[Level       ] 8
+[Minimum Cost] 0
+[Offensive   ] No
+[Description ]
+---Casting "Resist Magic" will increase the caster's endurance against
+enemies' magic.
+
+#
+"RESIST POISON"
+
+[Syntax      ] cast 'resist poison' <target>
+[Group       ] Mystic
+[Level       ] 3
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Resist Poison" when poisoned will enable your body to fight the
+poison better, enabling you to overcome its effects faster.
+
+#
+"SLOW DIGESTION"
+
+[Syntax      ] cast 'slow digestion' <target>
+[Group       ] Mystic
+[Level       ] 11
+[Minimum Cost] 1
+[Offensive   ] No
+[Description ]
+---Casting "Slow Digestion" will slow down the chosen target's rate of
+digestion, thus allowing him to wait longer between meals.
+
+#
+"DISPEL REGENERATION"
+
+[Syntax      ] cast 'dispel regeneration' <target>
+[Group       ] Mystic
+[Level       ] 13
+[Minimum Cost] 3
+[Offensive   ] No
+[Description ]
+---Casting "Dispel Regeneration" will remove the effects of regeneration
+spells such as Restlessness, Curing Saturation, etc. from the chosen
+target.
+
+#
+FEAR
+
+[Syntax      ] cast 'fear' <target>
+[Group       ] Mystic
+[Level       ] 12
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Fear" will scare the chosen target, causing them to flee
+chaotically until they save vs. the effect.
+
+#
+DIVINATION
+
+[Syntax      ] cast 'divination'
+[Group       ] Mystic
+[Level       ] 13
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Divination" will give the caster detailed information about
+the room the power is cast in.
+
+#
+SANCTUARY
+
+[Syntax      ] cast 'sanctuary' <target>
+[Group       ] Mystic
+[Level       ] 16
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Sanctuary" will create a mystical aura around the chosen
+target, preventing some attacks on the target as long as they do not
+cast on or attack others.
+
+#
+VITALITY
+
+[Syntax      ] cast 'vitality' <target>
+[Group       ] Mystic
+[Level       ] 11
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Vitality" will significantly increase the specified target's
+movement point regeneration.
+
+#
+TERROR
+
+[Syntax      ] cast 'terror'
+[Group       ] Mystic
+[Level       ] 18
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Terror" will scare everyone in the room who does not save vs.
+the power.  It's effect on the people in the room is similar to fear,
+although it is easier to save against terror.
+
+#
+"ENCHANT WEAPON"
+
+[Syntax      ] cast 'enchant weapon' <target>
+[Group       ] Mystic
+[Level       ] 20
+[Minimum Cost] 50
+[Offensive   ] No
+[Description ]
+---Casting "Enchant Weapon" will mystically enchant target weapon,
+increasing its offensive bonus given, and making it only usable by
+one of the caster's alignment.  The weapon wielded by the caster is
+checked for target word first, and then inventory.
+
+#
+DEATH WARD "DEATH WARD"
+
+[Syntax      ] cast 'death ward'
+[Group       ] Mystic
+[Level       ] 20
+[Minimum Cost] 0
+[Offensive   ] No
+[Description ]
+---Casting "Death Ward" will give the caster a ward from death.  If
+the caster is killed while under the affects of the ward, there is a
+chance that the caster will not have died, and will be disengaged from
+the battle.
+
+
+#
+CONFUSE
+
+[Syntax      ] cast 'confuse'
+[Group       ] Mystic
+[Level       ] 0
+[Minimum Cost] 10
+[Offensive   ] No
+[Description ]
+---Casting "Confuse" on your battle opponent will make them well... confused,
+and unable to use their skills and spells properly for some period of time.
+The ability to fully concentrate will gradually come back, as the power wears
+off. The success heavily depends on your proficiency in mystical skills.
+
+One must be specialized in the art of Illusion in order to be able to learn Confuse.
+
+See Also: SPECIALIZATIONS
+
+#
+HALLUCINATE
+
+[Syntax      ] cast 'hallucinate' <opponent>
+[Group       ] Mystic
+[Level       ] 3 
+[Minimum Cost] 2
+[Offensive   ] Yes
+[Description ]
+---Casting "hallucinate" on an opponent will cloud their vision and create the 
+illusion of blurred images in their head. The number of "images" depends heavily 
+on how powerful a mystic the caster is, and how well-versed with the art of the 
+illusion they are. When an affected opponent tries to hit someone (the caster or 
+anyone else), there is a chance that they will hit an "image" and realize that 
+they've just hit nothing. This chance decreases as they find out who's real and 
+who isn't. Once the opponent lands a hit on someone, they are no longer affected by 
+the power.
+
+#
+HAZE
+
+[Syntax      ] cast 'haze' <target>
+[Group       ] Mystic
+[Level       ] 5
+[Minimum Cost] 1
+[Offensive   ] No
+[Description ]
+---Casting "Haze" will cover eyes of a target with a transparent 
+psychic veil. The target will have difficulties finding the right way 
+and stumble in fight.  The effect is not drastic, but fairly annoying.
+
+#
+REGENERATION
+
+[Syntax      ] cast 'regeneration' <target>
+[Group       ] Mystic
+[Level       ] 15
+[Minimum Cost] 5
+[Offensive   ] No
+[Description ]
+---Casting "Regeneration" will increate the healing rate of chosen
+target.
+
+#
+GUARDIAN
+
+[Syntax      ] cast 'guardian'
+[Group       ] Mystic
+[Level       ] 27
+[Minimum Cost] 25
+[Offensive   ] No
+[Description ]
+---Casting "Guardian" will summon a guardian mob to protect the caster.
+The mobile that is summoned is determined by the race of the caster.
+
+One must be specialized in the Guardian art form to learn the Guardian Skill.
+ 
+See Also: SPECIALIZATIONS
+
+#
+INFRAVISION
+
+[Syntax      ] cast 'infravision'
+[Group       ] Mystic
+[Level       ] 17
+[Minimum Cost] 2
+[Offensive   ] No
+[Description ]
+---Casting "Infravision" will give the caster the ability to see in the
+dark as if it were daytime.
+
+#~

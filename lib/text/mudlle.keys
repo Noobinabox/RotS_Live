@@ -1,0 +1,96 @@
+Mudlle commands, semi-unsorted.
+
+Main body:
+
+?	reports stack and list to room.
+.	empty command.
+\	comment till the end of line
+@	a label. a label is three symbol long
+M	use the label
+$	subroutine number, it's five digit long
+,	interrupt, return FALSE
+;	interrupt, return TRUE
+Q	reset all and return FALSE
+R	reset all and return TRUE
+0..9	well, digits. to stack
+`...`	text, up to 255. to list.
++,-,*,/,  |
+<,>,=,  | binary arithmetic with stack
+&,|       |
+!	unary NOT with stack
+m	perform a command without arguments. cmd, subcmd from stack
+c	perform a command with one argument from list
+C	perform a command with two arguments from list
+d	delay itself to rounds from stack	
+s	say text from list, if it's text
+S	service commands
+Z	item to string (not checked yet)
+v	to_stack group, two-letter command
+V	from_stack group, two-letter command
+f	to_list group, two-letter command'
+
+K	calling a subroutine, its number from stack
+r	return from a subroutine
+g	unconditional goto, address from stack
+i	conditional goto, if(second lowest) then goto (lowest).
+-------------------------------------------------
+Service commands (S):
+
+u	duplicate stack
+d	delete from stack
+x	switch teh two lowest in stack
+f	rotate forward n-1 times, (the lowest becomes the n-th )
+b	rotate backward n-1 times(the n-th becomes the lowest)
+r	clean up stack
+U	duplicate list
+D	delete from list
+X	switch the two lowest in list
+F	rotate forward in list n-1 times
+B	rotate backward in list n-1 times
+C       check for a duplicate item in list, return its position for f/b
+            and remove the lowest list item, if a duplicate found.
+N	get the next global item | next to the lowest in the list. for
+n	get the next local item  | rooms and objects it does what it can
+
+           note: f,b,F,B take their "n" from stack
+-----------------------------------------------------
+
+To stack (v):
+
+C	the command number
+c	subcommand number
+I	the callflag
+h,m,v	hit, mana, move          |  these will be replaced probably
+H,M,V	maxhit, maxmana, maxmove | with another command, more general
+l	level
+r	room number(real)
+R	real room number from a virtual number
+P	takes a room number from stack, puts direction to move toward it.
+=	compares the two lowest items in the list and removes them
+N	takes a value from stack and puts random (0, value) to stack
+T	type of the item in list
+S	scan the list for the entry similar to the lowest item. remove the
+          entry from the list if found, put the "distance" to stack, or 0
+          if not found.
+--------------------
+
+From stack (V):
+
+I	sets the call mask
+h,m,v	sets hit, mana, move
+--------------------
+ To list (f):
+
+s	self
+a	command line, argument (?)
+i	value from stack, converted to text
++	concatenate to lowest items as strings, converting if need be
+r	the room the host is in
+R	the room by number from stack
+h	the char who called the procedure
+c	the first char in host's room, visible, not host
+C	the first char in host's room, visible, not host, not npc
+f	fighting opponent. if it's a char in the list, remove it and 
+        insert the one he's fighting, or zero, else just remove
+        from the list and insert zero.
+             r,R,c,f also put 1 to stack if succesful, 0 otherwise

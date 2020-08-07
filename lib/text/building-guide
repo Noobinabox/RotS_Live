@@ -1,0 +1,26 @@
+
+- Describe the area, do not assume the character does or is doing anything.
+  Do not assume the opinions, or race of a character... Somthing smelling
+  bad is a good example... it might smell bad to a elf, but a troll might
+  like that paticular smell. This also goes for the time of day, and other
+  things that change continuously. Remain as Neutral as possible.
+
+- Descriptions should be at least 4 lines long.
+
+- Always Format your description with the %f option.
+
+- Avoid the use of the words "You" and "Your" at all costs. Also avoid
+  exclimation points, and such things as incomplete sentences, although
+  they are used in literary works occassionally, please don't use them
+  here.
+
+- Don't forget to set exit_width (/12) for all exits, it is not
+  easy to notice that they have not been set, so please don't
+  forget them.
+
+- No Death Traps.
+
+
+
+
+

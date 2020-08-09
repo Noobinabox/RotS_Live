@@ -688,6 +688,7 @@ void Crash_follower_save(struct char_data* ch, FILE* fp)
     struct obj_file_elem dummy_object;
 
     dummy_object.item_number= SENTINEL_ITEM_ID_VALUE;
+    dummy_object.item_number_deprecated = DEPRECATED_ID_VALUE;
     for (k = ch->followers; k; k = next_fol) {
         next_fol = k->next;
         if (!IS_NPC(k->follower))

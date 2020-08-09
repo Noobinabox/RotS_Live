@@ -271,10 +271,9 @@ DEFENDER
 Specializing in defender makes you a master of fighting with shields. You have a 
 chance to occassionally block an attack that would have otherwise hit you, and
 significantly reducing the damage of the attack.
-#~
 
 #
-WEAPON MASTER
+"WEAPON MASTER"
 This specialization makes you a master of a variety of weapons, granting bonuses
 based on the weapon that is wielded.  This spec is intended to offer high passive
 damage and strategic options, allowing you to choose the right tool for the job
@@ -289,10 +288,9 @@ depending on the situation that you're in.
 * Daggers: Extra attack speed, chance to ignore your opponent's armor.
 * Swords: Small extra OB and PB, chance to double your attack speed 
           for your next attack.
-#~
 
 #
-BATTLE MAGE
+"BATTLE MAGE"
 This specialization makes you more proficient at staying in battle while casting spells.
 It provides the following benefits and drawbacks.
 + Lose ability to prepare spells.

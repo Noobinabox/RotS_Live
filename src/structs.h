@@ -26,27 +26,27 @@
 #include <vector>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch) * 2)
-const int ENE_TO_HIT = 1200;
-#define BAREHANDED_DAMAGE 2
-#define PRACS_PER_LEVEL 3
-#define LEA_PRAC_FACTOR 5
-const int LIGHT_WEAPON_WEIGHT_CUTOFF = 235;
+const int constexpr ENE_TO_HIT = 1200;
+const int constexpr BAREHANDED_DAMAGE = 2;
+const int constexpr PRACS_PER_LEVEL = 3;
+const int constexpr LEA_PRAC_FACTOR = 5;
+const int constexpr LIGHT_WEAPON_WEIGHT_CUTOFF = 235;
 
-const int INVALID_GUARDIAN = -1;
-const int AGGRESSIVE_GUARDIAN = 0;
-const int DEFENSIVE_GUARDIAN = 1;
-const int MYSTIC_GUARDIAN = 2;
+const int constexpr INVALID_GUARDIAN = -1;
+const int constexpr AGGRESSIVE_GUARDIAN = 0;
+const int constexpr DEFENSIVE_GUARDIAN = 1;
+const int constexpr MYSTIC_GUARDIAN = 2;
 
-#define LEVEL_IMPL 100
-#define LEVEL_GRGOD 97
-#define LEVEL_AREAGOD 95
-#define LEVEL_PERMIMM 94
-#define LEVEL_GOD 93
-#define LEVEL_IMMORT 91
-#define LEVEL_MINIMM LEVEL_IMMORT /* The lowest immortal level */
-#define LEVEL_MAX 30
+const int constexpr LEVEL_IMPL = 100;
+const int constexpr LEVEL_GRGOD = 97;
+const int constexpr LEVEL_AREAGOD = 95;
+const int constexpr LEVEL_PERMIMM = 94;
+const int constexpr LEVEL_GOD = 93;
+const int constexpr LEVEL_IMMORT = 91;
+const int constexpr LEVEL_MINIMM = LEVEL_IMMORT; /* The lowest immortal level */
+const int constexpr LEVEL_MAX = 30;
 
-#define LEVEL_FREEZE LEVEL_PERMIMM
+const int constexpr LEVEL_FREEZE = LEVEL_PERMIMM;
 
 const int constexpr NUM_OF_DIRS = 6;
 const int constexpr PULSE_ZONE = 12;
@@ -55,23 +55,23 @@ const int constexpr PULSE_VIOLENCE = 12;
 const int constexpr PULSE_FAST_UPDATE = 12;
 const int constexpr PULSE_MENTAL_FIGHT = 8;
 
-#define MAX_CHARACTERS 64000
-#define MAX_PCCHARACTERS 32000
-#define SMALL_BUFSIZE 512
-#define LARGE_BUFSIZE 16384
-#define MAX_STRING_LENGTH 8192
-#define MAX_INPUT_LENGTH 255
-#define MAX_MESSAGES 255
-#define MAX_ITEMS 153
-#define MAX_RACES 32
-#define MAX_BODYTYPES 16
-#define MAX_BODYPARTS 11
-#define MAX_RACE_NAME_LENGTH 14
-#define MIN_NAME_LENGTH 3
-#define MAX_NAME_LENGTH 12
-#define MAX_PWD_LENGTH 10 /* Used in char_file_u *DO*NOT*CHANGE* */
-#define HOST_LEN 30 /* Used in char_file_u *DO*NOT*CHANGE* */
-#define MAX_MAXBOARD 22 /* the max number of boards ever -  */
+const int constexpr MAX_CHARACTERS = 64000;
+const int constexpr MAX_PCCHARACTERS = 32000;
+const int constexpr SMALL_BUFSIZE = 512;
+const int constexpr LARGE_BUFSIZE = 16384;
+const int constexpr MAX_STRING_LENGTH = 8192;
+const int constexpr MAX_INPUT_LENGTH = 255;
+const int constexpr MAX_MESSAGES = 255;
+const int constexpr MAX_ITEMS = 153;
+const int constexpr MAX_RACES = 32;
+const int constexpr MAX_BODYTYPES = 16;
+const int constexpr MAX_BODYPARTS = 11;
+const int constexpr MAX_RACE_NAME_LENGTH = 14;
+const int constexpr MIN_NAME_LENGTH = 3;
+const int constexpr MAX_NAME_LENGTH = 12;
+const int constexpr MAX_PWD_LENGTH = 10; /* Used in char_file_u *DO*NOT*CHANGE* */
+const int constexpr HOST_LEN = 30; /* Used in char_file_u *DO*NOT*CHANGE* */
+const int constexpr MAX_MAXBOARD = 22; /* the max number of boards ever -  */
 /*   used in objsave                */
 
 #define MAX_ZONES 500
@@ -859,18 +859,18 @@ enum player_specs {
 #define PLRSPEC_BTLEMS 19
 
 /* Races for PCS */
-#define RACE_GOD 0
-#define RACE_HUMAN 1
-#define RACE_DWARF 2
-#define RACE_WOOD 3
-#define RACE_HOBBIT 4
-#define RACE_HIGH 5
-#define RACE_BEORNING 6
-#define RACE_URUK 11
-#define RACE_ORC 13
-#define RACE_MAGUS 15
-#define RACE_OLOGHAI 17
-#define RACE_HARADRIM 18
+const int constexpr RACE_GOD = 0;
+const int constexpr RACE_HUMAN = 1;
+const int constexpr RACE_DWARF = 2;
+const int constexpr RACE_WOOD = 3;
+const int constexpr RACE_HOBBIT = 4;
+const int constexpr RACE_HIGH = 5;
+const int constexpr RACE_BEORNING = 6;
+const int constexpr RACE_URUK = 11;
+const int constexpr RACE_ORC = 13;
+const int constexpr RACE_MAGUS = 15;
+const int constexpr RACE_OLOGHAI = 17;
+const int constexpr RACE_HARADRIM = 18;
 
 /* Races used for NPCs */
 #define RACE_EASTERLING 14

@@ -1325,9 +1325,9 @@ bool battle_mage_handler::does_spell_get_interrupted() const {
         return number() > base_chance;
     }
     
-    float warrior_bonus = warrior_level / 100.00;
-    float mage_bonus = mage_level / 100.00;
-    float tactic_bonus = tactic_bonus / 100.00;
+    float warrior_bonus = warrior_level / 100.0f;
+    float mage_bonus = mage_level / 100.0f;
+    float tactic_bonus = (tactics * 2) / 100.0f;
     float total_bonus = base_chance + warrior_bonus + mage_bonus + tactic_bonus;
     return number() > total_bonus;
 }
@@ -1341,8 +1341,8 @@ bool battle_mage_handler::does_armor_fail_spell() const {
         return number() > base_chance;
     }
 
-    float tactic_bonus = (tactics * 2) / 100;
-    float warrior_bonus = warrior_level / 100;
+    float tactic_bonus = (tactics * 2) / 100.0f;
+    float warrior_bonus = warrior_level / 100.0f;
     float total_bonus = base_chance + tactic_bonus + warrior_bonus;
     return number() > total_bonus;
 }
@@ -1368,7 +1368,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
     if (tactics != TACTICS_BERSERK)
         return;
 
-    if (victim->get_level() * 6 / 10 >= character->get_capped_level())
+    if (victim->get_level() >= character->get_capped_level() * 6 / 10)
     {
         int missing_health = max_health - current_health;
         character->tmpabilities.hit += missing_health * 0.1f;

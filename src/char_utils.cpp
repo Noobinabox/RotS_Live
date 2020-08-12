@@ -1321,7 +1321,7 @@ bool battle_mage_handler::does_spell_get_interrupted() const {
         return true;
     }
 
-    if (tactics < 4) {
+    if (tactics < TACTICS_AGGRESSIVE) {
         return number() > base_chance;
     }
     
@@ -1337,7 +1337,7 @@ bool battle_mage_handler::does_armor_fail_spell() const {
         return true;
     }
 
-    if (tactics < 4) {
+    if (tactics < TACTICS_AGGRESSIVE) {
         return number() > base_chance;
     }
 

@@ -873,10 +873,10 @@ const int constexpr RACE_OLOGHAI = 17;
 const int constexpr RACE_HARADRIM = 18;
 
 /* Races used for NPCs */
-#define RACE_EASTERLING 14
-#define RACE_HARAD 12
-#define RACE_UNDEAD 16
-#define RACE_TROLL 20
+const int constexpr RACE_EASTERLING = 14;
+const int constexpr RACE_HARAD = 12;
+const int constexpr RACE_UNDEAD = 16;
+const int constexpr RACE_TROLL = 20;
 
 #define localtime(x) localtime((time_t*)x)
 #ifndef CONSTANTSMARK

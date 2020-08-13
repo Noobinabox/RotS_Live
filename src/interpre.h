@@ -18,15 +18,6 @@
 
 #define MAX_CMD_LIST 350
 
-struct command_params
-{
-    char_data* character = nullptr;
-    char* argument = nullptr;
-    waiting_type* wait_data = nullptr;
-    int command = 0;
-    int subcommand = 0;
-};
-
 #define ACMD(c)                                                              \
     void(c)(struct char_data * ch, char* argument, struct waiting_type* wtl, \
         int cmd, int subcmd)
@@ -34,16 +25,6 @@ struct command_params
 //#define CRYPT(a,b) ((char *) crypt((a),(b)))
 
 #define CRYPT(a, b) ((char*)(a))
-
-struct special_func_params
-{
-    char_data* host = nullptr;
-    char_data* character = nullptr;
-    int command = 0;
-    char* argument = nullptr;
-    int callflag = 0;
-    waiting_type* wait_data = nullptr;
-};
 
 typedef int (*special_func)(char_data* host, char_data* character, int cmd, char* argument, int callflag, waiting_type* wait_data);
 #define SPECIAL(cname) int(cname)(struct char_data * host, struct char_data * ch, int cmd, char* arg, int callflag, waiting_type* wtl)

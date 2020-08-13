@@ -1422,49 +1422,46 @@ int choose_mystic_spell(char_data* caster, char_data* target)
     return spell_list[spell_list_index][3];
 }
 
-char_data* choose_caster_target(char_data* caster)
+char_data* choose_mystic_target(char_data* caster)
 {
     // Choose an initial target.  If the caster isn't fighting anyone, it will be himself.
     // Otherwise, it will be someone that is in combat with him.
-    if (caster->specials.fighting == nullptr) {
+    if (caster->specials.fighting == NULL) {
         return caster;
     }
 
-    char_data* best_target = nullptr;
-    char_data* fallback_target = caster->specials.fighting;
+    // There isn't a good way to count how many characters are in the room...
+    // So put the list of possible targets into a pair of vectors.
+    std::vector<char_data*> pcs_in_room;
+    std::vector<char_data*> pcs_fighting_caster;
 
-    int best_target_count = 0;
-    int valid_taget_count = 0;
+    const room_data& room = world[caster->in_room];
 
-    for (char_data* character = world[caster->in_room].people; character != nullptr; character = character->next_in_room) {
-        
-        if (character->specials.fighting == caster) {
-            float selection_chance = 1.0f / ++best_target_count;
-            if (number() <= selection_chance) {
-                best_target = character;
+    char_data* target = room.people;
+    while (target) {
+        if (utils::is_pc(*target)) {
+            pcs_in_room.push_back(target);
+
+            if (target->specials.fighting == caster) {
+                pcs_fighting_caster.push_back(target);
             }
-
-            // No need to test fallback_targets once the best_target has been selected.
-            continue;
         }
 
-		// skip non-player characters
-        // todo(drelidan):  add race_war test here
-		if (utils::is_npc(*character)) {
-			continue;
-		}
-
-        float fallback_selection_chance = 1.0f / ++valid_taget_count;
-        if (number() <= fallback_selection_chance) {
-            fallback_target = character;
-        }
+        target = target->next_in_room;
     }
 
-    if (best_target != nullptr) {
-        return best_target;
+    if (!pcs_fighting_caster.empty()) {
+        size_t count = pcs_fighting_caster.size();
+        int target_index = number(0, count - 1);
+        return pcs_fighting_caster.at(target_index);
+    } else if (!pcs_in_room.empty()) {
+        size_t count = pcs_in_room.size();
+        int target_index = number(0, count - 1);
+        return pcs_in_room.at(target_index);
+    } else {
+        // The caster is fighting a monster without any PCs in the room.  Have 'at em!
+        return caster->specials.fighting;
     }
-
-    return fallback_target;
 }
 } // end anonymous helper name_space
 
@@ -1477,14 +1474,14 @@ SPECIAL(mob_cleric)
         return FALSE;
     }
 
-    char_data* target = choose_caster_target(host);
+    char_data* target = choose_mystic_target(host);
     if (target == NULL)
-        return FALSE;
+        return false;
 
     // No good mystic spell to cast.
     int spell_number = choose_mystic_spell(host, target);
     if (spell_number == 0)
-        return FALSE;
+        return false;
 
     host->points.spirit = 100;
 
@@ -1509,6 +1506,7 @@ SPECIAL(mob_cleric)
  */
 int get_mob_spell_type(struct char_data* host, int spell_var)
 {
+
     if (GET_RACE(host) == RACE_MAGUS)
         spell_var = 2;
     else if (GET_RACE(host) == RACE_URUK || GET_RACE(host) == RACE_ORC)
@@ -1520,36 +1518,50 @@ int get_mob_spell_type(struct char_data* host, int spell_var)
 
 SPECIAL(mob_magic_user)
 {
-    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE) {
-        return FALSE;
-    }   
+    waiting_type wtl_base;
+    int spl_num, num, tmp, spell_var;
+    char_data* tmpch;
+    char_data* tar_ch = 0;
 
-    if (host->delay.wait_value != 0 && host->delay.subcmd != 0) {
+    if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
+        return FALSE;
+
+    if (host->delay.wait_value && host->delay.subcmd) {
         return FALSE;
     }
-
-	int spl_num = 0;
-	int spell_var = 0;
 
     /* find target */
-	char_data* target = choose_caster_target(host);
+    for (num = 0, tmpch = world[ch->in_room].people; tmpch;
+         tmpch = tmpch->next_in_room)
+        if (!IS_NPC(tmpch))
+            num++;
 
-    /*
-     * If this mobs hit points drops below one third
-     * mage mobs start casting cure self.
-     */
-    if (target == host) {
-        if (GET_HIT(host) < GET_MAX_HIT(host) / 3) {
+    if (!num)
+        return FALSE;
+
+    tmp = number(1, num);
+
+    for (num = 0, tmpch = world[ch->in_room].people; (num < tmp) && tmpch;
+         tmpch = tmpch->next_in_room)
+        if (!IS_NPC(tmpch)) {
+            num++;
+            tar_ch = tmpch;
+        }
+
+    if (!host->specials.fighting) {
+        if (GET_HIT(host) < GET_MAX_HIT(host) / 3)
             spl_num = SPELL_CURE_SELF;
-        }
-        else {
+        else
             return FALSE;
-        }   
     }
+    /*
+	 * If this mobs hit points drops below one third
+	 * mage mobs start casting cure self.
+	 */
     else {
-        if (IS_SET(MOB_FLAGS(host), MOB_WIMPY) && (GET_HIT(host) < GET_MAX_HIT(host) / 4)) {
+        if (IS_SET(MOB_FLAGS(host), MOB_WIMPY) && (GET_HIT(host) < GET_MAX_HIT(host) / 4))
             spl_num = SPELL_BLINK;
-        }
+
         else {
             /*
 			 * Since we have a list of 10 spells to choose from, and
@@ -1560,33 +1572,29 @@ SPECIAL(mob_magic_user)
 			 * This will very soon be replaced with each mob having
 			 * a bitvector list of spells that each can cast from.
 			 */
-            int caster_level = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, host));
-            if (caster_level > 50) {
-                caster_level = caster_level / 8;
-            } else {
-                caster_level = caster_level / 5;
-            }   
+            tmp = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, host));
+            if (tmp > 50)
+                tmp = tmp / 8;
+            else
+                tmp = tmp / 5;
 
-            if (number(0, 1) == 1) {
+            if ((number(0, 1)) == 1) {
                 /*
 				 * A 50% chance of a mob casting a spell
 				 * makes for a good casting rate on active mobs.
 				 */
                 spell_var = get_mob_spell_type(host, spell_var);
-                spl_num = spell_list[caster_level][spell_var];
-            } else {
+                spl_num = spell_list[tmp][spell_var];
+            } else
                 return FALSE;
-            }   
         }
     }
-
-    waiting_type wtl_base;
     wtl_base.cmd = CMD_CAST;
     wtl_base.subcmd = 0;
     wtl_base.targ1.ch_num = spl_num;
     wtl_base.targ1.type = TARGET_OTHER;
-    wtl_base.targ2.ptr.ch = target;
-    wtl_base.targ2.ch_num = target->abs_number;
+    wtl_base.targ2.ptr.ch = tar_ch;
+    wtl_base.targ2.ch_num = tar_ch->abs_number;
     wtl_base.targ2.type = TARGET_CHAR;
     wtl_base.targ2.choice = TAR_CHAR_ROOM;
     wtl_base.flg = 1;

@@ -390,24 +390,11 @@ struct attack_hit_type {
 
 void recalc_skills(struct char_data*);
 
-struct spell_params
-{
-    char_data* caster = nullptr;
-    char* arg = nullptr;
-    int type = 0;
-    char_data* victim = nullptr;
-    obj_data* obj = nullptr;
-    int digit = 0;
-    bool is_object = false;
-};
-
 #define ASPELL(castname)                             \
     void                                             \
     castname(char_data* caster, char* arg, int type, \
         char_data* victim, obj_data* obj, int digit, \
         int is_object)
-
-
 
 /* Mage spell prototypes */
 ASPELL(spell_blink);

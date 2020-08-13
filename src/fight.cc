@@ -1226,10 +1226,21 @@ void group_gain(char_data* killer, char_data* dead_man)
     char_vector involved_killers;
     char_set player_killers;
     
+    // Ensure that the killer is involved.
     involved_killers.push_back(killer);
     if (utils::is_pc(*killer))
     {
         player_killers.insert(killer);
+    }
+
+    // Ensure that the mob's target is involved as well.
+    if (killer->specials.fighting != nullptr)
+    {
+        involved_killers.push_back(killer->specials.fighting);
+		if (utils::is_pc(*killer->specials.fighting))
+		{
+			player_killers.insert(killer->specials.fighting);
+		}
     }
 
     // Collect everyone in the room who is fighting the person that died.

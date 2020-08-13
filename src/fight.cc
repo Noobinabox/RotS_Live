@@ -1225,6 +1225,12 @@ void group_gain(char_data* killer, char_data* dead_man)
 
     char_vector involved_killers;
     char_set player_killers;
+    
+    involved_killers.push_back(killer);
+    if (utils::is_pc(*killer))
+    {
+        player_killers.insert(killer);
+    }
 
     // Collect everyone in the room who is fighting the person that died.
     const room_data& death_room = world[dead_man->in_room];

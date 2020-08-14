@@ -53,6 +53,7 @@
 #define SKILL_EXTRA_DAMAGE 16
 #define SKILL_BLOCK 17
 #define SKILL_SWING 18
+#define SKILL_DEFEND 131
 
 /* Ranger skills */
 #define SKILL_DODGE 21

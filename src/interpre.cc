@@ -287,6 +287,7 @@ ACMD(do_cleave);
 ACMD(do_overrun);
 ACMD(do_frenzy);
 ACMD(do_stomp);
+ACMD(do_defend);
 
 void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
@@ -540,6 +541,7 @@ const char* command[] = {
     "stomp",
     "cleave",
     "overrun", //245
+    "defend",
     "\n"
 };
 
@@ -2209,6 +2211,8 @@ void assign_command_pointers(void)
         TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(245, POSITION_STANDING, do_overrun, 0, TRUE, 0,
         TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    COMMANDO(CMD_DEFEND, POSITION_FIGHTING, do_defend, 0, TRUE, 0,
+        TAR_NONE_OK, TAR_IGNORE, 0);
 }
 
 /* *************************************************************************

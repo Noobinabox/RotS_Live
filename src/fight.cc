@@ -2356,23 +2356,45 @@ int defender_effect(char_data* attacker, char_data* victim, int damage)
     if (utils::get_specialization(*victim) == game_types::PS_Defender) {
         obj_data* shield = victim->equipment[WEAR_SHIELD];
         if (shield && GET_ITEM_TYPE(shield) == ITEM_SHIELD) {
+
+            static const float reduced_per_block = 0.3f;
+
+            float blocked_damage_percentage = 0.0f;
+            if (auto defend_affect = utils::is_affected_by_spell(*victim, SKILL_DEFEND)) {
+                int defend_chance = defend_affect->modifier;
+                if (number(0, 100) <= defend_chance) {
+                    blocked_damage_percentage += reduced_per_block;
+                }
+            }
+
             int warrior_level = utils::get_prof_level(PROF_WARRIOR, *victim);
             int ranger_level = utils::get_prof_level(PROF_RANGER, *victim);
             int defender_block_chance = std::max(warrior_level, ranger_level);
             defender_block_chance += std::min(warrior_level, ranger_level) / 2;
 
             if (number(0, 100) <= defender_block_chance) {
-                act("You block $N's attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_CHAR);
-                act("$n blocks your attack, reducing its effectiveness!", FALSE, victim, NULL, attacker, TO_VICT);
-                act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
-
-                int blocked_damage = int(damage * 0.3);
-
-                defender_data* data = static_cast<defender_data*>(victim->extra_specialization_data.current_spec_info);
-                data->add_blocked_damage(blocked_damage);
-
-                return damage - blocked_damage;
+                blocked_damage_percentage += reduced_per_block;
             }
+
+            // Adding the extra float at the end to handle precision issues.
+            if (blocked_damage_percentage > reduced_per_block + 0.01f) {
+                // critical block
+				act("Your shield absorbs most of the impact of $N's attack.", FALSE, victim, nullptr, attacker, TO_CHAR);
+				act("$n absorbs most of your attack with %s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
+				act("$n absorbs most of the impact of $N's with %s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+            } else if (blocked_damage_percentage > 0.01f) {
+                // standard block
+				act("You block $N's attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_CHAR);
+				act("$n blocks your attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_VICT);
+				act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+            }
+
+			int blocked_damage = int(damage * blocked_damage_percentage);
+
+			defender_data* data = static_cast<defender_data*>(victim->extra_specialization_data.current_spec_info);
+			data->add_blocked_damage(blocked_damage);
+
+			return damage - blocked_damage;
         }
     }
 
@@ -2592,7 +2614,9 @@ void hit(char_data* ch, char_data* victim, int type)
                 dam = check_find_weakness(ch, victim, dam);
                 dam = wild_fighting_effect(ch, dam);
                 dam = heavy_fighting_effect(*ch, dam);
-                dam = defender_effect(ch, victim, dam);
+                if (!ignore_shield) {
+                    dam = defender_effect(ch, victim, dam);
+                }
                 dam = frenzy_effect(*ch, dam);
                 dam = weapon_master.get_total_damage(dam);
 

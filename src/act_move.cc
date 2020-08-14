@@ -313,7 +313,7 @@ int check_simple_move(struct char_data* ch, int cmd,
 void set_blood_trail(struct char_data* ch, int dir)
 {
     int tmp;
-    if ((utils::is_npc(*ch) || (utils::get_race_abbrev(*ch) != RACE_GOD))) {
+    if ((utils::is_npc(*ch) || (utils::get_race(*ch) != RACE_GOD))) {
         tmp = number(0, NUM_OF_BLOOD_TRAILS - 1);
         if (utils::is_npc(*ch)) {
             world[ch->in_room].bleed_track[tmp].char_number = ch->nr;

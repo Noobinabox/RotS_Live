@@ -2458,8 +2458,13 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
     }
     sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
     mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
+    
+    // Apply poison before damage - don't want to poison the character if the arrow kills them.
+    const int POISON_MIN_DAMAGE = 5;
+    if (victim->tmpabilities.hit > POISON_MIN_DAMAGE) {
+		check_weapon_poison(archer, victim, arrow);
+    }
     damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
-    check_weapon_poison(archer, victim, arrow);
 }
 
 //============================================================================

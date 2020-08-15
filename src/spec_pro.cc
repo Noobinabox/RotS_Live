@@ -1422,66 +1422,139 @@ int choose_mystic_spell(char_data* caster, char_data* target)
     return spell_list[spell_list_index][3];
 }
 
-char_data* choose_mystic_target(char_data* caster)
+
+/*
+ * Little function that runs a series
+ * of checks to give the mob in question the
+ * Correct set of spells to cast from.
+ */
+int get_mob_spell_type(const char_data* caster)
+{
+    if (GET_RACE(caster) == RACE_MAGUS)
+        return 2;
+    else if (GET_RACE(caster) == RACE_URUK || GET_RACE(caster) == RACE_ORC)
+        return 1;
+    else
+        return 0;
+}
+
+
+int choose_mage_spell(const char_data* caster, const char_data* target)
+{
+    // Heal up if low
+    if (caster == target) {
+        if (caster->tmpabilities.hit < caster->abilities.hit / 3) {
+            return SPELL_CURE_SELF;
+        } else {
+            return 0;
+        }
+    }
+
+    // Allow wimpy mobs to peace out.
+    if (IS_SET(MOB_FLAGS(caster), MOB_WIMPY) && (caster->tmpabilities.hit < caster->abilities.hit / 4)) {
+        return SPELL_BLINK;
+    }
+
+    // 50% chance to not cast at all.
+    if (number() < 0.5f) {
+        return 0;
+    }
+
+    /*
+	 * Since we have a list of 10 spells to choose from, and
+	 * since some of our in-game mobs are over 50 in level
+	 * any mob over level 50 will have its random number
+	 * divided by eight rather than 5 to ensure a spell
+	 * is picked from the array spell_list.
+	 * This will very soon be replaced with each mob having
+	 * a bitvector list of spells that each can cast from.
+	 */
+    int spell_list_index = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, caster));
+    if (spell_list_index > 50)
+        spell_list_index = spell_list_index / 8;
+    else
+        spell_list_index = spell_list_index / 5;
+
+    int spell_var = get_mob_spell_type(caster);
+    return spell_list[spell_list_index][spell_var];
+}
+
+bool is_engaged_with_victim(const char_data* character, const char_data* victim)
+{
+	if (victim == nullptr || character == nullptr) {
+		return false;
+	}
+
+    // Targets are directly engaged.
+    if (character->specials.fighting == victim || victim->specials.fighting == character) {
+        return true;
+    }
+
+    // Don't check NPC grouping to prevent abuse cases like leading and grouping tons of mounts
+    // in so that they eat spells for you.
+    if (utils::is_npc(*character)) {
+        return false;
+    }
+
+    // Targets are engaged through character's group.
+    if (character->group != nullptr) {
+        const group_data& group = *character->group;
+		for (const char_data* group_member : group) {
+			if (group_member->specials.fighting == victim || victim->specials.fighting == group_member) {
+				return true;
+			}
+		}
+    }
+	
+	return false;
+}
+
+char_data* choose_caster_target(char_data* caster)
 {
     // Choose an initial target.  If the caster isn't fighting anyone, it will be himself.
     // Otherwise, it will be someone that is in combat with him.
-    if (caster->specials.fighting == NULL) {
+    if (caster->specials.fighting == nullptr) {
         return caster;
     }
 
-    // There isn't a good way to count how many characters are in the room...
-    // So put the list of possible targets into a pair of vectors.
-    std::vector<char_data*> pcs_in_room;
-    std::vector<char_data*> pcs_fighting_caster;
-
-    const room_data& room = world[caster->in_room];
-
-    char_data* target = room.people;
-    while (target) {
-        if (utils::is_pc(*target)) {
-            pcs_in_room.push_back(target);
-
-            if (target->specials.fighting == caster) {
-                pcs_fighting_caster.push_back(target);
-            }
+    // NPC casters will preferentially target characters that are fighting them or
+    // group members of those characters.
+    int valid_count = 0;
+    char_data* target = caster->specials.fighting; // default target is the character the caster is engaged with
+    for (char_data* character = world[caster->in_room].people; character != nullptr; character = character->next_in_room) {
+        
+        if (!is_engaged_with_victim(character, caster)) {
+            continue;
         }
 
-        target = target->next_in_room;
-    }
+		float selection_chance = 1.0f / ++valid_count;
+		if (number() > selection_chance) {
+            continue;
+        }
 
-    if (!pcs_fighting_caster.empty()) {
-        size_t count = pcs_fighting_caster.size();
-        int target_index = number(0, count - 1);
-        return pcs_fighting_caster.at(target_index);
-    } else if (!pcs_in_room.empty()) {
-        size_t count = pcs_in_room.size();
-        int target_index = number(0, count - 1);
-        return pcs_in_room.at(target_index);
-    } else {
-        // The caster is fighting a monster without any PCs in the room.  Have 'at em!
-        return caster->specials.fighting;
+        target = character;
     }
+    
+    return target;
 }
 } // end anonymous helper name_space
 
 SPECIAL(mob_cleric)
-{
-    if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
+{if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
-    if (host->delay.wait_value && host->delay.subcmd) {
+    if (host->delay.wait_value != 0 && host->delay.subcmd != 0) {
         return FALSE;
     }
 
-    char_data* target = choose_mystic_target(host);
-    if (target == NULL)
-        return false;
+    char_data* target = choose_caster_target(host);
+    if (target == nullptr)
+        return FALSE;
 
     // No good mystic spell to cast.
     int spell_number = choose_mystic_spell(host, target);
     if (spell_number == 0)
-        return false;
+        return FALSE;
 
     host->points.spirit = 100;
 
@@ -1499,102 +1572,30 @@ SPECIAL(mob_cleric)
     return FALSE;
 }
 
-/*
- * Little function that runs a series
- * of checks to give the mob in question the
- * Correct set of spells to cast from. 
- */
-int get_mob_spell_type(struct char_data* host, int spell_var)
-{
-
-    if (GET_RACE(host) == RACE_MAGUS)
-        spell_var = 2;
-    else if (GET_RACE(host) == RACE_URUK || GET_RACE(host) == RACE_ORC)
-        spell_var = 1;
-    else
-        spell_var = 0;
-    return spell_var;
-}
-
 SPECIAL(mob_magic_user)
 {
-    waiting_type wtl_base;
-    int spl_num, num, tmp, spell_var;
-    char_data* tmpch;
-    char_data* tar_ch = 0;
-
-    if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
+    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
     if (host->delay.wait_value && host->delay.subcmd) {
         return FALSE;
     }
 
-    /* find target */
-    for (num = 0, tmpch = world[ch->in_room].people; tmpch;
-         tmpch = tmpch->next_in_room)
-        if (!IS_NPC(tmpch))
-            num++;
+	char_data* target = choose_caster_target(host);
+	if (target == nullptr)
+		return FALSE;
 
-    if (!num)
+    int spell_number = choose_mage_spell(host, target);
+    if (spell_number == 0)
         return FALSE;
 
-    tmp = number(1, num);
-
-    for (num = 0, tmpch = world[ch->in_room].people; (num < tmp) && tmpch;
-         tmpch = tmpch->next_in_room)
-        if (!IS_NPC(tmpch)) {
-            num++;
-            tar_ch = tmpch;
-        }
-
-    if (!host->specials.fighting) {
-        if (GET_HIT(host) < GET_MAX_HIT(host) / 3)
-            spl_num = SPELL_CURE_SELF;
-        else
-            return FALSE;
-    }
-    /*
-	 * If this mobs hit points drops below one third
-	 * mage mobs start casting cure self.
-	 */
-    else {
-        if (IS_SET(MOB_FLAGS(host), MOB_WIMPY) && (GET_HIT(host) < GET_MAX_HIT(host) / 4))
-            spl_num = SPELL_BLINK;
-
-        else {
-            /*
-			 * Since we have a list of 10 spells to choose from, and
-			 * since some of our in-game mobs are over 50 in level
-			 * any mob over level 50 will have its random number
-			 * divided by eight rather than 5 to ensure a spell
-			 * is picked from the array spell_list.
-			 * This will very soon be replaced with each mob having
-			 * a bitvector list of spells that each can cast from.
-			 */
-            tmp = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, host));
-            if (tmp > 50)
-                tmp = tmp / 8;
-            else
-                tmp = tmp / 5;
-
-            if ((number(0, 1)) == 1) {
-                /*
-				 * A 50% chance of a mob casting a spell
-				 * makes for a good casting rate on active mobs.
-				 */
-                spell_var = get_mob_spell_type(host, spell_var);
-                spl_num = spell_list[tmp][spell_var];
-            } else
-                return FALSE;
-        }
-    }
+    waiting_type wtl_base;
     wtl_base.cmd = CMD_CAST;
     wtl_base.subcmd = 0;
-    wtl_base.targ1.ch_num = spl_num;
+    wtl_base.targ1.ch_num = spell_number;
     wtl_base.targ1.type = TARGET_OTHER;
-    wtl_base.targ2.ptr.ch = tar_ch;
-    wtl_base.targ2.ch_num = tar_ch->abs_number;
+    wtl_base.targ2.ptr.ch = target;
+    wtl_base.targ2.ch_num = target->abs_number;
     wtl_base.targ2.type = TARGET_CHAR;
     wtl_base.targ2.choice = TAR_CHAR_ROOM;
     wtl_base.flg = 1;

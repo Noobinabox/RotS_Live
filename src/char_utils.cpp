@@ -1633,9 +1633,14 @@ void weapon_master_handler::regain_energy(char_data* victim)
     if (!does_sword_proc())
         return;
 
-	act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
-	act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
-
+    // It's possible that victim has died in response to the strike
+    // that caused this.  Only send a message if the character is currently
+    // in combat.
+    if (character->specials.fighting != nullptr) {
+		act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
+		act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
+    }
+	
     character->specials.ENERGY += ENE_TO_HIT / 2;
 }
 

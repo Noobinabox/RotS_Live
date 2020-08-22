@@ -308,6 +308,7 @@ struct command_info {
 #define CMD_STOMP 243
 #define CMD_CLEAVE 244
 #define CMD_OVERRUN 245
+#define CMD_DEFEND 246
 
 #define CMD_HIDE 86
 #define CMD_AMBUSH 87

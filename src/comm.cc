@@ -1635,9 +1635,17 @@ void nonblock(SocketType s)
 *******************************************************************/
 void send_to_char(const char* message, char_data* character)
 {
-    if (character->desc && message) {
-        SEND_TO_Q(message, character->desc);
+    // Early out if we have no message or character.
+    if (message == nullptr || message[0] == 0 || character == nullptr) {
+        return;
     }
+
+    // Early out if the character isn't connected.
+    if (character->desc == nullptr || character->desc->connected != CON_PLYNG) {
+        return;
+    }
+
+    SEND_TO_Q(message, character->desc);
 }
 
 void send_to_char(const char* message, int character_id)
@@ -1659,7 +1667,7 @@ const char* get_char_name(int character_id)
     if (character) {
         return character->player.name;
     }
-    return NULL;
+    return nullptr;
 }
 
 char_data* get_character(int character_id)

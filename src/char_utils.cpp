@@ -1321,13 +1321,13 @@ bool battle_mage_handler::does_spell_get_interrupted() const {
         return true;
     }
 
-    if (tactics < 4) {
+    if (tactics < TACTICS_AGGRESSIVE) {
         return number() > base_chance;
     }
     
-    float warrior_bonus = warrior_level / 100.00;
-    float mage_bonus = mage_level / 100.00;
-    float tactic_bonus = tactic_bonus / 100.00;
+    float warrior_bonus = warrior_level / 100.0f;
+    float mage_bonus = mage_level / 100.0f;
+    float tactic_bonus = (tactics * 2) / 100.0f;
     float total_bonus = base_chance + warrior_bonus + mage_bonus + tactic_bonus;
     return number() > total_bonus;
 }
@@ -1337,12 +1337,12 @@ bool battle_mage_handler::does_armor_fail_spell() const {
         return true;
     }
 
-    if (tactics < 4) {
+    if (tactics < TACTICS_AGGRESSIVE) {
         return number() > base_chance;
     }
 
-    float tactic_bonus = (tactics * 2) / 100;
-    float warrior_bonus = warrior_level / 100;
+    float tactic_bonus = (tactics * 2) / 100.0f;
+    float warrior_bonus = warrior_level / 100.0f;
     float total_bonus = base_chance + tactic_bonus + warrior_bonus;
     return number() > total_bonus;
 }
@@ -1368,7 +1368,7 @@ void wild_fighting_handler::on_unit_killed(const char_data* victim)
     if (tactics != TACTICS_BERSERK)
         return;
 
-    if (victim->get_level() * 6 / 10 >= character->get_capped_level())
+    if (victim->get_level() >= character->get_capped_level() * 6 / 10)
     {
         int missing_health = max_health - current_health;
         character->tmpabilities.hit += missing_health * 0.1f;
@@ -1633,9 +1633,14 @@ void weapon_master_handler::regain_energy(char_data* victim)
     if (!does_sword_proc())
         return;
 
-	act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
-	act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
-
+    // It's possible that victim has died in response to the strike
+    // that caused this.  Only send a message if the character is currently
+    // in combat.
+    if (character->specials.fighting != nullptr) {
+		act("You gain a rush of momentum!", FALSE, character, NULL, victim, TO_CHAR);
+		act("$n gains a rush of momentum!", FALSE, character, 0, victim, TO_ROOM, FALSE);
+    }
+	
     character->specials.ENERGY += ENE_TO_HIT / 2;
 }
 

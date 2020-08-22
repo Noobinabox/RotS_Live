@@ -180,7 +180,7 @@ float mana_gain(const char_data* character)
 
 float get_bonus_hit_gain(const char_data* character)
 {
-    float perception_modifier = std::min(character->specials2.perception, 100) / 100.0f;
+    float perception_modifier = utils::get_perception(*character) / 100.0f;
     
     // Early out if we have no perception.
     if (perception_modifier <= 0.0f)
@@ -252,7 +252,7 @@ float hit_gain(const char_data* character)
 
 float get_bonus_move_gain(const char_data* character)
 {
-	float perception_modifier = std::min(character->specials2.perception, 100) / 100.0f;
+	float perception_modifier = utils::get_perception(*character) / 100.0f;
 
 	// Early out if we have no perception.
 	if (perception_modifier <= 0.0f)
@@ -282,7 +282,7 @@ float move_gain(const char_data* character)
     const char_ability_data& stats = character->tmpabilities;
     if (is_npc(*character)) {
         if (is_mob_flagged(*character, MOB_MOUNT)) {
-            return 26 + (character->player.level * 2) + stats.con + stats.dex;
+            return 26 + (character->player.level * 2) + stats.con + stats.dex + get_bonus_move_gain(character);
         }
     }
 
@@ -324,7 +324,8 @@ float move_gain(const char_data* character)
                 gain *= 2.0;
             }
         }
-        return int(gain - 5);
+        gain += get_bonus_move_gain(character);
+        return gain - 5;
     } else {
         int race = character->player.race;
         if (race == RACE_WOOD || race == RACE_HIGH) {

@@ -943,6 +943,54 @@ ACMD(do_disengage)
     stop_fighting(ch);
 }
 
+ACMD(do_defend)
+{
+    if (ch->specials.fighting == nullptr) {
+        send_to_char("You are not fighting anybody.\n\r", ch);
+        return;
+    }
+
+    if (utils::get_specialization(*ch) != game_types::PS_Defender) {
+        send_to_char("You are not the right specialization for this.\n\r", ch);
+        return;
+    }
+
+    int defend_knowledge = utils::get_knowledge(*ch, SKILL_DEFEND);
+    if (defend_knowledge == 0) {
+        send_to_char("You don't know how to do that.\n\r", ch);
+        return;
+    }
+
+    if (ch->equipment[WEAR_SHIELD] == nullptr) {
+        send_to_char("You need to be using a shield for this.\n\r", ch);
+        return;
+    }
+
+	game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+
+	if (!timer.is_skill_allowed(*ch, SKILL_DEFEND)) {
+		send_to_char("You can't use this skill yet.\r\n", ch);
+		return;
+	}
+
+	act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
+	act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+
+	// create affect
+	affected_type af;
+	af.type = SKILL_DEFEND;
+	af.duration = 2; // 2 fast update ticks -- ~6s
+	af.modifier = defend_knowledge;
+	af.location = APPLY_NONE;
+	af.bitvector = 0;
+
+	// apply affect
+	affect_to_char(ch, &af);
+
+	static const int DEFEND_TIMER = 12;
+    timer.add_skill_timer(*ch, SKILL_DEFEND, DEFEND_TIMER);
+}
+
 //============================================================================
 ACMD(do_beorning)
 {

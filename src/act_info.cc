@@ -1533,8 +1533,14 @@ ACMD(do_look)
 
         /* Now generate the room description */
         if (PRF_FLAGGED(ch, PRF_SPAM))
+        {
             if (!PRF_FLAGGED(ch, PRF_BRIEF) || (cmd == CMD_LOOK))
+            {
+                strcat(buf2, CC_USE(ch, COLOR_DESC));
                 strcat(buf2, world[ch->in_room].description);
+            }
+        }
+        strcat(buf2, CC_NORM(ch));
 
         /* Any affections in the room */
         for (tmpaf = world[ch->in_room].affected; tmpaf; tmpaf = tmpaf->next)

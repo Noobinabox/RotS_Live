@@ -1835,6 +1835,9 @@ void convert_string(const char* str, int hide_invisible, struct char_data* ch,
                 case 'O': /* Object */
                     i = CC_USE(to, COLOR_OBJ);
                     break;
+                case 'E':
+                    i = CC_USE(to, COLOR_DESC);
+                    break;
                 default:
                     vmudlog(NRM, "ERROR: Unrecognized color code '%c'.",
                         *strp);

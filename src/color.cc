@@ -22,6 +22,7 @@ const char* color_fields[] = {
     "character",
     "object",
     "enemy",
+    "description",
     "off",
     "on",
     "default",
@@ -117,6 +118,7 @@ void set_colors_default(struct char_data* ch)
     set_colornum(ch, COLOR_CHAR, CGRN);
     set_colornum(ch, COLOR_OBJ, CCYN);
     set_colornum(ch, COLOR_ENMY, CBWHT);
+    set_colornum(ch, COLOR_DESC, CGRN);
 }
 
 ACMD(do_color)
@@ -153,15 +155,15 @@ ACMD(do_color)
         return;
     }
 
-    if (num == 13) {
+    if (num == 14) {
         set_colors_default(ch);
         send_to_char("Ok, you'll use the default colour set.\r\n", ch);
         return;
-    } else if (num == 12) {
+    } else if (num == 13) {
         SET_BIT(PRF_FLAGS(ch), PRF_COLOR);
         send_to_char("Colours turned on.\n\r", ch);
         return;
-    } else if (num == 11) {
+    } else if (num == 12) {
         REMOVE_BIT(PRF_FLAGS(ch), PRF_COLOR);
         send_to_char("Colours turned off.\n\r", ch);
         return;

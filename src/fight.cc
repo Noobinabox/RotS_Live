@@ -26,6 +26,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h" /* For zone_table */
+#include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -1348,7 +1349,7 @@ void group_gain(char_data* killer, char_data* dead_man)
         change_alignment(character, dead_man);
 
         // Allow wild fighting to handle this kill.
-        wild_fighting_handler wild_fighting(character);
+        player_spec::wild_fighting_handler wild_fighting(character);
         wild_fighting.on_unit_killed(dead_man);
 
         /* save only 10% of the time to avoid lag in big groups */
@@ -1788,7 +1789,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         send_to_char("You step out of your cover.\n\r", attacker);
         REMOVE_BIT(attacker->specials.affected_by, AFF_HIDE);
     }
-    battle_mage_handler battle_mage_handler(victim);
+    player_spec::battle_mage_handler battle_mage_handler(victim);
     /* Remove delay if wait_wheel */
     if (dam > 0) {
         if (IS_AFFECTED(victim, AFF_WAITWHEEL) && GET_WAIT_PRIORITY(victim) <= 40)
@@ -1891,7 +1892,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     record_spell_damage(attacker, victim, attacktype, dam);
 
     // Create wild fighting data to handle rage effects.
-    wild_fighting_handler wild_fighting(victim);
+    player_spec::wild_fighting_handler wild_fighting(victim);
 
     GET_HIT(victim) -= dam;
 
@@ -2250,7 +2251,7 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         /* First, remove minimum absorb */
         int damage_reduction = armor->obj_flags.value[1];
 
-        weapon_master_handler weapon_master(ch);
+        player_spec::weapon_master_handler weapon_master(ch);
 
         int divisor = 100;
 		if (w_type == TYPE_SPEARS) {
@@ -2346,7 +2347,7 @@ int frenzy_effect(char_data& attacker, int damage)
 //============================================================================
 int wild_fighting_effect(char_data* attacker, int damage)
 {
-    wild_fighting_handler handler(attacker);
+    player_spec::wild_fighting_handler handler(attacker);
     return handler.do_rush(damage);
 }
 
@@ -2494,7 +2495,7 @@ void hit(char_data* ch, char_data* victim, int type)
     }
 
     // create weapon master struct to handle this spec's logic if it applies.
-    weapon_master_handler weapon_master(ch);
+    player_spec::weapon_master_handler weapon_master(ch);
 
     /*
 	 * Calculate hits/misses/damage
@@ -2867,7 +2868,7 @@ void perform_violence(int mini_tics)
                     }
                     
                     else {
-                        weapon_master_handler weapon_master(fighter);
+                        player_spec::weapon_master_handler weapon_master(fighter);
                         weapon_master.regain_energy(fighter->specials.fighting);
                     }
                 } else /* Not in same room */

@@ -39,6 +39,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "warrior_spec_handlers.h"
 
 #include "char_utils.h"
 
@@ -676,7 +677,7 @@ int get_real_OB(char_data* ch)
     tmpob = GET_OB(ch);
     tmpob -= utils::get_skill_penalty(*ch);
 
-    weapon_master_handler weapon_master(ch);
+    player_spec::weapon_master_handler weapon_master(ch);
     tmpob += weapon_master.get_bonus_OB();
 
     if (!weapon && utils::get_raw_knowledge(*ch, SKILL_NATURAL_ATTACK) == 0) {
@@ -769,7 +770,7 @@ int get_real_parry(struct char_data* ch)
     tmpparry = GET_PARRY(ch);
     bonus = GET_PROF_LEVEL(PROF_WARRIOR, ch) * 2 + std::min(30, GET_LEVEL(ch)) + GET_BAL_STR(ch);
 
-    weapon_master_handler weapon_master(ch);
+    player_spec::weapon_master_handler weapon_master(ch);
     tmpparry += weapon_master.get_bonus_PB();
 
     weapon = ch->equipment[WIELD];

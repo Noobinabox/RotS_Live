@@ -30,6 +30,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "warrior_spec_handlers.h"
 
 /* extern variables */
 extern struct descriptor_data* descriptor_list;
@@ -1388,7 +1389,7 @@ ACMD(do_tactics)
 			}
         }
         
-        wild_fighting_handler wild_fighting(ch);
+        player_spec::wild_fighting_handler wild_fighting(ch);
         int target_tactics = TACTICS_NORMAL;
 
         switch (tmp) {

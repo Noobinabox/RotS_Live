@@ -21,6 +21,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
 #include "skill_timer.h"
@@ -901,7 +902,7 @@ ACMD(do_kick)
         dam *= 1.5f;
 
         // potential bonus damage from wild fighting
-        wild_fighting_handler wild_fighting(ch);
+        player_spec::wild_fighting_handler wild_fighting(ch);
         dam *= wild_fighting.get_wild_swing_damage_multiplier();
     }
 

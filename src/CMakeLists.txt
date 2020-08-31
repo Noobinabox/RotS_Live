@@ -104,6 +104,9 @@ clock.h
 skill_timer.h
 skill_timer.cpp
 
+warrior_spec_handlers.h
+warrior_spec_handlers.cpp
+
 )
 
 

@@ -19,6 +19,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h" /* For zone_table */
+#include "warrior_spec_handlers.h"
 #include <algorithm>
 #include <assert.h>
 #include <ctype.h>
@@ -43,7 +44,7 @@ int get_mage_caster_level(const char_data* caster)
 
 int get_magic_power(const char_data* caster)
 {
-    battle_mage_handler battle_mage_handler(caster);
+    player_spec::battle_mage_handler battle_mage_handler(caster);
     int caster_level = get_mage_caster_level(caster);
     int level_modifier = GET_MAX_RACE_PROF_LEVEL(PROF_MAGE, caster) * GET_LEVELA(caster) / 30;
     caster_level += battle_mage_handler.get_bonus_spell_power(caster->points.spell_power);

@@ -1215,7 +1215,7 @@ bool master_gets_credit(const char_data* character)
 
 void group_gain(char_data* killer, char_data* dead_man)
 {
-    if (killer == NULL || dead_man == NULL)
+    if (killer == nullptr || dead_man == nullptr)
         return;
 
     if (killer->in_room == NOWHERE)
@@ -1227,20 +1227,24 @@ void group_gain(char_data* killer, char_data* dead_man)
     char_vector involved_killers;
     char_set player_killers;
     
-    // Ensure that the killer is involved.
-    involved_killers.push_back(killer);
-    if (utils::is_pc(*killer))
+    // This can happen from some effects.
+    if (killer != dead_man)
     {
-        player_killers.insert(killer);
+        // Ensure that the killer is involved.
+		involved_killers.push_back(killer);
+		if (utils::is_pc(*killer))
+		{
+			player_killers.insert(killer);
+		}
     }
 
-    // Ensure that the mob's target is involved as well.
-    if (killer->specials.fighting != nullptr)
+    // Ensure that the victim's target is involved as well.
+    if (dead_man->specials.fighting != nullptr)
     {
-        involved_killers.push_back(killer->specials.fighting);
-		if (utils::is_pc(*killer->specials.fighting))
+        involved_killers.push_back(dead_man->specials.fighting);
+		if (utils::is_pc(*dead_man->specials.fighting))
 		{
-			player_killers.insert(killer->specials.fighting);
+			player_killers.insert(dead_man->specials.fighting);
 		}
     }
 
@@ -1332,7 +1336,7 @@ void group_gain(char_data* killer, char_data* dead_man)
             int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
             if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))) {
                 if (GET_SPIRIT(character) >= 99000) {
-                    vsend_to_char(character, "You have capped out on spirits.\n\r");
+                    send_to_char("You have capped out on spirits.\n\r", character);
                 } else {
                     vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
                     GET_SPIRIT(character) += gain;

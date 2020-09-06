@@ -80,6 +80,25 @@ HARADRIM SPECIFIC SKILLS__
 See also: MAN SKILL LIST
 
 #
+DEFEND
+
+[Syntax      ] defend
+[Spec        ] Defending
+[Level       ] 0
+[Offensive   ] No
+[Cooldown    ] 12 Seconds
+[Description ]
+--- You hunker down with your shield increasing the amount of damage reduction
+done for a short period of time. This skill has a 12 second cooldown before it
+can be used again.
+
+This skill requires that you are engaged with a target, using a shield and
+activily specialized in Defending.
+
+--- For Beornings this skill reduces the amount of maul points and duration 
+reduced per hit while active, and of course doesn't require you to use a shield.
+
+#
 OVERRUN
 
 [Syntax      ] overrun <direction>

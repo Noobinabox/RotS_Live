@@ -1619,6 +1619,13 @@ int maul_damage_reduction(char_data* ch, int damage)
     if (maul_reduction && maul_reduction->location == APPLY_MAUL) {
         damage_reduction += (maul_reduction->modifier / maul_db) * 0.001;
     }
+
+    affected_type* defend_affect = affected_by_spell(ch, SKILL_DEFEND);
+    if (defend_affect) {
+        dur += 3;
+        mod -= 0.30;
+    }
+
     damage_reduction = (double)damage * damage_reduction;
     damage -= (int)damage_reduction;
 

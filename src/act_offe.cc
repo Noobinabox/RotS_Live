@@ -962,7 +962,9 @@ ACMD(do_defend)
         return;
     }
 
-    if (ch->equipment[WEAR_SHIELD] == nullptr) {
+    bool is_player_beorning = utils::get_race(*ch) == RACE_BEORNING;
+
+    if (!is_player_beorning && ch->equipment[WEAR_SHIELD] == nullptr) {
         send_to_char("You need to be using a shield for this.\n\r", ch);
         return;
     }
@@ -974,8 +976,14 @@ ACMD(do_defend)
 		return;
 	}
 
-	act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
-	act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    if (is_player_beorning) {
+        act("You hunker down bracing for impact.", FALSE, ch, nullptr, nullptr, TO_CHAR);
+        act("$n hunkers down, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    }
+    else {
+        act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
+        act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    }
 
 	// create affect
 	affected_type af;

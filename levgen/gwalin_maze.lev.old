@@ -1,0 +1,143 @@
+size.x=30
+size.y=30
+room.base=31100
+room.max=99
+zone.name=Gwalin Maze 311
+zone.symbol=-
+zone.x=7
+zone.y=12
+zone.nr=311
+zone.lifespan=10
+source.wld=../lib/world/wld/252.wld
+source.zon=../lib/world/zon/252.zon
+output.wld=../lib/world/wld/311.wld
+output.zon=../lib/world/zon/311.zon
+~
+@15 14 25200 2
+@15 16 25200 0
+@14 15 25200 1
+!15 15
+!16 15
+s15 15 X
+~
+#Entrance connector
+25204 0 0 2 2 2 2
+
+#Layered Rock
+25205 0 0 2 2 2 2
+
+#Stagnant Pool
+25206 0 0 2 2 2 2
+
+#Natural Chamber
+25207 0 0 2 2 2 2
+
+#Scorched Rock
+25208 0 0 2 2 2 2
+
+#Narrow Crack
+25209 0 0 2 2 2 2
+
+#Deep Chamber
+25210 0 0 2 2 2 2
+
+#Quartz Chamber
+25211 0 0 2 2 2 2
+
+#Small Pool
+25212 0 0 2 2 2 2
+
+#Crystal Crevice
+25213 0 0 2 2 2 2
+
+#Cave-In
+25214 0 0 2 2 2 2
+
+#Small Hole
+25215 0 0 2 2 2 2
+
+#Sharp Passage
+25216 0 0 2 1 2 2
+25217 1 0 0 0 1 1
+25226 1 -1 1 2 2 2
+
+#Large Cave
+25218 0 0 2 2 1 0
+25219 0 -1 1 0 1 2
+25220 0 -2 1 0 2 2
+
+#Tight Tunnel
+25221 0 0 2 1 2 2
+25222 1 0 1 0 1 0
+25223 1 1 0 0 1 0
+
+#Hewn Tunnel
+25224 0 0 2 2 1 2
+25225 0 -1 1 0 2 0
+
+#Subterranean Forest
+25227 0 0 0 1 0 2
+25228 1 0 0 1 2 1
+25229 2 0 2 2 1 0
+
+#Underground Stream
+25230 0 0 2 2 1 2
+25231 0 -1 1 1 0 0
+25232 1 -1 0 0 1 1
+25234 1 -2 1 2 2 2
+
+#Swirling River
+25235 0 0 2 1 2 2
+25236 1 0 0 1 0 1
+25237 2 0 0 0 1 1
+25241 2 -1 1 0 0 0
+
+#Slimy Tunnel
+25238 0 0 2 2 1 2
+25239 0 -1 1 0 0 1
+25240 -1 -1 2 1 2 2
+
+#Filthy Den
+25243 0 0 1 2 2 2
+25242 0 -1 0 0 1 0
+
+#Crevice
+25244 0 0 1 2 2 2
+25245 0 1 1 0 1 0
+25246 0 2 0 1 1 0
+25247 1 2 0 0 0 1
+
+#Webbed Tunnels
+25248 0 0 2 1 2 2
+25249 1 0 0 0 1 1
+25250 1 -1 1 2 2 2
+
+#Filty Cave
+25251 0 0 2 1 2 2
+25252 1 0 0 1 0 1
+25253 2 0 0 0 0 1
+
+#Dark Corridor
+25256 0 0 2 2 1 2
+25255 0 -1 1 0 1 0
+25254 0 -2 1 2 2 2
+
+#Old Well
+25257 0 0 2 1 2 2
+25258 1 0 0 1 0 1
+25259 2 0 2 2 2 1
+
+#Jagged Tunnel
+25260 0 0 2 1 2 2
+25261 1 0 0 0 1 1
+25262 1 -1 1 2 2 2
+
+#Collapsing Tunnel
+25263 0 0 2 2 1 2
+25264 0 -1 1 2 1 2
+25265 0 -2 1 2 2 2
+
+#Unfinished Hall
+25266 0 0 1 2 2 2
+25267 0 1 0 0 1 1
+25268 -1 1 0 1 0 0

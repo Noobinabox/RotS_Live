@@ -1,0 +1,13 @@
+./levgen gwalin_maze.lev
+./levgen orcish_maze_level1.lev
+./levgen orcish_maze_level2.lev
+./levgen orcish_maze_level3.lev
+./levgen old_maze_lv1.lev
+./levgen old_maze_lv2.lev
+./levgen old_maze_lv3.lev
+./levgen old_maze_lv4.lev
+./levgen mirk_maze_280.lev
+./levgen mirk_maze_281.lev
+./levgen mirk_maze_291.lev
+./levgen mirk_maze_292.lev
+./levgen mirk_maze_294.lev

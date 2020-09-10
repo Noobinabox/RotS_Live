@@ -1,0 +1,3 @@
+levgen orcish_maze_level1.lev > oml1.log
+levgen orcish_maze_level2.lev > oml2.log
+levgen orcish_maze_level3.lev > oml3.log

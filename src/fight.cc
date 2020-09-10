@@ -2392,8 +2392,8 @@ int defender_effect(char_data* attacker, char_data* victim, int damage)
             if (blocked_damage_percentage > reduced_per_block + 0.01f) {
                 // critical block
 				act("Your shield absorbs most of the impact of $N's attack.", FALSE, victim, nullptr, attacker, TO_CHAR);
-				act("$n absorbs most of your attack with %s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
-				act("$n absorbs most of the impact of $N's with %s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+				act("$n absorbs most of your attack with $s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
+				act("$n absorbs most of the impact of $N's attack with $s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
             } else if (blocked_damage_percentage > 0.01f) {
                 // standard block
 				act("You block $N's attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_CHAR);

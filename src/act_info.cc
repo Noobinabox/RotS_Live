@@ -30,6 +30,7 @@
 #include "utils.h"
 #include "zone.h" /* For zone_table */
 #include "skill_timer.h"
+#include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -1533,8 +1534,14 @@ ACMD(do_look)
 
         /* Now generate the room description */
         if (PRF_FLAGGED(ch, PRF_SPAM))
+        {
             if (!PRF_FLAGGED(ch, PRF_BRIEF) || (cmd == CMD_LOOK))
+            {
+                strcat(buf2, CC_USE(ch, COLOR_DESC));
                 strcat(buf2, world[ch->in_room].description);
+            }
+        }
+        strcat(buf2, CC_NORM(ch));
 
         /* Any affections in the room */
         for (tmpaf = world[ch->in_room].affected; tmpaf; tmpaf = tmpaf->next)
@@ -1849,7 +1856,7 @@ ACMD(do_info)
         GET_PERCEPTION(ch),
         GET_WILLPOWER(ch));
 
-    battle_mage_handler battle_mage_handler(ch);
+    player_spec::battle_mage_handler battle_mage_handler(ch);
     bufpt += sprintf(bufpt, "Your spell penetration is %d, "
                             "and your spell power is %d,\n\r",
         battle_mage_handler.get_bonus_spell_pen(ch->points.get_spell_pen()),
@@ -2010,7 +2017,7 @@ ACMD(do_score)
         }
     }
 
-    weapon_master_handler weapon_master(ch);
+    player_spec::weapon_master_handler weapon_master(ch);
     bufpt += weapon_master.append_score_message(bufpt);
 
     if (GET_COND(ch, DRUNK) > 10) {

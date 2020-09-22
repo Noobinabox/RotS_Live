@@ -17,6 +17,7 @@
 #define COLOR_CHAR 8
 #define COLOR_OBJ 9
 #define COLOR_ENMY 10
+#define COLOR_DESC 11
 
 #define CNRM 0
 #define CRED 1

@@ -1,0 +1,110 @@
+size.x=10
+size.y=10
+room.base=28000
+room.max=99
+zone.name=Mirk Maze 203
+zone.symbol=*
+zone.x=13
+zone.y=7
+zone.nr=280
+zone.lifespan=10
+source.wld=../lib/world/wld/266.wld
+source.zon=../lib/world/zon/266.zon
+output.wld=../lib/world/wld/280.wld
+output.zon=../lib/world/zon/280.zon
+~
+@5 6 26693 0
+@4 5 26693 1
+@6 5 26693 3
+!5 4
+!5 5
+s5 4 E
+s5 5 X
+~
+#RedwoodsI
+26601 0  0  2 0 1 0
+26602 0  1  1 0 2 0
+
+#RedwoodsII
+26603 0  0  2 0 0 0
+
+#RedwoodsIII
+26604 0  0  2 0 1 0
+26605 0  1  1 0 1 0
+26606 0  2  1 0 2 0
+
+#Mirkwolves
+26611 0  0  2 0 1 0
+26612 -1 1  0 1 0 2
+26613 0  2  1 0 2 0
+26614 1  1  2 0 0 1
+26615 0  1  1 1 1 1
+
+#Spinners
+26621 0  0  2 0 1 0
+26622 0  1  1 1 0 0
+26623 1  1  0 2 0 1
+
+#Wychelms
+26631 0  0  2 0 1 0
+26632 -1 1  0 1 0 2
+26633 0  2  1 0 2 0
+26634 1  1  2 0 0 1
+26635 0  1  1 1 1 1
+
+#Rookey
+26643 0  0  2 2 1 2
+26644 0  1  1 0 0 0
+
+#Blackoak
+26645 0  0  0 0 0 2
+
+#Raven
+26646 0  0  2 2 1 2
+26647 0  1  1 0 0 0
+
+#Scarlet Oaks
+26653 0  0  2 2 2 2
+
+#Hazels
+26665 0  0  2 0 1 0
+26666 0  1  1 0 2 0
+
+#Gnarled Chestnuts
+26673 0  0  0 1 0 2
+26674 1  0  0 1 0 1
+26675 2  0  0 2 0 1
+
+#Pond
+26609 0  0  0 1 0 2
+26610 1  0  0 2 0 1
+
+#Mudspring
+26608 0  0  0 0 2 0
+
+#Swamp
+26616 0  0  0 1 0 2
+26617 1  0  0 2 0 1
+
+#Hunting
+26618 0  0  2 0 1 0
+26619 0  1  1 0 0 1
+26620 -1 1  0 1 0 2
+
+#Plane
+26636 0  0  2 2 2 2
+
+#Boar
+26637 0  0  2 0 0 0
+
+#Yew Trees
+26668 0  0  0 2 0 0
+
+#Venerable Yews
+26669 0  0  2 2 2 2
+
+#Dirty Mirkwood
+26670 0  0  0 1 0 2
+26671 1  0  0 1 0 1
+26672 2  0  0 2 0 1
+

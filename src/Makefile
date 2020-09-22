@@ -23,11 +23,12 @@ PROFILE = -g -rdynamic
 CFLAGS = $(MYFLAGS) $(PROFILE) $(OSFLAGS)
 
 OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
-	act_othe.o act_soci.o act_wiz.o ban.o big_brother.o boards.o char_utils.o char_utils_combat.o clerics.o clock.o color.o combat_manager.o \
+	act_othe.o act_soci.o act_wiz.o ban.o battle_mage_handler.o big_brother.o boards.o char_utils.o char_utils_combat.o clerics.o clock.o color.o combat_manager.o \
 	comm.o config.o consts.o db.o delayed_command_interpreter.o fight.o graph.o handler.o interpre.o environment_utils.o \
 	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o olog_hai.o\
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \
-	signals.o skill_timer.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weather.o zone.o
+	signals.o skill_timer.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weapon_master_handler.o  \
+	wild_fighting_handler.o weather.o zone.o
 
 
 ageland:        ../bin/ageland
@@ -60,6 +61,12 @@ combat_manager.o : combat_manager.cpp combat_manager.h base_utils.h
 	$(CC) -c $(CFLAGS) combat_manager.cpp
 big_brother.o : big_brother.cpp big_brother.h base_utils.h singleton.h
 	$(CC) -c $(CFLAGS) big_brother.cpp
+battle_mage_handler.o : battle_mage_handler.cpp warrior_spec_handlers.h structs.h
+	$(CC) -c $(CFLAGS) battle_mage_handler.cpp
+wild_fighting_handler.o : wild_fighting_handler.cpp warrior_spec_handlers.h structs.h
+	$(CC) -c $(CFLAGS) wild_fighting_handler.cpp
+weapon_master_handler.o : weapon_master_handler.cpp warrior_spec_handlers.h structs.h
+	$(CC) -c $(CFLAGS) weapon_master_handler.cpp
 skill_timer.o : skill_timer.cpp skill_timer.h singleton.h
 	$(CC) -c $(CFLAGS) skill_timer.cpp
 olog_hai.o : olog_hai.cpp structs.h utils.h comm.h interpre.h handler.h \

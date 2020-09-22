@@ -14,6 +14,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "warrior_spec_handlers.h"
 
 #include "char_utils.h"
 #include <algorithm>
@@ -772,7 +773,7 @@ void recalc_abilities(char_data* character)
             }
 
             // weapon masters get bonus attack speed with some weapons.
-            weapon_master_handler weapon_master(character);
+            player_spec::weapon_master_handler weapon_master(character);
             character->points.ENE_regen *= weapon_master.get_attack_speed_multiplier();
 
         } else {

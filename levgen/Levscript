@@ -1,0 +1,10 @@
+#!/bin/sh
+for i in *.lev
+do
+if test -e $i.REFRESH
+then
+echo Building $i
+levgen $i
+rm $i.REFRESH
+fi
+done

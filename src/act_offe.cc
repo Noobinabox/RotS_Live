@@ -21,6 +21,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
 #include "skill_timer.h"
@@ -901,7 +902,7 @@ ACMD(do_kick)
         dam *= 1.5f;
 
         // potential bonus damage from wild fighting
-        wild_fighting_handler wild_fighting(ch);
+        player_spec::wild_fighting_handler wild_fighting(ch);
         dam *= wild_fighting.get_wild_swing_damage_multiplier();
     }
 
@@ -961,7 +962,9 @@ ACMD(do_defend)
         return;
     }
 
-    if (ch->equipment[WEAR_SHIELD] == nullptr) {
+    bool is_player_beorning = utils::get_race(*ch) == RACE_BEORNING;
+
+    if (!is_player_beorning && ch->equipment[WEAR_SHIELD] == nullptr) {
         send_to_char("You need to be using a shield for this.\n\r", ch);
         return;
     }
@@ -973,8 +976,14 @@ ACMD(do_defend)
 		return;
 	}
 
-	act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
-	act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    if (is_player_beorning) {
+        act("You hunker down bracing for impact.", FALSE, ch, nullptr, nullptr, TO_CHAR);
+        act("$n hunkers down, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    }
+    else {
+        act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
+        act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
+    }
 
 	// create affect
 	affected_type af;

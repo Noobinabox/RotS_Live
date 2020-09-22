@@ -18,6 +18,7 @@ act_soci.cc
 act_wiz.cc
 ban.cc
 base_utils.h
+battle_mage_handler.cpp
 big_brother.cpp
 big_brother.h
 boards.cc
@@ -103,6 +104,10 @@ clock.h
 
 skill_timer.h
 skill_timer.cpp
+
+warrior_spec_handlers.h
+wild_fighting_handler.cpp
+weapon_master_handler.cpp
 
 )
 

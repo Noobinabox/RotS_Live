@@ -2819,12 +2819,12 @@ void nanny(struct descriptor_data* d, char* arg)
             reset_char(d->character);
             load_character(d->character); //new function in objsave
             save_char(d->character, d->character->in_room, 0);
+            STATE(d) = CON_PLYNG;
             report_news(d->character);
             report_mail(d->character);
             send_to_char(WELC_MESSG, d->character);
             send_to_char("\n\r", d->character);
 
-            STATE(d) = CON_PLYNG;
 
             /* if level 0, start out the new character */
             if (!GET_LEVEL(d->character)) {

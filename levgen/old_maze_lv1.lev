@@ -1,0 +1,141 @@
+size.x=10
+size.y=10
+room.base=23100
+room.max=99
+zone.name=Old maze level 1
+zone.symbol=*
+zone.x=11
+zone.y=10
+zone.nr=231
+zone.lifespan=10
+source.wld=../lib/world/wld/230.wld
+source.zon=../lib/world/zon/230.zon
+output.wld=../lib/world/wld/231.wld
+output.zon=../lib/world/zon/231.zon
+~
+@5 4 23000 2
+@5 6 23000 0
+@4 5 23000 1
+@6 5 23000 3
+!5 5
+s5 5 V
+~
+#Intersections
+23015  0  0  2 2 2 2
+
+#Tunnels
+23004  0  0  2 0 2 0
+
+#Tunnels
+23004  0  0  0 2 0 2
+
+#Tunnels
+23089  0  0  0 2 0 2
+
+#Tunnels
+23090  0  0  2 0 2 0
+
+#Tunnels
+23091  0  0  0 2 0 2
+
+#Dead Ends
+23002  0  0  2 0 0 0
+
+#Dead Ends
+23002  0  0  0 2 0 0
+
+#Dead Ends
+23005  0  0  0 0 2 0
+
+#Dead Ends
+23005  0  0  0 0 0 2
+
+#Dead Ends
+23009  0  0  2 0 0 0
+
+#Dead Ends
+23009  0  0  0 2 0 0
+
+#Dead Ends
+23013  0  0  0 0 2 0
+
+#Dead Ends
+23013  0  0  0 0 0 2
+
+#Intersections
+23003  0  0  2 2 2 2
+
+#Intersections
+23007  0  0  2 2 2 2
+
+#Intersections
+23010  0  0  2 2 2 2
+
+#Intersections
+23015  0  0  2 2 2 2
+
+#Troll training area
+23021  0  0 2 1 1 0
+23022  1  0 1 1 1 1
+23023  1 -1 0 0 1 0
+23024  1  1 1 0 0 0
+23025  2  0 0 0 0 1
+
+#Dusky Hall
+23027  0  0 1 2 2 1
+23028  1  0 0 0 0 1
+23026  0 -1 0 0 1 0
+
+#Troll Larder
+23043  0  0 1 2 2 1
+23044  -1 0 0 1 0 0
+23045  0 -1 0 0 1 0
+
+#Pool of Fire
+23059  0  0 2 2 1 2
+23060  0  1 1 0 1 0
+23061  0  2 1 2 0 2
+
+#Bandit camp
+23062  0  0 2 1 2 2
+23063  1  0 0 0 0 1
+
+#Tomb
+23064  0  0 2 1 2 2
+23065  1  0 0 1 0 1
+23066  2  0 0 0 1 1
+23067  2  1 1 0 0 0
+
+#Flooded Cave
+23068  0  0 2 1 2 2
+23069  1  0 1 2 0 2
+23070  1 -1 0 0 1 0
+23071  2  0 2 2 2 1
+
+#Flooded Tunnel
+23072  0  0 2 1 2 2
+23073  1  0 2 2 2 1
+
+#Dwarf Camp
+23074  0  0 2 1 2 2
+23075  1  0 0 1 0 1
+23076  2  0 2 2 2 1
+
+#Dwarven Mine
+23077  0  0 2 1 2 2
+23078  1  0 0 0 1 1
+23079  1  1 1 0 1 0
+23080  1  2 1 0 0 1
+23081  0  2 0 1 2 0
+
+#Orcish Quarteers
+23084  0  0 1 2 2 1
+23085 -1  0 0 1 0 0
+23083  0 -1 0 0 1 1
+23082 -1 -1 0 1 0 0
+
+#Abandoned Quarters
+23086  0  0 2 2 1 2
+23087  0  1 1 1 0 0
+23088  1  1 1 0 0 0
+ 

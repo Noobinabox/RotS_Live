@@ -29,6 +29,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h"
+#include "warrior_spec_handlers.h"
 
 /*   external vars  */
 extern FILE* player_fl;
@@ -834,6 +835,20 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
     sprintf(buf, "ENERGY: %d, ENE_regen: %d, damage: %d, null_speed: %d, str_speed %d\n\r",
         k->specials.ENERGY, utils::get_energy_regen(*k), k->points.damage, k->specials.null_speed, k->specials.str_speed);
     send_to_char(buf, ch);
+
+    if (!utils::is_npc(*k)) {
+        {
+            float health_regen = hit_gain(k);
+            float mana_regen = mana_gain(k);
+            float move_regen = move_gain(k);
+            player_spec::battle_mage_handler battle_mage_handler(k);
+            sprintf(buf, "Spell_Pen: %d, Spell_Pow: %d, Hit_Gain: %.0f, Stam_Gain: %.0f, Mov_Gain: %.0f\n\r",
+                battle_mage_handler.get_bonus_spell_pen(k->points.get_spell_pen()), 
+                battle_mage_handler.get_bonus_spell_power(k->points.get_spell_power()),
+                health_regen, mana_regen, move_regen);
+            send_to_char(buf, ch);
+        }
+    }
 
     sprinttype(GET_POS(k), position_types, buf2);
     sprintf(buf, "Pos: %s, Fighting: %s", buf2,

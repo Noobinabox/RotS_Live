@@ -26,6 +26,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h" /* For zone_table */
+#include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -1214,7 +1215,7 @@ bool master_gets_credit(const char_data* character)
 
 void group_gain(char_data* killer, char_data* dead_man)
 {
-    if (killer == NULL || dead_man == NULL)
+    if (killer == nullptr || dead_man == nullptr)
         return;
 
     if (killer->in_room == NOWHERE)
@@ -1226,20 +1227,24 @@ void group_gain(char_data* killer, char_data* dead_man)
     char_vector involved_killers;
     char_set player_killers;
     
-    // Ensure that the killer is involved.
-    involved_killers.push_back(killer);
-    if (utils::is_pc(*killer))
+    // This can happen from some effects.
+    if (killer != dead_man)
     {
-        player_killers.insert(killer);
+        // Ensure that the killer is involved.
+		involved_killers.push_back(killer);
+		if (utils::is_pc(*killer))
+		{
+			player_killers.insert(killer);
+		}
     }
 
-    // Ensure that the mob's target is involved as well.
-    if (killer->specials.fighting != nullptr)
+    // Ensure that the victim's target is involved as well.
+    if (dead_man->specials.fighting != nullptr)
     {
-        involved_killers.push_back(killer->specials.fighting);
-		if (utils::is_pc(*killer->specials.fighting))
+        involved_killers.push_back(dead_man->specials.fighting);
+		if (utils::is_pc(*dead_man->specials.fighting))
 		{
-			player_killers.insert(killer->specials.fighting);
+			player_killers.insert(dead_man->specials.fighting);
 		}
     }
 
@@ -1331,7 +1336,7 @@ void group_gain(char_data* killer, char_data* dead_man)
             int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
             if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))) {
                 if (GET_SPIRIT(character) >= 99000) {
-                    vsend_to_char(character, "You have capped out on spirits.\n\r");
+                    send_to_char("You have capped out on spirits.\n\r", character);
                 } else {
                     vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
                     GET_SPIRIT(character) += gain;
@@ -1348,7 +1353,7 @@ void group_gain(char_data* killer, char_data* dead_man)
         change_alignment(character, dead_man);
 
         // Allow wild fighting to handle this kill.
-        wild_fighting_handler wild_fighting(character);
+        player_spec::wild_fighting_handler wild_fighting(character);
         wild_fighting.on_unit_killed(dead_man);
 
         /* save only 10% of the time to avoid lag in big groups */
@@ -1614,6 +1619,13 @@ int maul_damage_reduction(char_data* ch, int damage)
     if (maul_reduction && maul_reduction->location == APPLY_MAUL) {
         damage_reduction += (maul_reduction->modifier / maul_db) * 0.001;
     }
+
+    affected_type* defend_affect = affected_by_spell(ch, SKILL_DEFEND);
+    if (defend_affect) {
+        dur += 3;
+        mod -= 0.30;
+    }
+
     damage_reduction = (double)damage * damage_reduction;
     damage -= (int)damage_reduction;
 
@@ -1788,7 +1800,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         send_to_char("You step out of your cover.\n\r", attacker);
         REMOVE_BIT(attacker->specials.affected_by, AFF_HIDE);
     }
-    battle_mage_handler battle_mage_handler(victim);
+    player_spec::battle_mage_handler battle_mage_handler(victim);
     /* Remove delay if wait_wheel */
     if (dam > 0) {
         if (IS_AFFECTED(victim, AFF_WAITWHEEL) && GET_WAIT_PRIORITY(victim) <= 40)
@@ -1891,7 +1903,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     record_spell_damage(attacker, victim, attacktype, dam);
 
     // Create wild fighting data to handle rage effects.
-    wild_fighting_handler wild_fighting(victim);
+    player_spec::wild_fighting_handler wild_fighting(victim);
 
     GET_HIT(victim) -= dam;
 
@@ -2250,7 +2262,7 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         /* First, remove minimum absorb */
         int damage_reduction = armor->obj_flags.value[1];
 
-        weapon_master_handler weapon_master(ch);
+        player_spec::weapon_master_handler weapon_master(ch);
 
         int divisor = 100;
 		if (w_type == TYPE_SPEARS) {
@@ -2346,7 +2358,7 @@ int frenzy_effect(char_data& attacker, int damage)
 //============================================================================
 int wild_fighting_effect(char_data* attacker, int damage)
 {
-    wild_fighting_handler handler(attacker);
+    player_spec::wild_fighting_handler handler(attacker);
     return handler.do_rush(damage);
 }
 
@@ -2380,8 +2392,8 @@ int defender_effect(char_data* attacker, char_data* victim, int damage)
             if (blocked_damage_percentage > reduced_per_block + 0.01f) {
                 // critical block
 				act("Your shield absorbs most of the impact of $N's attack.", FALSE, victim, nullptr, attacker, TO_CHAR);
-				act("$n absorbs most of your attack with %s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
-				act("$n absorbs most of the impact of $N's with %s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+				act("$n absorbs most of your attack with $s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
+				act("$n absorbs most of the impact of $N's attack with $s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
             } else if (blocked_damage_percentage > 0.01f) {
                 // standard block
 				act("You block $N's attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_CHAR);
@@ -2494,7 +2506,7 @@ void hit(char_data* ch, char_data* victim, int type)
     }
 
     // create weapon master struct to handle this spec's logic if it applies.
-    weapon_master_handler weapon_master(ch);
+    player_spec::weapon_master_handler weapon_master(ch);
 
     /*
 	 * Calculate hits/misses/damage
@@ -2867,7 +2879,7 @@ void perform_violence(int mini_tics)
                     }
                     
                     else {
-                        weapon_master_handler weapon_master(fighter);
+                        player_spec::weapon_master_handler weapon_master(fighter);
                         weapon_master.regain_energy(fighter->specials.fighting);
                     }
                 } else /* Not in same room */

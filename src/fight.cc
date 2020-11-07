@@ -2774,15 +2774,25 @@ bool can_beorning_swipe(struct char_data* character)
 	return is_victim_around(character);
 }
 
-bool does_beorning_swipe_proc(struct char_data* character)
-{
-    int warrior_level, skill_level;
+/*
+ * does_beorning_swipe_proc:
+ * determines the probability of a swipe attack firing off
+ * taking into account:
+ * - the char warrior level
+ * - the char skill level
+ * - the char level 
+ * NOTE: Max probability should be 31 for a level 90
+ * bear with 36w and fully practiced swipe
+ */
+bool
+does_beorning_swipe_proc(struct char_data* character) {
+    int warrior_level, skill_level, ch_level;
     double chance;
-    warrior_level = utils::get_prof_level(PROF_WARRIOR, *character);
-    skill_level = utils::get_raw_knowledge(*character, SKILL_SWIPE);
-    chance = (skill_level * (warrior_level + 4)) / 100;
-    chance = (100 - chance) / 100;
-    return number() >= chance;
+    warrior_level = utils::get_prof_level(PROF_WARRIOR, *character) / 3;
+    skill_level = utils::get_skill(*character, SKILL_SWIPE) / 10;
+    ch_level = GET_LEVEL(character) / 10;
+    chance = (warrior_level + skill_level + ch_level) / 100.0;
+    return number() <= chance;
 }
 
 namespace {

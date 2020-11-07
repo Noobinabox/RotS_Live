@@ -39,6 +39,17 @@ lib/plrobjs/
 lib/exploits/
 lib/misc/pklist
 log/
+CVS/
+old/
+backup/
+lib/misc/plrmail
+lib/misc/maze.dat
+lib/misc/mdl
+lib/misc/mudlle.keys
+lib/misc/oldcrimelist
+lib/misc/pk*
+lib/misc/repair*
+*~
 
 # Visual Studio Crap Dump
 src/.vs/

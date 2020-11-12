@@ -56,6 +56,7 @@ extern void check_break_prep(struct char_data*);
 extern void stop_hiding(struct char_data* ch, char);
 extern void update_pos(struct char_data* victim);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
+int check_hallucinate(struct char_data* ch, struct char_data* victim);
 extern void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon);
 extern void say_spell(char_data* caster, int spell_index);
 
@@ -2606,6 +2607,10 @@ ACMD(do_shoot)
         appear(ch);
         send_to_char("You cast off your sanctuary!\r\n", ch);
         act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+    }
+
+    if (!check_hallucinate(ch, victim)) {
+        return;
     }
 
     switch (subcmd) {

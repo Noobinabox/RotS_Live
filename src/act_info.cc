@@ -3181,7 +3181,8 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
     }
     if (flag & PROMPT_MAUL) {
         affected_type* maul_aff = affected_by_spell(ch, SKILL_MAUL);
-        sprintf(prompt, "%s%d/1000%c", prompt, maul_aff->modifier, 0);
+        int mod = maul_aff->duration * 10 / 2;
+        sprintf(prompt, "%s%d/1000%c", prompt, mod, 0);
     }
 
     if (flag & PROMPT_ARROWS) {

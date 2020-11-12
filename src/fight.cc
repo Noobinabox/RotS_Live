@@ -1601,29 +1601,27 @@ void generate_damage_message(char_data* attacker, char_data* victim, int damage,
     }
 }
 
+// TODO:(maga) Remove modifier mod
 int maul_damage_reduction(char_data* ch, int damage)
 {
     using namespace utils;
     double damage_reduction = 0.10;
     double maul_db = 2.00;
-    double mod = 2;
     double dur = 2;
 
     if (utils::get_specialization(*ch) == game_types::PS_Defender) {
         maul_db = 1.25;
-        mod = 0.50;
         dur = 6;
     }
     affected_type* maul_reduction = affected_by_spell(ch, SKILL_MAUL);
 
     if (maul_reduction && maul_reduction->location == APPLY_MAUL) {
-        damage_reduction += (maul_reduction->modifier / maul_db) * 0.001;
+        damage_reduction += ((maul_reduction->duration * 10 / 2) / maul_db) * 0.001;
     }
 
     affected_type* defend_affect = affected_by_spell(ch, SKILL_DEFEND);
     if (defend_affect) {
         dur += 3;
-        mod -= 0.30;
     }
 
     damage_reduction = (double)damage * damage_reduction;
@@ -1631,11 +1629,6 @@ int maul_damage_reduction(char_data* ch, int damage)
 
     if (maul_reduction && maul_reduction->location == APPLY_MAUL && maul_reduction->duration > 1) {
         int duration = maul_reduction->duration;
-        int modifier = maul_reduction->modifier;
-        if (!(((int)(damage_reduction * mod) > modifier))) {
-            maul_reduction->modifier -= (int)(damage_reduction * mod);
-        }
-
         if (!(((int)(damage_reduction / dur) > duration))) {
             maul_reduction->duration -= (int)(damage_reduction / dur);
         }

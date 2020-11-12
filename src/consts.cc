@@ -3364,7 +3364,7 @@ int mortal_idle_room[MAX_RACES] = {
     10263, // !NPC - Easterling!
     1192, // Uruk-Lhuth
     0, // !NPC - Undead!
-    1190, // Olog-Hai
+    1129, // Olog-Hai
     1192, // Haradrim
     0, // !UNUSED!
     0, // !NPC - Troll!

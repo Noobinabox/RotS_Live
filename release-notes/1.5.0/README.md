@@ -1,4 +1,4 @@
-#RotS Release Notes 1.5.0
+# RotS Release Notes 1.5.0
 This is a feature, new race, and bugfix patch. The new race Olog-Hais have been added to the game, along with all their new abilities.
 
 ## Bug Fixes / Balance Tweeks

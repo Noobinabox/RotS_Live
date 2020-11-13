@@ -1001,12 +1001,6 @@ ACMD(do_defend)
 }
 
 //============================================================================
-ACMD(do_beorning)
-{
-    return;
-}
-
-//============================================================================
 bool can_bear_skill(char_data* ch, int skill)
 {
     using namespace utils;
@@ -1295,19 +1289,19 @@ void apply_maul_char(char_data* ch)
     af.type = SKILL_MAUL;
     af.duration = maul_calculate_duration(ch) / 10;
     af.location = APPLY_MAUL;
-    af.modifier = 100;
+    af.modifier = 0;
     af.bitvector = 0;
     af.counter = 1;
 
     if (current_maul && current_maul->location == APPLY_MAUL) {
-        if (current_maul->modifier >= 1000 && ((af.modifier + current_maul->modifier) > 1000)) {
+        if (current_maul->duration >= 200 && ((af.duration + current_maul->duration) > 200)) {
             send_to_char("Your maul buff can't stack anymore.\r\n", ch);
             return;
         }
 
         af.duration += current_maul->duration;
-        af.modifier += current_maul->modifier;
-        af.modifier = std::min((int)af.modifier, 1000);
+        af.duration = std::min((int)af.duration, 200);
+        af.modifier = 0;
         af.counter += current_maul->counter;
     }
     affect_join(ch, &af, FALSE, FALSE);
@@ -1320,7 +1314,6 @@ void apply_maul_char(char_data* ch)
 // amount of armor absorption to the Beorning. This ability will stack up to 5
 // times.
 //============================================================================
-#define MAX_SKILL_AFFECT 5
 ACMD(do_maul)
 {
     one_argument(argument, arg);

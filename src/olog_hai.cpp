@@ -15,11 +15,11 @@ extern struct char_data* waiting_list;
 extern struct skill_data skills[];
 void appear(struct char_data* ch);
 int check_overkill(struct char_data* ch);
-const int FRENZY_TIMER = 600;
-const int SMASH_TIMER = 60;
-const int STOMP_TIMER = 60;
-const int CLEAVE_TIMER = 30;
-const int OVERRUN_TIMER = 60;
+const int constexpr FRENZY_TIMER = 600;
+const int constexpr SMASH_TIMER = 60;
+const int constexpr STOMP_TIMER = 60;
+const int constexpr CLEAVE_TIMER = 30;
+const int constexpr OVERRUN_TIMER = 60;
 ACMD(do_dismount);
 ACMD(do_move);
 
@@ -339,9 +339,10 @@ namespace olog_hai {
     void room_target(char_data* ch, void (*skill_damage)(char_data* character, char_data* victim)) {
         char_data* victim = nullptr;
         char_data* nxt_victim = nullptr;
+				auto mount = ch->mount_data.mount;
         for (victim = world[ch->in_room].people; victim; victim = nxt_victim) {
             nxt_victim = victim->next_in_room;
-            if (victim != ch) {
+            if (victim != ch && mount != victim) {
                 skill_damage(ch, victim);
             }
         }

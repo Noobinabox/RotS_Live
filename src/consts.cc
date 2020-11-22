@@ -587,17 +587,17 @@ struct skill_data skills[MAX_SKILLS] = {
     { "", PROF_GENERAL, 0, NULL,
         POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
     { "smash", PROF_WARRIOR, 20, NULL,
-        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+        POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_NONE },
     { "frenzy", PROF_WARRIOR, 30, NULL,
-        POSITION_FIGHTING, 0, 6, 65, 10, 1, 1, PLRSPEC_NONE },
+        POSITION_FIGHTING, 0, 0, 65, 10, 1, 1, PLRSPEC_NONE },
     { "stomp", PROF_GENERAL, 27, NULL,
-        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+        POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_NONE },
     { "", PROF_GENERAL, 0, NULL,
         POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
     { "cleave", PROF_WARRIOR, 25, NULL,
-        POSITION_FIGHTING, 0, 12, 16, 30, 1, 0, PLRSPEC_NONE },
+        POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_NONE },
     { "overrun", PROF_WARRIOR, 15, NULL,
-        POSITION_STANDING, 0, 6, 65, 10, 1, 1, PLRSPEC_NONE },
+        POSITION_STANDING, 0, 0, 65, 10, 1, 1, PLRSPEC_NONE },
 };
 
 byte language_number = 3;

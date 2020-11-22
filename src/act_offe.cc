@@ -50,6 +50,7 @@ int get_number(char** name);
 int check_overkill(struct char_data* ch);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 void appear(struct char_data* ch);
+bool is_frenzy_active(char_data& attacker);
 
 ACMD(do_hit)
 {
@@ -539,6 +540,9 @@ ACMD(do_bash)
         prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
         prob += number(-40, 40);
         prob -= 160;
+				if (is_frenzy_active(*ch)) {
+					prob = 1;
+				}
         if (prob < 0)
             damage(ch, victim, 0, SKILL_BASH, 0);
         else {

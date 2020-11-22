@@ -35,7 +35,13 @@ namespace olog_hai {
     }
 
     void apply_victim_delay(char_data* victim, int delay) {
-        WAIT_STATE_FULL(victim, delay, 0, 0, 100, 0, 0, 0, AFF_WAITING, TAR_IGNORE);
+			if (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_NOBASH)) {
+					return;
+			}
+			if (IS_SET(victim->specials.affected_by, AFF_BASH)) {
+					return;
+			}
+			WAIT_STATE_FULL(victim, delay, CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH, TARGET_IGNORE);
     }
 
     bool is_skill_valid(char_data* ch, const int& skill_id) {
@@ -143,15 +149,6 @@ namespace olog_hai {
         }
     }
 
-    bool does_skill_hit_random(int skill_id) {
-        switch(skill_id) {
-            case SKILL_SMASH:
-                return number() >= 0.95;
-            default:
-                return false;
-        }
-    }
-
     char_data* get_random_target(char_data* ch, char_data* original_victim) {
         char_data* t;
         int num = 0;
@@ -232,10 +229,8 @@ namespace olog_hai {
             if (number() >= 0.50) {
                 damage(attacker, mount, dam / 2, SKILL_SMASH, 0);
             }
-            if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-                int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
-                apply_victim_delay(victim, wait_delay);
-            }
+						int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
+						apply_victim_delay(victim, wait_delay);
             return;
         }
         damage(attacker, victim, dam, SKILL_SMASH, 0);
@@ -269,9 +264,7 @@ namespace olog_hai {
             return;
         }
         int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
-        if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            apply_victim_delay(victim, wait_delay);
-        }
+				apply_victim_delay(victim, wait_delay);
         damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
     }
 
@@ -289,9 +282,7 @@ namespace olog_hai {
         }
 
         int wait_delay = PULSE_VIOLENCE;
-        if (!IS_SET(victim->specials.affected_by, AFF_BASH)) {
-            apply_victim_delay(victim, wait_delay);
-        }
+				apply_victim_delay(victim, wait_delay);
         damage(attacker, victim, calculate_overrun_damage(*attacker, prob), SKILL_OVERRUN, 0);
     }
 
@@ -407,15 +398,6 @@ ACMD(do_smash)
         return;
     }
 
-    /* 5% chance to swing on the wrong target */
-    if (olog_hai::does_skill_hit_random(SKILL_SMASH)) {
-        // find our target.
-        char_data* new_target = olog_hai::get_random_target(ch, victim);
-        if (new_target != victim) {
-            damage(ch, victim, 0, SKILL_SMASH, 0);
-            victim = new_target;
-        }
-    }
     olog_hai::apply_smash_damage(ch, victim, prob);
 }
 

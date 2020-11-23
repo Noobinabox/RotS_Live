@@ -630,13 +630,8 @@ ologhai_item_restriction(char_data* character, obj_data* item) {
         return false;
     }
 
-		// Cannot wear this item
-		if (!CAN_WEAR(item, ITEM_WIELD)) {
-			return true;
-		}
-
     // Olog-Hais cannot wield small weapons, big hands and all.
-    if (item && item->get_bulk() <= 3 && item->get_weight() < LIGHT_WEAPON_WEIGHT_CUTOFF) {
+    if (CAN_WEAR(item, ITEM_WIELD) && (item && item->get_bulk() <= 3 && item->get_weight() <= LIGHT_WEAPON_WEIGHT_CUTOFF)) {
         send_to_char("Your massive hands are unable to grasp the tiny weapon.\n\r", character);
         return true;
     }

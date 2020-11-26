@@ -18,7 +18,7 @@
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.5.1.1\n\r"
+    "Arda: The Fourth Age, version 1.5.4\n\r"
 };
 
 //const
@@ -36,7 +36,7 @@ char* spell_wear_off_msg[] = {
     "You feel less protected.", //* 1 *
     "!Teleport!",
     "You feel less righteous.",
-    "You feel a cloak of blindness disolve.",
+    "You feel a cloak of blindness dissolve.",
     "!Burning Hands!", //* 5 *
     "!Call Lightning",
     "You feel more self-confident.",
@@ -140,7 +140,7 @@ char* spell_wear_off_msg[] = {
     "!Remove Curse!",
     "The white aura around your body fades.",
     "!Shocking Grasp!",
-    "Your magical shield disolves.",
+    "Your magical shield dissolves.",
     "You feel weaker.",
     "Your eyesight returns as if a veil has been lifted.", //* 110 *
     "You feel less confused.",

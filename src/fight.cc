@@ -2498,7 +2498,6 @@ void hit(char_data* ch, char_data* victim, int type)
         return;
     }
 
-    // create weapon master struct to handle this spec's logic if it applies.
     player_spec::weapon_master_handler weapon_master(ch);
 
     /*

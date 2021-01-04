@@ -15,16 +15,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "char_utils.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
+#include "limits.h"
+#include "pkill.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include "pkill.h"
-#include "char_utils.h"
-#include "limits.h"
 
 #include <iostream>
 #include <sstream>
@@ -248,16 +248,15 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
     if (real_object(object->item_number) > -1) {
         /* somewhat awkward, accounting for scalps... */
         if (object->item_number == generic_scalp) {
-            
+
             /* player id numbers exceed sh_int size, so we started stashing the id in extra_flags. 
              * scalp items don't use them, and load scalp knows where to put it. */
             int head_number = object->value[4];
             if (object->extra_flags != 0) {
                 head_number = object->extra_flags;
             }
-			obj = load_scalp(head_number);
-        }
-        else {
+            obj = load_scalp(head_number);
+        } else {
             obj = read_object(object->item_number, VIRT);
             obj->obj_flags.extra_flags = object->extra_flags;
             obj->obj_flags.timer = object->timer;
@@ -324,23 +323,23 @@ void Crash_listrent(struct char_data* ch, char* name)
                 object.item_number_deprecated = DEPRECATED_ID_VALUE;
             }
 
-            if (real_object(object.item_number) > -1) {
-                obj = read_object(object.item_number, VIRT);
+        if (real_object(object.item_number) > -1) {
+            obj = read_object(object.item_number, VIRT);
 
-                /* If we would overflow the buffer, don't add anymore */
+            /* If we would overflow the buffer, don't add anymore */
 
-                if (bufpt >= max_space - strlen(obj->short_description) - 1) {
-                    snprintf(buf + bufpt, overflow_len, overflow_str);
-                    send_to_char(buf, ch);
-                    extract_obj(obj);
-                    fclose(fl);
-                    return;
-                }
-
-                bufpt += snprintf(buf + bufpt, max_space - bufpt, "%s\n\r", obj->short_description);
-
+            if (bufpt >= max_space - strlen(obj->short_description) - 1) {
+                snprintf(buf + bufpt, overflow_len, overflow_str);
+                send_to_char(buf, ch);
                 extract_obj(obj);
+                fclose(fl);
+                return;
             }
+
+            bufpt += snprintf(buf + bufpt, max_space - bufpt, "%s\n\r", obj->short_description);
+
+            extract_obj(obj);
+        }
     }
     send_to_char(buf, ch);
     fclose(fl);
@@ -639,7 +638,7 @@ int Crash_obj2store(obj_data* obj, char_data* ch,
     obj_file_elem object;
 
     // Assign this the deprecation value so we know that this is a new save.
-	object.item_number_deprecated = DEPRECATED_ID_VALUE;
+    object.item_number_deprecated = DEPRECATED_ID_VALUE;
 
     if (obj->item_number >= 0) {
         object.item_number = obj_index[obj->item_number].virt;
@@ -664,8 +663,7 @@ int Crash_obj2store(obj_data* obj, char_data* ch,
     // Stash the player_id in extra_flags for scalps, since we have an array of shorts and player
     // ids can exceed that.  Scalp loading knows how to interpret this, and assigns the in-game object
     // an extra_flags of 0.
-    if (object.item_number == generic_scalp)
-    {
+    if (object.item_number == generic_scalp) {
         object.extra_flags = obj->obj_flags.value[4];
     }
 
@@ -687,7 +685,7 @@ void Crash_follower_save(struct char_data* ch, FILE* fp)
     int x;
     struct obj_file_elem dummy_object;
 
-    dummy_object.item_number= SENTINEL_ITEM_ID_VALUE;
+    dummy_object.item_number = SENTINEL_ITEM_ID_VALUE;
     dummy_object.item_number_deprecated = DEPRECATED_ID_VALUE;
     for (k = ch->followers; k; k = next_fol) {
         next_fol = k->next;
@@ -1584,12 +1582,11 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
             act(buf, FALSE, recep, 0, ch, TO_VICT);
         }
 
-
         if (mode == RENT_FACTOR) {
             affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
             act("$n stores your belongings and helps you into your private chamber.",
                 FALSE, recep, 0, ch, TO_VICT);
-            if(aff) {
+            if (aff) {
                 remove_fame_war_bonuses(ch, aff);
                 affect_remove(ch, aff);
             }

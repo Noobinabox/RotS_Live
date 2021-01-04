@@ -88,25 +88,22 @@ bool is_affected_by(const char_data& character, long skill_id)
 
 void add_spirits(char_data* character, int spirits)
 {
-	if ((character->points.spirit + spirits) <= MAX_SPIRITS) 
-	{
-		character->points.spirit += spirits;
-	}
+    if ((character->points.spirit + spirits) <= MAX_SPIRITS) {
+        character->points.spirit += spirits;
+    }
 }
 
 void set_spirits(char_data* character, int spirits)
 {
-	if (spirits <= MAX_SPIRITS) 
-	{
-		character->points.spirit = spirits;
-	}
+    if (spirits <= MAX_SPIRITS) {
+        character->points.spirit = spirits;
+    }
 }
 
 int get_spirits(char_data* character)
 {
-	return character->points.spirit;
+    return character->points.spirit;
 }
-
 
 //============================================================================
 affected_type* is_affected_by_spell(char_data& character, int skill_id)
@@ -191,8 +188,8 @@ int get_tactics(const char_data& character)
 //============================================================================
 void set_tactics(char_data& character, int value)
 {
-	if (value <= 0)
-		value = TACTICS_NORMAL;
+    if (value <= 0)
+        value = TACTICS_NORMAL;
 
     if (!is_npc(character)) {
         character.specials.tactics = static_cast<ubyte>(value);
@@ -211,8 +208,8 @@ int get_shooting(const char_data& character)
 //============================================================================
 void set_shooting(char_data& character, int value)
 {
-	if (value <= 0)
-		value = SHOOTING_NORMAL;
+    if (value <= 0)
+        value = SHOOTING_NORMAL;
 
     if (!is_npc(character))
         character.specials.shooting = static_cast<ubyte>(value);
@@ -230,8 +227,8 @@ int get_casting(const char_data& character)
 //============================================================================
 void set_casting(char_data& character, int value)
 {
-	if (value <= 0)
-		value = CASTING_NORMAL;
+    if (value <= 0)
+        value = CASTING_NORMAL;
 
     if (is_pc(character)) {
         character.specials.casting = static_cast<ubyte>(value);
@@ -274,7 +271,7 @@ const char* get_name(const char_data& character)
 }
 
 //============================================================================
-const char* get_skill_name(const int skill_id) 
+const char* get_skill_name(const int skill_id)
 {
     const skill_data* skills = get_skill_array();
     const char* skill_name = skills[skill_id].name;
@@ -371,7 +368,8 @@ int get_prof_points(int prof, const char_data& character)
 }
 
 //============================================================================
-int get_highest_coeffs(const char_data& character) {
+int get_highest_coeffs(const char_data& character)
+{
     int coeffs[4];
     int prof = 0;
     coeffs[0] = get_prof_level(PROF_MAGE, character);
@@ -807,15 +805,17 @@ bool is_awake(const char_data& character)
 }
 
 //============================================================================
-int get_ranking_tier(const char_data& character) {
+int get_ranking_tier(const char_data& character)
+{
     return get_ranking_tier(character.player.ranking);
 }
 
 //============================================================================
-int get_ranking_tier(int ranking) {
+int get_ranking_tier(int ranking)
+{
     if (ranking <= 3)
         return ranking;
-    
+
     return 4;
 }
 
@@ -974,7 +974,7 @@ bool can_see_object(const char_data& character, const obj_data& object, const we
     } else {
         return can_see(character, weather, room)
             && (!utils::is_set(item_flags, ITEM_INVISIBLE)
-                   || is_affected_by(character, AFF_DETECT_INVISIBLE));
+                || is_affected_by(character, AFF_DETECT_INVISIBLE));
     }
 }
 
@@ -1023,7 +1023,7 @@ bool is_race_magi(const char_data& character)
 //============================================================================
 bool is_race_haradrim(const char_data& character)
 {
-	return is_race_haradrim(character.player.race);
+    return is_race_haradrim(character.player.race);
 }
 
 //============================================================================
@@ -1053,7 +1053,7 @@ bool is_race_magi(int race)
 //============================================================================
 bool is_race_haradrim(int race)
 {
-	return race == 18;
+    return race == 18;
 }
 
 //============================================================================
@@ -1183,8 +1183,8 @@ const char* get_race_abbrev(const char_data& character)
     return race_abbrevs[race];
 }
 
-
-int get_race(const char_data& character) {
+int get_race(const char_data& character)
+{
     return character.player.race;
 }
 
@@ -1316,27 +1316,26 @@ int get_energy_regen(const char_data& character)
 //============================================================================
 int char_data::get_spent_practice_count() const
 {
-	if (skills == NULL)
-		return 0;
+    if (skills == NULL)
+        return 0;
 
-	int count = 0;
-	for (int index = 0; index < MAX_SKILLS; ++index)
-	{
-		count += skills[index];
-	}
+    int count = 0;
+    for (int index = 0; index < MAX_SKILLS; ++index) {
+        count += skills[index];
+    }
 
-	return count;
+    return count;
 }
 
 //============================================================================
 int char_data::get_max_practice_count() const
 {
-	const int free_pracs = 10;
+    const int free_pracs = 10;
 
-	int base_pracs = player.level * PRACS_PER_LEVEL;
-	int bonus_lea_pracs = player.level * get_max_lea() / LEA_PRAC_FACTOR;
+    int base_pracs = player.level * PRACS_PER_LEVEL;
+    int bonus_lea_pracs = player.level * get_max_lea() / LEA_PRAC_FACTOR;
 
-	return base_pracs + bonus_lea_pracs + free_pracs;
+    return base_pracs + bonus_lea_pracs + free_pracs;
 }
 
 //============================================================================
@@ -1348,22 +1347,21 @@ void char_data::update_available_practice_sessions()
 //============================================================================
 void char_data::reset_skills()
 {
-	if (skills == NULL || knowledge == NULL)
-		return;
+    if (skills == NULL || knowledge == NULL)
+        return;
 
-	for (int index = 0; index < MAX_SKILLS; ++index)
-	{
-		skills[index] = 0;
-		knowledge[index] = 0;
-	}
+    for (int index = 0; index < MAX_SKILLS; ++index) {
+        skills[index] = 0;
+        knowledge[index] = 0;
+    }
 
-	specials2.spells_to_learn = get_max_practice_count();
+    specials2.spells_to_learn = get_max_practice_count();
 }
 
 //============================================================================
 bool char_data::is_affected() const
 {
-	return affected != NULL;
+    return affected != NULL;
 }
 
 //============================================================================
@@ -1606,7 +1604,8 @@ std::string defender_data::to_string(char_data& character) const
     return std::string("You are specialized in defending.\n\r");
 }
 
-std::string battle_mage_spec_data::to_string(char_data& character) const {
+std::string battle_mage_spec_data::to_string(char_data& character) const
+{
     return std::string("You are specialized in battle mage.\n\r");
 }
 

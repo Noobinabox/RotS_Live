@@ -207,7 +207,7 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
     if (damg) {
         tmp = number(0, 6);
         if (tmp == 6) /* Hitting concentration */
-						utils::add_spirits(ch, damg);
+            utils::add_spirits(ch, damg);
 
         if (!(check_mind_block(victim, ch, damg, tmp)))
             return;

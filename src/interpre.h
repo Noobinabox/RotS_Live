@@ -107,29 +107,25 @@ struct command_info {
     int target_mask[32];
     void add_target(int mask_in, int value)
     {
-		for (int index = 0; index < 32; index++)
-		{
-			int bit_position_as_int = 1 << index;
-			if (bit_position_as_int & mask_in)
-			{
-				target_mask[index] |= value;
-			}
-		}
+        for (int index = 0; index < 32; index++) {
+            int bit_position_as_int = 1 << index;
+            if (bit_position_as_int & mask_in) {
+                target_mask[index] |= value;
+            }
+        }
     }
 
     /* This is never used anywhere */
     bool valid_target(int mask_in, int value)
     {
-		for (int index = 0; index < 32; index++)
-		{
-			int bit_position_as_int = 1 << index;
-			if (bit_position_as_int & mask_in)
-			{
-				return (target_mask[index] & value) != 0;
-			}
-		}
+        for (int index = 0; index < 32; index++) {
+            int bit_position_as_int = 1 << index;
+            if (bit_position_as_int & mask_in) {
+                return (target_mask[index] & value) != 0;
+            }
+        }
 
-		return false;
+        return false;
     }
 };
 

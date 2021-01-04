@@ -318,10 +318,10 @@ void pkill_update_rank(long idx)
         return;
     }
 
-    for (b = 0; b < trnk->rank_len;++b) {
+    for (b = 0; b < trnk->rank_len; ++b) {
         if (trnk->rank_tab[b] == -1)
             break;
-        
+
         if (npoints > player_table[trnk->rank_tab[b]].warpoints)
             break;
     }
@@ -820,13 +820,14 @@ int pkill_get_rank_by_character(struct char_data* c, bool totalRank)
     return pkill_get_totalrank_by_character_id(GET_INDEX(c), totalRank);
 }
 
-int pkill_get_totalrank_by_character_id(int idx, bool totalRank) {
+int pkill_get_totalrank_by_character_id(int idx, bool totalRank)
+{
     extern struct player_index_element* player_table;
     extern int top_of_p_table;
 
     if (idx < 0 || idx > top_of_p_table)
         return PKILL_UNRANKED;
-    
+
     if (totalRank)
         return player_table[idx].totalrank;
 

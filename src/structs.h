@@ -378,7 +378,6 @@ struct waiting_type {
 
 #define WEAPON_POISON_DUR 60
 
-
 struct obj_flag_data {
 public:
     int get_ob_coef() const { return value[0]; }
@@ -425,7 +424,6 @@ public:
     int poisondata[5];
 };
 
-
 /* Wraps the object_flag_data and exposes values that are used for weapons. */
 struct weapon_flag_data {
     weapon_flag_data(obj_flag_data* data)
@@ -443,8 +441,6 @@ struct weapon_flag_data {
 private:
     obj_flag_data* object_flag_data;
 };
-
-
 
 /* Used in OBJ_FILE_ELEM *DO*NOT*CHANGE* */
 struct obj_affected_type {
@@ -1078,7 +1074,7 @@ struct char_point_data {
     sh_int willpower; /* strength in mental fights */
     sh_int spell_pen;
     sh_int spell_power;
-    sh_int get_spell_power() const { return spell_power;  };
+    sh_int get_spell_power() const { return spell_power; };
     void set_spell_power(sh_int bonus) { spell_power += bonus; };
     sh_int get_spell_pen() const { return spell_pen; };
 };
@@ -1374,7 +1370,6 @@ private:
     long total_energy_sapped;
 };
 
-
 struct fire_spec_data : public elemental_spec_data {
     virtual std::string to_string(char_data& character) const;
 };
@@ -1536,7 +1531,7 @@ public:
     {
     }
 
-    virtual ~damage_details() {}
+    virtual ~damage_details() { }
 
     void add_damage(int damage)
     {
@@ -1595,7 +1590,7 @@ public:
         , elapsed_combat_seconds(0)
     {
     }
-    virtual ~timed_damage_details() {}
+    virtual ~timed_damage_details() { }
 
     float get_combat_time() const { return elapsed_combat_seconds; }
     float get_dps() const { return static_cast<float>(get_total_damage()) / std::max(elapsed_combat_seconds, 0.5f); }
@@ -1693,15 +1688,15 @@ public:
     /* Returns the leader of the character's group, if the character is in a group. */
     char_data* get_group_leader() const { return group ? group->get_leader() : NULL; }
 
-	int get_spent_practice_count() const;
-	int get_max_practice_count() const;
+    int get_spent_practice_count() const;
+    int get_max_practice_count() const;
     void update_available_practice_sessions();
 
-	// Resets all known skills and practice sessions for a character.
-	void reset_skills();
+    // Resets all known skills and practice sessions for a character.
+    void reset_skills();
 
-	// returns true if the affected pointer is valid
-	bool is_affected() const;
+    // returns true if the affected pointer is valid
+    bool is_affected() const;
 
     int get_dodge() const { return points.dodge; }
 

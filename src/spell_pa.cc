@@ -67,12 +67,11 @@ void say_spell(char_data* caster, int spell_index)
 
     // Reset the buffer.
     strcpy(buf, "");
-	if (GET_RACE(caster) != RACE_HARADRIM) {
-		sprintf(buf, "$n utters a strange command, '%s'", spell_name);
-	}
-	else {
-		sprintf(buf, "$n utters a foreign command, '%s'", spell_name);
-	}
+    if (GET_RACE(caster) != RACE_HARADRIM) {
+        sprintf(buf, "$n utters a strange command, '%s'", spell_name);
+    } else {
+        sprintf(buf, "$n utters a foreign command, '%s'", spell_name);
+    }
 
     const room_data& room = world[caster->in_room];
     char_data* receiver = room.people;
@@ -854,7 +853,7 @@ ACMD(do_cast)
             if (skills[spell_index].type == PROF_MAGE) {
                 GET_MANA(ch) -= (USE_MANA(ch, spell_index) >> 1);
             } else {
-								utils::add_spirits(ch, -USE_SPIRIT(ch, spell_index) >> 1);
+                utils::add_spirits(ch, -USE_SPIRIT(ch, spell_index) >> 1);
             }
 
             return;
@@ -893,10 +892,10 @@ ACMD(do_cast)
         else {
             int spirit_cost = USE_SPIRIT(ch, spell_index);
             affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
-            if (aff && utils::get_highest_coeffs(*ch) == PROF_CLERIC)  {
-                spirit_cost = spirit_cost * 0.80; 
+            if (aff && utils::get_highest_coeffs(*ch) == PROF_CLERIC) {
+                spirit_cost = spirit_cost * 0.80;
             }
-						utils::add_spirits(ch, -spirit_cost);
+            utils::add_spirits(ch, -spirit_cost);
         }
 
         send_to_char("Ok.\n\r", ch);

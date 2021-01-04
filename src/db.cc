@@ -24,8 +24,8 @@
 #include "zone.h"
 
 #include "big_brother.h"
-#include "skill_timer.h"
 #include "char_utils.h"
+#include "skill_timer.h"
 #include <iostream>
 #include <sstream>
 #include <string>

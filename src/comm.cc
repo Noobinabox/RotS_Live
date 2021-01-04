@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include "big_brother.h"
-#include "skill_timer.h"
 #include "char_utils.h"
 #include "color.h"
 #include "comm.h"
@@ -31,6 +30,7 @@
 #include "interpre.h"
 #include "limits.h"
 #include "script.h"
+#include "skill_timer.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
@@ -607,7 +607,8 @@ void game_loop(SocketType s)
                         opponent = point->character->specials.fighting;
 
                         add_prompt(prompt, point->character,
-                            PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0 : PROMPT_ALL);
+                            PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
+                                                                                                                                    : PROMPT_ALL);
 
                         if (opponent && IS_MENTAL(opponent)) {
                             sprintf(prompt, "%s Mind:", prompt);
@@ -698,7 +699,7 @@ void game_loop(SocketType s)
             was_updated = 1;
         }
         if (!(pulse % (PULSE_FAST_UPDATE)) /*&& !was_updated*/) {
-			//now increasing hp/mp/mana/spirit fast in fast_update..
+            //now increasing hp/mp/mana/spirit fast in fast_update..
             fast_update();
             affect_update();
 
@@ -1789,7 +1790,7 @@ void send_to_room_except_two(const char* messg, int room,
  */
 void convert_string(const char* str, int hide_invisible, struct char_data* ch,
     struct obj_data* obj, void* vict_obj,
-    struct char_data* to,const char* buf)
+    struct char_data* to, const char* buf)
 {
     int clobbered_color;
     char* used_color;

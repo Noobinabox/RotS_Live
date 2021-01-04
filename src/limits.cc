@@ -1519,15 +1519,6 @@ void fast_update()
 				// Make sure characters moves don't drop below zero.
 				GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
 
-        // Commented out because this will always add 0 spirit based on the math.
-        // If we want to give clerics a minimum spirit amount, change the divisor from
-        // 10 * freq to just 10.
-        /*
-        if (GET_SPIRIT(character) < GET_WILL(character) / 3 + GET_PROF_LEVEL(PROF_CLERIC, character) / 3) {
-            GET_SPIRIT(character) += number(1, GET_WILL(character) + GET_PROF_LEVEL(PROF_CLERIC, character)) / (10 * freq);
-        } 
-        */
-
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

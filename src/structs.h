@@ -26,6 +26,8 @@
 #include <vector>
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch) * 2)
+const int constexpr MAX_SPIRITS = 90000;
+
 const int constexpr ENE_TO_HIT = 1200;
 const int constexpr BAREHANDED_DAMAGE = 2;
 const int constexpr PRACS_PER_LEVEL = 3;

@@ -854,7 +854,7 @@ ACMD(do_cast)
             if (skills[spell_index].type == PROF_MAGE) {
                 GET_MANA(ch) -= (USE_MANA(ch, spell_index) >> 1);
             } else {
-                GET_SPIRIT(ch) -= (USE_SPIRIT(ch, spell_index) >> 1);
+								utils::add_spirits(ch, -USE_SPIRIT(ch, spell_index) >> 1);
             }
 
             return;
@@ -896,7 +896,7 @@ ACMD(do_cast)
             if (aff && utils::get_highest_coeffs(*ch) == PROF_CLERIC)  {
                 spirit_cost = spirit_cost * 0.80; 
             }
-            GET_SPIRIT(ch) -= spirit_cost;
+						utils::add_spirits(ch, -spirit_cost);
         }
 
         send_to_char("Ok.\n\r", ch);

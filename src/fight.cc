@@ -1321,7 +1321,7 @@ void group_gain(char_data* killer, char_data* dead_man)
         int num_killers = (int)player_killers.size();
         share = share * (num_killers + 1) / num_killers;
     } else {
-        spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
+        spirit_gain = utils::get_spirits(dead_man) * 100 / 4;
     }
 
     share = share / level_total;
@@ -1335,11 +1335,11 @@ void group_gain(char_data* killer, char_data* dead_man)
         if (perception_total > 0 && spirit_gain > 0) {
             int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
             if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))) {
-                if (GET_SPIRIT(character) >= 99000) {
+                if (utils::get_spirits(character) >= 99000) {
                     send_to_char("You have capped out on spirits.\n\r", character);
                 } else {
                     vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
-                    GET_SPIRIT(character) += gain;
+										utils::add_spirits(character, gain);
                 }
             }
         }

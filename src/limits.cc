@@ -1516,6 +1516,9 @@ void fast_update()
         GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
         GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
 
+				// Make sure characters moves don't drop below zero.
+				GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
+
         // Commented out because this will always add 0 spirit based on the math.
         // If we want to give clerics a minimum spirit amount, change the divisor from
         // 10 * freq to just 10.

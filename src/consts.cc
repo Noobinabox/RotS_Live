@@ -496,7 +496,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "detect evil", PROF_MAGE, 3, spell_detect_evil,
         POSITION_STANDING, 2, 12, 1, 5, 1, 0, PLRSPEC_NONE },
     { "blind", PROF_RANGER, 27, NULL,
-        POSITION_FIGHTING, 20, 20, 16, 24, 1, 1, PLRSPEC_NONE },
+        POSITION_FIGHTING, 20, 10, 16, 24, 1, 1, PLRSPEC_NONE },
 
     /* 111 */
     { "confuse", PROF_CLERIC, 1, spell_confuse,
@@ -536,7 +536,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "nothing", PROF_GENERAL, 0, NULL,
         POSITION_DEAD, 5, 2, 6, 1, 1, 0, PLRSPEC_NONE },
     { "wind blast", PROF_RANGER, 24, NULL,
-        POSITION_FIGHTING, 40, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE },
+        POSITION_FIGHTING, 20, 12, TAR_IGNORE, 24, 1, 0, PLRSPEC_NONE },
     { "Fame War", PROF_GENERAL, 1, NULL,
         POSITION_STANDING, 5, 2, 6, 1, 1, 1, PLRSPEC_NONE},
     { "", PROF_GENERAL, 0, NULL,

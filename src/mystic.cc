@@ -751,6 +751,11 @@ ASPELL(spell_curing)
     if (!victim)
         return;
 
+    if (GET_RACE(victim) == RACE_OLOGHAI) {
+        send_to_char("You cannot improve an Olog-Hai's regeneration.\n\r", caster);
+        return;
+    }
+
     int healing_level = get_mystic_caster_level(caster) + 5;
     if (victim != caster) {
         healing_level = (healing_level + get_mystic_caster_level(victim)) / 2;
@@ -779,6 +784,11 @@ ASPELL(spell_restlessness)
 {
     if (!victim)
         return;
+
+    if (GET_RACE(victim) == RACE_OLOGHAI) {
+        send_to_char("You cannot improve an Olog-Hai's vitality.\n\r", caster);
+        return;
+    }
 
     int healing_level = get_mystic_caster_level(caster) + 5;
     if (victim != caster) {

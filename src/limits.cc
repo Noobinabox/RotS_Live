@@ -1516,15 +1516,6 @@ void fast_update()
         GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
         GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
 
-        // Commented out because this will always add 0 spirit based on the math.
-        // If we want to give clerics a minimum spirit amount, change the divisor from
-        // 10 * freq to just 10.
-        /*
-        if (GET_SPIRIT(character) < GET_WILL(character) / 3 + GET_PROF_LEVEL(PROF_CLERIC, character) / 3) {
-            GET_SPIRIT(character) += number(1, GET_WILL(character) + GET_PROF_LEVEL(PROF_CLERIC, character)) / (10 * freq);
-        } 
-        */
-
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

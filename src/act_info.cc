@@ -1804,7 +1804,7 @@ ACMD(do_info)
                             "%d/%d moves and %d spirit.\n\r",
         GET_HIT(ch),
         GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
-        GET_MOVE(ch), GET_MAX_MOVE(ch), GET_SPIRIT(ch));
+        GET_MOVE(ch), GET_MAX_MOVE(ch), utils::get_spirits(ch));
 
     /* ch's resource regeneration */
     {
@@ -1982,7 +1982,7 @@ ACMD(do_score)
                             "%d spirit.\r\n",
         GET_HIT(ch), GET_MAX_HIT(ch),
         GET_MANA(ch), GET_MAX_MANA(ch), GET_MOVE(ch),
-        GET_MAX_MOVE(ch), GET_SPIRIT(ch));
+        GET_MAX_MOVE(ch), utils::get_spirits(ch));
 
     bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),

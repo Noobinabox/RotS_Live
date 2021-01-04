@@ -86,6 +86,27 @@ bool is_affected_by(const char_data& character, long skill_id)
     return utils::is_set(character.specials.affected_by, skill_id);
 }
 
+void add_spirits(char_data* character, int spirits)
+{
+	if ((character->points.spirit + spirits) <= MAX_SPIRITS) 
+	{
+		character->points.spirit += spirits;
+	}
+}
+
+void set_spirits(char_data* character, int spirits)
+{
+	if (spirits <= MAX_SPIRITS) 
+	{
+		character->points.spirit = spirits;
+	}
+}
+
+int get_spirits(char_data* character)
+{
+	return character->points.spirit;
+}
+
 
 //============================================================================
 affected_type* is_affected_by_spell(char_data& character, int skill_id)

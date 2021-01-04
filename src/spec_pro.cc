@@ -1119,11 +1119,11 @@ SPECIAL(room_temple)
     if (GET_POS(host) != POSITION_STANDING)
         return FALSE;
 
-    if (GET_SPIRIT(host) < 100) {
-        GET_SPIRIT(host) = 100;
-        send_to_char("You feel inspired!\n\r", host);
-    }
-
+		if (utils::get_spirits(host) < 100) {
+			utils::set_spirits(host, 100);
+      send_to_char("You feel inspired!\n\r", host);
+		}
+		
     return FALSE;
 }
 

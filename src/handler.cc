@@ -2039,7 +2039,7 @@ void extract_char(struct char_data* ch, int new_room)
             ch->specials.was_in_room = NOWHERE;
             send_to_char("Your spirit found a new body to wear.\n\r", ch);
             SET_POS(ch) = POSITION_RESTING;
-            GET_SPIRIT(ch) = GET_SPIRIT(ch) / 2;
+						utils::set_spirits(ch, utils::get_spirits(ch) / 2);
             do_look(ch, "", 0, 0, 0);
         } else {
             ch->desc->connected = CON_SLCT;

@@ -1516,6 +1516,9 @@ void fast_update()
         GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
         GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
 
+				// Make sure characters moves don't drop below zero.
+				GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
+
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

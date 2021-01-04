@@ -352,7 +352,7 @@ ACMD(do_practice)
                     shoot_calculate_wait(ch));
             else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {
                 sprintf(str2, "(%3d time,   %3d stamina)",
-                    skills[tmp].beats, USE_MANA(ch, tmp));
+                    skills[tmp].beats, skills[tmp].min_usesmana);
             } else if (CASTING_TIME(ch, tmp))
                 sprintf(str2, "(%3d time)",
                     skills[tmp].beats);

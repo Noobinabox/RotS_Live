@@ -311,7 +311,7 @@ ACMD(do_flee)
     void gain_exp(struct char_data*, int);
 
     if (GET_TACTICS(ch) == TACTICS_BERSERK) {
-        send_to_char("You are too enraged to flee!", ch);
+        send_to_char("You are too enraged to flee!\n\r", ch);
         return;
     }
 

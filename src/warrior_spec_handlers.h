@@ -65,6 +65,7 @@ public:
     bool does_spell_get_interrupted() const;
     bool does_armor_fail_spell() const;
     bool can_prepare_spell() const;
+    bool does_mental_attack_interrupt_spell() const;
 
 private:
     char_data* character = nullptr;

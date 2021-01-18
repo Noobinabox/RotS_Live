@@ -24,8 +24,8 @@
 #include "warrior_spec_handlers.h"
 
 #include "big_brother.h"
-#include "skill_timer.h"
 #include "char_utils.h"
+#include "skill_timer.h"
 
 /* extern variables */
 extern struct room_data world;
@@ -540,9 +540,9 @@ ACMD(do_bash)
         prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
         prob += number(-40, 40);
         prob -= 160;
-				if (is_frenzy_active(*ch)) {
-					prob = 1;
-				}
+        if (is_frenzy_active(*ch)) {
+            prob = 1;
+        }
         if (prob < 0)
             damage(ch, victim, 0, SKILL_BASH, 0);
         else {
@@ -898,7 +898,6 @@ ACMD(do_kick)
         return;
     }
 
-    
     prob = get_prob_skill(ch, victim, attacktype);
     dam = (2 + GET_PROF_LEVEL(PROF_WARRIOR, ch)) * (100 + prob) / 250;
 
@@ -914,10 +913,9 @@ ACMD(do_kick)
         damage(ch, victim, 0, attacktype, 0);
     else {
         // Heavy fighters kick 20% harder.
-		if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting)
-		{
-			dam += dam / 5;
-		}
+        if (utils::get_specialization(*ch) == (int)game_types::PS_HeavyFighting) {
+            dam += dam / 5;
+        }
         damage(ch, victim, dam, attacktype, 0);
     }
 
@@ -973,34 +971,33 @@ ACMD(do_defend)
         return;
     }
 
-	game_timer::skill_timer& timer = game_timer::skill_timer::instance();
+    game_timer::skill_timer& timer = game_timer::skill_timer::instance();
 
-	if (!timer.is_skill_allowed(*ch, SKILL_DEFEND)) {
-		send_to_char("You can't use this skill yet.\r\n", ch);
-		return;
-	}
+    if (!timer.is_skill_allowed(*ch, SKILL_DEFEND)) {
+        send_to_char("You can't use this skill yet.\r\n", ch);
+        return;
+    }
 
     if (is_player_beorning) {
         act("You hunker down bracing for impact.", FALSE, ch, nullptr, nullptr, TO_CHAR);
         act("$n hunkers down, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
-    }
-    else {
+    } else {
         act("You hunker down behind your shield.", FALSE, ch, nullptr, nullptr, TO_CHAR);
         act("$n hunkers down behind $s shield, ready for incoming blows.", FALSE, ch, nullptr, nullptr, TO_ROOM, FALSE);
     }
 
-	// create affect
-	affected_type af;
-	af.type = SKILL_DEFEND;
-	af.duration = 2; // 2 fast update ticks -- ~6s
-	af.modifier = defend_knowledge;
-	af.location = APPLY_NONE;
-	af.bitvector = 0;
+    // create affect
+    affected_type af;
+    af.type = SKILL_DEFEND;
+    af.duration = 2; // 2 fast update ticks -- ~6s
+    af.modifier = defend_knowledge;
+    af.location = APPLY_NONE;
+    af.bitvector = 0;
 
-	// apply affect
-	affect_to_char(ch, &af);
+    // apply affect
+    affect_to_char(ch, &af);
 
-	static const int DEFEND_TIMER = 12;
+    static const int DEFEND_TIMER = 12;
     timer.add_skill_timer(*ch, SKILL_DEFEND, DEFEND_TIMER);
 }
 

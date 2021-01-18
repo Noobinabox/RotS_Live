@@ -623,8 +623,8 @@ void wear_message(struct char_data* ch, struct obj_data* obj, int where)
     }
 }
 
-bool 
-ologhai_item_restriction(char_data* character, obj_data* item) {
+bool ologhai_item_restriction(char_data* character, obj_data* item)
+{
     // Only Olog-Hais here
     if (GET_RACE(character) != RACE_OLOGHAI) {
         return false;
@@ -639,8 +639,8 @@ ologhai_item_restriction(char_data* character, obj_data* item) {
     return false;
 }
 
-bool
-beorning_item_restriction(char_data* character, obj_data* item) {
+bool beorning_item_restriction(char_data* character, obj_data* item)
+{
     if (CAN_WEAR(item, ITEM_WEAR_SHIELD)) {
         send_to_char("You cannot wear a shield.\n\r", character);
         return false;
@@ -809,9 +809,8 @@ void perform_wear(char_data* character, obj_data* item, int item_slot, bool wear
         }
         if (IS_CARRYING_N(character) >= CAN_CARRY_N(character)) {
             send_to_char("Your hands are already full!\n\r", character);
-	    return;
-        }
-        else {
+            return;
+        } else {
             perform_remove(character, item_slot);
         }
     }

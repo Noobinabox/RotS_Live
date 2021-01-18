@@ -217,10 +217,9 @@ ASPELL(spell_revive)
     int level = get_mystic_caster_level(caster);
     count = (3 * 9 + level) * GET_PERCEPTION(victim) / 100 / 9;
 
-		if (count * 2 > utils::get_spirits(caster)) {
-			count = utils::get_spirits(caster) / 2;
-		}
-
+    if (count * 2 > utils::get_spirits(caster)) {
+        count = utils::get_spirits(caster) / 2;
+    }
 
     if (count <= 0) {
         send_to_char("You couldn't gather enough spirit to heal.\n\r", caster);
@@ -284,7 +283,7 @@ ASPELL(spell_revive)
     for (i = 0; i < 6; i++) {
         num = restore_stat(victim, i, revive_table[i]);
         actual_count += num;
-				utils::add_spirits(caster, -num);
+        utils::add_spirits(caster, -num);
         if (utils::get_spirits(caster) <= 0)
             break;
     }
@@ -1311,7 +1310,7 @@ ASPELL(spell_enchant_weapon)
 
         for (i = 0; i < MAX_OBJ_AFFECT; i++) {
             if (obj->affected[i].location != APPLY_NONE) {
-								utils::add_spirits(caster, 50);
+                utils::add_spirits(caster, 50);
                 send_to_char("There is too much magic in it already.\n\r", caster);
                 return;
             }
@@ -1565,7 +1564,7 @@ ASPELL(spell_guardian)
         send_to_char("You'll have to be more specific about "
                      "which guardian you wish to summon.\n",
             caster);
-				utils::add_spirits(caster, 30);
+        utils::add_spirits(caster, 30);
         return;
     } else
         guardian_num = guardian_mob[GET_RACE(caster)][guardian_to_load];

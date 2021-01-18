@@ -2198,13 +2198,13 @@ void assign_command_pointers(void)
     COMMANDO(238, POSITION_FIGHTING, do_blinding, 0, TRUE, 0,
         TAR_CHAR_ROOM | TAR_FIGHT_VICT, TAR_IGNORE, CMD_MASK_NO_UNHIDE);
     COMMANDO(239, POSITION_FIGHTING, do_bendtime, 0, TRUE, 0,
-		TAR_IGNORE, TAR_IGNORE, 0);
+        TAR_IGNORE, TAR_IGNORE, 0);
     COMMANDO(240, POSITION_FIGHTING, do_windblast, 0, TRUE, 0,
         TAR_IGNORE, TAR_IGNORE, 0);
     COMMANDO(241, POSITION_FIGHTING, do_smash, 0, TRUE, 0,
         TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(242, POSITION_FIGHTING, do_frenzy, 0, TRUE, 0,
-		TAR_IGNORE, TAR_IGNORE, 0);
+        TAR_IGNORE, TAR_IGNORE, 0);
     COMMANDO(243, POSITION_FIGHTING, do_stomp, 0, TRUE, 0,
         TAR_NONE_OK, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(244, POSITION_FIGHTING, do_cleave, 0, TRUE, 0,
@@ -2827,13 +2827,12 @@ void nanny(struct descriptor_data* d, char* arg)
             send_to_char(WELC_MESSG, d->character);
             send_to_char("\n\r", d->character);
 
-
             /* if level 0, start out the new character */
             if (!GET_LEVEL(d->character)) {
                 do_start(d->character);
                 send_to_char(START_MESSG, d->character);
             }
-            
+
             /* set character's energy to full on log-in */
             d->character->specials.ENERGY = ENE_TO_HIT;
 

@@ -191,7 +191,7 @@ void recount_light_room(int room)
     world[room].light = count;
 }
 
-int isname(const char* str,const char* namelist, char full)
+int isname(const char* str, const char* namelist, char full)
 {
     register char *curname, *curstr;
     int tmp;
@@ -331,8 +331,8 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
 
     case APPLY_MANA:
         GET_MAX_MANA(ch) += mod;
-		if (GET_MANA(ch) >= GET_MAX_MANA(ch) - mod)
-			GET_MANA(ch) += mod;
+        if (GET_MANA(ch) >= GET_MAX_MANA(ch) - mod)
+            GET_MANA(ch) += mod;
 
         break;
 
@@ -342,15 +342,15 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
 
     case APPLY_HIT:
         GET_MAX_HIT(ch) += mod;
-		if (GET_HIT(ch) >= GET_MAX_HIT(ch) - mod)
-			GET_HIT(ch) += mod;
+        if (GET_HIT(ch) >= GET_MAX_HIT(ch) - mod)
+            GET_HIT(ch) += mod;
 
         break;
 
     case APPLY_MOVE:
         GET_MAX_MOVE(ch) += mod;
-		if (GET_MOVE(ch) >= GET_MAX_MOVE(ch) - mod)
-			GET_MOVE(ch) += mod;
+        if (GET_MOVE(ch) >= GET_MAX_MOVE(ch) - mod)
+            GET_MOVE(ch) += mod;
         break;
 
     case APPLY_GOLD:
@@ -411,7 +411,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
     case APPLY_ARMOR:
         //     mod = (2*mod*GET_PERCEPTION(ch))/100;
         //     SET_DODGE(ch) += mod;
-        break;   
+        break;
     case APPLY_MAUL:
         if (!add) {
             SET_DODGE(ch) += std::min((counter * 5), MAX_MAUL_DODGE);
@@ -506,27 +506,27 @@ void affect_naked(char_data* ch)
 
 void apply_gear_affects(char_data* character, const obj_data* item, int modify_flag)
 {
-	for (int count = 0; count < MAX_OBJ_AFFECT; ++count) {
-		const obj_affected_type& obj_affect = item->affected[count];
-		if (obj_affect.location == APPLY_SPELL)
-			continue;
+    for (int count = 0; count < MAX_OBJ_AFFECT; ++count) {
+        const obj_affected_type& obj_affect = item->affected[count];
+        if (obj_affect.location == APPLY_SPELL)
+            continue;
 
-		affect_modify(character, obj_affect.location, obj_affect.modifier, item->obj_flags.bitvector, modify_flag, 0);
-	}
+        affect_modify(character, obj_affect.location, obj_affect.modifier, item->obj_flags.bitvector, modify_flag, 0);
+    }
 }
 
 void apply_gear_affects(char_data* character, int modify_flag)
 {
-	for (int item_index = 0; item_index < MAX_WEAR; ++item_index) {
-		const obj_data* item = character->equipment[item_index];
-		if (item == nullptr)
-			continue;
+    for (int item_index = 0; item_index < MAX_WEAR; ++item_index) {
+        const obj_data* item = character->equipment[item_index];
+        if (item == nullptr)
+            continue;
 
-		if (item_index == HOLD && !CAN_WEAR(item, ITEM_HOLD))
-			continue;
+        if (item_index == HOLD && !CAN_WEAR(item, ITEM_HOLD))
+            continue;
 
         apply_gear_affects(character, item, modify_flag);
-	}
+    }
 }
 
 void modify_affects(char_data* character, int modify_flag)
@@ -550,14 +550,14 @@ void affect_total(struct char_data* ch, int mode)
         affect_naked(ch);
     }
 
-	if (mode & AFFECT_TOTAL_SET) {
-		apply_gear_affects(ch, AFFECT_MODIFY_SET);
-		modify_affects(ch, AFFECT_MODIFY_SET);
+    if (mode & AFFECT_TOTAL_SET) {
+        apply_gear_affects(ch, AFFECT_MODIFY_SET);
+        modify_affects(ch, AFFECT_MODIFY_SET);
     }
 
-	if (mode & AFFECT_TOTAL_TIME) {
-		apply_gear_affects(ch, AFFECT_MODIFY_TIME);
-		modify_affects(ch, AFFECT_MODIFY_TIME);
+    if (mode & AFFECT_TOTAL_TIME) {
+        apply_gear_affects(ch, AFFECT_MODIFY_TIME);
+        modify_affects(ch, AFFECT_MODIFY_TIME);
     }
     /* Make certain values are between 0..100, not < 0 and not > 100! */
 
@@ -1285,27 +1285,16 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
             log("SYSERR: ch->in_room = NOWHERE when equipping char.");
     }
 
-	if ((IS_OBJ_STAT(item, ITEM_HARADRIM) && GET_RACE(character) != RACE_HARADRIM) ||
-		(IS_OBJ_STAT(item, ITEM_HUMAN) && GET_RACE(character) != RACE_HUMAN) ||
-		(IS_OBJ_STAT(item, ITEM_DWARF) && GET_RACE(character) != RACE_DWARF) ||
-		(IS_OBJ_STAT(item, ITEM_WOODELF) && GET_RACE(character) != RACE_WOOD) ||
-		(IS_OBJ_STAT(item, ITEM_HOBBIT) && GET_RACE(character) != RACE_HOBBIT) || 
-		(IS_OBJ_STAT(item, ITEM_BEORNING) && GET_RACE(character) != RACE_BEORNING) || 
-		(IS_OBJ_STAT(item, ITEM_URUK) && GET_RACE(character) != RACE_URUK) || 
-		(IS_OBJ_STAT(item, ITEM_ORC) && GET_RACE(character) != RACE_ORC) || 
-		(IS_OBJ_STAT(item, ITEM_MAGUS) && GET_RACE(character) != RACE_MAGUS) || 
-		(IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(character) != RACE_OLOGHAI))
-	{
-		if (character->in_room != NOWHERE) {
+    if ((IS_OBJ_STAT(item, ITEM_HARADRIM) && GET_RACE(character) != RACE_HARADRIM) || (IS_OBJ_STAT(item, ITEM_HUMAN) && GET_RACE(character) != RACE_HUMAN) || (IS_OBJ_STAT(item, ITEM_DWARF) && GET_RACE(character) != RACE_DWARF) || (IS_OBJ_STAT(item, ITEM_WOODELF) && GET_RACE(character) != RACE_WOOD) || (IS_OBJ_STAT(item, ITEM_HOBBIT) && GET_RACE(character) != RACE_HOBBIT) || (IS_OBJ_STAT(item, ITEM_BEORNING) && GET_RACE(character) != RACE_BEORNING) || (IS_OBJ_STAT(item, ITEM_URUK) && GET_RACE(character) != RACE_URUK) || (IS_OBJ_STAT(item, ITEM_ORC) && GET_RACE(character) != RACE_ORC) || (IS_OBJ_STAT(item, ITEM_MAGUS) && GET_RACE(character) != RACE_MAGUS) || (IS_OBJ_STAT(item, ITEM_OLOGHAI) && GET_RACE(character) != RACE_OLOGHAI)) {
+        if (character->in_room != NOWHERE) {
 
-			act("You are zapped by $p and instantly drop it.", FALSE, character, item, 0, TO_CHAR);
-			act("$n is zapped by $p and instantly drops it.", FALSE, character, item, 0, TO_ROOM);
-			obj_to_char(item, character); /* changed to drop in inventory instead of ground */
-			return;
-		}
-		else
-			log("SYSERR: ch->in_room = NOWHERE when equipping char.");
-	}
+            act("You are zapped by $p and instantly drop it.", FALSE, character, item, 0, TO_CHAR);
+            act("$n is zapped by $p and instantly drops it.", FALSE, character, item, 0, TO_ROOM);
+            obj_to_char(item, character); /* changed to drop in inventory instead of ground */
+            return;
+        } else
+            log("SYSERR: ch->in_room = NOWHERE when equipping char.");
+    }
 
     character->equipment[item_slot] = item;
     item->carried_by = character;
@@ -2039,7 +2028,7 @@ void extract_char(struct char_data* ch, int new_room)
             ch->specials.was_in_room = NOWHERE;
             send_to_char("Your spirit found a new body to wear.\n\r", ch);
             SET_POS(ch) = POSITION_RESTING;
-						utils::set_spirits(ch, utils::get_spirits(ch) / 2);
+            utils::set_spirits(ch, utils::get_spirits(ch) / 2);
             do_look(ch, "", 0, 0, 0);
         } else {
             ch->desc->connected = CON_SLCT;

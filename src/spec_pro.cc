@@ -1119,11 +1119,11 @@ SPECIAL(room_temple)
     if (GET_POS(host) != POSITION_STANDING)
         return FALSE;
 
-		if (utils::get_spirits(host) < 100) {
-			utils::set_spirits(host, 100);
-      send_to_char("You feel inspired!\n\r", host);
-		}
-		
+    if (utils::get_spirits(host) < 100) {
+        utils::set_spirits(host, 100);
+        send_to_char("You feel inspired!\n\r", host);
+    }
+
     return FALSE;
 }
 
@@ -1422,7 +1422,6 @@ int choose_mystic_spell(char_data* caster, char_data* target)
     return spell_list[spell_list_index][3];
 }
 
-
 /*
  * Little function that runs a series
  * of checks to give the mob in question the
@@ -1437,7 +1436,6 @@ int get_mob_spell_type(const char_data* caster)
     else
         return 0;
 }
-
 
 int choose_mage_spell(const char_data* caster, const char_data* target)
 {
@@ -1481,9 +1479,9 @@ int choose_mage_spell(const char_data* caster, const char_data* target)
 
 bool is_engaged_with_victim(const char_data* character, const char_data* victim)
 {
-	if (victim == nullptr || character == nullptr) {
-		return false;
-	}
+    if (victim == nullptr || character == nullptr) {
+        return false;
+    }
 
     // Targets are directly engaged.
     if (character->specials.fighting == victim || victim->specials.fighting == character) {
@@ -1499,14 +1497,14 @@ bool is_engaged_with_victim(const char_data* character, const char_data* victim)
     // Targets are engaged through character's group.
     if (character->group != nullptr) {
         const group_data& group = *character->group;
-		for (const char_data* group_member : group) {
-			if (group_member->specials.fighting == victim || victim->specials.fighting == group_member) {
-				return true;
-			}
-		}
+        for (const char_data* group_member : group) {
+            if (group_member->specials.fighting == victim || victim->specials.fighting == group_member) {
+                return true;
+            }
+        }
     }
-	
-	return false;
+
+    return false;
 }
 
 char_data* choose_caster_target(char_data* caster)
@@ -1522,25 +1520,26 @@ char_data* choose_caster_target(char_data* caster)
     int valid_count = 0;
     char_data* target = caster->specials.fighting; // default target is the character the caster is engaged with
     for (char_data* character = world[caster->in_room].people; character != nullptr; character = character->next_in_room) {
-        
+
         if (!is_engaged_with_victim(character, caster)) {
             continue;
         }
 
-		float selection_chance = 1.0f / ++valid_count;
-		if (number() > selection_chance) {
+        float selection_chance = 1.0f / ++valid_count;
+        if (number() > selection_chance) {
             continue;
         }
 
         target = character;
     }
-    
+
     return target;
 }
 } // end anonymous helper name_space
 
 SPECIAL(mob_cleric)
-{if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
+{
+    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
     if (host->delay.wait_value != 0 && host->delay.subcmd != 0) {
@@ -1581,9 +1580,9 @@ SPECIAL(mob_magic_user)
         return FALSE;
     }
 
-	char_data* target = choose_caster_target(host);
-	if (target == nullptr)
-		return FALSE;
+    char_data* target = choose_caster_target(host);
+    if (target == nullptr)
+        return FALSE;
 
     int spell_number = choose_mage_spell(host, target);
     if (spell_number == 0)
@@ -1708,9 +1707,10 @@ SPECIAL(mob_ranger)
         return 1;
     }
 
-	if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-		|| IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && ch->delay.wait_value == 0)
-		do_hide(host, "", 0, 0, 0);
+    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+            || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
+        && ch->delay.wait_value == 0)
+        do_hide(host, "", 0, 0, 0);
 
     tmproom = &world[host->in_room];
     mintime = 999;

@@ -71,7 +71,7 @@ int find_player_in_table(char* name, int idnum);
 char* strcpy_lang(char* targ, char* src, byte freq, int maxlen);
 void reshuffle(int* arr, int len);
 
-void* create_function(int elem_size, int elem_num, int line,const char* file);
+void* create_function(int elem_size, int elem_num, int line, const char* file);
 void free_function(void* pnt);
 
 int get_total_fame(char_data* ch);
@@ -253,7 +253,12 @@ void untrack_specialized_mage(char_data* mage);
 #define SANA(obj) (strchr("aeiouyAEIOUY", *(obj)->name) ? "an" : "a")
 
 /* Appropriately resolve "an" or "a" for a number, `num' */
-#define NANA(num) (num == 8 ? "an" : num == 11 ? "an" : num == 18 ? "an" : (num >= 80 && num < 89) ? "an" : (num >= 800 && num < 900) ? "an" : (num >= 8000 && num < 9000) ? "an" : "a")
+#define NANA(num) (num == 8 ? "an" : num == 11 ? "an" \
+        : num == 18                            ? "an" \
+        : (num >= 80 && num < 89)              ? "an" \
+        : (num >= 800 && num < 900)            ? "an" \
+        : (num >= 8000 && num < 9000)          ? "an" \
+                                               : "a")
 
 #define GET_TACTICS(ch) ((IS_NPC(ch)) ? 0 : (ch)->specials.tactics)
 #define SET_TACTICS(ch, value)              \
@@ -304,7 +309,8 @@ void untrack_specialized_mage(char_data* mage);
 
 #define GET_PROF_LEVEL(prof, ch) (((prof == PROF_GENERAL) || IS_NPC(ch)) ? GET_LEVEL(ch) : (ch)->profs->prof_level[prof])
 
-#define GET_MAX_RACE_PROF_LEVEL(prof, ch) ((GET_RACE(ch) == RACE_ORC) ? 20 : (GET_RACE(ch) == RACE_URUK) ? (prof == PROF_MAGE) ? 27 : 30 : 30)
+#define GET_MAX_RACE_PROF_LEVEL(prof, ch) ((GET_RACE(ch) == RACE_ORC) ? 20 : (GET_RACE(ch) == RACE_URUK) ? (prof == PROF_MAGE) ? 27 : 30 \
+                                                                                                         : 30)
 
 #define SET_PROF_LEVEL(prof, ch, val)            \
     do {                                         \
@@ -315,7 +321,9 @@ void untrack_specialized_mage(char_data* mage);
 #define GET_URUK_MAGE_PENALTY(prof, ch) ((GET_RACE(ch) == RACE_URUK) ? (prof == PROF_MAGE) ? 100 : 0 : 0)
 
 // (a + b-1) / b will make sure that we round up, not down.
-#define GET_PROF_COOF(prof, ch) ((prof == PROF_GENERAL) ? 1000 : (GET_RACE((ch)) == RACE_ORC) ? (square_root[(ch)->profs->prof_coof[(prof)]] * 2 + 2) / 3 : (GET_RACE((ch)) == RACE_URUK) ? square_root[(ch)->profs->prof_coof[(prof)]] - GET_URUK_MAGE_PENALTY((prof), (ch)) : square_root[(ch)->profs->prof_coof[(prof)]])
+#define GET_PROF_COOF(prof, ch) ((prof == PROF_GENERAL) ? 1000 : (GET_RACE((ch)) == RACE_ORC) ? (square_root[(ch)->profs->prof_coof[(prof)]] * 2 + 2) / 3                         \
+        : (GET_RACE((ch)) == RACE_URUK)                                                       ? square_root[(ch)->profs->prof_coof[(prof)]] - GET_URUK_MAGE_PENALTY((prof), (ch)) \
+                                                                                              : square_root[(ch)->profs->prof_coof[(prof)]])
 
 #define GET_PROF_POINTS(prof, ch) ((ch)->profs->prof_coof[(int)(prof)])
 
@@ -653,7 +661,9 @@ void set_mental_delay(char_data* ch, int value);
 
 #define GET_MENTAL_DELAY(ch) ((ch)->specials.mental_delay)
 
-#define GET_PERCEPTION(ch) (IS_SHADOW(ch) ? 100 : (((ch)->specials2.perception == -1) ? get_race_perception((ch)) : ((ch)->specials2.perception < 0) ? 0 : ((ch)->specials2.perception > 100) ? 100 : (ch)->specials2.perception))
+#define GET_PERCEPTION(ch) (IS_SHADOW(ch) ? 100 : (((ch)->specials2.perception == -1) ? get_race_perception((ch)) : ((ch)->specials2.perception < 0) ? 0   \
+                                    : ((ch)->specials2.perception > 100)                                                                             ? 100 \
+                                                                                                                                                     : (ch)->specials2.perception))
 
 #define SET_PERCEPTION(ch, num) (ch)->specials2.perception = (num)
 

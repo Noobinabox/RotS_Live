@@ -26,7 +26,7 @@ public:
     }
 
 protected:
-    virtual ~singleton() {}
+    virtual ~singleton() { }
 
     virtual void on_instance_destroyed() {};
     virtual void on_instance_not_created() {};
@@ -76,7 +76,7 @@ protected:
     {
     }
 
-    virtual ~world_singleton() {}
+    virtual ~world_singleton() { }
 
     const weather_data& get_weather() const { return *m_weather; }
     const room_data* get_world() const { return m_world; }

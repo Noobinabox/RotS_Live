@@ -9,15 +9,15 @@
 **************************************************************************/
 
 #include "platdef.h"
+#include <algorithm>
+#include <array>
 #include <ctype.h>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <array>
-#include <algorithm>
-#include <iostream>
-#include <sstream>
 
 #include "char_utils.h"
 #include "color.h"
@@ -100,7 +100,7 @@ ACMD(do_quit)
 
     mudlog(buf, NRM, (sh_int)MAX(LEVEL_GOD, GET_INVIS_LEV(ch)), TRUE);
 
-    if(aff) {
+    if (aff) {
         remove_fame_war_bonuses(ch, aff);
         affect_remove(ch, aff);
     }
@@ -1251,102 +1251,85 @@ ACMD(do_shooting)
 
 std::array<std::string_view, 4> inv_sorting = { "default", "grouped", "alpha", "length" };
 
-namespace
+namespace {
+bool has_argument(const char* argument)
 {
-	bool has_argument(const char* argument)
-	{
-		return *argument != 0;
-	}
+    return *argument != 0;
+}
 
-	int get_sort_index(const char* argument)
-	{
-        for (int index = 0; index < inv_sorting.size(); ++index)
-        {
-            if (inv_sorting[index].find(argument) != std::string::npos)
-            {
-                return index;
-            }
+int get_sort_index(const char* argument)
+{
+    for (int index = 0; index < inv_sorting.size(); ++index) {
+        if (inv_sorting[index].find(argument) != std::string::npos) {
+            return index;
         }
+    }
 
-		return -1;
-	}
+    return -1;
+}
 
-	void set_sort_value(int sort_index, char_data* character)
-	{
-		int high_bit_value = (sort_index & 2) >> 1;
-		int low_bit_value = sort_index & 1;
+void set_sort_value(int sort_index, char_data* character)
+{
+    int high_bit_value = (sort_index & 2) >> 1;
+    int low_bit_value = sort_index & 1;
 
-		if (high_bit_value != 0)
-		{
-			SET_BIT(character->specials2.pref, PRF_INV_SORT2);
-		}
-		else
-		{
-			REMOVE_BIT(character->specials2.pref, PRF_INV_SORT2);
-		}
+    if (high_bit_value != 0) {
+        SET_BIT(character->specials2.pref, PRF_INV_SORT2);
+    } else {
+        REMOVE_BIT(character->specials2.pref, PRF_INV_SORT2);
+    }
 
-		if (low_bit_value != 0)
-		{
-            SET_BIT(character->specials2.pref, PRF_INV_SORT1);
-		}
-		else
-		{
-            REMOVE_BIT(character->specials2.pref, PRF_INV_SORT1);
-		}
-	}
+    if (low_bit_value != 0) {
+        SET_BIT(character->specials2.pref, PRF_INV_SORT1);
+    } else {
+        REMOVE_BIT(character->specials2.pref, PRF_INV_SORT1);
+    }
+}
 
-	void report_sort_choices_to(char_data* character)
-	{
-		std::ostringstream message_writer;
-		message_writer << "Possible sort choices are:" << std::endl;
-		for (const auto& sort_name : inv_sorting)
-		{
-            message_writer << "\t" << sort_name << std::endl;
-		}
-        message_writer << std::endl;
+void report_sort_choices_to(char_data* character)
+{
+    std::ostringstream message_writer;
+    message_writer << "Possible sort choices are:" << std::endl;
+    for (const auto& sort_name : inv_sorting) {
+        message_writer << "\t" << sort_name << std::endl;
+    }
+    message_writer << std::endl;
 
-		send_to_char(message_writer.str().c_str(), character);
-	}
+    send_to_char(message_writer.str().c_str(), character);
+}
 
-	void report_inventory_sorting_to(char_data* character, const char* intro_string)
-	{
-		bool high_bit_set = PRF_FLAGGED(character, PRF_INV_SORT2) != 0;
-		bool low_bit_set = PRF_FLAGGED(character, PRF_INV_SORT1) != 0;
+void report_inventory_sorting_to(char_data* character, const char* intro_string)
+{
+    bool high_bit_set = PRF_FLAGGED(character, PRF_INV_SORT2) != 0;
+    bool low_bit_set = PRF_FLAGGED(character, PRF_INV_SORT1) != 0;
 
-		int sort_value = high_bit_set << 1 | low_bit_set;
+    int sort_value = high_bit_set << 1 | low_bit_set;
 
-		const char* sort_name = inv_sorting[sort_value].data();
+    const char* sort_name = inv_sorting[sort_value].data();
 
-		sprintf(buf, "%s %s.\r\n", intro_string, sort_name);
-		send_to_char(buf, character);
-	}
+    sprintf(buf, "%s %s.\r\n", intro_string, sort_name);
+    send_to_char(buf, character);
+}
 }
 
 ACMD(do_inventory_sort)
 {
-	if (has_argument(argument))
-	{
-		int sort_index = get_sort_index(argument);
-		if (sort_index >= 0)
-		{
-			set_sort_value(sort_index, ch);
+    if (has_argument(argument)) {
+        int sort_index = get_sort_index(argument);
+        if (sort_index >= 0) {
+            set_sort_value(sort_index, ch);
 
-			static const char* report_new_sort_string = "Your new inventory sorting method is";
-			report_inventory_sorting_to(ch, report_new_sort_string);
-		}
-		else
-		{
-			report_sort_choices_to(ch);
-		}
-	}
-	else
-	{
-		static const char* report_sort_string = "Your current inventory sorting method is";
-		report_inventory_sorting_to(ch, report_sort_string);
-		report_sort_choices_to(ch);
-	}
+            static const char* report_new_sort_string = "Your new inventory sorting method is";
+            report_inventory_sorting_to(ch, report_new_sort_string);
+        } else {
+            report_sort_choices_to(ch);
+        }
+    } else {
+        static const char* report_sort_string = "Your current inventory sorting method is";
+        report_inventory_sorting_to(ch, report_sort_string);
+        report_sort_choices_to(ch);
+    }
 }
-
 
 extern char* tactics[];
 ACMD(do_tactics)
@@ -1383,12 +1366,12 @@ ACMD(do_tactics)
         }
 
         if ((GET_TACTICS(ch) == TACTICS_BERSERK)) {
-			if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
-				send_to_char("You failed to cool down.\n\r", ch);
-				return;
-			}
+            if (number(-20, 100) > GET_RAW_SKILL(ch, SKILL_BERSERK)) {
+                send_to_char("You failed to cool down.\n\r", ch);
+                return;
+            }
         }
-        
+
         player_spec::wild_fighting_handler wild_fighting(ch);
         int target_tactics = TACTICS_NORMAL;
 
@@ -1421,7 +1404,6 @@ ACMD(do_tactics)
         SET_TACTICS(ch, target_tactics);
         wild_fighting.update_tactics(target_tactics);
     }
-
 
     switch (GET_TACTICS(ch)) {
     case TACTICS_DEFENSIVE:
@@ -1523,11 +1505,11 @@ char* change_comm[] = {
     "wiz",
     "roomflags",
     "nohassle", /* 25 */
-    "holylight", 
+    "holylight",
     "slowns",
     "shooting",
     "casting",
-	"sorting", /* 30 */
+    "sorting", /* 30 */
     "\n"
 };
 
@@ -1724,9 +1706,9 @@ ACMD(do_set)
     case 29:
         do_casting(ch, arg, wtl, 0, 0);
         break;
-	case SORTING_COMMAND_INDEX:
-		do_inventory_sort(ch, arg, wtl, 0, 0);
-		break;
+    case SORTING_COMMAND_INDEX:
+        do_inventory_sort(ch, arg, wtl, 0, 0);
+        break;
     default:
         send_to_char("Undefined response to this argument.\n\r", ch);
         return;

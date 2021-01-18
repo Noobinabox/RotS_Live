@@ -1004,7 +1004,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 - tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = -SPECIAL_STACK(host)[0];
+            [0] = -SPECIAL_STACK(host)[0];
             break;
 
         case '*': /* multiply, (stack-1)*(stack) */
@@ -1014,7 +1014,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 * tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = 0;
+            [0] = 0;
             break;
 
         case '/': /* divide, (stack-1)/(stack) */
@@ -1031,7 +1031,7 @@ SPECIAL(intelligent)
                     TO_STACK(host, tmpvar2 / tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = 0;
+            [0] = 0;
             break;
 
         case '<': /* compare, (stack-1) < (stack) */
@@ -1041,7 +1041,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 < tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = (0 < SPECIAL_STACK(host)[0]);
+            [0] = (0 < SPECIAL_STACK(host)[0]);
             break;
 
         case '>': /* compare, (stack-1) > (stack) */
@@ -1051,7 +1051,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 > tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = (0 > SPECIAL_STACK(host)[0]);
+            [0] = (0 > SPECIAL_STACK(host)[0]);
             break;
 
         case '=': /* compare, (stack-1) == (stack) */
@@ -1061,7 +1061,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 == tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = (0 == SPECIAL_STACK(host)[0]);
+            [0] = (0 == SPECIAL_STACK(host)[0]);
             break;
 
         case '&': /* logical &&, (stack-1) & (stack) */
@@ -1071,7 +1071,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 & tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = (0 && SPECIAL_STACK(host)[0]);
+            [0] = (0 && SPECIAL_STACK(host)[0]);
             break;
 
         case '|': /* logical !!, (stack-1) || (stack) */
@@ -1081,7 +1081,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, tmpvar2 | tmpvar);
             } else
                 SPECIAL_STACK(host)
-                [0] = (0 || SPECIAL_STACK(host)[0]);
+            [0] = (0 || SPECIAL_STACK(host)[0]);
             break;
 
         case '!':

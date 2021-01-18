@@ -33,7 +33,7 @@ void TO_STACK(struct char_data* host, long x)
     if (SPECIAL_STACKPOINT(host) == SPECIAL_STACKLEN) {
         for (tmp = 0; tmp < SPECIAL_STACKLEN - 1; tmp++)
             SPECIAL_STACK(host)
-            [tmp] = SPECIAL_STACK(host)[tmp + 1];
+        [tmp] = SPECIAL_STACK(host)[tmp + 1];
         SPECIAL_STACK(host)
         [SPECIAL_STACKPOINT(host)] = x;
     } else {

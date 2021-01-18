@@ -98,8 +98,8 @@ void assign_mobiles(void)
     ASSIGNMOB(5701, guild);
     ASSIGNMOB(6000, guild);
     ASSIGNMOB(6003, receptionist);
-	ASSIGNMOB(6603, receptionist);
-	ASSIGNMOB(6604, receptionist); // haradrim innkeeper
+    ASSIGNMOB(6603, receptionist);
+    ASSIGNMOB(6604, receptionist); // haradrim innkeeper
     ASSIGNMOB(9903, guild);
 
     ASSIGNMOB(10002, guild); // librarian -- languages
@@ -206,7 +206,6 @@ void assign_mobiles(void)
     ASSIGNMOB(10312, receptionist); // Beorning Rent
 
     ASSIGNMOB(32800, receptionist); // Olog-Hai Rent
-    
 }
 
 /* assign special procedures to objects */

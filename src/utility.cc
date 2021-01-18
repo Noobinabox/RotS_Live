@@ -1286,7 +1286,7 @@ void echo_on(int sock)
 
 void* create_pointer = 0;
 
-void* create_function(int elem_size, int elem_num, int line,const char* file)
+void* create_function(int elem_size, int elem_num, int line, const char* file)
 {
 
     //  printf("want to allocate size=%d, num=%d\n",elem_size,elem_num);

@@ -192,9 +192,8 @@ int get_sun_level(int room)
         level += 2;
     if (weather_info.sky[world[room].sector_type] > SKY_CLOUDY)
         level -= 1;
-    if
-        IS_SET(world[room].room_flags, SHADOWY)
-    level /= 2;
+    if IS_SET (world[room].room_flags, SHADOWY)
+        level /= 2;
     if (weather_info.sunlight == SUN_RISE || weather_info.sunlight == SUN_SET)
         level /= 2;
     return level;

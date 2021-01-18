@@ -19,6 +19,7 @@
 #include "char_utils_combat.h"
 #include "object_utils.h"
 #include <algorithm>
+#include "warrior_spec_handlers.h"
 
 const int MIN_SAFE_STAT = 3;
 
@@ -205,9 +206,10 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
 
     /* Successful hit */
     if (damg) {
+    		player_spec::battle_mage_handler battle_mage_handler(victim);
         tmp = number(0, 6);
         if (tmp == 6) /* Hitting concentration */
-            GET_SPIRIT(ch) += damg;
+            utils::add_spirits(ch, damg);
 
         if (!(check_mind_block(victim, ch, damg, tmp)))
             return;
@@ -225,7 +227,9 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
         gain_exp(ch, (1 + GET_LEVEL(victim)) * std::min(20 + GET_LEVEL(ch) * 2, damg * 5) / (1 + GET_LEVEL(ch)));
         if (!damage_result.will_die) {
             if (IS_AFFECTED(victim, AFF_WAITWHEEL) && victim->delay.priority <= 40) {
+            	if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
                 break_spell(victim);
+							}
             }
 
             if (damage_result.wants_to_flee) {
@@ -400,9 +404,12 @@ combat_result_struct damage_stat(struct char_data* killer, struct char_data* vic
         if (would_flee) {
             combat_results.wants_to_flee = would_flee && is_stat_critical(victim);
         }
+    		player_spec::battle_mage_handler battle_mage_handler(victim);
 
         if (IS_AFFECTED(victim, AFF_WAITWHEEL) && (GET_WAIT_PRIORITY(victim) <= 40)) {
+					if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
             break_spell(victim);
+					}
         }
     }
 

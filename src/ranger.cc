@@ -72,7 +72,6 @@ ACMD(do_move);
 ACMD(do_hit);
 ACMD(do_gen_com);
 
-
 ACMD(do_ride)
 {
 
@@ -112,7 +111,7 @@ ACMD(do_ride)
             return;
         }
     } else {
-        
+
         potential_mount = get_char_room_vis(ch, argument);
         if (!potential_mount) {
             send_to_char("There is nobody by that name.\n\r", ch);
@@ -142,8 +141,8 @@ ACMD(do_ride)
         if (affected_by_spell(potential_mount, SKILL_CALM)) {
             if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) {
                 if (!is_strong_enough_to_tame(ch->master, potential_mount, false)) {
-                  send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
-                  return;
+                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
+                    return;
                 }
             } else {
                 if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
@@ -421,12 +420,12 @@ ACMD(do_gather_food)
         break;
     default:
         if (number(0, 100) > (subcmd < 3 ? percent : percent - 10)) {
-            
+
             const char* gather_type = nullptr;
             switch (subcmd) {
             case 2:
-		gather_type = "a torch";
-		break;
+                gather_type = "a torch";
+                break;
             case 5:
                 gather_type = "a bow";
                 break;
@@ -436,9 +435,9 @@ ACMD(do_gather_food)
             case 7:
                 gather_type = "some dust";
                 break;
-	    case 1:
-	    case 3:
-	    case 4:
+            case 1:
+            case 3:
+            case 4:
             default:
                 gather_type = "some herbs";
                 break;
@@ -881,7 +880,6 @@ ACMD(do_ambush)
     struct char_data* victim;
     int success;
     int dmg;
-    
 
     if (IS_AFFECTED(ch, AFF_SANCTUARY)) {
         appear(ch);
@@ -1869,8 +1867,6 @@ void snuck_in(struct char_data* ch)
     if (GET_PROF_LEVEL(PROF_RANGER, ch) > number(0, 60))
         wait = wait - 1;
 
-
-
     if (utils::get_specialization(*ch) == game_types::PS_Stealth) {
         wait = wait * 0.5;
     }
@@ -2201,10 +2197,10 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, const ob
         // should be called and given an armor location or something.
     }
 
-	// haradrims get a bonus with crude arrows for being a primative race
-	if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
-		breakpercentage >>= 1;
-	}
+    // haradrims get a bonus with crude arrows for being a primative race
+    if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
+        breakpercentage >>= 1;
+    }
 
     if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
         breakpercentage >>= 1;
@@ -2459,11 +2455,11 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
     }
     sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
     mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
-    
+
     // Apply poison before damage - don't want to poison the character if the arrow kills them.
     const int POISON_MIN_DAMAGE = 5;
     if (victim->tmpabilities.hit > POISON_MIN_DAMAGE) {
-		check_weapon_poison(archer, victim, arrow);
+        check_weapon_poison(archer, victim, arrow);
     }
     damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
 }
@@ -3198,7 +3194,7 @@ ACMD(do_mark)
 
         // Did we land our touch attack???
         int target_number = mark_calculate_success(ch, victim);
-		say_spell(ch, SKILL_MARK);
+        say_spell(ch, SKILL_MARK);
         if (target_number > 0) {
             on_mark_hit(ch, victim);
         } else {
@@ -3449,7 +3445,7 @@ ACMD(do_blinding)
         }
 
         int percent_hit = harad_skill_calculate_save(ch, victim, SKILL_BLINDING);
-		say_spell(ch, SKILL_BLINDING);
+        say_spell(ch, SKILL_BLINDING);
         if (percent_hit < 0) {
             on_dust_miss(ch, victim, mana_cost);
         } else {
@@ -3584,7 +3580,7 @@ ACMD(do_bendtime)
         WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
-		say_spell(ch, SKILL_BEND_TIME);
+        say_spell(ch, SKILL_BEND_TIME);
         if (check_skill_success(ch, SKILL_BEND_TIME))
             on_bend_success(ch, mana_cost, move_cost);
         else {
@@ -3602,7 +3598,6 @@ ACMD(do_bendtime)
     }
 }
 
-
 void on_windblast_hit(char_data* ch)
 {
     int i, attempt, res, die, move_cost = 0;
@@ -3612,7 +3607,6 @@ void on_windblast_hit(char_data* ch)
         send_to_char("You stand your ground against the blast of thunderous force!", ch);
         return;
     }
-
 
     if (GET_POS(ch) < POSITION_FIGHTING)
 
@@ -3660,7 +3654,6 @@ void on_windblast_hit(char_data* ch)
     return;
 }
 
-
 void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
 {
     int dam_value, tmp, power_level;
@@ -3669,7 +3662,6 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
 
     GET_MANA(ch) -= mana_cost;
     GET_MOVE(ch) -= move_cost;
-
 
     if (ch->in_room == NOWHERE)
         return;
@@ -3681,9 +3673,9 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
     dam_value = number(1, 30) + power_level;
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-	
-	send_to_char("Vile black wind eminates from you, slamming into all!\r\n", ch);
-	
+
+    send_to_char("Vile black wind eminates from you, slamming into all!\r\n", ch);
+
     for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch_next) {
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
@@ -3720,7 +3712,6 @@ ACMD(do_windblast)
 
     one_argument(argument, arg);
 
-
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\r\n", ch);
         wtl->targ1.cleanup();
@@ -3743,7 +3734,7 @@ ACMD(do_windblast)
         WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
-		say_spell(ch, SKILL_WINDBLAST);
+        say_spell(ch, SKILL_WINDBLAST);
         if (check_skill_success(ch, SKILL_WINDBLAST)) {
             on_windblast_success(ch, mana_cost, move_cost);
         } else {

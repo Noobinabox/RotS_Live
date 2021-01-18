@@ -28,8 +28,8 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include "zone.h"
 #include "warrior_spec_handlers.h"
+#include "zone.h"
 
 /*   external vars  */
 extern FILE* player_fl;
@@ -821,7 +821,7 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
         GET_HIT(k), GET_MAX_HIT(k), hit_gain(k), get_bonus_hit_gain(k),
         GET_MANA(k), GET_MAX_MANA(k), mana_gain(k), get_bonus_mana_gain(k),
         GET_MOVE(k), GET_MAX_MOVE(k), move_gain(k), get_bonus_move_gain(k),
-        GET_SPIRIT(k), 0, 0, /*GET_MAX_SPIRIT(k), spirit_gain(k),*/
+        utils::get_spirits(k), 0, 0, /*GET_MAX_SPIRIT(k), spirit_gain(k),*/
         (k)->constabilities.hit, (k)->constabilities.mana, (k)->constabilities.move);
     send_to_char(buf, ch);
     sprintf(buf, "Encumbrance %d, Leg_encu %d, Perception %d, Willpower %d,\n\r", utils::get_encumbrance(*k), utils::get_leg_encumbrance(*k), GET_PERCEPTION(k), GET_WILLPOWER(k));
@@ -843,7 +843,7 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
             float move_regen = move_gain(k);
             player_spec::battle_mage_handler battle_mage_handler(k);
             sprintf(buf, "Spell_Pen: %d, Spell_Pow: %d, Hit_Gain: %.0f, Stam_Gain: %.0f, Mov_Gain: %.0f\n\r",
-                battle_mage_handler.get_bonus_spell_pen(k->points.get_spell_pen()), 
+                battle_mage_handler.get_bonus_spell_pen(k->points.get_spell_pen()),
                 battle_mage_handler.get_bonus_spell_power(k->points.get_spell_power()),
                 health_regen, mana_regen, move_regen);
             send_to_char(buf, ch);
@@ -2049,12 +2049,10 @@ ACMD(do_zreset)
 {
     int i, j;
 
-    if
-        IS_NPC(ch)
-        {
-            send_to_char("Homie don't play that!\n\r", ch);
-            return;
-        }
+    if IS_NPC (ch) {
+        send_to_char("Homie don't play that!\n\r", ch);
+        return;
+    }
     if (!*argument) {
         send_to_char("You must specify a zone.\n\r", ch);
         return;
@@ -2350,12 +2348,10 @@ ACMD(do_show)
         { "\n", 0 }
     };
 
-    if
-        IS_NPC(ch)
-        {
-            send_to_char("Oh no!  None of that stuff!\n\r", ch);
-            return;
-        }
+    if IS_NPC (ch) {
+        send_to_char("Oh no!  None of that stuff!\n\r", ch);
+        return;
+    }
     if (!*argument) {
         strcpy(buf, "Show options:\n\r");
         for (j = 0, i = 1; fields[i].level; i++)

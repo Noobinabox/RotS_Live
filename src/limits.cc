@@ -13,12 +13,12 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
+#include "pkill.h"
 #include "platdef.h"
 #include "profs.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include "pkill.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -181,15 +181,14 @@ float mana_gain(const char_data* character)
 float get_bonus_hit_gain(const char_data* character)
 {
     float perception_modifier = utils::get_perception(*character) / 100.0f;
-    
+
     // Early out if we have no perception.
     if (perception_modifier <= 0.0f)
         return character->points.health_regen;
 
     // Iterate through affect list for regeneration spells.
     float bonus_gain = 0.0f;
-    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next)
-    {
+    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next) {
         if (affect->type == SPELL_CURING) {
             bonus_gain += affect->modifier;
         } else if (affect->type == SPELL_RESTLESSNESS) {
@@ -244,7 +243,7 @@ float hit_gain(const char_data* character)
 
     gain = adjust_regen_for_level(character->player.level, gain);
 
-	// add bonus health regen after all modifiers
+    // add bonus health regen after all modifiers
     gain += get_bonus_hit_gain(character);
 
     return gain;
@@ -252,26 +251,25 @@ float hit_gain(const char_data* character)
 
 float get_bonus_move_gain(const char_data* character)
 {
-	float perception_modifier = utils::get_perception(*character) / 100.0f;
+    float perception_modifier = utils::get_perception(*character) / 100.0f;
 
-	// Early out if we have no perception.
-	if (perception_modifier <= 0.0f)
-		return character->points.move_regen;
+    // Early out if we have no perception.
+    if (perception_modifier <= 0.0f)
+        return character->points.move_regen;
 
-	// Iterate through affect list for regeneration spells.
-	float bonus_gain = 0.0f;
-	for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next)
-	{
-		if (affect->type == SPELL_CURING) {
+    // Iterate through affect list for regeneration spells.
+    float bonus_gain = 0.0f;
+    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next) {
+        if (affect->type == SPELL_CURING) {
             bonus_gain -= affect->modifier;
-		} else if (affect->type == SPELL_RESTLESSNESS) {
+        } else if (affect->type == SPELL_RESTLESSNESS) {
             bonus_gain += affect->modifier;
-		} else if (affect->type == SPELL_VITALITY) {
+        } else if (affect->type == SPELL_VITALITY) {
             bonus_gain += affect->duration * 6 / (float)FAST_UPDATE_RATE;
-		}
-	}
+        }
+    }
 
-	return (bonus_gain * perception_modifier) + character->points.move_regen;
+    return (bonus_gain * perception_modifier) + character->points.move_regen;
 }
 
 float move_gain(const char_data* character)
@@ -961,29 +959,33 @@ void check_breathing(char_data* ch)
     }
 }
 
-bool is_rank_valid(int ranking) {
+bool is_rank_valid(int ranking)
+{
     return (ranking != PKILL_UNRANKED)
         && (ranking >= MIN_RANK)
         && (ranking <= MAX_RANK);
 }
 
-void set_player_moves(struct char_data* ch, int mod, bool mode) {
+void set_player_moves(struct char_data* ch, int mod, bool mode)
+{
     if (!mode)
         mod = -mod;
-    
+
     ch->constabilities.move += mod;
     ch->abilities.move += mod;
     ch->tmpabilities.move += mod;
 }
 
-void set_player_ob(struct char_data* ch, int mod, bool mode) {
+void set_player_ob(struct char_data* ch, int mod, bool mode)
+{
     if (!mode)
         mod = -mod;
 
     SET_OB(ch) += mod;
 }
 
-void set_player_hit(struct char_data* ch, int mod, bool mode) {
+void set_player_hit(struct char_data* ch, int mod, bool mode)
+{
     if (mode == false)
         mod = -mod;
 
@@ -992,7 +994,8 @@ void set_player_hit(struct char_data* ch, int mod, bool mode) {
     ch->tmpabilities.hit += mod;
 }
 
-void set_player_con(struct char_data* ch, int mod, bool mode) {
+void set_player_con(struct char_data* ch, int mod, bool mode)
+{
     if (mode == false)
         mod = -mod;
 
@@ -1000,7 +1003,8 @@ void set_player_con(struct char_data* ch, int mod, bool mode) {
     ch->abilities.con += mod;
 }
 
-void set_player_mana(struct char_data* ch, int mod, bool mode) {
+void set_player_mana(struct char_data* ch, int mod, bool mode)
+{
     if (mode == false)
         mod = -mod;
 
@@ -1009,143 +1013,153 @@ void set_player_mana(struct char_data* ch, int mod, bool mode) {
     ch->tmpabilities.mana += mod;
 }
 
-void set_player_damage(struct char_data* ch, int mod, bool mode) {
+void set_player_damage(struct char_data* ch, int mod, bool mode)
+{
     if (!mode)
         mod = -mod;
 
-    if (!mode && ch->points.damage == 0 )
+    if (!mode && ch->points.damage == 0)
         return;
 
     ch->points.damage += mod;
 }
 
-void set_player_spell_pen(struct char_data* ch, int mod, bool mode) {
+void set_player_spell_pen(struct char_data* ch, int mod, bool mode)
+{
     if (!mode)
         mod = -mod;
     ch->points.spell_pen += mod;
 }
 
-void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode) {
-    switch(tier) {
-        case 1:
-            set_player_mana(ch, 15, mode);
-            set_player_con(ch, 2, mode);
-            set_player_spell_pen(ch, 3, mode);
-            break;
-        case 2:
-            set_player_con(ch, 1, mode);
-            set_player_mana(ch, 10, mode);
-            set_player_spell_pen(ch, 2, mode);
-            break;
-        case 3:
-            set_player_con(ch, 1, mode);
-            set_player_mana(ch, 5, mode);
-            set_player_spell_pen(ch, 1, mode);
-            break;
-        case 4:
-            set_player_mana(ch, 3, mode);
-            break;
-        default:
-            break;
-    }
-}
-
-void assign_pk_mystic_bonus(struct char_data* ch, int tier, bool mode) {
-    switch(tier) {
-        case 1:
-            set_player_con(ch, 2, mode);
-            break;
-        case 2:
-            set_player_con(ch, 2, mode);
-            break;
-        case 3:
-            set_player_con(ch, 1, mode);
-            break;
-        case 4:
-        default:
-            break;
-    }
-}
-
-void assign_pk_ranger_bonus(struct char_data* ch, int tier, bool mode) {
-    switch(tier) {
-        case 1:
-            set_player_con(ch, 2, mode);
-            set_player_moves(ch, 20, mode);
-            set_player_ob(ch, 10, mode);
-            break;
-        case 2:
-            set_player_con(ch, 1, mode);
-            set_player_moves(ch, 15, mode);
-            set_player_ob(ch, 7, mode);
-            break;
-        case 3:
-            set_player_con(ch, 1, mode);
-            set_player_moves(ch, 10, mode);
-            set_player_ob(ch, 5, mode);
-            break;
-        case 4:
-            set_player_moves(ch, 10, mode);
-            set_player_ob(ch, 3, mode);
-            break;;
-        default:
-            break;
-    }
-}
-
-void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode) {
+void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode)
+{
     switch (tier) {
-        case 1:
-            set_player_con(ch, 2, mode);
-            set_player_hit(ch, 15, mode);
-            set_player_ob(ch, 10, mode);
-            break;
-        case 2:
-            set_player_con(ch, 1, mode);
-            set_player_hit(ch, 10, mode);
-            set_player_ob(ch, 7, mode);
-            break;
-        case 3:
-            set_player_con(ch, 1, mode);
-            set_player_hit(ch, 5, mode);
-            set_player_ob(ch, 5, mode);
-            break;
-        case 4:
-            set_player_ob(ch, 3, mode);
-            set_player_hit(ch, 5, mode);
-            break;
-        default:
-            break;
+    case 1:
+        set_player_mana(ch, 15, mode);
+        set_player_con(ch, 2, mode);
+        set_player_spell_pen(ch, 3, mode);
+        break;
+    case 2:
+        set_player_con(ch, 1, mode);
+        set_player_mana(ch, 10, mode);
+        set_player_spell_pen(ch, 2, mode);
+        break;
+    case 3:
+        set_player_con(ch, 1, mode);
+        set_player_mana(ch, 5, mode);
+        set_player_spell_pen(ch, 1, mode);
+        break;
+    case 4:
+        set_player_mana(ch, 3, mode);
+        break;
+    default:
+        break;
     }
 }
 
-void assign_pk_bonuses(struct char_data* ch, int coeff, int tier,bool mode) {
+void assign_pk_mystic_bonus(struct char_data* ch, int tier, bool mode)
+{
+    switch (tier) {
+    case 1:
+        set_player_con(ch, 2, mode);
+        break;
+    case 2:
+        set_player_con(ch, 2, mode);
+        break;
+    case 3:
+        set_player_con(ch, 1, mode);
+        break;
+    case 4:
+    default:
+        break;
+    }
+}
+
+void assign_pk_ranger_bonus(struct char_data* ch, int tier, bool mode)
+{
+    switch (tier) {
+    case 1:
+        set_player_con(ch, 2, mode);
+        set_player_moves(ch, 20, mode);
+        set_player_ob(ch, 10, mode);
+        break;
+    case 2:
+        set_player_con(ch, 1, mode);
+        set_player_moves(ch, 15, mode);
+        set_player_ob(ch, 7, mode);
+        break;
+    case 3:
+        set_player_con(ch, 1, mode);
+        set_player_moves(ch, 10, mode);
+        set_player_ob(ch, 5, mode);
+        break;
+    case 4:
+        set_player_moves(ch, 10, mode);
+        set_player_ob(ch, 3, mode);
+        break;
+        ;
+    default:
+        break;
+    }
+}
+
+void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode)
+{
+    switch (tier) {
+    case 1:
+        set_player_con(ch, 2, mode);
+        set_player_hit(ch, 15, mode);
+        set_player_ob(ch, 10, mode);
+        break;
+    case 2:
+        set_player_con(ch, 1, mode);
+        set_player_hit(ch, 10, mode);
+        set_player_ob(ch, 7, mode);
+        break;
+    case 3:
+        set_player_con(ch, 1, mode);
+        set_player_hit(ch, 5, mode);
+        set_player_ob(ch, 5, mode);
+        break;
+    case 4:
+        set_player_ob(ch, 3, mode);
+        set_player_hit(ch, 5, mode);
+        break;
+    default:
+        break;
+    }
+}
+
+void assign_pk_bonuses(struct char_data* ch, int coeff, int tier, bool mode)
+{
     switch (coeff) {
-        case PROF_MAGE:
-            assign_pk_mage_bonus(ch, tier, mode);
-            break;
-        case PROF_CLERIC:
-            assign_pk_mystic_bonus(ch, tier, mode);
-            break;
-        case PROF_RANGER:
-            assign_pk_ranger_bonus(ch, tier, mode);
-            break;
-        case PROF_WARRIOR:
-            assign_pk_warrior_bonus(ch, tier, mode);
-            break;
-        default:
-            break;
+    case PROF_MAGE:
+        assign_pk_mage_bonus(ch, tier, mode);
+        break;
+    case PROF_CLERIC:
+        assign_pk_mystic_bonus(ch, tier, mode);
+        break;
+    case PROF_RANGER:
+        assign_pk_ranger_bonus(ch, tier, mode);
+        break;
+    case PROF_WARRIOR:
+        assign_pk_warrior_bonus(ch, tier, mode);
+        break;
+    default:
+        break;
     }
 }
 
-void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff) {
+void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff)
+{
     int coeff = utils::get_highest_coeffs(*ch);
     affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
     assign_pk_bonuses(ch, coeff, aff->modifier, false);
     recalc_abilities(ch);
 }
 
-void do_fame_war_bonuses(struct char_data* ch) {
+void do_fame_war_bonuses(struct char_data* ch)
+{
     if (IS_NPC(ch))
         return;
 
@@ -1167,7 +1181,7 @@ void do_fame_war_bonuses(struct char_data* ch) {
     }
 
     if ((ranking == ch->player.ranking && pkaff) // ranking hasn't changed
-       || ((ranking != ch->player.ranking && pkaff) && (pkaff->modifier == tier))) // ranking has but tier hasn't
+        || ((ranking != ch->player.ranking && pkaff) && (pkaff->modifier == tier))) // ranking has but tier hasn't
     {
         pkaff->duration = 100;
     }
@@ -1194,7 +1208,7 @@ void do_fame_war_bonuses(struct char_data* ch) {
         affect_to_char(ch, &newpkaf);
         send_to_char("The power of war empowers your body!\n\r", ch);
     }
-    
+
     ch->player.ranking = ranking;
 }
 
@@ -1396,7 +1410,7 @@ void affect_update_room(struct room_data* room)
             sprintf(buf, "check mist movement");
             mudlog(buf, NRM, LEVEL_GOD, FALSE);
             if (movechance < 75) {
-                direction = number(0, NUM_OF_DIRS -1);
+                direction = number(0, NUM_OF_DIRS - 1);
                 /* Decide if the random direction is legal, if so, move the mist */
                 if (!(room->dir_option[direction])) {
                     sprintf(buf, "no option for movement");
@@ -1479,51 +1493,42 @@ void fast_update()
 {
     int freq = FAST_UPDATE_RATE;
     for (char_data* character = character_list; character != nullptr; character = character->next) {
-        
+
         // Note:  Regen values can be negative, so we can't test if a character is below max as an optimization.
 
         float health_regen_base = hit_gain(character) / freq;
         int hitregen = int(health_regen_base);
-        if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base))))
-        {
+        if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base)))) {
             hitregen += hitregen >= 0 ? 1 : -1;
         }
 
-		float move_regen_base = move_gain(character) / freq;
-		int moveregen = int(move_regen_base);
-        if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base))))
-		{
+        float move_regen_base = move_gain(character) / freq;
+        int moveregen = int(move_regen_base);
+        if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base)))) {
             moveregen += moveregen >= 0 ? 1 : -1;
-		}
+        }
 
-		float mana_regen_base = mana_gain(character) / freq;
-		int manaregen = int(mana_regen_base);
-        if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base))))
-		{
+        float mana_regen_base = mana_gain(character) / freq;
+        int manaregen = int(mana_regen_base);
+        if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base)))) {
             manaregen += manaregen >= 0 ? 1 : -1;
-		}
+        }
 
         // Characters can die to negative regen values (think restlessness)
         GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
         if (GET_HIT(character) < 0 && hitregen < 0) {
-			act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
-			send_to_char("Your body failed to the magic.\n\r", character);
-			raw_kill(character, NULL, TYPE_UNDEFINED);
-			add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
-			return;
+            act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
+            send_to_char("Your body failed to the magic.\n\r", character);
+            raw_kill(character, NULL, TYPE_UNDEFINED);
+            add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
+            return;
         }
 
         GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
         GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
 
-        // Commented out because this will always add 0 spirit based on the math.
-        // If we want to give clerics a minimum spirit amount, change the divisor from
-        // 10 * freq to just 10.
-        /*
-        if (GET_SPIRIT(character) < GET_WILL(character) / 3 + GET_PROF_LEVEL(PROF_CLERIC, character) / 3) {
-            GET_SPIRIT(character) += number(1, GET_WILL(character) + GET_PROF_LEVEL(PROF_CLERIC, character)) / (10 * freq);
-        } 
-        */
+        // Make sure characters moves don't drop below zero.
+        GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
 
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);

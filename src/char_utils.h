@@ -141,4 +141,8 @@ void split_exp(const group_data& group, int exp);
 
 int get_energy_regen(const char_data& character);
 
+int get_spirits(char_data* character);
+void add_spirits(char_data* character, int spirits);
+void set_spirits(char_data* character, int spirits);
+
 }

@@ -217,8 +217,9 @@ ASPELL(spell_revive)
     int level = get_mystic_caster_level(caster);
     count = (3 * 9 + level) * GET_PERCEPTION(victim) / 100 / 9;
 
-    if (count * 2 > GET_SPIRIT(caster))
-        count = GET_SPIRIT(caster) / 2;
+    if (count * 2 > utils::get_spirits(caster)) {
+        count = utils::get_spirits(caster) / 2;
+    }
 
     if (count <= 0) {
         send_to_char("You couldn't gather enough spirit to heal.\n\r", caster);
@@ -282,8 +283,8 @@ ASPELL(spell_revive)
     for (i = 0; i < 6; i++) {
         num = restore_stat(victim, i, revive_table[i]);
         actual_count += num;
-        GET_SPIRIT(caster) -= num;
-        if (GET_SPIRIT(caster) <= 0)
+        utils::add_spirits(caster, -num);
+        if (utils::get_spirits(caster) <= 0)
             break;
     }
     if (!actual_count) {
@@ -751,6 +752,11 @@ ASPELL(spell_curing)
     if (!victim)
         return;
 
+    if (GET_RACE(victim) == RACE_OLOGHAI) {
+        send_to_char("You cannot improve an Olog-Hai's regeneration.\n\r", caster);
+        return;
+    }
+
     int healing_level = get_mystic_caster_level(caster) + 5;
     if (victim != caster) {
         healing_level = (healing_level + get_mystic_caster_level(victim)) / 2;
@@ -779,6 +785,11 @@ ASPELL(spell_restlessness)
 {
     if (!victim)
         return;
+
+    if (GET_RACE(victim) == RACE_OLOGHAI) {
+        send_to_char("You cannot improve an Olog-Hai's vitality.\n\r", caster);
+        return;
+    }
 
     int healing_level = get_mystic_caster_level(caster) + 5;
     if (victim != caster) {
@@ -1299,7 +1310,7 @@ ASPELL(spell_enchant_weapon)
 
         for (i = 0; i < MAX_OBJ_AFFECT; i++) {
             if (obj->affected[i].location != APPLY_NONE) {
-                GET_SPIRIT(caster) += 50;
+                utils::add_spirits(caster, 50);
                 send_to_char("There is too much magic in it already.\n\r", caster);
                 return;
             }
@@ -1553,7 +1564,7 @@ ASPELL(spell_guardian)
         send_to_char("You'll have to be more specific about "
                      "which guardian you wish to summon.\n",
             caster);
-        GET_SPIRIT(caster) += 30;
+        utils::add_spirits(caster, 30);
         return;
     } else
         guardian_num = guardian_mob[GET_RACE(caster)][guardian_to_load];

@@ -25,22 +25,22 @@
 #include "limits.h"
 #include "pkill.h"
 #include "script.h"
+#include "skill_timer.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include "zone.h" /* For zone_table */
-#include "skill_timer.h"
 #include "warrior_spec_handlers.h"
+#include "zone.h" /* For zone_table */
 
 #include "big_brother.h"
 #include "char_utils.h"
+#include <algorithm>
 #include <cmath>
-#include <string>
-#include <vector>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
+#include <string>
+#include <vector>
 
 /* extern variables */
 extern struct room_data world;
@@ -115,196 +115,170 @@ int show_tracks(struct char_data*, char*, int);
 static char* get_level_abbr(sh_int level, sh_int);
 int show_blood_trail(struct char_data*, char*, int);
 
+namespace {
+/* Simple structure for handling inventory formatting data. */
+struct inventory_data {
+    inventory_data()
+        : description()
+    {
+        count = 0;
+    }
 
-namespace
+    std::string description;
+    int count;
+};
+
+struct inventory_data_sort_alphabetically {
+    bool operator()(const inventory_data& left, const inventory_data& right)
+    {
+        return left.description < right.description;
+    }
+};
+
+struct inventory_data_sort_by_length {
+    bool operator()(const inventory_data& left, const inventory_data& right)
+    {
+        return left.description.size() < right.description.size();
+    }
+};
+
+bool use_inventory_formatter(char_data* character)
 {
-	/* Simple structure for handling inventory formatting data. */
-	struct inventory_data
-	{
-		inventory_data() : description()
-		{
-			count = 0;
-		}
+    bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+    bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
 
-		std::string description;
-		int count;
-	};
-
-	struct inventory_data_sort_alphabetically
-	{
-		bool operator()(const inventory_data& left, const inventory_data& right)
-		{
-			return left.description < right.description;
-		}
-	};
-
-	struct inventory_data_sort_by_length
-	{
-		bool operator()(const inventory_data& left, const inventory_data& right)
-		{
-			return left.description.size() < right.description.size();
-		}
-	};
-
-	bool use_inventory_formatter(char_data* character)
-	{
-		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
-		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
-
-		return high_bit_set || low_bit_set;
-	}
-
-	bool use_alpha_sorting(char_data* character)
-	{
-		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
-		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
-
-		return high_bit_set && !low_bit_set;
-	}
-
-	bool use_length_sorting(char_data* character)
-	{
-		bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
-		bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
-
-		return high_bit_set && low_bit_set;
-	}
-
-	/* Class that will return the contents of a container in a formatted string. */
-	class inventory_formatter
-	{
-	public:
-
-		inventory_formatter(obj_data* root_object, char_data* character)
-		{
-			m_root_object = root_object;
-			m_character = character;
-			m_working_data.reserve(64);
-		}
-
-		std::string format_inventory()
-		{
-			for (obj_data* item = m_root_object; item; item = item->next_content)
-			{
-				add_item_to_list(item);
-			}
-
-			if (m_seen_items.empty())
-			{
-				return std::string(" Nothing.\n\r");
-			}
-
-			bool sort_alpha = use_alpha_sorting(m_character);
-			bool sort_length = use_length_sorting(m_character);
-
-			if (sort_alpha)
-			{
-				inventory_data_sort_alphabetically sorter;
-				std::sort(m_seen_items.begin(), m_seen_items.end(), sorter);
-			}
-			else if (sort_length)
-			{
-				// stable sort is used for length because we want to maintain as much of
-				// the original order as possible.
-				inventory_data_sort_by_length sorter;
-				std::stable_sort(m_seen_items.begin(), m_seen_items.end(), sorter);
-			}
-
-			std::ostringstream inventory_writer;
-			for (size_t index = 0; index < m_seen_items.size(); ++index)
-			{
-				const inventory_data& item_data = m_seen_items[index];
-				inventory_writer << item_data.description;
-				if (item_data.count > 1)
-				{
-					inventory_writer << " (" << item_data.count << ')';
-				}
-				inventory_writer << std::endl;
-			}
-
-			inventory_writer << std::endl;
-			return inventory_writer.str();
-		}
-
-	private:
-
-		void add_item_to_list(obj_data* object)
-		{
-			get_item_description(object, m_working_data);
-
-			for (size_t index = 0; index < m_seen_items.size(); ++index)
-			{
-				inventory_data& item_data = m_seen_items[index];
-				if (m_working_data == item_data.description)
-				{
-					++item_data.count;
-					return;
-				}
-			}
-
-			inventory_data new_item;
-			new_item.description.assign(m_working_data);
-			new_item.count = 1;
-			m_seen_items.push_back(new_item);
-		}
-
-		void get_item_description(obj_data* object, std::string& working_data)
-		{
-			// reset the state of working data - this shouldn't force a reallocation.
-			working_data.clear();
-
-			if (!CAN_SEE_OBJ(m_character, object))
-			{
-				working_data.append("Something.");
-				return;
-			}
-
-			working_data.append(object->short_description);
-
-			if (IS_OBJ_STAT(object, ITEM_INVISIBLE))
-			{
-				working_data.append("(invisible");
-			}
-
-			if (IS_OBJ_STAT(object, ITEM_EVIL) && IS_AFFECTED(m_character, AFF_DETECT_INVISIBLE))
-			{
-				working_data.append("..It glows red!");
-			}
-			if (IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(m_character, AFF_DETECT_MAGIC))
-			{
-				working_data.append("..It glows blue!");
-			}
-			if (IS_OBJ_STAT(object, ITEM_WILLPOWER) && IS_SHADOW(m_character))
-			{
-				working_data.append(" ..It has a powerful aura!");
-			}
-			if (IS_OBJ_STAT(object, ITEM_GLOW))
-			{
-				working_data.append("..It has a soft glowing aura!");
-			}
-			if (IS_OBJ_STAT(object, ITEM_HUM))
-			{
-				working_data.append("..It emits a faint humming sound!");
-			}
-			if (IS_OBJ_STAT(object, ITEM_BROKEN))
-			{
-				working_data.append(" (broken)");
-			}
-			if ((GET_ITEM_TYPE(object) == ITEM_LIGHT) && (object->obj_flags.value[2] && object->obj_flags.value[3]))
-			{
-				working_data.append("..It glows brightly.");
-			}
-		}
-
-		obj_data* m_root_object;
-		char_data* m_character;
-
-		// string that is used to store temporary work
-		std::string m_working_data;
-		std::vector<inventory_data> m_seen_items;
-	};
+    return high_bit_set || low_bit_set;
 }
 
+bool use_alpha_sorting(char_data* character)
+{
+    bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+    bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+    return high_bit_set && !low_bit_set;
+}
+
+bool use_length_sorting(char_data* character)
+{
+    bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
+    bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
+
+    return high_bit_set && low_bit_set;
+}
+
+/* Class that will return the contents of a container in a formatted string. */
+class inventory_formatter {
+public:
+    inventory_formatter(obj_data* root_object, char_data* character)
+    {
+        m_root_object = root_object;
+        m_character = character;
+        m_working_data.reserve(64);
+    }
+
+    std::string format_inventory()
+    {
+        for (obj_data* item = m_root_object; item; item = item->next_content) {
+            add_item_to_list(item);
+        }
+
+        if (m_seen_items.empty()) {
+            return std::string(" Nothing.\n\r");
+        }
+
+        bool sort_alpha = use_alpha_sorting(m_character);
+        bool sort_length = use_length_sorting(m_character);
+
+        if (sort_alpha) {
+            inventory_data_sort_alphabetically sorter;
+            std::sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+        } else if (sort_length) {
+            // stable sort is used for length because we want to maintain as much of
+            // the original order as possible.
+            inventory_data_sort_by_length sorter;
+            std::stable_sort(m_seen_items.begin(), m_seen_items.end(), sorter);
+        }
+
+        std::ostringstream inventory_writer;
+        for (size_t index = 0; index < m_seen_items.size(); ++index) {
+            const inventory_data& item_data = m_seen_items[index];
+            inventory_writer << item_data.description;
+            if (item_data.count > 1) {
+                inventory_writer << " (" << item_data.count << ')';
+            }
+            inventory_writer << std::endl;
+        }
+
+        inventory_writer << std::endl;
+        return inventory_writer.str();
+    }
+
+private:
+    void add_item_to_list(obj_data* object)
+    {
+        get_item_description(object, m_working_data);
+
+        for (size_t index = 0; index < m_seen_items.size(); ++index) {
+            inventory_data& item_data = m_seen_items[index];
+            if (m_working_data == item_data.description) {
+                ++item_data.count;
+                return;
+            }
+        }
+
+        inventory_data new_item;
+        new_item.description.assign(m_working_data);
+        new_item.count = 1;
+        m_seen_items.push_back(new_item);
+    }
+
+    void get_item_description(obj_data* object, std::string& working_data)
+    {
+        // reset the state of working data - this shouldn't force a reallocation.
+        working_data.clear();
+
+        if (!CAN_SEE_OBJ(m_character, object)) {
+            working_data.append("Something.");
+            return;
+        }
+
+        working_data.append(object->short_description);
+
+        if (IS_OBJ_STAT(object, ITEM_INVISIBLE)) {
+            working_data.append("(invisible");
+        }
+
+        if (IS_OBJ_STAT(object, ITEM_EVIL) && IS_AFFECTED(m_character, AFF_DETECT_INVISIBLE)) {
+            working_data.append("..It glows red!");
+        }
+        if (IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(m_character, AFF_DETECT_MAGIC)) {
+            working_data.append("..It glows blue!");
+        }
+        if (IS_OBJ_STAT(object, ITEM_WILLPOWER) && IS_SHADOW(m_character)) {
+            working_data.append(" ..It has a powerful aura!");
+        }
+        if (IS_OBJ_STAT(object, ITEM_GLOW)) {
+            working_data.append("..It has a soft glowing aura!");
+        }
+        if (IS_OBJ_STAT(object, ITEM_HUM)) {
+            working_data.append("..It emits a faint humming sound!");
+        }
+        if (IS_OBJ_STAT(object, ITEM_BROKEN)) {
+            working_data.append(" (broken)");
+        }
+        if ((GET_ITEM_TYPE(object) == ITEM_LIGHT) && (object->obj_flags.value[2] && object->obj_flags.value[3])) {
+            working_data.append("..It glows brightly.");
+        }
+    }
+
+    obj_data* m_root_object;
+    char_data* m_character;
+
+    // string that is used to store temporary work
+    std::string m_working_data;
+    std::vector<inventory_data> m_seen_items;
+};
+}
 
 /* Procedures related to 'look' */
 void argument_split_2(char* argument, char* first_arg, char* second_arg)
@@ -390,7 +364,7 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
             strcat(buf, "..It glows blue!");
             found = TRUE;
         }
-        if (IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)){
+        if (IS_OBJ_STAT(object, ITEM_ANTI_GOOD) && IS_OBJ_STAT(object, ITEM_MAGIC) && IS_AFFECTED(ch, AFF_DETECT_MAGIC)) {
             strcat(buf, "..It glows red!");
             found = TRUE;
         }
@@ -422,35 +396,27 @@ void show_obj_to_char(struct obj_data* object, struct char_data* ch, int mode)
 /** The 'show' flag is true for containers and false for rooms. */
 void list_obj_to_char(obj_data* list, char_data* ch, int mode, bool show)
 {
-	bool use_formatter = use_inventory_formatter(ch);
-	if (show && use_formatter)
-	{
-		inventory_formatter formatter(list, ch);
-		std::string inventory_message = formatter.format_inventory();
-		send_to_char(inventory_message.c_str(), ch);
-	}
-	else
-	{
-		bool found = show;
-		for (obj_data* root_object = list; root_object; root_object = root_object->next_content)
-		{
-			if (CAN_SEE_OBJ(ch, root_object))
-			{
-				show_obj_to_char(root_object, ch, mode);
-				found = true;
-			}
-			else if (show)
-			{
-				send_to_char("Something.\n\r", ch);
-			}
-		}
+    bool use_formatter = use_inventory_formatter(ch);
+    if (show && use_formatter) {
+        inventory_formatter formatter(list, ch);
+        std::string inventory_message = formatter.format_inventory();
+        send_to_char(inventory_message.c_str(), ch);
+    } else {
+        bool found = show;
+        for (obj_data* root_object = list; root_object; root_object = root_object->next_content) {
+            if (CAN_SEE_OBJ(ch, root_object)) {
+                show_obj_to_char(root_object, ch, mode);
+                found = true;
+            } else if (show) {
+                send_to_char("Something.\n\r", ch);
+            }
+        }
 
-		// The character should get a report that the container is empty.
-		if (show && !found)
-		{
-			send_to_char(" Nothing.\n\r", ch);
-		}
-	}
+        // The character should get a report that the container is empty.
+        if (show && !found) {
+            send_to_char(" Nothing.\n\r", ch);
+        }
+    }
 }
 
 void show_equipment_to_char(struct char_data* from, struct char_data* to)
@@ -1458,7 +1424,7 @@ ACMD(do_look)
                         if (IS_SET(world[ch->in_room].dir_option[i]->exit_info,
                                 EX_CLOSED)
                             && !IS_SET(world[ch->in_room].dir_option[i]->exit_info,
-                                   EX_ISBROKEN)) {
+                                EX_ISBROKEN)) {
                             exit_choice = 2; /* Denotes a normal, closed door */
 
                             if (IS_SET(world[ch->in_room].dir_option[i]->exit_info,
@@ -1485,8 +1451,7 @@ ACMD(do_look)
 	     * exit_choice 5 means a darkie is looking at an exit which
 	     * leads to a sunlit room
 	     */
-                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SUNLIT_EXIT(ch->in_room,
-                                                                                                                                                                 world[ch->in_room].dir_option[i]->to_room, i))
+                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SUNLIT_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i))
                             if (exit_choice != 4)
                                 exit_choice = 5;
 
@@ -1495,8 +1460,7 @@ ACMD(do_look)
 	     * leads to a shadowy room, AND the sun is shining in that
 	     * room.
 	     */
-                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SHADOWY_EXIT(ch->in_room,
-                                                                                                                                                                 world[ch->in_room].dir_option[i]->to_room, i)
+                        if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SHADOWY_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i)
                             && weather_info.sunlight == SUN_LIGHT)
                             if (exit_choice != 4)
                                 exit_choice = 6;
@@ -1533,10 +1497,8 @@ ACMD(do_look)
         strcat(buf2, "\n\r");
 
         /* Now generate the room description */
-        if (PRF_FLAGGED(ch, PRF_SPAM))
-        {
-            if (!PRF_FLAGGED(ch, PRF_BRIEF) || (cmd == CMD_LOOK))
-            {
+        if (PRF_FLAGGED(ch, PRF_SPAM)) {
+            if (!PRF_FLAGGED(ch, PRF_BRIEF) || (cmd == CMD_LOOK)) {
                 strcat(buf2, CC_USE(ch, COLOR_DESC));
                 strcat(buf2, world[ch->in_room].description);
             }
@@ -1658,8 +1620,7 @@ ACMD(do_exits)
             if (EXIT(ch, door)->to_room != NOWHERE) {
                 tmp = IS_SET(EXIT(ch, door)->exit_info, EX_NOWALK) && IS_SET(EXIT(ch, door)->exit_info, EX_ISHIDDEN);
 
-                if (!tmp && (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)
-                                || IS_SET(EXIT(ch, door)->exit_info, EX_ISBROKEN))) {
+                if (!tmp && (!IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED) || IS_SET(EXIT(ch, door)->exit_info, EX_ISBROKEN))) {
                     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
                         sprintf(buf + strlen(buf), "%-7s - [%7d][w:%2d] %s\n\r",
                             exits[door], world[EXIT(ch, door)->to_room].number,
@@ -1713,10 +1674,9 @@ int get_percent_absorb(char_data* character)
     }
 
     // Characters specialized in heavy fighting absorb 10% more damage.
-	if (utils::get_specialization(*character) == game_types::PS_HeavyFighting)
-	{
-		absorb += absorb / 10;
-	}
+    if (utils::get_specialization(*character) == game_types::PS_HeavyFighting) {
+        absorb += absorb / 10;
+    }
 
     return absorb / 10;
 }
@@ -1759,7 +1719,9 @@ ACMD(do_info)
     /* `ch's name, title, alignment, sex and race */
     bufpt += sprintf(bufpt, "You are %s %s, %s (%d) %s %s.\n\r",
         GET_NAME(ch), GET_TITLE(ch),
-        IS_GOOD(ch) ? "a good" : IS_EVIL(ch) ? "an evil" : "a neutral", GET_ALIGNMENT(ch), GET_SEX(ch) ? GET_SEX(ch) == 1 ? "male" : "female" : "neutral",
+        IS_GOOD(ch) ? "a good" : IS_EVIL(ch) ? "an evil"
+                                             : "a neutral",
+        GET_ALIGNMENT(ch), GET_SEX(ch) ? GET_SEX(ch) == 1 ? "male" : "female" : "neutral",
         pc_races[GET_RACE(ch)]);
 
     /* `ch's level */
@@ -1804,7 +1766,7 @@ ACMD(do_info)
                             "%d/%d moves and %d spirit.\n\r",
         GET_HIT(ch),
         GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
-        GET_MOVE(ch), GET_MAX_MOVE(ch), GET_SPIRIT(ch));
+        GET_MOVE(ch), GET_MAX_MOVE(ch), utils::get_spirits(ch));
 
     /* ch's resource regeneration */
     {
@@ -1812,20 +1774,19 @@ ACMD(do_info)
         float bonus_health_regen = get_bonus_hit_gain(ch);
         const char* health_symbol = bonus_health_regen > 0.0f ? "+" : "";
 
-		float mana_regen = mana_gain(ch);
-		float bonus_mana_regen = get_bonus_mana_gain(ch);
-		const char* mana_symbol = bonus_mana_regen > 0.0f ? "+" : "";
+        float mana_regen = mana_gain(ch);
+        float bonus_mana_regen = get_bonus_mana_gain(ch);
+        const char* mana_symbol = bonus_mana_regen > 0.0f ? "+" : "";
 
-		float move_regen = move_gain(ch);
-		float bonus_move_regen = get_bonus_move_gain(ch);
-		const char* move_symbol = bonus_move_regen > 0.0f ? "+" : "";
-        
+        float move_regen = move_gain(ch);
+        float bonus_move_regen = get_bonus_move_gain(ch);
+        const char* move_symbol = bonus_move_regen > 0.0f ? "+" : "";
+
         bufpt += sprintf(bufpt, "You regain %.0f (%s%.0f) health, %.0f (%s%.0f) stamina, and %.0f (%s%.0f) moves per hour.\n\r",
             health_regen, health_symbol, bonus_health_regen,
             mana_regen, mana_symbol, bonus_mana_regen,
             move_regen, move_symbol, bonus_move_regen);
     }
-    
 
     /* `ch's wealth */
     bufpt += sprintf(bufpt, "You have %s.\n\r", money_message(GET_GOLD(ch), 1));
@@ -1982,7 +1943,7 @@ ACMD(do_score)
                             "%d spirit.\r\n",
         GET_HIT(ch), GET_MAX_HIT(ch),
         GET_MANA(ch), GET_MAX_MANA(ch), GET_MOVE(ch),
-        GET_MAX_MOVE(ch), GET_SPIRIT(ch));
+        GET_MAX_MOVE(ch), utils::get_spirits(ch));
 
     bufpt += sprintf(bufpt, "OB: %d, DB: %d, PB: %d, Speed: %d, Gold: %d",
         get_real_OB(ch), get_real_dodge(ch), get_real_parry(ch),
@@ -2010,8 +1971,8 @@ ACMD(do_score)
         if (weapon && (weapon->get_bulk() >= 4 || (weapon->get_bulk() == 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF))) {
             bufpt += sprintf(bufpt, "The heft of your weapon lends power to your blows.\r\n");
         }
-    } else if(utils::get_specialization(*ch) == game_types::PS_WildFighting && ch->specials.tactics == TACTICS_BERSERK) {
-		float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
+    } else if (utils::get_specialization(*ch) == game_types::PS_WildFighting && ch->specials.tactics == TACTICS_BERSERK) {
+        float health_percentage = ch->tmpabilities.hit / (float)ch->abilities.hit;
         if (health_percentage <= 0.45f) {
             bufpt += sprintf(bufpt, "Your fury lends speed to your attacks!\r\n");
         }
@@ -2619,7 +2580,7 @@ ACMD(do_users)
 ACMD(do_inventory)
 {
     send_to_char("You are carrying:\n\r", ch);
-	list_obj_to_char(ch->carrying, ch, 1, true);
+    list_obj_to_char(ch->carrying, ch, 1, true);
 }
 
 ACMD(do_equipment)
@@ -3621,7 +3582,8 @@ void report_affection(affected_type* aff, char* str)
     sprintf(str, "%-30s (%s)\n\r", skill_name, duration_text);
 }
 
-void report_skill_timer(const char_data& ch, char* buf) {
+void report_skill_timer(const char_data& ch, char* buf)
+{
     game_timer::skill_timer& timer = game_timer::skill_timer::instance();
     buf += timer.report_skill_status(utils::get_idnum(ch), buf);
 }
@@ -4460,84 +4422,186 @@ char* extra_messages[] = {
 char* value_array[][5] = {
 
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     },
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Light source handled by do_display_light */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Scroll not used */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Wand not used */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Staff not used*/
     {
-        "Offensive Bonus", "Parry Bonus    ", "Bulk           ",
-        "", "",
+        "Offensive Bonus",
+        "Parry Bonus    ",
+        "Bulk           ",
+        "",
+        "",
     }, /* Weapons Display */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Fire weapons ?, what the hell is this anyway */
     {
-        "To Hit", "To Damage", "Character ID", "Break Percentage", "",
+        "To Hit",
+        "To Damage",
+        "Character ID",
+        "Break Percentage",
+        "",
     }, /* Missile Weapon */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Treasure */
     {
-        "", "Min Absorbtion", "Encumberance  ",
-        "Dodge         ", "",
+        "",
+        "Min Absorbtion",
+        "Encumberance  ",
+        "Dodge         ",
+        "",
     }, /* Armour */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* small potion */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* worn ? */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* other */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Trash */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Trap */
     {
-        "Capacity", "Locktype", "", "", "",
+        "Capacity",
+        "Locktype",
+        "",
+        "",
+        "",
     }, /* Container */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* note */
     {
-        "Capacity    ", "Ammount Left", "", "", "",
+        "Capacity    ",
+        "Ammount Left",
+        "",
+        "",
+        "",
     }, /* Drink Container */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Key */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Food, handled by do_food_display */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Money */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Pen */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Money */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Fountain */
     {
-        "Dodge Bonus ", "Parry Bonus ", "Encumberance", "", "",
+        "Dodge Bonus ",
+        "Parry Bonus ",
+        "Encumberance",
+        "",
+        "",
     }, /* Shield */
     {
-        "", "", "", "", "",
+        "",
+        "",
+        "",
+        "",
+        "",
     }, /* Lever */
 };
 
@@ -4708,10 +4772,9 @@ void do_identify_object(struct char_data* ch, struct obj_data* j)
                  "This %s can be%s\r\n",
         item_messages[GET_ITEM_TYPE(j)],
         j->obj_flags.material >= 0 && j->obj_flags.material < num_of_object_materials ? material_messages
-                                                                                            [j->obj_flags.material]
+                [j->obj_flags.material]
                                                                                       : "an unknown substance",
-        j->obj_flags.weight / 100., item_messages
-                                        [GET_ITEM_TYPE(j)],
+        j->obj_flags.weight / 100., item_messages[GET_ITEM_TYPE(j)],
         buf2);
     send_to_char(buf, ch);
 

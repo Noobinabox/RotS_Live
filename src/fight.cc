@@ -25,8 +25,8 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include "zone.h" /* For zone_table */
 #include "warrior_spec_handlers.h"
+#include "zone.h" /* For zone_table */
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -222,7 +222,6 @@ void update_pos(struct char_data* victim)
     else
         GET_POS(victim) = POSITION_STUNNED;
 }
-
 
 /* start one char fighting another (yes, it is horrible, I know... )  */
 void set_fighting(struct char_data* ch, struct char_data* vict)
@@ -518,7 +517,7 @@ void get_corpse_desc(struct obj_data* corpse, struct char_data* ch,
         strncpy(condition, "battered", BUF_LEN - 1);
         break;
     case 156:
-        strncpy(condition, "cleaved", BUF_LEN -1);
+        strncpy(condition, "cleaved", BUF_LEN - 1);
         break;
     case 157:
         strncpy(condition, "trampled", BUF_LEN - 1);
@@ -1226,26 +1225,22 @@ void group_gain(char_data* killer, char_data* dead_man)
 
     char_vector involved_killers;
     char_set player_killers;
-    
+
     // This can happen from some effects.
-    if (killer != dead_man)
-    {
+    if (killer != dead_man) {
         // Ensure that the killer is involved.
-		involved_killers.push_back(killer);
-		if (utils::is_pc(*killer))
-		{
-			player_killers.insert(killer);
-		}
+        involved_killers.push_back(killer);
+        if (utils::is_pc(*killer)) {
+            player_killers.insert(killer);
+        }
     }
 
     // Ensure that the victim's target is involved as well.
-    if (dead_man->specials.fighting != nullptr)
-    {
+    if (dead_man->specials.fighting != nullptr) {
         involved_killers.push_back(dead_man->specials.fighting);
-		if (utils::is_pc(*dead_man->specials.fighting))
-		{
-			player_killers.insert(dead_man->specials.fighting);
-		}
+        if (utils::is_pc(*dead_man->specials.fighting)) {
+            player_killers.insert(dead_man->specials.fighting);
+        }
     }
 
     // Collect everyone in the room who is fighting the person that died.
@@ -1321,7 +1316,7 @@ void group_gain(char_data* killer, char_data* dead_man)
         int num_killers = (int)player_killers.size();
         share = share * (num_killers + 1) / num_killers;
     } else {
-        spirit_gain = GET_SPIRIT(dead_man) * 100 / 4;
+        spirit_gain = utils::get_spirits(dead_man) * 100 / 4;
     }
 
     share = share / level_total;
@@ -1335,11 +1330,11 @@ void group_gain(char_data* killer, char_data* dead_man)
         if (perception_total > 0 && spirit_gain > 0) {
             int gain = spirit_gain * GET_PERCEPTION(character) / perception_total / 100;
             if (gain > 0 && (GET_ALIGNMENT(character) * GET_ALIGNMENT(dead_man) <= 0 || RACE_EVIL(character))) {
-                if (GET_SPIRIT(character) >= 99000) {
+                if (utils::get_spirits(character) >= 99000) {
                     send_to_char("You have capped out on spirits.\n\r", character);
                 } else {
                     vsend_to_char(character, "Your spirit increases by %d.\n\r", gain);
-                    GET_SPIRIT(character) += gain;
+                    utils::add_spirits(character, gain);
                 }
             }
         }
@@ -1692,7 +1687,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
 
     if (!IS_NPC(attacker) && pkaff && victim->player.ranking < 4 && victim->player.ranking != PKILL_UNRANKED) {
         dam += dam * ((15 / victim->player.ranking) / 100);
-    } 
+    }
 
     /* Call special procs on damage */
     if (victim->specials.fighting != attacker) {
@@ -2000,7 +1995,6 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     }
 }
 
-
 bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data* weapon)
 {
     int multipler = weapon->obj_flags.get_poison_multipler();
@@ -2008,7 +2002,6 @@ bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data
     int offense = (((strength * 2) * 8) * multipler) / 100;
     int defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
     return number(offense / 3, offense) < number(defense / 2, defense) ? false : true;
-
 }
 
 void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
@@ -2040,7 +2033,6 @@ void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapo
     weapon->obj_flags.poisoned = false;
     return;
 }
-
 
 /*UPDATE* integreate parry message with other messages */
 void do_parry(struct char_data* ch, struct char_data* victim, int type)
@@ -2258,8 +2250,8 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         player_spec::weapon_master_handler weapon_master(ch);
 
         int divisor = 100;
-		if (w_type == TYPE_SPEARS) {
-			/* Spears hit the armor, but then go right through it */
+        if (w_type == TYPE_SPEARS) {
+            /* Spears hit the armor, but then go right through it */
             divisor += 50;
 
             // Weapon masters have a chance to double their armor punching with spears.
@@ -2270,16 +2262,15 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
 
         damage_reduction += ((damage - damage_reduction) * armor_absorb(armor) + 50) / divisor;
 
-		// Weapon masters have a chance to bypass the vast majority of armor with daggers.
+        // Weapon masters have a chance to bypass the vast majority of armor with daggers.
         if (weapon_master.ignores_armor(victim)) {
             damage_reduction = armor->obj_flags.value[1];
         }
 
         /* Heavy fighters get an extra 10% damage absorption. */
-		if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting)
-		{
-			damage_reduction += damage_reduction / 10;
-		}
+        if (utils::get_specialization(*victim) == (int)game_types::PS_HeavyFighting) {
+            damage_reduction += damage_reduction / 10;
+        }
 
         damage -= damage_reduction;
 
@@ -2335,7 +2326,8 @@ int heavy_fighting_effect(char_data& attacker, int damage)
     return damage;
 }
 
-bool is_frenzy_active(char_data& attacker) {
+bool is_frenzy_active(char_data& attacker)
+{
     return utils::get_race(attacker) == RACE_OLOGHAI && utils::is_affected_by_spell(attacker, SKILL_FRENZY);
 }
 
@@ -2384,22 +2376,22 @@ int defender_effect(char_data* attacker, char_data* victim, int damage)
             // Adding the extra float at the end to handle precision issues.
             if (blocked_damage_percentage > reduced_per_block + 0.01f) {
                 // critical block
-				act("Your shield absorbs most of the impact of $N's attack.", FALSE, victim, nullptr, attacker, TO_CHAR);
-				act("$n absorbs most of your attack with $s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
-				act("$n absorbs most of the impact of $N's attack with $s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+                act("Your shield absorbs most of the impact of $N's attack.", FALSE, victim, nullptr, attacker, TO_CHAR);
+                act("$n absorbs most of your attack with $s shield.", FALSE, victim, nullptr, attacker, TO_VICT);
+                act("$n absorbs most of the impact of $N's attack with $s shield.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
             } else if (blocked_damage_percentage > 0.01f) {
                 // standard block
-				act("You block $N's attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_CHAR);
-				act("$n blocks your attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_VICT);
-				act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
+                act("You block $N's attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_CHAR);
+                act("$n blocks your attack, reducing its effectiveness.", FALSE, victim, nullptr, attacker, TO_VICT);
+                act("$n blocks $N's attack.", FALSE, victim, 0, attacker, TO_NOTVICT, FALSE);
             }
 
-			int blocked_damage = int(damage * blocked_damage_percentage);
+            int blocked_damage = int(damage * blocked_damage_percentage);
 
-			defender_data* data = static_cast<defender_data*>(victim->extra_specialization_data.current_spec_info);
-			data->add_blocked_damage(blocked_damage);
+            defender_data* data = static_cast<defender_data*>(victim->extra_specialization_data.current_spec_info);
+            data->add_blocked_damage(blocked_damage);
 
-			return damage - blocked_damage;
+            return damage - blocked_damage;
         }
     }
 
@@ -2498,7 +2490,6 @@ void hit(char_data* ch, char_data* victim, int type)
         return;
     }
 
-    // create weapon master struct to handle this spec's logic if it applies.
     player_spec::weapon_master_handler weapon_master(ch);
 
     /*
@@ -2523,7 +2514,7 @@ void hit(char_data* ch, char_data* victim, int type)
     dodge_malus = get_real_dodge(victim) + evasion_malus;
     OB -= dodge_malus;
 
-	// Weapon masters have a chance to ignore a shield's contribution to dodge (and parry, but that's handled later).
+    // Weapon masters have a chance to ignore a shield's contribution to dodge (and parry, but that's handled later).
     bool ignore_shield = weapon_master.ignores_shields(victim);
     if (ignore_shield) {
         obj_data* shield = victim->equipment[WEAR_SHIELD];
@@ -2558,15 +2549,14 @@ void hit(char_data* ch, char_data* victim, int type)
             if (GET_POS(victim) > POSITION_STUNNED) {
                 OB -= get_real_parry(victim) * GET_CURRENT_PARRY(victim) / 100;
 
-				if (ignore_shield) {
-					obj_data* shield = victim->equipment[WEAR_SHIELD];
-					if (shield != nullptr) {
+                if (ignore_shield) {
+                    obj_data* shield = victim->equipment[WEAR_SHIELD];
+                    if (shield != nullptr) {
                         // scale the shield's parry from the user's current parry
-						OB += shield->obj_flags.value[0] * GET_CURRENT_PARRY(victim) / 100;
-					}
-				}
+                        OB += shield->obj_flags.value[0] * GET_CURRENT_PARRY(victim) / 100;
+                    }
+                }
             }
-                
 
             SET_CURRENT_PARRY(victim) = GET_CURRENT_PARRY(victim) * 2 / 3;
 
@@ -2609,7 +2599,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 dam += GET_DAMAGE(ch) * 10;
                 int damage_roll = number(0, 100);
 
-				// Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
+                // Weapon masters with axes have a chance to proc a second damage roll, using the better of the two.
                 damage_roll = weapon_master.do_on_damage_rolled(damage_roll, victim);
 
                 /* damage divided again by 10 */
@@ -2633,7 +2623,7 @@ void hit(char_data* ch, char_data* victim, int type)
 
                 dam = std::max(0, dam); /* Not less than 0 damage */
 
-				// Weapon masters with clubs and smiters have a chance to proc additional effects based on damage dealt.
+                // Weapon masters with clubs and smiters have a chance to proc additional effects based on damage dealt.
                 weapon_master.do_on_damage_dealt(dam, victim);
 
                 damage(ch, victim, dam, w_type, location);
@@ -2719,14 +2709,14 @@ void hit(char_data* ch, char_data* victim, int type)
 
 bool is_victim_around(const char_data* character)
 {
-	// The character is no longer fighting anyone.  Can't double-hit.
-	if (character->specials.fighting == NULL)
-		return false;
+    // The character is no longer fighting anyone.  Can't double-hit.
+    if (character->specials.fighting == NULL)
+        return false;
 
-	// The character's enemy is no longer in the room (probably wimpied out).  Can't
-	// attack an enemy that isn't there.
-	if (character->specials.fighting->in_room != character->in_room)
-		return false;
+    // The character's enemy is no longer in the room (probably wimpied out).  Can't
+    // attack an enemy that isn't there.
+    if (character->specials.fighting->in_room != character->in_room)
+        return false;
 
     return true;
 }
@@ -2747,7 +2737,7 @@ bool can_double_hit(const char_data* character)
     // Characters must be using a light weapon
     if (weapon && weapon->get_bulk() >= 3 && weapon->get_weight() > LIGHT_WEAPON_WEIGHT_CUTOFF)
         return false;
-    
+
     return is_victim_around(character);
 }
 
@@ -2764,7 +2754,7 @@ bool can_beorning_swipe(struct char_data* character)
     if (GET_RACE(character) != RACE_BEORNING)
         return false;
 
-	return is_victim_around(character);
+    return is_victim_around(character);
 }
 
 /*
@@ -2777,8 +2767,8 @@ bool can_beorning_swipe(struct char_data* character)
  * NOTE: Max probability should be 31 for a level 90
  * bear with 36w and fully practiced swipe
  */
-bool
-does_beorning_swipe_proc(struct char_data* character) {
+bool does_beorning_swipe_proc(struct char_data* character)
+{
     int warrior_level, skill_level, ch_level;
     double chance;
     warrior_level = utils::get_prof_level(PROF_WARRIOR, *character) / 3;
@@ -2880,7 +2870,7 @@ void perform_violence(int mini_tics)
                         fighter->specials.ENERGY = current_energy;
                         hit(fighter, victim, TYPE_UNDEFINED);
                     }
-                    
+
                     else {
                         player_spec::weapon_master_handler weapon_master(fighter);
                         weapon_master.regain_energy(fighter->specials.fighting);
@@ -2962,7 +2952,6 @@ int check_overkill(struct char_data* ch)
 
     return 1;
 }
-
 
 int check_hallucinate(struct char_data* ch, struct char_data* victim)
 {

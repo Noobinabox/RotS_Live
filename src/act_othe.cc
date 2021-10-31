@@ -366,10 +366,11 @@ void print_group_leader(const char_data* leader)
          move_prompt_index++)
         ;
 
-    sprintf(buf, "HP:%9s,%11s,%13s -- $N (Head of group)",
+    sprintf(buf, "HP:%9s,%11s,%13s -- %s (Head of group)\n\r",
         prompt_hit[health_prompt_index].message,
         *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
-        *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message);
+        *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
+				GET_NAME(leader));
 }
 
 void print_group_member(const char_data* group_member)
@@ -399,16 +400,18 @@ void print_group_member(const char_data* group_member)
         ;
 
     if (MOB_FLAGGED(group_member, MOB_ORC_FRIEND)) {
-        sprintf(buf, "HP:%9s,%11s,%13s -- $N (Lvl:%2d)",
+        sprintf(buf, "HP:%9s,%11s,%13s -- %s (Lvl:%2d)\n\r",
             prompt_hit[health_prompt_index].message,
             *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
             *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
+						GET_NAME(group_member),
             GET_LEVEL(group_member));
     } else {
-        sprintf(buf, "HP:%9s,%11s,%13s -- $N",
+        sprintf(buf, "HP:%9s,%11s,%13s -- %s\n\r",
             prompt_hit[health_prompt_index].message,
             *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
-            *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message);
+            *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
+						GET_NAME(group_member));
     }
 }
 
@@ -472,13 +475,13 @@ ACMD(do_group)
             // first, display the group leader's status
             char_data* leader = ch->get_group_leader();
             print_group_leader(leader);
-            act(buf, FALSE, ch, 0, leader, TO_CHAR);
+						send_to_char(buf, ch);
 
             // now, we display the group members; start with index 1 because index 0 is the group leader
             for (size_t index = 1; index < ch->group->size(); ++index) {
                 char_data* group_member = ch->group->at(index);
                 print_group_member(group_member);
-                act(buf, FALSE, ch, 0, group_member, TO_CHAR);
+								send_to_char(buf, ch);
             }
         }
     } else {

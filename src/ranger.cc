@@ -303,7 +303,7 @@ int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
         send_to_char("You can gather food, healing, energy, bows, arrows, or light.\n\r", ch);
         return FALSE;
     }
-    if (affected_by_spell(ch, SKILL_GATHER_FOOD) && gather_type > 2) {
+    if (affected_by_spell(ch, SKILL_GATHER_FOOD) && (gather_type > 2 && gather_type < 5)) {
         send_to_char("You would gain no benefit from this right now.\n\r", ch);
         return FALSE;
     }

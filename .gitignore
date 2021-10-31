@@ -49,6 +49,7 @@ lib/misc/mudlle.keys
 lib/misc/oldcrimelist
 lib/misc/pk*
 lib/misc/repair*
+core/
 *~
 
 # Visual Studio Crap Dump

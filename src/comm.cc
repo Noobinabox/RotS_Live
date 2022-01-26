@@ -2008,22 +2008,15 @@ void complete_delay(struct char_data* ch)
         command_interpreter(ch, "", &(ch->delay));
 }
 
-int in_waiting_list(struct char_data* ch)
+int in_waiting_list(char_data* ch)
 {
-    struct char_data* tmp;
+   if (waiting_list == NULL || ch == NULL)
+        return 0;
 
-    if (!waiting_list)
-        return 0;
-    for (tmp = waiting_list; tmp; tmp = tmp->delay.next)
-        if (tmp->delay.next == ch)
-            break;
-    if (tmp) {
-        if (tmp->delay.next == ch) {
+    for (char_data* iter = waiting_list; iter; iter = iter->delay.next)
+        if (iter == ch)
             return 1;
-        }
-    } else {
-        return 0;
-    }
+
     return 0;
 }
 

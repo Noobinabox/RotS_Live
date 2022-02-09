@@ -1,7 +1,11 @@
-/* platdef.h */
 
-#ifndef PLATDEF_H
-#define PLATDEF_H
+#pragma once
+
+#if defined(__linux__) || defined(unix)|| defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
+#define PREDEF_PLATFORM_LINUX
+#endif
+
+#if PREDEF_PLATFORM_LINUX
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -14,15 +18,15 @@
 #include <time.h>
 #include <unistd.h>
 
-#define SocketType int
+#endif
 
-typedef signed short int sh_int;
-typedef unsigned short int ush_int;
+using SocketType = int;
 
-typedef unsigned char byte;
-typedef signed char sbyte;
-typedef unsigned char ubyte;
+using sh_int = signed short int;
+using ush_int = unsigned short int;
 
-#define COPY_COMMAND "cp"
+using byte = unsigned char;
+using sbyte = signed char;
+using ubyte = unsigned char;
 
-#endif /* PLATDEF_H */
+constexpr auto COPY_COMMAND = "cp";

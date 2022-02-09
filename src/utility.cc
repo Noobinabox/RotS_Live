@@ -20,8 +20,11 @@
 *   or existing but unused universal_list structure into a linked list.   *
 **************************************************************************/
 
+#include "platdef.h"
 
+#if PREDEF_PLATFORM_LINUX
 #include <arpa/telnet.h>
+#endif
 
 #include <assert.h>
 #include <ctype.h>
@@ -36,7 +39,6 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "platdef.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"

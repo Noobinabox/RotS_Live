@@ -31,6 +31,7 @@
 # Game Files
 .ageland.pid
 bin/
+.idea/
 lib/last_cmds
 lib/crash_cmds
 lib/world/

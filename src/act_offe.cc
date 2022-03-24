@@ -9,10 +9,9 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
-#include "color.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
@@ -308,7 +307,6 @@ ACMD(do_flee)
 {
     int i, attempt, loose, die, res, move_cost;
     struct char_data* tmpch;
-    void gain_exp(struct char_data*, int);
 
     if (GET_TACTICS(ch) == TACTICS_BERSERK) {
         send_to_char("You are too enraged to flee!\n\r", ch);

@@ -10,11 +10,11 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "boards.h"
 #include "color.h"
@@ -83,7 +83,6 @@ extern int top_of_p_table;
 extern char* sector_types[];
 extern char* moon_phase[];
 extern long judppwd;
-extern int judpavailable;
 extern char* beornwhere[];
 
 extern char* extra_bits[];

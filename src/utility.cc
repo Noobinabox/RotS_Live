@@ -22,7 +22,7 @@
 
 #include "platdef.h"
 
-#if PREDEF_PLATFORM_LINUX
+#if defined(PREDEF_PLATFORM_LINUX)
 #include <arpa/telnet.h>
 #endif
 

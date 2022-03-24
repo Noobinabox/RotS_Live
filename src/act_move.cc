@@ -54,7 +54,7 @@ ACMD(do_look);
 
 bool should_double_strength(char_data* character)
 {
-    char_data* master = NULL;
+    char_data* master = nullptr;
     if (utils::is_pc(*character)) {
         master = character;
     } else {
@@ -394,7 +394,7 @@ int perform_move_mount(struct char_data* ch, int dir)
         char_from_room(tmpch);
         char_to_room(tmpch, new_room);
         if (is_death)
-            raw_kill(tmpch, NULL, 0);
+            raw_kill(tmpch, nullptr, 0);
     }
     /* Setting tracks in room */
     if ((IS_NPC(ch) || (GET_RACE(ch) != RACE_GOD)) && !(IS_AFFECTED(ch, AFF_FLYING))) {
@@ -417,7 +417,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     char_to_room(ch, new_room);
 
     if (is_death) {
-        raw_kill(ch, NULL, 0);
+        raw_kill(ch, nullptr, 0);
         return 0;
     }
     do_look(ch, "", 0, 0, SCMD_LOOK_BRIEF);
@@ -658,7 +658,7 @@ ACMD(do_move)
             call_trigger(ON_ENTER, (void*)&world[ch->in_room], (void*)ch, 0);
 
             if (is_death)
-                raw_kill(ch, NULL, 0);
+                raw_kill(ch, nullptr, 0);
         } else { // riding...
             if ((ch->mount_data.mount)->mount_data.rider != ch) {
                 send_to_char("You do not control your mount.\n\r", ch);
@@ -1065,7 +1065,7 @@ bool is_key(obj_data* item)
     return item->obj_flags.type_flag == ITEM_KEY;
 }
 
-/* returns NULL if the character does not have the key (or it is broken),
+/* returns nullptr if the character does not have the key (or it is broken),
 		   a pointer to the key if the character does have the key  */
 obj_data* has_key(char_data* character, int key)
 {
@@ -1081,7 +1081,7 @@ obj_data* has_key(char_data* character, int key)
                 if (is_key(character->equipment[HOLD]))
                     return (character->equipment[HOLD]);
 
-    return NULL;
+    return nullptr;
 }
 
 void check_break_key(struct obj_data* obj, struct char_data* ch)
@@ -1520,10 +1520,10 @@ ACMD(do_lose)
 
 ACMD(do_follow)
 {
-    if (ch == NULL)
+    if (ch == nullptr)
         return;
 
-    char_data* leader = NULL;
+    char_data* leader = nullptr;
 
     one_argument(argument, buf);
 
@@ -1538,7 +1538,7 @@ ACMD(do_follow)
         return;
     }
 
-    if (leader == NULL) {
+    if (leader == nullptr) {
         send_to_char("I see no person by that name here!\n\r", ch);
         return;
     }
@@ -1587,7 +1587,7 @@ ACMD(do_follow)
 
 ACMD(do_refollow)
 {
-    if (ch->master == NULL) {
+    if (ch->master == nullptr) {
         send_to_char("But, you aren't following anyone!\n\r", ch);
         return;
     }

@@ -9,8 +9,8 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "char_utils.h"
 #include "comm.h"
@@ -22,7 +22,7 @@
 #include "structs.h"
 #include "utils.h"
 
-#include <assert.h>
+#include <cassert>
 
 typedef char* string;
 
@@ -49,31 +49,6 @@ void death_cry(struct char_data* ch);
 extern struct char_data* waiting_list;
 void stop_hiding(struct char_data* ch, char);
 void do_power_of_arda(char_data* ch);
-
-string reverse_direction(int dir)
-{
-    switch (dir) {
-    case 0:
-        return ("the south");
-        break;
-    case 1:
-        return ("the west");
-        break;
-    case 2:
-        return ("the north");
-        break;
-    case 3:
-        return ("the east");
-        break;
-    case 4:
-        return ("below");
-        break;
-    case 5:
-        return ("above");
-        break;
-    };
-    return ("");
-}
 
 ACMD(do_look);
 
@@ -1364,9 +1339,7 @@ ACMD(do_stand)
         act("Do you not consider fighting as standing?", FALSE, ch, 0, 0, TO_CHAR);
         break;
     case POSITION_STUNNED:
-        return;
     case POSITION_INCAP:
-        return;
     case POSITION_DEAD:
         return;
     default:

@@ -11,22 +11,19 @@
 #include "platdef.h"
 #include <algorithm>
 #include <array>
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 #include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "char_utils.h"
-#include "color.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
 #include "limits.h"
-#include "profs.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"

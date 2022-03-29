@@ -65,10 +65,10 @@ Send comments, bug reports, help requests, etc. to Jeremy Elson
 */
 
 #include "platdef.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "boards.h"
 #include "comm.h"

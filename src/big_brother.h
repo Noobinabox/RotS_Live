@@ -7,7 +7,7 @@
 
 #include <map>
 #include <set>
-#include <time.h>
+#include <ctime>
 
 #ifndef USE_BIG_BROTHER
 #define USE_BIG_BROTHER 1

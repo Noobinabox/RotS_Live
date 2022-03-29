@@ -2,12 +2,10 @@
 
 #include "char_utils.h"
 #include "comm.h"
-#include "handler.h"
-#include "object_utils.h"
 #include "spells.h"
 #include "structs.h"
 
-#include <assert.h>
+#include <cassert>
 #include <string>
 
 /********************************************************************

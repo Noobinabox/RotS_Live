@@ -9,12 +9,11 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <ctype.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cctype>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 
 #include "comm.h"
 #include "db.h"

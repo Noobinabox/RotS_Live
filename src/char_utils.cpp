@@ -11,12 +11,10 @@
 #include "utils.h"
 #include "warrior_spec_handlers.h"
 #include <algorithm>
-#include <assert.h>
 #include <cmath>
 
 #include "comm.h" // for send_to_char
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>

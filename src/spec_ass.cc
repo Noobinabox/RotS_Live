@@ -8,12 +8,9 @@
 *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
 ************************************************************************ */
 
-#include <stdio.h>
-
 #include "comm.h"
 #include "db.h"
 #include "interpre.h"
-#include "platdef.h"
 #include "structs.h"
 #include "utils.h"
 

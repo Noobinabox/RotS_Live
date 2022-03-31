@@ -11,7 +11,7 @@
 #ifndef COMM_H
 #define COMM_H
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "utils.h" /* For the TRUE macro */
 

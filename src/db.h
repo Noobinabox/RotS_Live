@@ -11,7 +11,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include <stdio.h> /* For the FILE structure */
+#include <cstdio> /* For the FILE structure */
 
 #include "interpre.h" /* For the SPECIAL macro */
 #include "platdef.h" /* For sh_int, ush_int, byte, etc. */

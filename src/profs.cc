@@ -1,15 +1,11 @@
 /* This file deals with procedures relating to profs. */
 
 #include "platdef.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "comm.h"
 #include "db.h"
-#include "handler.h"
-#include "interpre.h"
-#include "limits.h"
 #include "profs.h"
 #include "spells.h"
 #include "structs.h"
@@ -18,14 +14,10 @@
 
 #include "char_utils.h"
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <cmath>
 #include <numeric>
 #include <vector>
-
-#include <iostream>
-#include <sstream>
-#include <string>
 
 #define MAX_STATSUM 99
 #define NUM_STATS 6

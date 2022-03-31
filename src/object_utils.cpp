@@ -6,7 +6,6 @@
 #include "spells.h"
 #include "utils.h"
 
-#include <algorithm>
 #include <cmath>
 
 //============================================================================
@@ -16,7 +15,7 @@ namespace utils {
 //============================================================================
 bool is_artifact(const obj_data& object)
 {
-    //drelidan:  This macro always returns false.
+    //Drelidan:  This macro always returns false.
     return false;
 }
 

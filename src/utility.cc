@@ -26,19 +26,15 @@
 #include <arpa/telnet.h>
 #endif
 
-#include <assert.h>
-#include <ctype.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 
 #include "color.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
-#include "interpre.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
@@ -48,7 +44,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <cstring>
 
 extern struct time_data time_info;
 extern struct room_data world;

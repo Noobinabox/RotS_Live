@@ -17,11 +17,11 @@
 #include "utils.h"
 #include "zone.h"
 #include <algorithm>
-#include <assert.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /* external variables */
 extern struct skill_data skills[];

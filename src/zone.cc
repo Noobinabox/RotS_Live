@@ -1,8 +1,8 @@
 /* zone.cc */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h> /* memmove */
+#include <cstdio>
+#include <cstdlib>
+#include <cstring> /* memmove */
 #include <strings.h>
 
 #include "comm.h" /* For TO_ROOM */

@@ -21,18 +21,14 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "limits.h"
 #include "platdef.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include <assert.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 
-#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -40,7 +36,7 @@
 /*---------------------------------------------------------------------------------------------*/
 
 /*
- * Enternal Structures
+ * External Structures
  */
 
 extern struct room_data world;

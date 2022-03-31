@@ -9,11 +9,10 @@
 ************************************************************************ */
 #define CONSTANTSMARK
 #include "platdef.h"
-#include <stdio.h>
+#include <cstdio>
 
 #include "db.h"
 #include "interpre.h"
-#include "limits.h"
 #include "spells.h"
 #include "structs.h"
 

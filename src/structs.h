@@ -13,13 +13,13 @@
 
 #include <sys/types.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "color.h" /* For MAX_COLOR_FIELDS */
 #include "platdef.h" /* For sh_int, ush_int, byte, etc. */
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <map>
 #include <set>
 #include <string>

@@ -19,15 +19,13 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include <assert.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "big_brother.h"
 #include "char_utils.h"
-#include <algorithm>
 #include <cmath>
 
 extern char* pc_race_types[];

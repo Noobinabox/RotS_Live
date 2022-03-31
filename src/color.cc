@@ -1,8 +1,6 @@
 /* color.cc */
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #include "color.h"
 #include "comm.h"

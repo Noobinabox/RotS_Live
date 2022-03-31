@@ -9,9 +9,8 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <csignal>
+#include <cstdlib>
 
 #include "structs.h"
 #include "utils.h"

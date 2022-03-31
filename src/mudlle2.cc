@@ -1,10 +1,7 @@
-#include "platdef.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "comm.h"
-#include "db.h"
 #include "handler.h"
 #include "interpre.h"
 #include "mudlle.h"

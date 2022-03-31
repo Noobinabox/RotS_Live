@@ -1,6 +1,5 @@
 #include "char_utils_combat.h"
 #include "char_utils.h"
-#include "environment_utils.h"
 #include "object_utils.h"
 #include "utils.h"
 
@@ -9,8 +8,7 @@
 
 #include "big_brother.h"
 #include "structs.h"
-#include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <set>
 
 namespace utils {

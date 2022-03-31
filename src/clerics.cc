@@ -1,10 +1,8 @@
 #include "platdef.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstring>
 
-#include "color.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"

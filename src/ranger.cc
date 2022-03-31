@@ -10,15 +10,14 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "script.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"

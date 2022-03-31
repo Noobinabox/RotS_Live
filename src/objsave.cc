@@ -9,25 +9,20 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <ctype.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 
-#include "char_utils.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
 #include "limits.h"
-#include "pkill.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
 
-#include <iostream>
-#include <sstream>
 #include <string>
 
 /* these factors should be unique integers */

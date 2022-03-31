@@ -1,9 +1,7 @@
 #include "skill_timer.h"
 #include "char_utils.h"
-#include "comm.h"
 #include "structs.h"
 #include "utils.h"
-#include <vector>
 
 template <>
 game_timer::skill_timer* world_singleton<game_timer::skill_timer>::m_pInstance(0);
@@ -31,11 +29,10 @@ void skill_timer::add_skill_timer(const char_data& ch, const int skill_id, const
 int skill_timer::report_skill_status(int player_id, char* buffer)
 {
     char str[255];
-    for (int i = 0; i < m_skill_timer.size(); ++i) {
-        auto& data = m_skill_timer[i];
-
+    for (auto & data : m_skill_timer) {
         if (data.player_id == player_id && data.skill_id != GLOBAL_SKILL) {
-            sprintf(str, "%-30s %-3d (seconds)\n\r", utils::get_skill_name(data.skill_id), data.counter);
+            sprintf(str, "%-30s %-3d (seconds)\n\r",
+                    utils::get_skill_name(data.skill_id), data.counter);
             sprintf(buffer, "%s%s", buffer, str);
         }
     }

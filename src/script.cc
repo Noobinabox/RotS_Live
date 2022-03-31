@@ -17,12 +17,9 @@
 // returns 1 if program should continue as normal, 0 if not (eg on_die 0 == do not kill char)
 
 #include "platdef.h"
-#include <ctype.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstring>
 
 #include "comm.h"
 #include "db.h"

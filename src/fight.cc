@@ -9,12 +9,11 @@
 ************************************************************************ */
 
 #include "platdef.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-#include "color.h"
 #include "comm.h"
 #include "db.h"
 #include "handler.h"
@@ -34,9 +33,6 @@
 #include <set>
 
 #include <ctime>
-#include <iostream>
-#include <sstream>
-#include <string>
 
 #define IS_PHYSICAL(_at) \
     ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)

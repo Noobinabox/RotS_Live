@@ -8,18 +8,18 @@
 *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
 ************************************************************************ */
 
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
 #include <execinfo.h>
 #include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <sys/stat.h>
 
 #include "platdef.h"
 #include <fcntl.h>
-#include <signal.h>
-#include <string.h>
+#include <csignal>
+#include <cstring>
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -28,7 +28,6 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "limits.h"
 #include "script.h"
 #include "skill_timer.h"
 #include "spells.h"
@@ -36,7 +35,6 @@
 #include "utils.h"
 #include "zone.h"
 
-#include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <sstream>

@@ -84,13 +84,12 @@ Send comments, bug reports, etc. to jelson@server.cs.jhu.edu
 
 */
 
-#include "platdef.h"
-#include <assert.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cassert>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "comm.h"
 #include "db.h"

@@ -13,7 +13,6 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "limits.h"
 #include "platdef.h"
 #include "spells.h"
 #include "structs.h"
@@ -21,11 +20,9 @@
 #include "warrior_spec_handlers.h"
 #include "zone.h" /* For zone_table */
 #include <algorithm>
-#include <assert.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #define RACE_SOME_ORC(caster) ((GET_RACE(caster) == RACE_URUK || GET_RACE(caster) == RACE_ORC || GET_RACE(caster) == RACE_MAGUS))
 

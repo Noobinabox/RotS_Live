@@ -15,8 +15,6 @@
 
 ************************************************************************ */
 
-#include <stdio.h>
-
 #include "platdef.h"
 #include "structs.h"
 
@@ -115,6 +113,7 @@ char* START_MESSG = "Welcome.  This is your new MUD character.\n\r"
    immort levels below the level you specify will go on the immlist instead. */
 int min_wizlist_lev = LEVEL_GOD;
 
+/* TODO(slyon): remove this backdoor access */
 int mobile_master_idnum = 51566; //Raziel
 int object_master_idnum = 1293; // Erika
 int object_master2_idnum = 35795; // Incanus

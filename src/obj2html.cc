@@ -2,14 +2,12 @@
 
 #include <sys/stat.h>
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 
 #include "comm.h" /* For vsend_to_char() */
 #include "db.h" /* For REAL */
-#include "handler.h" /* For extract_obj() */
 #include "interpre.h" /* For ACMD() */
 #include "spells.h" /* For TYPE_xxx */
 #include "structs.h" /* For ITEM_xxx */

@@ -164,6 +164,7 @@ struct command_info {
 #define SCMD_SWIM 223
 #define SCMD_LATIN1 224
 #define SCMD_SPINNER 225
+#define SCMD_AD 226
 
 #define SCMD_PARDON 301
 #define SCMD_NOTITLE 302

@@ -984,6 +984,7 @@ extern char* pc_named_star_types[];
 #define PRF_SPINNER (1 << 27)
 #define PRF_INV_SORT1 (1 << 28)
 #define PRF_INV_SORT2 (1 << 29)
+#define PRF_ADVANCED_VIEW (1 << 30)
 
 struct memory_rec {
     struct char_data* enemy;

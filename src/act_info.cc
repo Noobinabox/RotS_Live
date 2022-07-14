@@ -1408,6 +1408,10 @@ ACMD(do_look)
             sprintf(buf2, "%s (#%d) [ %s, %s]", buf2, world[ch->in_room].number,
                 sector_types[world[ch->in_room].sector_type], buf);
         }
+        else if (PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)) {
+            sprintf(buf2, "%s (#%d) [ %s ]", buf2, world[ch->in_room].number,
+                    sector_types[world[ch->in_room].sector_type]);
+        }
 
         strcat(buf2, CC_NORM(ch));
         if (PRF_FLAGGED(ch, PRF_AUTOEX)) { /* Send them the exits */
@@ -2924,7 +2928,8 @@ ACMD(do_toggle)
         "     Wimp Level: %-3s\r\n"
         "           Swim: %-3s    "
         "        Latin-1: %-3s    "
-        "        Spinner: %-3s\r\n",
+        "        Spinner: %-3s\r\n"
+        "  Advanced View: %-3s    ",
         ONOFF(PRF_FLAGGED(ch, PRF_PROMPT)),
         ONOFF(PRF_FLAGGED(ch, PRF_BRIEF)),
         ONOFF(PRF_FLAGGED(ch, PRF_NOTELL)),
@@ -2942,15 +2947,16 @@ ACMD(do_toggle)
         buf2,
         ONOFF(PRF_FLAGGED(ch, PRF_SWIM)),
         ONOFF(PRF_FLAGGED(ch, PRF_LATIN1)),
-        ONOFF(PRF_FLAGGED(ch, PRF_SPINNER)));
+        ONOFF(PRF_FLAGGED(ch, PRF_SPINNER)),
+        ONOFF(PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)));
     send_to_char(buf, ch);
 
     /* the special, immortal set list */
     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
         sprintf(buf,
             "      Roomflags: %-3s    "
-            "      Holylight: %-3s    "
-            "       Nohassle: %-3s\r\n"
+            "      Holylight: %-3s\r\n"
+            "       Nohassle: %-3s    "
             " Wiznet Channel: %-3s\r\n",
             ONOFF(PRF_FLAGGED(ch, PRF_ROOMFLAGS)),
             ONOFF(PRF_FLAGGED(ch, PRF_HOLYLIGHT)),
@@ -3126,6 +3132,13 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
         else
             sprintf(str, prompt_text[ch->specials.prompt_number], -1);
         sprintf(prompt, "%s%s%c", prompt, str, 0);
+        return;
+    }
+
+    if (flag & PROMPT_ADVANCED) {
+        sprintf(prompt, "%sHP: %d/%d S: %d/%d MV: %d/%d]%c",
+                prompt, GET_HIT(ch), GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
+                GET_MOVE(ch), GET_MAX_MOVE(ch), 0);
         return;
     }
     if (GET_MAX_HIT(ch))

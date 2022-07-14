@@ -164,6 +164,7 @@ struct command_info {
 #define SCMD_SWIM 223
 #define SCMD_LATIN1 224
 #define SCMD_SPINNER 225
+#define SCMD_ADVANCED_VIEW 226
 
 #define SCMD_PARDON 301
 #define SCMD_NOTITLE 302
@@ -248,6 +249,7 @@ struct command_info {
 #define PROMPT_STAT 8
 #define PROMPT_MAUL 16
 #define PROMPT_ARROWS 32
+#define PROMPT_ADVANCED 64
 #define PROMPT_ALL (PROMPT_HIT | PROMPT_MANA | PROMPT_MOVE)
 
 #define SCMD_KICK 1

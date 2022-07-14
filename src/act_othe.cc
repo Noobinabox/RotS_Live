@@ -975,7 +975,10 @@ char* tog_messages[][4] = {
     { "You will now see a spinner during skill and spell delays.\r\n",
         "You will no longer see a spinner during skill and spell delays.\r\n",
         "You currently see a spinner during skill and spell delays.\r\n",
-        "You currently do not see a spinner during skill and spell delays.\r\n" }
+        "You currently do not see a spinner during skill and spell delays.\r\n" },
+    { "Advanced view is now on.\n\r",
+               "Advanced view is off.\n\r",
+               "Advanced view is on.\n\r" }
 };
 
 ACMD(do_gen_tog)
@@ -1030,6 +1033,10 @@ ACMD(do_gen_tog)
     case SCMD_NOSUMMON:
         result = flag_modify(ch, PRF_SUMMONABLE, tog_messages[0], 0);
         break;
+
+        case SCMD_ADVANCED_VIEW:
+            result = flag_modify(ch, PRF_ADVANCED_VIEW, tog_messages[22], 0);
+            break;
 
     case SCMD_ECHO:
         result = flag_modify(ch, PRF_ECHO, tog_messages[1], 0);
@@ -1513,6 +1520,7 @@ char* change_comm[] = {
     "shooting",
     "casting",
     "sorting", /* 30 */
+    "advancedview",
     "\n"
 };
 
@@ -1560,7 +1568,7 @@ ACMD(do_set)
             strcat(buf, change_comm[tmp]);
             strcat(buf, ", ");
         }
-        buf[strlen(buf) - 2] = 0;
+        strcat(buf, "sorting, advancedview");
         strcat(buf, ".\n\r");
         send_to_char(buf, ch);
         return;
@@ -1711,6 +1719,9 @@ ACMD(do_set)
         break;
     case SORTING_COMMAND_INDEX:
         do_inventory_sort(ch, arg, wtl, 0, 0);
+        break;
+    case 31:
+        do_gen_tog(ch, arg, wtl, 0, SCMD_ADVANCED_VIEW);
         break;
     default:
         send_to_char("Undefined response to this argument.\n\r", ch);

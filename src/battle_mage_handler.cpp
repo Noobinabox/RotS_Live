@@ -1,7 +1,4 @@
 #include "char_utils.h"
-#include "comm.h"
-#include "handler.h"
-#include "spells.h"
 #include "utils.h"
 #include "warrior_spec_handlers.h"
 
@@ -51,9 +48,9 @@ bool battle_mage_handler::does_spell_get_interrupted() const
     }
 
 
-    float warrior_bonus = warrior_level / 100.0f;
-    float mage_bonus = mage_level / 100.0f;
-    float tactic_bonus = (tactics * 2) / 100.0f;
+    float warrior_bonus = (float)warrior_level / 100.0f;
+    float mage_bonus = (float)mage_level / 100.0f;
+    float tactic_bonus = (float)(tactics * 2) / 100.0f;
     float total_bonus = base_chance + warrior_bonus + mage_bonus + tactic_bonus;
     return number() > total_bonus;
 }
@@ -70,8 +67,8 @@ bool battle_mage_handler::does_mental_attack_interrupt_spell() const
     return number() > base_chance;
   }
 
-  float mage_bonus = mage_level / 100.0f;
-  float tactic_bonus = (tactics * 2) / 100.0f;
+  float mage_bonus = (float)mage_level / 100.0f;
+  float tactic_bonus = (float)(tactics * 2) / 100.0f;
   float total_bonus = base_chance + mage_bonus + tactic_bonus;
   return number() > total_bonus;
 }
@@ -86,8 +83,8 @@ bool battle_mage_handler::does_armor_fail_spell() const
         return number() > base_chance;
     }
 
-    float tactic_bonus = (tactics * 2) / 100.0f;
-    float warrior_bonus = warrior_level / 100.0f;
+    float tactic_bonus = (float)(tactics * 2) / 100.0f;
+    float warrior_bonus = (float)warrior_level / 100.0f;
     float total_bonus = base_chance + tactic_bonus + warrior_bonus;
     return number() > total_bonus;
 }

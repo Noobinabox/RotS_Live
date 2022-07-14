@@ -5,7 +5,7 @@
 #define PREDEF_PLATFORM_LINUX
 #endif
 
-#if PREDEF_PLATFORM_LINUX
+#if defined PREDEF_PLATFORM_LINUX
 
 #include <netdb.h>
 #include <netinet/in.h>

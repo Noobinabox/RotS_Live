@@ -2705,7 +2705,7 @@ char* pc_race_keywords[] = {
     "human", "dwarf", "elf", "hobbit", "elf", "bear",
     "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
     "uruk", "human", "orc", "human", "uruk",
-    "undead", "olog", "human", "UNDEFINED", "troll",
+    "undead", "olog", "haradrim", "UNDEFINED", "troll",
     /* Orc is 11, 16 total  ::: here all was changed to lowers, and
    harad human changed to human, for the "look" purposes. */
     "\n"
@@ -2717,7 +2717,7 @@ char* pc_star_types[] = {
     "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "*a Bear*",
     "UNDEFINED", "UNDEFINED", "UNDEFINED", "UNDEFINED",
     "*an Uruk*", "*a Human*", "*an Orc*", "*an Easterling*", "*an Uruk*",
-    "*an Undead*", "*an Olog-Hai*", "*a Human*", "UNDEFINED", "*a Troll*",
+    "*an Undead*", "*an Olog-Hai*", "*a Haradrim*", "UNDEFINED", "*a Troll*",
     /* Orc is 11, 16 total */
     "\n"
 };

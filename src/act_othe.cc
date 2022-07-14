@@ -1568,7 +1568,7 @@ ACMD(do_set)
             strcat(buf, change_comm[tmp]);
             strcat(buf, ", ");
         }
-        buf[strlen(buf) - 2] = 0;
+        strcat(buf, "sorting, advancedview");
         strcat(buf, ".\n\r");
         send_to_char(buf, ch);
         return;

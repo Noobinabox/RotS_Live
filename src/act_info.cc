@@ -3136,7 +3136,7 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
     }
 
     if (flag & PROMPT_ADVANCED) {
-        sprintf(prompt, "%sHP:%d/%d S:%d/%d MV:%d/%d]%c",
+        sprintf(prompt, "%sHP: %d/%d S: %d/%d MV: %d/%d]%c",
                 prompt, GET_HIT(ch), GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
                 GET_MOVE(ch), GET_MAX_MOVE(ch), 0);
         return;

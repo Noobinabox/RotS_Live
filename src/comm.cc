@@ -601,14 +601,20 @@ void game_loop(SocketType s)
                         if (IS_RIDING(point->character))
                             sprintf(prompt, "%s R", prompt);
 
-                        if (((GET_HIT(point->character) < GET_MAX_HIT(point->character)) || point->character->specials.fighting) && PRF_FLAGGED(point->character, PRF_PROMPT))
+                        if (PRF_FLAGGED(point->character, PRF_ADVANCED_VIEW)) {
+                            sprintf(prompt, "%s [", prompt);
+                            add_prompt(prompt, point->character, PROMPT_ADVANCED);
+                        }
+                        else if (((GET_HIT(point->character) < GET_MAX_HIT(point->character)) || point->character->specials.fighting) && PRF_FLAGGED(point->character, PRF_PROMPT))
                             sprintf(prompt, "%s HP:", prompt);
 
                         opponent = point->character->specials.fighting;
 
-                        add_prompt(prompt, point->character,
-                            PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
-                                                                                                                                    : PROMPT_ALL);
+                        if (!PRF_FLAGGED(point->character, PRF_ADVANCED_VIEW)) {
+                            add_prompt(prompt, point->character,
+                                       PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
+                                                                                                                                               : PROMPT_ALL);
+                        }
 
                         if (opponent && IS_MENTAL(opponent)) {
                             sprintf(prompt, "%s Mind:", prompt);

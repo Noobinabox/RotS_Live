@@ -3134,6 +3134,13 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
         sprintf(prompt, "%s%s%c", prompt, str, 0);
         return;
     }
+
+    if (flag & PROMPT_ADVANCED) {
+        sprintf(prompt, "%sHP:%d/%d S:%d/%d MV:%d/%d]%c",
+                prompt, GET_HIT(ch), GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
+                GET_MOVE(ch), GET_MAX_MOVE(ch), 0);
+        return;
+    }
     if (GET_MAX_HIT(ch))
         if (flag & PROMPT_HIT) {
             for (tmp = 0; (1000 * GET_HIT(ch)) / GET_MAX_HIT(ch) > prompt_hit[tmp].value; tmp++)

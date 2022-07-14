@@ -1034,7 +1034,7 @@ ACMD(do_gen_tog)
         result = flag_modify(ch, PRF_SUMMONABLE, tog_messages[0], 0);
         break;
 
-        case SCMD_AD:
+        case SCMD_ADVANCED_VIEW:
             result = flag_modify(ch, PRF_ADVANCED_VIEW, tog_messages[22], 0);
             break;
 
@@ -1721,7 +1721,7 @@ ACMD(do_set)
         do_inventory_sort(ch, arg, wtl, 0, 0);
         break;
     case 31:
-        do_gen_tog(ch, arg, wtl, 0, SCMD_AD);
+        do_gen_tog(ch, arg, wtl, 0, SCMD_ADVANCED_VIEW);
         break;
     default:
         send_to_char("Undefined response to this argument.\n\r", ch);

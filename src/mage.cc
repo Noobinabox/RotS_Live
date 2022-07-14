@@ -13,16 +13,12 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "limits.h"
 #include "platdef.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
 #include "warrior_spec_handlers.h"
 #include "zone.h" /* For zone_table */
-#include <algorithm>
-#include <assert.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -473,15 +469,18 @@ ASPELL(spell_locate_living)
         bigcount++;
     }
 
+    int caster_level = get_mage_caster_level(caster);
     bigcount = 0;
     for (tmp = 0; (tmp < roomnum) && (bigcount < mobrange); tmp++) {
         mobs = world[roomlist[tmp].number].people;
         while (mobs && (bigcount < mobrange)) {
-            sprintf(buf, "%s at %s to the %s.\n\r",
-                (IS_NPC(mobs) ? GET_NAME(mobs) : pc_star_types[mobs->player.race]),
-                world[roomlist[tmp].number].name,
-                loclife_dir_convert(roomlist[tmp]));
-            send_to_char(buf, caster);
+            if (!saves_spell(mobs, caster_level, 0)) {
+                sprintf(buf, "%s at %s to the %s.\n\r",
+                        (IS_NPC(mobs) ? GET_NAME(mobs) : pc_star_types[mobs->player.race]),
+                        world[roomlist[tmp].number].name,
+                        loclife_dir_convert(roomlist[tmp]));
+                send_to_char(buf, caster);
+            }
             bigcount++;
             mobs = mobs->next_in_room;
         }

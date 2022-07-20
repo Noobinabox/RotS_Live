@@ -5,7 +5,7 @@
 #define PREDEF_PLATFORM_LINUX
 #endif
 
-#if defined(PREDEF_PLATFORM_LINUX)
+#if defined PREDEF_PLATFORM_LINUX
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <ctime>
+#include <time.h>
 #include <unistd.h>
 
 #endif
@@ -23,8 +23,10 @@
 using SocketType = int;
 
 using sh_int = signed short int;
+using ush_int = unsigned short int;
 
 using byte = unsigned char;
+using sbyte = signed char;
 using ubyte = unsigned char;
 
 constexpr auto COPY_COMMAND = "cp";

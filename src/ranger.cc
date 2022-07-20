@@ -1157,6 +1157,7 @@ ACMD(do_trap)
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 
+
     /*
 	 * Subcommand callbacks:
 	 *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
@@ -1261,6 +1262,12 @@ ACMD(do_trap)
             /* Reset the trap.  do_trap subcmd=1 does exactly this. */
             do_trap(ch, "", wtl, CMD_TRAP, 1);
             return;
+        }
+
+        /* If player is afk remove flag and protection. Don't afk with trap set... */
+        if (IS_SET(PLR_FLAGS(ch), PLR_ISAFK)) {
+            REMOVE_BIT(PLR_FLAGS(ch), PLR_ISAFK);
+            bb_instance.on_character_returned(ch);
         }
 
         if (!bb_instance.is_target_valid(ch, victim)) {

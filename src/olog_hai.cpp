@@ -7,7 +7,6 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include <string>
 
 extern struct room_data world;
 extern struct char_data* waiting_list;
@@ -150,8 +149,8 @@ void do_sanctuary_check(char_data* ch)
 {
     if (utils::is_affected_by(*ch, AFF_SANCTUARY)) {
         appear(ch);
-        send_to_char("You cast off your santuary!\r\n", ch);
-        act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
+        send_to_char("You cast off your sanctuary!\r\n", ch);
+        act("$n renounces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
     }
 }
 

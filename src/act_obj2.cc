@@ -21,6 +21,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "olog_hai.h"
 
 /* extern variables */
 extern struct room_data world;
@@ -621,22 +622,6 @@ void wear_message(struct char_data* ch, struct obj_data* obj, int where)
     }
 }
 
-bool ologhai_item_restriction(char_data* character, obj_data* item)
-{
-    // Only Olog-Hais here
-    if (GET_RACE(character) != RACE_OLOGHAI) {
-        return false;
-    }
-
-    // Olog-Hais cannot wield small weapons, big hands and all.
-    if (CAN_WEAR(item, ITEM_WIELD) && (item && item->get_bulk() <= 3 && item->get_weight() <= LIGHT_WEAPON_WEIGHT_CUTOFF)) {
-        send_to_char("Your massive hands are unable to grasp the tiny weapon.\n\r", character);
-        return true;
-    }
-
-    return false;
-}
-
 bool beorning_item_restriction(char_data* character, obj_data* item)
 {
     if (CAN_WEAR(item, ITEM_WEAR_SHIELD)) {
@@ -758,7 +743,7 @@ void perform_wear(char_data* character, obj_data* item, int item_slot, bool wear
         }
     }
 
-    if (ologhai_item_restriction(character, item)) {
+    if (olog_hai::item_restriction(character, item)) {
         return;
     }
 

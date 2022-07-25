@@ -7,6 +7,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "olog_hai.h"
 
 extern struct room_data world;
 extern struct char_data* waiting_list;
@@ -18,10 +19,54 @@ const int constexpr SMASH_TIMER = 60;
 const int constexpr STOMP_TIMER = 60;
 const int constexpr CLEAVE_TIMER = 30;
 const int constexpr OVERRUN_TIMER = 60;
+const float constexpr FRENZY_DAMAGE = 1.10;
+const int constexpr OLOG_BASH_BONUS = 20;
+
 ACMD(do_dismount);
 ACMD(do_move);
 
 namespace olog_hai {
+int add_frenzy_damage(char_data* character, int damage)
+{
+    if (is_frenzy_active(*character)){
+        damage *= FRENZY_DAMAGE;
+    }
+    return damage;
+}
+bool is_frenzy_active(char_data& character)
+{
+    if (utils::is_affected_by_spell(character, SKILL_FRENZY) && utils::get_race(character) == RACE_OLOGHAI) {
+        return true;
+    }
+
+    return false;
+}
+
+int add_bash_bonus(const char_data& character)
+{
+    int bonus = 0;
+    if (utils::get_race(character) == RACE_OLOGHAI) {
+        bonus += OLOG_BASH_BONUS;
+    }
+
+    return bonus;
+}
+bool item_restriction(char_data* character, obj_data* item)
+{
+    // Only Olog-Hais here
+    if (GET_RACE(character) != RACE_OLOGHAI) {
+        return false;
+    }
+
+    // Olog-Hais cannot wield small weapons, big hands and all.
+    if (CAN_WEAR(item, ITEM_WIELD) && (item && item->get_bulk() <= 3 && item->get_weight() <= LIGHT_WEAPON_WEIGHT_CUTOFF)) {
+        send_to_char("Your massive hands are unable to grasp the tiny weapon.\n\r", character);
+        return true;
+    }
+
+    return false;
+}
+
 int get_prob_skill(char_data* attacker, char_data* victim, int skill)
 {
     int prob = utils::get_skill(*attacker, skill);

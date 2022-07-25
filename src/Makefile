@@ -69,7 +69,7 @@ weapon_master_handler.o : weapon_master_handler.cpp warrior_spec_handlers.h stru
 	$(CC) -c $(CFLAGS) weapon_master_handler.cpp
 skill_timer.o : skill_timer.cpp skill_timer.h singleton.h
 	$(CC) -c $(CFLAGS) skill_timer.cpp
-olog_hai.o : olog_hai.cpp structs.h utils.h comm.h interpre.h handler.h \
+olog_hai.o : olog_hai.cpp olog_hai.h structs.h utils.h comm.h interpre.h handler.h \
 	db.h spells.h limits.h 
 	$(CC) -c $(CFLAGS) olog_hai.cpp
 delayed_command_interpreter.o : delayed_command_interpreter.cpp delayed_command_interpreter.h
@@ -89,7 +89,7 @@ act_obj1.o : act_obj1.cc structs.h utils.h comm.h interpre.h handler.h \
 	db.h spells.h
 	$(CC) -c $(CFLAGS) act_obj1.cc
 act_obj2.o : act_obj2.cc structs.h utils.h comm.h interpre.h handler.h \
-	db.h spells.h limits.h
+	db.h spells.h limits.h olog_hai.h
 	$(CC) -c $(CFLAGS) act_obj2.cc
 act_offe.o : act_offe.cc structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h

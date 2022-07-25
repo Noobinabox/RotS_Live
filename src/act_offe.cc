@@ -21,6 +21,7 @@
 #include "structs.h"
 #include "utils.h"
 #include "warrior_spec_handlers.h"
+#include "olog_hai.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -49,7 +50,6 @@ int get_number(char** name);
 int check_overkill(struct char_data* ch);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 void appear(struct char_data* ch);
-bool is_frenzy_active(char_data& attacker);
 
 ACMD(do_hit)
 {
@@ -538,7 +538,7 @@ ACMD(do_bash)
         prob += number(0, MAX(1, 35 + get_real_OB(ch) / 4));
         prob += number(-40, 40);
         prob -= 160;
-        if (is_frenzy_active(*ch)) {
+        if (olog_hai::is_frenzy_active(*ch)) {
             prob = 1;
         }
         if (prob < 0)
@@ -603,8 +603,10 @@ ACMD(do_bash)
         if ((tmp == RACE_URUK) || (tmp == RACE_DWARF))
             prob += 10;
 
-        if ((tmp == RACE_BEORNING) || (tmp == RACE_OLOGHAI))
+        if (tmp == RACE_BEORNING)
             prob += 20;
+
+        prob += olog_hai::add_bash_bonus(*ch);
 
         if (IS_SET(EXIT(ch, door)->exit_info, EX_DOORISHEAVY))
             prob = -1;

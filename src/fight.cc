@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "warrior_spec_handlers.h"
 #include "zone.h" /* For zone_table */
+#include "olog_hai.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -2322,20 +2323,6 @@ int heavy_fighting_effect(char_data& attacker, int damage)
     return damage;
 }
 
-bool is_frenzy_active(char_data& attacker)
-{
-    return utils::get_race(attacker) == RACE_OLOGHAI && utils::is_affected_by_spell(attacker, SKILL_FRENZY);
-}
-
-int frenzy_effect(char_data& attacker, int damage)
-{
-    if (is_frenzy_active(attacker)) {
-        return damage * 1.10;
-    }
-
-    return damage;
-}
-
 //============================================================================
 int wild_fighting_effect(char_data* attacker, int damage)
 {
@@ -2532,7 +2519,7 @@ void hit(char_data* ch, char_data* victim, int type)
             return;
         }
 
-        if (is_frenzy_active(*ch)) {
+        if (olog_hai::is_frenzy_active(*ch)) {
             tmp = 35;
         }
 
@@ -2608,7 +2595,7 @@ void hit(char_data* ch, char_data* victim, int type)
                 if (!ignore_shield) {
                     dam = defender_effect(ch, victim, dam);
                 }
-                dam = frenzy_effect(*ch, dam);
+                dam = olog_hai::add_frenzy_damage(ch, dam);
                 dam = weapon_master.get_total_damage(dam);
 
                 tmp = bodyparts[GET_BODYTYPE(victim)].armor_location[location];

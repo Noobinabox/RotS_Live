@@ -949,6 +949,30 @@ ASPELL(spell_blink)
     }
 }
 
+
+bool is_teleportation_room_valid(room_data* room) {
+    // Don't teleport the caster into a room with people
+    if (room-> people)
+        return false;
+
+    // Don't kill the caster with a death room
+    if (IS_SET(room->room_flags, DEATH))
+        return false;
+
+    // Don't let the caster go into rooms they shouldn't be in
+    if (IS_SET(room->room_flags, SECURITYROOM))
+        return false;
+
+    if (IS_SET(room->room_flags, NO_TELEPORT))
+        return false;
+
+    if (IS_SET(room->room_flags, GODROOM))
+        return false;
+
+    // Everything looks good, let them go
+    return true;
+}
+
 /*----------------------------------------------------------------------------------------------------------*/
 ASPELL(spell_relocate)
 {
@@ -1036,7 +1060,7 @@ ASPELL(spell_relocate)
 
         for (tmp = 0; tmp <= top_of_world; tmp++) {
             room = &world[tmp];
-            if ((room->zone == zon_target) && !room->people && !IS_SET(room->room_flags, DEATH) && !IS_SET(room->room_flags, SECURITYROOM) && !IS_SET(room->room_flags, NO_TELEPORT)) {
+            if ((room->zone == zon_target) && is_teleportation_room_valid(room)) {
                 for (tmp2 = 0; tmp2 < NUM_OF_DIRS; tmp2++)
                     if (room->dir_option[tmp2])
                         break;
@@ -1074,7 +1098,7 @@ ASPELL(spell_relocate)
         }
         for (tmp = 0; tmp <= top_of_world; tmp++) {
             room = &world[tmp];
-            if ((room->zone == zon_target) && !room->people && !IS_SET(room->room_flags, DEATH) && !IS_SET(room->room_flags, SECURITYROOM)) {
+            if ((room->zone == zon_target) && is_teleportation_room_valid(room)) {
                 for (tmp2 = 0; tmp2 < NUM_OF_DIRS; tmp2++)
                     if (room->dir_option[tmp2])
                         break;

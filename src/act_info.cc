@@ -1409,8 +1409,14 @@ ACMD(do_look)
                 sector_types[world[ch->in_room].sector_type], buf);
         }
         else if (PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)) {
-            sprintf(buf2, "%s (#%d) [ %s ]", buf2, world[ch->in_room].number,
-                    sector_types[world[ch->in_room].sector_type]);
+            if (IS_SET(world[ch->in_room].room_flags, HIDE_VNUM)) {
+                sprintf(buf2, "%s (???) [ %s ]", buf2,
+                        sector_types[world[ch->in_room].sector_type]);
+            }
+            else {
+                sprintf(buf2, "%s (#%d) [ %s ]", buf2, world[ch->in_room].number,
+                        sector_types[world[ch->in_room].sector_type]);
+            }
         }
 
         strcat(buf2, CC_NORM(ch));

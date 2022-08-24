@@ -2505,6 +2505,7 @@ char* room_bits[] = {
     "SECURITY",
     "PEACE",
     "NO_TELEPORT",
+    "HIDE_VNUM",
     "\n"
 };
 char num_of_sector_types = 13;

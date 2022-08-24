@@ -2060,32 +2060,32 @@ int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage
     /* If they've got armor, let's let it do its thing */
     obj_data* armor = victim.equipment[location];
     if (armor) {
-        // The target has armor, but we made an accurate shot.
-        if (check_archery_accuracy(archer, victim)) {
-            act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_CHAR);
-            act("$n manages to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_NOTVICT);
-            act("$n notices a weakness in your armor!", TRUE, &archer, NULL, &victim, TO_VICT);
-            return damage;
-        }
-
         const obj_flag_data& obj_flags = armor->obj_flags;
+        if (obj_flags.is_chain() || obj_flags.is_metal())
+        {
+            // The target has armor, but we made an accurate shot.
+            if (check_archery_accuracy(archer, victim)) {
+                act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_CHAR);
+                act("$n manages to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_NOTVICT);
+                act("$n notices a weakness in your armor!", TRUE, &archer, NULL, &victim, TO_VICT);
+                return damage;
+            }
 
-        /* First, remove minimum absorb */
-        int damage_reduction = armor->get_base_damage_reduction();
+            /* First, remove minimum absorb */
+            int damage_reduction = armor->get_base_damage_reduction();
 
-        /* Then apply the armor_absorb factor */
-        damage_reduction += (damage * armor_absorb(armor) + 50) / 100;
+            /* Then apply the armor_absorb factor */
+            damage_reduction += (damage * armor_absorb(armor) + 50) / 100;
 
-        if (obj_flags.is_leather() || obj_flags.is_cloth()) {
-            damage_reduction = 0;
-        } else if (obj_flags.is_chain()) {
-            // Chain is half-effective against shooting.
-            damage_reduction = damage_reduction / 2;
+            if (obj_flags.is_chain()) {
+                // Chain is half-effective against shooting.
+                damage_reduction = damage_reduction / 2;
+            }
+
+            // Reduce damage here, but not below 1.
+            damage -= damage_reduction;
+            damage = std::max(damage, 1);
         }
-
-        // Reduce damage here, but not below 1.
-        damage -= damage_reduction;
-        damage = std::max(damage, 1);
     }
 
     return damage;
@@ -2195,27 +2195,38 @@ int shoot_calculate_wait(const char_data* archer)
  * --------------------------- Change Log --------------------------------
  * drelidan: Jan 26, 2017 - Created function
  */
-bool does_arrow_break(const char_data* archer, const char_data* victim, const obj_data* arrow)
+bool does_arrow_break(const char_data* archer, const char_data* victim, obj_data* arrow, int hit_location)
 {
-    int breakpercentage = arrow->obj_flags.value[3];
-    if (victim) {
-        // factor in victim contribution here - but victim is optional.
-        // TODO(drelidan):  Figure out break contribution.  Perhaps this function
-        // should be called and given an armor location or something.
+    if (hit_location < 0 || hit_location > MAX_WEAR) {
+        return false;
     }
 
-    // haradrims get a bonus with crude arrows for being a primative race
-    if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
-        breakpercentage >>= 1;
+    obj_data* armor = victim->equipment[hit_location];
+
+    if (armor == nullptr) {
+        return false;
     }
 
-    if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
-        breakpercentage >>= 1;
-    }
+    const obj_flag_data& obj_flags = armor->obj_flags;
 
-    const int rolledNumber = number(1, 100);
-    if (rolledNumber < breakpercentage) {
-        return true;
+    if (obj_flags.is_chain() || obj_flags.is_metal())
+    {
+        int break_percentage = arrow->obj_flags.value[3];
+
+        // Haradrims get a bonus with crude arrows for being a primitive race
+        if ((break_percentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
+            break_percentage >>= 1;
+        }
+
+        if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
+            break_percentage >>= 1;
+        }
+
+        const int rolledNumber = number(1, 100);
+        if (rolledNumber < break_percentage) {
+            extract_obj(arrow);
+            return true;
+        }
     }
     return false;
 }
@@ -2224,10 +2235,10 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, const ob
  * move_arrow_to_victim will take the arrow out of the shooters quiver and
  * tag the arrow with their character_id. After that it will move the arrow
  * into the victims inventory. We tag the arrow so the shooter can type recover
- * after the kill and it will return all arrows with his character_id on it.
+ * after the kill, and it will return all arrows with his character_id on it.
  *
  * This function will also handle the breaking of arrows based on the
- * victims armor and percentage on arrows themself.
+ * victims armor and percentage on arrows themselves.
  *
  * Returns true if the arrow was moved to the victim, false if it was destroyed.
  * --------------------------- Change Log --------------------------------
@@ -2241,11 +2252,6 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
         obj_from_obj(arrow);
     }
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(archer, victim, arrow)) {
-        // Destroy the arrow and exit.
-        extract_obj(arrow);
-        return false;
-    }
     //tag arrow in value slot 2 of the shooter
     if (!IS_NPC(archer)) {
         arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
@@ -2283,11 +2289,6 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
     }
 
     obj_to_char(arrow, archer); // Move it into his inventory.
-    if (does_arrow_break(archer, NULL, arrow)) {
-        // Destroy the arrow and exit.
-        extract_obj(arrow);
-        return false;
-    }
     //tag arrow in value slot 2 of the shooter
     if (!IS_NPC(archer)) {
         arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
@@ -2454,7 +2455,9 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
 {
     int hit_location = 0;
     int damage_dealt = shoot_calculate_damage(archer, victim, arrow, hit_location);
-    move_arrow_to_victim(archer, victim, arrow);
+    if (!does_arrow_break(archer, victim, arrow, hit_location)) {
+        move_arrow_to_victim(archer, victim, arrow);
+    }
     if (GET_SHOOTING(archer) == SHOOTING_FAST) {
         damage_dealt = damage_dealt / 2;
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
@@ -2463,11 +2466,6 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
     sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
     mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 
-    // Apply poison before damage - don't want to poison the character if the arrow kills them.
-    const int POISON_MIN_DAMAGE = 5;
-    if (victim->tmpabilities.hit > POISON_MIN_DAMAGE) {
-        check_weapon_poison(archer, victim, arrow);
-    }
     damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
 }
 

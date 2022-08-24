@@ -1,0 +1,44 @@
+#+title: Release 1.5.5
+#+author: Maga
+
+* Table of Content :toc:
+- [[#release-notes-155][Release Notes 1.5.5]]
+  - [[#imm-staff-changes][IMM Staff Changes]]
+  - [[#advanced-view][Advanced View]]
+  - [[#relocate][Relocate]]
+  - [[#arrows][Arrows]]
+
+* Release Notes 1.5.5
+
+The following has been changed and/or modified in the game for this release.
+
+** IMM Staff Changes
+The following as been added to the game for IMM staff.
+
+*** HIDE_VNUM
+
+This is a new room flag that will hide the room vnum from players with advanced view turned on. This is intended for maze like rooms meant to confuse the players, such as Blent's blind spider rooms.
+
+*** ITEM_STAY_ZONE
+
+This will keep an item from leaving the zone it is in, whether it is in the players inventory or equiped.
+
+** Advanced View
+
+Advanced view command has been split out into two commands.
+
+*** Advanced View
+
+Displays the room number and terrain of the current room you are in.
+
+*** Advanced Prompt
+
+Displays the players score values in the prompt
+
+** Relocate
+
+Characters can no longer relocate into god rooms.
+
+** Arrows
+
+Arrows will no longer break on non-armored hit locations. Arrows can now be stored in any container.

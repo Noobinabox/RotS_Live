@@ -2197,24 +2197,24 @@ int shoot_calculate_wait(const char_data* archer)
  */
 bool does_arrow_break(const char_data* archer, const char_data* victim, const obj_data* arrow)
 {
-    int breakpercentage = arrow->obj_flags.value[3];
+    int break_percentage = arrow->obj_flags.value[3];
     if (victim) {
         // factor in victim contribution here - but victim is optional.
         // TODO(drelidan):  Figure out break contribution.  Perhaps this function
         // should be called and given an armor location or something.
     }
 
-    // haradrims get a bonus with crude arrows for being a primative race
-    if ((breakpercentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
-        breakpercentage >>= 1;
+    // Haradrims get a bonus with crude arrows for being a primitive race
+    if ((break_percentage > 30) && (GET_RACE(archer) == RACE_HARADRIM)) {
+        break_percentage >>= 1;
     }
 
     if (utils::get_specialization(*archer) == (int)game_types::PS_Archery) {
-        breakpercentage >>= 1;
+        break_percentage >>= 1;
     }
 
     const int rolledNumber = number(1, 100);
-    if (rolledNumber < breakpercentage) {
+    if (rolledNumber < break_percentage) {
         return true;
     }
     return false;

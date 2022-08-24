@@ -105,10 +105,7 @@ ACMD(do_put)
                 } else
                     for (obj = ch->carrying; obj; obj = next_obj) {
                         next_obj = obj->next_content;
-                        if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver) {
-                            send_to_char("Arrows can only go into a quiver.\n\r", ch);
-                            break;
-                        } else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver) {
+                        if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver) {
                             send_to_char("Only arrows can go into a quiver.\n\r", ch);
                             break;
                         } else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && is_quiver) {
@@ -124,10 +121,7 @@ ACMD(do_put)
                 } else
                     while (obj) {
                         next_obj = get_obj_in_list_vis(ch, arg1, obj->next_content, 9999);
-                        if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver) {
-                            send_to_char("Arrows can only go into a quiver.\n\r", ch);
-                            break;
-                        } else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver) {
+                        if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver) {
                             send_to_char("Only arrows can go into a quiver.\n\r", ch);
                             break;
                         } else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && is_quiver) {
@@ -143,8 +137,6 @@ ACMD(do_put)
                     send_to_char(buf, ch);
                 } else if (obj == container) {
                     send_to_char("You attempt to fold it into itself, but fail.\n\r", ch);
-                } else if (GET_ITEM_TYPE(obj) == ITEM_MISSILE && !is_quiver) {
-                    send_to_char("Arrows can only go into a quiver.\n\r", ch);
                 } else if (GET_ITEM_TYPE(obj) != ITEM_MISSILE && is_quiver) {
                     send_to_char("Only arrows can go into a quiver.\n\r", ch);
                 } else {

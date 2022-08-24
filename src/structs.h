@@ -519,6 +519,7 @@ public:
 #define SECURITYROOM (1 << 14)
 #define PEACEROOM (1 << 15)
 #define NO_TELEPORT (1 << 16)
+#define HIDE_VNUM (1 << 17)
 
 #define BFS_ERROR -1
 #define BFS_ALREADY_THERE -2

@@ -202,6 +202,7 @@ const int constexpr SECS_PER_MUD_YEAR = (12 * SECS_PER_MUD_MONTH);
 #define ITEM_MAGUS (1 << 25)
 #define ITEM_OLOGHAI (1 << 26)
 #define ITEM_HARADRIM (1 << 27)
+#define ITEM_STAY_ZONE (1 << 28)
 
 /* Some different kind of liquids */
 #define LIQ_WATER 0

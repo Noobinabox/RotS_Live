@@ -489,6 +489,53 @@ int perform_move_mount(struct char_data* ch, int dir)
     return 1;
 }
 
+
+void parse_container_for_stay_zone(obj_data* container, int room) {
+    obj_data* next_item = nullptr;
+    for (obj_data* item = container->contains; item; item = next_item) {
+        next_item = item->next_content;
+
+        if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
+            parse_container_for_stay_zone(item, room);
+        }
+
+        if (IS_OBJ_STAT(item, ITEM_STAY_ZONE)) {
+            obj_from_obj(item);
+            obj_to_room(item, room);
+        }
+    }
+
+};
+
+void prohibit_item_stay_zone_move(char_data* ch, int room) {
+    // Check for gear that character is wearing.
+    for (int gear_index = 0; gear_index < MAX_WEAR; gear_index++) {
+        obj_data* item = ch->equipment[gear_index];
+        if (item == nullptr) {
+            continue;
+        }
+
+        if (IS_OBJ_STAT(ch->equipment[gear_index], ITEM_STAY_ZONE)) {
+            obj_data* item = unequip_char(ch, gear_index);
+            obj_to_room(item, room);
+        }
+    }
+
+    // Check inventory of character.
+    obj_data* next_item = nullptr;
+    for (obj_data* item = ch->carrying; item; item = next_item) {
+        next_item = item->next_content;
+        if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
+            parse_container_for_stay_zone(item, room);
+        }
+
+        if (IS_OBJ_STAT(item, ITEM_STAY_ZONE)) {
+            obj_from_char(item);
+            obj_to_room(item, room);
+        }
+    }
+}
+
 ACMD(do_move)
 /* do_move is under construction to account for riding... !!!!  */
 {
@@ -564,6 +611,8 @@ ACMD(do_move)
         to_room = EXIT(ch, cmd)->to_room;
         is_death = IS_SET(world[to_room].room_flags, DEATH);
         was_in = ch->in_room;
+
+        bool diff_zone = (was_in / 100) != (to_room / 100);
 
         if (!IS_RIDING(ch)) {
             res_flag = check_simple_move(ch, cmd, &need_move, subcmd);
@@ -658,6 +707,11 @@ ACMD(do_move)
 
             if (utils::is_affected_by_spell(*ch, SKILL_MARK)) {
                 set_blood_trail(ch, cmd);
+            }
+
+            // Check for item_stay_zone in players inventory and equipment.
+            if (diff_zone) {
+                prohibit_item_stay_zone_move(ch, was_in);
             }
 
             char_from_room(ch);

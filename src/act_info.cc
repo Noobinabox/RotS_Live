@@ -2929,7 +2929,8 @@ ACMD(do_toggle)
         "           Swim: %-3s    "
         "        Latin-1: %-3s    "
         "        Spinner: %-3s\r\n"
-        "  Advanced View: %-3s    ",
+        "  Advanced View: %-3s    "
+        "Advanced Prompt: %-3s    ",
         ONOFF(PRF_FLAGGED(ch, PRF_PROMPT)),
         ONOFF(PRF_FLAGGED(ch, PRF_BRIEF)),
         ONOFF(PRF_FLAGGED(ch, PRF_NOTELL)),
@@ -2948,14 +2949,15 @@ ACMD(do_toggle)
         ONOFF(PRF_FLAGGED(ch, PRF_SWIM)),
         ONOFF(PRF_FLAGGED(ch, PRF_LATIN1)),
         ONOFF(PRF_FLAGGED(ch, PRF_SPINNER)),
-        ONOFF(PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)));
+        ONOFF(PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)),
+        ONOFF(PRF_FLAGGED(ch, PRF_ADVANCED_PROMPT)));
     send_to_char(buf, ch);
 
     /* the special, immortal set list */
     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
         sprintf(buf,
-            "      Roomflags: %-3s    "
-            "      Holylight: %-3s\r\n"
+            "      Roomflags: %-3s\r\n"
+            "      Holylight: %-3s    "
             "       Nohassle: %-3s    "
             " Wiznet Channel: %-3s\r\n",
             ONOFF(PRF_FLAGGED(ch, PRF_ROOMFLAGS)),

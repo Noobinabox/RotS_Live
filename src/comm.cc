@@ -601,7 +601,7 @@ void game_loop(SocketType s)
                         if (IS_RIDING(point->character))
                             sprintf(prompt, "%s R", prompt);
 
-                        if (PRF_FLAGGED(point->character, PRF_ADVANCED_VIEW)) {
+                        if (PRF_FLAGGED(point->character, PRF_ADVANCED_PROMPT)) {
                             sprintf(prompt, "%s [", prompt);
                             add_prompt(prompt, point->character, PROMPT_ADVANCED);
                         }
@@ -610,7 +610,7 @@ void game_loop(SocketType s)
 
                         opponent = point->character->specials.fighting;
 
-                        if (!PRF_FLAGGED(point->character, PRF_ADVANCED_VIEW)) {
+                        if (!PRF_FLAGGED(point->character, PRF_ADVANCED_PROMPT)) {
                             add_prompt(prompt, point->character,
                                        PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
                                                                                                                                                : PROMPT_ALL);

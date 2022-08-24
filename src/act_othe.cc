@@ -976,9 +976,14 @@ char* tog_messages[][4] = {
         "You will no longer see a spinner during skill and spell delays.\r\n",
         "You currently see a spinner during skill and spell delays.\r\n",
         "You currently do not see a spinner during skill and spell delays.\r\n" },
-    { "Advanced view is now on.\n\r",
-               "Advanced view is off.\n\r",
-               "Advanced view is on.\n\r" }
+    { "Advanced view is now on.\r\n",
+               "Advanced view is off.\r\n",
+               "Advanced view is on.\r\n",
+               "Advanced view is off.\r\n"},
+    { "Advanced prompt is now on.\r\n",
+                "Advanced prompt is off.\r\n",
+                "Advanced prompt is on.\r\n",
+                "Advanced prompt is off.\r\n"}
 };
 
 ACMD(do_gen_tog)
@@ -1034,9 +1039,13 @@ ACMD(do_gen_tog)
         result = flag_modify(ch, PRF_SUMMONABLE, tog_messages[0], 0);
         break;
 
-        case SCMD_ADVANCED_VIEW:
-            result = flag_modify(ch, PRF_ADVANCED_VIEW, tog_messages[22], 0);
-            break;
+    case SCMD_ADVANCED_VIEW:
+        result = flag_modify(ch, PRF_ADVANCED_VIEW, tog_messages[22], 0);
+        break;
+
+    case SCMD_ADVANCED_PROMPT:
+        result = flag_modify(ch, PRF_ADVANCED_PROMPT, tog_messages[23], 0);
+        break;
 
     case SCMD_ECHO:
         result = flag_modify(ch, PRF_ECHO, tog_messages[1], 0);
@@ -1521,6 +1530,7 @@ char* change_comm[] = {
     "casting",
     "sorting", /* 30 */
     "advancedview",
+    "advancedprompt",
     "\n"
 };
 
@@ -1568,7 +1578,7 @@ ACMD(do_set)
             strcat(buf, change_comm[tmp]);
             strcat(buf, ", ");
         }
-        strcat(buf, "sorting, advancedview");
+        strcat(buf, "sorting, advancedview, advancedprompt");
         strcat(buf, ".\n\r");
         send_to_char(buf, ch);
         return;
@@ -1722,6 +1732,9 @@ ACMD(do_set)
         break;
     case 31:
         do_gen_tog(ch, arg, wtl, 0, SCMD_ADVANCED_VIEW);
+        break;
+    case 32:
+        do_gen_tog(ch, arg, wtl, 0, SCMD_ADVANCED_PROMPT);
         break;
     default:
         send_to_char("Undefined response to this argument.\n\r", ch);

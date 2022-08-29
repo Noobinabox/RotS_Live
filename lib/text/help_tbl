@@ -5,7 +5,7 @@ punishments:
 
 Offense/Infraction            1        2        3        4+
 ---------------------------------------------------------------
-Multiplaying*                 5       10    deletion    ban
+Multi-playing*                 5       10    deletion    ban
 Equipment transfer**          3        5       10     deletion
 Bug or ban abuse              &        3        5     deletion
 Whitie-whitie pk*             5       10    deletion    ban
@@ -81,7 +81,7 @@ SWIM DROWNING
 
 Swim is a ranger skill that allows one to pass over water-filled rooms 
 without the aid of a boat. One must "set swim on" to enter one of these rooms.
-By default, this setting is turned off so a player does not accidently wander
+By default, this setting is turned off so a player does not accidentally wander
 into a water-filled room.  A check is made upon entering the room and every
 so often afterwards. A failed check will result in the player struggling to
 remain swimming. If the player continues to fail these checks, he/she may
@@ -147,7 +147,7 @@ See also: LEVEL
 #
 ANGER NOQUIT
 
-If you engage in a fight, your adrenalin level becomes very high and
+If you engage in a fight, your adrenaline level becomes very high and
 you get affected by ANGER.
 
 From OOC prospective, ANGER is a feature in the game that keeps any
@@ -213,7 +213,7 @@ learn. See:
 MAN SKILL BEORNING
 
 #
-URUK
+URUK-HAI URUK
 Uruk-hai can see in the dark, but they cannot see into sunny rooms. While
 in the sun they are affected the power of Arda, and receive penalties to
 their OB, DB, and PB. They also cannot hunt in the sun. Uruks receive a 
@@ -271,13 +271,13 @@ Usage: recruit <name of a mobile>
 
 Common orcs have a unique ability to "recruit" followers.  Some mobiles of
 common orc race will gladly join the group of a player.  They will listen to
-the leader's commands and assinst in a fight. Also, common orc enemies (all
+the leader's commands and assist in a fight. Also, common orc enemies (all
 good races and Uruk-Lhuth) will not be able to distinguish a common orc from
 his/her followers. 
 #
 START FAQ
 
-Greetings, fellow traveller!
+Greetings, fellow traveler!
 
 Welcome to Return of the Shadow, Arda the Fourth Age;
 better known as simply ROTS. This is a guide that will give someone a
@@ -293,7 +293,7 @@ Q1.  Where do I find newbie eq?
 A1. As a new player you can gain a set of eq simply by typing 'ask' in
 the room you first appear in ROTS. This will provide you with all the 
 basics you need to get yourself going, and this command is also
-re-usuable after each death, and if your new they're will be a few of
+re-usable after each death, and if your new they're will be a few of
 them.  
 Alternatively-
 Newbie equipment may be found in a number of areas within each city:
@@ -323,17 +323,17 @@ can learn type "MAN SPELL LIST" To see the mystical powers that maybe learned
 type "MAN POWER LIST" To see the skills that one may practice type "MAN SKILL
 LIST". When at a guildmaster type "Practice" to see a list of the skills and
 spells that may be learned. Type "Practice <skill>" and you will spend one
-practic e session on that skill.
+practice e session on that skill.
 
 Q4.  Where is it safe to xp (get experience)?
 
 A4. Experience plays a vital role in how the game works.  There are a number
 creatures found everywhere on Arda. The generally safe areas to gain
-experienceare near towns and in wide open areas.  Remember to type "consider
+experience near towns and in wide open areas.  Remember to type "consider
 <target>" to see a creatures strength and level compared to yours. Keep an eye
 on your health level and "flee" when it drops low, "Wounded" is generally a
 safe time to flee so that leaves leeway for failed attempts. Keep in mind that
-consider can be decieving as to the actual strength of an opponent. Generally
+consider can be deceiving as to the actual strength of an opponent. Generally
 farms that support life are a great place to sharpen ones skill and butcher
 food "Butcher <target>" for one to eat. Remember dark areas are not usually a
 good place to be without a light, there are spells that allow you to create
@@ -386,8 +386,8 @@ with them as quickly as possible.
 Q9.  Why won't some people help me?
 
 A9. While it is generally nice to help people, there is no law that dictates
-that higher levels should help newibes. Certain people have a belief system
-that says that they shouldn't help newbies, others dont concern themselves
+that higher levels should help newbies. Certain people have a belief system
+that says that they shouldn't help newbies, others don't concern themselves
 with it. As a newbie, it is important to realize that higher levels may or may
 not help you with equipment or gold - its their choice. Usually, if anyone
 feels like giving out some equipment or gold, they will give it
@@ -432,7 +432,7 @@ Text is appended after the current position, at the end by default.
 #
 ANGEL PRACRESET RESET
 
-A little temporary feature we have for the convenince of our players:
+A little temporary feature we have for the convenience of our players:
 "tell angel pracreset" will reset all your practices
 
 #
@@ -460,7 +460,7 @@ Consequent typing 'alias gc get all corpse' will equal typing 'smile
 gc get all corpse', interpreted as 'smile gc' and will return 'Nobody
 here by that name.'.  To clean this misunderstanding, type: "al alias"
 
-Only the first word on the line will be subsituted at this time.
+Only the first word on the line will be substituted at this time.
 #
 LOOK
 For studying your surroundings. Examples:
@@ -711,21 +711,21 @@ See also: INFO
 #
 INFO
 Gives more detailed information about your character then score.
-This inculdes stats, experience, playing times, you levels in different
+This includes stats, experience, playing times, you levels in different
 classes, etc.
 
 One of the line mentions specialization - see SPECIALIZE (man spec all) 
 for more details.
 
-See also: SCORE, MAN SPECIALIZION ALL (short: man spec all)
+See also: SCORE, MAN SPECIALIZATION ALL (short: man spec all)
 #
-ENCUMBERANCE
+ENCUMBRANCE
 
 If you were naked all the time, you would be able to anything you want.
 However, you would normally wear something and carry some INVENTORY.  Items
-that you wear add to your encumberance.  In fact, the heavier and bulkier your
-item is, the harder it will be for you to move around (MOVE ENCUMBERANCE) and
-to use your skills and spells properly (SKILL ENCUMBERANCE).  See INFO how
+that you wear add to your encumbrance.  In fact, the heavier and bulkier your
+item is, the harder it will be for you to move around (MOVE ENCUMBRANCE) and
+to use your skills and spells properly (SKILL ENCUMBRANCE).  See INFO how
 much you are encumbered.
 
 See also: INFO.
@@ -805,9 +805,9 @@ See also: HELP MYSTIC, HELP CONCENTRATE, MAN POWERS GENERAL
 PK "PLAYER KILL" PKILL "RACE WAR"
 
 Return of the Shadow has a race war. All "good" races vs "evil" races. If
-you are to come accross a race that is the member of the opposite side of
+you are to come across a race that is the member of the opposite side of
 the war, you will see that player by his or her race name only, such as
-*an Uruk* or *a Hobbit*. If you are to come accross a member of the opposite
+*an Uruk* or *a Hobbit*. If you are to come across a member of the opposite
 race you have two choices: Kill or be Killed. There is no mercy. If you win
 you can become famous (see FAME). If losing, flee for your life!
 
@@ -830,7 +830,7 @@ There are rules pertaining to the race war :
      a useful spell on them (unless that useful spell might also have its
      drawbacks, such as curing saturation and restlessness). Leaving a
      victims equipment on their corpse is not considered helping them, yet
-     taking it and dropping it somewhere else for them to reaquire is
+     taking it and dropping it somewhere else for them to reacquire is
      considered helping them.
 
 IMPORTANT: Use command "policy" to see applicable latest rules.
@@ -844,7 +844,7 @@ See also: FAME
 FAME
 
    Fame is currently in testing, so please report all bugs and
-incostincies you find with it.  Fame measures the achievements of that
+inconstancy's you find with it.  Fame measures the achievements of that
 person.  Player kills of the opposite side have the most value, but
 level and gold amount matters as well.
    Your fights with other people are recorded, and can be seen by others, as 
@@ -855,10 +855,10 @@ is a sum of their levels, and the resulting fame is divided between killers.
   INCOGNITO option affects the fame greatly. If the killer is incognito,
 no fame is gained, since he prefers to remain unknown. If there are
 incognito people in a group of killers, their deed is known, but only
-for two days. If an incognito person dies, curiosity and exaggerrations
+for two days. If an incognito person dies, curiosity and exaggerations
 will make the fight remembered for longer, as if the victim was level 40.
 The fame gained or lost, though, is not affected.
-   You can type "fame <name>" to see waht is known about other people,
+   You can type "fame <name>" to see what is known about other people,
 or type "fame all" to see the list of all known fights.
 
 See also: PKILL
@@ -868,8 +868,8 @@ EXPLOITS
 Usage: exploits
 
   This command gives you history of your character. Exploits
-record all player kills, all deathes and all stat increases.
-  The final line in exploits shows various total figures. Thes include:
+record all player kills, all deaths and all stat increases.
+  The final line in exploits shows various total figures. These include:
 
 pdeaths    - the total number of times you've died to other players.
 pkills     - the total number of times you've killed another player.
@@ -920,7 +920,7 @@ You may not be able to ride indoors.
 
 Note that riding a mount if fairly exhausting process, but the better you
 know RIDE skill (man skill ride) the better you are in control of your horse,
-and the less tired you get from controling your horse.
+and the less tired you get from controlling your horse.
 
 Note: There is also a bug that allows you to ride mounts for other races, making use of this bug is considered illegal and is punishable. The following are the mounts that are permitted for the respective races:
 
@@ -989,7 +989,7 @@ BLOCK
 >block                  - to check what you are blocking, if any.
 >block none             - stop blocking, if you were.
 
-You need to know warrior's skill block to be successfull.
+You need to know warrior's skill block to be successful.
 
 See also: MAN SKILL BLOCK 
 #
@@ -1116,19 +1116,19 @@ See also: HEALER, CLASS
 HEALER
 
 Healers are an extreme form of the common mystic; these beings train and
-focus their willpower and perception to an accute science: these are true
+focus their willpower and perception to an acute science: these are true
 masters of the Wraith world.  As a consequence of being so devoted to the
 routine study of spirits, healers are completely unaware of the workings
 of the physical world, and are thus completely unversed in even the
 simplest of survival skills and make rather terrible fighters.  On the
 other hand, healers are no less versed than their mystic brethren in their
-knowledge of wizardy.
+knowledge of wizardry.
 
 See also: MYSTIC, CLASS
 #
 MAGE
 
-Mages are experts of those magical arts which emtail the manipulation of
+Mages are experts of those magical arts which entail the manipulation of
 the physical world: fire, lightning, ice and darkness.  In general, mages
 make heavy use of their spells to cause as much physical harm to their
 victim as possible.  However, the arts of magery also include control of
@@ -1215,7 +1215,7 @@ obvious ones won't show up here - you have to THINK in order to locate those.
 Example:
 North - Main Road.
 
-If you are a sun-hating uruk, you will see # characters around sunlit exits.
+If you are a sun-hating Uruk, you will see # characters around sunlit exits.
 
 For example: #West#  - Before the Guard Post
 #
@@ -1233,9 +1233,9 @@ of this command may be one of surprise, but you'll get used to it.  You'll
 have to, at any rate, since certain things in the game depend on this
 particular notion of time; the opening hours of the shops, and the length
 of days and nights, for example.
-  The time is counted in Tolkien system.  The monthes and days you see 
+  The time is counted in Tolkien system.  The months and days you see
 are used by humans on the Middle Earth.
-  Westron monthes:        English translation:
+  Westron months:        English translation:
    Narvinye                January
    Nenime                  February
    Sulime                  March
@@ -1261,14 +1261,14 @@ Ideas:
    mob here, or a room here, should go to Death & Loman if on the west
    side of the Anduin, and to Fingolfin if on the East side. Minor coding
    ideas should be posted or sent to Seether or Dim, but I'm warning you,
-   the "To Be Coded" list is very long, so you may not recieve your
+   the "To Be Coded" list is very long, so you may not receive your
    wish nor a response for quite a while if you mail, if you post
    one of our many high gods is bound to make some remarks about it.
  
 Typos:
 -- All typos in room names, and room/mob/object descriptions should go to
-   Fingolfin, Loman or Death. All typoes in a social should go to Erika, and 
-   all other typoes dealing with messages that you are sent should be sent to
+   Fingolfin, Loman or Death. All typos in a social should go to Erika, and
+   all other typos dealing with messages that you are sent should be sent to
    Dim or Prami, as they are more than likely located in the code... However 
    remember that Dim and other Imms are very busy people, so don't expect 
    typos in unimportant messages in the code to be changed very quickly.
@@ -1305,7 +1305,7 @@ or
 > next
 to read the next unread message.
 
-If you have a number of unread message, and you wish to catchup, 
+If you have a number of unread message, and you wish to catch up,
 > next <number of the message>
 will show you the corresponding message, and mark this message as
 last read.
@@ -1369,7 +1369,7 @@ similar to spellcasting. In this state, you cannot do anything, and
 if you are fighting, you will not hit your opponent. However, if
 you are fighting mentally, you will find your mental defense improved.
 Other beneficial effects will be added shortly. This trance will not
-be broken by a succesful hit upon you. You can break your concentration
+be broken by a successful hit upon you. You can break your concentration
 by pressing "enter" over an empty line, similar to spellcasting.
 Concentrate will also shorten the duration of confuse.
 
@@ -1446,7 +1446,7 @@ See also: LEGEND
 BRIEF SPAM
 Toggle "brief mode".  When in brief mode, you don't see the descriptions of
 the room you are in; only the name of the room and the people and objects
-there.  Unless you're very familiar with the area in which you're travelling,
+there.  Unless you're very familiar with the area in which you're traveling,
 however, it is not advisable to use this command.  Frequently, you will find
 small but vital hints in the descriptions of the rooms: An extra peek at your
 surroundings could mean the difference between life and death!
@@ -1525,7 +1525,7 @@ following you to your group.
 If you are a group member, then you will share experience points for killing
 monsters equally among the group. Experience points will only be shared among
 group members that are in the same location, at the time of the killing
-blow. Sharing is regardless of wherther the group members have been
+blow. Sharing is regardless of whether the group members have been
 participating in the fight.
 
 Group with no argument shows a list of people with whom you are grouped.
@@ -1573,10 +1573,10 @@ Use : Use <Staff>
       Use <Wand> <Target>
 
 Using staff's will automatically target everybody (or everything) in a
-room, execpt yourself. Therefore staff's are naturally very powerful, and
+room, except yourself. Therefore staff's are naturally very powerful, and
 yet may be very dangerous to use around other players.
 
-Using wands require that you point it at a target, which can be eihter a
+Using wands require that you point it at a target, which can be either a
 character or an object.
 
 Both staff's and wand's must be HELD in the hand prior to use! (Use the
@@ -1685,7 +1685,7 @@ If you have echo off:
 >tell prami hi
 Ok.
 
-Command carries no gameplay value, just for your convinience.
+Command carries no gameplay value, just for your convenience.
 See also: SET
 #
 NOTELL
@@ -1776,7 +1776,7 @@ letter.
 
  Every time you log a character in there is a line displayed telling you if
 you have new mail messages waiting.
- Example: You have new mail wainting.
+ Example: You have new mail waiting.
                 --or--
           There is no new mail for you.
 
@@ -1792,7 +1792,7 @@ mail <player> - Use this command at a postmaster mob to send another player
                  a message.
                - type write <player> to enter the mail editor. Then type the 
                  message you wish to send. Remember to hit %f to format the
-                 message so that it appears intelligable to the recipient.
+                 message so that it appears intelligible to the recipient.
                  To finish and send the message type %e.
                  Example:
                    write Vaitya <enter>
@@ -1811,7 +1811,7 @@ SAY TELL ASK WHISPER YELL NARRATE CHAT PETITION SING '
 If you consider communicating with other beings, you might be understood
 better if you start your sentences with any of these commands.
 
-The "say" command is heard by everone in your room. 
+The "say" command is heard by everyone in your room.
 You can use ' as a shorthand for say, as in: ' hello there.
 example: say hello, my name is Bob
 
@@ -1847,7 +1847,7 @@ REPLY
 If someone tells you something, you may simply reply to that person, rather
 than typing tell <person> <string>. A reply always goes to the person that
 last told you something, to see who that person is, just type reply with
-an arguement.
+an argument.
 Example:
 reply Sorry, I missed your tell.
 
@@ -1862,12 +1862,12 @@ this is purely out-of-character command.
 #
 SET
 
-set <paramater> [on|off|number|toggle]
+set <parameter> [on|off|number|toggle]
 
 > set       -- lists some parameters and their values,
 > set ?     -- to get list of all possible parameters. 
-> set <paramater>     -- will display the status of this parameter.
-> set <paramater> on/off   
+> set <parameter>     -- will display the status of this parameter.
+> set <parameter> on/off
 > set <parameter> toggle    -- will toggle from on to off and from off to on.
 
 See also: PROMPT, WIMPY, BRIEF, COMPACT, SPAM, NOTELL, NOCHAT, NONARRATE,
@@ -1891,7 +1891,7 @@ See also:  SAY GSAY NOREPEAT NARRATE
 #
 SOCIALS
 
-Socials are commands used to show your affective state to others.  The
+Socials are commands used to show your effective state to others.  The
 actor, victim and bystanders may receive different messages.  Generally,
 social commands are used only to express emotion, but it is possible that
 some mobs (or players) will take action based on the social.
@@ -2098,7 +2098,7 @@ STRENGTH
 
    Strength is the raw physical power your character possess. The higher your
 strength the more damage you will do in hand to hand combat. Strength also
-determines how much wieght your character can carry.
+determines how much weight your character can carry.
 
 #
 INTELLIGENCE
@@ -2109,7 +2109,7 @@ do, the lower the chance of spells fail.
 #
 DEXTERITY
 
-Dexterity more comonly known as agility determines how quick your character 
+Dexterity more commonly known as agility determines how quick your character
 can react in some situations, the higher your dexterity the better the chance 
 to dodge an attack, and to flee from the fight.
 

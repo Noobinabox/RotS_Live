@@ -3,7 +3,7 @@ ALL LIST
 >specialize <spec_name>
 >specialize
 
-   After you become reknown and proficient in your abilities, you can
+   After you become renown and proficient in your abilities, you can
 choose an area to concentrate on, in your life. The effects of your
 selection vary, and can add to your abilities no matter what class you
 belong to.
@@ -62,7 +62,7 @@ individual spells in unique ways, as described by the specialization.
   Illusion      - The art of confusing and misguiding everybody.
                   * Grants the "confuse" power.  See POWER CONFUSE.
 				  * Makes the "fear", "terror", and "haze" powers last longer.
-				  * Makes "halluciation" stronger.
+				  * Makes "hallucination" stronger.
 
   Guardian      - The powerful art of summoning a Guardian mob to aid you
                   through your adventures. See POWER GUARDIAN
@@ -89,7 +89,7 @@ individual spells in unique ways, as described by the specialization.
                   which significantly increases the damage of your next swing.
 				  When low on health and berserk, attack speed is increased.
 				  Recover some missing health when scoring a meaningful kill on berserk.
-				  Also gaints the skill "wild swing".  See SKILL WILD SWING.
+				  Also grants the skill "wild swing".  See SKILL WILD SWING.
 				  Ideal for warriors.
 				 
   Light fighting- Makes you a master of fighting with light weapons and armor.
@@ -144,7 +144,7 @@ SEE ALSO: "SKILLS STEALTH STALK COVER AMBUSH"
 Specializing in wild fighting will grant you an occasional rush of ferocity
 in battle, which significantly increases the damage of your next swing. The
 probability of this happening is based on your warrior level. Wild fighting
-speicialization also grants you access to the "swing" skill.
+specialization also grants you access to the "swing" skill.
 
 SEE ALSO: "SKILLS SWING"
 #
@@ -168,7 +168,7 @@ FIRE
 Specializing in fire will make all mage spells of the fire type more effective
 against your opponents. Fire spec also increases the minimal damage done by 
 the spells "firebolt" and "fireball". When you specialize in fire saving
-against cold spells is harder to do, and players specializaed in cold have
+against cold spells is harder to do, and players specialized in cold have
 a harder time saving against your spells.
 
 #
@@ -218,7 +218,7 @@ The following spells and powers are effected by this specialization:
 #
 PROTECTION
 
-Specializing in protection enchances all defensive magic such as "resist magic",
+Specializing in protection enhances all defensive magic such as "resist magic",
 "shield", and "evasion". This specialization also grants you access to the 
 "protection" power.
 
@@ -227,10 +227,10 @@ SEE ALSO: "POWERS PROTECTION"
 ILLUSION
 
 The illusion specialization increases all mystic powers that are mind affecting
-such as "fear", "terror", "halluciation", and "haze". This specializations also
+such as "fear", "terror", "hallucination", and "haze". This specializations also
 grants you access to the "confuse" power.
 
-SEE ALSO: "POWERS FEAR TERROR HAZE CONFUSE HALLUCIATION"
+SEE ALSO: "POWERS FEAR TERROR HAZE CONFUSE HALLUCINATION"
 #
 GUARDIAN
 
@@ -269,7 +269,7 @@ SEE ALSO: "SKILLS KICK WEAPON MASTERY"
 DEFENDER
 
 Specializing in defender makes you a master of fighting with shields. You have a 
-chance to occassionally block an attack that would have otherwise hit you, and
+chance to occasionally block an attack that would have otherwise hit you, and
 significantly reducing the damage of the attack.
 
 #

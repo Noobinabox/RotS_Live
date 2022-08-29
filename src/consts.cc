@@ -2479,10 +2479,11 @@ char* extra_bits[] = {
     "BEORNING",
     "URUK",
     "ORC",
-    "ORCFOLLOWER",
+    "ORC_FOLLOWER",
     "LHUTH",
     "OLOGHAI",
     "HARADRIM",
+    "STAY_ZONE",
     "\n"
 };
 

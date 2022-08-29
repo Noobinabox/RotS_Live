@@ -490,16 +490,20 @@ int perform_move_mount(struct char_data* ch, int dir)
 }
 
 
-void parse_container_for_stay_zone(obj_data* container, int room) {
+void parse_container_for_stay_zone(char_data* ch, obj_data* container, int room) {
     obj_data* next_item = nullptr;
     for (obj_data* item = container->contains; item; item = next_item) {
         next_item = item->next_content;
 
         if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
-            parse_container_for_stay_zone(item, room);
+            parse_container_for_stay_zone(ch, item, room);
         }
 
         if (IS_OBJ_STAT(item, ITEM_STAY_ZONE)) {
+            sprintf(buf, "You drop %s.\n\r", OBJS(item, ch));
+            send_to_char(buf, ch);
+            sprintf(buf, "$n drops $p.");
+            act(buf, TRUE, ch, item, 0, TO_ROOM);
             obj_from_obj(item);
             obj_to_room(item, room);
         }
@@ -526,10 +530,14 @@ void prohibit_item_stay_zone_move(char_data* ch, int room) {
     for (obj_data* item = ch->carrying; item; item = next_item) {
         next_item = item->next_content;
         if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
-            parse_container_for_stay_zone(item, room);
+            parse_container_for_stay_zone(ch, item, room);
         }
 
         if (IS_OBJ_STAT(item, ITEM_STAY_ZONE)) {
+            sprintf(buf, "You drop %s.\n\r", OBJS(item, ch));
+            send_to_char(buf, ch);
+            sprintf(buf, "$n drops $p.");
+            act(buf, TRUE, ch, item, 0, TO_ROOM);
             obj_from_char(item);
             obj_to_room(item, room);
         }

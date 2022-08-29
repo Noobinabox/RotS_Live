@@ -109,6 +109,11 @@ int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, i
     return damage(caster, victim, damage_dealt, spell_number, hit_location);
 }
 
+bool different_zone(int was_in, int to_room)
+{
+    return (was_in / 100 ) != (to_room / 100);
+}
+
 /*
  * external structures 
  */
@@ -117,6 +122,7 @@ extern struct room_data world;
 extern struct obj_data* obj_proto;
 extern struct obj_data* object_list;
 extern struct char_data* character_list;
+extern void prohibit_item_stay_zone_move(char_data* ch,int was_in);
 extern int rev_dir[];
 extern int top_of_world;
 extern char* dirs[];
@@ -759,6 +765,7 @@ ASPELL(spell_vitalize_self)
 ASPELL(spell_summon)
 {
     int ch_x, ch_y, v_x, v_y, dist;
+    int was_in, to_room;
 
     /*  if(GET_LEVEL(caster) < LEVEL_GOD) {
 		send_to_char("Summon no longer has power over creatures of Arda\n\r", caster);
@@ -788,6 +795,13 @@ ASPELL(spell_summon)
     if ((GET_POS(victim) == POSITION_FIGHTING) || (IS_SET(world[caster->in_room].room_flags, NO_TELEPORT)) || (PRF_FLAGGED(victim, PRF_SUMMONABLE)) || (GET_LEVEL(victim) >= LEVEL_IMMORT)) {
         send_to_char("You failed.\n\r", caster);
         return;
+    }
+
+    was_in = victim->in_room;
+    to_room = caster->in_room;
+
+    if (different_zone(was_in, to_room)) {
+        prohibit_item_stay_zone_move(victim,was_in);
     }
 
     ch_x = zone_table[world[caster->in_room].zone].x;
@@ -903,7 +917,11 @@ int random_exit(int room)
 
 ASPELL(spell_blink)
 {
-    int room, tmp, fail, dist;
+    int room;
+    int tmp;
+    int fail;
+    int dist;
+    int was_in = 0;
 
     if (!caster)
         return;
@@ -911,6 +929,7 @@ ASPELL(spell_blink)
     if (!victim)
         victim = caster;
 
+    was_in = victim->in_room;
     room = victim->in_room;
     fail = 0;
 
@@ -940,6 +959,9 @@ ASPELL(spell_blink)
         stop_riding(victim);
         if (caster != victim)
             send_to_char("You relocated your victim.\n\r", caster);
+        if (different_zone(was_in, room)) {
+            prohibit_item_stay_zone_move(caster, was_in);
+        }
         send_to_char("The world spinned around you, and changed.\n\r", victim);
         act("$n disappeared in a flash of light.\n\r", TRUE, victim, 0, 0, TO_ROOM);
         char_from_room(victim);
@@ -976,7 +998,7 @@ bool is_teleportation_room_valid(room_data* room) {
 /*----------------------------------------------------------------------------------------------------------*/
 ASPELL(spell_relocate)
 {
-    int zon_start, zon_target, zon_try, dist;
+    int zon_start, zon_target, zon_try, dist, was_in;
     int x, y, del_x, del_y, tmp, tmp2, num, tmpnum;
     struct room_data* room;
     struct affected_type af;
@@ -1115,6 +1137,9 @@ ASPELL(spell_relocate)
     }
 
     if (tmp <= top_of_world) {
+        if (different_zone(was_in, tmp)) {
+            prohibit_item_stay_zone_move(caster, was_in);
+        }
         stop_riding(caster);
         act("$n screams a shrill wail of pain, and suddenly disappears.\n\r",
             FALSE, caster, 0, 0, TO_ROOM);

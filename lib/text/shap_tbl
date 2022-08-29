@@ -9,15 +9,15 @@ Level 91s (Lower Maias):
 - Describe the area, do not assume the character does or is doing anything.
   Do not assume the opinions, or race of a character... Something smelling
   bad is a good example -- it might smell bad to a elf, but a troll might
-  like that paticular smell. This also goes for the time of day, and other
+  like that particular smell. This also goes for the time of day, and other
   things that change continuously. Remain as Neutral as possible.
   Do not imply characters feelings, for example 'You shiver in fear as you 
-  walk...' is bad, what if the person visits this room for 20th time? better 
+  walk...' is bad, what if the person visits this room for 20Th time? better
   to write '..... trees (or whatever) around you look frightening......'
 
 - Avoid the use of the words "You" and "Your" at all costs. Also avoid
-  exclimation points, and such things as incomplete sentences, although
-  they are used in literary works occassionally, please don't use them
+  exclamation points, and such things as incomplete sentences, although
+  they are used in literary works occasionally, please don't use them
   here.
 
 - Stay in the margins of theme.  Mud action takes place in the fourth age 
@@ -28,13 +28,13 @@ Level 91s (Lower Maias):
   since it is clearly not tolkienish.  Another examples of out of place 
   creatures are ogres, faeries and elementals.
 
-- Descriptions should be at least 4 lines long, with 3 intervals (spacebars)
+- Descriptions should be at least 4 lines long, with 3 intervals (space-bars)
   in front of the paragraph.
 
 - Always Format your description with the %f option.
 
 - Don't forget to set exit_width (/12) for non-standard exits.
-  Remember that default 0 implies sector dependance.
+  Remember that default 0 implies sector dependence.
 
 - No Death Traps.
 
@@ -60,7 +60,7 @@ type agrees with the zone it is in, as listed below.
 52 axes
 53 concussion weapons
 54 piercing weapons
-55 spears/polearms
+55 spears/pole-arms
 56 misc. weapons
  
 60 leather armor
@@ -118,7 +118,7 @@ FAQ
 some other rooms? How do I fix it?
   A: after you enter the description, type %f (format text) right in the
 editor before you do %e.  It will format your description in nice standard
-way.  Don't forget 3 empty spacebars in front of description - you have to
+way.  Don't forget 3 empty space-bars in front of description - you have to
 do that manually.
 
 6). How can I make sure that there is always one and only one mobile
@@ -143,13 +143,13 @@ Line text data are one-line messages, such as room titles or keyword lists.
           instead.
 
 Numeric data in shaping is most often contains flags, and the interface
-          is modified to accomodate this. The key symbols '+','-','p', 'm'
+          is modified to accommodate this. The key symbols '+','-','p', 'm'
           are recognized before the numeric value.
          '17'  will set the data value to 17
          '+17' will add 17 to the previous data value
          '-17' will subtract 17 from the previous data value
-         'p17' will set the flag 17 in the data value (bitvector)
-         'm17' will remove the flag 17 in the data value (bitvector)
+         'p17' will set the flag 17 in the data value (bit vector)
+         'm17' will remove the flag 17 in the data value (bit vector)
           Entering empty line will leave the data unchanged.
 
 #
@@ -165,8 +165,8 @@ numerical command has a help on SHAPE ROOM <NUMBER> for /<number> command.
 Don't forget to read MAN SHAPE GENERAL, MAN SHAPE FAQ, MAN SHAPE GUIDELINES.
 #
 BITVECTOR
-   When a flag is a bitvector, that flag should be set to the sum of the 
-compontents you want.  If some field (e.g. mobile flags) is a bitvector, 
+   When a flag is a bit vector, that flag should be set to the sum of the
+components you want.  If some field (e.g. mobile flags) is a bit vector,
 you can use the follow formats:
 Dig]<n>       - to assign value n to the field.
 Dig]+<n>      - will add n to the current value of the field.
@@ -326,7 +326,7 @@ LEVER              25
 
 Depending on this type, object values (/12) are different.
 See 'SHAPE OBJ ITEM_TYPE' for meaning of the values. 
-See 'SHAPE OBJLIST' for the list of appropiate zones for objects.
+See 'SHAPE OBJLIST' for the list of appropriate zones for objects.
 The default value is 13 (Change!), the input is an integer.
 
 #
@@ -351,7 +351,7 @@ number			Values
 11	ANTI_NEUTRAL	2048      not usable by neutral people -- DO NOT USE
 12	NORENt		4096      not allowed to rent the item
 
-The default value is 0. The input is a bitvector.
+The default value is 0. The input is a bit vector.
 See MAN SHAPE BITVECTOR for details.
 # 
 "OBJ 11"
@@ -371,7 +371,7 @@ number	value
 8	256	ARMS - sleeves, braces.
 9	512	SHIELD 
 10	1024	ABOUT BODY - cloaks.
-11	2048	WAISTE - belts, pouches.
+11	2048	WAIST - belts, pouches.
 12	4096	WRIST - bracelets. 
 13	8192	WIELD - give this flag to all weapons!
 14	16384	HOLD - will add effects if item is held. note that all items
@@ -381,7 +381,7 @@ number	value
 17	131072	BELT - worn on belt.
 
 The default value is 0, and should stay if the object is notake, e.g. a
-fountain.  Otherwise the value must be changed. The input is a bitvector.
+fountain.  Otherwise the value must be changed. The input is a bit vector.
 See MAN SHAPE BITVECTOR for details.
 #
 "OBJ 12"
@@ -417,7 +417,7 @@ Value[1]: Parry bonus.  See guidelines for boards.
 Value[2]: Bulk is the distance between handle of the weapon, and it's center
           of mass, in 2/3 feet. (20 cm). Round to the closest integer.
           Normal bulks are: dagger: 1, shortsword: 2, longsword: 3, 
-          two-handed sword: 6, Haleberd: 7-8.
+          two-handed sword: 6, Halberd: 7-8.
 Value[3]:
           NUMBER  CATEGORY   Message type
             2  : Whip          "whip/whips"
@@ -439,10 +439,10 @@ Value[4]: Damage.
 
 ARMOR (9)
 Value[0]: Set this to 0 for armour which has absorb % (it will be
-automatically calculated), and to -1 for armour which you don't wnat
+automatically calculated), and to -1 for armour which you don't want
 to have absorb %)
 Value[1]: Min. absorb
-Value[2]: Encumberance of arms/hands. affects thieve's skills, OB, and spells.
+Value[2]: Encumbrance of arms/hands. affects thief's skills, OB, and spells.
 Value[3]: Dodging bonus on an item.
 Value[4]: NOT USED (reserved for condition)
 See guidelines on boards or ask Dim. Shield is NOT an armour.
@@ -597,8 +597,8 @@ Value[4]: -
 ITEM_SHIELD (24)
 Value[0]: Dodge bonus when wearing the shield
 Value[1]: Parry bonus when wearing the shield
-Value[2]: Encumberance
-Value[3]: Shield block cooficient.
+Value[2]: Encumbrance
+Value[3]: Shield block coefficient.
 Value[4]: NOT USED (reserved for condition)
 See boards for guidelines, or ask Dim. 
 
@@ -629,7 +629,7 @@ See also: ONE TWO
 #
 "OBJ 14" 
 
-This value should be about 10 * level ^2 for levels up to 10, doulbe for
+This value should be about 10 * level ^2 for levels up to 10, double for
 every level thereafter.
 #
 "OBJ 15"
@@ -670,7 +670,7 @@ Material of an object.
 
 These are extra affects of an object. Do not change, if in doubt.
 If you know what you need, then put 
-parenthesis space number space mobdifier space parenthesis
+parenthesis space number space modifier space parenthesis
 like ( 18 10 ) would give +10 ob
 The numbers are:
 
@@ -705,11 +705,11 @@ APPLY_ARMOR            26
 APPLY_SPELL            27 (modifier: 256*spell_level + spell_number)
 APPLY_BITVECTOR        28 (adds a bit number 'modifier' to the 'affected_by')
 APPLY_MANA_REGEN       29 (adds 'modifier' mana to the mana regen )
-APPLY_RESISTANCE       30 | these two are bitvectors, see
+APPLY_RESISTANCE       30 | these two are bit vectors, see
 APPLY_VULNERABILITY    31 | SHAPE MOB 36 for the values
 
 But if you are not sure, ask higher gods, or leave it at (0 0) (0 0).
-For a list of bitvectors (for #28), see MAN SHAPE OBJ BITVECTOR.
+For a list of bit vectors (for #28), see MAN SHAPE OBJ BITVECTOR.
 #
 "OBJ 20"
 
@@ -718,7 +718,7 @@ you really know what you are doing.
 #
 "OBJ 49"
 
-/49 is convinience command which will lead you through the object creation
+/49 is convenience command which will lead you through the object creation
 sequence to create an object. It is useful to do this command in the
 beginning and edit the parameters of an object later with other commands.
 
@@ -835,7 +835,7 @@ Good luck!
 #
 "ZONE A" "ZON A"
 
-This is a series of Commands that fall under no major catagory... blame Tuh.
+This is a series of Commands that fall under no major category... blame Tuh.
 
 Each command is A <arguments> 
 There are no if_flags with an A command
@@ -851,7 +851,7 @@ These are available:
 2 = sets difficulty coef
 3 = sets trophy coef
 4 = makes mobiles follow    - this one is most commonly used.
-5 = modifys object values
+5 = modifies object values
 6 = modifies command status, for use in conjunction with if_flags
 7 = give mobile a special procedure (see MAN SHAPE MOB2 29)
 8 = set mob flags that were not set in shape mob
@@ -880,14 +880,14 @@ Sets Trophy coef of last mobile loaded to (b)
 A 4 (b) 
 
 Forces last Mobile to follow the (b)th mobile in the room.
-For the last mobile loaded to follow the 2nd mobile in the room
+For the last mobile loaded to follow the 2ND mobile in the room
 use the command : A 4 2
 
 -----
 A 5 (b) (c)
 
 Set the (b)th value of last object loaded to (c)
-For the 4th value of the last object to be set to 10
+For the 4Th value of the last object to be set to 10
 use the command : A 5 4 10
 
 -----
@@ -983,7 +983,7 @@ and lock on the other side as well.
 Equips the last mobile loaded with an Object
 Always use with if_flag 2.
 
-Fairly clumsy command, zone command K is much more convinient.
+Fairly clumsy command, zone command K is much more convenient.
 The only advantage of E command that it allows you to set probability
 of regening the certain item.
 
@@ -999,7 +999,7 @@ arguments:
 (b) = object vnum
 (c) = eq position (refer to chart below)
 (d) = max existing (set to 0 unless told otherwise)
-(e) = probabilty in percent (very important line)
+(e) = probability in percent (very important line)
 
 Eq Positions :
 
@@ -1016,7 +1016,7 @@ Eq Positions :
 10 = Arms
 11 = Shield
 12 = About Body (cloaks/capes)
-13 = Around Waiste
+13 = Around Waist
 14 = Right Wrist
 15 = Left Wrist
 16 = Wield
@@ -1036,7 +1036,7 @@ arguments:
 (b) = object vnum to be given
 (c) = This argument is not used -- don't ask me why, just put 0 or something
 (d) = max existing in world (set to 0 if not a unique item)
-(e) = probabilty
+(e) = probability
 #
 "ZONE K" "ZON K" 
 
@@ -1063,8 +1063,8 @@ arguments :
 (b) = mobile vnum
 (c) = room to be loaded in.
 (d) = max existing in the world. For non-unique mobs, set this to 0.
-(e) = probabilty
-(f) = difficult (modifer for xp given) -- set to 100% unless told otherwise
+(e) = probability
+(f) = difficult (modifier for xp given) -- set to 100% unless told otherwise
 (g) = max line (how many mobiles can be loaded by this single command)
 (h) = trophy (set to 1 unless told otherwise)
 #
@@ -1080,7 +1080,7 @@ arguments:
 (b) = object vnum
 (c) = room number to be loaded in
 (d) = max existing in the world (set to 0 unless told otherwise)
-(e) = probabilty
+(e) = probability
 (f) = max number loaded into this room
 
 Please note that an O command does *NOT* have to precede E or G commands.
@@ -1098,7 +1098,7 @@ arguments:
 (c) = the object to be placed in another object
 (d) = the container (object that argument (b) is placed into)
 (e) = max existing in world (set to 0 if not unique item)
-(f) = probabilty
+(f) = probability
 (g) = maximum number of objects to be placed in the container (arg d)
 
 
@@ -1148,7 +1148,7 @@ M: 10 <mob vnum> <room no.> 0 100 50 0 1
 idea to fix 50% for exp for mounts, but that is optional)
 
 These two lines in the zone will make sure that even if mounts
-are led out of the room, there will be replentished in the room.
+are led out of the room, there will be replenished in the room.
 #
 "ZON IF_FLAGS" "ZONE IF_FLAGS"
 
@@ -1168,8 +1168,8 @@ The if_flags are as follows :
 32 -- perform if total darkie fame is greater than total whitie fame
 40 -- perform if total darkie fame is *NOT* greater than whitie fame
 
-Note that the if_flag is a bitvector.  The above values are sample
-values for people who do not need complex if flags.  The bitvector
+Note that the if_flag is a bit vector.  The above values are sample
+values for people who do not need complex if flags.  The bit vector
 works as follows:
 
     |  1 |  2 |  4 |  8 | 16 | 32 |    |    |    |  . . .
@@ -1184,8 +1184,8 @@ can't be added together are the ones that require that something
 (require last command performed) + (invert) = (require last command *NOT* performed)
                 1                +     8    =  9
 
-The problem with adding 8 to your bitvector is that it inverts
-ALL of your options in your bitvector.  For example, if you have
+The problem with adding 8 to your bit vector is that it inverts
+ALL of your options in your bit vector.  For example, if you have
 an if_flag of 1 + 2 + 8 = 11, then your command will execute
 when the last command was not performed AND the last mobile was
 not loaded.  If your if_flag is 1 + 2 + 4 + 8 = 15 then your zone
@@ -1556,7 +1556,7 @@ Wraiths              =100
 "MOB2 33" "MOB2 34"
 
    These options set the mobile "death cry" - the message to give when it
-dies. The default message is "Your blood freeses as you hear its death cry".
+dies. The default message is "Your blood freezes as you hear its death cry".
 The /33 defines the message to produce in the room where it dies, the
 /34 message is sent to adjacent rooms.
    You cannot send no message at all. If you define here empty lines, the
@@ -1570,14 +1570,14 @@ If it is set to 0, or such object does not exist, a default corpse will be
 made. 
    The default corpse is a container with 0 capacity and its own weight
 equal to the mobile weight. If you make your corpse not a container, the
-mobile's posessions will be put into it anyway, creating a "buggy" corpse.
+mobile's possessions will be put into it anyway, creating a "buggy" corpse.
 The object used for the corpse can be beheaded and butchered as a usual
 corpse.
 
 #
 "MOB2 36" "MOB2 37"
 
-   Fields 36 and 37 set the mobile's resistance and vulnerability bitvectors.
+   Fields 36 and 37 set the mobile's resistance and vulnerability bitvector.
 Characters can be resistant to spell/skill groups only, which coincide with
 specializations. These groups are:
 
@@ -1719,7 +1719,7 @@ following: (mainly for movement usage)
   SECT_UNDERWATER      8
   SECT_ROAD            9  Uses same as 2, but can have other effects
   SECT_CRACK          10  For cracks in earthquake. Do not use.
-  SECT_DENSE_FOREST   11  For very dense forest, such as mirkwood at places.
+  SECT_DENSE_FOREST   11  For very dense forest, such as Mirkwood at places.
   SECT_SWAMP          12  For swamps and such
 
 The default value is 0. The input is an integer.
@@ -1729,7 +1729,7 @@ The default value is 0. The input is an integer.
 
 /5 selects an exit to edit (current exit). The possible inputs are n (north), 
 w (west), s (south), e (east), u (up) and d (down). The commands /6, /8 to 
-/12 are unavaiable until the current exit is selected.
+/12 are unavailable until the current exit is selected.
 
 Make sure you set up /11 after you do /5.
 
@@ -1772,7 +1772,7 @@ See also: MAN SHAPE ROOM 8 , MAN SHAPE EDIT, MAN SHAPE OBJ LEVER
 "ROOM 7"
 
 /7 removes the exit completely. The possible values are: n, w, s, e, u
-or d. The input is a char. If you accidenally removed a wrong exit in a
+or d. The input is a char. If you accidentally removed a wrong exit in a
 saved room, you can use /free (without /save) and then start shaping again.
 
 #
@@ -1819,7 +1819,7 @@ there must be exit description), then description is displayed when
 "ROOM 12"
 
 /12 assigns the exit width of the current exit. This value is one of the
-ollowing:
+following:
 
 	0 - Default width (Depends on Sector type)
 	1 - Narrow tunnel, Crevice
@@ -1846,7 +1846,7 @@ paragraph of any length.
 #
 "ROOM 15"
 
-/15 created a new extra description. "Extra descriptioon" is something in the
+/15 created a new extra description. "Extra description" is something in the
 room which is not an object, nor a mob, but does exist there, e.g. wall, rock
 (no need to create object), sky, ground. The extra description should be used
 if needed, but not overused. 

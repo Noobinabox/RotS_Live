@@ -480,7 +480,7 @@ ASPELL(spell_locate_living)
     for (tmp = 0; (tmp < roomnum) && (bigcount < mobrange); tmp++) {
         mobs = world[roomlist[tmp].number].people;
         while (mobs && (bigcount < mobrange)) {
-            if (!saves_spell(mobs, caster_level, 0)) {
+            if (!new_saves_spell(caster, mobs, 0)) {
                 sprintf(buf, "%s at %s to the %s.\n\r",
                         (IS_NPC(mobs) ? GET_NAME(mobs) : pc_star_types[mobs->player.race]),
                         world[roomlist[tmp].number].name,
@@ -496,7 +496,6 @@ ASPELL(spell_locate_living)
     else
         send_to_char("The area seems to be empty.\n\r", caster);
 
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -533,7 +532,6 @@ ASPELL(spell_cure_self)
 
     caster->tmpabilities.hit = std::min(caster->abilities.hit, caster->tmpabilities.hit + health_restored);
     send_to_char("You feel better.\n\r", caster);
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -598,7 +596,7 @@ ASPELL(spell_reveal_life)
                 hider_bonus = GET_HIDING(hider) / 25;
                 hider_bonus += number(0, GET_HIDING(hider)) % 25 ? 1 : 0;
                 hider_bonus -= (30 - level) / 3;
-                if (!saves_spell(hider, level, hider_bonus)) {
+                if (!new_saves_spell(caster, hider, hider_bonus)) {
                     stop_hiding(hider, FALSE);
                     send_to_char("You've been discovered!\r\n", hider);
                     found = 1;
@@ -623,7 +621,6 @@ ASPELL(spell_reveal_life)
     else
         list_char_to_char(world[caster->in_room].people, caster, 0);
 
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -688,7 +685,7 @@ ASPELL(spell_flash)
             GET_ENERGY(tmpch) -= 400;
         if (tmpch->specials.fighting == caster)
             GET_ENERGY(tmpch) -= 400;
-        if (!saves_spell(tmpch, caster_level, 0)) {
+        if (!new_saves_spell(caster, tmpch, 0)) {
             //  6-11-01 Errent attempts to make flash give power of arda to darkies - look out!
             if (RACE_EVIL(tmpch) && GET_RACE(tmpch) != RACE_HARADRIM) {
                 afflevel = 50;
@@ -725,7 +722,6 @@ ASPELL(spell_flash)
         }
     }
     send_to_char("You produce a bright flash of light.\n\r", caster);
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -1971,7 +1967,7 @@ ASPELL(spell_word_of_sight)
                 hider_bonus = GET_HIDING(hider) / 30;
                 hider_bonus += number(0, GET_HIDING(hider) % 30) ? 1 : 0;
                 hider_bonus -= (30 - level) / 3;
-                if (!saves_spell(hider, level, hider_bonus)) {
+                if (!new_saves_spell(caster, hider, hider_bonus)) {
                     send_to_char("You've been discovered!\r\n", hider);
                     stop_hiding(hider, FALSE);
                     found = 1;
@@ -1994,7 +1990,6 @@ ASPELL(spell_word_of_sight)
     else
         list_char_to_char(world[caster->in_room].people, caster, 0);
 
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -2028,7 +2023,6 @@ ASPELL(spell_word_of_shock)
     }
     send_to_char("You utter a word of power.\n\r", caster);
 
-    return;
 }
 
 /*----------------------------------------------------------------------------------------------------------*/

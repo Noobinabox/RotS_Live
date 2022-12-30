@@ -2152,7 +2152,7 @@ SPECIAL(resetter)
         wtltmp.targ1.ptr.ch = ch;
         wtltmp.targ1.ch_num = ch->abs_number;
         if (GET_LEVEL(ch) == 6) {
-            if (ch->specials2.rerolls >= 21) {
+            if (ch->specials2.rerolls >= 41) {
                 wtltmp.targ2.type = TARGET_TEXT;
                 wtltmp.targ2.ptr.text = get_from_txt_block_pool("Sorry, you have exceeded the amount of times you can reroll statistics.");
                 wtltmp.cmd = CMD_TELL;

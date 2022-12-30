@@ -18,7 +18,7 @@
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.5.4\n\r"
+    "Arda: The Fourth Age, version 1.5.5\n\r"
 };
 
 //const

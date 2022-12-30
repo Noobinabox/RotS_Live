@@ -7,6 +7,7 @@
   - [[#advanced-view][Advanced View]]
   - [[#relocate][Relocate]]
   - [[#arrows][Arrows]]
+  - [[#rerolls][Rerolls]]
 
 * Release Notes 1.5.5
 
@@ -42,3 +43,7 @@ Characters can no longer relocate into god rooms.
 ** Arrows
 
 Arrows will no longer break on non-armored hit locations. Arrows can now be stored in any container.
+
+** Rerolls
+
+Increased reroll limit to 40

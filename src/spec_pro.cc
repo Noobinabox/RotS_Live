@@ -2164,7 +2164,7 @@ SPECIAL(resetter)
             send_to_char("Rerolling statistics...\n\r", ch);
             roll_abilities(ch, 80, 93);
             ch->specials2.rerolls += 1;
-            reroll_count = 21 - ch->specials2.rerolls;
+            reroll_count = 41 - ch->specials2.rerolls;
             sprintf(buf, "You have %d reroll attempts left.\n\r", reroll_count);
             send_to_char(buf, ch);
             sprintf(buf, "Str: %d/%d, Int: %d/%d, Wil: %d/%d, Dex: %d/%d, Con: %d/%d, Lea: %d/%d\n\r",

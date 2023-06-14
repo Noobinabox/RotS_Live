@@ -872,6 +872,18 @@ const int constexpr RACE_MAGUS = 15;
 const int constexpr RACE_OLOGHAI = 17;
 const int constexpr RACE_HARADRIM = 18;
 
+const int constexpr RACE_HUMAN_MIN_PERCEP = 20;
+const int constexpr RACE_DWARF_MIN_PERCEP = 15;
+const int constexpr RACE_WOOD_MIN_PERCEP = 20;
+const int constexpr RACE_HOBBIT_MIN_PERCEP = 20;
+const int constexpr RACE_HIGH_MIN_PERCEP = 20;
+const int constexpr RACE_BEORNING_MIN_PERCEP = 15;
+const int constexpr RACE_URUK_MIN_PERCEP = 20;
+const int constexpr RACE_ORC_MIN_PERCEP = 10;
+const int constexpr RACE_MAGUS_MIN_PERCEP = 20;
+const int constexpr RACE_OLOGHAI_MIN_PERCEP = 10;
+const int constexpr RACE_HARADRIM_MIN_PERCEP = 20;
+
 /* Races used for NPCs */
 #define RACE_EASTERLING 14
 #define RACE_HARAD 12

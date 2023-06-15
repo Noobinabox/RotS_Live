@@ -958,29 +958,21 @@ void raw_kill(char_data* dead_man, char_data* killer, int attack_type)
         // TODO(drelidan):  When we can track the origin of status effects, include that
         // here so we can determine if the 'poisoned' kill type was actually from a player.
         bool died_to_player = attack_type == SPELL_POISON || killer != NULL && !IS_NPC(killer);
-        if (died_to_player) {
-            char_ability_data& cur_abils = dead_man->tmpabilities;
-            char_ability_data& max_abils = dead_man->abilities;
+        char_ability_data& cur_abils = dead_man->tmpabilities;
+        char_ability_data& max_abils = dead_man->abilities;
+        cur_abils = max_abils;
 
-            // Restore the character to full, and then set health to 1/4 and mana to 0
-            // to ensure that characters don't abuse this in town-siege situations.
-            cur_abils = max_abils;
+        if (died_to_player) {
             cur_abils.hit = max_abils.hit / 4;
             cur_abils.mana = 0;
         } else {
             // Set his stats to 2/3 their current value.
-            if (GET_STR(dead_man) > 0)
-                SET_STR(dead_man, GET_STR(dead_man) * 2 / 3);
-            if (GET_INT(dead_man) > 0)
-                GET_INT(dead_man) = GET_INT(dead_man) * 2 / 3;
-            if (GET_WILL(dead_man) > 0)
-                GET_WILL(dead_man) = GET_WILL(dead_man) * 2 / 3;
-            if (GET_DEX(dead_man) > 0)
-                GET_DEX(dead_man) = GET_DEX(dead_man) * 2 / 3;
-            if (GET_CON(dead_man) > 0)
-                GET_CON(dead_man) = GET_CON(dead_man) * 2 / 3;
-            if (GET_LEA(dead_man) > 0)
-                GET_LEA(dead_man) = GET_LEA(dead_man) * 2 / 3;
+            SET_STR(dead_man, GET_STR(dead_man) * 2 / 3);
+            GET_INT(dead_man) = GET_INT(dead_man) * 2 / 3;
+            GET_WILL(dead_man) = GET_WILL(dead_man) * 2 / 3;
+            GET_DEX(dead_man) = GET_DEX(dead_man) * 2 / 3;
+            GET_CON(dead_man) = GET_CON(dead_man) * 2 / 3;
+            GET_LEA(dead_man) = GET_LEA(dead_man) * 2 / 3;
 
             // Set hits to 1, moves and mana to 0.
             GET_HIT(dead_man) = 1;

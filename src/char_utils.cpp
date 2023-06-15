@@ -1558,11 +1558,11 @@ std::string darkness_spec_data::to_string(char_data& character) const
     message_writer << "Your dark spells are more difficult to resist." << std::endl;
     message_writer << "You have access to the 'expose elements' spell, which makes a particular" << std::endl;
     message_writer << "elemental spell cost much less mana on the target.  cast 'expose elements'." << std::endl;
+    message_writer << "Your dark bolt spell deals increased damage." << std::endl;
     if (utils::is_race_magi(character)) {
         message_writer << "Your black arrow is harder to resist." << std::endl;
         message_writer << "Your spear of darkness spell deals additional damage." << std::endl;
     } else {
-        message_writer << "Your dark bolt spell deals increased damage." << std::endl;
         message_writer << "Your searing darkness spell deals additional dark damage." << std::endl;
     }
     message_writer << "------------------------------------------------------------" << std::endl;

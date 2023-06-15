@@ -369,6 +369,25 @@ void check_stat_increase(char_data* character)
 }
 } // end anonymous helper namespace
 
+void check_for_special_levels(char_data* character) {
+    switch (GET_LEVEL(character)) {
+        case 6:
+            send_to_char("You are now able to see your statistics and reroll them!\n\rType stat to see your current statistics or type tell angel reroll to change them.\n\r", character);
+            break;
+        case 12:
+            send_to_char("You are now able to pick a specialization!\n\rSee man spec all.\n\r", character);
+            break;
+        case 20:
+            send_to_char("You are now able to set your title!\n\rSee man gen title.\n\r", character);
+            break;
+        case 30:
+            send_to_char("You are now a legend character!\n\rSee man gen legend.\n\r", character);
+            break;
+        default:
+            break;
+    }
+}
+
 void advance_level(char_data* character)
 {
     send_to_char("You feel more powerful!\n\r", character);
@@ -384,7 +403,7 @@ void advance_level(char_data* character)
     mudlog(buf, BRF, std::max(LEVEL_IMMORT, GET_INVIS_LEV(character)), TRUE);
 
     /* log following levels in exploits */
-    if ((GET_LEVEL(character) == 6) || (GET_LEVEL(character) == 10) || (GET_LEVEL(character) == 15) || (GET_LEVEL(character) == 20) || (GET_LEVEL(character) == 25) || (GET_LEVEL(character) == 30) || (GET_LEVEL(character) == 35) || (GET_LEVEL(character) == 40) || (GET_LEVEL(character) == 45) || (GET_LEVEL(character) == 50) || (GET_LEVEL(character) == 55) || (GET_LEVEL(character) == 60) || (GET_LEVEL(character) == 65) || (GET_LEVEL(character) == 70) || (GET_LEVEL(character) == 75) || (GET_LEVEL(character) == 80) || (GET_LEVEL(character) == 85) || (GET_LEVEL(character) > 89))
+    if ((GET_LEVEL(character) == 6) || ((GET_LEVEL(character) > 6) && !(GET_LEVEL(character) % 5)))
         add_exploit_record(EXPLOIT_LEVEL, character, GET_LEVEL(character), NULL);
 
     /* add birth exploit */
@@ -401,6 +420,8 @@ void advance_level(char_data* character)
     if (GET_MAX_MINI_LEVEL(character) < GET_MINI_LEVEL(character)) {
         check_stat_increase(character);
     }
+
+    check_for_special_levels(character);
 
     character->update_available_practice_sessions();
 

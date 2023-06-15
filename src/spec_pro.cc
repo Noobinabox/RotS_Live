@@ -72,6 +72,7 @@ ACMD(do_tell);
 ACMD(do_pull);
 ACMD(do_wear);
 ACMD(do_kick);
+ACMD(do_stat);
 
 struct social_type {
     char* cmd;
@@ -2167,14 +2168,7 @@ SPECIAL(resetter)
             reroll_count = 41 - ch->specials2.rerolls;
             sprintf(buf, "You have %d reroll attempts left.\n\r", reroll_count);
             send_to_char(buf, ch);
-            sprintf(buf, "Str: %d/%d, Int: %d/%d, Wil: %d/%d, Dex: %d/%d, Con: %d/%d, Lea: %d/%d\n\r",
-                GET_STR(ch), (ch)->constabilities.str,
-                GET_INT(ch), (ch)->constabilities.intel,
-                GET_WILL(ch), (ch)->constabilities.wil,
-                GET_DEX(ch), (ch)->constabilities.dex,
-                GET_CON(ch), (ch)->constabilities.con,
-                GET_LEA(ch), (ch)->constabilities.lea);
-            send_to_char(buf, ch);
+            do_stat(ch, "", 0, 0, 0);
             return 0;
         } else {
             wtltmp.targ2.type = TARGET_TEXT;

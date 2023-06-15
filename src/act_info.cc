@@ -4083,10 +4083,13 @@ ACMD(do_stat)
         return;
     }
 
+    auto stat_sum = GET_STR_BASE(ch) + GET_INT_BASE(ch) + GET_WILL_BASE(ch) + GET_DEX_BASE(ch) + GET_CON_BASE(ch) + GET_LEA_BASE(ch);
+
     if (!wtl || ((wtl->targ1.type == TARGET_NONE) || RETIRED(ch)) || (GET_LEVEL(ch) < LEVEL_GOD)) {
-        sprintf(buf, "Your fatigue is %d; Your willpower is %d; Your statistics are\n\rStr: %2d/%2d, Int: %2d/%2d, Wil: %2d/%2d, Dex: %2d/%2d, Con: %2d/%2d, Lea: %2d/%2d.\n\r",
+        sprintf(buf, "Your fatigue is %d; Your willpower is %d; Your statistic sum is %d\n\rYour statistics are\n\rStr: %2d/%2d, Int: %2d/%2d, Wil: %2d/%2d, Dex: %2d/%2d, Con: %2d/%2d, Lea: %2d/%2d.\n\r",
             GET_MENTAL_DELAY(ch) / PULSE_MENTAL_FIGHT,
             GET_WILLPOWER(ch),
+            stat_sum,
             GET_STR(ch), GET_STR_BASE(ch),
             GET_INT(ch), GET_INT_BASE(ch),
             GET_WILL(ch), GET_WILL_BASE(ch),

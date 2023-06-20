@@ -855,7 +855,7 @@ int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier
     damage_dealt += GET_PROF_LEVEL(PROF_RANGER, attacker) - GET_LEVELA(victim) + 10;
 
     /* Apply stealth specialization amplification */
-    if (utils::get_specialization(*attacker) == game_types::PS_Stealth) {
+    if (utils::get_specialization(*attacker) == game_types::PS_Stealth && IS_NPC(victim)) {
         damage_dealt = damage_dealt * 3 / 2;
     }
 

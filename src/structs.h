@@ -874,7 +874,7 @@ const int constexpr RACE_HARADRIM = 18;
 
 const int constexpr RACE_HUMAN_MIN_PERCEP = 20;
 const int constexpr RACE_DWARF_MIN_PERCEP = 15;
-const int constexpr RACE_WOOD_MIN_PERCEP = 20;
+const int constexpr RACE_WOOD_MIN_PERCEP = 30;
 const int constexpr RACE_HOBBIT_MIN_PERCEP = 20;
 const int constexpr RACE_HIGH_MIN_PERCEP = 20;
 const int constexpr RACE_BEORNING_MIN_PERCEP = 15;

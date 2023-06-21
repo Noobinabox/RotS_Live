@@ -881,12 +881,6 @@ ACMD(do_ambush)
     int success;
     int dmg;
 
-    if (IS_AFFECTED(ch, AFF_SANCTUARY)) {
-        appear(ch);
-        send_to_char("You cast off your sanctuary!\r\n", ch);
-        act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
-    }
-
     if (IS_SHADOW(ch)) {
         send_to_char("Hmm, perhaps you've spent too much time in"
                      " mortal lands.\r\n",
@@ -931,6 +925,12 @@ ACMD(do_ambush)
     if (subcmd == 0 && wtl == NULL) {
         send_to_char("Ambush who?\r\n", ch);
         return;
+    }
+
+    if (IS_AFFECTED(ch, AFF_SANCTUARY)) {
+        appear(ch);
+        send_to_char("You cast off your sanctuary!\r\n", ch);
+        act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
     }
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();

@@ -2638,6 +2638,7 @@ ACMD(do_shoot)
         wtl->targ2.cleanup();
 
         int wait_delay = shoot_calculate_wait(ch);
+        SET_CURRENT_PARRY(ch) = 0;
         WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {

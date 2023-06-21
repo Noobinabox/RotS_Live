@@ -2633,6 +2633,8 @@ ACMD(do_shoot)
             }
         }
 
+        SET_CURRENT_PARRY(ch) = 0;
+
         // Clean-up targets prior to setting new targets.
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();

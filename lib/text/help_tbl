@@ -2202,6 +2202,13 @@ You quickly scan the area and see:
                   a scraggy sheep: very far to the south
 
 #
+RENOUNCE
+
+RENOUNCE will remove any active sanctuary spells that you currently have
+on yourself.
+
+Sell also: man power sanctuary
+#
 RECOVER
 
 RECOVER will gather all arrows expended after shooting a bow and place them

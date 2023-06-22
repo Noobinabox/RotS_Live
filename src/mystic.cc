@@ -893,7 +893,7 @@ ASPELL(spell_dispel_regeneration)
     } else {
         affected_type* spell = utils::is_affected_by_spell(*victim, SPELL_RESTLESSNESS);
         if (spell) {
-            if (saves_mystic(victim)) {
+            if (saves_mystic(victim) && other_side(caster, victim)) {
                 act("$N resists your attempt to dispel Restlessness.", FALSE, caster, 0, victim, TO_CHAR);
                 act("You resist $n's attempts to dispel Restlessness from you.", FALSE, caster, 0, victim, TO_VICT);
             } else {
@@ -903,7 +903,7 @@ ASPELL(spell_dispel_regeneration)
 
         spell = utils::is_affected_by_spell(*victim, SPELL_CURING);
         if (spell) {
-            if (saves_mystic(victim)) {
+            if (saves_mystic(victim) && other_side(caster, victim)) {
                 act("$N resists your attempt to dispel Curing Saturation.", FALSE, caster, 0, victim, TO_CHAR);
                 act("You resist $n's attempts to dispel Curing Saturation from you.", FALSE, caster, 0, victim, TO_VICT);
             } else {
@@ -913,7 +913,7 @@ ASPELL(spell_dispel_regeneration)
 
         spell = utils::is_affected_by_spell(*victim, SPELL_REGENERATION);
         if (spell) {
-            if (saves_mystic(victim)) {
+            if (saves_mystic(victim) && other_side(caster, victim)) {
                 act("$N resists your attempt to dispel Regeneration.", FALSE, caster, 0, victim, TO_CHAR);
                 act("You resist $n's attempts to dispel Regeneration from you.", FALSE, caster, 0, victim, TO_VICT);
             } else {
@@ -923,7 +923,7 @@ ASPELL(spell_dispel_regeneration)
 
         spell = utils::is_affected_by_spell(*victim, SPELL_VITALITY);
         if (spell) {
-            if (saves_mystic(victim)) {
+            if (saves_mystic(victim) && other_side(caster, victim)) {
                 act("$N resists your attempt to dispel Vitality.", FALSE, caster, 0, victim, TO_CHAR);
                 act("You resist $n's attempts to dispel Vitality from you.", FALSE, caster, 0, victim, TO_VICT);
             } else {
@@ -931,8 +931,6 @@ ASPELL(spell_dispel_regeneration)
             }
         }
     }
-
-    return;
 }
 
 ASPELL(spell_regeneration)
@@ -1749,4 +1747,18 @@ ASPELL(spell_protection)
     default:
         return;
     };
+}
+
+
+void do_renounce(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command) {
+
+    if (utils::is_affected_by_spell(*character, SPELL_SANCTUARY)) {
+        send_to_char("You renounce your sanctuary!\n\r", character);
+        act("$n renounces $s sanctuary!", FALSE, character, nullptr, nullptr, TO_ROOM);
+        affect_from_char(character, SPELL_SANCTUARY);
+        REMOVE_BIT(character->specials.affected_by, AFF_SANCTUARY);
+        return;
+    }
+
+    send_to_char("You renounce yourself to the world, but nothing happens...\n\r", character);
 }

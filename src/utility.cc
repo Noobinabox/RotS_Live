@@ -591,7 +591,7 @@ int get_real_stealth(struct char_data* ch)
 
     switch (world[ch->in_room].sector_type) {
     case SECT_INSIDE:
-        percent -= 5;
+        percent -= 20;
         break;
     case SECT_CITY:
         percent -= 10;

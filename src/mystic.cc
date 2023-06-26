@@ -1168,8 +1168,10 @@ ASPELL(spell_poison)
         return;
     }
 
-    if (GET_POSITION(caster) == POSITION_FIGHTING)
-        victim = caster->specials.fighting;
+    if (caster == victim) {
+        send_to_char("Poison yourself? Surely you jest...", caster);
+        return;
+    }
 
     if (victim) {
         if (!saves_poison(victim, caster) && (number(0, magus_save) < 50)) {

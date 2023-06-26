@@ -2028,4 +2028,12 @@ struct universal_list {
     universal_list* next;
 };
 
+class group_roll {
+    public:
+        char* character_name;
+        int roll;
+
+        group_roll(char_data* character_name, int roll) : character_name(character_name->player.name), roll(roll) {}
+};
+
 #endif /* STRUCTS_H */

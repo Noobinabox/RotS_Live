@@ -423,7 +423,37 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_PERCEPTION:
-        ch->specials2.perception += mod;
+        if (affected_by_spell(ch, SPELL_INSIGHT)) {
+            int potentialPerception = ch->specials2.perception + mod;
+            int minimumRacePerception = 0;
+            switch (ch->player.race) {
+                case RACE_HUMAN: minimumRacePerception = RACE_HUMAN_MIN_PERCEP;
+                    break;
+                case RACE_DWARF: minimumRacePerception = RACE_DWARF_MIN_PERCEP;
+                    break;
+                case RACE_WOOD: minimumRacePerception = RACE_WOOD_MIN_PERCEP;
+                    break;
+                case RACE_HOBBIT: minimumRacePerception = RACE_HOBBIT_MIN_PERCEP;
+                    break;
+                case RACE_HIGH: minimumRacePerception = RACE_HIGH_MIN_PERCEP;
+                    break;
+                case RACE_BEORNING: minimumRacePerception = RACE_BEORNING_MIN_PERCEP;
+                    break;
+                case RACE_URUK: minimumRacePerception = RACE_URUK_MIN_PERCEP;
+                    break;
+                case RACE_ORC: minimumRacePerception = RACE_ORC_MIN_PERCEP;
+                    break;
+                case RACE_MAGUS: minimumRacePerception = RACE_MAGUS_MIN_PERCEP;
+                    break;
+                case RACE_OLOGHAI: minimumRacePerception = RACE_OLOGHAI_MIN_PERCEP;
+                    break;
+                case RACE_HARADRIM: minimumRacePerception = RACE_HARADRIM_MIN_PERCEP;
+                    break;
+            }
+            ch->specials2.perception = std::max(potentialPerception, minimumRacePerception);
+        } else {
+            ch->specials2.perception += mod;
+        }
         break;
 
     case APPLY_SPELL:

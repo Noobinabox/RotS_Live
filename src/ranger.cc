@@ -1996,27 +1996,37 @@ bool check_archery_accuracy(const char_data& archer, const char_data& victim)
  * slyon: Feb 3, 2017 - Added arrow tohit into the equation
  */
 
-int shoot_calculate_success(const char_data* archer, const char_data* victim, const obj_data* arrow)
+int shoot_calculate_success(char_data* archer, char_data* victim, const obj_data* arrow)
 {
-    using namespace utils;
-
-    int archery_skill = get_skill(*archer, SKILL_ARCHERY);
-    int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
-    //This obj_flag is defined in act_info.cc
-    int arrow_tohit = arrow->obj_flags.value[0];
-
-    int ranger_level = get_prof_level(PROF_RANGER, *archer);
+    int archery_skill = utils::get_skill(*archer, SKILL_ARCHERY);
+    int accuracy_skill = utils::get_skill(*archer, SKILL_ACCURACY);
+    int ranger_level = utils::get_prof_level(PROF_RANGER, *archer);
     int ranger_dex = archer->get_cur_dex();
+    int arrow_tohit = arrow->obj_flags.value[0];
+    int random = number(1, 100);
 
-    // Calculate success is currently not taking 'OB' into account.  This is intentional.
-    // This can return over 100 currently.  Check out scaling for different factors to
-    // see how we want to adjust this.
+    int prob = (archery_skill * 2) + arrow_tohit;
+    prob -= get_real_dodge(victim) / 2;
+    prob -= get_real_parry(victim) / 2;
+    prob += accuracy_skill / 10;
+    prob += ranger_dex;
+    prob += random;
+    prob -= 120;
 
-    // TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
-    // here for shooting quickly and a bonus for shooting slowly.
-    int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 10) + arrow_tohit;
+    std::ostringstream message_writer;
+    message_writer << std::endl;
+    message_writer << "prob = " << (archery_skill * 2) + arrow_tohit << std::endl;
+    message_writer << "prob -= " << get_real_dodge(victim) / 2 << std::endl;
+    message_writer << "prob -= " << get_real_parry(victim) / 2 << std::endl;
+    message_writer << "prob += " << accuracy_skill / 10 << std::endl;
+    message_writer << "prob += " << ranger_dex << std::endl;
+    message_writer << "prob += " << random << std::endl;
+    message_writer << "prob -= 120" << std::endl;
+    message_writer << "prob = " << prob << std::endl;
 
-    return success_chance;
+    send_to_char(message_writer.str().c_str(), archer);
+
+    return prob;
 }
 
 /*
@@ -2642,7 +2652,7 @@ ACMD(do_shoot)
         WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {
-        if (victim == NULL) {
+        if (victim == nullptr) {
             return;
         }
 
@@ -2657,7 +2667,7 @@ ACMD(do_shoot)
         }
 
         // Get the arrow.
-        obj_data* arrow = NULL;
+        obj_data* arrow = nullptr;
         obj_data* quiver = ch->equipment[WEAR_BACK];
         if (quiver) {
             arrow = quiver->contains;
@@ -2681,9 +2691,8 @@ ACMD(do_shoot)
             act("$n releases their arrow and it goes flying!\r\n", FALSE, ch, 0, 0, TO_ROOM);
         }
 
-        int roll = number(0, 99);
         int target_number = shoot_calculate_success(ch, victim, arrow);
-        if (roll < target_number) {
+        if (target_number >= 0) {
             on_arrow_hit(ch, victim, arrow);
         } else {
             on_arrow_miss(ch, victim, arrow);

@@ -2101,16 +2101,16 @@ int movement_loss[] = { /* movement cost with a good load BTW. min. is 3/4 .. 2-
     2, /* Inside     */
     3, /* City       */
     4, /* Field      */
-    5, /* Forest     */
-    8, /* Hills      */
-    9, /* Mountains  */
-    8, /* Swimming   */
-    10, /* Unswimable */
-    10, /* Underwater */
+    7, /* Forest     */
+    10, /* Hills      */
+    11, /* Mountains  */
+    10, /* Swimming   */
+    12, /* Unswimable */
+    12, /* Underwater */
     3, /* Road       */
-    10, /* Crack, from earthquake */
-    7, /* dense forest*/
-    10, /* swamp       */
+    12, /* Crack, from earthquake */
+    9, /* dense forest*/
+    12, /* swamp       */
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 

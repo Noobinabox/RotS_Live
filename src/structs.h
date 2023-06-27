@@ -872,6 +872,18 @@ const int constexpr RACE_MAGUS = 15;
 const int constexpr RACE_OLOGHAI = 17;
 const int constexpr RACE_HARADRIM = 18;
 
+const int constexpr RACE_HUMAN_MIN_PERCEP = 20;
+const int constexpr RACE_DWARF_MIN_PERCEP = 15;
+const int constexpr RACE_WOOD_MIN_PERCEP = 30;
+const int constexpr RACE_HOBBIT_MIN_PERCEP = 20;
+const int constexpr RACE_HIGH_MIN_PERCEP = 20;
+const int constexpr RACE_BEORNING_MIN_PERCEP = 15;
+const int constexpr RACE_URUK_MIN_PERCEP = 20;
+const int constexpr RACE_ORC_MIN_PERCEP = 10;
+const int constexpr RACE_MAGUS_MIN_PERCEP = 20;
+const int constexpr RACE_OLOGHAI_MIN_PERCEP = 10;
+const int constexpr RACE_HARADRIM_MIN_PERCEP = 20;
+
 /* Races used for NPCs */
 #define RACE_EASTERLING 14
 #define RACE_HARAD 12
@@ -2026,6 +2038,14 @@ struct universal_list {
     } ptr;
 
     universal_list* next;
+};
+
+class group_roll {
+    public:
+        char* character_name;
+        int roll;
+
+        group_roll(char_data* character_name, int roll) : character_name(character_name->player.name), roll(roll) {}
 };
 
 #endif /* STRUCTS_H */

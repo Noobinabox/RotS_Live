@@ -295,6 +295,8 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
 
 void do_details(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
+void do_renounce(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
+
 const char* command[] = {
     "north", /* 1 */
     "east",
@@ -542,6 +544,7 @@ const char* command[] = {
     "cleave",
     "overrun", //245
     "defend",
+    "renounce",
     "\n"
 };
 
@@ -2213,6 +2216,8 @@ void assign_command_pointers(void)
         TAR_DIR_WAY, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(CMD_DEFEND, POSITION_FIGHTING, do_defend, 0, TRUE, 0,
         TAR_NONE_OK, TAR_IGNORE, 0);
+    COMMANDO(247, POSITION_STANDING, do_renounce, 0, TRUE, 0,
+             FULL_TARGET, TAR_IGNORE, 0);
 }
 
 /* *************************************************************************

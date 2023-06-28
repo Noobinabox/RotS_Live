@@ -227,7 +227,7 @@ setup:
 
 .PHONY: run
 run: ../bin/ageland setup
-	@cd .. && ./bin/ageland
+	@cd .. && ./bin/ageland -p
 
 ../bin/ageland:
 	if [ -f ../bin/ageland ]; \

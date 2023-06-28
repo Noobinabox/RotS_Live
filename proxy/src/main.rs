@@ -2,10 +2,16 @@ use std::net::{SocketAddr, SocketAddrV4};
 
 use clap::Parser;
 use color_eyre::eyre::{bail, Report};
+use futures_util::stream::StreamExt;
+use futures_util::SinkExt;
 use tokio::{
-    io::AsyncWriteExt,
+    io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
 };
+
+use tokio_tungstenite::tungstenite::Message;
+
+const READ_BUFFER_SIZE: usize = 8 * 1024; // 8 kb
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -16,11 +22,15 @@ struct Args {
     game: SocketAddrV4,
 
     #[arg(short, long, default_value = "0.0.0.0:3791")]
-    /// Address to listen
+    /// TCP address to listen
     listen: SocketAddrV4,
+
+    #[arg(short, long, default_value = "0.0.0.0:8080")]
+    /// Websocket address to listen
+    websocket: SocketAddrV4,
 }
 
-async fn handle_connection(
+async fn handle_tcp(
     game: SocketAddrV4,
     mut stream: TcpStream,
     addr: SocketAddr,
@@ -42,21 +52,103 @@ async fn handle_connection(
     Ok(())
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), Report> {
-    color_eyre::install()?;
-
-    let args = Args::parse();
-    let listener = TcpListener::bind(args.listen).await?;
-
+async fn tcp_server(game: SocketAddrV4, listener: TcpListener) -> Result<(), Report> {
     loop {
         let (stream, addr) = listener.accept().await?;
-        let game = args.game.clone();
+        let game = game.clone();
+
+        log::debug!("Received TCP connection on {addr}");
 
         tokio::spawn(async move {
-            if let Err(err) = handle_connection(game, stream, addr).await {
-                eprintln!("{err}");
+            if let Err(err) = handle_tcp(game, stream, addr).await {
+                log::error!("{err}");
             }
         });
     }
+}
+
+async fn handle_ws(game: SocketAddrV4, stream: TcpStream, addr: SocketAddr) -> Result<(), Report> {
+    let addr = match addr {
+        SocketAddr::V4(addr) => addr,
+        SocketAddr::V6(addr) => bail!("Unexpected IPv6: {addr}"),
+    };
+
+    let mut ws = tokio_tungstenite::accept_async(stream).await?;
+    let mut game = TcpStream::connect(game).await?;
+    let mut buf = [0; READ_BUFFER_SIZE];
+
+    // Write the proxy header
+    game.write_u32(u32::from(*addr.ip())).await?;
+
+    // Start proxying
+    loop {
+        tokio::select! {
+            msg = ws.next() => {
+                let msg = if let Some(msg) = msg {
+                    msg?
+                } else {
+                    break;
+                };
+
+                match msg {
+                    Message::Text(msg) => game.write_all(msg.as_bytes()).await?,
+                    Message::Binary(msg) => game.write_all(&msg).await?,
+                    Message::Close(_) => break,
+                    _ => continue,
+                }
+            },
+            read = game.read(&mut buf) => {
+                let read = read?;
+
+                if read > 0 {
+                    ws.send(Message::Binary(Vec::from(&buf[..read]))).await?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+async fn ws_server(game: SocketAddrV4, listener: TcpListener) -> Result<(), Report> {
+    loop {
+        let (stream, addr) = listener.accept().await?;
+        let game = game.clone();
+
+        log::debug!("Received websocket connection on {addr}");
+
+        tokio::spawn(async move {
+            if let Err(err) = handle_ws(game, stream, addr).await {
+                log::error!("{err}");
+            }
+        });
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Report> {
+    env_logger::init();
+    color_eyre::install()?;
+
+    let args = Args::parse();
+    let tcp = TcpListener::bind(args.listen).await?;
+    let ws = TcpListener::bind(args.websocket).await?;
+
+    if let Ok(addr) = tcp.local_addr() {
+        log::info!("Listening for TCP connections on {}", addr);
+    }
+
+    if let Ok(addr) = ws.local_addr() {
+        log::info!("Listening for WebSocket connections on {}", addr);
+    }
+
+    let tcp = tokio::spawn(tcp_server(args.game, tcp));
+    let ws = tokio::spawn(ws_server(args.game, ws));
+
+    tokio::select! {
+        res = tcp => res??,
+        res = ws => res??,
+    };
+
+    Ok(())
 }

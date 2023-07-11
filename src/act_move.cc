@@ -103,9 +103,9 @@ int get_room_move_penalty(const char_data* character, int room_sector)
         return room_move_penalty;
     }
 
-    // Stealth specialized characters on foot treat all other terrain as road.
+    // Stealth specialized characters on foot reduce movement by half, minimum of 1
     if (utils::get_specialization(*character) == game_types::PS_Stealth && !character->mount_data.mount) {
-        room_move_penalty = movement_loss[SECT_ROAD];
+        room_move_penalty = std::max(1, room_move_penalty / 2);
     }
 
     return room_move_penalty;
@@ -147,7 +147,7 @@ int room_move_cost(char_data* character, room_data* new_room)
     }
 
     if (IS_RIDING(character)) {
-        move_cost = move_cost / (120 + GET_RAW_KNOWLEDGE(character, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(character, SKILL_ANIMALS) / 2);
+        move_cost = (move_cost / (120 + GET_RAW_KNOWLEDGE(character, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(character, SKILL_ANIMALS) / 2)) * 5/4;
     } else {
         move_cost = move_cost / 100;
     }
@@ -686,8 +686,11 @@ ACMD(do_move)
                         continue;
                     show_char_to_char(ch, tmpvict, 0, buf2);
                 }
-            } else if (IS_AFFECTED(ch, AFF_SNEAK))
+            } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
+                // sneaking cost double movement
+                need_move *= 2;
+            }
 
             // Here setting his tracks...
 

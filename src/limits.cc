@@ -294,7 +294,8 @@ float move_gain(const char_data* character)
     /* Prof/Level calculations */
     gain += (stats.con + stats.dex) / 2.0;
 
-    float expertise_modifier = get_prof_level(PROF_RANGER, *character) / 6.0 + get_raw_knowledge(*character, SKILL_TRAVELLING) / 10.0;
+    /* Expertise for Rangers and Travelling Skill */
+    float expertise_modifier = (get_prof_level(PROF_RANGER, *character) / 6.0) + (get_raw_knowledge(*character, SKILL_TRAVELLING) / 40);
     gain += expertise_modifier;
 
     /* Skill/Spell calculations */

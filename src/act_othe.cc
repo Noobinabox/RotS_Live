@@ -304,6 +304,10 @@ void roll_for_character(char_data* character, char_data* roll_initiator)
     }
 }
 
+bool compareByValue(const group_roll& a, const group_roll b) {
+    return a.roll > b.roll;
+};
+
 ACMD(do_grouproll)
 {
     one_argument(argument, buf);
@@ -324,9 +328,22 @@ ACMD(do_grouproll)
     }
 
     if (string_func::is_null_or_empty(buf)) {
-        for (char_iter iter = ch->group->begin(); iter != ch->group->end(); ++iter) {
-            roll_for_character(*iter, ch);
+        std::vector<group_roll> group_rolls;
+
+        for (auto & iter : *ch->group) {
+            if (utils::is_pc(*iter)) {
+                group_rolls.emplace_back(iter, number(1,100));
+            }
         }
+
+        std::sort(group_rolls.begin(), group_rolls.end(), compareByValue);
+
+        for(const auto& group_roll: group_rolls) {
+            sprintf(buf, "%8s -- Rolled: %3d", group_roll.character_name, group_roll.roll);
+            act(buf, FALSE, ch, nullptr, nullptr, TO_CHAR);
+            act(buf, FALSE, ch, nullptr, nullptr, TO_ROOM);
+        }
+
     } else {
         if (char_data* rollee = get_char_room_vis(ch, buf)) {
             if (ch->group == rollee->group) {

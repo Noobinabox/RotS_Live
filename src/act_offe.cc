@@ -47,7 +47,6 @@ int get_real_stealth(struct char_data* ch);
 int find_door(struct char_data* ch, char* type, char* dir);
 void group_gain(struct char_data* ch, struct char_data* victim);
 int get_number(char** name);
-int check_overkill(struct char_data* ch);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 void appear(struct char_data* ch);
 bool is_frenzy_active(char_data& attacker);
@@ -480,11 +479,6 @@ ACMD(do_bash)
             send_to_char("Bash who?\n\r", ch);
             return;
         }
-        if (door >= 0)
-            if (!check_overkill(victim)) {
-                send_to_char("You cannot get close enough to bash.\n\r", ch);
-                return;
-            }
 
         WAIT_STATE_FULL(ch, skills[SKILL_BASH].beats, CMD_BASH,
             next_mode, 50, 0, (next_mode == 1) ? GET_ABS_NUM(victim) : door, victim,
@@ -849,11 +843,6 @@ ACMD(do_kick)
         return;
     }
 
-    if (!check_overkill(victim)) {
-        send_to_char("You cannot get close enough!\n\r", ch);
-        return;
-    }
-
     if (victim->in_room != ch->in_room) {
         if (attacktype == SKILL_KICK)
             send_to_char("Kick who?\n\r", ch);
@@ -1110,11 +1099,6 @@ ACMD(do_rend)
         return;
     }
 
-    if (!check_overkill(victim)) {
-        send_to_char("You cannot get close enough!\n\r", ch);
-        return;
-    }
-
     int prob = get_prob_skill(ch, victim, SKILL_REND);
 
     if (prob < 0) {
@@ -1201,10 +1185,6 @@ ACMD(do_bite)
         return;
     }
 
-    if (!check_overkill(victim)) {
-        send_to_char("You cannot get close enough!\n\r", ch);
-        return;
-    }
 
     int prob = get_prob_skill(ch, victim, SKILL_BITE);
 
@@ -1325,11 +1305,6 @@ ACMD(do_maul)
 
     char_data* victim = is_maul_targ_valid(ch, wtl);
     if (victim == NULL) {
-        return;
-    }
-
-    if (!check_overkill(victim)) {
-        send_to_char("You cannot get close enough!\n\r", ch);
         return;
     }
 

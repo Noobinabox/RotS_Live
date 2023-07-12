@@ -83,7 +83,6 @@ void group_gain(struct char_data* ch, struct char_data* victim);
 void do_pass_through(struct char_data* ch, struct char_data* victim, int type);
 /* riposte doesn't use int type, but maybe when messages are sorted... */
 void do_riposte(struct char_data* ch, struct char_data* victim);
-int check_overkill(struct char_data* ch);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 
 /* Weapon attack texts */
@@ -1708,16 +1707,6 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         return 0;
     }
 
-    if (!check_overkill(victim)) {
-        act("There is too much activity to attack $N.",
-            FALSE, attacker, 0, victim, TO_CHAR);
-        act("$N tried to attack you but could not get close enough.",
-            FALSE, victim, 0, attacker, TO_CHAR);
-        act("$n tried to attack $N but could not get close enough.",
-            FALSE, attacker, 0, victim, TO_NOTVICT);
-        return 0;
-    }
-
     if (!check_sanctuary(attacker, victim))
         return 0;
 
@@ -2931,26 +2920,6 @@ ACMD(do_twohand)
         affect_total(ch);
         return;
     }
-}
-
-int check_overkill(struct char_data* ch)
-{
-    struct char_data* tmpch;
-    int num_fighting = 0;
-
-    if (!ch || IS_NPC(ch))
-        return 1;
-
-    if (GET_BODYTYPE(ch) == 1)
-        for (tmpch = combat_list; tmpch; tmpch = tmpch->next_fighting)
-            if (tmpch->specials.fighting == ch)
-                if (!(IS_NPC(tmpch)))
-                    num_fighting++;
-
-    if (num_fighting > 3 && number(0, num_fighting))
-        return 0;
-
-    return 1;
 }
 
 int check_hallucinate(struct char_data* ch, struct char_data* victim)

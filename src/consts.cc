@@ -325,7 +325,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "stealth", PROF_RANGER, 2, NULL,
         POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_STLH },
     { "awareness", PROF_RANGER, 1, NULL,
-        POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_NONE },
+        POSITION_FIGHTING, 0, 0, 16, 20, 1, 0, PLRSPEC_NONE },
     { "ride", PROF_RANGER, 0, NULL,
         POSITION_FIGHTING, 0, 0, 16, 20, 1, 0, PLRSPEC_NONE },
     { "accuracy", PROF_RANGER, 11, NULL,

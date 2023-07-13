@@ -103,9 +103,9 @@ int get_room_move_penalty(const char_data* character, int room_sector)
         return room_move_penalty;
     }
 
-    // Stealth specialized characters on foot reduce movement by half, minimum of 1
+    // Stealth specialized characters on foot reduce movement by 25%
     if (utils::get_specialization(*character) == game_types::PS_Stealth && !character->mount_data.mount) {
-        room_move_penalty = std::max(1, room_move_penalty / 2);
+        room_move_penalty = std::max(1, (int)(room_move_penalty * 0.75));
     }
 
     return room_move_penalty;
@@ -688,15 +688,13 @@ ACMD(do_move)
                 }
             } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
-                // sneaking cost double movement
-                need_move *= 2;
+                // sneaking increases the cost of moving by 120%
+                need_move += (int)(need_move * 0.25);
             }
 
             // Here setting his tracks...
 
             if ((IS_NPC(ch) || (GET_RACE(ch) != RACE_GOD)) && !IS_SHADOW(ch) && !IS_AFFECTED(ch, AFF_FLYING)) { // &&
-                //!(world[ch->in_room].sector_type == SECT_WATER_NOSWIM) &&
-                //!(world[ch->in_room].sector_type == SECT_WATER_SWIM) ) now hunt will work in water
 
                 if ((subcmd == SCMD_STALK) && (GET_KNOWLEDGE(ch, SKILL_STALK) > number(0, 119))) {
 

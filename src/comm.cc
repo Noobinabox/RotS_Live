@@ -1336,8 +1336,10 @@ int write_to_descriptor(int desc, char* txt)
     total = strlen(txt);
     sofar = 0;
 
-    if (!desc)
+    if (desc <= 0) {
         return 0;
+    }
+
     do {
         thisround = write(desc, txt + sofar, total - sofar);
         if (thisround < 0) {

@@ -519,7 +519,7 @@ namespace {
         0 /*belt*/
     };
 
-    /* Light fighting weight values.  These values represent the expected 
+    /* Light fighting weight values.  These values represent the expected
 		 * weight of an item in this slot. */
     const int light_fighting_weight_table[MAX_WEAR] = {
         0,
@@ -1189,6 +1189,39 @@ int get_race(const char_data& character)
 }
 
 //============================================================================
+int get_minimum_insight_perception(const char_data &character) {
+    int race = character.player.race;
+    switch (race) {
+        case RACE_GOD:
+            return 0;
+        case RACE_HUMAN:
+            return 20;
+        case RACE_DWARF:
+            return 15;
+        case RACE_WOOD:
+            return 30;
+        case RACE_HOBBIT:
+            return 20;
+        case RACE_BEORNING:
+            return 15;
+        case RACE_URUK:
+            return 20;
+        case RACE_ORC:
+            return 15;
+        case RACE_MAGUS:
+            return 20;
+        case RACE_HARADRIM:
+            return 20;
+        case RACE_OLOGHAI:
+            return 15;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
+//============================================================================
 int get_race_perception(const char_data& character)
 {
     int race = character.player.race;
@@ -1206,7 +1239,8 @@ int get_race_perception(const char_data& character)
         return 30;
     case RACE_HIGH:
         return 100;
-    //case RACE_BEORN: return 30;
+    case RACE_BEORNING:
+        return 15;
     case RACE_URUK:
         return 30;
     case RACE_HARAD:

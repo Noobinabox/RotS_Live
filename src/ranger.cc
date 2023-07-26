@@ -800,11 +800,18 @@ int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
     percent = number(-100, 0);
     percent += number(-20, 20);
     percent -= GET_LEVELA(victim);
-    percent -= IS_NPC(victim) ? 0 : GET_SKILL(victim, SKILL_AWARENESS) / 2;
+    if(utils::is_pc(*victim)) {
+        percent -= GET_SKILL(victim, SKILL_AWARENESS) / 2;
+        percent -= utils::get_prof_level(PROF_RANGER, *victim);
+        percent -= victim->get_cur_int() / 4;
+        percent -= victim->get_cur_dex() / 2;
+    }
+
     percent += GET_PROF_LEVEL(PROF_RANGER, ch) + 15;
     percent += GET_SKILL(ch, SKILL_AMBUSH) + get_real_stealth(ch);
-    if (GET_POSITION(victim) <= POSITION_RESTING)
+    if (GET_POSITION(victim) <= POSITION_RESTING) {
         percent += 25 * (POSITION_FIGHTING - GET_POSITION(victim));
+    }
     percent -= GET_AMBUSHED(victim);
     percent -= utils::get_encumbrance(*ch);
 
@@ -991,11 +998,11 @@ ACMD(do_ambush)
 
             SET_CURRENT_PARRY(victim) = 0;
 
-            GET_AMBUSHED(victim) = GET_AMBUSHED(victim) * 3 / 4 + 30;
-            if (IS_NPC(victim))
-                GET_AMBUSHED(victim) += 20;
-            if (IS_NPC(victim) && !IS_SET(ch->specials2.act, MOB_AGGRESSIVE))
+            GET_AMBUSHED(victim) = GET_AMBUSHED(victim) * 3 / 4 + 50;
+
+            if (!IS_SET(ch->specials2.act, MOB_AGGRESSIVE)) {
                 GET_AMBUSHED(victim) += 15;
+            }
         }
 
         dmg = ambush_calculate_damage(ch, victim, success);

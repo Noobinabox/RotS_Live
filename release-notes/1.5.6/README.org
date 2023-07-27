@@ -16,6 +16,7 @@
   - [[#minimum-perception-from-insight][Minimum Perception From Insight]]
   - [[#movement-cost][Movement Cost]]
   - [[#password-display][Password Display]]
+  - [[#player-count-mask][Player Count Mask]]
 
 * Release Notes 1.5.6
 
@@ -74,3 +75,7 @@ A global 20% increase to movement penalties
 ** Password Display
 
 Your password will no longer be displayed on the screen at login.
+
+** Player Count Mask
+
+The player count at login will no longer be masked with there are 5 or move players on.

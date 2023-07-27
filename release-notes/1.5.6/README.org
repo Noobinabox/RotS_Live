@@ -15,6 +15,7 @@
   - [[#overkill-protection][Overkill Protection]]
   - [[#minimum-perception-from-insight][Minimum Perception From Insight]]
   - [[#movement-cost][Movement Cost]]
+  - [[#password-display][Password Display]]
 
 * Release Notes 1.5.6
 
@@ -29,7 +30,6 @@ This is a new command added to remove a players sanctuary. See man gen renounce 
 Ambush for stealth specialized characters has been reduced against other players.
 
 Players now have memory after being ambushed and will have a higher awareness afterwards making it difficult to be ambushed again.
-
 
 ** Awareness
 
@@ -70,3 +70,7 @@ Each race now has a minimum amount of perception they can obtain while insighted
 ** Movement Cost
 
 A global 20% increase to movement penalties
+
+** Password Display
+
+Your password will no longer be displayed on the screen at login.

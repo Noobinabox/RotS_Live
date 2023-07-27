@@ -2013,10 +2013,6 @@ int shoot_calculate_success(char_data* archer, char_data* victim, const obj_data
     success_chance += utils::get_prof_level(PROF_RANGER, *archer);
     success_chance += archer->get_cur_dex();
 
-    std::ostringstream message;
-    message << "success_chance: " << success_chance << std::endl;
-    send_to_char(message.str().c_str(), archer);
-
     return success_chance;
 }
 

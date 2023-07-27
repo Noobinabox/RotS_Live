@@ -16,7 +16,7 @@ namespace utils {
 //============================================================================
 bool is_artifact(const obj_data& object)
 {
-    //drelidan:  This macro always returns false.
+    // drelidan:  This macro always returns false.
     return false;
 }
 
@@ -55,15 +55,15 @@ namespace {
     double apply_owner_to_object_level(const char_data& owner, double object_level, int skill_type)
     {
         /*
-			* If the weapon is owned by someone (i.e., we aren't just statting
-			* an object), then that person will affect how well the weapon
-			* works.  Currently, there are two maluses:
-			*   (1) If the wielder's level is a good deal lower than the
-			*       object's level, then the level of the object is lowered
-			*       to be closer to the wielder's; thus reducing damage.
-			*   (2) If the wielder has low weapon skill for the object, then
-			*       we reduce the damage.
-			*/
+         * If the weapon is owned by someone (i.e., we aren't just statting
+         * an object), then that person will affect how well the weapon
+         * works.  Currently, there are two maluses:
+         *   (1) If the wielder's level is a good deal lower than the
+         *       object's level, then the level of the object is lowered
+         *       to be closer to the wielder's; thus reducing damage.
+         *   (2) If the wielder has low weapon skill for the object, then
+         *       we reduce the damage.
+         */
 
         double mod_owner_level = owner.player.level * 1.3333;
 
@@ -150,10 +150,10 @@ namespace {
     double get_weight_bulk_factor(const obj_data& weapon)
     {
         /*
-			 * A lot of these numbers seem arbitrary, but I am not going to adjust them.
-			 * The purpose of this exercise isn't to change how much damage characters do,
-			 * it's to understand the code and make it easier to read.
-			 */
+         * A lot of these numbers seem arbitrary, but I am not going to adjust them.
+         * The purpose of this exercise isn't to change how much damage characters do,
+         * it's to understand the code and make it easier to read.
+         */
 
         /* all equal damage in 2-hands, with 20 str 20 dex. 100% attack */
 

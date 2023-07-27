@@ -48,8 +48,8 @@ private:
     bool in_waiting_list(char_data* ch);
 
 private:
-    //TODO(dgurley):  Use a more efficient data structure once you
-    // figure out what the access pattern is.
+    // TODO(dgurley):  Use a more efficient data structure once you
+    //  figure out what the access pattern is.
     typedef std::list<char_data*> wait_list_type;
     typedef wait_list_type::iterator wait_list_iter;
     wait_list_type m_waitingList;
@@ -62,9 +62,9 @@ private:
     // to a set and implement an algorithm using 'remove-if' on the vector.
     // It's just a pain to do it atm without lambdas.
     /*
-		std::vector<char_data*> m_waitingList;
-		std::unordered_set<char_data> m_pendingDeletes;
-		*/
+                std::vector<char_data*> m_waitingList;
+                std::unordered_set<char_data> m_pendingDeletes;
+                */
 
     // Deleted functions.
     // Don't put definitions in here so trying to do them will cause a compile error.

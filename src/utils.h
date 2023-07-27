@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: utils.h                                       Part of CircleMUD *
-*  Usage: header file: utility macros and prototypes of utility funcs     *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: utils.h                                       Part of CircleMUD *
+ *  Usage: header file: utility macros and prototypes of utility funcs     *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef UTILS_H
 #define UTILS_H
@@ -137,8 +137,8 @@ void untrack_specialized_mage(char_data* mage);
 
 #define UPPER(c) (((c) >= 'a' && (c) <= 'z') ? ((c) + ('A' - 'a')) : (c))
 
-/* Functions in utility.c                     
- #define MAX(a,b) (((a) > (b)) ? (a) : (b)) 
+/* Functions in utility.c
+ #define MAX(a,b) (((a) > (b)) ? (a) : (b))
  #define MIN(a,b) (((a) < (b)) ? (a) : (b)) */
 
 #define ISNEWL(ch) ((ch) == '\n' || (ch) == '\r')
@@ -148,8 +148,8 @@ void untrack_specialized_mage(char_data* mage);
 #define CAP(st) (*(st) = UPPER(*(st)))
 
 /* #define CREATE(result, type, number)  do {\
-	if (!((result) = (type *) calloc ((number), sizeof(type))))\
-		{ perror("malloc failure"); abort(); } } while(0) */
+        if (!((result) = (type *) calloc ((number), sizeof(type))))\
+                { perror("malloc failure"); abort(); } } while(0) */
 
 // second thought taken, let's try another variant first
 
@@ -656,7 +656,7 @@ sh_int get_race_perception(char_data* ch);
 sh_int get_naked_perception(char_data* ch);
 sh_int get_naked_willpower(char_data* ch);
 
-//int get_mental_delay(char_data * ch); /* if mental is <= 1, can do it again. */
+// int get_mental_delay(char_data * ch); /* if mental is <= 1, can do it again. */
 void set_mental_delay(char_data* ch, int value);
 
 #define GET_MENTAL_DELAY(ch) ((ch)->specials.mental_delay)

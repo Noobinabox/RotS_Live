@@ -1,9 +1,9 @@
 /* ************************************************************************
-*  File: magic.cpp                                                        *
-*  Usage: low-level functions for magic; spell template code              *
-*  All spells that aren't completely custom like teleport should          *
-*  be sent this.                                                          *
-************************************************************************ */
+ *  File: magic.cpp                                                        *
+ *  Usage: low-level functions for magic; spell template code              *
+ *  All spells that aren't completely custom like teleport should          *
+ *  be sent this.                                                          *
+ ************************************************************************ */
 
 #include "char_utils.h"
 #include "comm.h"
@@ -151,7 +151,7 @@ void affect_update(void)
  * Every spell that does damage comes through here. This calculates the
  * amount of damage, adds in any modifiers, determines what the saves are,
  * tests for saves and calls apply_damage().
- * 
+ *
  * -1 = dead, otherwise the amount of damge done.
  */
 int mag_damage(int level, struct char_data* caster, struct char_data* victim, int spellnum, int savetype)
@@ -410,10 +410,10 @@ void mag_affects(int level, struct char_data* caster, struct char_data* victim,
     }
 
     /*
-	 * If this is a mob that has this affect set in its mob file, do not
-	 * perform the affect. This prevents people from un-sancting mobs
-	 * by sancting them and waiting for it to fade, for example.
-	 */
+     * If this is a mob that has this affect set in its mob file, do not
+     * perform the affect. This prevents people from un-sancting mobs
+     * by sancting them and waiting for it to fade, for example.
+     */
     if (IS_NPC(victim) && !affected_by_spell(victim, spellnum)) {
         for (i = 0; i < MAX_SPELL_AFFECTS; i++) {
             if (AFF_FLAGGED(victim, af[i].bitvector)) {
@@ -424,17 +424,17 @@ void mag_affects(int level, struct char_data* caster, struct char_data* victim,
     }
 
     /*
-	 * If the victim is already affected by this spell, and the spell does
-	 * not have an accumlative affect, then fail the spell.
-	 */
+     * If the victim is already affected by this spell, and the spell does
+     * not have an accumlative affect, then fail the spell.
+     */
     if (affected_by_spell(victim, spellnum) && !(accum_duration || accum_affect)) {
         send_to_char(ch, "%s", NOEFFECT);
         return;
     }
 
     /*
-	 * Loop through the affects and apply it to the victim
-	 */
+     * Loop through the affects and apply it to the victim
+     */
     for (i = 0; i < MAX_SPELL_AFFECTS; i++) {
         if (af[i].bitvector || (af[i].location != APPLY_NONE)) {
             affect_join(victim, af + i, accum_duration, FALSE, accum_affect, FALSE);
@@ -454,7 +454,7 @@ void mag_affects(int level, struct char_data* caster, struct char_data* victim,
 /*
  * This function is used to provide services to mag_groups. This function is
  * the one you should change to add new group spells.
- * 
+ *
  * No spells of this class are currently implemented.
  */
 void perform_mag_groups(int level, struct char_data* caster, struct char_data* tch,
@@ -514,7 +514,7 @@ void mag_groups(int level, struct char_data* caster, int spellnum, int savetype)
  * generally offensive spells. This calls mag_damage to do the actual damage
  * -- all spells listed here must also have a cast in mag_damage() in order
  * for them to work.
- * 
+ *
  */
 void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
 {
@@ -539,8 +539,8 @@ void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
     }
 
     /* Add special room spells here for example earthquake has the possibility of adding an
-   * additional room below the caster and dealing damage again on falling.
-   */
+     * additional room below the caster and dealing damage again on falling.
+     */
     switch (spellnum) {
     case SPELL_EARTHQUAKE:
         int crack_chance, tmp;
@@ -616,14 +616,14 @@ void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
     }
 
     /*
- * Every spell that affects an area (room) runs through here.  These are
- * generally offensive spells.  This calls mag_damage to do the actual
- * damage -- all spells listed here must also have a case in mag_damage()
- * in order for them to work.
- *
- *  area spells have limited targets within the room.
- *  Currently there are no spells that implement this function
- */
+     * Every spell that affects an area (room) runs through here.  These are
+     * generally offensive spells.  This calls mag_damage to do the actual
+     * damage -- all spells listed here must also have a case in mag_damage()
+     * in order for them to work.
+     *
+     *  area spells have limited targets within the room.
+     *  Currently there are no spells that implement this function
+     */
     void mag_areas(int level, struct char_data* caster, int spellnum, int savetype)
     {
         struct char_data *tch, *next_tch;
@@ -633,9 +633,9 @@ void mag_masses(int level, struct char_data* caster, int spellnum, int savetype)
             return;
 
         /*
-   * to add spells to this fn, just add the message here plus an entry
-   * in mag_damage for the damaging part of the spell
-   */
+         * to add spells to this fn, just add the message here plus an entry
+         * in mag_damage for the damaging part of the spell
+         */
         switch (spellnum) {
         default:
             break;

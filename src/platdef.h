@@ -1,7 +1,7 @@
 
 #pragma once
 
-#if defined(__linux__) || defined(unix)|| defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
+#if defined(__linux__) || defined(unix) || defined(__unix) || defined(__unix__) || defined(__FreeBSD__)
 #define PREDEF_PLATFORM_LINUX
 #endif
 

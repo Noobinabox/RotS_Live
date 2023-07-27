@@ -3,6 +3,8 @@
 #ifndef ZONE_H
 #define ZONE_H
 
+#include <stdio.h>
+
 struct owner_list {
     int owner; /* one of the owners of zone/object */
     struct owner_list* next; /* next owner */
@@ -32,11 +34,11 @@ struct zone_data {
     int cmdno; /* Number of zone commands */
     struct reset_com* cmd; /* command table for reset	          */
     /*
-   *  Reset mode:
-   *  0: Don't reset, and don't update age
-   *  1: Reset if no PC's are located in zone
-   *  2: Just reset
-   */
+     *  Reset mode:
+     *  0: Don't reset, and don't update age
+     *  1: Reset if no PC's are located in zone
+     *  2: Just reset
+     */
 };
 
 void zone_update(void);

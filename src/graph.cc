@@ -1,16 +1,16 @@
 /* ************************************************************************
-*   File: graph.c                                       Part of CircleMUD *
-*  Usage: various graph algorithms                                        *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: graph.c                                       Part of CircleMUD *
+ *  Usage: various graph algorithms                                        *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #define TRACK_THROUGH_DOORS
 
-/* 
+/*
  * You can define or not define TRACK_THOUGH_DOORS, above, depending on
  * whether or not you want track to find paths which lead through closed
  * or hidden doors.
@@ -92,12 +92,12 @@ void bfs_clear_queue(void)
         bfs_dequeue();
 }
 
-/* 
+/*
  * find_first_step: given a source room and a target room, find the first
  * step on the shortest path from the source to the target.
  * Intended usage: in mobile_activity, give a mob a dir to go if they're
  * tracking another mob or a PC.  Or, a 'track' skill for PCs.
-*/
+ */
 
 int find_first_step(int src, int target)
 {
@@ -121,10 +121,10 @@ int find_first_step(int src, int target)
     target_room = &world[target];
     MARK(src_room);
 
-    /* 
-   * first, enqueue the first steps, saving which
-   * direction we're going.
-   */
+    /*
+     * first, enqueue the first steps, saving which
+     * direction we're going.
+     */
     for (curr_dir = 0; curr_dir < NUM_OF_DIRS; curr_dir++)
         if (VALID_EDGE(src_room, curr_dir)) {
             MARK(&world[(int)TOROOM(src_room, curr_dir)]);
@@ -151,7 +151,7 @@ int find_first_step(int src, int target)
 }
 
 /*
- *  Functions and Commands which use the above fns		     
+ *  Functions and Commands which use the above fns
  */
 
 ACMD(do_wiztrack)
@@ -186,11 +186,11 @@ ACMD(do_wiztrack)
         break;
     default:
 
-        /* 
-	  * if you want to make this into a skill instead of a command,
-	  * the next few lines make it give you a random direction if you
-          * fail the random skill roll.
-          */
+        /*
+         * if you want to make this into a skill instead of a command,
+         * the next few lines make it give you a random direction if you
+         * fail the random skill roll.
+         */
 
 #ifdef TRACK_IS_SKILL
     {
@@ -301,10 +301,10 @@ char* water_track_desc(int track_age)
 int show_tracks(char_data* ch, char* name, int mode)
 {
     /*
-   * returns the number of tracks shown
-   * mode: 1 - full mode, all tracks and easier to find
-   *       2 - fast mode, fresh tracks only and harder to notice
-   */
+     * returns the number of tracks shown
+     * mode: 1 - full mode, all tracks and easier to find
+     *       2 - fast mode, fresh tracks only and harder to notice
+     */
 
     int tmp, count, ch_num, chance_factor, tr_time, shall_show;
     room_data* ch_room;

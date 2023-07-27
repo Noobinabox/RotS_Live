@@ -1,40 +1,40 @@
 /**********************************************************************
-*         Return of the Shadow Shape Scripting Functions              *
-*                                                                     *
-* How shaping scripts works:                                          *
-*   At boot a block of memory is created which holds the header for   *
-*   all scripts called script_table (script_head * number_of_scripts).*
-*   The individual components are struct script_head and are the      *
-*   headers for linked lists of script commands (script_data).        *
-*   When shaping, a temporary script_head and script_data commands are*
-*   created and edited.  When shaping is /implemented these temporary *
-*   structures are copied into the script_table - only if the script  *
-*   existed at reboot;  if not, they can only be /saved and will      *
-*   appear in the script_table when the mud next reboots.             *
-*                                                                     *
-* To add a new command or trigger:                                    *
-*   Add a #define in script.h for the new command                     *
-*   Add the text entry for it in get_command (shapescript.cc)         *
-*   Add the display properties to show_command (shapescript.cc)       *
-*   Add entry handling in shape_center_script  (shapescript.cc)       *
-*   Add the command to run_script (script.cc)                         *
-*   Easy huh?                                                         *
-*                                                                     *
-* Script file format:                                                 *
-*   #<script number> Title of script                                  *
-*   Long description                                                  *
-*   of script.  Multi-line ending in an empty line containing:        *
-*   ~                                                                 *
-*   <comand_type> <command_number> <params 0..5>                      *
-*   Text for command ending in~                                       *
-*   ...                                                               *
-*   999 0 0 0 0 0 0 0        <- indicates last command (no text line) *
-*   #<script number> Title of script                                  *
-*   ... etc                                                           *
-*   999 0 0 0 0 0 0 0                                                 *
-*   #99999                                                            *
-*   $~                                                                *
-**********************************************************************/
+ *         Return of the Shadow Shape Scripting Functions              *
+ *                                                                     *
+ * How shaping scripts works:                                          *
+ *   At boot a block of memory is created which holds the header for   *
+ *   all scripts called script_table (script_head * number_of_scripts).*
+ *   The individual components are struct script_head and are the      *
+ *   headers for linked lists of script commands (script_data).        *
+ *   When shaping, a temporary script_head and script_data commands are*
+ *   created and edited.  When shaping is /implemented these temporary *
+ *   structures are copied into the script_table - only if the script  *
+ *   existed at reboot;  if not, they can only be /saved and will      *
+ *   appear in the script_table when the mud next reboots.             *
+ *                                                                     *
+ * To add a new command or trigger:                                    *
+ *   Add a #define in script.h for the new command                     *
+ *   Add the text entry for it in get_command (shapescript.cc)         *
+ *   Add the display properties to show_command (shapescript.cc)       *
+ *   Add entry handling in shape_center_script  (shapescript.cc)       *
+ *   Add the command to run_script (script.cc)                         *
+ *   Easy huh?                                                         *
+ *                                                                     *
+ * Script file format:                                                 *
+ *   #<script number> Title of script                                  *
+ *   Long description                                                  *
+ *   of script.  Multi-line ending in an empty line containing:        *
+ *   ~                                                                 *
+ *   <comand_type> <command_number> <params 0..5>                      *
+ *   Text for command ending in~                                       *
+ *   ...                                                               *
+ *   999 0 0 0 0 0 0 0        <- indicates last command (no text line) *
+ *   #<script number> Title of script                                  *
+ *   ... etc                                                           *
+ *   999 0 0 0 0 0 0 0                                                 *
+ *   #99999                                                            *
+ *   $~                                                                *
+ **********************************************************************/
 
 #include "platdef.h"
 #include <ctype.h>
@@ -2368,7 +2368,7 @@ int get_command(char* command)
         return 0;
 
     default:
-        //log("Unknown command type: get_command");
+        // log("Unknown command type: get_command");
         return 0;
 
     } // switch

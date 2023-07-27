@@ -18,8 +18,8 @@
 #include "char_utils.h"
 #include "char_utils_combat.h"
 #include "object_utils.h"
-#include <algorithm>
 #include "warrior_spec_handlers.h"
+#include <algorithm>
 
 const int MIN_SAFE_STAT = 3;
 
@@ -205,7 +205,7 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
 
     /* Successful hit */
     if (damg) {
-    		player_spec::battle_mage_handler battle_mage_handler(victim);
+        player_spec::battle_mage_handler battle_mage_handler(victim);
         tmp = number(0, 6);
         if (tmp == 6) /* Hitting concentration */
             utils::add_spirits(ch, damg);
@@ -226,9 +226,9 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
         gain_exp(ch, (1 + GET_LEVEL(victim)) * std::min(20 + GET_LEVEL(ch) * 2, damg * 5) / (1 + GET_LEVEL(ch)));
         if (!damage_result.will_die) {
             if (IS_AFFECTED(victim, AFF_WAITWHEEL) && victim->delay.priority <= 40) {
-            	if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
-                break_spell(victim);
-							}
+                if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
+                    break_spell(victim);
+                }
             }
 
             if (damage_result.wants_to_flee) {
@@ -278,7 +278,7 @@ void do_mental(struct char_data* ch, char* argument, struct waiting_type* wtl, i
 }
 
 /*
- * returns 1 if the victim dies, else 0 
+ * returns 1 if the victim dies, else 0
  */
 void die(struct char_data* ch, struct char_data* killer, int attacktype);
 
@@ -396,19 +396,19 @@ combat_result_struct damage_stat(struct char_data* killer, struct char_data* vic
         }
 
         /*
-		* would_flee should not depend on a wimpy level, because that is for
-		* physical attacks.  ugh.  -- Seether
-		*/
+         * would_flee should not depend on a wimpy level, because that is for
+         * physical attacks.  ugh.  -- Seether
+         */
         bool would_flee = (IS_NPC(victim) && MOB_FLAGGED(victim, MOB_WIMPY)) || !IS_NPC(victim);
         if (would_flee) {
             combat_results.wants_to_flee = would_flee && is_stat_critical(victim);
         }
-    		player_spec::battle_mage_handler battle_mage_handler(victim);
+        player_spec::battle_mage_handler battle_mage_handler(victim);
 
         if (IS_AFFECTED(victim, AFF_WAITWHEEL) && (GET_WAIT_PRIORITY(victim) <= 40)) {
-					if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
-            break_spell(victim);
-					}
+            if (battle_mage_handler.does_mental_attack_interrupt_spell()) {
+                break_spell(victim);
+            }
         }
     }
 
@@ -548,7 +548,7 @@ bool weapon_willpower_damage(char_data* attacker, char_data* victim)
 
     int combined_percep = utils::get_perception(*attacker) * utils::get_perception(*victim);
     if (combined_percep < number(1, 10000)) {
-        //TODO(drelidan):  Add nifty message here.
+        // TODO(drelidan):  Add nifty message here.
         return false;
     }
 

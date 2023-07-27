@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: limits.c                                      Part of CircleMUD *
-*  Usage: limits & gain funcs for HMV, exp, hunger/thirst, idle time      *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: limits.c                                      Part of CircleMUD *
+ *  Usage: limits & gain funcs for HMV, exp, hunger/thirst, idle time      *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "limits.h"
 #include "comm.h"
@@ -732,7 +732,7 @@ void point_update(void)
         next_thing = j->next; /* Next in object list */
 
         //      /* If this is a corpse */
-        //if ( (GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (j->obj_flags.value[3]) ) {
+        // if ( (GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (j->obj_flags.value[3]) ) {
         if (j->obj_flags.timer >= 0) {
             /* timer count down */
             if (j->obj_flags.timer > 0)
@@ -914,12 +914,12 @@ void do_start(struct char_data* ch)
     ch->player.time.logon = time(0);
 
     /*
-   * If no player files exist, the top of the p_table is -1.  We
-   * call create_entry before we call do_start, and create_entry
-   * will create a new cell in the ptab and increment the top by
-   * 1.  Hence if the top is 0, there are no players other than
-   * this one and we want it to be the imp.
-   */
+     * If no player files exist, the top of the p_table is -1.  We
+     * call create_entry before we call do_start, and create_entry
+     * will create a new cell in the ptab and increment the top by
+     * 1.  Hence if the top is 0, there are no players other than
+     * this one and we want it to be the imp.
+     */
     if (top_of_p_table == 0) {
         log("Player table was empty: creating new implementor.\r\n");
         gain_exp_regardless(ch, xp_to_level(LEVEL_IMPL));
@@ -1374,7 +1374,7 @@ void affect_update_room(struct room_data* room)
 
     time_phase = get_current_time_phase();
 
-    movechance = number(1, 100); //to be used to check if mists move.
+    movechance = number(1, 100); // to be used to check if mists move.
 
     for (tmpaf = room->affected; tmpaf; tmpaf = next_tmpaf) {
         next_tmpaf = tmpaf->next;

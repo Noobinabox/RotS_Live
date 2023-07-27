@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: act.movement.c                                Part of CircleMUD *
-*  Usage: movement commands, door handling, & sleep/rest/etc state        *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.movement.c                                Part of CircleMUD *
+ *  Usage: movement commands, door handling, & sleep/rest/etc state        *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <stdio.h>
@@ -147,7 +147,7 @@ int room_move_cost(char_data* character, room_data* new_room)
     }
 
     if (IS_RIDING(character)) {
-        move_cost = (move_cost / (120 + GET_RAW_KNOWLEDGE(character, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(character, SKILL_ANIMALS) / 2)) * 5/4;
+        move_cost = (move_cost / (120 + GET_RAW_KNOWLEDGE(character, SKILL_RIDE) * 2 + GET_RAW_KNOWLEDGE(character, SKILL_ANIMALS) / 2)) * 5 / 4;
     } else {
         move_cost = move_cost / 100;
     }
@@ -159,12 +159,12 @@ int room_move_cost(char_data* character, room_data* new_room)
 //***********************************************************************
 int check_simple_move(struct char_data* ch, int cmd,
     int* mv_cost, int mode)
-/* Assumes, 
+/* Assumes,
      1. That there is no master and no followers.
-     2. That the direction exists. 
-     
+     2. That the direction exists.
+
      Returns :
-     
+
      0 : success
      1 : intercepted by specials, or something like that
      2 : need a boat
@@ -174,7 +174,7 @@ int check_simple_move(struct char_data* ch, int cmd,
      6 : has no control over mount
      7 : riders can't go indoors
      8 : race guard mob is in the room
-                
+
      Also returns movement cost in mv_cost
   */
 {
@@ -223,9 +223,9 @@ int check_simple_move(struct char_data* ch, int cmd,
 
     if (room_from->sector_type == SECT_WATER_NOSWIM || room_to->sector_type == SECT_WATER_NOSWIM) {
         /*
- *    room_from->sector_type == SECT_WATER_SWIM ||
- *    room_to->sector_type == SECT_WATER_SWIM) {
- */
+         *    room_from->sector_type == SECT_WATER_SWIM ||
+         *    room_to->sector_type == SECT_WATER_SWIM) {
+         */
         if (!can_swim(ch) && !IS_RIDING(ch)) {
             // can swim on mounts
             return 2;
@@ -248,11 +248,11 @@ int check_simple_move(struct char_data* ch, int cmd,
                 int m;
 
                 /*
-          * m will be in the range [0, 6].  Since the sector movement
-          * cost for SECT_WATER_SWIM and SECT_WATER_NOSWIM are 8 and 10,
-          * this means that a 36r with mastered swim can swim a NOSWIM
-          * room with 1 movement cost.
-          */
+                 * m will be in the range [0, 6].  Since the sector movement
+                 * cost for SECT_WATER_SWIM and SECT_WATER_NOSWIM are 8 and 10,
+                 * this means that a 36r with mastered swim can swim a NOSWIM
+                 * room with 1 movement cost.
+                 */
                 m = GET_PROF_LEVEL(PROF_RANGER, ch) + GET_SKILL(ch, SKILL_SWIM);
                 m /= 20;
 
@@ -373,15 +373,15 @@ int perform_move_mount(struct char_data* ch, int dir)
                 send_to_char("You are too exhausted!\n\r", ch);
             stop_riding(tmpch);
         } else {
-            //if bloodied harder to move -Z
+            // if bloodied harder to move -Z
             if (GET_HIT(ch) < GET_MAX_HIT(ch) / 4)
                 move_cost += 2;
 
             // If "sundelayed", harder to move. - power of Arda
             if (EVIL_RACE(ch))
                 do_power_of_arda(ch);
-            //if (GET_RACE(ch) == RACE_ORC) move_cost += number(2,3);
-            //else move_cost += number(1,2);
+            // if (GET_RACE(ch) == RACE_ORC) move_cost += number(2,3);
+            // else move_cost += number(1,2);
 
             GET_MOVE(tmpch) -= move_cost;
         }
@@ -489,8 +489,8 @@ int perform_move_mount(struct char_data* ch, int dir)
     return 1;
 }
 
-
-void parse_container_for_stay_zone(char_data* ch, obj_data* container, int room) {
+void parse_container_for_stay_zone(char_data* ch, obj_data* container, int room)
+{
     obj_data* next_item = nullptr;
     for (obj_data* item = container->contains; item; item = next_item) {
         next_item = item->next_content;
@@ -508,10 +508,10 @@ void parse_container_for_stay_zone(char_data* ch, obj_data* container, int room)
             obj_to_room(item, room);
         }
     }
-
 };
 
-void prohibit_item_stay_zone_move(char_data* ch, int room) {
+void prohibit_item_stay_zone_move(char_data* ch, int room)
+{
     // Check for gear that character is wearing.
     for (int gear_index = 0; gear_index < MAX_WEAR; gear_index++) {
         obj_data* item = ch->equipment[gear_index];
@@ -1156,7 +1156,7 @@ bool is_key(obj_data* item)
 }
 
 /* returns NULL if the character does not have the key (or it is broken),
-		   a pointer to the key if the character does have the key  */
+                   a pointer to the key if the character does have the key  */
 obj_data* has_key(char_data* character, int key)
 {
     for (obj_data* item = character->carrying; item; item = item->next_content)
@@ -1691,7 +1691,7 @@ ACMD(do_refollow)
 }
 
 ACMD(do_lead)
-{ //Added by Loman.
+{ // Added by Loman.
     char_data* potential_mount;
     char_data* mount;
 
@@ -1770,7 +1770,7 @@ ACMD(do_pull)
 
     obj_data* obj;
     int room_num, exit_num, next_room_num;
-    int would_open; //1 if open, 0 is close.
+    int would_open; // 1 if open, 0 is close.
     room_data* room;
     room_data* next_room;
 

@@ -136,11 +136,11 @@ void write_object(FILE* f, struct obj_data* obj, int num)
 
         obj->obj_flags.wear_flags);
 
-    /*  fprintf(f,"%d %d %d %d %d\n\r",obj->obj_flags.value[0], 
+    /*  fprintf(f,"%d %d %d %d %d\n\r",obj->obj_flags.value[0],
 
-	  obj->obj_flags.value[1],obj->obj_flags.value[2],
+          obj->obj_flags.value[1],obj->obj_flags.value[2],
 
-	  obj->obj_flags.value[3],obj->obj_flags.value[4]);
+          obj->obj_flags.value[3],obj->obj_flags.value[4]);
 
 */
     fprintf(f, "%d %d %d %d %d\n\r", obj->obj_flags.value[0],
@@ -167,7 +167,7 @@ void write_object(FILE* f, struct obj_data* obj, int num)
     }
 }
 
-//#define SUBST(x)   real->x=(char *)calloc(strlen(curr->x)+1,1);  strcpy(real->x,curr->x);
+// #define SUBST(x)   real->x=(char *)calloc(strlen(curr->x)+1,1);  strcpy(real->x,curr->x);
 
 #define SUBST(x)                                \
     CREATE(real->x, char, strlen(curr->x) + 1); \
@@ -344,7 +344,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
     //  int i,i1;
     int tmp, tmp1, tmp2, tmp3, tmp4, tmp5, choice;
     struct obj_data* obj;
-    //char key;
+    // char key;
     struct extra_descr_data* current_descr;
     choice = 0;
     obj = SHAPE_OBJECT(ch)->object;
@@ -447,7 +447,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
             if (current_descr) {
                 //	current_descr->next=(struct extra_descr_data *)calloc(1,sizeof(struct extra_descr_data));
                 CREATE1(current_descr->next, extra_descr_data);
-                //bzero((char *)(current_descr->next),sizeof(struct extra_descr_data));
+                // bzero((char *)(current_descr->next),sizeof(struct extra_descr_data));
                 current_descr = current_descr->next;
             } else {
                 CREATE1(SHAPE_OBJECT(ch)->object->ex_description, extra_descr_data);
@@ -910,7 +910,7 @@ void list_help_obj(struct char_data* ch)
 void list_object(struct char_data* ch, struct obj_data* obj)
 {
 
-    static char str[MAX_STRING_LENGTH]; //str1[100];
+    static char str[MAX_STRING_LENGTH]; // str1[100];
 
     struct extra_descr_data* tmpdesc;
 
@@ -1049,13 +1049,13 @@ extern struct room_data world;
 
 int load_object(struct char_data* ch, char* arg)
 {
-    //char c;
-    //char format;
+    // char c;
+    // char format;
     int i, tmp, tmp2, tmp3, tmp4, tmp5, number, room_number;
     char str[255], fname[80];
     struct extra_descr_data* new_descr;
     FILE* f;
-    //char s1[50],s2[50],s3[50],s4[50];
+    // char s1[50],s2[50],s3[50],s4[50];
     char* st = 0;
     room_number = ch->in_room;
 
@@ -1094,7 +1094,7 @@ int load_object(struct char_data* ch, char* arg)
 
     /* fseek(f,tmp,SEEK_SET);
   fscanf(f,"%c",&c);
-  
+
   fscanf(f,"%d",&tmp);
   */
     if (tmp > number) {
@@ -1295,7 +1295,7 @@ int load_object(struct char_data* ch, char* arg)
 
    CREATE1(SHAPE_OBJECT(ch)->object,struct obj_data);
 
-  
+
 
   SHAPE_OBJECT(ch)->object->item_number=-1;
 
@@ -1345,7 +1345,7 @@ int load_object(struct char_data* ch, char* arg)
 
 /*****************----------------------------------******************/
 
-//#define min(a,b) (((a)<(b))? (a):(b))
+// #define min(a,b) (((a)<(b))? (a):(b))
 
 int append_object(struct char_data* ch, char* arg);
 

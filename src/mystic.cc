@@ -1,15 +1,15 @@
 /* ************************************************************************
-*   File: mystic.cc                                     Part of CircleMUD *
-*   Usage: actual effects of mystical spells                              *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: mystic.cc                                     Part of CircleMUD *
+ *   Usage: actual effects of mystical spells                              *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 /*
- * Mystic.cc is part of a code clean up project 
+ * Mystic.cc is part of a code clean up project
  * Mystic.cc is derived from circlemuds magic.cc
  * The change over was made in an effort to better organise
  * the code base by the rots-devel team (go us)
@@ -104,7 +104,7 @@ int get_mystic_caster_level(const char_data* caster)
  *  - Self_Affection Spells
  *  - Regeneration Spells
  *  - Offensive (for lack of a better word) skills
- *  - Everything Else 
+ *  - Everything Else
  */
 
 /* Perception and Mental skills ordered by level
@@ -112,7 +112,7 @@ int get_mystic_caster_level(const char_data* caster)
  * - Revive
  * - Mind Block
  * - Insight
- * - Pragmatism 
+ * - Pragmatism
  */
 
 ACMD(do_flee);
@@ -333,7 +333,7 @@ ASPELL(spell_insight)
     }
 
     if ((victim != caster) && !is_object) {
-        //if(GET_PERCEPTION(victim)*2 < number(0,100)){
+        // if(GET_PERCEPTION(victim)*2 < number(0,100)){
         if (saves_insight(victim, caster)) {
             act("You failed to affect $S mind.", FALSE, caster, 0, victim, TO_CHAR);
             return;
@@ -977,7 +977,7 @@ ASPELL(spell_regeneration)
 /*
  *  Offensive Spells listed below in order
  *  - Hallucinate
- *  - Haze 
+ *  - Haze
  *  - Fear
  *  - Poison
  *  - Terror
@@ -998,14 +998,14 @@ ASPELL(spell_hallucinate)
         send_to_char("They are already hallucinating!\n\r", caster);
 
     /*
-	 *  The modifier represents the number of times that the affected character
-	 * can "miss" the illusions of the characters/mobiles they're trying to hit.
-	 * Once they've "missed" this number of times, the effect will be removed.
-	 * If they hit the player before the modifier is 0, the effect will also be
-	 * removed.  A player of mystic level 31 or higher gets an additional +1
-	 * modifier.  A player specialization of Illusion give the player an
-	 * additional +1 modifier.
-	 */
+     *  The modifier represents the number of times that the affected character
+     * can "miss" the illusions of the characters/mobiles they're trying to hit.
+     * Once they've "missed" this number of times, the effect will be removed.
+     * If they hit the player before the modifier is 0, the effect will also be
+     * removed.  A player of mystic level 31 or higher gets an additional +1
+     * modifier.  A player specialization of Illusion give the player an
+     * additional +1 modifier.
+     */
 
     modifier = ((GET_PROF_LEVEL(PROF_CLERIC, caster) / 10) + 2)
         + ((GET_PROF_LEVEL(PROF_CLERIC, caster) > 30) ? 1 : 0)
@@ -1232,7 +1232,7 @@ ASPELL(spell_terror)
 }
 
 /*
- * Misc Mystic Spells listed below 
+ * Misc Mystic Spells listed below
  *  - Attune
  *  - Sanctuary
  *  - Enchant Weapon
@@ -1527,11 +1527,11 @@ void scale_guardian(int guardian_type, const char_data* caster, char_data* guard
 ASPELL(spell_guardian)
 {
     /*
-	 * Guardian now takes an extra
-	 * argument from the character on cast
-	 * The argument determines the type of
-	 * Guardian mob cast by the user
-	 */
+     * Guardian now takes an extra
+     * argument from the character on cast
+     * The argument determines the type of
+     * Guardian mob cast by the user
+     */
 
     static char* guardian_type[] = {
         "aggressive",
@@ -1551,11 +1551,11 @@ ASPELL(spell_guardian)
     }
 
     /*
-	 * Takes the extra arguement from the user
-	 * Checks if its a valid arguement
-	 * Loads appropriate guardian number according
-	 * to race/type.
-	 */
+     * Takes the extra arguement from the user
+     * Checks if its a valid arguement
+     * Loads appropriate guardian number according
+     * to race/type.
+     */
 
     one_argument(arg, first_word);
     guardian_to_load = search_block(first_word, guardian_type, 0);
@@ -1751,8 +1751,8 @@ ASPELL(spell_protection)
     };
 }
 
-
-void do_renounce(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command) {
+void do_renounce(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
+{
 
     if (utils::is_affected_by_spell(*character, SPELL_SANCTUARY)) {
         send_to_char("You renounce your sanctuary!\n\r", character);

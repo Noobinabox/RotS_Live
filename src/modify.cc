@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: modify.c                                      Part of CircleMUD *
-*  Usage: Run-time modification of game variables                         *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: modify.c                                      Part of CircleMUD *
+ *  Usage: Run-time modification of game variables                         *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -66,8 +66,8 @@ int max_value[] = {
 
 extern sh_int screen_width;
 /* ************************************************************************
-*  modification of malloc'ed strings                                      *
-************************************************************************ */
+ *  modification of malloc'ed strings                                      *
+ ************************************************************************ */
 
 int word_length(char* str)
 {
@@ -203,7 +203,7 @@ void string_add_init(struct descriptor_data* d, char** str)
     if (*d->str) {
         if (*str) {
             tmp = strlen(*d->str);
-            CREATE(tmpstr, char, BLOCK_STR_LEN*(1 + tmp / BLOCK_STR_LEN));
+            CREATE(tmpstr, char, BLOCK_STR_LEN * (1 + tmp / BLOCK_STR_LEN));
             strncpy(tmpstr, *d->str, tmp);
             *d->str = tmpstr;
             tmpstr = 0;

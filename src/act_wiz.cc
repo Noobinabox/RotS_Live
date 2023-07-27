@@ -99,7 +99,7 @@ extern char* resistance_name[];
 extern char* vulnerability_name[];
 /* external functs */
 
-//char *crypt(const char *key, const char *salt);
+// char *crypt(const char *key, const char *salt);
 int find_name(char* name);
 void encrypt_line(unsigned char* line, int len);
 void show_room_affection(char* str, affected_type* aff, int mode);
@@ -2081,7 +2081,7 @@ ACMD(do_zreset)
         send_to_char("Invalid zone number.\n\r", ch);
 }
 
-/* 
+/*
   General fn for wizcommands of the sort: cmd <player>
 */
 
@@ -2092,7 +2092,7 @@ struct
     int min_level;
 } wizutil_options[] = {
     { "reroll", SCMD_REROLL, LEVEL_GRGOD },
-    { "pardon", SCMD_PARDON, LEVEL_GOD + 1 }, //no longer used
+    { "pardon", SCMD_PARDON, LEVEL_GOD + 1 }, // no longer used
     { "freeze", SCMD_FREEZE, LEVEL_FREEZE },
     { "notitle", SCMD_NOTITLE, LEVEL_GOD },
     { "thaw", SCMD_THAW, LEVEL_FREEZE },
@@ -3144,7 +3144,7 @@ extern int top_of_objt;
 
 extern struct char_data* mob_proto;
 extern struct obj_data* obj_proto;
-//extern room_data world;
+// extern room_data world;
 ACMD(do_register)
 {
 

@@ -1,12 +1,12 @@
 /**************************************************************************
-*   File: spell_parser.c                                Part of CircleMUD *
-*  Usage: command interpreter for 'cast' command (spells)                 *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-**************************************************************************/
+ *   File: spell_parser.c                                Part of CircleMUD *
+ *  Usage: command interpreter for 'cast' command (spells)                 *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ **************************************************************************/
 
 #include "platdef.h"
 #include <assert.h>
@@ -132,7 +132,7 @@ char saves_power(const char_data* victim, sh_int casting_power, sh_int save_bonu
     }
 }
 
-/* 
+/*
  * Saving a mage spell depends on many things (and mystic spells
  * should one day be changed so that they too depend on many
  * things).  First and foremost are the mage level of the caster,
@@ -290,7 +290,7 @@ void check_break_prep(struct char_data* ch)
     }
 }
 
-/* 
+/*
  * A pretty general save function that takes into consideration
  * perception.  Higher percep makes better save.
  */
@@ -478,8 +478,8 @@ bool can_cast_spell(char_data& character, int spell_index, const skill_data& spe
     }
 
     /* Here checking that the character is allowed to cast the spell if they are
-		in shadow form.  Probably a better way of doing this, but I can't think
-		of it at the moment :) */
+                in shadow form.  Probably a better way of doing this, but I can't think
+                of it at the moment :) */
 
     // These checks spells seem like they are very particular.  Going into and out of shadow form?
     if (spell.min_usesmana == 55 && affected_by_spell(&character, SPELL_ANGER)) {
@@ -541,7 +541,7 @@ ACMD(do_cast)
     }
 
     /** no wtl, or wtl->subcmd==0  - the first call of do_cast,
-		starting  to cast now **/
+                starting  to cast now **/
 
     if ((ch->delay.cmd == CMD_PREPARE) && (ch->delay.targ1.type == TARGET_IGNORE)) {
         prepared_spell = ch->delay.targ1.ch_num;
@@ -705,7 +705,7 @@ ACMD(do_cast)
     }
 
     /* ok, now the caster has waited his respective time, and
-	 * we're going to actually cast the spell */
+     * we're going to actually cast the spell */
     REMOVE_BIT(ch->specials.affected_by, AFF_WAITING);
     REMOVE_BIT(ch->specials.affected_by, AFF_WAITWHEEL);
 
@@ -729,7 +729,7 @@ ACMD(do_cast)
         }
 
         /* get rid of sanctuaries for any spell targetted on someone other
-		 * than themseles */
+         * than themseles */
         if (tar_char && (tar_char != ch) && IS_AFFECTED(ch, AFF_SANCTUARY)) {
             appear(ch);
             send_to_char("You cast off your sanctuary!\n\r", ch);
@@ -901,10 +901,10 @@ ACMD(do_cast)
         send_to_char("Ok.\n\r", ch);
 
         /*
-		 * failing to hallucinate means no spell is cast, but this
-		 * is only the behavior assuming that there IS a target, and
-		 * that the target is not yourself.
-		 */
+         * failing to hallucinate means no spell is cast, but this
+         * is only the behavior assuming that there IS a target, and
+         * that the target is not yourself.
+         */
         if (tar_char && tar_char != ch && !check_hallucinate(ch, tar_char)) {
             return;
         }
@@ -913,12 +913,12 @@ ACMD(do_cast)
         ((*skills[spell_index].spell_pointer)(ch, arg, SPELL_TYPE_SPELL, tar_char, tar_obj, tar_dig, 0));
 
         /*
-		 * Casting a prepared spell now causes a short after-spell
-		 * lag.  Why do we use beats / 4?  A 30m's fireball (which
-		 * is the longest lag spell I can think of - unless spear
-		 * is longer) has a time of 15: thus beats/4 is basically
-		 * *never* greater than zero.
-		 */
+         * Casting a prepared spell now causes a short after-spell
+         * lag.  Why do we use beats / 4?  A 30m's fireball (which
+         * is the longest lag spell I can think of - unless spear
+         * is longer) has a time of 15: thus beats/4 is basically
+         * *never* greater than zero.
+         */
         if (prepared_spell == spell_index) {
             WAIT_STATE_BRIEF(ch, number(1, skills[spell_index].beats / 4), -1, 0, 50, AFF_WAITING);
         }
@@ -937,7 +937,7 @@ ACMD(do_cast)
  * that I removed caused prepare to fail should the caster
  * not have enough mana (or a cleric not have enough spirit)
  * to cast the spell at prepare time.
- * 
+ *
  * Subcommmands:
  *   0 - Initial call to prepare, cause delay and store in a
  *       temporary structure what is being prepared.

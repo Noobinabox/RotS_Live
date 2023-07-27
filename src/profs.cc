@@ -369,22 +369,23 @@ void check_stat_increase(char_data* character)
 }
 } // end anonymous helper namespace
 
-void check_for_special_levels(char_data* character) {
+void check_for_special_levels(char_data* character)
+{
     switch (GET_LEVEL(character)) {
-        case 6:
-            send_to_char("You are now able to see your statistics and reroll them!\n\rType stat to see your current statistics or type tell angel reroll to change them.\n\r", character);
-            break;
-        case 12:
-            send_to_char("You are now able to pick a specialization!\n\rSee man spec all.\n\r", character);
-            break;
-        case 20:
-            send_to_char("You are now able to set your title!\n\rSee man gen title.\n\r", character);
-            break;
-        case 30:
-            send_to_char("You are now a legend character!\n\rSee man gen legend.\n\r", character);
-            break;
-        default:
-            break;
+    case 6:
+        send_to_char("You are now able to see your statistics and reroll them!\n\rType stat to see your current statistics or type tell angel reroll to change them.\n\r", character);
+        break;
+    case 12:
+        send_to_char("You are now able to pick a specialization!\n\rSee man spec all.\n\r", character);
+        break;
+    case 20:
+        send_to_char("You are now able to set your title!\n\rSee man gen title.\n\r", character);
+        break;
+    case 30:
+        send_to_char("You are now a legend character!\n\rSee man gen legend.\n\r", character);
+        break;
+    default:
+        break;
     }
 }
 

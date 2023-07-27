@@ -31,8 +31,8 @@
 #include <string>
 
 /**************************************************************************
-*  declarations of most of the 'global' variables                         *
-************************************************************************ */
+ *  declarations of most of the 'global' variables                         *
+ ************************************************************************ */
 
 /* The global buffering system */
 char buf[MAX_STRING_LENGTH];
@@ -121,7 +121,7 @@ struct char_data* fast_update_list = 0; /* list for fast updating */
 struct char_data* death_waiting_list = 0; /* list of those flagged to die... */
 
 char world_map[WORLD_AREA + 1];
-char small_map[2 * SMALL_WORLD_RADIUS + 3][4 * SMALL_WORLD_RADIUS + 7]; //Ingolemo small_map addition
+char small_map[2 * SMALL_WORLD_RADIUS + 3][4 * SMALL_WORLD_RADIUS + 7]; // Ingolemo small_map addition
 
 long judppwd; // password for JUDP IP registration
 int judpavailable; // 1 if JUDP is available, 0 otherwise
@@ -153,7 +153,7 @@ void reset_time(void);
 void clear_char(struct char_data* ch, int mode);
 void init_boards(void);
 void initialize_buffers();
-//void        add_follower(struct char_data *ch, struct char_data *leader);
+// void        add_follower(struct char_data *ch, struct char_data *leader);
 char* fread_line(FILE* fp);
 void move_char_deleted(int index);
 
@@ -162,7 +162,7 @@ extern struct descriptor_data* descriptor_list;
 void load_messages(void);
 void weather_and_time(int mode);
 void assign_command_pointers(void);
-//void	assign_spell_pointers(void);
+// void	assign_spell_pointers(void);
 void boot_social_messages(void);
 void update_obj_file(void); /* In objsave.c */
 void sort_commands(void);
@@ -190,8 +190,8 @@ extern universal_list* affected_list_pool;
 unsigned char pwdcrypt[MAX_PWD_LENGTH];
 
 /*************************************************************************
-*  routines for booting the system                                       *
-*********************************************************************** */
+ *  routines for booting the system                                       *
+ *********************************************************************** */
 
 /* thith is necessary for the autowiz system */
 void reboot_wizlists(void)
@@ -839,8 +839,8 @@ void load_rooms(FILE* fl)
                         aff_set = 1;
                     }
 
-                    base_af->type = tmp; //ROOMAFF_SPELL;
-                    base_af->location = tmp2; //SPELL_NONE;
+                    base_af->type = tmp; // ROOMAFF_SPELL;
+                    base_af->location = tmp2; // SPELL_NONE;
                     base_af->duration = -1;
                     base_af->modifier = tmp3; // spell level
                     base_af->bitvector = tmp4 | PERMAFFECT; // what flags to set
@@ -861,7 +861,7 @@ void load_rooms(FILE* fl)
 
     top_of_world = room_nr - 1;
     top_of_world++; // this is for the dummy EXTENSION_ROOM_HEAD room
-    //printf("top_of_world=%d\n",top_of_world);
+    // printf("top_of_world=%d\n",top_of_world);
 }
 
 /* read direction data */
@@ -1087,8 +1087,8 @@ void load_scripts(FILE* fl)
 }
 
 /*************************************************************************
-*  procedures for resetting, both play-time and boot-time	 	 *
-*********************************************************************** */
+ *  procedures for resetting, both play-time and boot-time	 	 *
+ *********************************************************************** */
 
 int vnum_mobile(char* searchname, struct char_data* ch)
 {
@@ -1474,10 +1474,10 @@ read_object(int nr, int type)
     obj_index[i].number++;
 
     /*
-   * Users can't create objects, only immortals, so we have to assume that
-   * this is 0 as it hasn't been touched by a PC.  This should be checked in
-   * do_load!
-   */
+     * Users can't create objects, only immortals, so we have to assume that
+     * this is 0 as it hasn't been touched by a PC.  This should be checked in
+     * do_load!
+     */
     obj->touched = 0;
     obj->loaded_by = 0;
 
@@ -1553,10 +1553,10 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.material = tmp3;
             obj_proto[i].obj_flags.script_number = tmp4;
             /*fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
-	    obj_proto[i].obj_flags.poisoned = tmp;
-	    obj_proto[i].obj_flags.poisondata[0] = tmp2;
-	    obj_proto[i].obj_flags.poisondata[1] = tmp3;
-	    obj_proto[i].obj_flags.poisondata[2] = tmp4;*/
+            obj_proto[i].obj_flags.poisoned = tmp;
+            obj_proto[i].obj_flags.poisondata[0] = tmp2;
+            obj_proto[i].obj_flags.poisondata[1] = tmp3;
+            obj_proto[i].obj_flags.poisondata[2] = tmp4;*/
 
             /* *** extra descriptions *** */
 
@@ -1683,8 +1683,8 @@ int set_exit_state(struct room_data* room, int dir, int newstate)
 }
 
 /*************************************************************************
-*  stuff related to the save/load player system				             *
-*********************************************************************** */
+ *  stuff related to the save/load player system				             *
+ *********************************************************************** */
 
 // New load system (Fingolfin) under construction
 
@@ -2081,7 +2081,7 @@ void store_to_char(struct char_file_u* st, struct char_data* ch)
     ch->specials.carry_weight = 0;
     ch->specials.carry_items = 0;
     SET_PARRY(ch) = 0;
-    ch->points.damage = 0; //st->points.damage;
+    ch->points.damage = 0; // st->points.damage;
     SET_DODGE(ch) = 0;
     SET_OB(ch) = 0;
     ch->points.encumb = 0;
@@ -2257,7 +2257,7 @@ int old_create_entry(char* name)
     }
     //   printf("placing the new player in position %d, total %d\n",num,top_of_p_table);
     CREATE(player_table[num].name, char, strlen(name) + 1);
-    //printf("passed created, i=%d,num=%d\n",i,num);
+    // printf("passed created, i=%d,num=%d\n",i,num);
     (player_table + i)->flags = 0;
     // (player_table + i)->title[0] = 0;
     (player_table + i)->warpoints = 0;
@@ -2498,7 +2498,7 @@ void save_char(struct char_data* ch, int load_room, int notify_char)
     }
 
     /* if load_room isn't anywhere, but they are somewhere, we'll set
-   * load_room to that somewhere */
+     * load_room to that somewhere */
     if ((load_room == NOWHERE) && (ch->in_room != NOWHERE))
         load_room = world[ch->in_room].number;
 
@@ -2532,8 +2532,8 @@ void save_char(struct char_data* ch, int load_room, int notify_char)
 }
 
 /************************************************************************
-*  procs of a (more or less) general utility nature			*
-********************************************************************** */
+ *  procs of a (more or less) general utility nature			*
+ ********************************************************************** */
 
 /* read and allocate space for a '~'-terminated string from a given file */
 char* fread_string(FILE* fl, char* error)
@@ -2685,7 +2685,7 @@ void free_char(struct char_data* ch)
     if (ch->knowledge) {
         RELEASE(ch->knowledge);
     }
-    //printf("skills freed, and others\n");
+    // printf("skills freed, and others\n");
 
     ch->extra_specialization_data.reset();
     ch->damage_details.reset();
@@ -2722,10 +2722,10 @@ void free_obj(struct obj_data* obj)
        RELEASE(obj->action_description);
      if (obj->ex_description && obj->ex_description != obj_proto[nr].ex_description)
        for (thith = obj->ex_description; thith; thith = next_one) {
-	 next_one = thith->next;
-	 RELEASE(thith->keyword);
-	 RELEASE(thith->description);
-	 RELEASE(thith);
+         next_one = thith->next;
+         RELEASE(thith->keyword);
+         RELEASE(thith->description);
+         RELEASE(thith);
        }
    } */
 
@@ -3379,7 +3379,7 @@ int room_data::create_room(int zone)
             TOTAL_LENGTH += EXTENSION_SIZE;
             //      sprintf(mybuf,"created first, total=%d",TOTAL_LENGTH);
             //      log(mybuf);
-            //printf(" numbersm %d %d\n",world[place].number, world[place+1].number);
+            // printf(" numbersm %d %d\n",world[place].number, world[place+1].number);
             new_room = BASE_EXTENSION->extension_world;
         } else {
             for (ext = BASE_EXTENSION; ext->extension_next; ext = ext->extension_next)
@@ -3422,7 +3422,7 @@ void room_data::create_bulk(int amount)
         exit(0);
     }
 
-    //BASE_WORLD = (room_data *)calloc(sizeof(room_data), amount + EXTENSION_SIZE);
+    // BASE_WORLD = (room_data *)calloc(sizeof(room_data), amount + EXTENSION_SIZE);
     BASE_WORLD = new room_data[amount + EXTENSION_SIZE];
     if (!BASE_WORLD) {
         printf("Could not allocate %d rooms for room_data\n", amount);
@@ -3550,7 +3550,7 @@ void write_exploits(char_data* ch, exploit_record* record)
     default:
         sprintf(playerfname, "exploits/ZZZ/%s.exploits", name);
         break;
-    } //switch
+    } // switch
 
     // open this chars main exploit file
     exploit_player_file = fopen(playerfname, "r");
@@ -3572,7 +3572,7 @@ void write_exploits(char_data* ch, exploit_record* record)
             fwrite(&temprec, sizeof(exploit_record), 1, exploit_file);
         }
         fclose(exploit_player_file);
-    } //more than one entry
+    } // more than one entry
 
     // close the temp file. this temp file contains entire trophy
     fclose(exploit_file);
@@ -3829,7 +3829,7 @@ int rename_char(struct char_data* ch, char* newname)
     system(namebuf);
 
     /* release the buffers in the player table and in their personal
-   * char_data structure */
+     * char_data structure */
     RELEASE(player_table[player_i].name);
     RELEASE(ch->player.name);
 

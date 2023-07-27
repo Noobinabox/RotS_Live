@@ -1,34 +1,34 @@
 /* ************************************************************************
-*   File: handler.c                                     Part of CircleMUD *
-*  Usage: internal funcs: moving and finding chars/objs                   *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: handler.c                                     Part of CircleMUD *
+ *  Usage: internal funcs: moving and finding chars/objs                   *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 /**************************************************************************
-*  ROTS Documentation                                                     *
-*                                                                         *
-*  Handling Affections                                                    *
-*    An affection should be applied to a character using affect_to_char   *
-*    with pointers to the character and the new affection.                *
-*    To remove an affection use affect_from_char sending a pointer to the *
-*    character and the skill number (from spells_pa.cc).                  *
-*    To remove an unknown affection from a character use affect_remove    *
-*    after checking that the pointer you are sending to the function is   *
-*    present in ch->affected.                                             *
-*                                                                         *
-*  affected_type_pool                                                     *
-*    This is a linked list of unused affections which can be allocated to *
-*    characters as and when they are needed.  Once the affection is       *
-*    removed from a character it returns to the pool until it is needed.  *
-*    If the pool becomes empty then a call to get_from_affected_type_pool *
-*    will allocate resources for a new affection. Rooms also use this     *
-*    pool since their affection handling should be almost identical to    *
-*    characters.                                                          *
-**************************************************************************/
+ *  ROTS Documentation                                                     *
+ *                                                                         *
+ *  Handling Affections                                                    *
+ *    An affection should be applied to a character using affect_to_char   *
+ *    with pointers to the character and the new affection.                *
+ *    To remove an affection use affect_from_char sending a pointer to the *
+ *    character and the skill number (from spells_pa.cc).                  *
+ *    To remove an unknown affection from a character use affect_remove    *
+ *    after checking that the pointer you are sending to the function is   *
+ *    present in ch->affected.                                             *
+ *                                                                         *
+ *  affected_type_pool                                                     *
+ *    This is a linked list of unused affections which can be allocated to *
+ *    characters as and when they are needed.  Once the affection is       *
+ *    removed from a character it returns to the pool until it is needed.  *
+ *    If the pool becomes empty then a call to get_from_affected_type_pool *
+ *    will allocate resources for a new affection. Rooms also use this     *
+ *    pool since their affection handling should be almost identical to    *
+ *    characters.                                                          *
+ **************************************************************************/
 
 #include "platdef.h"
 #include <assert.h>
@@ -581,8 +581,8 @@ void affect_total(struct char_data* ch, int mode)
 }
 
 /*  If there is a structure of affected_type in the affected_type_pool list then
-	it is removed, if not then one is CREATEd.  A pointer to an available affected_type
-	structure is returned to be applied to a character or room. */
+        it is removed, if not then one is CREATEd.  A pointer to an available affected_type
+        structure is returned to be applied to a character or room. */
 
 struct affected_type* get_from_affected_type_pool()
 {
@@ -601,7 +601,7 @@ struct affected_type* get_from_affected_type_pool()
 }
 
 /* Puts a struct affected_type into the head of the pool.
-   ** Replaced with free at the moment to aid bughunting. */
+ ** Replaced with free at the moment to aid bughunting. */
 
 void put_to_affected_type_pool(struct affected_type* oldaf)
 {
@@ -612,8 +612,8 @@ void put_to_affected_type_pool(struct affected_type* oldaf)
 }
 
 /* Insert an affect_type in a char_data structure
-   Automatically sets apropriate bits and applys 
-   
+   Automatically sets apropriate bits and applys
+
    1.  Checks to see if the character is on the affected list.  If not they are added
    2.  Allocates memory for the new affection (also inserting it into affected_list)
    3.  Copies the parameters of the affection to the structure in the affected_list
@@ -694,8 +694,8 @@ void affect_to_room(struct room_data* room, struct affected_type* af)
 }
 
 /* Remove an affected_type structure from a char (called when duration
-   reaches zero). Pointer *af must never be NIL! Frees mem and calls 
-   affect_location_apply 
+   reaches zero). Pointer *af must never be NIL! Frees mem and calls
+   affect_location_apply
                                                */
 void affect_remove(struct char_data* ch, struct affected_type* af)
 {
@@ -832,7 +832,7 @@ void affect_from_char_notify(struct char_data* ch, byte skill)
     affect_from_char(ch, skill);
 }
 
-/* Call affect_remove with every spell of spelltype "skill" 
+/* Call affect_remove with every spell of spelltype "skill"
    Standard mud call to remove an affection of known type from a character.  */
 
 void affect_from_char(struct char_data* ch, byte skill)
@@ -1826,7 +1826,7 @@ void extract_obj(struct obj_data* obj)
 
     if (obj->item_number >= 0)
         (obj_index[obj->item_number].number)--;
-    //printf("extracting object %s in room %d\n",obj->name, obj->in_room);
+    // printf("extracting object %s in room %d\n",obj->name, obj->in_room);
     free_obj(obj);
 }
 

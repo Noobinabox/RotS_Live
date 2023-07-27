@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: act.obj1.c                                    Part of CircleMUD *
-*  Usage: object handling routines -- get/drop and container handling     *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.obj1.c                                    Part of CircleMUD *
+ *  Usage: object handling routines -- get/drop and container handling     *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include <ctype.h>
 #include <stdio.h>
@@ -57,12 +57,12 @@ void perform_put(struct char_data* ch, struct obj_data* obj,
 
 /* The following put modes are supported by the code below:
 
-	1) put <object> <container>
-	2) put all.<object> <container>
-	3) put all <container>
+        1) put <object> <container>
+        2) put all.<object> <container>
+        3) put all <container>
 
-	<container> must be in inventory or on ground.
-	all objects to be put into container must be in inventory.
+        <container> must be in inventory or on ground.
+        all objects to be put into container must be in inventory.
 */
 
 ACMD(do_put)
@@ -239,11 +239,11 @@ void get_from_container(struct char_data* ch, struct obj_data* cont, char* arg, 
 
     else if (obj_dotmode == FIND_ALL) {
         /*
-		 * This if prevents people from spam
-		 * looting corpses while still allowing
-		 * for characters to use the get all corpse
-		 * command while looting their own corpse.
-		 */
+         * This if prevents people from spam
+         * looting corpses while still allowing
+         * for characters to use the get all corpse
+         * command while looting their own corpse.
+         */
         for (obj = cont->contains; obj; obj = next_obj) {
             next_obj = obj->next_content;
             found = 1;
@@ -698,8 +698,8 @@ ACMD(do_give)
                     perform_give(ch, vict, obj);
                     obj = next_obj;
                     /* This because of poor design - losing orignal arguments
-	          in give_find_vict etc.  Needs to be rewritten.
-	       */
+                  in give_find_vict etc.  Needs to be rewritten.
+               */
                     if (temp_arg)
                         RELEASE(temp_arg);
                     temp_arg = str_dup(original_argument);
@@ -900,8 +900,8 @@ obj_data* load_scalp(int number)
     }
 
     CREATE(scalp, struct obj_data, 1);
-    //printf("making corpse from %p\n",ch);
-    //printf("corpse created, =%p\n",corpse);
+    // printf("making corpse from %p\n",ch);
+    // printf("corpse created, =%p\n",corpse);
     clear_object(scalp);
 
     scalp->item_number = real_object(generic_scalp);

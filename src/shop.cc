@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: shop.c                                        Part of CircleMUD *
-*  Usage: spec-procs and other funcs for shops and shopkeepers            *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: shop.c                                        Part of CircleMUD *
+ *  Usage: spec-procs and other funcs for shops and shopkeepers            *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <stdio.h>
@@ -171,11 +171,11 @@ int is_ok(struct char_data* keeper, struct char_data* ch, int shop_nr)
     return TRUE;
 
     /*   switch (shop_index[shop_nr].with_who) { (with_who now used for material)
-   case 0  : 
+   case 0  :
       return(TRUE);
-   case 1  : 
+   case 1  :
       return(TRUE);
-   default : 
+   default :
       return(TRUE);
    }; */
 }
@@ -244,7 +244,7 @@ void shopping_buy(char* arg, struct char_data* ch,
         objnum = atoi(argm);
     else
         objnum = 9999;
-    //printf("argm=%s, objnum=%d\n",argm,objnum);
+    // printf("argm=%s, objnum=%d\n",argm,objnum);
     if (!(temp1 = get_obj_in_list_vis(ch, argm, world[shop_index[shop_nr].stock_room].contents, objnum))) {
         sprintf(buf, shop_index[shop_nr].no_such_item1, GET_NAME(ch));
         do_tell(keeper, buf, 0, 19, 0);
@@ -373,7 +373,7 @@ void shopping_sell(char* arg, struct char_data* ch, struct char_data* keeper, in
         if (GET_GOLD(keeper) > 15000) {
            shop_index[shop_nr].bankAccount += (GET_GOLD(keeper) - 15000);
            GET_GOLD(keeper) = 15000;
-        } 
+        }
 */
     /*   if ((get_obj_in_list(argm, world[shop_index[shop_nr].stock_room].contents)) */
     if (shop_producing(temp1, shop_nr) || (GET_ITEM_TYPE(temp1) == ITEM_TRASH) || (has_already(temp1, shop_nr)))
@@ -398,25 +398,25 @@ void shopping_value(char* arg, struct char_data* ch,
     one_argument(arg, argm);
     if (!(*argm)) {
         sprintf(buf, "%s What do you want me to valuate??", GET_NAME(ch));
-        //printf("buff:%s.\n",buf);
+        // printf("buff:%s.\n",buf);
         do_tell(keeper, buf, 0, 19, 0);
         return;
     }
 
     if (!(temp1 = get_obj_in_list_vis(ch, argm, ch->carrying, 9999))) {
-        //printf("no such item\n");
+        // printf("no such item\n");
         sprintf(buf, shop_index[shop_nr].no_such_item2, GET_NAME(ch));
         do_tell(keeper, buf, 0, 19, 0);
         return;
     }
 
     if (!(trade_with(temp1, shop_nr))) {
-        //printf("no trade with you\n");
+        // printf("no trade with you\n");
         sprintf(buf, shop_index[shop_nr].do_not_buy, GET_NAME(ch));
         do_tell(keeper, buf, 0, 19, 0);
         return;
     }
-    //printf("numbers: cost:%d, profit:%d\n",temp1->obj_flags.cost, shop_index[shop_nr].profit_sell);
+    // printf("numbers: cost:%d, profit:%d\n",temp1->obj_flags.cost, shop_index[shop_nr].profit_sell);
     sprintf(buf, "%s I'll give you %s for that!", GET_NAME(ch), money_message((int)(temp1->obj_flags.cost * shop_index[shop_nr].profit_sell / 100)));
     do_tell(keeper, buf, 0, 19, 0);
 
@@ -490,7 +490,7 @@ void shopping_kill(char* arg, struct char_data* ch,
     }
 }
 
-//int	shop_keeper(struct char_data *ch, int cmd, char *arg)
+// int	shop_keeper(struct char_data *ch, int cmd, char *arg)
 SPECIAL(shop_keeper)
 {
     struct char_data* temp_char;
@@ -621,8 +621,8 @@ void boot_the_shops(FILE* shop_f, char* filename)
                 shop_index[number_of_shops].type[count] = (byte)temp;
             }
             /*	 for( ; count < MAX_TRADE ; count++ )
-	    shop_index[number_of_shops].type[count] =  -1;
-	    */
+            shop_index[number_of_shops].type[count] =  -1;
+            */
             shop_index[number_of_shops].no_such_item1 = fread_string(shop_f, buf2);
             shop_index[number_of_shops].no_such_item2 = fread_string(shop_f, buf2);
             shop_index[number_of_shops].do_not_buy = fread_string(shop_f, buf2);

@@ -450,7 +450,7 @@ void shape_center_proto(struct char_data* ch, char* arg)
 {
 
     char str[1000], tmpstr[1000];
-    //int i,i1;
+    // int i,i1;
     int tmp, tmp1, tmp2, tmp3, tmp4, tmp5, choice;
     struct char_data* mob;
     char keymode;
@@ -1245,7 +1245,7 @@ int get_text(FILE* f, char** line)
 int load_proto(struct char_data* ch, char* arg)
 {
     char format;
-    //int i;
+    // int i;
     int tmp, number, room_number;
     char str[255], fname[80];
     FILE* file;
@@ -1780,7 +1780,7 @@ int append_proto(struct char_data* ch, char* arg)
 
 /*void animate_mob(struct char_data * ch){
   struct char_data * mob;
-  int room_number=1; 
+  int room_number=1;
   room_number=ch->in_room;
    CREATE(mob, struct char_data, 1);
 
@@ -2161,12 +2161,12 @@ void free_proto(struct char_data* ch)
         ch->specials.prompt_value = 0;
     }
     ch->specials.position = SHAPE_PROTO(ch)->position;
-    //RELEASE(SHAPE_PROTO(ch));
+    // RELEASE(SHAPE_PROTO(ch));
     REMOVE_BIT(PRF_FLAGS(ch), PRF_DISPTEXT);
     RELEASE(ch->temp);
     if (GET_POS(ch) <= POSITION_SHAPING)
         GET_POS(ch) = POSITION_STANDING;
-    //printf("passed free_mob\n");
+    // printf("passed free_mob\n");
 }
 
 /****************************** main() ********************************/

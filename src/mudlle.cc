@@ -332,7 +332,7 @@ void int_tostack(struct char_data* host, char* arg, int cmd,
 
     default:
         value = 0;
-        //SPECIAL_STACK(host)[SPECIAL_STACKPOINT(host)]=0;
+        // SPECIAL_STACK(host)[SPECIAL_STACKPOINT(host)]=0;
         break;
     }
     TO_STACK(host, value);
@@ -663,12 +663,12 @@ SPECIAL(intelligent)
     struct waiting_type tmpwtl;
 
     /*
-   * first, we need to make sure that the callflag
-   * that called this function is appropriate for this
-   * mobile.  If the callflag isn't in his CALL_MASK,
-   * we return; however, no CALL_MASK can keep us from
-   * running if SPECIAL_DELAY is the callflag
-   */
+     * first, we need to make sure that the callflag
+     * that called this function is appropriate for this
+     * mobile.  If the callflag isn't in his CALL_MASK,
+     * we return; however, no CALL_MASK can keep us from
+     * running if SPECIAL_DELAY is the callflag
+     */
     if (!IS_SET(CALL_MASK(host), callflag) && (callflag != SPECIAL_DELAY))
         return FALSE;
 
@@ -978,7 +978,7 @@ SPECIAL(intelligent)
                 TO_STACK(host, 1);
             else
                 TO_STACK(host, 0);
-            //printf("soft check passed:%d\n",(tmplist2)?1:0);
+            // printf("soft check passed:%d\n",(tmplist2)?1:0);
             if (key == 'c')
                 break;
             if (!tmp)
@@ -986,7 +986,7 @@ SPECIAL(intelligent)
             REMOVE_LIST(host);
             while (SPECIAL_LIST_HEAD(host) != tmp)
                 UP_LIST(host);
-            //printf("hard check passed\n");
+            // printf("hard check passed\n");
             break;
 
         case '+': /* sum, (stack)+(stack-1) */
@@ -1131,7 +1131,7 @@ SPECIAL(intelligent)
                 tmpvar = FROM_STACK(host);
                 tmpvar2 = 0;
             }
-            //printf("'i' command, arg=%d, addr=%d\n",tmpvar2,tmpvar);
+            // printf("'i' command, arg=%d, addr=%d\n",tmpvar2,tmpvar);
             if (tmpvar2)
                 PROG_POINT(host) = tmpvar - 1;
             if (PROG_POINT(host) >= cmd_leng)

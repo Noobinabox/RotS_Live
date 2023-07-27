@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: comm.c                                        Part of CircleMUD *
-*  Usage: Communication, socket handling, main(), central game loop       *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: comm.c                                        Part of CircleMUD *
+ *  Usage: Communication, socket handling, main(), central game loop       *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include <ctype.h>
 #include <errno.h>
@@ -131,7 +131,7 @@ void* virt_program_number(int number);
 void* virt_obj_program_number(int number);
 void replace_aliases(char_data* ch, char* line);
 
-//int gethostname(char *, int);
+// int gethostname(char *, int);
 
 ACMD(do_cast);
 SPECIAL(intelligent);
@@ -152,8 +152,8 @@ void sigsegv_handler(int sig)
 }
 
 /* *********************************************************************
-*  main game loop and related stuff				       *
-********************************************************************* */
+ *  main game loop and related stuff				       *
+ ********************************************************************* */
 
 int main(int argc, char** argv)
 {
@@ -604,16 +604,17 @@ void game_loop(SocketType s)
                         if (PRF_FLAGGED(point->character, PRF_ADVANCED_PROMPT)) {
                             sprintf(prompt, "%s [", prompt);
                             add_prompt(prompt, point->character, PROMPT_ADVANCED);
-                        }
-                        else if (((GET_HIT(point->character) < GET_MAX_HIT(point->character)) || point->character->specials.fighting) && PRF_FLAGGED(point->character, PRF_PROMPT))
+                        } else if (((GET_HIT(point->character) < GET_MAX_HIT(point->character)) || point->character->specials.fighting)
+                            && PRF_FLAGGED(point->character, PRF_PROMPT)) {
                             sprintf(prompt, "%s HP:", prompt);
+                        }
 
                         opponent = point->character->specials.fighting;
 
                         if (!PRF_FLAGGED(point->character, PRF_ADVANCED_PROMPT)) {
                             add_prompt(prompt, point->character,
-                                       PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
-                                                                                                                                               : PROMPT_ALL);
+                                PRF_FLAGGED(point->character, PRF_DISPTEXT) ? PRF_DISPTEXT : !PRF_FLAGGED(point->character, PRF_PROMPT) ? 0
+                                                                                                                                        : PROMPT_ALL);
                         }
 
                         if (opponent && IS_MENTAL(opponent)) {
@@ -705,7 +706,7 @@ void game_loop(SocketType s)
             was_updated = 1;
         }
         if (!(pulse % (PULSE_FAST_UPDATE)) /*&& !was_updated*/) {
-            //now increasing hp/mp/mana/spirit fast in fast_update..
+            // now increasing hp/mp/mana/spirit fast in fast_update..
             fast_update();
             affect_update();
 
@@ -781,8 +782,8 @@ void game_loop(SocketType s)
 }
 
 /* ******************************************************************
-*  general utility stuff (for local use)			    *
-****************************************************************** */
+ *  general utility stuff (for local use)			    *
+ ****************************************************************** */
 
 int get_from_q(struct txt_q* queue, char* dest)
 {
@@ -820,7 +821,7 @@ void write_to_output(const char* txt, struct descriptor_data* t)
     } else { /* otherwise, try to switch to a large buffer */
         if (t->large_outbuf || ((size + strlen(t->output)) > LARGE_BUFSIZE)) {
             /* we're already using large buffer, or even the large buffer
-	    in't big enough -- switch to overflow state */
+            in't big enough -- switch to overflow state */
             t->bufptr = -1;
             buf_overflows++;
             return;
@@ -956,8 +957,8 @@ void flush_queues(struct descriptor_data* d)
 }
 
 /* ******************************************************************
-*  socket handling						    *
-****************************************************************** */
+ *  socket handling						    *
+ ****************************************************************** */
 
 SocketType init_socket(sh_int port)
 {
@@ -1106,7 +1107,7 @@ SocketType pnew_descriptor(SocketType s)
     extern char* GREETINGS;
 
     if ((desc = pnew_connection(s)) == 0) // here was <0, too bad
-        return (0); //here was -1, too bad...
+        return (0); // here was -1, too bad...
 
     sockets_connected = sockets_playing = 0;
 
@@ -1159,7 +1160,7 @@ SocketType pnew_descriptor(SocketType s)
 
     /*  Uncomment this if you want pnew connections logged.  It's usually not
     necessary, and just adds a lot of unnecessary bulk to the logs.
-   
+
    sprintf(buf2, "Pnew connection from [%s]", pnewd->host);
    log(buf2);
 */
@@ -1377,7 +1378,7 @@ void break_spell(struct char_data* ch)
     //  }
     //  else{
     // no problem - just couldn't break it
-    //send_to_char("Minor problem in break_spell. Please notify imps. :)\n\r",
+    // send_to_char("Minor problem in break_spell. Please notify imps. :)\n\r",
     //		 ch);
     //  }
 }
@@ -1640,8 +1641,8 @@ void nonblock(SocketType s)
 }
 
 /* ****************************************************************
-*	Public routines for system-to-player-communication	  *
-*******************************************************************/
+ *	Public routines for system-to-player-communication	  *
+ *******************************************************************/
 void send_to_char(const char* message, char_data* character)
 {
     // Early out if we have no message or character.
@@ -2018,7 +2019,7 @@ void complete_delay(struct char_data* ch)
 
 int in_waiting_list(char_data* ch)
 {
-   if (waiting_list == NULL || ch == NULL)
+    if (waiting_list == NULL || ch == NULL)
         return 0;
 
     for (char_data* iter = waiting_list; iter; iter = iter->delay.next)

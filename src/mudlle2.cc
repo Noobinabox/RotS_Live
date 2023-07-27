@@ -93,9 +93,9 @@ void TO_LIST(struct char_data* host, void* entr, int type)
     char tmp, tmp2, overfl;
 
     /*
-   * if(type == TARGET_TEXT) 
-   *  entr = get_from_txt_block_pool((char *) entr);
-   */
+     * if(type == TARGET_TEXT)
+     *  entr = get_from_txt_block_pool((char *) entr);
+     */
 
     if (!entr)
         type = TARGET_NONE;
@@ -124,12 +124,12 @@ void TO_LIST(struct char_data* host, void* entr, int type)
         SPECIAL_LIST_REFS(host) = SPECIAL_LIST(host).ptr.ch->abs_number;
     else
         SPECIAL_LIST_REFS(host) = -1;
-    /*    
-   *  printf("to_list, type=%d, head=%d\n",type,SPECIAL_LIST_HEAD(host));
-   *  if(type == SPECIAL_STR)
-   *    printf("to_list str:%s.\n",SPECIAL_LIST(host).str);
-   *  else printf("to_list - not str\n");
-   */
+    /*
+     *  printf("to_list, type=%d, head=%d\n",type,SPECIAL_LIST_HEAD(host));
+     *  if(type == SPECIAL_STR)
+     *    printf("to_list str:%s.\n",SPECIAL_LIST(host).str);
+     *  else printf("to_list - not str\n");
+     */
 }
 
 void TO_LIST(struct char_data* host, target_data* newtarg)
@@ -137,9 +137,9 @@ void TO_LIST(struct char_data* host, target_data* newtarg)
     char tmp, tmp2, overfl;
 
     /*
-   * if(type == TARGET_TEXT)
-   *   entr = get_from_txt_block_pool((char *) entr);
-   */
+     * if(type == TARGET_TEXT)
+     *   entr = get_from_txt_block_pool((char *) entr);
+     */
 
     if (!newtarg) {
         TO_LIST(host, 0, TARGET_NONE);

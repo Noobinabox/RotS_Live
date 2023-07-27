@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: spec_assign.c                                 Part of CircleMUD *
-*  Usage: Functions to assign function pointers to objs/mobs/rooms        *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: spec_assign.c                                 Part of CircleMUD *
+ *  Usage: Functions to assign function pointers to objs/mobs/rooms        *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include <stdio.h>
 
@@ -187,16 +187,16 @@ void assign_mobiles(void)
     ASSIGNMOB(32529, guild); // maelor, orcish illusionist
     ASSIGNMOB(18833, guild); // Lhuth mob in vinyanost tombs
     ASSIGNMOB(10213, guild); // Karvok
-    ASSIGNMOB(4647, guild); //Ungorod Swashbuckler
+    ASSIGNMOB(4647, guild); // Ungorod Swashbuckler
 
     ASSIGNMOB(28473, receptionist); // temporary innkeeper in uruk mage tower
     ASSIGNMOB(21343, receptionist); // tawarost receptionist
 
     ASSIGNMOB(28640, receptionist); // glob, tentmaster
     ASSIGNMOB(21344, receptionist); /*tawarost*/
-    //ASSIGNMOB(1101, drake_one);
-    ASSIGNMOB(2041, guild); //ALT RotS Puke
-    ASSIGNMOB(2043, guild); //ALT RotS Uruk
+    // ASSIGNMOB(1101, drake_one);
+    ASSIGNMOB(2041, guild); // ALT RotS Puke
+    ASSIGNMOB(2043, guild); // ALT RotS Uruk
 
     ASSIGNMOB(10310, guild); // Beorning guildmaster
     ASSIGNMOB(32816, guild); // Olog-Hai guildmaster

@@ -1,12 +1,12 @@
 /**************************************************************************
-*   File: constants.c                                   Part of CircleMUD *
-*  Usage: Numeric and string contants used by the MUD                     *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 19 0, 1991.               *
-************************************************************************ */
+ *   File: constants.c                                   Part of CircleMUD *
+ *  Usage: Numeric and string contants used by the MUD                     *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 19 0, 1991.               *
+ ************************************************************************ */
 #define CONSTANTSMARK
 #include "platdef.h"
 #include <stdio.h>
@@ -21,7 +21,7 @@ char circlemud_version[] = {
     "Arda: The Fourth Age, version 1.5.5\n\r"
 };
 
-//const
+// const
 char* prof_abbrevs[] = {
     "--",
     "Mu",
@@ -30,7 +30,7 @@ char* prof_abbrevs[] = {
     "Wa"
 };
 
-//const
+// const
 char* spell_wear_off_msg[] = {
     "RESERVED DB.C",
     "You feel less protected.", //* 1 *
@@ -1199,8 +1199,8 @@ struct skill_teach_data guildmasters[] = {
         { 0,
             0, 0, 0, 0, 0, 0, 0, 100, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 100,
-            100, 100, 100, 100, 100, 100, 100, 100, 100, 100, //100,100, 40,  0, 60,100,  0, 80,  0, 60,
-            100, 100, 100, 100, 100, 100, 100, 100, 100, 0, //100,100,  5,100,  0,  0, 20,  0,100,  0,
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 100, // 100,100, 40,  0, 60,100,  0, 80,  0, 60,
+            100, 100, 100, 100, 100, 100, 100, 100, 100, 0, // 100,100,  5,100,  0,  0, 20,  0,100,  0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             /*51*/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             100, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2133,7 +2133,7 @@ char* object_materials[] = {
     "undefined", "undefined", "undefined", "undefined", "undefined", "undefined", "undefined"
 };
 
-//const
+// const
 char* dirs[] = {
     "north",
     "east",
@@ -2152,7 +2152,7 @@ char* refer_dirs[] = {
     "below",
     "\n"
 };
-//const
+// const
 char* weekdays[7] = {
     "Elenya",
     "Anarya",
@@ -2163,7 +2163,7 @@ char* weekdays[7] = {
     "Earenya"
 };
 
-//const
+// const
 char* month_name[17] = {
     "Narviny\xEB", /* 0 */
     "N\xE9nim\xEB",
@@ -2184,7 +2184,7 @@ char* month_name[17] = {
     "Month of the Great Evil"
 };
 
-//const
+// const
 char* where[] = {
     "<used as light>        ",
     "<worn on finger>       ",
@@ -2297,7 +2297,7 @@ sh_int* get_leg_encumb_table()
     return leg_encumb_table;
 }
 
-//const
+// const
 char* drinks[] = {
     "water",
     "beer",
@@ -2318,7 +2318,7 @@ char* drinks[] = {
     "\n"
 };
 
-//const
+// const
 char* drinknames[] = {
     "water",
     "beer",
@@ -2358,14 +2358,14 @@ int drink_aff[][3] = {
     { 0, 0, 13 }
 };
 
-//const
+// const
 char* genders[] = {
     "neutral",
     "male",
     "female"
 };
 
-//const
+// const
 char* color_liquid[] = {
     "clear",
     "brown",
@@ -2385,7 +2385,7 @@ char* color_liquid[] = {
     "crystal clear"
 };
 
-//const
+// const
 char* fullness[] = {
     "less than half ",
     "about half ",
@@ -2393,7 +2393,7 @@ char* fullness[] = {
     ""
 };
 
-//const
+// const
 char* item_types[] = {
     "UNDEFINED",
     "LIGHT",
@@ -2424,7 +2424,7 @@ char* item_types[] = {
     "\n"
 };
 
-//const
+// const
 char* wear_bits[] = {
     "TAKE",
     "FINGER",
@@ -2447,7 +2447,7 @@ char* wear_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* extra_bits[] = {
     "GLOW",
     "HUM",
@@ -2463,11 +2463,11 @@ char* extra_bits[] = {
     "!NEUTRAL",
     "!RENT",
     /* if a sprintbit() ever tries to issue the !DONATE bit on an
-    * object, we want to know about it.  it -never- should do this,
-    * as no place in the code allows !DONATE except building, in
-    * which case builders can, unfortunately, accidentally set the
-    * !DONATE bit
-    */
+     * object, we want to know about it.  it -never- should do this,
+     * as no place in the code allows !DONATE except building, in
+     * which case builders can, unfortunately, accidentally set the
+     * !DONATE bit
+     */
     "<OLD !DONATE, REPORT TO IMPS>",
     "!INVIS",
     "WILLPOWER",
@@ -2487,7 +2487,7 @@ char* extra_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* room_bits[] = {
     "DARK",
     "DEATH",
@@ -2528,7 +2528,7 @@ char* sector_types[] = {
     "\n"
 };
 
-//const
+// const
 char* exit_bits[] = {
     "DOOR",
     "CLOSED",
@@ -2548,21 +2548,21 @@ char* exit_bits[] = {
     "\n"
 };
 
-//const
-// char	*sector_types[] = {
-//    "Inside",
-//    "City",
-//    "Field",
-//    "Forest",
-//    "Hills",
-//    "Mountains",
-//    "Water Swim",
-//    "Water NoSwim",
-//    "City",
-//    "\n"
-// };
+// const
+//  char	*sector_types[] = {
+//     "Inside",
+//     "City",
+//     "Field",
+//     "Forest",
+//     "Hills",
+//     "Mountains",
+//     "Water Swim",
+//     "Water NoSwim",
+//     "City",
+//     "\n"
+//  };
 
-//const
+// const
 char* equipment_types[] = {
     "Special",
     "Worn on right finger",
@@ -2589,7 +2589,7 @@ char* equipment_types[] = {
     "\n"
 };
 
-//const
+// const
 char* affected_bits[] = {
     "SENSE",
     "INFRA",
@@ -2626,7 +2626,7 @@ char* affected_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* apply_types[] = {
     "NONE",
     "STR",
@@ -2671,7 +2671,7 @@ char* apply_types[] = {
     "\n"
 };
 
-//const
+// const
 char* pc_prof_types[] = {
     "UNDEFINED",
     "Magic User",
@@ -2681,7 +2681,7 @@ char* pc_prof_types[] = {
     "\n"
 };
 
-//const
+// const
 char* pc_races[] = {
     "God",
     "Human", "Dwarf", "Wood Elf", "Hobbit", "High Elf", "Beorning",
@@ -2713,7 +2713,7 @@ char* pc_race_keywords[] = {
     "\n"
 };
 
-//const
+// const
 char* pc_star_types[] = {
     "God",
     "*a Human*", "*a Dwarf*", "*an Elf*", "*a Hobbit*", "*an Elf*", "*a Bear*",
@@ -2724,7 +2724,7 @@ char* pc_star_types[] = {
     "\n"
 };
 
-//const
+// const
 char* pc_named_star_types[] = {
     "%s the God",
     "*%s the Human*", "*%s the Dwarf*", "*%s the Elf*", "*%s the Hobbit*", "*%s the Elf*", "*%s the Beorning*",
@@ -2753,14 +2753,14 @@ char* pc_evil_fame_keywords[] = {
     "evil", "chieftain", "commander", "patrol", ""
 };
 
-//const
+// const
 char* npc_prof_types[] = {
     "Normal",
     "Undead",
     "\n"
 };
 
-//const
+// const
 char* action_bits[] = {
     "SPEC",
     "SENTINEL",
@@ -2792,7 +2792,7 @@ char* action_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* player_bits[] = {
     "",
     "IS_NCHANGED",
@@ -2820,7 +2820,7 @@ char* player_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* preference_bits[] = {
     "BRIEF",
     "COMPACT",
@@ -2858,7 +2858,7 @@ char* preference_bits[] = {
     "\n"
 };
 
-//const
+// const
 char* position_types[] = {
     "Dead",
     "Mortally wounded",
@@ -2872,7 +2872,7 @@ char* position_types[] = {
     "\n"
 };
 
-//const
+// const
 char* connected_types[] = {
     "Playing",
     "Get name",
@@ -2904,7 +2904,7 @@ char* connected_types[] = {
     "\n"
 };
 
-//const
+// const
 char* ban_types[] = {
     "no",
     "new",
@@ -3102,8 +3102,8 @@ char* prompt_text[] = {
 
 struct prompt_type prompt_hit[] = {
     { "Dying", 0 },
-    { "Awful", 100 }, //check in ACMD(do_report) in act_othe.cc
-    { "Bloodied", 250 }, //before changing any of these structures
+    { "Awful", 100 }, // check in ACMD(do_report) in act_othe.cc
+    { "Bloodied", 250 }, // before changing any of these structures
     { "Wounded", 450 },
     { "Hurt", 700 },
     { "Bruised", 900 },
@@ -3151,7 +3151,7 @@ struct prompt_type prompt_mount[] = {
 };
 
 struct prompt_type prompt_spirit[] = { /* Notice that the value means different
-					thing here, thatn in other prompts */
+                                        thing here, thatn in other prompts */
     { "Unexperienced", 15 }, /* 5 per level, for now */
     { "Conscious", 30 },
     { "Devoted", 45 },
@@ -3529,11 +3529,11 @@ char* vulnerability_name[] = {
 };
 
 /*
-  * Array to hold guardian vnums based
-  * on race and guardian type.
-  * Guardian type from left to right
-  * Aggressive->Defensive->Mystic.
-  */
+ * Array to hold guardian vnums based
+ * on race and guardian type.
+ * Guardian type from left to right
+ * Aggressive->Defensive->Mystic.
+ */
 
 int guardian_mob[MAX_RACES][3] = {
     { 1110, 1110, 1110 },

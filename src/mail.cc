@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: mail.c                                        Part of CircleMUD *
-*  Usage: Internal funcs and player spec-procs of mud-mail system         *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: mail.c                                        Part of CircleMUD *
+ *  Usage: Internal funcs and player spec-procs of mud-mail system         *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 /******* MUD MAIL SYSTEM MAIN FILE ***************************************
 
@@ -22,7 +22,7 @@ INSTALLATION INSTRUCTIONS
 1.  Edit mail.h and change the constants to your personal preferences.
 
 2.  Create a room in your MUD designated as the Post Office and create a
-    mobile to be used as the postmaster; in spec_assign.c, assign the function 
+    mobile to be used as the postmaster; in spec_assign.c, assign the function
     "postmaster" to your mailman MOB.
 
 3.  In db.h, define MAIL_FILE as the mail file's filename.
@@ -31,11 +31,11 @@ INSTALLATION INSTRUCTIONS
     system is active or not.  Include mail.h in db.c.  Somewhere in the mud's
     bootup sequence, call the mail system's boot-up function like this:
 
-	log("Booting mail system.");
-	if (!scan_file()) {
-	   log("   Mail system error -- mail system disabled!");
-	   no_mail = 1;
-	}
+        log("Booting mail system.");
+        if (!scan_file()) {
+           log("   Mail system error -- mail system disabled!");
+           no_mail = 1;
+        }
 
 5.  In structs.h, define a player ACT flag called PLR_MAILING.  If your MUD
     has a flag to indicate whether or not the player is writing (i.e. on
@@ -52,22 +52,22 @@ INSTALLATION INSTRUCTIONS
 7.  Include mail.h in modify.c.  In the function string_add in modify.c,
     make the following modification:
 
-	if (terminator)	{
+        if (terminator)	{
            if (!d->connected && (IS_FLAGGED(d->character, PLR_MAILING))) {
               store_mail(d->name, d->character->player.name, *d->str);
-	      RELEASE(*d->str);
-	      RELEASE(d->str);
-	      RELEASE(d->name);
-	      d->name = 0;
-	      SEND_TO_Q("Message sent!\n\r", d);
-	      if (!IS_NPC(d->character))
-	         REMOVE_BIT(d->character->specials.act, PLR_MAILING | PLR_WRITING);
-	   }
+              RELEASE(*d->str);
+              RELEASE(d->str);
+              RELEASE(d->name);
+              d->name = 0;
+              SEND_TO_Q("Message sent!\n\r", d);
+              if (!IS_NPC(d->character))
+                 REMOVE_BIT(d->character->specials.act, PLR_MAILING | PLR_WRITING);
+           }
 
-	   d->str = 0;
-	   if (d->connected == CON_EXDSCR) {
-	      SEND_TO_Q(MENU, d);
-		. . . . .
+           d->str = 0;
+           if (d->connected == CON_EXDSCR) {
+              SEND_TO_Q(MENU, d);
+                . . . . .
 
 END OF INSTALLATION INSTRUCTIONS
 
@@ -331,7 +331,7 @@ void store_mail(char* to, char* from, char* message_pointer)
     msg_txt += HEADER_BLOCK_DATASIZE; /* move pointer to next bit of text */
 
     /* find the next block address, then rewrite the header
-	   to reflect where the next block is.	*/
+           to reflect where the next block is.	*/
     last_address = target_address;
     target_address = pop_free_list();
     header.next_block = target_address;
@@ -347,18 +347,18 @@ void store_mail(char* to, char* from, char* message_pointer)
     msg_txt += strlen(data.txt);
 
     /* if, after 1 header block and 1 data block there is STILL
-	   part of the message left to write to the file, keep writing
-	   the new data blocks and rewriting the old data blocks to reflect
-	   where the next block is.  Yes, this is kind of a hack, but if
-	   the block size is big enough it won't matter anyway.  Hopefully,
-	   MUD players won't pour their life stories out into the Mud Mail
-	   System anyway.
- 
-	   Note that the block_type data field in data blocks is either
-	   a number >=0, meaning a link to the next block, or LAST_BLOCK
-	   flag (-2) meaning the last block in the current message.  This
-	   works much like DOS' FAT.
-	*/
+           part of the message left to write to the file, keep writing
+           the new data blocks and rewriting the old data blocks to reflect
+           where the next block is.  Yes, this is kind of a hack, but if
+           the block size is big enough it won't matter anyway.  Hopefully,
+           MUD players won't pour their life stories out into the Mud Mail
+           System anyway.
+
+           Note that the block_type data field in data blocks is either
+           a number >=0, meaning a link to the next block, or LAST_BLOCK
+           flag (-2) meaning the last block in the current message.  This
+           works much like DOS' FAT.
+        */
 
     while (bytes_written < total_length) {
         last_address = target_address;

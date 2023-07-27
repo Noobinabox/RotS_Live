@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: boards.h                                      Part of CircleMUD *
-*  Usage: header file for bulletin boards                                 *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: boards.h                                      Part of CircleMUD *
+ *  Usage: header file for bulletin boards                                 *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef BOARDS_H
 #define BOARDS_H
@@ -14,7 +14,7 @@
 #include "platdef.h" /* For byte typedefs */
 
 #define NUM_OF_BOARDS 24
-//#define NUM_OF_BOARDS      (board_info_type::num_of_boards)
+// #define NUM_OF_BOARDS      (board_info_type::num_of_boards)
 #define MAX_BOARD_MESSAGES 100 /* arbitrary */
 #define MAX_BIG_BOARD_MESSAGES 500 /* arbitrary */
 #define MAX_MAIL_MESSAGES 1000 /* arbitrary */
@@ -57,7 +57,7 @@ struct board_info_type {
 
     virtual void write_message(struct char_data* ch, char* arg, int num = 0);
     virtual int show_board(struct char_data* ch, char* arg, int allflag);
-    virtual int select_msg(int msg, int softflag = 0); //0 - hard search, !0-soft
+    virtual int select_msg(int msg, int softflag = 0); // 0 - hard search, !0-soft
     virtual int display_msg(struct char_data* ch, char* arg, int nextflag);
     int remove_msg(struct char_data* ch, char* arg);
     int count_msg(char_data* ch, int cur_num);

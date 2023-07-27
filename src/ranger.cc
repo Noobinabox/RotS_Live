@@ -1,13 +1,13 @@
 /* ************************************************************************
-*  File: Ranger.cc                                Part of CircleMUD       *
-*  Usage: Handles our ranger coeff skills                                 *
-*  Created 27/04/05                                                       *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.
-************************************************************************ */
+ *  File: Ranger.cc                                Part of CircleMUD       *
+ *  Usage: Handles our ranger coeff skills                                 *
+ *  Created 27/04/05                                                       *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -294,11 +294,11 @@ int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
 {
 
     /*
-   * The way gather was originally implemented was terrible,
-   * because of this i have to but in a second checker for
-   * argument here to stop a bug. Nested switch statements
-   * using the same variable to switch is a bad idea. . .
-   */
+     * The way gather was originally implemented was terrible,
+     * because of this i have to but in a second checker for
+     * argument here to stop a bug. Nested switch statements
+     * using the same variable to switch is a bad idea. . .
+     */
     if (gather_type == 0) {
         send_to_char("You can gather food, healing, energy, bows, arrows, or light.\n\r", ch);
         return FALSE;
@@ -313,8 +313,8 @@ int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
     }
 
     /*
-   * Checks our sector conditions (if any)
-   */
+     * Checks our sector conditions (if any)
+     */
     switch (world[ch->in_room].sector_type) {
     case SECT_INSIDE:
         send_to_char("You can not gather herbs inside!\n\r", ch);
@@ -362,11 +362,11 @@ ACMD(do_gather_food)
     int affects_last, ranger_bonus;
 
     /*
-   * Replaced a series of if/else statements which used to determine
-   * what subcommand of gather you were using. Replaced it with
-   * a neat little array, and used search_block to get the desired
-   * values.
-   */
+     * Replaced a series of if/else statements which used to determine
+     * what subcommand of gather you were using. Replaced it with
+     * a neat little array, and used search_block to get the desired
+     * values.
+     */
     static char* gather_type[] = {
         "",
         "food",
@@ -449,12 +449,12 @@ ACMD(do_gather_food)
             return;
         } else {
             /*
-       * This portion of the code was relatively untouched
-       * and stays in its original format. A few lines concerning
-       * objects and darkie races were removed.
-       * This is where we load our objects for gather light and food
-       * and do our calculations for healing and energy.
-       */
+             * This portion of the code was relatively untouched
+             * and stays in its original format. A few lines concerning
+             * objects and darkie races were removed.
+             * This is where we load our objects for gather light and food
+             * and do our calculations for healing and energy.
+             */
             switch (subcmd) {
             case 1:
                 if ((obj = read_object(GATHER_FOOD, VIRT)) != NULL) {
@@ -520,11 +520,11 @@ ACMD(do_gather_food)
             }
 
             /*
-       * The affects of gather herbs now is based on the characters
-       * ranger level. Its 25 - ranger level / 2, it was static at
-       * 18, so i wanted to keep the values relatively (big relatively)
-       * close to that mark.
-       */
+             * The affects of gather herbs now is based on the characters
+             * ranger level. Its 25 - ranger level / 2, it was static at
+             * 18, so i wanted to keep the values relatively (big relatively)
+             * close to that mark.
+             */
 
             ranger_bonus = number(GET_PROF_LEVEL(PROF_RANGER, ch) / 4,
                 GET_PROF_LEVEL(PROF_RANGER, ch) / 3);
@@ -615,9 +615,9 @@ ACMD(do_pick)
                 act("$n picks the lock of the door.", TRUE, ch, 0, 0, TO_ROOM);
             send_to_char("The lock quickly yields to your skills.\n\r", ch);
             /*
-       *This piece now unlocks the other side
-       * of the door also
-       */
+             *This piece now unlocks the other side
+             * of the door also
+             */
             if ((other_room = EXIT(ch, door)->to_room) != NOWHERE)
                 if ((back = world[other_room].dir_option[rev_dir[door]]) != NULL)
                     if (back->to_room == ch->in_room)
@@ -628,8 +628,8 @@ ACMD(do_pick)
 void stop_hiding(struct char_data* ch, char mode)
 {
     /*
-   *if mode is FALSE, then we don't send the "step" message
-   */
+     *if mode is FALSE, then we don't send the "step" message
+     */
     if (IS_SET(ch->specials.affected_by, AFF_HIDE) && mode)
         send_to_char("You step out of your cover.\r\n", ch);
 
@@ -646,13 +646,13 @@ ACMD(do_hide)
     one_argument(argument, first_argument);
 
     /*
-   * We can't use an in-function `well' flag for this.  why?  because then
-   * we charge the player 5* as many beats for hide, then return.  we're
-   * then called again to perform the actual hide, but our well variable
-   * has been lost.  making `well' static well also not work, because then
-   * if two people hid on the same tick, we could confuse who hid well and
-   * who did not
-   */
+     * We can't use an in-function `well' flag for this.  why?  because then
+     * we charge the player 5* as many beats for hide, then return.  we're
+     * then called again to perform the actual hide, but our well variable
+     * has been lost.  making `well' static well also not work, because then
+     * if two people hid on the same tick, we could confuse who hid well and
+     * who did not
+     */
 
     if (!strcmp(first_argument, "well"))
         SET_BIT(ch->specials2.hide_flags, HIDING_WELL);
@@ -676,11 +676,11 @@ ACMD(do_hide)
                          "hope you can't be seen.\n\r",
                 ch);
         /*
-     * The code below determines the beats taken to perform
-     * a hide, based on whether or not people have snuck into
-     * the room, are looking to hide or hide well. If you've snuck
-     * into the room, hiding times will be slightly faster
-     */
+         * The code below determines the beats taken to perform
+         * a hide, based on whether or not people have snuck into
+         * the room, are looking to hide or hide well. If you've snuck
+         * into the room, hiding times will be slightly faster
+         */
         else {
             if (IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
                 if (IS_SET(ch->specials2.hide_flags, HIDING_WELL))
@@ -800,7 +800,7 @@ int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
     percent = number(-100, 0);
     percent += number(-20, 20);
     percent -= GET_LEVELA(victim);
-    if(utils::is_pc(*victim)) {
+    if (utils::is_pc(*victim)) {
         percent -= GET_SKILL(victim, SKILL_AWARENESS) / 2;
         percent -= utils::get_prof_level(PROF_RANGER, *victim);
         percent -= victim->get_cur_int() / 4;
@@ -1030,14 +1030,14 @@ trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
         victim = target->targ2.ptr.ch;
     else {
         /*
-		 * Two BIG distinctions: if the keyword begins with a
-		 * digit, then it's 1.uruk or 2.bear, and thus the keyword
-		 * is UNIQUE.  There is at most one 1.uruk and one 2.bear
-		 * in any given room.  If the keyword does not begin with
-		 * a digit, then the keyword may not be unique; i.e., if
-		 * the keyword is "uruk" and there are 3 uruks in the room,
-		 * then this could be any one of them.
-		 */
+         * Two BIG distinctions: if the keyword begins with a
+         * digit, then it's 1.uruk or 2.bear, and thus the keyword
+         * is UNIQUE.  There is at most one 1.uruk and one 2.bear
+         * in any given room.  If the keyword does not begin with
+         * a digit, then the keyword may not be unique; i.e., if
+         * the keyword is "uruk" and there are 3 uruks in the room,
+         * then this could be any one of them.
+         */
         keyword = target->targ1.ptr.text->text;
         if (isdigit(*keyword))
             victim = get_char_room_vis(ch, keyword, 0);
@@ -1147,7 +1147,7 @@ bool is_valid_subcommand(char_data& character, int sub_command, const waiting_ty
 }
 
 // drelidan:  Copied ACMD macro here so I could see the arguments.
-//void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int subcmd)
+// void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int subcmd)
 ACMD(do_trap)
 {
     static int ignore_recursion = 0;
@@ -1165,26 +1165,25 @@ ACMD(do_trap)
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
 
-
     /*
-	 * Subcommand callbacks:
-	 *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
-	 *       see what the purpose of ignore_recursion is.
-	 *   0   Command issued by a player or mob.  Has either a text keyword
-	 *       as an argument or has no argument.
-	 *   1   Callback: trap setup complete.  We cheat a little and store
-	 *       important target data on the character's waiting structure.
-	 *       This may cause problems if some other wait activity happens,
-	 *       because then the target data for our trap will be cleared.
-	 *   2   do_trap was called from react_trap in spec_pro.cc.  This means
-	 *       that someone has entered the room with ch.  If the person who
-	 *       entered matches ch's target data, then ch will attempt to trap
-	 *       them.  We delay ch's trap for 1 game tick before letting it go
-	 *       off.
-	 *   3   The trap is actually occurring.  Damage and bash the victim if
-	 *       the trap is successful.  Damage and success percent are heavily
-	 *       based on ambush success and damage.
-	 */
+     * Subcommand callbacks:
+     *  -1   Cancel the current trap.  See the SUPER HACK note in case 2 to
+     *       see what the purpose of ignore_recursion is.
+     *   0   Command issued by a player or mob.  Has either a text keyword
+     *       as an argument or has no argument.
+     *   1   Callback: trap setup complete.  We cheat a little and store
+     *       important target data on the character's waiting structure.
+     *       This may cause problems if some other wait activity happens,
+     *       because then the target data for our trap will be cleared.
+     *   2   do_trap was called from react_trap in spec_pro.cc.  This means
+     *       that someone has entered the room with ch.  If the person who
+     *       entered matches ch's target data, then ch will attempt to trap
+     *       them.  We delay ch's trap for 1 game tick before letting it go
+     *       off.
+     *   3   The trap is actually occurring.  Damage and bash the victim if
+     *       the trap is successful.  Damage and success percent are heavily
+     *       based on ambush success and damage.
+     */
     switch (subcmd) {
     case -1:
         /* XXX: SUPER HACK */
@@ -1237,18 +1236,18 @@ ACMD(do_trap)
         ch->specials.store_prog_number = 0;
 
         /*
-		 * XXX: SUPER HACK.  If we are here, then case 1 has happened already.
-		 * In case 1, we store trap's target information in the character's
-		 * delay variable.  However, when we call WAIT_STATE_FULL, it will call
-		 * complete_delay, which will then call do_trap with subcmd -1 to clear
-		 * the data we stored there.  Once those targets are deleted, we're
-		 * screwed.
-		 *
-		 * So what we have here is a static variable that we set to 1 when we
-		 * know this screwball scenario is going to happen.  When ignore_recursion
-		 * is 1, then case -1 above reacts accordingly and does not clear the
-		 * target data.
-		 */
+         * XXX: SUPER HACK.  If we are here, then case 1 has happened already.
+         * In case 1, we store trap's target information in the character's
+         * delay variable.  However, when we call WAIT_STATE_FULL, it will call
+         * complete_delay, which will then call do_trap with subcmd -1 to clear
+         * the data we stored there.  Once those targets are deleted, we're
+         * screwed.
+         *
+         * So what we have here is a static variable that we set to 1 when we
+         * know this screwball scenario is going to happen.  When ignore_recursion
+         * is 1, then case -1 above reacts accordingly and does not clear the
+         * target data.
+         */
         ignore_recursion = 1;
         if (wtl->targ1.type == TARGET_TEXT) {
             WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
@@ -1328,12 +1327,12 @@ ACMD(do_calm)
     if (GET_SPEC(ch) == PLRSPEC_PETS)
         calm_skill += 30;
     /*
-   * Set up the victim pointer
-   * Case -1 Cancelled a calm in progess
-   * Case 0 Entered "Calm Target"
-   * Case 1 Finished Calm delay
-   * Default should never happen
-   */
+     * Set up the victim pointer
+     * Case -1 Cancelled a calm in progess
+     * Case 0 Entered "Calm Target"
+     * Case 1 Finished Calm delay
+     * Default should never happen
+     */
     switch (subcmd) {
     case -1:
         abort_delay(ch);
@@ -1596,9 +1595,9 @@ ACMD(do_tame)
 
             victim->specials2.pref = 0;
             /*
-	 * Removal of mob aggressions
-	 * Addition of move bonus
-	 */
+             * Removal of mob aggressions
+             * Addition of move bonus
+             */
             GET_MOVE(ch) -= 60;
             GET_MOVE(victim) = GET_MAX_MOVE(victim) += 50;
             if (GET_SPEC(ch) == PLRSPEC_PETS) {
@@ -1668,9 +1667,9 @@ ACMD(do_whistle)
             for (tmpch = rm->people; tmpch; tmpch = tmpch->next_in_room) {
                 if (MOB_FLAGGED(tmpch, MOB_PET) && (tmpch->master == ch)) {
                     /*
-	   * this is the guy we need to come to ch
-	   * Make him stand up
-	   */
+                     * this is the guy we need to come to ch
+                     * Make him stand up
+                     */
                     GET_POS(tmpch) = POSITION_STANDING;
                     update_pos(tmpch);
                     affected_type newaf;
@@ -1850,31 +1849,31 @@ void snuck_in(struct char_data* ch)
     }
 
     /*
-	 * If you're hunting, we don't want sneak to make your hunt delay
-	 * non-existent, so we add the hunt delay to the sneak delay if
-	 * you're hunting.
-	 *
-	 * For those confused as to why we use the variable `wait': since
-	 * macro expansion simply replaces the text in the macro with the
-	 * text we send it as arguments, sending 'ch->delay.wait_value + 2'
-	 * doesn't actually work.  WAIT_STATE is called, it calls
-	 * WAIT_STATE_FULL, which will call abort_delay (in the case of
-	 * hunt), which will set ch->delay.wait_value to 0.  Your wait time
-	 * will still be using the simple ch->delay.wait_value + 2 syntax
-	 * when it actually performs the wait_value assignment in
-	 * WAIT_STATE_FULL, but the value in ch->delay.wait_value will
-	 * already be 0.
-	 *
-	 * Another worthy thing to note is that the WAIT_STATE macros seem
-	 * to go through a lot of angst to circumvent the buzz-worthy 'double
-	 * delays'; a double delay is just what is happening here: the hunt
-	 * delay is still active, and we're throwing another on top of it.
-	 * I don't really see what the problem with this is, assuming both
-	 * delays were set with WAIT_STATE (and they are, for this case).
-	 * Notice that if anyone ever muddles any sort of delay, sneak won't
-	 * destroy the delay's value, but it'll destroy its other info.. not
-	 * quite sure what we should do about this.
-	 */
+     * If you're hunting, we don't want sneak to make your hunt delay
+     * non-existent, so we add the hunt delay to the sneak delay if
+     * you're hunting.
+     *
+     * For those confused as to why we use the variable `wait': since
+     * macro expansion simply replaces the text in the macro with the
+     * text we send it as arguments, sending 'ch->delay.wait_value + 2'
+     * doesn't actually work.  WAIT_STATE is called, it calls
+     * WAIT_STATE_FULL, which will call abort_delay (in the case of
+     * hunt), which will set ch->delay.wait_value to 0.  Your wait time
+     * will still be using the simple ch->delay.wait_value + 2 syntax
+     * when it actually performs the wait_value assignment in
+     * WAIT_STATE_FULL, but the value in ch->delay.wait_value will
+     * already be 0.
+     *
+     * Another worthy thing to note is that the WAIT_STATE macros seem
+     * to go through a lot of angst to circumvent the buzz-worthy 'double
+     * delays'; a double delay is just what is happening here: the hunt
+     * delay is still active, and we're throwing another on top of it.
+     * I don't really see what the problem with this is, assuming both
+     * delays were set with WAIT_STATE (and they are, for this case).
+     * Notice that if anyone ever muddles any sort of delay, sneak won't
+     * destroy the delay's value, but it'll destroy its other info.. not
+     * quite sure what we should do about this.
+     */
 
     // Characters that are stealth spec do not have a sneak delay.
     int wait = ch->delay.wait_value + 2;
@@ -2046,13 +2045,13 @@ int get_hit_location(const char_data& victim)
 }
 
 /*
-* Given a hit location and a damage, calculate how much damage
-* should be done after the victim's armor is factored in.  The
-* modified amount is returned.
-*
-* This used to be (tmp >= 0); this implied that torches
-* could parry. - Tuh
-*/
+ * Given a hit location and a damage, calculate how much damage
+ * should be done after the victim's armor is factored in.  The
+ * modified amount is returned.
+ *
+ * This used to be (tmp >= 0); this implied that torches
+ * could parry. - Tuh
+ */
 int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage, int location)
 {
     /* Bogus hit location */
@@ -2063,8 +2062,7 @@ int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage
     obj_data* armor = victim.equipment[location];
     if (armor) {
         const obj_flag_data& obj_flags = armor->obj_flags;
-        if (obj_flags.is_chain() || obj_flags.is_metal())
-        {
+        if (obj_flags.is_chain() || obj_flags.is_metal()) {
             // The target has armor, but we made an accurate shot.
             if (check_archery_accuracy(archer, victim)) {
                 act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_CHAR);
@@ -2211,8 +2209,7 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, obj_data
 
     const obj_flag_data& obj_flags = armor->obj_flags;
 
-    if (obj_flags.is_chain() || obj_flags.is_metal())
-    {
+    if (obj_flags.is_chain() || obj_flags.is_metal()) {
         int break_percentage = arrow->obj_flags.value[3];
 
         // Haradrims get a bonus with crude arrows for being a primitive race
@@ -2254,7 +2251,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
         obj_from_obj(arrow);
     }
     obj_to_char(arrow, archer); // Move it into his inventory.
-    //tag arrow in value slot 2 of the shooter
+    // tag arrow in value slot 2 of the shooter
     if (!IS_NPC(archer)) {
         arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
     } else if (IS_NPC(archer)) {
@@ -2271,18 +2268,18 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 }
 
 /*
-* move_arrow_to_room will take the arrow out of the shooters quiver and
-* tag the arrow with their character_id. After that it will deposit the arrow
-* on the ground. We tag the arrow so the shooter can type recover
-* after the kill and it will return all arrows with his character_id on it.
-*
-* This function will also handle the breaking of arrows based on the
-* victims armor and percentage on arrows themself.
-*
-* Returns true if the arrow was moved to the victim, false if it was destroyed.
-* --------------------------- Change Log --------------------------------
-* drelidan: Feb 07, 2017 - Created function
-*/
+ * move_arrow_to_room will take the arrow out of the shooters quiver and
+ * tag the arrow with their character_id. After that it will deposit the arrow
+ * on the ground. We tag the arrow so the shooter can type recover
+ * after the kill and it will return all arrows with his character_id on it.
+ *
+ * This function will also handle the breaking of arrows based on the
+ * victims armor and percentage on arrows themself.
+ *
+ * Returns true if the arrow was moved to the victim, false if it was destroyed.
+ * --------------------------- Change Log --------------------------------
+ * drelidan: Feb 07, 2017 - Created function
+ */
 void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
     // Remove object from the character.
@@ -2292,7 +2289,7 @@ void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 
     obj_to_char(arrow, archer); // Move it into his inventory.
 
-    //tag arrow in value slot 2 of the shooter
+    // tag arrow in value slot 2 of the shooter
     arrow->obj_flags.value[2] = utils::is_pc(*archer) ? (int)archer->specials2.idnum : (int)archer->abs_number;
 
     // Move the arrow to the room.
@@ -2341,10 +2338,7 @@ bool can_ch_shoot(char_data* archer)
         send_to_char("You must be wielding a bow to shoot.\r\n", archer);
         return false;
     }
-    /* slyon:
-	 * We need to check if they have something equiped on their back
-	 * before we check for the name or it will crash the game.
-	 */
+
     const obj_data* quiver = archer->equipment[WEAR_BACK];
     if (!quiver || !quiver->is_quiver()) {
         if (is_pc(*archer)) {
@@ -2942,7 +2936,7 @@ int mark_calculate_duration(char_data* marker)
 
 /*=================================================================================
    mark_calculate_damage:
-   Here we do a simple damage calculation on mark. It's damage is similar to 
+   Here we do a simple damage calculation on mark. It's damage is similar to
    magic missile. The mark ability isn't meant to do that much damage.
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
@@ -3543,7 +3537,7 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
 /*=================================================================================
   do_bendtime:
   This is a race specific harad ability. It will allow the Haradrim to double it's
-  current energy and increase their temporary ob by 20, for a short duration. 
+  current energy and increase their temporary ob by 20, for a short duration.
   The cost of this skill is the players max mana and 100 moves.
   ------------------------------Change Log---------------------------------------
   slyon: Oct 04, 2018 - Created

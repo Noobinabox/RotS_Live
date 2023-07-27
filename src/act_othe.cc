@@ -1,12 +1,12 @@
 /**************************************************************************
-*   File: act.other.c                                   Part of CircleMUD *
-*  Usage: Miscellaneous player-level commands                             *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-**************************************************************************/
+ *   File: act.other.c                                   Part of CircleMUD *
+ *  Usage: Miscellaneous player-level commands                             *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ **************************************************************************/
 
 #include "platdef.h"
 #include <algorithm>
@@ -199,11 +199,11 @@ ACMD(do_recruit)
     }
 
     /*
-   * Orcs get four followers with a cap of 48 total levels;
-   * one follower level per one player level until level 48.
-   * We allow orcs such a large force due to the fact that
-   * they can't follow or be followed by other players.
-   */
+     * Orcs get four followers with a cap of 48 total levels;
+     * one follower level per one player level until level 48.
+     * We allow orcs such a large force due to the fact that
+     * they can't follow or be followed by other players.
+     */
     if (level_total + GET_LEVEL(victim) > MIN(GET_LEVEL(ch), 48) || num_followers >= 4) {
         send_to_char("You have already recruited too powerful "
                      "a force for this target to be added.\n\r",
@@ -304,7 +304,8 @@ void roll_for_character(char_data* character, char_data* roll_initiator)
     }
 }
 
-bool compareByValue(const group_roll& a, const group_roll b) {
+bool compareByValue(const group_roll& a, const group_roll b)
+{
     return a.roll > b.roll;
 };
 
@@ -330,15 +331,15 @@ ACMD(do_grouproll)
     if (string_func::is_null_or_empty(buf)) {
         std::vector<group_roll> group_rolls;
 
-        for (auto & iter : *ch->group) {
+        for (auto& iter : *ch->group) {
             if (utils::is_pc(*iter)) {
-                group_rolls.emplace_back(iter, number(1,100));
+                group_rolls.emplace_back(iter, number(1, 100));
             }
         }
 
         std::sort(group_rolls.begin(), group_rolls.end(), compareByValue);
 
-        for(const auto& group_roll: group_rolls) {
+        for (const auto& group_roll : group_rolls) {
             sprintf(buf, "%8s -- Rolled: %3d", group_roll.character_name, group_roll.roll);
             act(buf, FALSE, ch, nullptr, nullptr, TO_CHAR);
             act(buf, FALSE, ch, nullptr, nullptr, TO_ROOM);
@@ -387,7 +388,7 @@ void print_group_leader(const char_data* leader)
         prompt_hit[health_prompt_index].message,
         *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
         *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
-				GET_NAME(leader));
+        GET_NAME(leader));
 }
 
 void print_group_member(const char_data* group_member)
@@ -421,14 +422,14 @@ void print_group_member(const char_data* group_member)
             prompt_hit[health_prompt_index].message,
             *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
             *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
-						GET_NAME(group_member),
+            GET_NAME(group_member),
             GET_LEVEL(group_member));
     } else {
         sprintf(buf, "HP:%9s,%11s,%13s -- %s\n\r",
             prompt_hit[health_prompt_index].message,
             *prompt_mana[mana_prompt_index].message == '\0' ? "S:Full" : prompt_mana[mana_prompt_index].message,
             *prompt_move[move_prompt_index].message == '\0' ? "MV:Energetic" : prompt_move[move_prompt_index].message,
-						GET_NAME(group_member));
+            GET_NAME(group_member));
     }
 }
 
@@ -492,13 +493,13 @@ ACMD(do_group)
             // first, display the group leader's status
             char_data* leader = ch->get_group_leader();
             print_group_leader(leader);
-						send_to_char(buf, ch);
+            send_to_char(buf, ch);
 
             // now, we display the group members; start with index 1 because index 0 is the group leader
             for (size_t index = 1; index < ch->group->size(); ++index) {
                 char_data* group_member = ch->group->at(index);
                 print_group_member(group_member);
-								send_to_char(buf, ch);
+                send_to_char(buf, ch);
             }
         }
     } else {
@@ -644,7 +645,7 @@ int calculate_gold_amount(char* text, char* argument, char_data* character)
             one_argument(current_argument, text);
             if (string_func::equals(text, "gold") || string_func::equals(text, "silver") || string_func::equals(text, "copper")) {
                 /* save some strcmp'ing time since only the previous three
-				* arguments could possibly have made it here */
+                 * arguments could possibly have made it here */
                 switch (*text) {
                 case 'g':
                     amount *= 1000;
@@ -994,13 +995,13 @@ char* tog_messages[][4] = {
         "You currently see a spinner during skill and spell delays.\r\n",
         "You currently do not see a spinner during skill and spell delays.\r\n" },
     { "Advanced view is now on.\r\n",
-               "Advanced view is off.\r\n",
-               "Advanced view is on.\r\n",
-               "Advanced view is off.\r\n"},
+        "Advanced view is off.\r\n",
+        "Advanced view is on.\r\n",
+        "Advanced view is off.\r\n" },
     { "Advanced prompt is now on.\r\n",
-                "Advanced prompt is off.\r\n",
-                "Advanced prompt is on.\r\n",
-                "Advanced prompt is off.\r\n"}
+        "Advanced prompt is off.\r\n",
+        "Advanced prompt is on.\r\n",
+        "Advanced prompt is off.\r\n" }
 };
 
 ACMD(do_gen_tog)
@@ -1585,11 +1586,11 @@ ACMD(do_set)
     no_set:
         sprintf(buf, "Possible arguments are:\n\r");
         /*
-     * Such. a. fucking. hack.  This doesn't even really work: slowns
-     * is implementor-only, as may be the case for other future
-     * options.  We really need a generic type of list that can deal
-     * with permissions based on level.
-     */
+         * Such. a. fucking. hack.  This doesn't even really work: slowns
+         * is implementor-only, as may be the case for other future
+         * options.  We really need a generic type of list that can deal
+         * with permissions based on level.
+         */
         tmp2 = (GET_LEVEL(ch) >= LEVEL_IMMORT) ? 27 : 23;
         for (tmp = 0; tmp < tmp2; tmp++) {
             strcat(buf, change_comm[tmp]);
@@ -2066,7 +2067,7 @@ const int num_of_apply = 2;
 /*=================================================================================
    do_apply:
    This will apply a poison to a weapon or apply an antidote to a player if they
-   are poisoned. The characters ranger level and gather skill determines how 
+   are poisoned. The characters ranger level and gather skill determines how
    successful they are with apply the poison to the weapon, but there is no
    restriction on the antidote.
    ------------------------------Change Log---------------------------------------

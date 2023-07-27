@@ -1,12 +1,12 @@
 /** ************************************************************************
-*   File: spec_procs.c                                  Part of CircleMUD *
-*  Usage: implementation of special procedures for mobiles/objects/rooms  *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: spec_procs.c                                  Part of CircleMUD *
+ *  Usage: implementation of special procedures for mobiles/objects/rooms  *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -111,7 +111,7 @@ char* how_good(int percent)
 /*
  * Procedures for skills, guilds
  * difficulty: pracs for perfection * 10.
- * pracs_used: pracs used * 100000 with adjustments 
+ * pracs_used: pracs used * 100000 with adjustments
  */
 
 void recalc_skills(struct char_data* ch)
@@ -147,7 +147,7 @@ void recalc_skills(struct char_data* ch)
         } else
             pracs_used = pracs_used * 10000;
 
-        //pracs used * 100000 with adjustment
+        // pracs used * 100000 with adjustment
         tmps = 1000 - pracs_used / (difficulty * 100);
         ch->knowledge[skill_no] = (10000 - tmps * tmps / 100) / 99;
         if (tmps < 0)
@@ -636,7 +636,7 @@ SPECIAL(kit_room)
     return TRUE;
 }
 
-/* 
+/*
  * Special procedures for objects
  */
 SPECIAL(obj_willpower)
@@ -712,9 +712,9 @@ SPECIAL(gatekeeper)
 
     if (callflag != SPECIAL_DELAY || ch == NULL) {
         /*
-     * This if block is the only part of this code that should
-     * execute if callflag=SPECIAL_SELF
-     */
+         * This if block is the only part of this code that should
+         * execute if callflag=SPECIAL_SELF
+         */
         if (!cmd || ch == NULL) {
             /* Leave gates open during the day */
             if (weather_info.sunlight >= SUN_RISE && weather_info.sunlight < SUN_SET)
@@ -1017,13 +1017,13 @@ SPECIAL(gatekeeper2)
             host->delay.targ2.ch_num = doordir;
         }
 
-        /* 
-     *Note that due to the implementation of wait states, imm-
-     * ediately after this function returns, it will decrement
-     * the gatekeeper's wait state.  So using a wait state of 1
-     * will result in having no delay, a wait state of 2 will
-     * result in a 2 tick delay, and so on.
-     */
+        /*
+         *Note that due to the implementation of wait states, imm-
+         * ediately after this function returns, it will decrement
+         * the gatekeeper's wait state.  So using a wait state of 1
+         * will result in having no delay, a wait state of 2 will
+         * result in a 2 tick delay, and so on.
+         */
         WAIT_STATE_FULL(host, number(2, 4), -1,
             cmd == CMD_KNOCK ? 1 : 2,
             30, 0, ch->abs_number, ch, 0, TARGET_CHAR);
@@ -1031,12 +1031,12 @@ SPECIAL(gatekeeper2)
     }
 
     /*
-   * From this point on, we're completing our -own- delay, so
-   * it's safe to modify delay values.  In everything above,
-   * modifying a delay value could cause the dreaded gatekeeper
-   * bash bug, because you could overwrite a delay created by
-   * bash (or anything else, for that matter)
-   */
+     * From this point on, we're completing our -own- delay, so
+     * it's safe to modify delay values.  In everything above,
+     * modifying a delay value could cause the dreaded gatekeeper
+     * bash bug, because you could overwrite a delay created by
+     * bash (or anything else, for that matter)
+     */
     if (!host->delay.cmd || !host->delay.subcmd) {
         do_say(host, "Ugh, I forgot what I'm doing.", 0, 0, 0);
         host->delay.cmd = host->delay.subcmd = 0;
@@ -1390,10 +1390,10 @@ int choose_mystic_spell(char_data* caster, char_data* target)
 {
     if (caster == target) {
         /*
-			* When this mob_type is poisoned it will cast remove
-			* and when below 1/3 of its hit points will start
-			* casting regeneration spells.
-			*/
+         * When this mob_type is poisoned it will cast remove
+         * and when below 1/3 of its hit points will start
+         * casting regeneration spells.
+         */
         if (affected_by_spell(caster, SPELL_POISON)) {
             return SPELL_REMOVE_POISON;
         } else if (caster->tmpabilities.hit < caster->abilities.hit / 3) {
@@ -1413,12 +1413,12 @@ int choose_mystic_spell(char_data* caster, char_data* target)
     max_spell_list_index = std::max(max_spell_list_index, 0);
 
     /*
-		* If the mob is engaged its going to cast
-		* its mystic spells from the list.
-		* I'm using a random number one to ten here on a
-		* temporary basis until i've written the code
-		* that allows for individual mob spell lists.
-		*/
+     * If the mob is engaged its going to cast
+     * its mystic spells from the list.
+     * I'm using a random number one to ten here on a
+     * temporary basis until i've written the code
+     * that allows for individual mob spell lists.
+     */
     int spell_list_index = number(0, max_spell_list_index);
     return spell_list[spell_list_index][3];
 }
@@ -1460,14 +1460,14 @@ int choose_mage_spell(const char_data* caster, const char_data* target)
     }
 
     /*
-	 * Since we have a list of 10 spells to choose from, and
-	 * since some of our in-game mobs are over 50 in level
-	 * any mob over level 50 will have its random number
-	 * divided by eight rather than 5 to ensure a spell
-	 * is picked from the array spell_list.
-	 * This will very soon be replaced with each mob having
-	 * a bitvector list of spells that each can cast from.
-	 */
+     * Since we have a list of 10 spells to choose from, and
+     * since some of our in-game mobs are over 50 in level
+     * any mob over level 50 will have its random number
+     * divided by eight rather than 5 to ensure a spell
+     * is picked from the array spell_list.
+     * This will very soon be replaced with each mob having
+     * a bitvector list of spells that each can cast from.
+     */
     int spell_list_index = number(0, GET_PROF_LEVEL(PROF_MAGIC_USER, caster));
     if (spell_list_index > 50)
         spell_list_index = spell_list_index / 8;
@@ -1646,11 +1646,11 @@ SPECIAL(mob_warrior)
         kick_var = number(1, 2);
     }
     /*
-   * Warrior mobs now kick and swing.
-   * The kick_var int deceides which one
-   * it will perform at any time, its totally
-   * random.
-   */
+     * Warrior mobs now kick and swing.
+     * The kick_var int deceides which one
+     * it will perform at any time, its totally
+     * random.
+     */
     wtl_base.cmd = com_num;
     if (com_num == CMD_KICK)
         wtl_base.subcmd = kick_var;
@@ -1667,11 +1667,11 @@ SPECIAL(mob_warrior)
 SPECIAL(mob_ranger)
 {
     /*
-   * Ranger mobs were coded to kick, but coded incorrectly
-   * I removed the kick as it wasn't a random Kick, rather
-   * the mob kept constantly kicking while engaged in 
-   * Combat
-   */
+     * Ranger mobs were coded to kick, but coded incorrectly
+     * I removed the kick as it wasn't a random Kick, rather
+     * the mob kept constantly kicking while engaged in
+     * Combat
+     */
 
     waiting_type tmpwtl;
     char_data* tmpch;
@@ -1795,7 +1795,7 @@ SPECIAL(mob_jig)
 int get_exit_width(room_data* room, int exit);
 
 /*
- * Well in answer to Vakaurs' prayers i've removed 
+ * Well in answer to Vakaurs' prayers i've removed
  * our six block_exit functions and replaced them
  * with one.
  */
@@ -1805,37 +1805,37 @@ int get_exit_width(room_data* room, int exit);
 
 /*
 SPECIAL(block_exit) {
-  
+
   int width, chance;
-  
-  if(callflag == SPECIAL_COMMAND && ch == host && 
-     cmd < 0 || cmd_info[cmd].minimum_position > POSITION_RESTING) {  
+
+  if(callflag == SPECIAL_COMMAND && ch == host &&
+     cmd < 0 || cmd_info[cmd].minimum_position > POSITION_RESTING) {
     if(cmd == CMD_BLOCK)
       return FALSE;
     if(!CAN_GO(ch, 0))
       return FALSE;
-    ch->specials.store_prog_number = 0; 
+    ch->specials.store_prog_number = 0;
     act("$n stopped blocking the way north.",TRUE, ch, 0, 0, TO_ROOM);
     send_to_char("You stopped blocking the way north.\n\r",ch);
     return FALSE;
   }
-  
+
   if((callflag != SPECIAL_COMMAND) || (cmd != host->specials2.rp_flag + 1))
     return FALSE;
-  
+
   if(ch->in_room == NOWHERE) {
     ch->specials.store_prog_number = 0;
     return FALSE;
   }
-  
+
   width = get_exit_width(&world[ch->in_room], host->specials2.rp_flag);
   if(width <= 0){
     ch->specials.store_prog_number = 0;
     return FALSE;
   }
-  
+
   chance = BLOCK_CHANCE(host, ch, width);
-  
+
   if(number(1,100) < chance){
     act("$n tried to slip north past $N but could not.", TRUE, ch, 0, host, TO_NOTVICT);
     act("$n tried to move north past you, but failed.", FALSE, ch, 0, host, TO_VICT);
@@ -2233,13 +2233,13 @@ SPECIAL(react_trap)
     w.targ2.ptr.ch = ch;
 
     /*
-	 * XXX: What to do here: if I call command_interpreter, I
-	 * get some proper processing on 'w' to make sure the args
-	 * are valid.  But then command_interpreter will call this
-	 * again with ch = host = the trapper and cmd = 220 (TRAP).
-	 * Then I have to make the trap command not break the set
-	 * trap.  Can this be dealt with in do_trap()?
-	 */
+     * XXX: What to do here: if I call command_interpreter, I
+     * get some proper processing on 'w' to make sure the args
+     * are valid.  But then command_interpreter will call this
+     * again with ch = host = the trapper and cmd = 220 (TRAP).
+     * Then I have to make the trap command not break the set
+     * trap.  Can this be dealt with in do_trap()?
+     */
     target_check(host, CMD_TRAP, &w.targ1, &w.targ2);
     do_trap(host, "", &w, CMD_TRAP, w.subcmd);
 
@@ -2337,7 +2337,7 @@ SPECIAL(ar_tarthalon)
 /*
  * In true horror tradition, more and more ghouls appear
  * until the character is forced to flee
- * If the spawned Ghouls are not fighting they 
+ * If the spawned Ghouls are not fighting they
  * return to the ground whence they came
  */
 SPECIAL(ghoul)
@@ -2533,7 +2533,7 @@ SPECIAL(vampire_huntress)
         char_to_room(host, real_room(to_room));
         act("$n enters, her massive wings darkening the forest.", FALSE, host, 0, 0, TO_ROOM);
         tmpno = number(0, 2);
-        if (tmpno) { //33% she will fly off, 33% attack, 33% kidnap
+        if (tmpno) { // 33% she will fly off, 33% attack, 33% kidnap
             victim = 0;
             for (victim = world[host->in_room].people; victim;
                  victim = victim->next_in_room)
@@ -2555,7 +2555,7 @@ SPECIAL(vampire_huntress)
                     send_to_char("You are carried at great speed through the trees.\n\r\n", victim);
                     send_to_char("Branches and trees all flash past, and you are powerless to prevent it.\n\r\n", victim);
                     act("$n bites you!", FALSE, host, 0, victim, TO_VICT);
-                    af.type = SPELL_POISON; //replace with more powerful poison when coded
+                    af.type = SPELL_POISON; // replace with more powerful poison when coded
                     af.duration = 24;
                     af.modifier = -4;
                     af.location = APPLY_STR;
@@ -2597,7 +2597,7 @@ SPECIAL(vampire_huntress)
         }
         mob = read_mobile(real_mobile(15302), REAL);
         GET_HIT(mob) = GET_HIT(host) * 3;
-        extract_char(host); //Gives a [room_data..] error presumably when it returns - strange...
+        extract_char(host); // Gives a [room_data..] error presumably when it returns - strange...
         char_to_room(mob, real_room(15379));
         if ((obj = read_object(6338, VIRT)))
             obj_to_char(obj, mob);
@@ -2619,7 +2619,7 @@ SPECIAL(vampire_huntress)
     return 0;
 }
 
-/* 
+/*
  * Thuringwethil in human form. Will regenerate
  * and hits very fast. If she heals completely she
  * will change back into a bat and patrol the area
@@ -2676,10 +2676,10 @@ SPECIAL(thuringwethil)
         victim = read_mobile(real_mobile(15301), REAL);
         char_to_room(victim, real_room(15379));
         /*    tmpwtl.cmd = 6;
-	  tmpwtl.subcmd = 0;
-	  if(CAN_GO(victim, tmpwtl.cmd -1))
-	  do_move(victim,"", &tmpwtl, tmpwtl.cmd, 0);
-	  tmpwtl.targ1.cleanup();  Changed - Fingolfin, Dec 2001  */
+          tmpwtl.subcmd = 0;
+          if(CAN_GO(victim, tmpwtl.cmd -1))
+          do_move(victim,"", &tmpwtl, tmpwtl.cmd, 0);
+          tmpwtl.targ1.cleanup();  Changed - Fingolfin, Dec 2001  */
         host = victim; // trying to avoid room_data errors when we return
         return 1;
     }
@@ -2740,7 +2740,7 @@ SPECIAL(vampire_killer)
         if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim))
             break;
     if (victim && victim != host) {
-        if (number(0, 50)) //Give them a chance to get away...
+        if (number(0, 50)) // Give them a chance to get away...
             return 0;
         act("$n leans over and bites $N on the neck!!", TRUE, host, 0, victim, TO_NOTVICT);
         act("$n leans over and bites you on the neck!!", FALSE, host, 0, victim, TO_VICT);
@@ -2767,7 +2767,7 @@ SPECIAL(vampire_killer)
     if (victim2)
         which_room += 2;
     if (!which_room) {
-        switch (world[host->in_room].number) { //If nothing to bite, get out of the cell
+        switch (world[host->in_room].number) { // If nothing to bite, get out of the cell
         case 15399:
             tmpwtl.cmd = 1;
             break;
@@ -2779,7 +2779,7 @@ SPECIAL(vampire_killer)
                 tmpwtl.cmd = 2;
             else
                 tmpwtl.cmd = 4;
-            if (number(0, 15)) //So he doesn't run around down there
+            if (number(0, 15)) // So he doesn't run around down there
                 return 0;
         }
         }
@@ -2796,10 +2796,10 @@ SPECIAL(vampire_killer)
         return 0;
     } else {
         if (number(0, 10))
-            return 0; //Slow him down a bit
+            return 0; // Slow him down a bit
         if (which_room == 3)
-            which_room = number(1, 2); //If both whities and darkies are there 50% which
-        switch (world[host->in_room].number) { //one
+            which_room = number(1, 2); // If both whities and darkies are there 50% which
+        switch (world[host->in_room].number) { // one
         case 15395:
             tmpwtl.cmd = 2;
             break;
@@ -2993,10 +2993,10 @@ SPECIAL(herald)
         return 0;
 
     /*
-   * we'll abuse host->specials.memory to keep
-   * track of people entering and leaving the room
-   * ok, let's see... did we announce 'host' yet?
-   */
+     * we'll abuse host->specials.memory to keep
+     * track of people entering and leaving the room
+     * ok, let's see... did we announce 'host' yet?
+     */
     pr = mr = host->specials.memory;
     while (mr) {
         if (mr->enemy != ch) {

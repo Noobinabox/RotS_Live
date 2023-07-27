@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: objsave.c                                     Part of CircleMUD *
-*  Usage: loading/saving player objects for rent and crash-save           *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: objsave.c                                     Part of CircleMUD *
+ *  Usage: loading/saving player objects for rent and crash-save           *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -201,9 +201,9 @@ int Crash_clean_file(char* name)
     if (!Crash_get_filename(name, fname))
         return 0;
     /*
-   * open for write so that permission problems will be flagged now,
-   * at boot time.
-   */
+     * open for write so that permission problems will be flagged now,
+     * at boot time.
+     */
 
     if (!(fl = fopen(fname, "r+b"))) {
         if (errno != ENOENT) { /* if it fails, NOT because of no file */
@@ -237,11 +237,11 @@ struct obj_data*
 Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
 {
     /*
-   * this function loads an object with a virtual number of
-   * `object->item_number', and stores it in `obj'.  `obj'
-   * is then the object "prototype."  we modify that prototype
-   * with what is stored in the obj_file_elem `object'.
-   */
+     * this function loads an object with a virtual number of
+     * `object->item_number', and stores it in `obj'.  `obj'
+     * is then the object "prototype."  we modify that prototype
+     * with what is stored in the obj_file_elem `object'.
+     */
     int j;
     struct obj_data* obj;
 
@@ -249,7 +249,7 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
         /* somewhat awkward, accounting for scalps... */
         if (object->item_number == generic_scalp) {
 
-            /* player id numbers exceed sh_int size, so we started stashing the id in extra_flags. 
+            /* player id numbers exceed sh_int size, so we started stashing the id in extra_flags.
              * scalp items don't use them, and load scalp knows where to put it. */
             int head_number = object->value[4];
             if (object->extra_flags != 0) {
@@ -263,10 +263,10 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
             obj->obj_flags.bitvector = object->bitvector;
             obj->loaded_by = object->loaded_by;
 
-            /* 
-       * drink containers and light sources are the only types of items
-       * that should be different in the obj_file_elem than our prototypes
-       */
+            /*
+             * drink containers and light sources are the only types of items
+             * that should be different in the obj_file_elem than our prototypes
+             */
             if (obj->obj_flags.type_flag == ITEM_LIGHT || obj->obj_flags.type_flag == ITEM_DRINKCON) {
                 obj->obj_flags.value[0] = object->value[0];
                 obj->obj_flags.value[1] = object->value[1];
@@ -604,8 +604,8 @@ int calc_load_room(struct char_data* ch, int load_result)
                 load_room = r_mortal_start_room[GET_RACE(ch)];
 
             /* Look through maze mappings. If ch was in a maze room
-       * before termination of game, he/she will unrent in the
-       * mapped-to rooms. */
+             * before termination of game, he/she will unrent in the
+             * mapped-to rooms. */
             for (i = 0; i < MAX_MAZE_RENT_MAPPINGS; i++)
                 if (old_room / 100 == mortal_maze_room[i][0] / 100) { /* room/100 = zone */
                     load_room = real_room(mortal_maze_room[i][1]);
@@ -815,7 +815,7 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
             SET_BIT(MOB_FLAGS(mob), MOB_PET);
             break;
 
-        case FOL_TAMED: //need same for tame
+        case FOL_TAMED: // need same for tame
         {
             af.type = SKILL_TAME;
             af.duration = -1;
@@ -1224,8 +1224,8 @@ void Crash_rentsave(struct char_data* ch, int cost)
 }
 
 /* ************************************************************************
-* Routines used for the "Offer"                                           *
-************************************************************************* */
+ * Routines used for the "Offer"                                           *
+ ************************************************************************* */
 
 int Crash_report_unrentables(struct char_data* ch, struct char_data* recep,
     struct obj_data* obj)

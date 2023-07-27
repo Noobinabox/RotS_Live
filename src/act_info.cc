@@ -1,13 +1,13 @@
 
 /* ************************************************************************
-*   File: act.informative.c                             Part of CircleMUD *
-*  Usage: Player-level commands of an informative nature                  *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.informative.c                             Part of CircleMUD *
+ *  Usage: Player-level commands of an informative nature                  *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -516,11 +516,11 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
 }
 
 /*
-  * Puts a line into `str' describing how `ch' sees `i'; i.e.:
-  * "i is sitting/standing/whatever here."
-  *
-  * NOTE: WILL CLOBBER COLOR.
-  */
+ * Puts a line into `str' describing how `ch' sees `i'; i.e.:
+ * "i is sitting/standing/whatever here."
+ *
+ * NOTE: WILL CLOBBER COLOR.
+ */
 void get_char_position_line(struct char_data* ch, struct char_data* i, char* str)
 {
     str[0] = 0;
@@ -659,9 +659,9 @@ void show_mount_to_char(struct char_data* i, struct char_data* ch,
         strcat(buf, CC_USE(ch, COLOR_CHAR));
 
     /*
-	 * We NEED to know if there are multiple people riding one mount and
-	 * whether or not ANY of those riders will generate a special message
-	 */
+     * We NEED to know if there are multiple people riding one mount and
+     * whether or not ANY of those riders will generate a special message
+     */
     tmpch = i->mount_data.rider;
     tmpnum = i->mount_data.rider_number;
     for (riderno = 0; tmpch && char_exists(tmpnum);
@@ -705,12 +705,12 @@ void show_mount_to_char(struct char_data* i, struct char_data* ch,
             switch (GET_POS(tmpch)) {
             case POSITION_RESTING:
                 /*
-				 * If special_message is 0, then the last person in the list
-				 * isn't doing anything, and thus we are seperated from them
-				 * by either " and " or ", ", so we need to use 'are', not
-				 * 'is'.  This is the is/are if block mentioned in the comment
-				 * heading this function.
-				 */
+                 * If special_message is 0, then the last person in the list
+                 * isn't doing anything, and thus we are seperated from them
+                 * by either " and " or ", ", so we need to use 'are', not
+                 * 'is'.  This is the is/are if block mentioned in the comment
+                 * heading this function.
+                 */
                 if (tmpch == ch || (!special_message && vis_count))
                     strcat(buf, " are");
                 else /* tmpch is not the viewer */
@@ -743,12 +743,12 @@ void show_mount_to_char(struct char_data* i, struct char_data* ch,
 
             default:
                 /*
-				 * If there's more than one rider, and at least one has a
-				 * special message, we need to be sure that the message we
-				 * generate does not imply that all of the other riders are
-				 * affected by the same message, so they ALL get the special
-				 * message "is here," if they didn't get one already.
-				 */
+                 * If there's more than one rider, and at least one has a
+                 * special message, we need to be sure that the message we
+                 * generate does not imply that all of the other riders are
+                 * affected by the same message, so they ALL get the special
+                 * message "is here," if they didn't get one already.
+                 */
                 if (riderno > 1 && special_message) {
                     if (ch == tmpch)
                         strcat(buf, " are");
@@ -785,10 +785,10 @@ void show_mount_to_char(struct char_data* i, struct char_data* ch,
         }
 
         /*
-		 * Multiple riders only; if we didn't have this statement, it
-		 * would seem as though only the last person in our list is
-		 * actually riding on the mount
-		 */
+         * Multiple riders only; if we didn't have this statement, it
+         * would seem as though only the last person in our list is
+         * actually riding on the mount
+         */
         if (riderno > 1) {
             if (riderno == 2)
                 strcat(buf, " both");
@@ -842,10 +842,10 @@ void show_char_to_char(struct char_data* i, struct char_data* ch, int mode,
             return;
 
         /*
-     * A player char or a mobile without long descr, or not in the
-     * default posistion, or a charmed orc-friend: basically anyone
-     * who needs a special sort of message.
-     */
+         * A player char or a mobile without long descr, or not in the
+         * default posistion, or a charmed orc-friend: basically anyone
+         * who needs a special sort of message.
+         */
         if ((!i->player.long_descr || GET_POS(i) != i->specials.default_pos || pos_line) || (IS_NPC(i) && MOB_FLAGGED(i, MOB_ORC_FRIEND) && MOB_FLAGGED(i, MOB_PET) && other_side(ch, i))) {
             if (!pos_line) {
                 sprintf(buf, "%s%s%s",
@@ -1168,9 +1168,9 @@ ACMD(do_look)
             if ((!*(EXIT(ch, keyword_no)->general_description) || (EXIT(ch, keyword_no)->to_room != NOWHERE)) && !IS_SET(EXIT(ch, keyword_no)->exit_info, EX_CLOSED) && !IS_SET(EXIT(ch, keyword_no)->exit_info, EX_NO_LOOK) && (EXIT(ch, keyword_no)->to_room != NOWHERE)) {
 
                 /*
-	 * exam <direction> causes you to look in the room connected
-	 * to that direction
-	 */
+                 * exam <direction> causes you to look in the room connected
+                 * to that direction
+                 */
                 if (subcmd == SCMD_LOOK_EXAM) {
                     sprintf(str, "To the %s you see:\n\r", keywords[keyword_no]);
                     send_to_char(str, ch);
@@ -1312,19 +1312,19 @@ ACMD(do_look)
                 bits = generic_find(arg2, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP | FIND_CHAR_ROOM, ch,
                     &tmp_char, &found_object);
             /*
-       * The next line was the cause of look spirit crashes.
-       *
-       * if(tmp_char && CAN_SEE(ch, tmp_char)) {
-       *
-       * Why does this line fail? Because tmp_char is produced by
-       * generic_find if and only if the ch can see tmp_char.
-       * That is, the can_see has to succeed otherwise tmp_char
-       * will not be assigned.  The look spirit crash happened if
-       * generic_find succeeds its can_see and generates tmp_char,
-       * but then this line can_see fails and mud assumes there is
-       * no tmp_char or tmp_objs; the result was referencing an
-       * undefined pointer.
-       */
+             * The next line was the cause of look spirit crashes.
+             *
+             * if(tmp_char && CAN_SEE(ch, tmp_char)) {
+             *
+             * Why does this line fail? Because tmp_char is produced by
+             * generic_find if and only if the ch can see tmp_char.
+             * That is, the can_see has to succeed otherwise tmp_char
+             * will not be assigned.  The look spirit crash happened if
+             * generic_find succeeds its can_see and generates tmp_char,
+             * but then this line can_see fails and mud assumes there is
+             * no tmp_char or tmp_objs; the result was referencing an
+             * undefined pointer.
+             */
 
             if (tmp_char) {
                 show_char_to_char(tmp_char, ch, 1);
@@ -1407,15 +1407,13 @@ ACMD(do_look)
                 sprintbit((long)world[ch->in_room].room_flags, room_bits, buf, 0);
             sprintf(buf2, "%s (#%d) [ %s, %s]", buf2, world[ch->in_room].number,
                 sector_types[world[ch->in_room].sector_type], buf);
-        }
-        else if (PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)) {
+        } else if (PRF_FLAGGED(ch, PRF_ADVANCED_VIEW)) {
             if (IS_SET(world[ch->in_room].room_flags, HIDE_VNUM)) {
                 sprintf(buf2, "%s (???) [ %s ]", buf2,
-                        sector_types[world[ch->in_room].sector_type]);
-            }
-            else {
+                    sector_types[world[ch->in_room].sector_type]);
+            } else {
                 sprintf(buf2, "%s (#%d) [ %s ]", buf2, world[ch->in_room].number,
-                        sector_types[world[ch->in_room].sector_type]);
+                    sector_types[world[ch->in_room].sector_type]);
             }
         }
 
@@ -1446,9 +1444,9 @@ ACMD(do_look)
                             }
                         }
                         /*
-	     * exit_choice 4 means that you cannot walk into this
-	     * exit.  This is used for windows, mainly.
-	     */
+                         * exit_choice 4 means that you cannot walk into this
+                         * exit.  This is used for windows, mainly.
+                         */
                         else if (IS_SET(world[ch->in_room].dir_option[i]->exit_info,
                                      EX_NOWALK)) {
                             if (ch->player.level >= LEVEL_GOD)
@@ -1458,27 +1456,27 @@ ACMD(do_look)
                         }
 
                         /*
-	     * exit_choice 5 means a darkie is looking at an exit which
-	     * leads to a sunlit room
-	     */
+                         * exit_choice 5 means a darkie is looking at an exit which
+                         * leads to a sunlit room
+                         */
                         if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SUNLIT_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i))
                             if (exit_choice != 4)
                                 exit_choice = 5;
 
                         /*
-	     * exit_choice 6 means a darkie is looking at an exit which
-	     * leads to a shadowy room, AND the sun is shining in that
-	     * room.
-	     */
+                         * exit_choice 6 means a darkie is looking at an exit which
+                         * leads to a shadowy room, AND the sun is shining in that
+                         * room.
+                         */
                         if (((GET_RACE(ch) == RACE_URUK) || (GET_RACE(ch) == RACE_ORC) || (GET_RACE(ch) == RACE_MAGUS) || (GET_RACE(ch) == RACE_OLOGHAI)) && IS_SHADOWY_EXIT(ch->in_room, world[ch->in_room].dir_option[i]->to_room, i)
                             && weather_info.sunlight == SUN_LIGHT)
                             if (exit_choice != 4)
                                 exit_choice = 6;
 
                         /*
-	     * Generate the direction letter and any surrounding symbols
-	     * based on the information we've gathered with exit_choice
-	     */
+                         * Generate the direction letter and any surrounding symbols
+                         * based on the information we've gathered with exit_choice
+                         */
                         switch (i) {
                         case 0:
                             sprintf(exit_line, exit_mark[exit_choice], 'N');
@@ -1537,9 +1535,9 @@ ACMD(do_look)
             do_orc_delay(ch, "", 0, 0, 0);
 
         /*
-     * If you're hunting, have no sun penalty, and aren't confused,
-     * we send you the tracks in this room.
-     */
+         * If you're hunting, have no sun penalty, and aren't confused,
+         * we send you the tracks in this room.
+         */
         else if (!IS_NPC(ch) && !SUN_PENALTY(ch) && IS_AFFECTED(ch, AFF_HUNT) && !IS_AFFECTED(ch, AFF_CONFUSE)) {
             show_tracks(ch, 0, 2);
             WAIT_STATE(ch, 4);
@@ -1919,9 +1917,9 @@ ACMD(do_info)
 }
 
 /*
-* This function, when given i < 170*4, returns 200*sqrt(i).
-* CH is only needed to send overflow to.
-*/
+ * This function, when given i < 170*4, returns 200*sqrt(i).
+ * CH is only needed to send overflow to.
+ */
 int do_squareroot(int i)
 {
     if (i / 4 > 170) {
@@ -2161,11 +2159,11 @@ ACMD(do_help)
         num = 0;
 
     /*
-   * Now we're dealing with both the help command AND the manual
-   * command.  `argument' either points to the first argument in
-   * the help command, or the second and following arguments in
-   * the manual: `help <argument>' or `man <chapter> <argument'.
-   */
+     * Now we're dealing with both the help command AND the manual
+     * command.  `argument' either points to the first argument in
+     * the help command, or the second and following arguments in
+     * the manual: `help <argument>' or `man <chapter> <argument'.
+     */
     if (*argument) {
         if (!help_content[num].keyword || !help_content[num].file) {
             send_to_char("No such help available.\n\r", ch);
@@ -3145,8 +3143,8 @@ void add_prompt(char* prompt, struct char_data* ch, long flag)
 
     if (flag & PROMPT_ADVANCED) {
         sprintf(prompt, "%sHP: %d/%d S: %d/%d MV: %d/%d]%c",
-                prompt, GET_HIT(ch), GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
-                GET_MOVE(ch), GET_MAX_MOVE(ch), 0);
+            prompt, GET_HIT(ch), GET_MAX_HIT(ch), GET_MANA(ch), GET_MAX_MANA(ch),
+            GET_MOVE(ch), GET_MAX_MOVE(ch), 0);
         return;
     }
     if (GET_MAX_HIT(ch))
@@ -3270,13 +3268,13 @@ ACMD(do_whois)
         else
             /* Playtime info given for: mortals, immortals whoising lower targets */
             if ((GET_LEVEL(ch) >= LEVEL_IMMORT && GET_LEVEL(ch) >= t_level) || t_level < LEVEL_IMMORT)
-            sprintf(str, "%s %s is %s%s.\n\r%s %s\r", P->name, t_title,
-                get_level_abbr(t_level, t_race), t_retired,
-                isplaying ? "Playing since " : "Last seen ",
-                asctime(localtime(&tt)));
-        else
-            sprintf(str, "%s %s is %s%s.\n\r", P->name, t_title,
-                get_level_abbr(t_level, t_race), t_retired);
+                sprintf(str, "%s %s is %s%s.\n\r%s %s\r", P->name, t_title,
+                    get_level_abbr(t_level, t_race), t_retired,
+                    isplaying ? "Playing since " : "Last seen ",
+                    asctime(localtime(&tt)));
+            else
+                sprintf(str, "%s %s is %s%s.\n\r", P->name, t_title,
+                    get_level_abbr(t_level, t_race), t_retired);
     }
 
     *str = toupper(*str);
@@ -3347,11 +3345,11 @@ ACMD(do_map)
     tmpch = zone_table[zone].symbol;
 
     /*
-   * The zone_table is already generated, we just write an X
-   * to the character's current location, send them that map,
-   * then set the X back to what it was before.  This is very
-   * thread-not-safe.
-   */
+     * The zone_table is already generated, we just write an X
+     * to the character's current location, send them that map,
+     * then set the X back to what it was before.  This is very
+     * thread-not-safe.
+     */
     symbol_to_map(zone_table[zone].x, zone_table[zone].y, 'X');
     send_to_char(world_map, ch);
     symbol_to_map(zone_table[zone].x, zone_table[zone].y, tmpch);
@@ -3817,9 +3815,9 @@ ACMD(do_fame)
     }
 
     /* XXX: Quick and dirty.  We need a pkill API to get a list of
-	 * kills pertaining only to this character; but for now we'll just
-	 * use the entire list (that's what the legacy code does anyway).
-	 */
+     * kills pertaining only to this character; but for now we'll just
+     * use the entire list (that's what the legacy code does anyway).
+     */
     pkills = pkill_get_all(&n);
     records = 0;
     bufpt = 0;
@@ -4803,11 +4801,11 @@ void do_identify_object(struct char_data* ch, struct obj_data* j)
     send_to_char(buf, ch);
 
     /*
-   * If an object type_flag is either Light or Food, its value_flags
-   * are handled by two seperate fucntions, everything else
-   * is handled via the value_array, which is the default
-   * for the below switch.
-   */
+     * If an object type_flag is either Light or Food, its value_flags
+     * are handled by two seperate fucntions, everything else
+     * is handled via the value_array, which is the default
+     * for the below switch.
+     */
 
     switch (j->obj_flags.type_flag) {
     case ITEM_LIGHT:

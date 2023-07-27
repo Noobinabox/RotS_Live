@@ -23,9 +23,9 @@
 
 struct race_bodypart_data;
 
-//TODO(dgurley):  Move these tables elsewhere or provide accessors or something.
+// TODO(dgurley):  Move these tables elsewhere or provide accessors or something.
 extern sh_int square_root[];
-//extern race_bodypart_data bodyparts[MAX_BODYTYPES]; // Due to where this is located, this currently isn't possible to support here.
+// extern race_bodypart_data bodyparts[MAX_BODYTYPES]; // Due to where this is located, this currently isn't possible to support here.
 
 namespace utils {
 //============================================================================
@@ -77,7 +77,7 @@ bool is_player_mode_on(const char_data& character, long flag)
 {
     return false;
     // there is no character.specials2.mode
-    //return base_utils::is_set(character.specials2.mode, flag);
+    // return base_utils::is_set(character.specials2.mode, flag);
 }
 
 //============================================================================
@@ -344,7 +344,7 @@ int get_prof_coof(int prof, const char_data& character)
         return 1000;
 
     int prof_coof = character.profs->prof_coof[prof];
-    //TODO(dgurley):  square_root is an externed array; fix this crap.
+    // TODO(dgurley):  square_root is an externed array; fix this crap.
     int return_prof_coof = square_root[prof_coof];
 
     if (character.player.race == RACE_ORC) {
@@ -493,7 +493,7 @@ bool is_evil_race(const char_data& character)
 //============================================================================
 namespace {
     /* Encumbrance values used for light fighting.  These values represent the
-		 * expected encumbrance for a piece of gear in that slot. */
+     * expected encumbrance for a piece of gear in that slot. */
     const int light_fighting_encumb_table[MAX_WEAR] = {
         0,
         0,
@@ -520,7 +520,7 @@ namespace {
     };
 
     /* Light fighting weight values.  These values represent the expected
-		 * weight of an item in this slot. */
+     * weight of an item in this slot. */
     const int light_fighting_weight_table[MAX_WEAR] = {
         0,
         0,
@@ -547,7 +547,7 @@ namespace {
     };
 
     /* Encumbrance values used for heavy fighting.  These values represent the
-		* expected encumbrance for a piece of gear in that slot. */
+     * expected encumbrance for a piece of gear in that slot. */
     const int heavy_fighting_encumb_table[MAX_WEAR] = {
         0,
         0,
@@ -574,7 +574,7 @@ namespace {
     };
 
     /* Weight values used for heavy fighting.  These values represent the
-		* expected weight for a piece of gear in that slot. */
+     * expected weight for a piece of gear in that slot. */
     const int heavy_fighting_weight_table[MAX_WEAR] = {
         0,
         0,
@@ -695,7 +695,7 @@ namespace {
             }
 
             // Drelidan:  Removing this for now, but leaving it in for future changes.
-            //new_encumb += int(std::sqrt(heavy_fighting_encumbrance_difference));
+            // new_encumb += int(std::sqrt(heavy_fighting_encumbrance_difference));
 
             return new_encumb;
         } else if (get_specialization(character) == game_types::PS_LightFighting) {
@@ -1072,7 +1072,7 @@ const char* get_object_name(const char_data& character, const obj_data& object,
     const weather_data& weather, const room_data& room)
 {
     if (can_see_object(character, object, weather, room)) {
-        //dgurley: fname isn't thread safe
+        // dgurley: fname isn't thread safe
         return fname(object.name);
     } else {
         return "something";
@@ -1189,33 +1189,34 @@ int get_race(const char_data& character)
 }
 
 //============================================================================
-int get_minimum_insight_perception(const char_data &character) {
+int get_minimum_insight_perception(const char_data& character)
+{
     int race = character.player.race;
     switch (race) {
-        case RACE_GOD:
-            return 0;
-        case RACE_HUMAN:
-            return 20;
-        case RACE_DWARF:
-            return 15;
-        case RACE_WOOD:
-            return 30;
-        case RACE_HOBBIT:
-            return 20;
-        case RACE_BEORNING:
-            return 15;
-        case RACE_URUK:
-            return 20;
-        case RACE_ORC:
-            return 15;
-        case RACE_MAGUS:
-            return 20;
-        case RACE_HARADRIM:
-            return 20;
-        case RACE_OLOGHAI:
-            return 15;
-        default:
-            return 0;
+    case RACE_GOD:
+        return 0;
+    case RACE_HUMAN:
+        return 20;
+    case RACE_DWARF:
+        return 15;
+    case RACE_WOOD:
+        return 30;
+    case RACE_HOBBIT:
+        return 20;
+    case RACE_BEORNING:
+        return 15;
+    case RACE_URUK:
+        return 20;
+    case RACE_ORC:
+        return 15;
+    case RACE_MAGUS:
+        return 20;
+    case RACE_HARADRIM:
+        return 20;
+    case RACE_OLOGHAI:
+        return 15;
+    default:
+        return 0;
     }
 
     return 0;
@@ -1530,18 +1531,18 @@ std::string cold_spec_data::to_string(char_data& character) const
     message_writer << "Your chill ray spell is much harder to resist." << std::endl;
     message_writer << "------------------------------------------------------------" << std::endl;
     /*
-	message_writer << "Chill Ray:" << std::endl;
-	message_writer << "\tTotal Casts: " << get_chill_ray_count() << std::endl;
-	message_writer << "\tSuccessful Casts: " << get_successful_chills() << std::endl;
-	message_writer << "\tFailed Casts: " << get_saved_chills() << std::endl;
-	message_writer << "\tTotal Damage: " << total_chill_ray_damage << std::endl << std::endl;
-	message_writer << "Cone of Cold:" << std::endl;
-	message_writer << "\tTotal Casts: " << get_cone_count() << std::endl;
-	message_writer << "\tSuccessful Casts: " << get_successful_cones() << std::endl;
-	message_writer << "\tFailed Casts: " << get_saved_cones() << std::endl;
-	message_writer << "\tTotal Damage: " << total_cone_of_cold_damage << std::endl << std::endl;
-	message_writer << "\tTotal Attacks Stopped: " << get_total_energy_sapped() / ENE_TO_HIT << std::endl;
-	*/
+        message_writer << "Chill Ray:" << std::endl;
+        message_writer << "\tTotal Casts: " << get_chill_ray_count() << std::endl;
+        message_writer << "\tSuccessful Casts: " << get_successful_chills() << std::endl;
+        message_writer << "\tFailed Casts: " << get_saved_chills() << std::endl;
+        message_writer << "\tTotal Damage: " << total_chill_ray_damage << std::endl << std::endl;
+        message_writer << "Cone of Cold:" << std::endl;
+        message_writer << "\tTotal Casts: " << get_cone_count() << std::endl;
+        message_writer << "\tSuccessful Casts: " << get_successful_cones() << std::endl;
+        message_writer << "\tFailed Casts: " << get_saved_cones() << std::endl;
+        message_writer << "\tTotal Damage: " << total_cone_of_cold_damage << std::endl << std::endl;
+        message_writer << "\tTotal Attacks Stopped: " << get_total_energy_sapped() / ENE_TO_HIT << std::endl;
+        */
     report_exposed_data(message_writer);
     return message_writer.str();
 }

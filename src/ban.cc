@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: ban.c                                         Part of CircleMUD *
-*  Usage: banning/unbanning/checking sites and player names               *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: ban.c                                         Part of CircleMUD *
+ *  Usage: banning/unbanning/checking sites and player names               *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <ctype.h>
@@ -262,9 +262,9 @@ int valid_name(char* newname)
     char tempname[MAX_NAME_LENGTH];
 
     /*
-   * Read in the list.  This should be done every time so that we don't have
-   * to reboot to add someone to the list.  -Alkar
-   */
+     * Read in the list.  This should be done every time so that we don't have
+     * to reboot to add someone to the list.  -Alkar
+     */
     read_invalid_list();
 
     /* IF THE LIST COULDN'T BE READ IN FOR A REASON, RETURN VALID */
@@ -272,9 +272,9 @@ int valid_name(char* newname)
         return 1;
 
     /*
-   * If the length of the name is below the minimum length, return invalid.
-   * special check for "all" so that people can still be called 'Alleth', etc
-   */
+     * If the length of the name is below the minimum length, return invalid.
+     * special check for "all" so that people can still be called 'Alleth', etc
+     */
     if (strlen(newname) < MIN_NAME_LENGTH || strlen(newname) > MAX_NAME_LENGTH || !strcmp(newname, "all")) {
         clear_invalid_list();
         return 0;
@@ -286,9 +286,9 @@ int valid_name(char* newname)
     tempname[i] = 0;
 
     /*
-   * Loop through the invalid list and see if the string occurs in
-   * the desired name
-   */
+     * Loop through the invalid list and see if the string occurs in
+     * the desired name
+     */
     for (i = 0; i < num_invalid; i++)
         /* If invalid_list[i] is a null string, don't compare it */
         if (*invalid_list[i])
@@ -349,11 +349,11 @@ void read_invalid_list(void)
         CREATE(invalid_list[i], char, MAX_NAME_LENGTH);
 
         /*
-     * When fscanf fails during conversion, the contents
-     * of invalid_list[i] will be undefined.  So, we make
-     * the string NULL terminated so that later uses of
-     * the string won't crash and burn.
-     */
+         * When fscanf fails during conversion, the contents
+         * of invalid_list[i] will be undefined.  So, we make
+         * the string NULL terminated so that later uses of
+         * the string won't crash and burn.
+         */
         if (fscanf(fp, "%s", invalid_list[i]) == EOF) {
             *invalid_list[i] = 0;
             break;

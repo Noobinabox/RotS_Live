@@ -1,18 +1,18 @@
 /**********************************************************
-* File: script.cc                                         *
-*                                                         *
-*                 Return of the Shadow                    *
-*                   script functions                      *
-*                                                         *
-*                       script.cc                         *
-*                                                         *
-* NB                                                      *
-* scripts return 1 if program should continue as normal,  *
-* and 0 if not (eg on_die 0 == do not kill char)          *
-*                                                         *
-* Characters who are on the waiting list cannot run       *
-*   scripts                                               *
-**********************************************************/
+ * File: script.cc                                         *
+ *                                                         *
+ *                 Return of the Shadow                    *
+ *                   script functions                      *
+ *                                                         *
+ *                       script.cc                         *
+ *                                                         *
+ * NB                                                      *
+ * scripts return 1 if program should continue as normal,  *
+ * and 0 if not (eg on_die 0 == do not kill char)          *
+ *                                                         *
+ * Characters who are on the waiting list cannot run       *
+ *   scripts                                               *
+ **********************************************************/
 
 // returns 1 if program should continue as normal, 0 if not (eg on_die 0 == do not kill char)
 
@@ -856,8 +856,8 @@ int run_script(struct info_script* info, struct script_data* position)
             break;
 
         case SCRIPT_DO_FOLLOW:
-            //tmpch is follower
-            //tmpch2 is leader
+            // tmpch is follower
+            // tmpch2 is leader
             if (curr->param[0] && curr->param[1]) {
                 tmpch = get_char_param(curr->param[0], info);
                 tmpch2 = get_char_param(curr->param[1], info);
@@ -1115,8 +1115,8 @@ int run_script(struct info_script* info, struct script_data* position)
             if (curr->param[0]) {
                 txt1 = get_text_param(curr->param[0], info);
                 if (txt1) {
-                    //CREATE(txt2, char, strlen(txt1));
-                    //strcpy(txt2, txt1);
+                    // CREATE(txt2, char, strlen(txt1));
+                    // strcpy(txt2, txt1);
                     txt2 = str_dup(txt1);
                     for (txt3 = txt2; *txt3; txt3++)
                         *txt3 = toupper(*txt3);
@@ -1322,21 +1322,21 @@ int run_script(struct info_script* info, struct script_data* position)
             curr = curr->next;
             break;
 
-        /* 
-                 * This is technically a unary op--however, it sets the
-                 * variable pointed to by param[1] to the value of param[0],
-                 * so param[0] is NOT a variable, it is a valid integer
-                 * value.
-                 */
+        /*
+         * This is technically a unary op--however, it sets the
+         * variable pointed to by param[1] to the value of param[0],
+         * so param[0] is NOT a variable, it is a valid integer
+         * value.
+         */
         case SCRIPT_SET_INT_VALUE:
             set_int_value(info, curr->param[1], curr->param[0]);
             curr = curr->next;
             break;
 
         /*
-                 * All 0-ary integer operations.  I.e., get some value
-                 * directly from the system.
-                 */
+         * All 0-ary integer operations.  I.e., get some value
+         * directly from the system.
+         */
         case SCRIPT_SET_INT_WAR_STATUS:
             x = int_0ary_op(info, curr->command_type);
             set_int_value(info, curr->param[0], x);

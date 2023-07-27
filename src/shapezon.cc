@@ -20,7 +20,7 @@ extern struct room_data world;
 
 int shape_standup(struct char_data* ch, int pos);
 int convert_exit_flag(int tmp, int mode); /* in shaperom.cpp */
-//void symbol_to_map(int x, int y, int symb);
+// void symbol_to_map(int x, int y, int symb);
 void draw_map();
 
 int shapezone_lastroom;
@@ -360,7 +360,7 @@ void write_zone(FILE* f, struct char_data* ch)
     fprintf(f, "S\n");
 }
 
-//#define SUBST(x)   real->x=(char *)calloc(strlen(curr->x)+1,1);  strcpy(real->x,curr->x);
+// #define SUBST(x)   real->x=(char *)calloc(strlen(curr->x)+1,1);  strcpy(real->x,curr->x);
 
 #define SUBST(x)                                \
     CREATE(real->x, char, strlen(curr->x) + 1); \
@@ -472,7 +472,7 @@ void implement_zone(struct char_data* ch)
     //  zone_table[adr].cmd=(struct reset_com *)calloc(count+1,sizeof(struct reset_com));
     CREATE(zone_table[adr].cmd, reset_com, count + 1);
 
-    //printf("counted %d zone commands.\n",count);
+    // printf("counted %d zone commands.\n",count);
     tmpzon = SHAPE_ZONE(ch)->root;
 
     count = 0;
@@ -674,7 +674,7 @@ void shape_center_zone(struct char_data* ch, char* arg)
         ->procedure
         = SHAPE_EDIT;
     if ((tmp1 != SHAPE_NONE) && (tmp1 != SHAPE_EDIT)) {
-        //send_to_char("mixed orders. aborted - better restart shaping.\n\r",ch);
+        // send_to_char("mixed orders. aborted - better restart shaping.\n\r",ch);
         extra_coms_zone(ch, arg);
         return;
     }
@@ -1015,11 +1015,11 @@ void shape_center_zone(struct char_data* ch, char* arg)
     }
     else{
       if(!arg){
-	send_to_char("string required. dropped\n\r",ch);
-	SHAPE_ZONE(ch)->editflag=0;
-	ch->specials.prompt_number=7;
-	shape_standup(ch,SHAPE_ZONE(ch)->position);
-	return;
+        send_to_char("string required. dropped\n\r",ch);
+        SHAPE_ZONE(ch)->editflag=0;
+        ch->specials.prompt_number=7;
+        shape_standup(ch,SHAPE_ZONE(ch)->position);
+        return;
       }
       RELEASE(SHAPE_ZONE(ch)->curr->comment);
       //      SHAPE_ZONE(ch)->curr->comment=(char *)calloc(strlen(arg)+1,1);
@@ -1564,7 +1564,7 @@ void list_zone(struct char_data* ch)
     send_to_char(str, ch);
     str[0] = 0;
     zon = SHAPE_ZONE(ch)->root;
-    //printf("cur_room = %d\n",SHAPE_ZONE(ch)->cur_room);
+    // printf("cur_room = %d\n",SHAPE_ZONE(ch)->cur_room);
     while (zon) {
         check = 1;
         if (SHAPE_ZONE(ch)->cur_room) {
@@ -1638,7 +1638,7 @@ int get_text(FILE* f, char** line); /* exist in protos.c */
 
 /****************-------------------------------------****************/
 
-//extern struct room_data world;
+// extern struct room_data world;
 
 int load_zone(struct char_data* ch, char* arg)
 {
@@ -1998,7 +1998,7 @@ void free_zone(struct char_data* ch)
         RELEASE(owner);
         owner = owner2;
     }
-    //RELEASE(SHAPE_ZONE(ch));
+    // RELEASE(SHAPE_ZONE(ch));
     RELEASE(ch->temp);
     REMOVE_BIT(PRF_FLAGS(ch), PRF_DISPTEXT);
     if (GET_POS(ch) <= POSITION_SHAPING)

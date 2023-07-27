@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: boards.c                                      Part of CircleMUD *
-*  Usage: handling of multiple bulletin boards                            *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: boards.c                                      Part of CircleMUD *
+ *  Usage: handling of multiple bulletin boards                            *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 /* FEATURES & INSTALLATION INSTRUCTIONS ***********************************
 
@@ -55,13 +55,13 @@ Send comments, bug reports, help requests, etc. to Jeremy Elson
 
 3 - Add a new line to the board_info array below.  The fields, in order, are:
 
-	Board's virtual number.
-	Min level one must be to look at this board or read messages on it.
-	Min level one must be to post a message to the board.
-	Min level one must be to remove other people's messages from this
-		board (but you can always remove your own message).
-	Filename of this board, in quotes.
-	Last field must always be 0.
+        Board's virtual number.
+        Min level one must be to look at this board or read messages on it.
+        Min level one must be to post a message to the board.
+        Min level one must be to remove other people's messages from this
+                board (but you can always remove your own message).
+        Filename of this board, in quotes.
+        Last field must always be 0.
 */
 
 #include "platdef.h"
@@ -87,7 +87,7 @@ int has_mail(char* recipient);
 int _parse_name(char* arg, char* name);
 
 /*
- * format: lnum, vnum, read lvl, write lvl, remove lvl, filename, 0 at end 
+ * format: lnum, vnum, read lvl, write lvl, remove lvl, filename, 0 at end
  * Be sure to also change NUM_OF_BOARDS in board.h
  */
 
@@ -293,7 +293,7 @@ SPECIAL(gen_board)
             return 0;
         }
     }
-    //printf("arg:%s, news_number:%d\n",arg, news_board_number);
+    // printf("arg:%s, news_number:%d\n",arg, news_board_number);
     switch (cmd) {
     case CMD_WRITE:
         board->is_changed = 1;
@@ -435,7 +435,7 @@ int board_info_type::show_board(struct char_data* ch,
     char* arg1;
     descriptor_data* d;
 
-    //printf("going to show board\n");
+    // printf("going to show board\n");
     if (!ch->desc)
         return 0;
     arg1 = one_argument(arg, tmp);
@@ -652,7 +652,7 @@ int board_info_type::remove_msg(struct char_data* ch, char* arg)
         msg = -1;
     else
         msg = tmp;
-    //printf("remove_msg, msg=%d\n",msg);
+    // printf("remove_msg, msg=%d\n",msg);
     if (msg < 0 || msg >= num_of_msgs) {
         send_to_char("That message exists only in your imagination..\n\r", ch);
         return 1;
@@ -892,7 +892,7 @@ void board_info_type::load_board()
 void board_info_type::reset_board()
 {
     int i;
-    //printf("Entering board reset.\n");
+    // printf("Entering board reset.\n");
     for (i = 0; i < max_of_msgs; i++) {
         if (MSG_HEADING(i)) {
             printf("Trying to remove message #%d.\n", i);
@@ -910,7 +910,7 @@ void board_info_type::reset_board()
 board_info_type::board_info_type(int objnum, int l_read, int l_write, int l_rem,
     int max_msg, char* file, char* titlename)
 {
-    /** This stuff is copied lower to the mail_info_type constructor - 
+    /** This stuff is copied lower to the mail_info_type constructor -
         be careful and considerate. **/
 
     vnum = objnum;
@@ -1034,10 +1034,10 @@ void mail_info_type::write_message(struct char_data* ch, char* arg, int num)
         for (; *arg && isspace(*arg); arg++)
             ;
         /*    if (!*arg) {
-	  send_to_char("We must have a headline!\n\r", ch);
-	  return;
-	  }
-	  */
+          send_to_char("We must have a headline!\n\r", ch);
+          return;
+          }
+          */
         CREATE(NEW_MSG_INDEX.heading, char, len);
         if (!NEW_MSG_INDEX.heading) {
             send_to_char("The board is malfunctioning - sorry.\n\r", ch);
@@ -1099,9 +1099,9 @@ void report_news(struct char_data* ch)
 }
 
 /* 6-12-01 Errent
-*  The old report_mail function has been replaced with has_mail from the new mail system
-*  Rather than rewrite all instances of report_mail, i just made report_mail use has_mail
-*/
+ *  The old report_mail function has been replaced with has_mail from the new mail system
+ *  Rather than rewrite all instances of report_mail, i just made report_mail use has_mail
+ */
 void report_mail(struct char_data* ch)
 {
     char recipient[100];

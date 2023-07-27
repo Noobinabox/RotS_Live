@@ -1,24 +1,24 @@
 /* ************************************************************************
-*   File: utility.c                                     Part of CircleMUD *
-*  Usage: various internal functions of a utility nature                  *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: utility.c                                     Part of CircleMUD *
+ *  Usage: various internal functions of a utility nature                  *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 /**************************************************************************
-* ROTS Documentation                                                      *
-*                                                                         *
-*                                                                         *
-* Universal list                                                          *
-*   A simple linked list structure which can hold pointers to char_data   *
-*   room_data or obj_data.  The number of universal_list structures are   *
-*   counted with universal_list_counter, and the number actively used in  *
-*   lists is held in used_in_universal_list.  Pool_to_list will add a new *
-*   or existing but unused universal_list structure into a linked list.   *
-**************************************************************************/
+ * ROTS Documentation                                                      *
+ *                                                                         *
+ *                                                                         *
+ * Universal list                                                          *
+ *   A simple linked list structure which can hold pointers to char_data   *
+ *   room_data or obj_data.  The number of universal_list structures are   *
+ *   counted with universal_list_counter, and the number actively used in  *
+ *   lists is held in used_in_universal_list.  Pool_to_list will add a new *
+ *   or existing but unused universal_list structure into a linked list.   *
+ **************************************************************************/
 
 #include "platdef.h"
 
@@ -77,7 +77,7 @@ void retire(struct char_data* ch)
 
 /*
  * Unset `ch's retired flag, add an exploit record showing
- * that `ch' was unretired, and reset `ch's retiredon time 
+ * that `ch' was unretired, and reset `ch's retiredon time
  * to zero.
  */
 void unretire(struct char_data* ch)
@@ -89,7 +89,7 @@ void unretire(struct char_data* ch)
 
 /*
  * Return the 7bit ascii value of an 8bit accented character
- * if we do not support the character, return 0 
+ * if we do not support the character, return 0
  */
 char unaccent(char c)
 {
@@ -447,15 +447,15 @@ int get_weapon_damage(struct obj_data* obj)
     owner = obj->carried_by;
 
     /*
-	 * If the weapon is owned by someone (i.e., we aren't just statting
-	 * an object), then that person will affect how well the weapon
-	 * works.  Currently, there are two maluses:
-	 *   (1) If the wielder's level is a good deal lower than the
-	 *       object's level, then the level of the object is lowered
-	 *       to be closer to the wielder's; thus reducing damage.
-	 *   (2) If the wielder has low weapon skill for the object, then
-	 *       we reduce the damage.
-	 */
+     * If the weapon is owned by someone (i.e., we aren't just statting
+     * an object), then that person will affect how well the weapon
+     * works.  Currently, there are two maluses:
+     *   (1) If the wielder's level is a good deal lower than the
+     *       object's level, then the level of the object is lowered
+     *       to be closer to the wielder's; thus reducing damage.
+     *   (2) If the wielder has low weapon skill for the object, then
+     *       we reduce the damage.
+     */
     if (owner != NULL) {
         /* Case (1) */
         if (obj_level > (GET_LEVEL(owner) * 4 / 3 + 7))
@@ -564,7 +564,7 @@ int armor_absorb(struct obj_data* obj)
     return (absorb);
 }
 
-/* 
+/*
  * get_real_stealth has sort of turned into the default
  * "how stealthy is this person?" function.  It now takes
  * into account specialization and sneak in addition to
@@ -1050,11 +1050,11 @@ void log_death_trap(struct char_data* ch)
 /* writes a string to the log */
 void log(const char* str)
 {
-    //time_t ct(0);
-    //char* time_string = asctime(localtime(&ct));
+    // time_t ct(0);
+    // char* time_string = asctime(localtime(&ct));
 
     //*(time_string + std::strlen(time_string) - 1) = '\0';
-    //fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
+    // fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
 
     long ct;
     char* tmstr;
@@ -1075,8 +1075,8 @@ void mudlog(char* str, char type, sh_int level, byte file)
 
     ct = time(0);
     tmp = asctime(localtime(&ct));
-    //time_t ct(0);
-    //char* tmp = asctime(localtime(&ct));
+    // time_t ct(0);
+    // char* tmp = asctime(localtime(&ct));
 
     if (file)
         fprintf(stderr, "%d, %-19.19s :: %s\n", type, tmp, str);
@@ -1116,7 +1116,7 @@ void vmudlog(char type, char* format, ...)
 }
 
 /*
- * Sprintbit now contains an extra variable (int var) so it can 
+ * Sprintbit now contains an extra variable (int var) so it can
  * discern when identify is using it.
  */
 void sprintbit(long vektor, char* names[], char* result, int var)
@@ -1144,11 +1144,11 @@ void sprintbit(long vektor, char* names[], char* result, int var)
         if (IS_SET(1, vektor) && (vektor != BFS_MARK)) {
             if (*names[nr] != '\n') {
                 /*
-	 * Where the variable passed in is not 0
-	 * then identify is using sprintbit
-	 * The block of code contained here is used only
-	 * for identify.
-	 */
+                 * Where the variable passed in is not 0
+                 * then identify is using sprintbit
+                 * The block of code contained here is used only
+                 * for identify.
+                 */
                 if (var != 0) {
                     if (var == 2) {
                         if (count == 0)
@@ -1349,7 +1349,7 @@ void encrypt_line(unsigned char* line, int len)
     }
     k1 = (line[len - 1] * 16);
     k2 = (line[0] / 8);
-    //k2 = 0;
+    // k2 = 0;
     lp[len - 1] = (k1 + k2) & 127;
     lp[len - 1] += 32;
     //  printf("e-encoding: '%c' %d %d '%c'%d\n",line[len-1],k1,k2 ,lp[len-1],lp[len-1]);
@@ -1366,7 +1366,7 @@ void decrypt_line(unsigned char* lp, int len)
     /*static*/ unsigned char* line = decrypt_line_line;
 
     k1 = ((lp[len - 1] - 32) * 8);
-    //k1 = 0;
+    // k1 = 0;
     k2 = ((lp[0] - 32) / 16);
     line[0] = (k1 + k2) & 127;
     //  printf("d-decoding: '%c'%d %d %d '%c'%d\n",lp[0],lp[0],k1,k2 ,line[0],line[0]);
@@ -1434,7 +1434,7 @@ void reshuffle(int* arr, int len)
 }
 
 /*
- * Can character see at all? 
+ * Can character see at all?
  */
 int CAN_SEE(struct char_data* sub)
 {
@@ -1470,9 +1470,9 @@ int CAN_SEE(struct char_data* sub, struct char_data* obj, int light_mode)
         return 0;
 
     /*
-   * If you aren't in the same room as it, and it's an NPC, 
-   * you can't see it, unless it's the guardian angel.
-   */
+     * If you aren't in the same room as it, and it's an NPC,
+     * you can't see it, unless it's the guardian angel.
+     */
     if (GET_LEVEL(sub) < LEVEL_IMMORT && sub->in_room != obj->in_room && IS_NPC(obj) && strcmp(GET_NAME(obj), "Guardian angel"))
         return 0;
 
@@ -1484,10 +1484,10 @@ int CAN_SEE(struct char_data* sub, struct char_data* obj, int light_mode)
     }
 
     /*
-   * Light/physical dependent stuff in here: shadows can
-   * see though physical objects (hence see hidden players)
-   * and don't worry about light sources.
-   */
+     * Light/physical dependent stuff in here: shadows can
+     * see though physical objects (hence see hidden players)
+     * and don't worry about light sources.
+     */
     if (!(IS_SHADOW(sub))) {
         if (GET_HIDING(obj)) {
             /* mobs have a 10% chance to simply not see people that sneak in */
@@ -1727,7 +1727,7 @@ int used_in_universal_list = 0;
  * and its associated pool list and adds a new item at the beginning.
  * If a free universal_list structure is available in the pool it is
  * removed and returned.  If not, a new structure is created and
- * returned. Counts are kept of the number of universal list 
+ * returned. Counts are kept of the number of universal list
  * structures created and the number in current use.
  */
 
@@ -1755,7 +1755,7 @@ pool_to_list(struct universal_list** list, struct universal_list** head)
 /*
  * Takes a list, its associated pool and a member of the list
  * and removes it from the list and adds it to the head of the
- * pool 
+ * pool
  */
 void from_list_to_pool(universal_list** list, universal_list** head, universal_list* body)
 {
@@ -2161,7 +2161,7 @@ static void check_container_proto(struct obj_data* obj, struct char_data* ch)
  * that 'observer' can see 'target' even if they fail CAN_SEE.
  * force_visible is notably used by global communications,
  * where we always want everyone to appear visible.
- * 
+ *
  * NOTE: It is the responsibility of the -caller- to preserve
  * any color settings in a string where PERS is used!
  */

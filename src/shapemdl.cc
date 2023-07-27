@@ -1,4 +1,4 @@
-/* 
+/*
  * src/shapemdl.cc
  *
  * Provide the in-game interface to ASIMA mudlle shaping

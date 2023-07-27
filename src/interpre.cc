@@ -1,12 +1,12 @@
 /**************************************************************************
-*   File: interpreter.c                                 Part of CircleMUD *
-*  Usage: parse user commands, search for specials, call ACMD functions   *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-**************************************************************************/
+ *   File: interpreter.c                                 Part of CircleMUD *
+ *  Usage: parse user commands, search for specials, call ACMD functions   *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ **************************************************************************/
 
 #include "platdef.h"
 #include <ctype.h>
@@ -527,22 +527,22 @@ const char* command[] = {
     "top",
     "groll",
     "shoot",
-    "recover", //230
+    "recover", // 230
     "retrieve",
     "scan",
     "details",
     "bite",
-    "rend", //235
+    "rend", // 235
     "maul",
     "mark",
     "blind",
     "bend",
-    "windblast", //240
+    "windblast", // 240
     "smash",
     "frenzy",
     "stomp",
     "cleave",
-    "overrun", //245
+    "overrun", // 245
     "defend",
     "renounce",
     "\n"
@@ -795,10 +795,10 @@ void report_wrong_target(struct char_data* ch, int mask, char has_arg)
 
 int target_check_one(struct char_data* ch, int mask, struct target_data* t1)
 /*
-   * mask is the mask of possible targets,
-   * t1 carries the target to check,
-   * the proc returns the target status, or 0 if wrong target
-   */
+ * mask is the mask of possible targets,
+ * t1 carries the target to check,
+ * the proc returns the target status, or 0 if wrong target
+ */
 {
     int tmp;
 
@@ -882,10 +882,10 @@ int target_check_one(struct char_data* ch, int mask, struct target_data* t1)
 
 char* target_from_word(struct char_data* ch, char* argument, int mask, struct target_data* t1)
 /*
-   * This one tries to take a target from argument string.
-   * Possible targets are determined from the mask argument.
-   * Returns the target in t1 and the remaining string as return value
-   */
+ * This one tries to take a target from argument string.
+ * Possible targets are determined from the mask argument.
+ * Returns the target in t1 and the remaining string as return value
+ */
 {
     int tmp, arg_i, tmpvalue;
     char word[MAX_INPUT_LENGTH];
@@ -1284,9 +1284,9 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         }
 
         /*
-     * Already shaping.  Don't check for retirement.  If they're in here
-     * somehow they have to be able to get out.
-     */
+         * Already shaping.  Don't check for retirement.  If they're in here
+         * somehow they have to be able to get out.
+         */
         if ((ch->specials.position == POSITION_SHAPING) && (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level)) { /* do_shape */
             shape_center(ch, argument_raw);
             return;
@@ -1352,17 +1352,17 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
     }
 
     /*
-   * unhide hiders; commands with CMD_MASK_NO_UNHIDE shouldn't
-   * unhide people.  If someone snuck into a room (and therefore
-   * has the small hide value and SNUCK_IN hide_flag), they
-   * should not be unhidden if they're:
-   *  - still hidden from their initial entrance
-   *  - they're using the hide command
-   * Additionally, since practi{c,s}e can be used to either list
-   * information (a case that shouldn't unhide you) or cause your
-   * character to do very noticeable, physical activity (a case
-   * that should unhide you), we check for it specially.
-   */
+     * unhide hiders; commands with CMD_MASK_NO_UNHIDE shouldn't
+     * unhide people.  If someone snuck into a room (and therefore
+     * has the small hide value and SNUCK_IN hide_flag), they
+     * should not be unhidden if they're:
+     *  - still hidden from their initial entrance
+     *  - they're using the hide command
+     * Additionally, since practi{c,s}e can be used to either list
+     * information (a case that shouldn't unhide you) or cause your
+     * character to do very noticeable, physical activity (a case
+     * that should unhide you), we check for it specially.
+     */
     if (cmd_info[cmd].minimum_position > POSITION_SLEEPING)
         if (!IS_SET(cmd_info[cmd].mask, CMD_MASK_NO_UNHIDE) && !(cmd == CMD_HIDE && IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && !((cmd == CMD_PRACTICE || cmd == CMD_PRACTISE) && !*(argument + begin + look_at)))
             stop_hiding(ch, TRUE);
@@ -1400,10 +1400,10 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
             }
 
             /*
-       * if the command has a target of TAR_CHAR_ROOM, a
-       * move penalty applies.  this is to keep people from
-       * spamming things like 'kill uruk' or 'pat uruk'
-       */
+             * if the command has a target of TAR_CHAR_ROOM, a
+             * move penalty applies.  this is to keep people from
+             * spamming things like 'kill uruk' or 'pat uruk'
+             */
 
             if (!may_not_perform) {
                 /* execute the command */
@@ -1475,9 +1475,9 @@ int is_number(char* str)
 
 char* one_argument(char* argument, char* first_arg)
 /*
-   * find the first sub-argument of a string, return pointer to first char
-   * in primary argument, following the sub-arg
-   */
+ * find the first sub-argument of a string, return pointer to first char
+ * in primary argument, following the sub-arg
+ */
 {
     int found, begin, look_at;
 
@@ -2217,12 +2217,12 @@ void assign_command_pointers(void)
     COMMANDO(CMD_DEFEND, POSITION_FIGHTING, do_defend, 0, TRUE, 0,
         TAR_NONE_OK, TAR_IGNORE, 0);
     COMMANDO(247, POSITION_STANDING, do_renounce, 0, TRUE, 0,
-             FULL_TARGET, TAR_IGNORE, 0);
+        FULL_TARGET, TAR_IGNORE, 0);
 }
 
 /* *************************************************************************
-*  Stuff for controlling the non-playing sockets (get name, pwd etc)       *
-************************************************************************* */
+ *  Stuff for controlling the non-playing sockets (get name, pwd etc)       *
+ ************************************************************************* */
 
 int find_name(char* name)
 /* locate entry in p_table with entry->name == name. -1 mrks failed search */
@@ -2269,7 +2269,7 @@ void nanny(struct descriptor_data* d, char* arg)
 
     extern long secs_to_unretire(struct char_data*);
     int load_char(char* name, struct char_file_u* char_element);
-    void load_character(struct char_data * ch); //new function in objsave
+    void load_character(struct char_data * ch); // new function in objsave
 
     switch (STATE(d)) {
     case CON_NME: /* wait for input of name */
@@ -2790,7 +2790,7 @@ void nanny(struct descriptor_data* d, char* arg)
             close_socket(d);
             break;
         case '1':
-            //new
+            // new
             for (tmp_ch = character_list; tmp_ch; tmp_ch = tmp_ch->next) {
                 if (!IS_NPC(tmp_ch) && GET_IDNUM(d->character) == GET_IDNUM(tmp_ch)) {
                     if (!tmp_ch->desc || (!tmp_ch->desc->descriptor)) {
@@ -2822,9 +2822,9 @@ void nanny(struct descriptor_data* d, char* arg)
                 }
             }
 
-            //endnew
+            // endnew
             reset_char(d->character);
-            load_character(d->character); //new function in objsave
+            load_character(d->character); // new function in objsave
             save_char(d->character, d->character->in_room, 0);
             STATE(d) = CON_PLYNG;
             report_news(d->character);
@@ -3019,8 +3019,8 @@ void nanny(struct descriptor_data* d, char* arg)
 
 int new_player_select(struct descriptor_data* d, char* arg)
 /*
-   * returns CON_CREATE to continue creation, CON_SLCT to end
-   */
+ * returns CON_CREATE to continue creation, CON_SLCT to end
+ */
 {
     int tmp, tmp2, i, classpoints;
 

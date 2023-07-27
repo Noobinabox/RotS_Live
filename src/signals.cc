@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: signals.c                                     Part of CircleMUD *
-*  Usage: Signal trapping and signal handlers                             *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: signals.c                                     Part of CircleMUD *
+ *  Usage: Signal trapping and signal handlers                             *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <signal.h>
@@ -60,9 +60,9 @@ void signal_setup(void)
 
     //   interval.tv_sec = 900;    /* 15 minutes */
     //   interval.tv_usec = 0;
-    //itime.it_interval = interval;
-    //itime.it_value = interval;
-    //setitimer(ITIMER_VIRTUAL, &itime, 0);
+    // itime.it_interval = interval;
+    // itime.it_value = interval;
+    // setitimer(ITIMER_VIRTUAL, &itime, 0);
     signal(SIGVTALRM, checkpointing);
 }
 

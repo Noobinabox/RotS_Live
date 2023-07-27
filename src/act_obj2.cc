@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: act.obj2.c                                    Part of CircleMUD *
-*  Usage: eating/drinking and wearing/removing equipment                  *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.obj2.c                                    Part of CircleMUD *
+ *  Usage: eating/drinking and wearing/removing equipment                  *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <assert.h>
@@ -338,34 +338,34 @@ ACMD(do_pour)
 
     /*   if (subcmd == SCMD_FILL) {
       if (!*arg1) { // no arguments
-	 send_to_char("What do you want to fill?  And what are you filling it from?\n\r", ch);
-	 return;
+         send_to_char("What do you want to fill?  And what are you filling it from?\n\r", ch);
+         return;
       }
       if (!(to_obj = get_obj_in_list_vis(ch, arg1, ch->carrying,9999))) {
-	 send_to_char("You can't find it!", ch);
-	 return;
+         send_to_char("You can't find it!", ch);
+         return;
       }
 
       if (GET_ITEM_TYPE(to_obj) != ITEM_DRINKCON) {
-	 act("You can't fill $p!", FALSE, ch, to_obj, 0, TO_CHAR);
-	 return;
+         act("You can't fill $p!", FALSE, ch, to_obj, 0, TO_CHAR);
+         return;
       }
 
       if (!*arg2) { // no 2nd argument
-	 act("What do you want to fill $p from?", FALSE, ch, to_obj, 0, TO_CHAR);
-	 return;
+         act("What do you want to fill $p from?", FALSE, ch, to_obj, 0, TO_CHAR);
+         return;
       }
 
 
       if (!(from_obj = get_obj_in_list_vis(ch, arg2, world[ch->in_room].contents,9999))) {
-	 sprintf(buf, "There doesn't seem to be any '%s' here.\n\r", arg2);
-	 send_to_char(buf, ch);
-	 return;
+         sprintf(buf, "There doesn't seem to be any '%s' here.\n\r", arg2);
+         send_to_char(buf, ch);
+         return;
       }
 
       if (GET_ITEM_TYPE(from_obj) != ITEM_FOUNTAIN) {
-	 act("You can't fill something from $p.", FALSE, ch, from_obj, 0, TO_CHAR);
-	 return;
+         act("You can't fill something from $p.", FALSE, ch, from_obj, 0, TO_CHAR);
+         return;
       }
    }
    */

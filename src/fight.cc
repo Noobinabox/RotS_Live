@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: fight.c                                       Part of CircleMUD *
-*  Usage: Combat system                                                   *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: fight.c                                       Part of CircleMUD *
+ *  Usage: Combat system                                                   *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <assert.h>
@@ -267,20 +267,20 @@ void stop_fighting(struct char_data* ch)
     oppon = ch->specials.fighting;
 
     /*
-   * Go through the combat list.  If a char is found that is fighting ch,
-   * ch is not directly fighting that_char, and ch CAN_SEE that_char,
-   * tmp = that_char, otherwise (if no characters are found) tmp = NULL.
-   */
+     * Go through the combat list.  If a char is found that is fighting ch,
+     * ch is not directly fighting that_char, and ch CAN_SEE that_char,
+     * tmp = that_char, otherwise (if no characters are found) tmp = NULL.
+     */
     for (tmp = combat_list; tmp; tmp = tmp->next_fighting)
         if (tmp->specials.fighting == ch && tmp != oppon
             && CAN_SEE(ch, tmp))
             break;
 
     /*
-   *If we didn't find a character above, and ch has not regenned energy or
-   * has mental delay, and ch is alive (stunned or better), ch is no longer
-   * fighting anyone, and we return.
-   */
+     *If we didn't find a character above, and ch has not regenned energy or
+     * has mental delay, and ch is alive (stunned or better), ch is no longer
+     * fighting anyone, and we return.
+     */
     if (!tmp && GET_ENERGY(ch) < ENE_TO_HIT || GET_MENTAL_DELAY(ch) && GET_POS(ch) > POSITION_STUNNED) {
         ch->specials.fighting = 0;
         GET_POS(ch) = POSITION_STANDING;
@@ -715,11 +715,11 @@ obj_data* make_physical_corpse(char_data* character, char_data* killer, int atta
     }
 
     /*
-	 * Next two lines are used to identify to who the corpse belongs to
-	 * In the case of the first, its for the purposes of beheading
-	 * In the case of the second value, it allows the owner
-	 * of the corpse to freely use "get all corpse".
-	 */
+     * Next two lines are used to identify to who the corpse belongs to
+     * In the case of the first, its for the purposes of beheading
+     * In the case of the second value, it allows the owner
+     * of the corpse to freely use "get all corpse".
+     */
     int corpse_id = 0;
     if (IS_NPC(character)) {
         corpse_id = mob_index[character->nr].virt;
@@ -735,11 +735,11 @@ obj_data* make_physical_corpse(char_data* character, char_data* killer, int atta
     /* this function sorts out money related matters */
     move_gold(character, corpse, 0);
     /*
-	 * Sets our corpse decay time
-	 * The third value passed in an integer value, if
-	 * this value is set to anything but 0 then that value
-	 * will become the corpse decay time.
-	 */
+     * Sets our corpse decay time
+     * The third value passed in an integer value, if
+     * this value is set to anything but 0 then that value
+     * will become the corpse decay time.
+     */
     corpse_decay_time(character, corpse, 0);
 
     /* removing our victims eq */
@@ -839,7 +839,7 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
     align = 0; // initialization, if nothing below is true, no gain :)
 
     if (GET_ALIGNMENT(victim) == 0)
-        return; //neutral mobs do not effect alignment
+        return; // neutral mobs do not effect alignment
 
     // Supposedly "good" races
     if (RACE_GOOD(ch)) {
@@ -1059,12 +1059,12 @@ void die(char_data* dead_man, char_data* killer, int attack_type)
         }
 
         /*
-		 * If a mob kills a player, it no longer has memory of the player.
-		 *
-		 * Greeeeaaaat, so if a player dies to one mob with memory, every
-		 * other mob who remembers the player still has him on memory.  So
-		 * death isn't a clean start-over.
-		 */
+         * If a mob kills a player, it no longer has memory of the player.
+         *
+         * Greeeeaaaat, so if a player dies to one mob with memory, every
+         * other mob who remembers the player still has him on memory.  So
+         * death isn't a clean start-over.
+         */
         if (IS_NPC(killer) && !IS_NPC(dead_man) && IS_SET(killer->specials2.act, MOB_MEMORY)) {
             forget(killer, dead_man);
         }
@@ -1661,15 +1661,15 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     }
 
     /*
-	 * Check hallucination.  Only check this if it's a physical hit type (to
-	 * avoid checking spells twice).
-	 */
+     * Check hallucination.  Only check this if it's a physical hit type (to
+     * avoid checking spells twice).
+     */
     if (IS_PHYSICAL(attacktype) && !check_hallucinate(attacker, victim))
         return 0;
 
     /* Here we are checking to see if the victim is a Beorning because
-	   they have a natural damage reduction on physical weapons only. Spell
-	   damage is still at it's full amount. */
+           they have a natural damage reduction on physical weapons only. Spell
+           damage is still at it's full amount. */
     if (GET_RACE(victim) == RACE_BEORNING && dam > 1) {
         dam = maul_damage_reduction(victim, dam);
     }
@@ -1761,9 +1761,9 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         appear(attacker);
 
     /*
-	 * XXX: This should really use stop_hiding.  But stop_hiding
-	 * needs modifications first.
-	 */
+     * XXX: This should really use stop_hiding.  But stop_hiding
+     * needs modifications first.
+     */
     if (IS_AFFECTED(attacker, AFF_HIDE)) {
         act("$n steps out of $s cover.", TRUE, attacker, 0, 0, TO_ROOM);
         send_to_char("You step out of your cover.\n\r", attacker);
@@ -1804,40 +1804,40 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     dam = std::max(dam, 0);
 
     /*
-	 * Seether's shield:
-	 * If the victim has the shield spell up, we're going to take
-	 * some of his mana before his hitpoints, if he makes the roll.
-	 * It will only drain mana to 1 (not 0) and will do at -least-
-	 * 1 hp of damage; we allow for the hit to take at most all of
-	 * their mana minus one.
-	 *   if(affected_by_spell(victim, SPELL_SHIELD) &&
-	 *      attacktype != SKILL_AMBUSH) {
-	 *     if(number(1, 101) < (29 + GET_PROF_LEVEL(PROF_MAGE, victim) * 2)) {
-	 *       int shield_prof, mana_remove = 0;
-	 *
-	 *       shield_prof = number(1, GET_PROF_LEVEL(PROF_MAGE, victim)) +
-	 *                     number(1, GET_MANA(victim) / 3);
-	 *       mana_remove = MIN(MIN(dam - 1, shield_prof), GET_MANA(victim));
-	 *       GET_MANA(victim) -= mana_remove;
-	 *       dam -= mana_remove;
-	 *     }
-	 *   }
-	 *
-	 *
-	 * Fingol's shield:
-	 * We should compare the two - see how they work in the game.  If
-	 * the victim has shield spell up it absorbs up to 40% of damage
-	 * remaining by now (after other abs etc) at a cost of mana
-	 * dependent on mage level.  My simple version: 20 / mage_level
-	 * cost in mana.
-	 *
-	 * Dim's shield:
-	 *   mana cost = level * 20 / mage_level +
-	 *               number(0, mage_level) > i * 20 % mage_level ? 1 : 0;
-	 *
-	 * 01/01/00: now we check that attack is not bash, else damage will
-	 * be absorbed and the bash message won't be given.
-	 */
+     * Seether's shield:
+     * If the victim has the shield spell up, we're going to take
+     * some of his mana before his hitpoints, if he makes the roll.
+     * It will only drain mana to 1 (not 0) and will do at -least-
+     * 1 hp of damage; we allow for the hit to take at most all of
+     * their mana minus one.
+     *   if(affected_by_spell(victim, SPELL_SHIELD) &&
+     *      attacktype != SKILL_AMBUSH) {
+     *     if(number(1, 101) < (29 + GET_PROF_LEVEL(PROF_MAGE, victim) * 2)) {
+     *       int shield_prof, mana_remove = 0;
+     *
+     *       shield_prof = number(1, GET_PROF_LEVEL(PROF_MAGE, victim)) +
+     *                     number(1, GET_MANA(victim) / 3);
+     *       mana_remove = MIN(MIN(dam - 1, shield_prof), GET_MANA(victim));
+     *       GET_MANA(victim) -= mana_remove;
+     *       dam -= mana_remove;
+     *     }
+     *   }
+     *
+     *
+     * Fingol's shield:
+     * We should compare the two - see how they work in the game.  If
+     * the victim has shield spell up it absorbs up to 40% of damage
+     * remaining by now (after other abs etc) at a cost of mana
+     * dependent on mage level.  My simple version: 20 / mage_level
+     * cost in mana.
+     *
+     * Dim's shield:
+     *   mana cost = level * 20 / mage_level +
+     *               number(0, mage_level) > i * 20 % mage_level ? 1 : 0;
+     *
+     * 01/01/00: now we check that attack is not bash, else damage will
+     * be absorbed and the bash message won't be given.
+     */
     if (affected_by_spell(victim, SPELL_SHIELD) && attacktype != SKILL_AMBUSH && attacktype != SKILL_BASH) {
         i = (dam * 2 + 4) / 5;
         aff = affected_by_spell(victim, SPELL_SHIELD);
@@ -1928,9 +1928,9 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
         break;
     default: /* >= POSITION SLEEPING */
         /*
-	   * This code gets duplicated in hit().  Make sure to check
-	   * there if you change anything here.
-	   */
+         * This code gets duplicated in hit().  Make sure to check
+         * there if you change anything here.
+         */
         if (dam > (GET_MAX_HIT(victim) / 5))
             act("That really did HURT!", FALSE, victim, 0, 0, TO_CHAR);
 
@@ -2256,23 +2256,23 @@ int armor_effect(struct char_data* ch, struct char_data* victim,
         damage -= damage_reduction;
 
         /*
-		 * Smiting weapons can sometimes crush an opponent's bones
-		 * under the armor; wearing armor will actually INCREASE
-		 * the amount of damage taken, since the bodypart cannot
-		 * recoil under the disfigured metal.  Additionally, one's
-		 * head can hit the armor from the inside and add extra
-		 * damage.
-		 *
-		 * Based on a real life program on the discovery channel.
-		 *
-		 * Alright, now smiting only works on rigid metal armor,
-		 * not chain or leather.  Unfortunately, it won't work on
-		 * armor made of mithril, even if the description says the
-		 * armor is made of mithril plats.  Perhaps mithril should
-		 * never appear in plates? Or perhaps we should have some
-		 * other flag to define rigidity? Or perhaps smiting should
-		 * not exist? :)
-		 */
+         * Smiting weapons can sometimes crush an opponent's bones
+         * under the armor; wearing armor will actually INCREASE
+         * the amount of damage taken, since the bodypart cannot
+         * recoil under the disfigured metal.  Additionally, one's
+         * head can hit the armor from the inside and add extra
+         * damage.
+         *
+         * Based on a real life program on the discovery channel.
+         *
+         * Alright, now smiting only works on rigid metal armor,
+         * not chain or leather.  Unfortunately, it won't work on
+         * armor made of mithril, even if the description says the
+         * armor is made of mithril plats.  Perhaps mithril should
+         * never appear in plates? Or perhaps we should have some
+         * other flag to define rigidity? Or perhaps smiting should
+         * not exist? :)
+         */
         if (w_type == TYPE_SMITE && armor->obj_flags.material == 4) {
             if (number() >= 0.80) {
                 send_to_char("Your opponent's bones crunch loudly.\n\r", ch);
@@ -2474,13 +2474,13 @@ void hit(char_data* ch, char_data* victim, int type)
     player_spec::weapon_master_handler weapon_master(ch);
 
     /*
-	 * Calculate hits/misses/damage
-	 *
-	 * NOTE: If tmp is 35, then the hit will succeed no matter
-	 * what.  This is not just because of the 100 OB bonus, but
-	 * because of the if statements which decide whether a dodge,
-	 * parry or evade is possible.
-	 */
+     * Calculate hits/misses/damage
+     *
+     * NOTE: If tmp is 35, then the hit will succeed no matter
+     * what.  This is not just because of the 100 OB bonus, but
+     * because of the if statements which decide whether a dodge,
+     * parry or evade is possible.
+     */
     tmp = number(1, 35);
     OB = get_real_OB(ch);
     OB += number(1, 55 + OB / 4);
@@ -2555,9 +2555,9 @@ void hit(char_data* ch, char_data* victim, int type)
             } else {
                 /* Generate a hit location based on bodypart structure */
                 /*
-				 *XXX: Make into a separate function that treats bodyparts
-				 * for all body types well.
-				 */
+                 *XXX: Make into a separate function that treats bodyparts
+                 * for all body types well.
+                 */
                 location = 0;
                 if (bodyparts[GET_BODYTYPE(victim)].bodyparts) {
                     tmp = number(1, 100);
@@ -2572,11 +2572,11 @@ void hit(char_data* ch, char_data* victim, int type)
                     dam /= 2; /* mobs have weapon damage halved */
 
                 /*
-				   * 100 str would double damage, double effect for
-				   * 2-handers, last factor is avg. 1.4 with str 13
-				   * OB bonus factored in, and mult. by number between
-				   * 1 and 2, with  numbers close to 1 more probable
-				   */
+                 * 100 str would double damage, double effect for
+                 * 2-handers, last factor is avg. 1.4 with str 13
+                 * OB bonus factored in, and mult. by number between
+                 * 1 and 2, with  numbers close to 1 more probable
+                 */
                 dam += GET_DAMAGE(ch) * 10;
                 int damage_roll = number(0, 100);
 
@@ -2620,25 +2620,25 @@ void hit(char_data* ch, char_data* victim, int type)
     }
 
     /*
-	 * Following moved here from damage function, so dodge/parry
-	 * would engage.  It might be better done by just rewriting
-	 * dodge to go through damage parser, we'll see.
-	 *
-	 * Later: I think it could be marginally better to send this
-	 * code through the damage function, mainly so that we don't
-	 * have to worry about duplicated code.  However, we might
-	 * not have a very elegant way to preclude parries/dodges
-	 * from calling the SPECIAL_DAMAGE proc in that case.
-	 *
-	 * NOTE: Everything beyond this point happens ONLY if 'ch'
-	 * didn't have enough energy to hit, or 'ch' was parried,
-	 * dodged or evaded.  If any amount of damage is dealt
-	 * (whether it be by riposte, a normal hit, etc), this code
-	 * is not reached, and its functionality is duplicated in
-	 * damage().  It is for this reason why I think these calls
-	 * for SPECIAL_DAMAGE procs are highly out of place, and
-	 * this mess of position updating is also absolutely horrid.
-	 */
+     * Following moved here from damage function, so dodge/parry
+     * would engage.  It might be better done by just rewriting
+     * dodge to go through damage parser, we'll see.
+     *
+     * Later: I think it could be marginally better to send this
+     * code through the damage function, mainly so that we don't
+     * have to worry about duplicated code.  However, we might
+     * not have a very elegant way to preclude parries/dodges
+     * from calling the SPECIAL_DAMAGE proc in that case.
+     *
+     * NOTE: Everything beyond this point happens ONLY if 'ch'
+     * didn't have enough energy to hit, or 'ch' was parried,
+     * dodged or evaded.  If any amount of damage is dealt
+     * (whether it be by riposte, a normal hit, etc), this code
+     * is not reached, and its functionality is duplicated in
+     * damage().  It is for this reason why I think these calls
+     * for SPECIAL_DAMAGE procs are highly out of place, and
+     * this mess of position updating is also absolutely horrid.
+     */
     if (ch->specials.fighting != victim) {
         tmpwtl.targ1.ptr.ch = victim;
         tmpwtl.targ1.type = TARGET_CHAR;
@@ -2744,7 +2744,7 @@ bool can_beorning_swipe(struct char_data* character)
  * taking into account:
  * - the char warrior level
  * - the char skill level
- * - the char level 
+ * - the char level
  * NOTE: Max probability should be 31 for a level 90
  * bear with 36w and fully practiced swipe
  */
@@ -2919,11 +2919,11 @@ int check_hallucinate(struct char_data* ch, struct char_data* victim)
     struct affected_type* aff;
 
     /*
-   * Check for a hallucinating ch and check whether or not
-   * they just hit thin air.  If they did, remove a modifier.
-   * If not, remove the effect.  If the modifier is now 0 as
-   * a result of removal, remove the effect.
-   */
+     * Check for a hallucinating ch and check whether or not
+     * they just hit thin air.  If they did, remove a modifier.
+     * If not, remove the effect.  If the modifier is now 0 as
+     * a result of removal, remove the effect.
+     */
     if (IS_AFFECTED(ch, AFF_HALLUCINATE)) {
         for (aff = ch->affected; aff; aff = aff->next) {
             if (aff->type == SPELL_HALLUCINATE) {
@@ -2946,10 +2946,10 @@ int check_hallucinate(struct char_data* ch, struct char_data* victim)
                     return 0;
                 } else {
                     /*
-	   * They hit the player.  Unaffect the character and
-	   * continue the damage sequence as though nothing
-	   * happened.
-	   */
+                     * They hit the player.  Unaffect the character and
+                     * continue the damage sequence as though nothing
+                     * happened.
+                     */
                     affect_from_char(ch, SPELL_HALLUCINATE);
                     return 1;
                 }

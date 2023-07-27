@@ -32,7 +32,7 @@ int convert_exit_flag(int tmp, int mode)
 {
     /* mode 0 means formal code to real flag, mode 1 - real flag to formal */
     int res;
-    //printf("converting %d.\n",tmp);
+    // printf("converting %d.\n",tmp);
     res = 0;
     if (!mode) {
         if (tmp >= 100) {
@@ -66,7 +66,7 @@ int convert_exit_flag(int tmp, int mode)
             res |= EX_ISDOOR | EX_PICKPROOF;
         if (tmp == 4)
             res |= EX_ISDOOR | EX_ISHIDDEN | EX_PICKPROOF;
-        //printf("mode 0, returning %d\n",res);
+        // printf("mode 0, returning %d\n",res);
         return res;
     } else {
         res = 0;
@@ -96,7 +96,7 @@ int convert_exit_flag(int tmp, int mode)
         default:
             break;
         }
-        //printf("mode 1, returning %d\n",res);
+        // printf("mode 1, returning %d\n",res);
         return res;
     }
     return 0;
@@ -289,7 +289,7 @@ void implement_room(struct char_data* ch)
                 // 	real->dir_option[i]=(struct room_direction_data *)calloc(1,sizeof(struct room_direction_data));
                 CREATE1(real->dir_option[i], room_direction_data);
             }
-            //bzero((char *)(real->dir_option[i]),sizeof(struct room_direction_data));
+            // bzero((char *)(real->dir_option[i]),sizeof(struct room_direction_data));
             if (*(curr->dir_option[i]->general_description)) {
                 SUBST(dir_option[i]->general_description);
             } else {
@@ -427,7 +427,7 @@ void shape_center_room(struct char_data* ch, char* arg)
     struct extra_descr_data* tmpdescr;
 
     // char key;
-    //char * tmppt;
+    // char * tmppt;
     choice = 0;
     tmp = SHAPE_ROOM(ch)->procedure;
     mob = SHAPE_ROOM(ch)->room;
@@ -724,7 +724,7 @@ void shape_center_room(struct char_data* ch, char* arg)
             sprintf(str, "You will edit exit %s\n\r", exit_convert(SHAPE_ROOM(ch)->exit_chosen));
             send_to_char(str, ch);
             if (!mob->dir_option[SHAPE_ROOM(ch)->exit_chosen]) {
-                //printf("creating exit\n");
+                // printf("creating exit\n");
                 CREATE(mob->dir_option[SHAPE_ROOM(ch)->exit_chosen], struct room_direction_data, 1);
                 CREATE(mob->dir_option[SHAPE_ROOM(ch)->exit_chosen]->general_description, char, 1);
                 mob->dir_option[SHAPE_ROOM(ch)->exit_chosen]->general_description[0] = 0;
@@ -910,26 +910,26 @@ void shape_center_room(struct char_data* ch, char* arg)
             /*  Code below removed as it is unstable. fingolfin, december 2001
 
       if(!mob->affected){
-	send_to_char("No room affections found.\n\r",ch);
-	break;
+        send_to_char("No room affections found.\n\r",ch);
+        break;
       }
       if(!IS_SET(SHAPE_ROOM(ch)->flags,SHAPE_DIGIT_ACTIVE)){
-	send_to_char("Describe room affection (four numbers, without commas):\n\r",ch);
-	SET_BIT(SHAPE_ROOM(ch)->flags,SHAPE_DIGIT_ACTIVE);
-	SHAPE_ROOM(ch)->position=shape_standup(ch,POSITION_SHAPING);
-	ch->specials.prompt_number=3;
-	return;
+        send_to_char("Describe room affection (four numbers, without commas):\n\r",ch);
+        SET_BIT(SHAPE_ROOM(ch)->flags,SHAPE_DIGIT_ACTIVE);
+        SHAPE_ROOM(ch)->position=shape_standup(ch,POSITION_SHAPING);
+        ch->specials.prompt_number=3;
+        return;
       }
       else{
-	if(4!=sscanf(arg,"%d %d %d %d",
-		     &tmp,&tmp1,&tmp2,&tmp3)){
-	  send_to_char("four numbers required. dropped\n\r",ch);
+        if(4!=sscanf(arg,"%d %d %d %d",
+                     &tmp,&tmp1,&tmp2,&tmp3)){
+          send_to_char("four numbers required. dropped\n\r",ch);
       REMOVE_BIT(SHAPE_PROTO(ch)->flags,SHAPE_DIGIT_ACTIVE);
       shape_standup(ch,SHAPE_ROOM(ch)->position);
-	ch->specials.prompt_number=4;
-	  SHAPE_ROOM(ch)->editflag=0;
-	  return;
-	}
+        ch->specials.prompt_number=4;
+          SHAPE_ROOM(ch)->editflag=0;
+          return;
+        }
       }
       mob->affected->type = tmp;
       mob->affected->location = tmp1;
@@ -939,10 +939,10 @@ void shape_center_room(struct char_data* ch, char* arg)
 
       REMOVE_BIT(SHAPE_ROOM(ch)->flags,SHAPE_DIGIT_ACTIVE);
       shape_standup(ch,SHAPE_ROOM(ch)->position);
-	ch->specials.prompt_number=4;
+        ch->specials.prompt_number=4;
       SHAPE_ROOM(ch)->editflag=0;
-	if(IS_SET(SHAPE_ROOM(ch)->flags,SHAPE_CHAIN))
-	  SHAPE_ROOM(ch)->editflag=room_chain[18];
+        if(IS_SET(SHAPE_ROOM(ch)->flags,SHAPE_CHAIN))
+          SHAPE_ROOM(ch)->editflag=room_chain[18];
 
       break;  */
 
@@ -963,8 +963,8 @@ void shape_center_room(struct char_data* ch, char* arg)
 
       SHAPE_ROOM(ch)->editflag=0;
       SET_BIT(SHAPE_ROOM(ch)->flags, SHAPE_CHAIN);
-	if(IS_SET(SHAPE_ROOM(ch)->flags, SHAPE_CHAIN))
-	  SHAPE_ROOM(ch)->editflag=room_chain[19];
+        if(IS_SET(SHAPE_ROOM(ch)->flags, SHAPE_CHAIN))
+          SHAPE_ROOM(ch)->editflag=room_chain[19];
 
       break;    */
 
@@ -979,20 +979,20 @@ void shape_center_room(struct char_data* ch, char* arg)
             /*  Code below removed as it is unstable. fingolfin, december 2001
 
       if(!SHAPE_ROOM(ch)->room->affected){
-	send_to_char("No affections exist on this room.\n\r",ch);
+        send_to_char("No affections exist on this room.\n\r",ch);
       }
       else{
-	tmpaf = SHAPE_ROOM(ch)->room->affected->next;
-	put_to_affected_type_pool(SHAPE_ROOM(ch)->room->affected);
-	SHAPE_ROOM(ch)->room->affected = tmpaf;
-	
-	send_to_char("Affection removed.\n\r",ch);
+        tmpaf = SHAPE_ROOM(ch)->room->affected->next;
+        put_to_affected_type_pool(SHAPE_ROOM(ch)->room->affected);
+        SHAPE_ROOM(ch)->room->affected = tmpaf;
+
+        send_to_char("Affection removed.\n\r",ch);
       }
       SHAPE_ROOM(ch)->editflag=0;
       SET_BIT(SHAPE_ROOM(ch)->flags, SHAPE_CHAIN);
       if(IS_SET(SHAPE_ROOM(ch)->flags, SHAPE_CHAIN))
-	SHAPE_ROOM(ch)->editflag=room_chain[20];
-      
+        SHAPE_ROOM(ch)->editflag=room_chain[20];
+
       break;              */
 
 #undef DESCRCHANGE
@@ -1043,7 +1043,7 @@ void list_help_room(struct char_data* ch)
 /*********--------------------------------*********/
 void list_room(struct char_data* ch, struct room_data* mob)
 {
-    static char str[MAX_STRING_LENGTH]; //st2[50];
+    static char str[MAX_STRING_LENGTH]; // st2[50];
     int i, i2;
     long int flg;
     sprintf(str, "(1) name         :%s\n\r", mob->name);
@@ -1119,11 +1119,11 @@ int find_mob(FILE* f, int n);
 int get_text(FILE* f, char** line);
 /****************-------------------------------------****************/
 /*extern struct room_data *character_list;
-*/
+ */
 int load_room(struct char_data* ch, char* arg)
 {
     char format;
-    //int i;
+    // int i;
     int tmp, tmp2, tmp3, tmp4, number;
     char str[255], fname[80];
     FILE* f;
@@ -1154,7 +1154,7 @@ int load_room(struct char_data* ch, char* arg)
     tmp = find_mob(f, number);
     /* fseek(f,tmp,SEEK_SET);
   fscanf(f,"%c",&c);
-  
+
   fscanf(f,"%d",&tmp);
   */
     if (tmp == -1) {
@@ -1175,7 +1175,7 @@ int load_room(struct char_data* ch, char* arg)
         if (!SHAPE_ROOM(ch)->room) {
             //    SHAPE_ROOM(ch)->room=(struct room_data *)calloc(1,sizeof(struct room_data));
             CREATE1(SHAPE_ROOM(ch)->room, room_data);
-            //bzero((char *)(SHAPE_ROOM(ch)->room), sizeof(struct room_data));
+            // bzero((char *)(SHAPE_ROOM(ch)->room), sizeof(struct room_data));
         }
         SHAPE_ROOM(ch)
             ->room->name
@@ -1252,17 +1252,17 @@ int load_room(struct char_data* ch, char* arg)
                 /*
       switch(tmp2){
       case 1: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_CLOSED;
-	break;
+        break;
       case 2: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_CLOSED|EX_LOCKED;
-	break;
+        break;
       case 3: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_PICKPROOF|EX_CLOSED|EX_LOCKED;
-	break;
+        break;
       case 4: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_ISHIDDEN|EX_CLOSED;
-	break;
+        break;
       case 5: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_ISHIDDEN|EX_CLOSED|EX_LOCKED;
-	break;
+        break;
       case 6: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=EX_ISDOOR|EX_PICKPROOF|EX_ISHIDDEN|EX_CLOSED|EX_LOCKED;
-	break;
+        break;
       default: SHAPE_ROOM(ch)->room->dir_option[tmp]->exit_info=0;
       }
       */
@@ -1313,7 +1313,7 @@ int load_room(struct char_data* ch, char* arg)
 int append_room(struct char_data* ch, char* arg);
 int create_room(struct char_data* ch, char* arg)
 {
-    int number = 0, tmp; //tmp2,room_number;
+    int number = 0, tmp; // tmp2,room_number;
     char str[255], fname[80];
     FILE* f;
     //  struct extra_descr_data * tmpdescr;
@@ -1374,7 +1374,7 @@ int create_room(struct char_data* ch, char* arg)
     return number;
 }
 /*****************----------------------------------******************/
-//#define min(a,b) (((a)<(b))? (a):(b))
+// #define min(a,b) (((a)<(b))? (a):(b))
 int replace_room(struct char_data* ch, char* arg)
 {
     /* copy f1 to f2, replacing mob #num with new mob */
@@ -1600,7 +1600,7 @@ int append_room(struct char_data* ch, char* arg)
     fclose(f2);
     return i1 + 1;
 }
-//#define RELEASE(x) if(x) RELEASE(x)
+// #define RELEASE(x) if(x) RELEASE(x)
 void free_room(struct char_data* ch)
 {
     int i;
@@ -1641,8 +1641,8 @@ void free_room(struct char_data* ch)
     }
     //    shape_standup(ch,SHAPE_ROOM(ch)->position);
     REMOVE_BIT(SHAPE_ROOM(ch)->flags, SHAPE_ROOM_LOADED);
-    //RELEASE(SHAPE_ROOM(ch));
-    //SHAPE_ROOM(ch)=0;
+    // RELEASE(SHAPE_ROOM(ch));
+    // SHAPE_ROOM(ch)=0;
     RELEASE(ch->temp);
     ch->temp = 0;
     REMOVE_BIT(PRF_FLAGS(ch), PRF_DISPTEXT);
@@ -1660,7 +1660,7 @@ void extra_coms_room(struct char_data* ch, char* argument)
 
     room_number = ch->in_room;
     /*  printf("shape center: flags=%d\n\r",SHAPE_ROOM(ch)->flags);
-*/
+     */
     if (SHAPE_ROOM(ch)->procedure == SHAPE_EDIT) {
 
         send_to_char("you invoked some rhymes from shapeless indefinity...\n\r", ch);

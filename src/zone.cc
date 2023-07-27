@@ -86,15 +86,15 @@ void load_zones(FILE* fl)
     for (cmd_no = 0;; ++cmd_no) {
         fscanf(fl, "%c", &command);
 
-        /* 
-     * Marks the end of the zone command list
-     * XXX: Question: if we originally allocated a command structure
-     * even for 'S' commands (which are unused), then does other code
-     * depend on finding 'S' commands to terminate the list?  We could
-     * use the cmd_no data we have here to set a number in the zone
-     * structure to tell us how many commands there are, so we don't
-     * NEED the terminating 'S' command.
-     */
+        /*
+         * Marks the end of the zone command list
+         * XXX: Question: if we originally allocated a command structure
+         * even for 'S' commands (which are unused), then does other code
+         * depend on finding 'S' commands to terminate the list?  We could
+         * use the cmd_no data we have here to set a number in the zone
+         * structure to tell us how many commands there are, so we don't
+         * NEED the terminating 'S' command.
+         */
         if (command == 'S') {
             vmudlog(CMP, "Encountered S command on command number #%d.",
                 cmd_no);
@@ -143,13 +143,13 @@ void load_zones(FILE* fl)
         }
 
         /*
-     * Read in the comment.
-     * XXX: The comment is only saved to the zone structure in
-     * shapezon.cc.  This *is* somewhat efficient, since we don't
-     * need zone comments unless someone's actually looking at
-     * them . . but that won't be very general.  We should save
-     * the comment here.
-     */
+         * Read in the comment.
+         * XXX: The comment is only saved to the zone structure in
+         * shapezon.cc.  This *is* somewhat efficient, since we don't
+         * need zone comments unless someone's actually looking at
+         * them . . but that won't be very general.  We should save
+         * the comment here.
+         */
         fgets(buf, 80, fl);
         vmudlog(NRM, "Got command: %c %d %d %d %d %d %d %d.",
             zone_table[zone].cmd[cmd_no].command,
@@ -255,11 +255,11 @@ void renum_zone_one(int zone)
             break;
         }
 
-        /* 
-     * If we ever received a negative value from any of the real_*
-     * functions, we've got an invalid virtual number.  Thus we
-     * disable the command with the special '*' zone command.
-     */
+        /*
+         * If we ever received a negative value from any of the real_*
+         * functions, we've got an invalid virtual number.  Thus we
+         * disable the command with the special '*' zone command.
+         */
         if (a < 0 || b < 0) {
             vmudlog(CMP, "Invalid virtual number in zone reset command: "
                          "zone #%d, command %d.  Command disabled.\n",
@@ -289,13 +289,13 @@ void zone_update(void)
     int is_empty(int);
 
     /*
-   * The 4 constant comes from 4 passes per second.  This apparently
-   * means that one minute has passed and is not accurate unless
-   * PULSE_ZONE is a multiple of 4 or a factor of 60.
-   *
-   * I don't think this applies anymore, since comm.cc uses pulses
-   * to determine whether or not zone_update should even be called.
-   */
+     * The 4 constant comes from 4 passes per second.  This apparently
+     * means that one minute has passed and is not accurate unless
+     * PULSE_ZONE is a multiple of 4 or a factor of 60.
+     *
+     * I don't think this applies anymore, since comm.cc uses pulses
+     * to determine whether or not zone_update should even be called.
+     */
     if (((++timer * PULSE_ZONE) / 4) >= 60) {
         timer = 0;
 
@@ -345,11 +345,11 @@ void zone_update(void)
     }
 
     /*
-   * Dequeue a single zone (if possible) and reset.
-   *
-   * XXX: What the hell is the point of this for loop if there's
-   * an unconditional break in its body?
-   */
+     * Dequeue a single zone (if possible) and reset.
+     *
+     * XXX: What the hell is the point of this for loop if there's
+     * an unconditional break in its body?
+     */
     for (update_u = reset_q.head; update_u; update_u = update_u->next) {
         reset_zone(update_u->zone_to_reset);
         vmudlog(CMP, "Automatic zone reset: zone #%d, %s.",
@@ -389,7 +389,7 @@ void zone_update(void)
  *    Bit 4 (0x08) - invert: require that specified events do NOT occur
  *    Bit 5 (0x10) - require that the good side lead the race war
  *    Bit 6 (0x20) - require that the evil side lead the race war
- * 
+ *
  * Note that some fine tuned properties of bitvectors aren't
  * kept here: for example, you can't require one event to
  * occur and require one event to not occur, because the
@@ -770,10 +770,10 @@ void reset_zone(int zone)
                 break;
             case 'K':
                 /*
-	 * This usually isn't an error.  If a mob loading command
-	 * exists but doesn't /execute/, then this error will get
-	 * triggered.
-	 */
+                 * This usually isn't an error.  If a mob loading command
+                 * exists but doesn't /execute/, then this error will get
+                 * triggered.
+                 */
                 if (!mob || !last_mob) {
                     last_cmd = 0;
                     break;

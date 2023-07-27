@@ -1,12 +1,12 @@
 /**************************************************************************
-*   File: act.comm.c                                    Part of CircleMUD *
-*  Usage: Player-level communication commands                             *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-**************************************************************************/
+ *   File: act.comm.c                                    Part of CircleMUD *
+ *  Usage: Player-level communication commands                             *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ **************************************************************************/
 
 #include "platdef.h"
 #include <stdio.h>
@@ -438,7 +438,7 @@ ACMD(do_page)
 
 /**********************************************************************
  * generalized communication func, originally by Fred C. Merkel (Torg) *
-  *********************************************************************/
+ *********************************************************************/
 
 int channels[] = {
     PRF_NARRATE,
@@ -665,7 +665,7 @@ ACMD(do_alias)
         send_to_char("You have the following aliases defined:\n\r", ch);
         for (count = 0; list; list = list->next, count++) {
             sprintf(buf, "%-20s: %s\n\r", list->keyword, list->command);
-            //printf("list found: %s\n",buf);
+            // printf("list found: %s\n",buf);
             send_to_char(buf, ch);
         }
         //    sprintf(buf,"You have %d of max %d aliases.\n\r",count,MAX_ALIAS);

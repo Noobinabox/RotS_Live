@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: act.social.c                                  Part of CircleMUD *
-*  Usage: Functions to handle socials                                     *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.social.c                                  Part of CircleMUD *
+ *  Usage: Functions to handle socials                                     *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <stdio.h>
@@ -107,9 +107,9 @@ void boot_social_messages(void)
         }
         /*
       if (social_list_top && soc_mess_list[social_list_top-1].act_nr > tmp) {
-	 fprintf(stderr, "Format error or out-of-order social in socials file near #%d.\n",
-	     soc_mess_list[social_list_top-1].act_nr);
-	 exit(1);
+         fprintf(stderr, "Format error or out-of-order social in socials file near #%d.\n",
+             soc_mess_list[social_list_top-1].act_nr);
+         exit(1);
       }
       */
 

@@ -73,7 +73,7 @@ struct obj2html_type {
  * an object a subtype depending on how many hands are required to
  * wield it.  This depends on bulk; the formula used in do_wield to
  * cause an automatic two-hand wield is: wield two-handed if bulk is
- * greater than 4.  In order to allow our user to specify multiple 
+ * greater than 4.  In order to allow our user to specify multiple
  * bulks, we have to shift this into a bitvector.
  */
 char* handed_keywords[][3] = {
@@ -659,13 +659,13 @@ void build_output(struct obj2html_type* list, struct obj_data* o)
         if (IS_SET(list[i].valid_types, list[i].get_typemask(o)) || (dump_all && IS_SET(list[i].typemask, list[i].get_typemask(o)))) {
 
             /*
-       * If there are subtypes, then we have to continue recursing until
-       * we hit a leaf.  If we don't, then if someone types "weapon pierce",
-       * a spear will match at "weapon" and get included in the tables even
-       * though it doesn't match the subtype of the weapon.  Otherwise, if
-       * there are no subtypes, then there is no way to invalidate this item
-       * and it is good for outputting.
-       */
+             * If there are subtypes, then we have to continue recursing until
+             * we hit a leaf.  If we don't, then if someone types "weapon pierce",
+             * a spear will match at "weapon" and get included in the tables even
+             * though it doesn't match the subtype of the weapon.  Otherwise, if
+             * there are no subtypes, then there is no way to invalidate this item
+             * and it is good for outputting.
+             */
             if (list[i].subtypes)
                 build_output(list[i].subtypes, o);
             else {
@@ -678,9 +678,9 @@ void build_output(struct obj2html_type* list, struct obj_data* o)
 
                 /* Now insert the item into the table in a type-dependent order */
                 /* XXX: Right now, we're just sorting by level.  Once we make
-	 * item-dependent comparison functions, we'll be able to sort
-	 * in item-dependent fashion.
-	 */
+                 * item-dependent comparison functions, we'll be able to sort
+                 * in item-dependent fashion.
+                 */
                 /* Find where to insert to preserve sorted order */
                 for (j = 0; j < list[i].num_to_output; ++j)
                     if (o->obj_flags.level > list[i].to_output[j]->obj_flags.level)
@@ -710,10 +710,10 @@ void dump_output(struct char_data* ch, FILE* f, struct obj2html_type* list)
             dump_output(ch, f, list[i].subtypes);
         else {
             /*
-       * XXX: The num_to_output check is only here to protect the
-       * GET_ITEM_TYPE call from operating on a null to_output list.
-       * Once we have per-type headers, we won't need this at all.
-       */
+             * XXX: The num_to_output check is only here to protect the
+             * GET_ITEM_TYPE call from operating on a null to_output list.
+             * Once we have per-type headers, we won't need this at all.
+             */
             if (list[i].num_to_output) {
                 obj2html_newtable(ch, f, &list[i],
                     GET_ITEM_TYPE(list[i].to_output[0]));

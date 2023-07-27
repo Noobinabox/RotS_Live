@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: mage.c                                        Part of CircleMUD *
-*  Usage: actual effects of mage only spells                              *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: mage.c                                        Part of CircleMUD *
+ *  Usage: actual effects of mage only spells                              *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "char_utils.h"
 #include "comm.h"
@@ -111,18 +111,18 @@ int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, i
 
 bool different_zone(int was_in, int to_room)
 {
-    return (was_in / 100 ) != (to_room / 100);
+    return (was_in / 100) != (to_room / 100);
 }
 
 /*
- * external structures 
+ * external structures
  */
 
 extern struct room_data world;
 extern struct obj_data* obj_proto;
 extern struct obj_data* object_list;
 extern struct char_data* character_list;
-extern void prohibit_item_stay_zone_move(char_data* ch,int was_in);
+extern void prohibit_item_stay_zone_move(char_data* ch, int was_in);
 extern int rev_dir[];
 extern int top_of_world;
 extern char* dirs[];
@@ -134,7 +134,7 @@ extern char* sector_types[];
  * external functions
  */
 void list_char_to_char(struct char_data* list, struct char_data* caster, int mode);
-//void do_stat_object(struct char_data *caster, struct obj_data *j);
+// void do_stat_object(struct char_data *caster, struct obj_data *j);
 void stop_hiding(struct char_data* caster, char);
 ACMD(do_look);
 void do_identify_object(struct char_data*, struct obj_data*);
@@ -153,8 +153,8 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
  * name and which spells are withing the code segement.
  *Each single Spell function is seperated by a _SINGLE_ commented line, under which the
  * spells general details will commented.
- *I'm quite aware at the fact that this is probably not needed, but i think this is a 
- * good practice, as it makes code easily readable. 
+ *I'm quite aware at the fact that this is probably not needed, but i think this is a
+ * good practice, as it makes code easily readable.
  * Khronos 26/03/05
  */
 
@@ -173,7 +173,7 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
  * - Vitalize Self
  * - Summon
  * - Identify
-*/
+ */
 
 /*-----------------------------------------------------------------------------------------------------------*/
 /*
@@ -270,11 +270,11 @@ int loclife_add_rooms(loclife_coord room, loclife_coord* roomlist,
 }
 const char* loclife_dirnames[216] = {
     /*
-   *Lines - up/down here - farthest down - farthest up
-   *columns - east/west
-   * groups - north/south
-   * (n/s, e/w, u/d)
-   */
+     *Lines - up/down here - farthest down - farthest up
+     *columns - east/west
+     * groups - north/south
+     * (n/s, e/w, u/d)
+     */
     "here",
     "down",
     "down",
@@ -482,9 +482,9 @@ ASPELL(spell_locate_living)
         while (mobs && (bigcount < mobrange)) {
             if (!new_saves_spell(caster, mobs, 0)) {
                 sprintf(buf, "%s at %s to the %s.\n\r",
-                        (IS_NPC(mobs) ? GET_NAME(mobs) : pc_star_types[mobs->player.race]),
-                        world[roomlist[tmp].number].name,
-                        loclife_dir_convert(roomlist[tmp]));
+                    (IS_NPC(mobs) ? GET_NAME(mobs) : pc_star_types[mobs->player.race]),
+                    world[roomlist[tmp].number].name,
+                    loclife_dir_convert(roomlist[tmp]));
                 send_to_char(buf, caster);
             }
             bigcount++;
@@ -495,7 +495,6 @@ ASPELL(spell_locate_living)
         send_to_char("You could not further concentrate.\n\r", caster);
     else
         send_to_char("The area seems to be empty.\n\r", caster);
-
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -620,14 +619,13 @@ ASPELL(spell_reveal_life)
         send_to_char("The place seems empty.\n\r", caster);
     else
         list_char_to_char(world[caster->in_room].people, caster, 0);
-
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
 /* Spell Shield
  * Gives the caster a magical shield that absorbs damage
- * which is currently hugely disproportioned to the actual 
- * ammount of mana lose, making this spell as it stands very 
+ * which is currently hugely disproportioned to the actual
+ * ammount of mana lose, making this spell as it stands very
  * overpowered. IT NEEDS TO BE CHANGED
  * Khronos 27/03/05
  */
@@ -752,7 +750,7 @@ ASPELL(spell_vitalize_self)
 /*----------------------------------------------------------------------------------------------------------*/
 /*
  * Summon spell
- * Transfers a character from where they are to 
+ * Transfers a character from where they are to
  * the casters room.
  * We don't use this spell anymore should it be completely
  * removed?
@@ -764,9 +762,9 @@ ASPELL(spell_summon)
     int was_in, to_room;
 
     /*  if(GET_LEVEL(caster) < LEVEL_GOD) {
-		send_to_char("Summon no longer has power over creatures of Arda\n\r", caster);
-		return;
-	  }*/
+                send_to_char("Summon no longer has power over creatures of Arda\n\r", caster);
+                return;
+          }*/
 
     if (!victim)
         return;
@@ -797,7 +795,7 @@ ASPELL(spell_summon)
     to_room = caster->in_room;
 
     if (different_zone(was_in, to_room)) {
-        prohibit_item_stay_zone_move(victim,was_in);
+        prohibit_item_stay_zone_move(victim, was_in);
     }
 
     ch_x = zone_table[world[caster->in_room].zone].x;
@@ -830,7 +828,7 @@ ASPELL(spell_summon)
 /*
  * Spell Identify
  * Allows mortals to use the vstat command!
- * Gives details on objects 
+ * Gives details on objects
  */
 
 ASPELL(spell_identify)
@@ -967,10 +965,10 @@ ASPELL(spell_blink)
     }
 }
 
-
-bool is_teleportation_room_valid(room_data* room) {
+bool is_teleportation_room_valid(room_data* room)
+{
     // Don't teleport the caster into a room with people
-    if (room-> people)
+    if (room->people)
         return false;
 
     // Don't kill the caster with a death room
@@ -1011,10 +1009,10 @@ ASPELL(spell_relocate)
     dist = 4;
 
     /*
-   * If the player has Anger, remove 2 zones from the range, 
-   * otherwise if the player's specialization is teleportation,
-   * add a zone.
-   */
+     * If the player has Anger, remove 2 zones from the range,
+     * otherwise if the player's specialization is teleportation,
+     * add a zone.
+     */
     if (affected_by_spell(caster, SPELL_ANGER))
         dist -= 2;
     else if (GET_SPEC(caster) == PLRSPEC_TELE)
@@ -1297,7 +1295,7 @@ ASPELL(spell_beacon)
  * - Cone of Cold
  * - Earthquake
  * - Lightning Strike
- * - Fireball  
+ * - Fireball
  */
 
 // Gets the save bonus provided by character specialization.
@@ -1328,7 +1326,7 @@ int get_save_bonus(const char_data& caster, const char_data& victim, game_types:
 /*
  * Spell Magic Missile
  * Our most basic Offensive spell
- * Does small amounts of phys damage 
+ * Does small amounts of phys damage
  */
 
 ASPELL(spell_magic_missile)
@@ -1408,7 +1406,7 @@ ASPELL(spell_chill_ray)
  * i can see this spell becomming more popular, also if lightning
  * spec was introduced this could become a prefered spell
  * On a side note if we do introduce spec lightning perhaps if a
- * player was speced in lightning there would be no lose of spell 
+ * player was speced in lightning there would be no lose of spell
  * affectiveness if they were indoors
  */
 
@@ -1499,7 +1497,7 @@ ASPELL(spell_firebolt)
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
-/* 
+/*
  * Spell cone of cold
  * Powerful upper end cold spell
  * not as popular as chill ray as it can't perma bash chars
@@ -1714,7 +1712,7 @@ ASPELL(spell_earthquake)
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
-/* 
+/*
  * Spell lightning strike
  * Very powerful spell capable of doing huge damage
  * Only works when the weather is stormy
@@ -1759,7 +1757,7 @@ ASPELL(spell_lightning_strike)
  * Spell searing darkness
  * Very powerful spell capable of doing huge damage
  * Uruk-Hai only spell that does fire and darkness as damage.
- * Maga 11/21/2016 
+ * Maga 11/21/2016
  */
 
 ASPELL(spell_searing_darkness)
@@ -1989,7 +1987,6 @@ ASPELL(spell_word_of_sight)
         send_to_char("The place seems empty.\n\r", caster);
     else
         list_char_to_char(world[caster->in_room].people, caster, 0);
-
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -2022,7 +2019,6 @@ ASPELL(spell_word_of_shock)
         }
     }
     send_to_char("You utter a word of power.\n\r", caster);
-
 }
 
 /*----------------------------------------------------------------------------------------------------------*/
@@ -2144,7 +2140,7 @@ ASPELL(spell_spear_of_darkness)
 
 /*----------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------*/
-/* Spec Specific spells list below in order of 
+/* Spec Specific spells list below in order of
  * - Blaze
  * - Freeze
  * - Mist of bazunga
@@ -2198,10 +2194,10 @@ ASPELL(spell_blaze)
         }
 
         /*
-		 * Add the new affection.  Keep in mind that the af.modifier is the
-		 * mage level that will be used to calculate damage in subsequent
-		 * calls.
-		 */
+         * Add the new affection.  Keep in mind that the af.modifier is the
+         * mage level that will be used to calculate damage in subsequent
+         * calls.
+         */
         af.type = ROOMAFF_SPELL;
         af.duration = level;
         af.modifier = level;
@@ -2220,9 +2216,9 @@ ASPELL(spell_blaze)
         send_to_char("The area suddenly bursts into a roaring firestorm!\n\r", caster);
     }
     /*
-	 * We were called by room_affect_update or there was an actual
-	 * victim specified
-	 */
+     * We were called by room_affect_update or there was an actual
+     * victim specified
+     */
     else if (victim) {
         int save_bonus = get_save_bonus(*caster, *victim, game_types::PS_Fire, game_types::PS_Cold);
         bool saved = new_saves_spell(caster, victim, save_bonus);
@@ -2249,14 +2245,14 @@ ASPELL(spell_blaze)
  * entered, and then done again in spell_pa.cc's do_cast.
  *
  * TODO: now we just need to make a new 'is frozen' affection
- * for exits, add behavior all over the code for that flag 
+ * for exits, add behavior all over the code for that flag
  * (mainly in stuff like do_open, do_close, maybe pick, and, of
- * course, the shaping interface [including manuals]).  We also 
- * need a flag like NO_FREEZE for exits so that builders can 
+ * course, the shaping interface [including manuals]).  We also
+ * need a flag like NO_FREEZE for exits so that builders can
  * designate certain doors as unfreezable.
  */
 
-/* 
+/*
  *I think personally this spell is a bad idea,
  * i envisage alot of trap kills from it
  * Khronos 27/03/05
@@ -2330,13 +2326,13 @@ ASPELL(spell_mist_of_baazunga)
         if (oldaf->duration < af.duration)
             oldaf->duration = af.duration;
         /*
-		 * This has been commented out for a pretty long time;
-		 * why exactly don't we want to output a message if the
-		 * caster is renewing the mists?
-		 *
-		 * act("$n breathes out dark mists.", TRUE, caster, 0, 0, TO_ROOM);
-		 * send_to_char("You breathe out dark mists.\n\r", caster);
-		 */
+         * This has been commented out for a pretty long time;
+         * why exactly don't we want to output a message if the
+         * caster is renewing the mists?
+         *
+         * act("$n breathes out dark mists.", TRUE, caster, 0, 0, TO_ROOM);
+         * send_to_char("You breathe out dark mists.\n\r", caster);
+         */
     } else {
         affect_to_room(&world[caster->in_room], &af);
         act("$n breathes out dark mists.", TRUE, caster, 0, 0, TO_ROOM);

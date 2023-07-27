@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: act.offensive.c                               Part of CircleMUD *
-*  Usage: player-level commands of an offensive nature                    *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: act.offensive.c                               Part of CircleMUD *
+ *  Usage: player-level commands of an offensive nature                    *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <stdio.h>
@@ -522,9 +522,9 @@ ACMD(do_bash)
         }
 
         /*
-		 * bash prob. is like a hit, except victim parry is halved,
-		 * and OB = OB*3/2 -= (1d60-30)
-		 */
+         * bash prob. is like a hit, except victim parry is halved,
+         * and OB = OB*3/2 -= (1d60-30)
+         */
         prob = GET_SKILL(ch, SKILL_BASH);
         prob += get_real_OB(ch) * 3 / 2;
         prob -= get_real_dodge(victim);
@@ -613,7 +613,7 @@ ACMD(do_bash)
             send_to_char(buf, ch);
             return;
         }
-        if (number(0, 99) > prob) { //failure
+        if (number(0, 99) > prob) { // failure
             send_to_char("You only injure yourself.\n\r", ch);
             GET_HIT(ch) -= number(1, 20);
             GET_MOVE(ch) -= 10;
@@ -1184,7 +1184,6 @@ ACMD(do_bite)
     if (victim == NULL) {
         return;
     }
-
 
     int prob = get_prob_skill(ch, victim, SKILL_BITE);
 

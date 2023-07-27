@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: mobact.c                                      Part of CircleMUD *
-*  Usage: Functions for generating intelligent (?) behavior in mobiles    *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: mobact.c                                      Part of CircleMUD *
+ *  Usage: Functions for generating intelligent (?) behavior in mobiles    *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #include "platdef.h"
 #include <stdio.h>
@@ -213,7 +213,7 @@ void one_mobile_activity(char_data* ch)
         }
 
         /* Assistant mob.  They always assist their master if their master is fighting
-		 * and they are not. */
+         * and they are not. */
         if (AWAKE(ch) && IS_SET(ch->specials2.act, MOB_ASSISTANT) && ch->master) {
             if (ch->master->in_room == ch->in_room && ch->master->specials.fighting && ch->specials.fighting == NULL) {
                 if (CAN_SEE(ch, ch->master)) {
@@ -305,7 +305,7 @@ void one_mobile_activity(char_data* ch)
                         break;
                     }
                 if (tmp_ch)
-                    return; //continue;
+                    return; // continue;
             }
 
             /* Standard aggressive mobs */

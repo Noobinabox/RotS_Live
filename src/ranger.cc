@@ -2003,25 +2003,20 @@ bool check_archery_accuracy(const char_data& archer, const char_data& victim)
  * slyon: Feb 3, 2017 - Added arrow tohit into the equation
  */
 
-int shoot_calculate_success(const char_data* archer, const char_data* victim, const obj_data* arrow)
+int shoot_calculate_success(char_data* archer, char_data* victim, const obj_data* arrow)
 {
-    using namespace utils;
+    int success_chance = 0;
+    success_chance -= get_real_dodge(victim);
+    success_chance -= utils::get_prof_level(PROF_RANGER, *victim);
 
-    int archery_skill = get_skill(*archer, SKILL_ARCHERY);
-    int accuracy_skill = get_skill(*archer, SKILL_ACCURACY);
-    //This obj_flag is defined in act_info.cc
-    int arrow_tohit = arrow->obj_flags.value[0];
+    success_chance += utils::get_skill(*archer, SKILL_ARCHERY);
+    success_chance += arrow->obj_flags.value[0];
+    success_chance += utils::get_prof_level(PROF_RANGER, *archer);
+    success_chance += archer->get_cur_dex();
 
-    int ranger_level = get_prof_level(PROF_RANGER, *archer);
-    int ranger_dex = archer->get_cur_dex();
-
-    // Calculate success is currently not taking 'OB' into account.  This is intentional.
-    // This can return over 100 currently.  Check out scaling for different factors to
-    // see how we want to adjust this.
-
-    // TODO(drelidan):  When 'shooting modes' are implemented, give a penalty
-    // here for shooting quickly and a bonus for shooting slowly.
-    int success_chance = ranger_level + (ranger_dex / 2) + (archery_skill / 2) + (accuracy_skill / 10) + arrow_tohit;
+    std::ostringstream message;
+    message << "success_chance: " << success_chance << std::endl;
+    send_to_char(message.str().c_str(), archer);
 
     return success_chance;
 }
@@ -2288,7 +2283,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
 * --------------------------- Change Log --------------------------------
 * drelidan: Feb 07, 2017 - Created function
 */
-bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
+void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 {
     // Remove object from the character.
     if (arrow->in_obj) {
@@ -2296,20 +2291,13 @@ bool move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
     }
 
     obj_to_char(arrow, archer); // Move it into his inventory.
+
     //tag arrow in value slot 2 of the shooter
-    if (!IS_NPC(archer)) {
-        arrow->obj_flags.value[2] = (int)archer->specials2.idnum;
-    } else if (IS_NPC(archer)) {
-        arrow->obj_flags.value[2] = archer->abs_number;
-    } else {
-        return false;
-    }
+    arrow->obj_flags.value[2] = utils::is_pc(*archer) ? (int)archer->specials2.idnum : (int)archer->abs_number;
 
     // Move the arrow to the room.
     obj_from_char(arrow);
     obj_to_room(arrow, room_num);
-
-    return true;
 }
 
 /*
@@ -2406,9 +2394,9 @@ bool can_ch_shoot(char_data* archer)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-char_data* is_targ_valid(char_data* archer, waiting_type* target)
+char_data* is_target_valid(char_data* archer, waiting_type* target)
 {
-    char_data* victim = NULL;
+    char_data* victim = nullptr;
 
     if (target->targ1.type == TARGET_TEXT) {
         victim = get_char_room_vis(archer, target->targ1.ptr.text->text);
@@ -2418,28 +2406,28 @@ char_data* is_targ_valid(char_data* archer, waiting_type* target)
         }
     }
 
-    if (victim == NULL) {
+    if (victim == nullptr) {
         if (archer->specials.fighting) {
             victim = archer->specials.fighting;
         } else {
             send_to_char("Shoot who?\r\n", archer);
-            return NULL;
+            return nullptr;
         }
     }
 
     if (archer->in_room != victim->in_room) {
         send_to_char("Your victim is no longer here.\r\n", archer);
-        return NULL;
+        return nullptr;
     }
 
     if (archer == victim) {
         send_to_char("But you have so much to live for!\r\n", archer);
-        return NULL;
+        return nullptr;
     }
 
     if (!CAN_SEE(archer, victim)) {
         send_to_char("Shoot who?\r\n", archer);
-        return NULL;
+        return nullptr;
     }
 
     return victim;
@@ -2574,10 +2562,12 @@ void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
     if (roll <= 0) {
         arrow_landing_location = get_arrow_landing_location(room);
     }
+    int hit_location = get_hit_location(*victim);
 
     // The arrow falls into this or a nearby room.
     send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
     move_arrow_to_room(archer, arrow, arrow_landing_location);
+    damage(archer, victim, 0, SKILL_ARCHERY, hit_location);
 }
 
 /*
@@ -2603,7 +2593,7 @@ ACMD(do_shoot)
     if (!can_ch_shoot(ch))
         return;
 
-    char_data* victim = is_targ_valid(ch, wtl);
+    char_data* victim = is_target_valid(ch, wtl);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {

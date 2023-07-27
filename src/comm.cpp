@@ -1079,18 +1079,8 @@ std::string get_logged_in_count_message(descriptor_data* list)
                    << " on currently, and " << imm_count << (imm_count == 1 ? " god." : " gods.") << std::endl;
 
     if (player_total > 0) {
-        if (player_total < DETAILED_LIST_CUT_OFF) {
-            message_writer << "There " << (whitie_count == 1 ? "is " : "are ") << whitie_count << " free people, and "
-                           << darkie_count + lhuth_count << " forces of the dark." << std::endl;
-        } else {
-            if (whitie_count > darkie_count + lhuth_count) {
-                message_writer << "The forces of the light are more prevalent." << std::endl;
-            } else if (darkie_count + lhuth_count > whitie_count) {
-                message_writer << "The forces of the dark are more prevalent." << std::endl;
-            } else {
-                message_writer << "The forces of the light and the dark are evenly matched." << std::endl;
-            }
-        }
+        message_writer << "There " << (whitie_count == 1 ? "is " : "are ") << whitie_count << " free people, and "
+                       << darkie_count + lhuth_count << " forces of the dark." << std::endl;
     }
 
     message_writer << std::endl;

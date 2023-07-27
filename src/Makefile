@@ -45,9 +45,9 @@ clean:
 clock.o : clock.cpp clock.h
 	$(CC) -c $(CFLAGS) clock.cpp
 
-comm.o : comm.cc structs.h utils.h comm.h interpre.h handler.h db.h \
+comm.o : comm.cpp structs.h utils.h comm.h interpre.h handler.h db.h \
 	limits.h clock.h
-	$(CC) -c $(CFLAGS) $(COMMFLAGS) comm.cc
+	$(CC) -c $(CFLAGS) $(COMMFLAGS) comm.cpp
 char_utils.o : char_utils.cpp base_utils.h char_utils.h object_utils.h \
 	environment_utils.h structs.h handler.h
 	$(CC) -c $(CFLAGS) char_utils.cpp
@@ -76,126 +76,125 @@ delayed_command_interpreter.o : delayed_command_interpreter.cpp delayed_command_
 	$(CC) -c $(CFLAGS) delayed_command_interpreter.cpp
 wait_functions.o : wait_functions.cpp structs.h base_utils.h char_utils.h object_utils.h  comm.h
 	$(CC) -c $(CFLAGS) wait_functions.cpp
-act_comm.o : act_comm.cc structs.h utils.h comm.h interpre.h handler.h \
+act_comm.o : act_comm.cpp structs.h utils.h comm.h interpre.h handler.h \
 	db.h
-	$(CC) -c $(CFLAGS) act_comm.cc
-act_info.o : act_info.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) act_comm.cpp
+act_info.o : act_info.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) act_info.cc
-act_move.o : act_move.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) act_info.cpp
+act_move.o : act_move.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h
-	$(CC) -c $(CFLAGS) act_move.cc
-act_obj1.o : act_obj1.cc structs.h utils.h comm.h interpre.h handler.h \
+	$(CC) -c $(CFLAGS) act_move.cpp
+act_obj1.o : act_obj1.cpp structs.h utils.h comm.h interpre.h handler.h \
 	db.h spells.h
-	$(CC) -c $(CFLAGS) act_obj1.cc
-act_obj2.o : act_obj2.cc structs.h utils.h comm.h interpre.h handler.h \
+	$(CC) -c $(CFLAGS) act_obj1.cpp
+act_obj2.o : act_obj2.cpp structs.h utils.h comm.h interpre.h handler.h \
 	db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) act_obj2.cc
-act_offe.o : act_offe.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) act_obj2.cpp
+act_offe.o : act_offe.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) act_offe.cc
-act_othe.o : act_othe.cc structs.h utils.h comm.h interpre.h handler.h \
+	$(CC) -c $(CFLAGS) act_offe.cpp
+act_othe.o : act_othe.cpp structs.h utils.h comm.h interpre.h handler.h \
 	db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) act_othe.cc
-act_soci.o : act_soci.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) act_othe.cpp
+act_soci.o : act_soci.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h
-	$(CC) -c $(CFLAGS) act_soci.cc
-act_wiz.o : act_wiz.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) act_soci.cpp
+act_wiz.o : act_wiz.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h profs.h
-	$(CC) -c $(CFLAGS) act_wiz.cc
-handler.o : handler.cc structs.h utils.h comm.h db.h handler.h interpre.h
-	$(CC) -c $(CFLAGS) handler.cc
-db.o : db.cc structs.h utils.h db.h comm.h handler.h limits.h spells.h \
+	$(CC) -c $(CFLAGS) act_wiz.cpp
+handler.o : handler.cpp structs.h utils.h comm.h db.h handler.h interpre.h
+	$(CC) -c $(CFLAGS) handler.cpp
+db.o : db.cpp structs.h utils.h db.h comm.h handler.h limits.h spells.h \
         interpre.h big_brother.h skill_timer.h
-	$(CC) -c $(CFLAGS) db.cc
-ban.o : ban.cc structs.h utils.h comm.h interpre.h handler.h db.h
-	$(CC) -c $(CFLAGS) ban.cc
-interpre.o : interpre.cc structs.h comm.h interpre.h db.h utils.h \
+	$(CC) -c $(CFLAGS) db.cpp
+ban.o : ban.cpp structs.h utils.h comm.h interpre.h handler.h db.h
+	$(CC) -c $(CFLAGS) ban.cpp
+interpre.o : interpre.cpp structs.h comm.h interpre.h db.h utils.h \
 	limits.h spells.h handler.h profs.h
-	$(CC) -c $(CFLAGS) interpre.cc
-utility.o : utility.cc structs.h utils.h comm.h
-	$(CC) -c $(CFLAGS) utility.cc
-spec_ass.o : spec_ass.cc structs.h db.h interpre.h utils.h
-	$(CC) -c $(CFLAGS) spec_ass.cc
-spec_pro.o : spec_pro.cc structs.h utils.h comm.h interpre.h \
+	$(CC) -c $(CFLAGS) interpre.cpp
+utility.o : utility.cpp structs.h utils.h comm.h
+	$(CC) -c $(CFLAGS) utility.cpp
+spec_ass.o : spec_ass.cpp structs.h db.h interpre.h utils.h
+	$(CC) -c $(CFLAGS) spec_ass.cpp
+spec_pro.o : spec_pro.cpp structs.h utils.h comm.h interpre.h \
 	handler.h db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) spec_pro.cc
-limits.o : limits.cc structs.h limits.h utils.h spells.h comm.h db.h handler.h          profs.h
-	$(CC) -c $(CFLAGS) limits.cc
-fight.o	: fight.cc structs.h utils.h comm.h handler.h interpre.h db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) fight.cc
-weather.o : weather.cc structs.h utils.h comm.h handler.h interpre.h db.h
-	$(CC) -c $(CFLAGS) weather.cc
-shop.o : shop.cc structs.h comm.h handler.h db.h interpre.h utils.h
-	$(CC) -c $(CFLAGS) shop.cc
-mystic.o : mystic.cc structs.h utils.h comm.h spells.h handler.h limits.h \
+	$(CC) -c $(CFLAGS) spec_pro.cpp
+limits.o : limits.cpp structs.h limits.h utils.h spells.h comm.h db.h handler.h          profs.h
+	$(CC) -c $(CFLAGS) limits.cpp
+fight.o	: fight.cpp structs.h utils.h comm.h handler.h interpre.h db.h spells.h limits.h
+	$(CC) -c $(CFLAGS) fight.cpp
+weather.o : weather.cpp structs.h utils.h comm.h handler.h interpre.h db.h
+	$(CC) -c $(CFLAGS) weather.cpp
+shop.o : shop.cpp structs.h comm.h handler.h db.h interpre.h utils.h
+	$(CC) -c $(CFLAGS) shop.cpp
+mystic.o : mystic.cpp structs.h utils.h comm.h spells.h handler.h limits.h \
 	interpre.h db.h
-	$(CC) -c $(CFLAGS) mystic.cc
-mage.o  : mage.cc structs.h utils.h comm.h spells.h handler.h limits.h \
+	$(CC) -c $(CFLAGS) mystic.cpp
+mage.o  : mage.cpp structs.h utils.h comm.h spells.h handler.h limits.h \
         interpre.h db.h
-	${CC} -c ${CFLAGS} mage.cc
-spell_pa.o : spell_pa.cc structs.h utils.h comm.h db.h interpre.h \
+	${CC} -c ${CFLAGS} mage.cpp
+spell_pa.o : spell_pa.cpp structs.h utils.h comm.h db.h interpre.h \
 	spells.h handler.h
-	$(CC) -c $(CFLAGS) spell_pa.cc
-mobact.o : mobact.cc utils.h structs.h db.h comm.h interpre.h handler.h
-	$(CC) -c $(CFLAGS) mobact.cc
-modify.o : modify.cc structs.h utils.h interpre.h handler.h db.h comm.h
-	$(CC) -c $(CFLAGS) modify.cc
-consts.o : consts.cc structs.h limits.h
-	$(CC) -c $(CFLAGS) consts.cc
-objsave.o : objsave.cc structs.h comm.h handler.h db.h interpre.h \
+	$(CC) -c $(CFLAGS) spell_pa.cpp
+mobact.o : mobact.cpp utils.h structs.h db.h comm.h interpre.h handler.h
+	$(CC) -c $(CFLAGS) mobact.cpp
+modify.o : modify.cpp structs.h utils.h interpre.h handler.h db.h comm.h
+	$(CC) -c $(CFLAGS) modify.cpp
+consts.o : consts.cpp structs.h limits.h
+	$(CC) -c $(CFLAGS) consts.cpp
+objsave.o : objsave.cpp structs.h comm.h handler.h db.h interpre.h \
 	utils.h spells.h
-	$(CC) -c $(CFLAGS) objsave.cc
-boards.o : boards.cc structs.h utils.h comm.h db.h boards.h interpre.h \
+	$(CC) -c $(CFLAGS) objsave.cpp
+boards.o : boards.cpp structs.h utils.h comm.h db.h boards.h interpre.h \
 	handler.h
-	$(CC) -c $(CFLAGS) boards.cc
-signals.o : signals.cc utils.h structs.h
-	$(CC) -c $(CFLAGS) signals.cc
-graph.o : graph.cc structs.h utils.h comm.h interpre.h handler.h db.h \
+	$(CC) -c $(CFLAGS) boards.cpp
+signals.o : signals.cpp utils.h structs.h
+	$(CC) -c $(CFLAGS) signals.cpp
+graph.o : graph.cpp structs.h utils.h comm.h interpre.h handler.h db.h \
 	spells.h
-	$(CC) -c $(CFLAGS) graph.cc
-config.o : config.cc structs.h
-	$(CC) -c $(CFLAGS) config.cc
-ranger.o : ranger.cc structs.h utils.h comm.h interpre.h handler.h db.h\
+	$(CC) -c $(CFLAGS) graph.cpp
+config.o : config.cpp structs.h
+	$(CC) -c $(CFLAGS) config.cpp
+ranger.o : ranger.cpp structs.h utils.h comm.h interpre.h handler.h db.h\
 	 spells.h script.h
-	 $(CC) -c $(CFLAGS) ranger.cc
-script.o : script.cc structs.h utils.h comm.h interpre.h protos.h script.h
-	$(CC) -c $(CFLAGS) script.cc
-shapemob.o : shapemob.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shapemob.cc
-shapeobj.o : shapeobj.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shapeobj.cc
-shaperom.o : shaperom.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shaperom.cc
-shapezon.o : shapezon.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shapezon.cc
-shapemdl.o : shapemdl.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shapemdl.cc
-shapescript.o : shapescript.cc structs.h utils.h comm.h interpre.h protos.h
-	$(CC) -c $(CFLAGS) shapescript.cc
-mudlle.o   : mudlle.cc structs.h utils.h comm.h interpre.h protos.h mudlle.h
-	$(CC) -c $(CFLAGS) mudlle.cc
-mudlle2.o   : mudlle2.cc structs.h utils.h comm.h interpre.h protos.h mudlle.h
-	$(CC) -c $(CFLAGS) mudlle2.cc
-profs.o   : profs.cc structs.h utils.h comm.h interpre.h limits.h profs.h comm.h
-	$(CC) -c $(CFLAGS) profs.cc
-clerics.o : clerics.cc structs.h utils.h comm.h handler.h interpre.h db.h spells.h limits.h
-	$(CC) -c $(CFLAGS) clerics.cc
-mail.o    : mail.cc structs.h utils.h comm.h interpre.h db.h handler.h
-	$(CC) -c $(CFLAGS) mail.cc
-zone.o: zone.cc zone.h structs.h utils.h
-	$(CC) -c $(CFLAGS) zone.cc
-color.o: color.cc color.h
-	$(CC) -c $(CFLAGS) color.cc
-obj2html.o: obj2html.cc
-	$(CC) -c $(CFLAGS) obj2html.cc
+	 $(CC) -c $(CFLAGS) ranger.cpp
+script.o : script.cpp structs.h utils.h comm.h interpre.h protos.h script.h
+	$(CC) -c $(CFLAGS) script.cpp
+shapemob.o : shapemob.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shapemob.cpp
+shapeobj.o : shapeobj.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shapeobj.cpp
+shaperom.o : shaperom.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shaperom.cpp
+shapezon.o : shapezon.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shapezon.cpp
+shapemdl.o : shapemdl.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shapemdl.cpp
+shapescript.o : shapescript.cpp structs.h utils.h comm.h interpre.h protos.h
+	$(CC) -c $(CFLAGS) shapescript.cpp
+mudlle.o   : mudlle.cpp structs.h utils.h comm.h interpre.h protos.h mudlle.h
+	$(CC) -c $(CFLAGS) mudlle.cpp
+mudlle2.o   : mudlle2.cpp structs.h utils.h comm.h interpre.h protos.h mudlle.h
+	$(CC) -c $(CFLAGS) mudlle2.cpp
+profs.o   : profs.cpp structs.h utils.h comm.h interpre.h limits.h profs.h comm.h
+	$(CC) -c $(CFLAGS) profs.cpp
+clerics.o : clerics.cpp structs.h utils.h comm.h handler.h interpre.h db.h spells.h limits.h
+	$(CC) -c $(CFLAGS) clerics.cpp
+mail.o    : mail.cpp structs.h utils.h comm.h interpre.h db.h handler.h
+	$(CC) -c $(CFLAGS) mail.cpp
+zone.o: zone.cpp zone.h structs.h utils.h
+	$(CC) -c $(CFLAGS) zone.cpp
+color.o: color.cpp color.h
+	$(CC) -c $(CFLAGS) color.cpp
+obj2html.o: obj2html.cpp
+	$(CC) -c $(CFLAGS) obj2html.cpp
 pkill.o: pkill.c pkill.h
 	$(CC) -c $(CFLAGS) pkill.c
 
 .PHONY: format
 format:
 	clang-format -i -style=WebKit *.cpp
-	clang-format -i -style=WebKit *.cc
 	clang-format -i -style=WebKit *.c
 	clang-format -i -style=WebKit *.h
 

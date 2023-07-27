@@ -3,6 +3,8 @@
 #ifndef ZONE_H
 #define ZONE_H
 
+#include <stdio.h>
+
 struct owner_list {
     int owner; /* one of the owners of zone/object */
     struct owner_list* next; /* next owner */

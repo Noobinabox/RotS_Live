@@ -3,6 +3,7 @@
 #ifndef MUDLLE_H
 #define MUDLLE_H
 
+#include "interpre.h"
 #include "structs.h" /* For the txt_block structure */
 
 /* the following are the types of special_list entries */
@@ -59,10 +60,6 @@ struct special_list {
 
 #define SPECIAL_LIST_REFS(ch) \
     (SPECIAL_LIST_AREA(ch)->field[SPECIAL_LIST_HEAD(ch)].ch_num)
-
-#define SPECIAL_LIST_RAW(ch) (ch)->specials.poofOut
-
-#define MAX_MUDLLE_BUFFER 10000
 
 SPECIAL(intelligent);
 

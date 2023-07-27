@@ -154,7 +154,7 @@ void sigsegv_handler(int sig)
 /* *********************************************************************
  *  main game loop and related stuff				       *
  ********************************************************************* */
-
+#ifndef TESTING
 int main(int argc, char** argv)
 {
     signal(SIGSEGV, sigsegv_handler);
@@ -248,6 +248,7 @@ int main(int argc, char** argv)
     run_the_game(port);
     return (0);
 }
+#endif
 
 // TODO(drelidan):  Move this into a place that makes sense.  We're cooking pasta!
 std::vector<char_data*> specialized_mages;

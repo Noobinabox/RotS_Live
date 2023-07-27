@@ -189,13 +189,12 @@ color.o: color.cpp color.h
 	$(CC) -c $(CFLAGS) color.cpp
 obj2html.o: obj2html.cpp
 	$(CC) -c $(CFLAGS) obj2html.cpp
-pkill.o: pkill.c pkill.h
-	$(CC) -c $(CFLAGS) pkill.c
+pkill.o: pkill.cpp pkill.h
+	$(CC) -c $(CFLAGS) pkill.cpp
 
 .PHONY: format
 format:
 	clang-format -i -style=WebKit *.cpp
-	clang-format -i -style=WebKit *.c
 	clang-format -i -style=WebKit *.h
 
 .PHONY: setup

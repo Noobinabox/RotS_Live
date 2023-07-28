@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: interpreter.h                                 Part of CircleMUD *
-*  Usage: header file: public procs, macro defs, subcommand defines       *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: interpreter.h                                 Part of CircleMUD *
+ *  Usage: header file: public procs, macro defs, subcommand defines       *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef INTERPRE_H
 #define INTERPRE_H
@@ -22,7 +22,7 @@
     void(c)(struct char_data * ch, char* argument, struct waiting_type* wtl, \
         int cmd, int subcmd)
 
-//#define CRYPT(a,b) ((char *) crypt((a),(b)))
+// #define CRYPT(a,b) ((char *) crypt((a),(b)))
 
 #define CRYPT(a, b) ((char*)(a))
 
@@ -146,8 +146,8 @@ struct command_info {
 #define SCMD_BRIEF 203
 #define SCMD_COMPACT 204
 #define SCMD_NOTELL 205
-//#define SCMD_NARRATE	207
-//#define SCMD_CHAT	208
+// #define SCMD_NARRATE	207
+// #define SCMD_CHAT	208
 #define SCMD_WIZ 210
 #define SCMD_SPAM 211
 #define SCMD_ROOMFLAGS 212

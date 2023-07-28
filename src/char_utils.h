@@ -124,6 +124,7 @@ const char* get_prof_abbrev(const char_data& character);
 const char* get_race_abbrev(const char_data& character);
 
 int get_perception(const char_data& character);
+int get_minimum_insight_perception(const char_data& character);
 bool is_mental(const char_data& character);
 
 game_types::player_specs get_specialization(const char_data& character);

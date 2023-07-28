@@ -11,8 +11,8 @@
 #include <string>
 
 /********************************************************************
-* Singleton Implementation
-*********************************************************************/
+ * Singleton Implementation
+ *********************************************************************/
 template <>
 game_rules::big_brother* world_singleton<game_rules::big_brother>::m_pInstance(0);
 

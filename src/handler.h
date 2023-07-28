@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: handler.h                                     Part of CircleMUD *
-*  Usage: header file: prototypes of handling and utility functions       *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: handler.h                                     Part of CircleMUD *
+ *  Usage: header file: prototypes of handling and utility functions       *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef HANDLER_H
 #define HANDLER_H

@@ -1,7 +1,7 @@
-#ifndef CHARPLAYERDATABUILDER_H_
-#define CHARPLAYERDATABUILDER_H_
+#ifndef CHAR_PLAYER_DATA_BUILDER_H_
+#define CHAR_PLAYER_DATA_BUILDER_H_
 
-#include "../structs.h"
+#include "../../structs.h"
 #include <strings.h>
 
 namespace builders {
@@ -58,4 +58,4 @@ namespace builders {
 
 } // builders
 
-#endif //CHARPLAYERDATABUILDER_H_
+#endif //CHAR_PLAYER_DATA_BUILDER_H_

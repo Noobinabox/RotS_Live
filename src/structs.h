@@ -1212,20 +1212,6 @@ struct char_special2_data {
     long will_teach;
 };
 
-enum source_type {
-    SOURCE_PLAYER,
-    SOURCE_MOB,
-    SOURCE_ROOM,
-    SOURCE_ITEM,
-    SOURCE_OTHER,
-    SOURCE_INVALID,
-};
-
-struct affection_source {
-    source_type type;
-    int source_id;
-    void* source;
-};
 
 /* Used in CHAR_FILE_U Change with the utmost care */
 struct affected_type {

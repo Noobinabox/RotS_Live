@@ -66,6 +66,6 @@ src/.vs/
 .vs/
 .vscode/
 .vscode/settings.json
-*build*/
+*build/
 .gitignore
-
+*cmake-build*/

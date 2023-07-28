@@ -1,7 +1,7 @@
-#ifndef OBJFLAGDATABUILDER_H_
-#define OBJFLAGDATABUILDER_H_
+#ifndef OBJ_FLAG_DATA_BUILDER_H_
+#define OBJ_FLAG_DATA_BUILDER_H_
 
-#include "../structs.h"
+#include "../../structs.h"
 
 
 namespace builders {
@@ -57,4 +57,4 @@ namespace builders {
     };
 }
 
-#endif //OBJFLAGDATABUILDER_H_
+#endif //OBJ_FLAG_DATA_BUILDER_H_

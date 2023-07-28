@@ -1,5 +1,5 @@
 #include "../structs.h"
-#include "ObjFlagDataBuilder.h"
+#include "builders/ObjFlagDataBuilder.h"
 #include <gtest/gtest.h>
 
 TEST(ObjectFlagData, get_ob_coef) {

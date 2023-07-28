@@ -46,19 +46,19 @@ namespace CODE_SAVER {
     void add_char_to_waitlist(char_data* character, char_data* waiting_list)
     {
         /*
-			* bsantosus:  I kidnapped computer.
-			*  I love ROTS! It's the best game EVERS! <3
-			*  Dave and Brenda 4/14/2017! <3
-			*/
+         * bsantosus:  I kidnapped computer.
+         *  I love ROTS! It's the best game EVERS! <3
+         *  Dave and Brenda 4/14/2017! <3
+         */
 
-        //TODO(dgurley):  Parse the function below to figure out what it is.
-        //                  I think it's a forward list just looking at it, but we'll see.
-        //TODO(dgurley):  Figure out a better way to handle waiting.
+        // TODO(dgurley):  Parse the function below to figure out what it is.
+        //                   I think it's a forward list just looking at it, but we'll see.
+        // TODO(dgurley):  Figure out a better way to handle waiting.
         //
-        // It looks like it's a queue implementation.
-        // Keep track of last.
-        // This file will take over complete_delay and abort_delay.
-        // Make use of std::find to see if the character is in the waiting list.
+        //  It looks like it's a queue implementation.
+        //  Keep track of last.
+        //  This file will take over complete_delay and abort_delay.
+        //  Make use of std::find to see if the character is in the waiting list.
         char_data* temp_character = waiting_list;
 
         if (temp_character == character) {
@@ -227,8 +227,8 @@ bool wait_list::in_waiting_list(char_data* character)
 }
 
 /********************************************************************
-	* Singleton Implementation
-	*********************************************************************/
+ * Singleton Implementation
+ *********************************************************************/
 wait_list* wait_list::m_pInstance(NULL);
 bool wait_list::m_bDestroyed(false);
 

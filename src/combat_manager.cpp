@@ -90,8 +90,8 @@ namespace {
 } // end anonymous namespace
 
 /********************************************************************
-	* Public Functions
-	*********************************************************************/
+ * Public Functions
+ *********************************************************************/
 //============================================================================
 bool combat_manager::can_attack(char_data* attacker, char_data* victim)
 {
@@ -290,7 +290,7 @@ void combat_manager::do_riposte(char_data* attacker, char_data* riposter)
     rip_damage *= std::min((int)riposter->tmpabilities.dex, 20);
     rip_damage /= number_d(50.0, 100.0);
 
-    //TODO(drelidan):  Include skill type and weapon type.
+    // TODO(drelidan):  Include skill type and weapon type.
     apply_damage(attacker, riposter, rip_damage, weapon_hit_type(weapon->get_weapon_type()), 21);
 }
 
@@ -488,23 +488,23 @@ double combat_manager::apply_armor_reduction(char_data* attacker, char_data* vic
         damage -= damage_reduction;
 
         /*
-			* Smiting weapons can sometimes crush an opponent's bones
-			* under the armor; wearing armor will actually INCREASE
-			* the amount of damage taken, since the bodypart cannot
-			* recoil under the disfigured metal.  Additionally, one's
-			* head can hit the armor from the inside and add extra
-			* damage.
-			*
-			* Based on a real life program on the discovery channel.
-			*
-			* Alright, now smiting only works on rigid metal armor,
-			* not chain or leather.  Unfortunately, it won't work on
-			* armor made of mithril, even if the description says the
-			* armor is made of mithril plats.  Perhaps mithril should
-			* never appear in plates? Or perhaps we should have some
-			* other flag to define rigidity? Or perhaps smiting should
-			* not exist? :)
-			*/
+         * Smiting weapons can sometimes crush an opponent's bones
+         * under the armor; wearing armor will actually INCREASE
+         * the amount of damage taken, since the bodypart cannot
+         * recoil under the disfigured metal.  Additionally, one's
+         * head can hit the armor from the inside and add extra
+         * damage.
+         *
+         * Based on a real life program on the discovery channel.
+         *
+         * Alright, now smiting only works on rigid metal armor,
+         * not chain or leather.  Unfortunately, it won't work on
+         * armor made of mithril, even if the description says the
+         * armor is made of mithril plats.  Perhaps mithril should
+         * never appear in plates? Or perhaps we should have some
+         * other flag to define rigidity? Or perhaps smiting should
+         * not exist? :)
+         */
         if (weapon_type == TYPE_SMITE && armor->obj_flags.material == 4) {
             const double SMITE_CHANCE = 0.2;
             double roll = number();
@@ -529,8 +529,8 @@ bool combat_manager::apply_damage(char_data* attacker, char_data* victim, double
 }
 
 /********************************************************************
-	* Singleton Implementation
-	*********************************************************************/
+ * Singleton Implementation
+ *********************************************************************/
 combat_manager* combat_manager::m_pInstance(0);
 bool combat_manager::m_bDestroyed(false);
 

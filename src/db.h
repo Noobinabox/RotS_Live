@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: db.h                                          Part of CircleMUD *
-*  Usage: header file for database handling                               *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: db.h                                          Part of CircleMUD *
+ *  Usage: header file for database handling                               *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef DB_H
 #define DB_H
@@ -164,16 +164,16 @@ struct reset_com {
     int arg6;
     int arg7;
     int existing;
-    /* 
-    *  Commands:
-    *  'M': Read a mobile
-    *  'O': Read an object
-    *  'G': Give obj to mob
-    *  'P': Put obj in obj
-    *  'G': Obj to char
-    *  'E': Obj to char equip
-    *  'D': Set state of door
-    */
+    /*
+     *  Commands:
+     *  'M': Read a mobile
+     *  'O': Read an object
+     *  'G': Give obj to mob
+     *  'P': Put obj in obj
+     *  'G': Obj to char
+     *  'E': Obj to char equip
+     *  'D': Set state of door
+     */
 };
 
 /* element in monster and object index-tables */

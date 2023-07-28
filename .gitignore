@@ -39,6 +39,9 @@ lib/players/
 lib/plrobjs/
 lib/exploits/
 lib/misc/pklist
+lib/core
+lib/boards
+lib/gdb_backtrace
 log/
 CVS/
 old/
@@ -52,6 +55,11 @@ lib/misc/pk*
 lib/misc/repair*
 core/
 *~
+autorun4000
+switchserver.sh
+crashes
+syslog
+.killscript
 
 # Visual Studio Crap Dump
 src/.vs/
@@ -59,3 +67,6 @@ src/.vs/
 .vscode/
 .vscode/settings.json
 *build*/
+.gitignore
+
+lib/boards

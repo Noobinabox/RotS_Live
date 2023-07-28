@@ -181,9 +181,9 @@
 #define SPELL_RAGE 119
 #define SPELL_ANGER 120
 /* These are reserved for languages do not used them...
-	#define LANG_ANIMAL      121
-	#define LANG_HUMAN       122
-	#define LANG_ORC         123
+        #define LANG_ANIMAL      121
+        #define LANG_HUMAN       122
+        #define LANG_ORC         123
 */
 
 /* Any skills and/or spells free should be listed here */

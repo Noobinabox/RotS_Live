@@ -1187,7 +1187,7 @@ struct char_data* read_mobile(int nr, int type)
         mudlog(buf, CMP, LEVEL_GRGOD, TRUE);
     }
 
-    mob->specials2.perception = get_naked_perception(mob);
+    mob->specials2.rawPerception = mob->specials2.perception = get_naked_perception(mob);
     // if((mob->specials2.perception == -1) || IS_SHADOW(mob))
     //  mob->specials2.perception = get_naked_perception(mob);
 

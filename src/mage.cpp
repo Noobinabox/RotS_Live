@@ -791,6 +791,12 @@ ASPELL(spell_summon)
         return;
     }
 
+    affected_type* angerAffect = affected_by_spell(victim, SPELL_ANGER);
+    if (angerAffect && angerAffect->duration > 2) {
+        send_to_char("Player has engaged in PK too recently to be summoned.", caster);
+        return;
+    }
+
     was_in = victim->in_room;
     to_room = caster->in_room;
 

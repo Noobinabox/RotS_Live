@@ -1195,6 +1195,7 @@ struct char_special2_data {
     int bad_pws; /* number of bad password attemps	*/
     /* also a call mask for special mobiles */
     int saving_throw; /* saving throw for new mobiles */
+    int rawPerception; /* a raw value without any overrides applied. can be outside of the 0 to 100 range */
     int perception; /* perception changes between 0 and 100 */
     int conditions[3]; /* Drunk full etc.			*/
 

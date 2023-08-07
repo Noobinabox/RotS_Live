@@ -69,3 +69,5 @@ src/.vs/
 *build/
 .gitignore
 *cmake-build*/
+
+lib/boards

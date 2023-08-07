@@ -1171,6 +1171,10 @@ ASPELL(spell_poison)
         return;
     }
 
+    if (!victim && caster->specials.fighting) {
+        victim = caster->specials.fighting;
+    }
+
     if (victim) {
         if (!saves_poison(victim, caster) && (number(0, magus_save) < 50)) {
             int level = get_mystic_caster_level(caster);

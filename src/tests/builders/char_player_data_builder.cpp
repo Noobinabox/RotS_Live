@@ -1,4 +1,4 @@
-#include "CharPlayerDataBuilder.h"
+#include "char_player_data_builder.h"
 
 namespace builders {
     CharPlayerDataBuilder &CharPlayerDataBuilder::setName(char *value) {

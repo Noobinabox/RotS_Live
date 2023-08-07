@@ -1193,10 +1193,6 @@ ASPELL(spell_poison)
             act("$N shrugs off your poison with ease.", FALSE, caster, 0, victim, TO_CHAR);
         }
 
-    } else { /* Object poison */
-        if ((obj->obj_flags.type_flag == ITEM_DRINKCON) || (obj->obj_flags.type_flag == ITEM_FOUNTAIN) || (obj->obj_flags.type_flag == ITEM_FOOD)) {
-            obj->obj_flags.value[3] = 1;
-        }
     }
 }
 

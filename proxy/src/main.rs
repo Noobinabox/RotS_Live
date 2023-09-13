@@ -1,9 +1,12 @@
-use std::net::{SocketAddr, SocketAddrV4};
+use std::{
+    net::{SocketAddr, SocketAddrV4},
+    str::FromStr,
+    sync::Arc,
+};
 
 use clap::Parser;
-use color_eyre::eyre::{bail, Report};
-use futures_util::stream::StreamExt;
-use futures_util::SinkExt;
+use color_eyre::eyre::{bail, ContextCompat, Report};
+use futures_util::{stream::StreamExt, SinkExt};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpListener, TcpStream},
@@ -13,13 +16,38 @@ use tokio_tungstenite::tungstenite::{handshake::server::Request, Message};
 
 const READ_BUFFER_SIZE: usize = 8 * 1024; // 8 kb
 
+#[derive(Clone, Debug)]
+struct GameAddr {
+    hostname: Arc<String>,
+    port: u16,
+}
+
+impl GameAddr {
+    async fn connect(&self) -> Result<TcpStream, Report> {
+        Ok(TcpStream::connect((self.hostname.as_str(), self.port)).await?)
+    }
+}
+
+impl FromStr for GameAddr {
+    type Err = Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (hostname, port) = s.split_once(':').context("Missing port")?;
+
+        Ok(Self {
+            hostname: Arc::new(String::from(hostname)),
+            port: port.parse()?,
+        })
+    }
+}
+
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     #[arg(short, long, default_value = "127.0.0.1:1024")]
     /// Address of the game
-    game: SocketAddrV4,
+    game: GameAddr,
 
     #[arg(short, long, default_value = "0.0.0.0:3791")]
     /// TCP address to listen
@@ -34,18 +62,14 @@ struct Args {
     cloudflare: bool,
 }
 
-async fn handle_tcp(
-    game: SocketAddrV4,
-    mut stream: TcpStream,
-    addr: SocketAddr,
-) -> Result<(), Report> {
+async fn handle_tcp(game: GameAddr, mut stream: TcpStream, addr: SocketAddr) -> Result<(), Report> {
     let addr = match addr {
         SocketAddr::V4(addr) => addr,
         SocketAddr::V6(addr) => bail!("Unexpected IPv6: {addr}"),
     };
 
     // Connect to the game
-    let mut game = TcpStream::connect(game).await?;
+    let mut game = game.connect().await?;
 
     // Write the proxy header
     game.write_u32(u32::from(*addr.ip())).await?;
@@ -56,9 +80,10 @@ async fn handle_tcp(
     Ok(())
 }
 
-async fn tcp_server(game: SocketAddrV4, listener: TcpListener) -> Result<(), Report> {
+async fn tcp_server(game: GameAddr, listener: TcpListener) -> Result<(), Report> {
     loop {
         let (stream, addr) = listener.accept().await?;
+        let game = game.clone();
 
         log::debug!("Received TCP connection on {addr}");
 
@@ -71,7 +96,7 @@ async fn tcp_server(game: SocketAddrV4, listener: TcpListener) -> Result<(), Rep
 }
 
 async fn handle_ws(
-    game: SocketAddrV4,
+    game: GameAddr,
     stream: TcpStream,
     addr: SocketAddr,
     cloudflare: bool,
@@ -95,7 +120,7 @@ async fn handle_ws(
     })
     .await?;
 
-    let mut game = TcpStream::connect(game).await?;
+    let mut game = game.connect().await?;
     let mut buf = [0; READ_BUFFER_SIZE];
 
     // Write the proxy header
@@ -131,13 +156,10 @@ async fn handle_ws(
     Ok(())
 }
 
-async fn ws_server(
-    game: SocketAddrV4,
-    listener: TcpListener,
-    cloudflare: bool,
-) -> Result<(), Report> {
+async fn ws_server(game: GameAddr, listener: TcpListener, cloudflare: bool) -> Result<(), Report> {
     loop {
         let (stream, addr) = listener.accept().await?;
+        let game = game.clone();
 
         log::debug!("Received websocket connection on {addr}");
 
@@ -166,7 +188,7 @@ async fn main() -> Result<(), Report> {
         log::info!("Listening for WebSocket connections on {}", addr);
     }
 
-    let tcp = tokio::spawn(tcp_server(args.game, tcp));
+    let tcp = tokio::spawn(tcp_server(args.game.clone(), tcp));
     let ws = tokio::spawn(ws_server(args.game, ws, args.cloudflare));
 
     tokio::select! {

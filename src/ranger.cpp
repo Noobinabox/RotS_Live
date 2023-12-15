@@ -800,12 +800,7 @@ int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
     percent = number(-100, 0);
     percent += number(-20, 20);
     percent -= GET_LEVELA(victim);
-    if (utils::is_pc(*victim)) {
-        percent -= GET_SKILL(victim, SKILL_AWARENESS) / 2;
-        percent -= utils::get_prof_level(PROF_RANGER, *victim);
-        percent -= victim->get_cur_int() / 4;
-        percent -= victim->get_cur_dex() / 2;
-    }
+    percent -= IS_NPC(victim) ? 0 : GET_SKILL(victim, SKILL_AWARENESS) / 2;
 
     percent += GET_PROF_LEVEL(PROF_RANGER, ch) + 15;
     percent += GET_SKILL(ch, SKILL_AMBUSH) + get_real_stealth(ch);
@@ -862,8 +857,8 @@ int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier
     damage_dealt += GET_PROF_LEVEL(PROF_RANGER, attacker) - GET_LEVELA(victim) + 10;
 
     /* Apply stealth specialization amplification */
-    if (utils::get_specialization(*attacker) == game_types::PS_Stealth && IS_NPC(victim)) {
-        damage_dealt = damage_dealt * 3 / 2;
+    if (utils::get_specialization(*attacker) == game_types::PS_Stealth) {
+        damage_dealt *= IS_NPC(victim) ? 1.50 : 1.25;
     }
 
     /* Add damage based on weapon */
@@ -1046,22 +1041,22 @@ trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
 
         /* The victim didn't match the keyword */
         if (victim != target->targ2.ptr.ch)
-            return NULL;
+            return nullptr;
     }
 
-    if (victim == NULL)
-        return NULL;
+    if (victim == nullptr)
+        return nullptr;
 
     if (!CAN_SEE(ch, victim))
-        return NULL;
+        return nullptr;
 
     if (victim->specials.fighting) {
         send_to_char("Your target is too alert!\n\r", ch);
-        return NULL;
+        return nullptr;
     }
     if (victim == ch) {
         send_to_char("You attempt to trap yourself.\r\n", ch);
-        return NULL;
+        return nullptr;
     }
 
     return victim;

@@ -858,7 +858,10 @@ int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier
 
     /* Apply stealth specialization amplification */
     if (utils::get_specialization(*attacker) == game_types::PS_Stealth) {
-        damage_dealt *= IS_NPC(victim) ? 1.50 : 1.25;
+        if (IS_NPC(victim))
+            damage_dealt = damage_dealt * 3 / 2;
+        else
+            damage_dealt = damage_dealt * 10 / 8;
     }
 
     /* Add damage based on weapon */
@@ -978,7 +981,7 @@ ACMD(do_ambush)
         }
 
         victim = ambush_get_valid_victim(ch, wtl);
-        if (victim == NULL)
+        if (victim == nullptr)
             return;
 
         if (!bb_instance.is_target_valid(ch, victim)) {
@@ -993,7 +996,9 @@ ACMD(do_ambush)
 
             SET_CURRENT_PARRY(victim) = 0;
 
-            GET_AMBUSHED(victim) = GET_AMBUSHED(victim) * 3 / 4 + 50;
+            const int awareness_gain = IS_NPC(victim) ? 50 : 75;
+
+            GET_AMBUSHED(victim) = GET_AMBUSHED(victim) * 3 / 4 + awareness_gain;
 
             if (!IS_SET(ch->specials2.act, MOB_AGGRESSIVE)) {
                 GET_AMBUSHED(victim) += 15;

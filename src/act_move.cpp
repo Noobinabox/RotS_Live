@@ -548,26 +548,32 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
  * Reduces the movement cost of rooms based on character race and sector type.
  */
 int recalculate_movement_cost(const int room_type, const int race, const int movement_cost) {
-    if (race == RACE_HARADRIM || race == RACE_MAGUS) {
+    // No love for third side or Olog-Hais
+    if (race == RACE_HARADRIM || race == RACE_MAGUS || race == RACE_OLOGHAI) {
         return movement_cost;
     }
 
+    // Dwarves be in mountains
     if (room_type == SECT_MOUNTAIN && race == RACE_DWARF) {
         return movement_cost / 2;
     }
 
+    // Forests for Elves and Bears of course
     if ((room_type == SECT_DENSE_FOREST || room_type == SECT_FOREST ) && (race == RACE_WOOD || race == RACE_BEORNING)) {
         return movement_cost / 2;
     }
 
+    // Orcs and Uruk-Hais are swamp rats
     if (room_type == SECT_SWAMP && (race == RACE_URUK || race == RACE_ORC)) {
         return movement_cost / 2;
     }
 
+    // Hobbits love them holes in hills
     if (room_type == SECT_HILLS && race == RACE_HOBBIT) {
         return movement_cost / 2;
     }
 
+    // Humans riding their horses in the fields.
     if (room_type == SECT_FIELD && race == RACE_HUMAN) {
         return movement_cost / 2;
     }

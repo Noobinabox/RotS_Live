@@ -8,17 +8,15 @@
  *  CircleMUD is based on DikuMUD, Copyright (C) 19 0, 1991.               *
  ************************************************************************ */
 #define CONSTANTSMARK
-#include "platdef.h"
 #include <stdio.h>
 
 #include "db.h"
 #include "interpre.h"
-#include "limits.h"
 #include "spells.h"
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.5.5\n\r"
+    "Arda: The Fourth Age, version 1.5.7\n\r"
 };
 
 // const

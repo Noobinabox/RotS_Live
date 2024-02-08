@@ -974,6 +974,46 @@ ASPELL(spell_regeneration)
     }
 }
 
+
+void cast_mass_spell(char_data* caster, void (*spell)(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object)) {
+    if (!caster->group) {
+        send_to_char("You are not in a group.\n\r", caster);
+        return;
+    }
+
+    for (auto iter = caster->group->begin(); iter != caster->group->end(); ++iter) {
+        char_data* group_member = *iter;
+        if (group_member != caster && group_member->in_room == caster->in_room) {
+            spell(caster, nullptr, SPELL_TYPE_SPELL, group_member, nullptr, 0, 0);
+        }
+    }
+}
+
+ASPELL(spell_mass_regeneration) {
+    if (utils::get_skill(*caster, SPELL_REGENERATION) < 100) {
+        send_to_char("Only those who have mastered regeneration may cast this spell", caster);
+        return;
+    }
+    cast_mass_spell(caster, spell_regeneration);
+}
+
+ASPELL(spell_mass_vitality) {
+    if (utils::get_skill(*caster, SPELL_VITALITY) < 100) {
+        send_to_char("Only those who have mastered vitality may cast this spell", caster);
+        return;
+    }
+    cast_mass_spell(caster, spell_vitality);
+}
+
+ASPELL(spell_mass_insight) {
+    if (utils::get_skill(*caster, SPELL_INSIGHT) < 100) {
+        send_to_char("Only those who have mastered insight may cast this spell", caster);
+        return;
+    }
+    cast_mass_spell(caster, spell_insight);
+}
+
+
 /*
  *  Offensive Spells listed below in order
  *  - Hallucinate

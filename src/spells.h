@@ -174,6 +174,9 @@
 #define SKILL_BLOODTHIRST 155
 #define SKILL_CLEAVE 156
 #define SKILL_OVERRUN 157
+#define SPELL_MASS_REGENERATION 158
+#define SPELL_MASS_VITALITY 159
+#define SPELL_MASS_INSIGHT  160
 
 #define SPELL_ASPHYXIATION 116
 #define SPELL_ARDA 117
@@ -474,6 +477,10 @@ ASPELL(spell_resist_poison);
 ASPELL(spell_attune);
 ASPELL(spell_confuse);
 ASPELL(spell_expose_elements);
+
+ASPELL(spell_mass_regeneration);
+ASPELL(spell_mass_vitality);
+ASPELL(spell_mass_insight);
 
 bool is_strong_enough_to_tame(struct char_data* tamer, struct char_data* animal, bool include_current_followers);
 

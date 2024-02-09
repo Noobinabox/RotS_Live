@@ -17,8 +17,26 @@ Mystic power list modified by Prami, 09/16/98.
 |      Saturation  |(13) Divination     |                  |                  |
 |(5) Haze          |(14) Poison         |                  |                  |
 |(6) Insight       |(15) Regeneration   |                  |                  |
-|(6) Mass Insight  |(16)~Sanctuary      |                  |                  |
+|                  |(16)~Sanctuary      |                  |                  |
 |__________________|____________________|__________________|__________________|
+| See MAN POWER MASS to see power list specific to mass casting.              |
+\_____________________________________________________________________________/
+#
+MASS
+
+See help on each power as "man power <name of power>"
+Note that all mass spells required a 100% practiced in their power.
+
+ _________________________________
+/ (level) power name       Cost   \
+|_________________________________|
+|(6)  Mass Insight          50    |
+|(12) Mass Vitality         75    |   
+|(15) Mass Regeneration    100    |
+\---------------------------------/
+
+See also: MAN SPELL LIST
+
 #
 HELP GENERAL LEVEL
    The Valar no longer interfere with the mortal lands of Middle-Earth,

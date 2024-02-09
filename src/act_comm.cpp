@@ -8,7 +8,6 @@
  *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
  **************************************************************************/
 
-#include "platdef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -778,6 +777,14 @@ ACMD(do_pray)
     }
 
     tar_ch = get_char_vis(ch, argument);
+
+    if (utils::is_npc(*ch) && ch->master) {
+        if (other_side(ch->master, tar_ch)) {
+            send_to_char("There is no such person to hear you.\n\r", ch);
+            return;
+        }
+    }
+
     if (!tar_ch || (tar_ch && other_side(ch, tar_ch))) {
         send_to_char("There is no such person to hear you.\n\r", ch);
         return;

@@ -771,11 +771,6 @@ ASPELL(spell_summon)
         return;
     }
 
-    if (utils::is_pc(*caster) && (other_side(caster, victim))) {
-        send_to_char("No such player in the world.\n\r", caster);
-        return;
-    }
-
     if (victim == caster) {
         send_to_char("You are already here.\n\r", caster);
         return;

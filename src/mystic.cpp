@@ -1207,11 +1207,6 @@ ASPELL(spell_poison)
         return;
     }
 
-    if (caster == victim) {
-        send_to_char("Poison yourself? Surely you jest...", caster);
-        return;
-    }
-
     if (!victim && caster->specials.fighting) {
         victim = caster->specials.fighting;
     }

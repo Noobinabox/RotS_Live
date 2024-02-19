@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: mail.h                                        Part of CircleMUD *
-*  Usage: header file for mail system                                     *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: mail.h                                        Part of CircleMUD *
+ *  Usage: header file for mail system                                     *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef MAIL_H
 #define MAIL_H
@@ -95,7 +95,7 @@ struct header_block_type_d {
 
 struct data_block_type_d {
     long block_type; /* -1 if header block, -2 if last data block
-      				   in mail, otherwise a link to the next */
+                                   in mail, otherwise a link to the next */
     char txt[DATA_BLOCK_DATASIZE + 1]; /* the actual text		 */
 };
 

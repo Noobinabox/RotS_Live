@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: structs.h                                     Part of CircleMUD *
-*  Usage: header file for central structures and contstants               *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: structs.h                                     Part of CircleMUD *
+ *  Usage: header file for central structures and contstants               *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef STRUCTS_H
 #define STRUCTS_H
@@ -338,7 +338,7 @@ struct target_data {
         void* other;
     } ptr;
     sh_int ch_num; /* abs_number, if the target is a character, or just some
-		   digit data*/
+                   digit data*/
     int choice; /* what kind of target is this   */
     void cleanup(); /* cleans the target data, releases the text if nec. */
     void operator=(target_data t2);
@@ -365,10 +365,10 @@ struct extra_descr_data {
 struct waiting_type {
     int wait_value; /* number of ticks left to wait */
     int cmd; /* command to be performed after delay -
-				 0  = none,
-				 -1 = call special for NPC, none for PC */
+                                 0  = none,
+                                 -1 = call special for NPC, none for PC */
     int subcmd; /* subcmd it is, probably as a chain flag
-				 for specials for NPCs */
+                                 for specials for NPCs */
     int priority; /* priority it is. 0 is the lowest */
 
     int flg; /* also for whatever needed, flags mostly */
@@ -660,7 +660,7 @@ struct room_data {
     room_data& operator[](int i);
 
     int create_room(int zone); /* active constructor, returns real number  -
-							   use this one to add rooms */
+                                                           use this one to add rooms */
     void create_bulk(int amount); /* initial world constructor, the first alloc*/
     void delete_room(); /* active destructor - use it when removing rooms */
     void create_exit(int dir, int room, char connect = 1);
@@ -872,18 +872,6 @@ const int constexpr RACE_MAGUS = 15;
 const int constexpr RACE_OLOGHAI = 17;
 const int constexpr RACE_HARADRIM = 18;
 
-const int constexpr RACE_HUMAN_MIN_PERCEP = 20;
-const int constexpr RACE_DWARF_MIN_PERCEP = 15;
-const int constexpr RACE_WOOD_MIN_PERCEP = 30;
-const int constexpr RACE_HOBBIT_MIN_PERCEP = 20;
-const int constexpr RACE_HIGH_MIN_PERCEP = 20;
-const int constexpr RACE_BEORNING_MIN_PERCEP = 15;
-const int constexpr RACE_URUK_MIN_PERCEP = 20;
-const int constexpr RACE_ORC_MIN_PERCEP = 10;
-const int constexpr RACE_MAGUS_MIN_PERCEP = 20;
-const int constexpr RACE_OLOGHAI_MIN_PERCEP = 10;
-const int constexpr RACE_HARADRIM_MIN_PERCEP = 20;
-
 /* Races used for NPCs */
 #define RACE_EASTERLING 14
 #define RACE_HARAD 12
@@ -1067,8 +1055,8 @@ struct char_ability_data {
     sh_int move;
 };
 
-/* Used in CHAR_FILE_U; 
- * Changes may require serialization updates in loading code if we want to persist new data 
+/* Used in CHAR_FILE_U;
+ * Changes may require serialization updates in loading code if we want to persist new data
  */
 struct char_point_data {
 
@@ -1086,7 +1074,7 @@ struct char_point_data {
     sh_int parry; /* parry in normal tactics */
     sh_int dodge; /* dodge. all in this file are tactics independent.*/
     sh_int encumb; /* how encumbered a player is, affects casting and
-			  dex skills */
+                          dex skills */
     sh_int willpower; /* strength in mental fights */
     sh_int spell_pen;
     sh_int spell_power;
@@ -1201,12 +1189,13 @@ struct char_special2_data {
     int alignment; /* +-1000 for alignments          */
     long act; /* act flag for NPC's; player flag for PC's */
     long pref; /* preference flags for PC's,
-						racial agg/non-agg NPCs		*/
+                                                racial agg/non-agg NPCs		*/
     int wimp_level; /* Below this # of hit points, flee! */
     byte freeze_level; /* Level of god who froze char, if any	*/
     int bad_pws; /* number of bad password attemps	*/
     /* also a call mask for special mobiles */
     int saving_throw; /* saving throw for new mobiles */
+    int rawPerception; /* a raw value without any overrides applied. can be outside of the 0 to 100 range */
     int perception; /* perception changes between 0 and 100 */
     int conditions[3]; /* Drunk full etc.			*/
 
@@ -1734,7 +1723,7 @@ public:
     player_damage_details damage_details; /* structure for storing damage data */
     byte* skills; /* dynam. alloc. array of pracs spent                                         on skills */
     byte* knowledge; /* array of knowledge, computed from
-											pracs spent at logon */
+                                                                                        pracs spent at logon */
     struct affected_type* affected; /* affected by what spells       */
     struct obj_data* equipment[MAX_WEAR]; /* Equipment array               */
 
@@ -1811,7 +1800,7 @@ struct weather_data {
 };
 
 /* ***********************************************************************
-   File element for player file.  Changes here require changes in 
+   File element for player file.  Changes here require changes in
    save/load code in the database.
 *************************************************************************/
 struct char_file_u {
@@ -1854,9 +1843,9 @@ struct char_file_u {
 };
 
 /* *************************************************************
-* The follower structure is used in objsave for saving followers
-* Changing it will result in the loss of followers and eq      *
-***************************************************************/
+ * The follower structure is used in objsave for saving followers
+ * Changing it will result in the loss of followers and eq      *
+ ***************************************************************/
 struct follower_file_elem {
     int fol_vnum;
     int mount_vnum;
@@ -1868,8 +1857,8 @@ struct follower_file_elem {
 };
 
 /* ************************************************************************
-*  file element for object file. BEWARE: Changing it will ruin rent files *
-************************************************************************ */
+ *  file element for object file. BEWARE: Changing it will ruin rent files *
+ ************************************************************************ */
 
 constexpr const sh_int SENTINEL_ITEM_ID_VALUE = -17;
 constexpr const sh_int DEPRECATED_ID_VALUE = -255;
@@ -1914,8 +1903,8 @@ struct rent_info {
 };
 
 /* ***********************************************************
-*  The following structures are related to descriptor_data   *
-*********************************************************** */
+ *  The following structures are related to descriptor_data   *
+ *********************************************************** */
 
 struct txt_block {
     char* text;
@@ -2041,11 +2030,15 @@ struct universal_list {
 };
 
 class group_roll {
-    public:
-        char* character_name;
-        int roll;
+public:
+    char* character_name;
+    int roll;
 
-        group_roll(char_data* character_name, int roll) : character_name(character_name->player.name), roll(roll) {}
+    group_roll(char_data* character_name, int roll)
+        : character_name(character_name->player.name)
+        , roll(roll)
+    {
+    }
 };
 
 #endif /* STRUCTS_H */

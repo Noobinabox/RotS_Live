@@ -265,7 +265,7 @@ namespace {
     {
         using namespace utils;
 
-        //TODO(drelidan):  Perhaps replace get_bal_strength with a damage smoothing formula.
+        // TODO(drelidan):  Perhaps replace get_bal_strength with a damage smoothing formula.
         int strength = get_bal_strength(character);
         int war_level = get_prof_level(PROF_WARRIOR, character);
         int max_war_level = get_max_race_prof_level(PROF_WARRIOR, character);

@@ -4,7 +4,7 @@
    These defines are used in shaping and in executing scripts.  Each script_data object has an
    int command_type field which refers to the defines below.  The char_has_script function looks
    for the defines below to see if a character/object/room has a certain trigger.
-   
+
    These defines are also used during execution of a script since execution cannot run from
    one trigger to the next in a script
 */

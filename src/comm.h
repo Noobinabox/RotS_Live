@@ -1,12 +1,12 @@
 /* ************************************************************************
-*   File: comm.h                                        Part of CircleMUD *
-*  Usage: header file: prototypes of public communication functions       *
-*                                                                         *
-*  All rights reserved.  See license.doc for complete information.        *
-*                                                                         *
-*  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
-*  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
-************************************************************************ */
+ *   File: comm.h                                        Part of CircleMUD *
+ *  Usage: header file: prototypes of public communication functions       *
+ *                                                                         *
+ *  All rights reserved.  See license.doc for complete information.        *
+ *                                                                         *
+ *  Copyright (C) 1993 by the Trustees of the Johns Hopkins University     *
+ *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
+ ************************************************************************ */
 
 #ifndef COMM_H
 #define COMM_H

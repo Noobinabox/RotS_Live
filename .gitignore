@@ -69,4 +69,6 @@ src/.vs/
 *build*/
 .gitignore
 
-lib/boards
+
+# Rust
+target/

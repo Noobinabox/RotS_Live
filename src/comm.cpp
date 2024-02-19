@@ -88,6 +88,7 @@ SocketType mother_desc = 0; /* file desc of the mother connection */
 SocketType maxdesc; /* highest desc num used */
 int avail_descs; /* max descriptors available */
 int tics = 0; /* for extern checkpointing */
+int has_proxy; /* Game expects to be proxied */
 
 FILE* fpCommand; // DEBUGGING
 int iCommands = 0;
@@ -207,6 +208,10 @@ int main(int argc, char** argv)
             no_specials = 1;
             log("Suppressing assignment of special routines.");
             break;
+        case 'p':
+            has_proxy = 1;
+            log("Expecting proxy server.");
+            break;
         default:
             sprintf(buf, "SYSERR: Unknown option -%c in argument string.", *(argv[pos] + 1));
             log(buf);
@@ -217,7 +222,7 @@ int main(int argc, char** argv)
 
     if (pos < argc)
         if (!isdigit(*argv[pos])) {
-            fprintf(stderr, "Usage: %s [-m] [-q] [-r] [-s] [-d pathname] [ port # ]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-m] [-q] [-r] [-s] [-p] [-d pathname] [ port # ]\n", argv[0]);
             exit(0);
         } else if ((port = atoi(argv[pos])) <= 1024) {
             printf("Illegal port #\n");
@@ -1032,7 +1037,6 @@ SocketType pnew_connection(SocketType s)
     sprintf(buf, "Socket %d connected.", t);
     mudlog(buf, NRM, LEVEL_IMPL, TRUE);
 
-    nonblock(t); // here t was changed to s, for windows...
     return (t);
 }
 
@@ -1123,8 +1127,28 @@ SocketType pnew_descriptor(SocketType s)
 
     /* find info */
     size = sizeof(sock);
-    if (getpeername(desc, (struct sockaddr*)&sock, &size) < 0) {
-        perror("getpeername");
+
+    int err = 0;
+
+    // The game is running behind a proxy; read the peer address from the connection
+    if (has_proxy) {
+        err = read(desc, &sock.sin_addr.s_addr, sizeof(sock.sin_addr.s_addr));
+
+        if (err < 0) {
+            perror("reading proxy header");
+        }
+    } else {
+        err = getpeername(desc, (struct sockaddr*)&sock, &size);
+
+        if (err < 0) {
+            perror("getpeername");
+        }
+    }
+
+    // Done with synchronous reading, switch to nonblocking
+    nonblock(desc);
+
+    if (err < 0) {
         *pnewd->host = '\0';
     } else if (nameserver_is_slow || !(from = gethostbyaddr((char*)&sock.sin_addr, sizeof(sock.sin_addr), AF_INET))) {
         if (!nameserver_is_slow)
@@ -1155,6 +1179,7 @@ SocketType pnew_descriptor(SocketType s)
    sprintf(buf2, "Pnew connection from [%s]", pnewd->host);
    log(buf2);
 */
+
     /* init desc data */
     pnewd->descriptor = desc;
     pnewd->connected = CON_NME;

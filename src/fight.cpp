@@ -31,12 +31,8 @@
 #include "big_brother.h"
 #include "char_utils.h"
 #include "char_utils_combat.h"
-#include <set>
 
 #include <ctime>
-#include <iostream>
-#include <sstream>
-#include <string>
 
 #define IS_PHYSICAL(_at) \
     ((_at) >= TYPE_HIT && (_at) <= TYPE_CRUSH ? TRUE : FALSE)
@@ -798,41 +794,6 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
     extern int min_race_align[];
     extern int max_race_align[];
 
-    //    align = GET_ALIGNMENT(ch) - GET_ALIGNMENT(victim);
-
-    //    if((GET_ALIGNMENT(ch) > 0)&& (GET_ALIGNMENT(victim) < 0))
-    //      align = -GET_ALIGNMENT(ch) - GET_ALIGNMENT(victim);
-    //    if((GET_ALIGNMENT(ch) > 0)&& (GET_ALIGNMENT(victim) > 0))
-    //      align = -GET_ALIGNMENT(victim);
-
-    //       GET_ALIGNMENT(ch) += align/8;
-
-    //       if(GET_ALIGNMENT(ch) < -1000) GET_ALIGNMENT(ch) = -1000;
-
-    /*** current align system, commented out by Zenith
-  align = (-GET_ALIGNMENT(victim) - GET_ALIGNMENT(ch))/3;
-
-  if(IS_AGGR_TO(victim, ch) || MOB_FLAGGED(victim, MOB_AGGRESSIVE)){
-    if((align < 0) && (align < - GET_ALIGNMENT(victim)*3/2))
-      align = - GET_ALIGNMENT(victim)*3/2;
-  }
-  else{
-    if((align < 0) && (align < - GET_ALIGNMENT(victim)*2 - 120))
-      align = - GET_ALIGNMENT(victim)*2 - 120;
-  }
-  align = align *(GET_LEVEL(victim) + 2)/(GET_LEVEL(ch) + 10)/20;
-
-  age = MOB_AGE_TICKS(victim, time(0)) * 40/(GET_LEVEL(victim)+20);
-
-  if(IS_NPC(victim) && (GET_LEVEL(victim) > 5)){
-    if((age < average_mob_life/2))
-      align = align * (average_mob_life*60 + age*40)/(average_mob_life*100);
-    else
-      align = align * (150 - 50*average_mob_life/age)/100;
-
-  }
-
-****/
     if (ch == victim)
         return; // -has- happened :)
 
@@ -856,11 +817,14 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
                 align = MAX(0, (GET_ALIGNMENT(ch) / 2 - GET_ALIGNMENT(victim)) / 200);
         }
         // whities kill good - tut tut
-        if (GET_ALIGNMENT(victim) > 0)
-            if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) || IS_AGGR_TO(victim, ch))
+        if (GET_ALIGNMENT(victim) > 0) {
+            if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) || IS_AGGR_TO(victim, ch)) {
                 align = 0 - GET_ALIGNMENT(victim) / 10;
-            else
+            }
+            else {
                 align = 0 - GET_ALIGNMENT(victim) / 2;
+            }
+        }
 
     } else {
 

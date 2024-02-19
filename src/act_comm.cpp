@@ -779,7 +779,7 @@ ACMD(do_pray)
     tar_ch = get_char_vis(ch, argument);
 
     if (utils::is_npc(*ch) && ch->master) {
-        if (other_side(ch->master, tar_ch)) {
+        if (tar_ch && other_side(ch->master, tar_ch)) {
             send_to_char("There is no such person to hear you.\n\r", ch);
             return;
         }
@@ -789,6 +789,7 @@ ACMD(do_pray)
         send_to_char("There is no such person to hear you.\n\r", ch);
         return;
     }
+
     switch (GET_SEX(tar_ch)) {
     case SEX_MALE:
         act("You pray to $N, hoping for his good will.", FALSE, ch, 0, tar_ch, TO_CHAR);

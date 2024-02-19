@@ -761,11 +761,6 @@ ASPELL(spell_summon)
     int ch_x, ch_y, v_x, v_y, dist;
     int was_in, to_room;
 
-    /*  if(GET_LEVEL(caster) < LEVEL_GOD) {
-                send_to_char("Summon no longer has power over creatures of Arda\n\r", caster);
-                return;
-          }*/
-
     if (!victim)
         return;
     if (caster->in_room == NOWHERE)

@@ -8,7 +8,6 @@
  *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
  **************************************************************************/
 
-#include "platdef.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,24 +131,26 @@ ACMD(do_gsay)
         send_to_char("Yes, but WHAT do you want to group-say?\n\r", ch);
     } else {
         // Send the message to the group.
-        sprintf(buf, "%s group-says '%s'\n\r", GET_NAME(ch), argument + message_index);
+        sprintf(buf, "$CG%s group-says '%s'\n\r", GET_NAME(ch), argument + message_index);
         for (char_iter iter = group->begin(); iter != group->end(); ++iter) {
             char_data* member = *iter;
             if (member != ch) {
-                send_to_char(buf, member);
+                act(buf, FALSE, ch, NULL, member, TO_VICT);
+                // send_to_char(buf, member);
             }
         }
 
         // Alert the player that their message has been sent.
         if (PRF_FLAGGED(ch, PRF_ECHO)) {
-            sprintf(buf, "You group-say '%s'\n\r", argument + message_index);
-            send_to_char(buf, ch);
+            sprintf(buf, "$CGYou group-say '%s'\n\r", argument + message_index);
+            act(buf, FALSE, ch, NULL, NULL, TO_CHAR);
+            // send_to_char(buf, ch);
         } else {
             send_to_char("Ok.\n\r", ch);
         }
 
         // Other people in the room hear this as well.
-        sprintf(buf, "$n says '%s'\n\r", argument + message_index);
+        sprintf(buf, "$CS$n says '%s'\n\r", argument + message_index);
         for (char_data* bystander = world[ch->in_room].people; bystander; bystander = bystander->next_in_room) {
             if (group != bystander->group && utils::is_pc(*bystander)) {
                 act(buf, FALSE, ch, 0, bystander, TO_VICT);
@@ -776,10 +777,19 @@ ACMD(do_pray)
     }
 
     tar_ch = get_char_vis(ch, argument);
+
+    if (utils::is_npc(*ch) && ch->master) {
+        if (tar_ch && other_side(ch->master, tar_ch)) {
+            send_to_char("There is no such person to hear you.\n\r", ch);
+            return;
+        }
+    }
+
     if (!tar_ch || (tar_ch && other_side(ch, tar_ch))) {
         send_to_char("There is no such person to hear you.\n\r", ch);
         return;
     }
+
     switch (GET_SEX(tar_ch)) {
     case SEX_MALE:
         act("You pray to $N, hoping for his good will.", FALSE, ch, 0, tar_ch, TO_CHAR);

@@ -8,17 +8,15 @@
  *  CircleMUD is based on DikuMUD, Copyright (C) 19 0, 1991.               *
  ************************************************************************ */
 #define CONSTANTSMARK
-#include "platdef.h"
 #include <stdio.h>
 
 #include "db.h"
 #include "interpre.h"
-#include "limits.h"
 #include "spells.h"
 #include "structs.h"
 
 char circlemud_version[] = {
-    "Arda: The Fourth Age, version 1.5.5\n\r"
+    "Arda: The Fourth Age, version 1.5.7\n\r"
 };
 
 // const
@@ -598,6 +596,15 @@ struct skill_data skills[MAX_SKILLS] = {
         POSITION_FIGHTING, 0, 0, 16, 30, 1, 0, PLRSPEC_NONE },
     { "overrun", PROF_WARRIOR, 15, NULL,
         POSITION_STANDING, 0, 0, 65, 10, 1, 1, PLRSPEC_NONE },
+    { "mass regeneration", PROF_CLERIC, 15, spell_mass_regeneration,
+        POSITION_STANDING, 100, 15, 1, 10, 1, 1, PLRSPEC_NONE },
+    { "mass vitality", PROF_CLERIC, 11, spell_mass_vitality,
+        POSITION_STANDING, 75, 12, 1, 10, 1, 1, PLRSPEC_NONE },
+    { "mass insight", PROF_CLERIC, 6, spell_mass_insight,
+        POSITION_FIGHTING, 50, 12, 1, 10, 1, 0, PLRSPEC_NONE },
+    /* 161 */
+    { "", PROF_GENERAL, 0, NULL,
+        POSITION_STANDING, 0, 0, 16, 5, 1, 0, PLRSPEC_NONE },
 };
 
 byte language_number = 3;

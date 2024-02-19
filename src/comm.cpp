@@ -11,7 +11,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <execinfo.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -38,9 +37,6 @@
 
 #include <cstdlib>
 #include <ctime>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <vector>
 
 #define MAX_HOSTNAME 256
@@ -1040,57 +1036,6 @@ SocketType pnew_connection(SocketType s)
     return (t);
 }
 
-std::string get_logged_in_count_message(descriptor_data* list)
-{
-    int whitie_count = 0;
-    int darkie_count = 0;
-    int lhuth_count = 0;
-    int imm_count = 0;
-
-    descriptor_data* descriptor = list;
-    while (descriptor) {
-        if (descriptor->connected == CON_PLYNG) {
-            char_data* character = descriptor->character;
-            if (descriptor->original) {
-                character = descriptor->original;
-            }
-
-            if (character) {
-                int race = character->player.race;
-                if (race == RACE_WOOD || race == RACE_DWARF || race == RACE_HOBBIT
-                    || race == RACE_HUMAN || race == RACE_BEORNING) {
-                    ++whitie_count;
-                } else if (race == RACE_URUK || race == RACE_ORC || race == RACE_OLOGHAI) {
-                    ++darkie_count;
-                } else if (race == RACE_MAGUS || race == RACE_HARADRIM) {
-                    ++lhuth_count;
-                } else if (character->player.level >= LEVEL_IMMORT) {
-                    if (character->specials.invis_level == 0) {
-                        ++imm_count;
-                    }
-                }
-            }
-        }
-
-        descriptor = descriptor->next;
-    }
-
-    const int DETAILED_LIST_CUT_OFF = 5;
-    int player_total = whitie_count + darkie_count + lhuth_count;
-    std::ostringstream message_writer;
-    message_writer << std::endl;
-    message_writer << "There " << (player_total == 1 ? "is " : "are ") << player_total << (player_total == 1 ? " player" : " players")
-                   << " on currently, and " << imm_count << (imm_count == 1 ? " god." : " gods.") << std::endl;
-
-    if (player_total > 0) {
-        message_writer << "There " << (whitie_count == 1 ? "is " : "are ") << whitie_count << " free people, and "
-                       << darkie_count + lhuth_count << " forces of the dark." << std::endl;
-    }
-
-    message_writer << std::endl;
-    return message_writer.str();
-}
-
 SocketType pnew_descriptor(SocketType s)
 {
     SocketType desc;
@@ -1216,10 +1161,7 @@ SocketType pnew_descriptor(SocketType s)
     descriptor_data* cur_list = descriptor_list;
     descriptor_list = pnewd;
 
-    std::string player_count_message = get_logged_in_count_message(cur_list);
-
     SEND_TO_Q(GREETINGS, pnewd);
-    SEND_TO_Q(player_count_message.c_str(), pnewd);
     SEND_TO_Q("By what name do you wish to be known? ", pnewd);
 
     return (1);
@@ -1861,8 +1803,11 @@ void convert_string(const char* str, int hide_invisible, struct char_data* ch,
                 case 'O': /* Object */
                     i = CC_USE(to, COLOR_OBJ);
                     break;
-                case 'E':
+                case 'E': /* Description */
                     i = CC_USE(to, COLOR_DESC);
+                    break;
+                case 'G': /* Group Tell */
+                    i = CC_USE(to, COLOR_GTELL);
                     break;
                 default:
                     vmudlog(NRM, "ERROR: Unrecognized color code '%c'.",

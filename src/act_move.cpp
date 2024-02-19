@@ -489,7 +489,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     return 1;
 }
 
-void parse_container_for_stay_zone(char_data* ch, obj_data* container, int room)
+void parse_container_for_stay_zone(char_data* ch, obj_data* container, const int room)
 {
     obj_data* next_item = nullptr;
     for (obj_data* item = container->contains; item; item = next_item) {
@@ -542,6 +542,43 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
             obj_to_room(item, room);
         }
     }
+}
+
+/*
+ * Reduces the movement cost of rooms based on character race and sector type.
+ */
+int recalculate_movement_cost(const int room_type, const int race, const int movement_cost) {
+    // No love for third side or Olog-Hais
+    if (race == RACE_HARADRIM || race == RACE_MAGUS || race == RACE_OLOGHAI) {
+        return movement_cost;
+    }
+
+    // Dwarves be in mountains
+    if (room_type == SECT_MOUNTAIN && race == RACE_DWARF) {
+        return movement_cost / 2;
+    }
+
+    // Forests for Elves and Bears of course
+    if ((room_type == SECT_DENSE_FOREST || room_type == SECT_FOREST ) && (race == RACE_WOOD || race == RACE_BEORNING)) {
+        return movement_cost / 2;
+    }
+
+    // Orcs and Uruk-Hais are swamp rats
+    if (room_type == SECT_SWAMP && (race == RACE_URUK || race == RACE_ORC)) {
+        return movement_cost / 2;
+    }
+
+    // Hobbits love them holes in hills
+    if (room_type == SECT_HILLS && race == RACE_HOBBIT) {
+        return movement_cost / 2;
+    }
+
+    // Humans riding their horses in the fields.
+    if (room_type == SECT_FIELD && race == RACE_HUMAN) {
+        return movement_cost / 2;
+    }
+
+    return movement_cost;
 }
 
 ACMD(do_move)
@@ -691,6 +728,15 @@ ACMD(do_move)
                 // sneaking cost double movement
                 need_move *= 2;
             }
+
+
+            // Reduce movement cost for specific races based on room type
+
+            const auto room_type = world[ch->in_room].sector_type;
+            const auto race = ch->player.race;
+
+            need_move = recalculate_movement_cost(room_type, race, need_move);
+
 
             // Here setting his tracks...
 

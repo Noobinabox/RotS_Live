@@ -3,22 +3,40 @@ See help on each power as "man power <name of the spell>"
 Mystic power list modified by Prami, 09/16/98.
 
  MYSTIC______________________________________________________________________
-/(level) powername |(level) powername |(level) powername |(level) powername \
-|_____________________________________|_____________________________________|
-|(1) Curse         |(6)  Pragmatism   |(17)~Infravision  |  ~ = good races  |
-|(1) Detect Hidden |(6)  Restlessness |(18) Terror       |      only.       |
-|(1) Detect Magic  |(8)  Remove Poison|(20) Enchant      |                  |
-|(1) Revive        |(8)  Resist Magic |       Weapon     |  # = evil races  |
-|(2) Evasion       |(11) Slow         |(20) Death Ward   |      only.       |
-|(3) Hallucinate   |       Digestion  |(27) Guardian     |                  |
-|(3)#Mind Block    |(11) Vitality     |                  |                  |
-|(3) Resist Poison |(12) Fear         |                  |                  |
-|(4) Curing        |(13) Dispel Regen |                  |                  | 
-|      Saturation  |(13) Divination   |                  |                  |
-|(5) Haze          |(14) Poison       |                  |                  |
-|(6) Insight       |(15) Regeneration |                  |                  |
-|                  |(16)~Sanctuary    |                  |                  |
-|__________________|__________________|__________________|__________________|
+/(level) powername |(level) powername   |(level) powername |(level) powername \
+|_______________________________________|_____________________________________|
+|(1) Curse         |(6)  Pragmatism     |(17)~Infravision  |  ~ = good races  |
+|(1) Detect Hidden |(6)  Restlessness   |(18) Terror       |      only.       |
+|(1) Detect Magic  |(8)  Remove Poison  |(20) Enchant      |                  |
+|(1) Revive        |(8)  Resist Magic   |       Weapon     |  # = evil races  |
+|(2) Evasion       |(11) Slow           |(20) Death Ward   |      only.       |
+|(3) Hallucinate   |       Digestion    |(27) Guardian     |                  |
+|(3)#Mind Block    |(11) Vitality       |                  |                  |
+|(3) Resist Poison |(12) Fear           |                  |                  |
+|(4) Curing        |(13) Dispel Regen   |                  |                  | 
+|      Saturation  |(13) Divination     |                  |                  |
+|(5) Haze          |(14) Poison         |                  |                  |
+|(6) Insight       |(15) Regeneration   |                  |                  |
+|                  |(16)~Sanctuary      |                  |                  |
+|__________________|____________________|__________________|__________________|
+| See MAN POWER MASS to see power list specific to mass casting.              |
+\_____________________________________________________________________________/
+#
+MASS
+
+See help on each power as "man power <name of power>"
+Note that all mass spells required a 100% practiced in their power.
+
+ _________________________________
+/ (level) power name       Cost   \
+|_________________________________|
+|(6)  Mass Insight          50    |
+|(12) Mass Vitality         75    |   
+|(15) Mass Regeneration    100    |
+\---------------------------------/
+
+See also: MAN SPELL LIST
+
 #
 HELP GENERAL LEVEL
    The Valar no longer interfere with the mortal lands of Middle-Earth,
@@ -39,6 +57,48 @@ powers gain in strength as the Mystic gains in experience.  Note that when
 using powers for other's benefit, actual benefit of the power will be an
 average between the Mystic and the target's mystical ability.   
 
+
+#
+"MASS INSIGHT"
+
+[Syntax      ] cast 'mass insight'
+[Group       ] Mystic
+[Level       ] 6
+[Minimum Cost] 50
+[Offensive   ] No
+[Description ]
+---Casting  "Mass Insight" will apply the insight spell to everybody in your
+current group that is in the same room as the caster.
+
+See man power insight for more details.
+
+#
+"MASS REGENERATION"
+
+[Syntax      ] cast 'mass regeneration'
+[Group       ] Mystic
+[Level       ] 15
+[Minimum Cost] 100
+[Offensive   ] No
+[Description ]
+---Casting  "Mass Regeneration" will apply the regeneration spell to everybody in your
+current group that is in the same room as the caster.
+
+See man power regeneration for more details.
+
+#
+"MASS VITALITY"
+
+[Syntax      ] cast 'mass vitality'
+[Group       ] Mystic
+[Level       ] 11
+[Minimum Cost] 75
+[Offensive   ] No
+[Description ]
+---Casting  "Mass Vitality" will apply the vitality spell to everybody in your
+current group that is in the same room as the caster.
+
+See man power vitality for more details.
 
 #
 "MIND BLOCK"

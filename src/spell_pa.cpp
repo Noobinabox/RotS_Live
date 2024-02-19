@@ -9,7 +9,6 @@
  **************************************************************************/
 
 #include "platdef.h"
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -405,6 +404,18 @@ bool can_orc_follower_cast_spell(int spell_index)
     return true;
 }
 
+bool is_spell_free(const int spell_index) {
+    switch (spell_index) {
+        case SPELL_MASS_REGENERATION:
+        case SPELL_MASS_INSIGHT:
+        case SPELL_MASS_VITALITY:
+        case SPELL_EXPOSE_ELEMENTS:
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool can_cast_spell(char_data& character, int spell_index, const skill_data& spell)
 {
     if (spell_index == SPELL_EXPOSE_ELEMENTS) {
@@ -459,7 +470,7 @@ bool can_cast_spell(char_data& character, int spell_index, const skill_data& spe
         send_to_char("You can not cast this!!\n\r", &character);
         return false;
     }
-    if ((GET_KNOWLEDGE(&character, spell_index) <= 0) && spell_index != SPELL_EXPOSE_ELEMENTS) {
+    if ((GET_KNOWLEDGE(&character, spell_index) <= 0) && !is_spell_free(spell_index)) {
         send_to_char("You don't know this spell.\n\r", &character);
         return false;
     }
@@ -834,7 +845,7 @@ ACMD(do_cast)
             tmp = GET_KNOWLEDGE(ch, spell_index);
 
             // Characters that can cast 'Expose Elements' are considered 100% trained in it.
-            if (spell_index == SPELL_EXPOSE_ELEMENTS) {
+            if (is_spell_free(spell_index)) {
                 tmp = 100;
             }
         }

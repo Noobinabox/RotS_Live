@@ -600,6 +600,10 @@ void show_command(char_data* ch, script_data* script)
         sprintf(buf, "[%d] TRIG ON_HEAR_SAY     (%s)\n\r", script->number, script->text);
         break;
 
+    case ON_HEAR_YELL:
+        sprintf(buf, "[%d] TRIG ON_HEAR_YELL    (%s)\n\r", script->number, script->text);
+        break;
+
     case ON_PULL:
         sprintf(buf, "[%d] TRIG ON_PULL         (%s)\n\r", script->number, script->text);
         break;
@@ -2321,6 +2325,8 @@ int get_command(char* command)
             return ON_RECEIVE;
         if (!strcmp(command, "ON_WEAR"))
             return ON_WEAR;
+        if (!strcmp(command, "ON_HEAR_YELL"))
+            return ON_HEAR_YELL;
         return 0;
 
     case 'P':

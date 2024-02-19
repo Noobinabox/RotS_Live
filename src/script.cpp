@@ -19,7 +19,6 @@
 #include "platdef.h"
 #include <ctype.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +77,7 @@ int trigger_object_damage(obj_data* obj, char_data* vict, char_data* ch);
 // Returns the index position of a script in the script_table when supplied with a vnum
 // -1 == script not found (0 is a valid position in the script_table)
 
-int find_script_by_number(int number)
+int find_script_by_number(const int number)
 {
     int i;
 
@@ -575,7 +574,7 @@ obj_data* get_obj_param(int param, info_script* info)
 
 // Checks if a character/object/room has a script of script_type returns a pointer to the command if so, 0 if not
 
-script_data* char_has_script(int* return_index, int script_no, int script_type)
+script_data* char_has_script(int* return_index, const int script_no, const int script_type)
 {
     script_data* tmpscript = 0;
     int index;
@@ -638,6 +637,10 @@ int call_trigger(int trigger_type, void* subject, void* subject2, void* subject3
         break;
 
     case ON_HEAR_SAY:
+        return_value = trigger_char_hear((char_data*)subject, (char_data*)subject2, (char*)subject3);
+        break;
+
+    case ON_HEAR_YELL:
         return_value = trigger_char_hear((char_data*)subject, (char_data*)subject2, (char*)subject3);
         break;
 
@@ -1511,6 +1514,15 @@ int trigger_char_hear(char_data* ch, char_data* speaking, char* text)
             ch->specials.script_info->str[0] = text;
             return_value = run_script(ch->specials.script_info, script_position->next);
         }
+    if ((script_position = char_has_script(&index, ch->specials.script_number, ON_HEAR_YELL))) {
+        if (script_position->next) {
+            initialise_script_info_char(ch, index);
+            ch->specials.script_info->ch[0] = ch;
+            ch->specials.script_info->ch[1] = speaking;
+            ch->specials.script_info->str[0] = text;
+            return_value = run_script(ch->specials.script_info, script_position->next);
+        }
+    }
     return return_value;
 }
 

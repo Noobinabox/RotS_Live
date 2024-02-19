@@ -27,7 +27,6 @@
 #include "structs.h"
 #include "utils.h"
 #include <assert.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +34,6 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <vector>
 
 /*---------------------------------------------------------------------------------------------*/
 
@@ -974,6 +972,49 @@ ASPELL(spell_regeneration)
     }
 }
 
+
+void cast_mass_spell(char_data* caster, void (*spell)(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object)) {
+    if (!caster->group) {
+        send_to_char("You are not in a group.\n\r", caster);
+        return;
+    }
+
+    for (auto iter = caster->group->begin(); iter != caster->group->end(); ++iter) {
+        char_data* group_member = *iter;
+        if (group_member->in_room == caster->in_room) {
+            spell(caster, nullptr, SPELL_TYPE_SPELL, group_member, nullptr, 0, 0);
+        }
+    }
+}
+
+ASPELL(spell_mass_regeneration) {
+    if (utils::get_skill(*caster, SPELL_REGENERATION) < 100) {
+        send_to_char("Only those who have mastered regeneration may cast this spell.\n\r", caster);
+        return;
+    }
+    send_to_room("The air hums as a powerful magic breathes life into all who stand within its embrace.\n\r", caster->in_room);
+    cast_mass_spell(caster, spell_regeneration);
+}
+
+ASPELL(spell_mass_vitality) {
+    if (utils::get_skill(*caster, SPELL_VITALITY) < 100) {
+        send_to_char("Only those who have mastered vitality may cast this spell.\n\r", caster);
+        return;
+    }
+    send_to_room("The air hums as a powerful magic breathes vitality into all who stand within its embrace.\n\r", caster->in_room);
+    cast_mass_spell(caster, spell_vitality);
+}
+
+ASPELL(spell_mass_insight) {
+    if (utils::get_skill(*caster, SPELL_INSIGHT) < 100) {
+        send_to_char("Only those who have mastered insight may cast this spell.\n\r", caster);
+        return;
+    }
+    send_to_room("The air hums as a powerful magic brings insight into all who stand within its embrace.\n\r", caster->in_room);
+    cast_mass_spell(caster, spell_insight);
+}
+
+
 /*
  *  Offensive Spells listed below in order
  *  - Hallucinate
@@ -1163,11 +1204,6 @@ ASPELL(spell_poison)
         act("$n breathes out a cloud of smoke.", TRUE, caster, 0, 0, TO_ROOM);
         send_to_char("You breathe out poison.\n\r", caster);
 
-        return;
-    }
-
-    if (caster == victim) {
-        send_to_char("Poison yourself? Surely you jest...", caster);
         return;
     }
 

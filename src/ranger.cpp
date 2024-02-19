@@ -1962,16 +1962,6 @@ int see_hiding(struct char_data* seeker)
     return can_see;
 }
 
-/*
- * Assuming 'archer' is shooting 'victim', does 'archer' perform
- * an 'accurate' hit (via the accuracy skill)?
- *
- * This is similar to the accuracy check in 'fight.cc', but it does not
- * take tactics into consideration, since they are not used for archery.
- *
- * Returns: true if the hit should not be accurate, false if the
- * hit should be accurate.
- */
 bool check_archery_accuracy(const char_data& archer, const char_data& victim)
 {
     using namespace utils;
@@ -1986,40 +1976,15 @@ bool check_archery_accuracy(const char_data& archer, const char_data& victim)
     return roll < probability;
 }
 
-/*
- * shoot_calculate_success determines the success rate of the
- * archer versus the victim, taking into account:
- * - the ranger level of the attacker
- * - the amount of archery practiced by attacker
- * - the ob of the attacker
- * - the dex of the attacker
- *
- * NOTE: This should probably be changed after the first test of attacking.
- * XXX The skill accuracy should be taken into mind here
- * --------------------------- Change Log --------------------------------
- * slyon: Jan 24,2017 - Created function
- * drelidan: Jan 31, 2017 - Base implementation as an example.
- * slyon: Feb 3, 2017 - Added arrow tohit into the equation
- */
-
-int shoot_calculate_success(char_data* archer, char_data* victim, const obj_data* arrow)
+int shoot_calculate_success(const char_data& archer)
 {
     int success_chance = 0;
-    success_chance -= get_real_dodge(victim);
-    success_chance -= utils::get_prof_level(PROF_RANGER, *victim);
-
-    success_chance += utils::get_skill(*archer, SKILL_ARCHERY);
-    success_chance += arrow->obj_flags.value[0];
-    success_chance += utils::get_prof_level(PROF_RANGER, *archer);
-    success_chance += archer->get_cur_dex();
+    success_chance += utils::get_skill(archer, SKILL_ARCHERY);
+    success_chance += utils::get_skill(archer, SKILL_ACCURACY) / 10;
 
     return success_chance;
 }
 
-/*
- * Returns the part of the body on the victim that is getting hit.
- *
- **/
 int get_hit_location(const char_data& victim)
 {
     int hit_location = 0;
@@ -2040,14 +2005,6 @@ int get_hit_location(const char_data& victim)
     return hit_location;
 }
 
-/*
- * Given a hit location and a damage, calculate how much damage
- * should be done after the victim's armor is factored in.  The
- * modified amount is returned.
- *
- * This used to be (tmp >= 0); this implied that torches
- * could parry. - Tuh
- */
 int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage, int location)
 {
     /* Bogus hit location */
@@ -2150,16 +2107,6 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
     return damage;
 }
 
-/*
- * shoot_calculate_wait will determine how long the shoot will be affected
- * by WAIT_STATE_FULL and it will take into account the following:
- * -- WEAPON SPEED
- * -- SKILL_ARCHERY
- * -- RANGER_LEVEL
- * -- RACE;
- * --------------------------- Change Log --------------------------------
- * slyon: Jan 24, 2017 - Created function
- */
 int shoot_calculate_wait(const char_data* archer)
 {
     const int base_beats = 12;
@@ -2181,7 +2128,7 @@ int shoot_calculate_wait(const char_data* archer)
     }
 
     total_beats = std::max(total_beats, min_beats);
-    /*total_beats = std::min(total_beats, base_beats);*/
+
     return total_beats;
 }
 
@@ -2669,7 +2616,7 @@ ACMD(do_shoot)
         }
 
         int roll = number(0, 99);
-        int target_number = shoot_calculate_success(ch, victim, arrow);
+        int target_number = shoot_calculate_success(*ch);
         if (roll < target_number) {
             on_arrow_hit(ch, victim, arrow);
         } else {

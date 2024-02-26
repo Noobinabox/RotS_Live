@@ -19,10 +19,10 @@ Mystic power list modified by Prami, 09/16/98.
 |(6) Insight       |(15) Regeneration   |                  |                  |
 |                  |(16)~Sanctuary      |                  |                  |
 |__________________|____________________|__________________|__________________|
-| See MAN POWER MASS to see power list specific to mass casting.              |
+| See MAN POWER MASS CAST to see power list specific to mass casting.         |
 \_____________________________________________________________________________/
 #
-MASS
+MASS CAST
 
 See help on each power as "man power <name of power>"
 Note that all mass spells required a 100% practiced in their power.
@@ -30,9 +30,9 @@ Note that all mass spells required a 100% practiced in their power.
  _________________________________
 / (level) power name       Cost   \
 |_________________________________|
-|(6)  Mass Insight          50    |
-|(12) Mass Vitality         75    |   
-|(15) Mass Regeneration    100    |
+|(6)  Mass Insight          25    |
+|(12) Mass Vitality         50    |   
+|(15) Mass Regeneration     50    |
 \---------------------------------/
 
 See also: MAN SPELL LIST

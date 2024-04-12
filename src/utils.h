@@ -661,9 +661,11 @@ void set_mental_delay(char_data* ch, int value);
 
 #define GET_MENTAL_DELAY(ch) ((ch)->specials.mental_delay)
 
-#define GET_PERCEPTION(ch) (IS_SHADOW(ch) \
-                            ? 100 : ((ch)->specials2.perception == -1) \
-                                ? get_race_perception((ch)) : std::min(100, std::max(0, (ch)->specials2.perception)))
+#define GET_PERCEPTION(ch) (IS_SHADOW(ch)    \
+        ? 100                                \
+        : ((ch)->specials2.perception == -1) \
+        ? get_race_perception((ch))          \
+        : std::min(100, std::max(0, (ch)->specials2.perception)))
 
 #define IS_MENTAL(ch) (IS_SHADOW(ch) || (!IS_NPC(ch) && PRF_FLAGGED(ch, PRF_MENTAL)))
 

@@ -404,15 +404,16 @@ bool can_orc_follower_cast_spell(int spell_index)
     return true;
 }
 
-bool is_spell_free(const int spell_index) {
+bool is_spell_free(const int spell_index)
+{
     switch (spell_index) {
-        case SPELL_MASS_REGENERATION:
-        case SPELL_MASS_INSIGHT:
-        case SPELL_MASS_VITALITY:
-        case SPELL_EXPOSE_ELEMENTS:
-            return true;
-        default:
-            return false;
+    case SPELL_MASS_REGENERATION:
+    case SPELL_MASS_INSIGHT:
+    case SPELL_MASS_VITALITY:
+    case SPELL_EXPOSE_ELEMENTS:
+        return true;
+    default:
+        return false;
     }
 }
 

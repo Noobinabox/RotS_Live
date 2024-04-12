@@ -25,7 +25,7 @@ CFLAGS = $(MYFLAGS) $(PROFILE) $(OSFLAGS)
 OBJFILES = act_comm.o act_info.o act_move.o act_obj1.o act_obj2.o act_offe.o \
 	act_othe.o act_soci.o act_wiz.o ban.o battle_mage_handler.o big_brother.o boards.o char_utils.o char_utils_combat.o clerics.o clock.o color.o combat_manager.o \
 	comm.o config.o consts.o db.o delayed_command_interpreter.o fight.o graph.o handler.o interpre.o environment_utils.o \
-	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o obj2html.o object_utils.o objsave.o olog_hai.o\
+	limits.o mail.o mystic.o mage.o mobact.o modify.o mudlle.o mudlle2.o mob_csv_extract.o obj2html.o object_utils.o objsave.o olog_hai.o\
 	pkill.o profs.o ranger.o script.o shapemdl.o shapemob.o shapeobj.o shaperom.o shapezon.o shapescript.o shop.o \
 	signals.o skill_timer.o spec_ass.o spec_pro.o spell_pa.o utility.o wait_functions.o weapon_master_handler.o  \
 	wild_fighting_handler.o weather.o zone.o
@@ -111,7 +111,7 @@ db.o : db.cpp structs.h utils.h db.h comm.h handler.h limits.h spells.h \
 ban.o : ban.cpp structs.h utils.h comm.h interpre.h handler.h db.h
 	$(CC) -c $(CFLAGS) ban.cpp
 interpre.o : interpre.cpp structs.h comm.h interpre.h db.h utils.h \
-	limits.h spells.h handler.h profs.h
+	limits.h spells.h handler.h profs.h mob_csv_extract.h
 	$(CC) -c $(CFLAGS) interpre.cpp
 utility.o : utility.cpp structs.h utils.h comm.h
 	$(CC) -c $(CFLAGS) utility.cpp
@@ -189,6 +189,8 @@ color.o: color.cpp color.h
 	$(CC) -c $(CFLAGS) color.cpp
 obj2html.o: obj2html.cpp
 	$(CC) -c $(CFLAGS) obj2html.cpp
+mob_csv_extract.o: mob_csv_extract.cpp mob_csv_extract.h
+	$(CC) -c $(CFLAGS) mob_csv_extract.cpp
 pkill.o: pkill.cpp pkill.h
 	$(CC) -c $(CFLAGS) pkill.cpp
 
@@ -217,7 +219,8 @@ setup:
 		../lib/exploits/K-O \
 		../lib/exploits/P-T \
 		../lib/exploits/U-Z \
-		../lib/exploits/ZZZ
+		../lib/exploits/ZZZ \
+		../mobs
 	@touch \
 		../log/lastdeath \
 		../lib/last_cmds \

@@ -423,9 +423,9 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
         break;
 
     case APPLY_PERCEPTION:
-        //Lego: Since we loop through every gear slot, we need to track the underlying perception value rather than update the final perception value 
-        //      because each subsequent iteration would add/subtract the overridden minimum percep. 
-        //      Then we override the underlying value with our minimum perception logic and expose that to the rest of the game.
+        // Lego: Since we loop through every gear slot, we need to track the underlying perception value rather than update the final perception value
+        //       because each subsequent iteration would add/subtract the overridden minimum percep.
+        //       Then we override the underlying value with our minimum perception logic and expose that to the rest of the game.
         ch->specials2.rawPerception += mod;
 
         if (affected_by_spell(ch, SPELL_INSIGHT)) {
@@ -505,7 +505,7 @@ void affect_naked(char_data* ch)
     // sets some intrinsic parameters
     // assumes that the char is naked and has no affections.
 
-    //SET_PERCEPTION(ch, get_naked_perception(ch));
+    // SET_PERCEPTION(ch, get_naked_perception(ch));
     int nakedPerception = get_naked_perception(ch);
     ch->specials2.rawPerception = ch->specials2.perception = nakedPerception;
     GET_WILLPOWER(ch) = get_naked_willpower(ch);
@@ -520,7 +520,7 @@ void affect_naked(char_data* ch)
 void apply_gear_affects(char_data* character, const obj_data* item, int modify_flag)
 {
     for (int count = 0; count < MAX_OBJ_AFFECT; ++count) {
-            
+
         const obj_affected_type& obj_affect = item->affected[count];
         if (obj_affect.location == APPLY_SPELL)
             continue;
@@ -540,7 +540,7 @@ void apply_gear_affects(char_data* character, int modify_flag)
             continue;
 
         apply_gear_affects(character, item, modify_flag);
-    }        
+    }
 }
 
 void modify_affects(char_data* character, int modify_flag)

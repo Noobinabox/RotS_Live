@@ -972,8 +972,8 @@ ASPELL(spell_regeneration)
     }
 }
 
-
-void cast_mass_spell(char_data* caster, void (*spell)(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object)) {
+void cast_mass_spell(char_data* caster, void (*spell)(char_data* caster, char* arg, int type, char_data* victim, obj_data* obj, int digit, int is_object))
+{
     if (!caster->group) {
         send_to_char("You are not in a group.\n\r", caster);
         return;
@@ -987,7 +987,8 @@ void cast_mass_spell(char_data* caster, void (*spell)(char_data* caster, char* a
     }
 }
 
-ASPELL(spell_mass_regeneration) {
+ASPELL(spell_mass_regeneration)
+{
     if (utils::get_skill(*caster, SPELL_REGENERATION) < 100) {
         send_to_char("Only those who have mastered regeneration may cast this spell.\n\r", caster);
         return;
@@ -996,7 +997,8 @@ ASPELL(spell_mass_regeneration) {
     cast_mass_spell(caster, spell_regeneration);
 }
 
-ASPELL(spell_mass_vitality) {
+ASPELL(spell_mass_vitality)
+{
     if (utils::get_skill(*caster, SPELL_VITALITY) < 100) {
         send_to_char("Only those who have mastered vitality may cast this spell.\n\r", caster);
         return;
@@ -1005,7 +1007,8 @@ ASPELL(spell_mass_vitality) {
     cast_mass_spell(caster, spell_vitality);
 }
 
-ASPELL(spell_mass_insight) {
+ASPELL(spell_mass_insight)
+{
     if (utils::get_skill(*caster, SPELL_INSIGHT) < 100) {
         send_to_char("Only those who have mastered insight may cast this spell.\n\r", caster);
         return;
@@ -1013,7 +1016,6 @@ ASPELL(spell_mass_insight) {
     send_to_room("The air hums as a powerful magic brings insight into all who stand within its embrace.\n\r", caster->in_room);
     cast_mass_spell(caster, spell_insight);
 }
-
 
 /*
  *  Offensive Spells listed below in order

@@ -105,6 +105,26 @@ int get_spirits(char_data* character)
     return character->points.spirit;
 }
 
+int get_current_moves(char_data* character)
+{
+    return character->tmpabilities.move;
+}
+
+int get_max_moves(char_data* character)
+{
+    return character->abilities.move;
+}
+
+int get_current_hit(const char_data& character)
+{
+    return character.tmpabilities.hit;
+}
+
+int get_max_hit(const char_data& character)
+{
+    return character.abilities.hit;
+}
+
 //============================================================================
 affected_type* is_affected_by_spell(char_data& character, int skill_id)
 {
@@ -116,7 +136,7 @@ affected_type* is_affected_by_spell(char_data& character, int skill_id)
         ++count;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 //============================================================================
@@ -964,7 +984,8 @@ bool can_see(const char_data& character, const weather_data& weather, const room
 }
 
 //============================================================================
-bool can_see_object(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room)
+bool can_see_object(const char_data& character, const obj_data& object, const weather_data& weather,
+    const room_data& room)
 {
     int item_flags = object.obj_flags.extra_flags;
 
@@ -979,7 +1000,8 @@ bool can_see_object(const char_data& character, const obj_data& object, const we
 }
 
 //============================================================================
-bool can_get_object(const char_data& character, const obj_data& object, const weather_data& weather, const room_data& room)
+bool can_get_object(const char_data& character, const obj_data& object, const weather_data& weather,
+    const room_data& room)
 {
     return utils::can_wear(object, ITEM_TAKE)
         && can_carry_object(character, object)
@@ -1831,6 +1853,8 @@ void group_data::track_combat_time(char_data* character, float elapsed_seconds)
 //============================================================================
 namespace string_func {
 bool equals(const char* a, const char* b) { return strcmp(a, b) == 0; }
+
 bool is_null_or_empty(const char* a) { return !a || a[0] == '\0'; }
+
 bool contains(const char* a, const char* b) { return strstr(a, b) != NULL; }
 }

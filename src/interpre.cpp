@@ -27,6 +27,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "mob_csv_extract.h"
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -545,6 +546,7 @@ const char* command[] = {
     "overrun", // 245
     "defend",
     "renounce",
+    "mob2csv",
     "\n"
 };
 
@@ -2218,6 +2220,8 @@ void assign_command_pointers(void)
         TAR_NONE_OK, TAR_IGNORE, 0);
     COMMANDO(247, POSITION_STANDING, do_renounce, 0, TRUE, 0,
         FULL_TARGET, TAR_IGNORE, 0);
+    COMMANDO(248, POSITION_DEAD, do_mob_csv_extract, LEVEL_IMPL, FALSE, 0,
+        FULL_TARGET, FULL_TARGET, 0);
 }
 
 /* *************************************************************************

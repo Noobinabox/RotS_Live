@@ -31,7 +31,7 @@ void delayed_command_interpreter::run()
         return;
     }
 
-    typedef int (*special_ptr)(char_data * ch, char_data * victim, int cmd, char* argument, int call_flag, waiting_type* wait_list);
+    typedef int (*special_ptr)(char_data* ch, char_data* victim, int cmd, char* argument, int call_flag, waiting_type* wait_list);
 
     waiting_type* delay = &m_character->delay;
     char_data* victim = NULL;

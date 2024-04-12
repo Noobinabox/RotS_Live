@@ -820,8 +820,7 @@ void change_alignment(struct char_data* ch, struct char_data* victim)
         if (GET_ALIGNMENT(victim) > 0) {
             if (MOB_FLAGGED(victim, MOB_AGGRESSIVE) || IS_AGGR_TO(victim, ch)) {
                 align = 0 - GET_ALIGNMENT(victim) / 10;
-            }
-            else {
+            } else {
                 align = 0 - GET_ALIGNMENT(victim) / 2;
             }
         }

@@ -547,7 +547,8 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
 /*
  * Reduces the movement cost of rooms based on character race and sector type.
  */
-int recalculate_movement_cost(const int room_type, const int race, const int movement_cost) {
+int recalculate_movement_cost(const int room_type, const int race, const int movement_cost)
+{
     // No love for third side or Olog-Hais
     if (race == RACE_HARADRIM || race == RACE_MAGUS || race == RACE_OLOGHAI) {
         return movement_cost;
@@ -559,7 +560,7 @@ int recalculate_movement_cost(const int room_type, const int race, const int mov
     }
 
     // Forests for Elves and Bears of course
-    if ((room_type == SECT_DENSE_FOREST || room_type == SECT_FOREST ) && (race == RACE_WOOD || race == RACE_BEORNING)) {
+    if ((room_type == SECT_DENSE_FOREST || room_type == SECT_FOREST) && (race == RACE_WOOD || race == RACE_BEORNING)) {
         return movement_cost / 2;
     }
 
@@ -729,14 +730,12 @@ ACMD(do_move)
                 need_move *= 2;
             }
 
-
             // Reduce movement cost for specific races based on room type
 
             const auto room_type = world[ch->in_room].sector_type;
             const auto race = ch->player.race;
 
             need_move = recalculate_movement_cost(room_type, race, need_move);
-
 
             // Here setting his tracks...
 

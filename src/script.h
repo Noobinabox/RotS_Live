@@ -43,7 +43,7 @@
 #define ON_DRINK 20 //  When a character drinks from an object
 #define ON_WEAR 21 //  When a character places an object into their equipment (return false and wear fails)
 #define ON_PULL 22 //  When a character pulls a lever (return FALSE - lever is not pulled)
-#define ON_HEAR_YELL 23  // When a character hears another yell
+#define ON_HEAR_YELL 23 // When a character hears another yell
 
 #define SCRIPT_DO_SAY 30 //  Script command do_say - similar to ACMD
 #define SCRIPT_ASSIGN_STR 31 //  Assign the contents of param1 to script variable str1

@@ -1252,14 +1252,14 @@ struct time_info_data age(struct char_data* ch)
 void echo_off(int sock)
 {
 
-   char	off_string[] = //"";
-   {
-      (char) IAC,
-      (char) WILL,
-      (char) TELOPT_ECHO,
-      (char)  0,
-   };
-   (void) write(sock, off_string, sizeof(off_string));
+    char off_string[] = //"";
+        {
+            (char)IAC,
+            (char)WILL,
+            (char)TELOPT_ECHO,
+            (char)0,
+        };
+    (void)write(sock, off_string, sizeof(off_string));
 }
 
 /*
@@ -1268,16 +1268,16 @@ void echo_off(int sock)
 
 void echo_on(int sock)
 {
-   char	off_string[] = //"";
-    {
-      (char) IAC,
-      (char) WONT,
-      (char) TELOPT_ECHO,
-      (char) TELOPT_NAOFFD,
-      (char) TELOPT_NAOCRD,
-      (char)  0,
-   };
-   (void) write(sock, off_string, sizeof(off_string));
+    char off_string[] = //"";
+        {
+            (char)IAC,
+            (char)WONT,
+            (char)TELOPT_ECHO,
+            (char)TELOPT_NAOFFD,
+            (char)TELOPT_NAOCRD,
+            (char)0,
+        };
+    (void)write(sock, off_string, sizeof(off_string));
 }
 
 /* This is to work together with CREATE macro, to try fighting

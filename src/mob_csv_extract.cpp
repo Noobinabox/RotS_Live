@@ -214,8 +214,8 @@ std::string mob_csv_extract::generate_npc_stat(char_data* mob)
     mob_data.dodge = GET_DODGE(mob);
     mob_data.saving_throw = mob->specials2.saving_throw;
     mob_data.energy = GET_ENERGY(mob);
-    mob_data.energy_regeneration = GET_ENE_REGEN(mob);
-    mob_data.damage = utils::get_energy_regen(*mob);
+    mob_data.energy_regeneration = utils::get_energy_regen(*mob);
+    mob_data.damage = GET_DAMAGE(mob);
     mob_data.null_speed = mob->specials.null_speed;
     mob_data.strength_speed = mob->specials.str_speed;
     mob_data.npc_flags = MOB_FLAGS(mob);

@@ -75,7 +75,6 @@ struct mob_csv_data {
         oss << "\"" << learning << "\"" << ",";
         oss << "\"" << health_point << "\"" << ",";
         oss << "\"" << stamina << "\"" << ",";
-        oss << "\"" << body_type << "\"";
         oss << "\"" << moves << "\"" << ",";
         oss << "\"" << spirits << "\"" << ",";
         oss << "\"" << encumbrance << "\"" << ",";

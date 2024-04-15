@@ -59,88 +59,48 @@ struct mob_csv_data {
     std::string to_string() const
     {
         std::ostringstream oss;
-        oss << "\"" << vnum << "\""
-            << ",";
-        oss << "\"" << name << "\""
-            << ",";
-        oss << "\"" << aliases << "\""
-            << ",";
-        oss << "\"" << title << "\""
-            << ",";
-        oss << "\"" << race << "\""
-            << ",";
-        oss << "\"" << level << "\""
-            << ",";
-        oss << "\"" << experience << "\""
-            << ",";
-        oss << "\"" << alignment << "\""
-            << ",";
-        oss << "\"" << strength << "\""
-            << ",";
-        oss << "\"" << intelligence << "\""
-            << ",";
-        oss << "\"" << will << "\""
-            << ",";
-        oss << "\"" << dexterity << "\""
-            << ",";
-        oss << "\"" << constitution << "\""
-            << ",";
-        oss << "\"" << learning << "\""
-            << ",";
-        oss << "\"" << health_point << "\""
-            << ",";
-        oss << "\"" << stamina << "\""
-            << ",";
-        oss << "\"" << moves << "\""
-            << ",";
-        oss << "\"" << spirits << "\""
-            << ",";
-        oss << "\"" << encumbrance << "\""
-            << ",";
-        oss << "\"" << leg_encumbrance << "\""
-            << ",";
-        oss << "\"" << perception << "\""
-            << ",";
-        oss << "\"" << willpower << "\""
-            << ",";
-        oss << "\"" << coins << "\""
-            << ",";
-        oss << "\"" << offensive_bonus << "\""
-            << ",";
-        oss << "\"" << parry << "\""
-            << ",";
-        oss << "\"" << dodge << "\""
-            << ",";
-        oss << "\"" << saving_throw << "\""
-            << ",";
-        oss << "\"" << energy << "\""
-            << ",";
-        oss << "\"" << energy_regeneration << "\""
-            << ",";
-        oss << "\"" << damage << "\""
-            << ",";
-        oss << "\"" << null_speed << "\""
-            << ",";
-        oss << "\"" << strength_speed << "\""
-            << ",";
-        oss << "\"" << npc_flags << "\""
-            << ",";
-        oss << "\"" << aggressive_flags << "\""
-            << ",";
-        oss << "\"" << will_teach << "\""
-            << ",";
-        oss << "\"" << script << "\""
-            << ",";
-        oss << "\"" << special_program_number << "\""
-            << ",";
-        oss << "\"" << call_mask << "\""
-            << ",";
-        oss << "\"" << affected_bits << "\""
-            << ",";
-        oss << "\"" << resistances << "\""
-            << ",";
-        oss << "\"" << vulnerabilities << "\""
-            << ",";
+        oss << "\"" << vnum << "\"" << ",";
+        oss << "\"" << name << "\"" << ",";
+        oss << "\"" << aliases << "\"" << ",";
+        oss << "\"" << title << "\"" << ",";
+        oss << "\"" << race << "\"" << ",";
+        oss << "\"" << level << "\"" << ",";
+        oss << "\"" << experience << "\"" << ",";
+        oss << "\"" << alignment << "\"" << ",";
+        oss << "\"" << strength << "\"" << ",";
+        oss << "\"" << intelligence << "\"" << ",";
+        oss << "\"" << will << "\"" << ",";
+        oss << "\"" << dexterity << "\"" << ",";
+        oss << "\"" << constitution << "\"" << ",";
+        oss << "\"" << learning << "\"" << ",";
+        oss << "\"" << health_point << "\"" << ",";
+        oss << "\"" << stamina << "\"" << ",";
+        oss << "\"" << body_type << "\"";
+        oss << "\"" << moves << "\"" << ",";
+        oss << "\"" << spirits << "\"" << ",";
+        oss << "\"" << encumbrance << "\"" << ",";
+        oss << "\"" << leg_encumbrance << "\"" << ",";
+        oss << "\"" << perception << "\"" << ",";
+        oss << "\"" << willpower << "\"" << ",";
+        oss << "\"" << coins << "\"" << ",";
+        oss << "\"" << offensive_bonus << "\"" << ",";
+        oss << "\"" << parry << "\"" << ",";
+        oss << "\"" << dodge << "\"" << ",";
+        oss << "\"" << saving_throw << "\"" << ",";
+        oss << "\"" << energy << "\"" << ",";
+        oss << "\"" << energy_regeneration << "\"" << ",";
+        oss << "\"" << damage << "\"" << ",";
+        oss << "\"" << null_speed << "\"" << ",";
+        oss << "\"" << strength_speed << "\"" << ",";
+        oss << "\"" << npc_flags << "\"" << ",";
+        oss << "\"" << aggressive_flags << "\"" << ",";
+        oss << "\"" << will_teach << "\"" << ",";
+        oss << "\"" << script << "\"" << ",";
+        oss << "\"" << special_program_number << "\"" << ",";
+        oss << "\"" << call_mask << "\"" << ",";
+        oss << "\"" << affected_bits << "\"" << ",";
+        oss << "\"" << resistances << "\"" << ",";
+        oss << "\"" << vulnerabilities << "\"" << ",";
         oss << "\"" << body_type << "\"";
         oss << std::endl;
         return oss.str();
@@ -150,7 +110,7 @@ struct mob_csv_data {
 void mob_csv_extract::create_header(char_data* ch)
 {
     fprintf(file,
-        "\"id_num\",\"name\",\"vnum\",\"aliases\",\"title\",\"race\","
+        "\"vnum\",\"name\",\"aliases\",\"title\",\"race\","
         "\"level\",\"experience\","
         "\"alignment\",\"strength\",\"intelligence\",\"will\",\"dexterity\","
         "\"constitution\",\"learning\",\"health_point\",\"stamina\",\"moves\",\"spirits\","

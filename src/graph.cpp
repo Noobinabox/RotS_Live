@@ -393,7 +393,7 @@ int show_blood_trail(struct char_data* ch, char* name, int mode)
         if (shall_show) {
             count++;
             if (IS_WATER(ch->in_room)) {
-                sprintf(buf, "The water looks %s distrubed to the %s.\n\r",
+                sprintf(buf, "The water looks %s disturbed to the %s.\n\r",
                     water_track_desc(tr_time), dirs[ch_room->bleed_track[tmp].data & 7]);
             } else {
                 sprintf(buf, "%sA blood trail leading %s is %s.\n\r", buf, dirs[ch_room->bleed_track[tmp].data & 7], track_desc(tr_time));

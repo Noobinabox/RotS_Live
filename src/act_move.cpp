@@ -98,12 +98,7 @@ bool should_double_strength(char_data* character)
 int get_room_move_penalty(const char_data* character, int room_sector)
 {
     int room_move_penalty = movement_loss[room_sector];
-    if (room_sector == SECT_WATER_SWIM || room_sector == SECT_WATER_NOSWIM || room_sector == SECT_UNDERWATER
-        || room_sector == SECT_SWAMP || room_sector == SECT_INSIDE) {
-        return room_move_penalty;
-    }
 
-    // Stealth specialized characters on foot reduce movement by half, minimum of 1
     if (utils::get_specialization(*character) == game_types::PS_Stealth && !character->mount_data.mount) {
         room_move_penalty = std::max(1, room_move_penalty / 2);
     }
@@ -727,7 +722,7 @@ ACMD(do_move)
             } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
                 // sneaking cost double movement
-                need_move *= 2;
+                need_move += utils::get_specialization(*ch) == game_types::PS_Stealth ? 1 : 2;
             }
 
             // Reduce movement cost for specific races based on room type

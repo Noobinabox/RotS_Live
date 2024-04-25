@@ -1299,14 +1299,20 @@ int write_to_descriptor(int desc, char* txt)
         return 0;
     }
 
-    do {
-        thisround = write(desc, txt + sofar, total - sofar);
-        if (thisround < 0) {
-            perror("Write to socket");
-            return (-1);
-        }
-        sofar += thisround;
-    } while (sofar < total);
+    try {
+        do {
+            thisround = write(desc, txt + sofar, total - sofar);
+            if (thisround < 0) {
+                perror("Write to socket");
+                return (-1);
+            }
+            sofar += thisround;
+        } while (sofar < total);
+    }
+    catch(...) {
+        vmudlog(NRM, "Exception in write_to_descriptor");
+        return -1;
+    }
 
     return (0);
 }

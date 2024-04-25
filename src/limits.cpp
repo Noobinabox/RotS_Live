@@ -333,7 +333,7 @@ float move_gain(const char_data* character)
         }
 
         if (race == RACE_BEORNING) {
-            gain *= 1.25;
+            gain *= 1.75;
         }
 
         if (race == RACE_OLOGHAI) {

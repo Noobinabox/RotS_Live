@@ -387,23 +387,10 @@ $n attempts to throw some dust, but it slips through $s fingers.~
 You throw grey dust in $N's eyes.~
 $n throws grey dust in your eyes, blinding you!~
 $n throws grey dust in $N's eyes!~
-~
-~
-~
+How shameful to throw dust at a GOD!!!~
+You turn your head and ignore $N's attempt to throw dust at you.~
+$N turns $S head and ignores $n's attempt to throw dust.~
 M
- 124
-Your handful of dust destroys what is left of $N's fragile being.~
-$n destroys what is left of your fragile being with a handful of dust.~
-$n destroys what is left of $N's fragile being with a handful of dust.~
-$N dodges your attempt to grasp their side.~
-$n attempts to grasp your side but misses.~
-$N dodges $n's attempt to grab $M side.~
-You grasp $N's side, leaving an open festering wound.~
-You scream in pain as $n grasps your side, leaving an open festering wound.~
-$N screams in pain as $n grabs $M side, leaving an open festering wound.~
-~
-~
-~
  124
 You grasp $N's side and their body is overtaken with disease and decay, killing $M instantly!~
 $n grasps your side and your body is taken over by disease and decay, killing you instantly!~
@@ -508,7 +495,7 @@ You are burnt to death by the gout of fire from $n's breath!~
 The gout of fire from $n burns $N to death.~
 Your gout of fire burns out before it reaches $N.~
 $n's gout of fire burns out before reaching you.~
-A gout of fire from $n breath burns out beforing reaching $N!~
+A gout of fire from $n breath burns out before reaching $N!~
 Your gout of fire shoots out in all directions burning $N!~
 $n snorts and a gout of fire shoots out of its nostrils at YOU!~
 $n snorts and a gout of fire shoots out of its nostrils at $N!~

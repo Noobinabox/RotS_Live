@@ -542,7 +542,7 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
 /*
  * Reduces the movement cost of rooms based on character race and sector type.
  */
-int recalculate_movement_cost(const int room_type, const int race, const int movement_cost)
+int racial_movement_reduction(const int room_type, const int race, const int movement_cost)
 {
     // No love for third side or Olog-Hais
     if (race == RACE_HARADRIM || race == RACE_MAGUS || race == RACE_OLOGHAI) {
@@ -653,7 +653,7 @@ ACMD(do_move)
         is_death = IS_SET(world[to_room].room_flags, DEATH);
         was_in = ch->in_room;
 
-        bool diff_zone = (was_in / 100) != (to_room / 100);
+        bool different_zone = world[was_in].zone != world[to_room].zone;
 
         if (!IS_RIDING(ch)) {
             res_flag = check_simple_move(ch, cmd, &need_move, subcmd);
@@ -721,16 +721,13 @@ ACMD(do_move)
                 }
             } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
-                // sneaking cost double movement
-                need_move += utils::get_specialization(*ch) == game_types::PS_Stealth ? 1 : 2;
+                need_move *= 1.5;
             }
-
-            // Reduce movement cost for specific races based on room type
 
             const auto room_type = world[ch->in_room].sector_type;
             const auto race = ch->player.race;
 
-            need_move = recalculate_movement_cost(room_type, race, need_move);
+            need_move = racial_movement_reduction(room_type, race, need_move);
 
             // Here setting his tracks...
 
@@ -761,7 +758,7 @@ ACMD(do_move)
             }
 
             // Check for item_stay_zone in players inventory and equipment.
-            if (diff_zone) {
+            if (different_zone) {
                 prohibit_item_stay_zone_move(ch, was_in);
             }
 

@@ -4338,7 +4338,7 @@ recalc_skills	spec_pro.cpp	/^void recalc_skills(struct char_data* ch)$/;"	f	type
 recalc_worn_weight	objsave.cpp	/^void recalc_worn_weight(char_data* character)$/;"	f	typeref:typename:void
 recalc_zone_power	handler.cpp	/^void recalc_zone_power()$/;"	f	typeref:typename:void
 recalculate_mob	shapemob.cpp	/^void recalculate_mob(struct char_data* ch)$/;"	f	typeref:typename:void
-recalculate_movement_cost	act_move.cpp	/^int recalculate_movement_cost(const int room_type, const int race, const int movement_cost) {$/;"	f	typeref:typename:int
+racial_movement_reduction	act_move.cpp	/^int racial_movement_reduction(const int room_type, const int race, const int movement_cost) {$/;"	f	typeref:typename:int
 recipient	mail.h	/^    char recipient[NAME_SIZE + 1]; \/* who the mail is for *\/$/;"	m	struct:mail_index_type_d	typeref:typename:char[]
 recite_lines	structs.h	/^    char* recite_lines; \/* For reciters, how far read? *\/$/;"	m	struct:char_special_data	typeref:typename:char *
 record_crime	db.cpp	/^void record_crime(char_data* criminal, char_data* victim, int crime, int wit_type)$/;"	f	typeref:typename:void

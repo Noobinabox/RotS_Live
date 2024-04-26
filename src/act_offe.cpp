@@ -1287,16 +1287,10 @@ void apply_maul_char(char_data* ch)
     affect_join(ch, &af, FALSE, FALSE);
 }
 
-//============================================================================
-// From design doc:
-// This attack is a debuff and buff skill. When the Beorning does a maul on a
-// target it will give them negatives to OB and DB, while applying a small
-// amount of armor absorption to the Beorning. This ability will stack up to 5
-// times.
-//============================================================================
 ACMD(do_maul)
 {
     one_argument(argument, arg);
+    const int maul_cost = utils::get_specialization(*ch) == game_types::PS_Defender ? 5: 10;
 
     if (can_bear_skill(ch, SKILL_MAUL) == false) {
         return;
@@ -1307,14 +1301,13 @@ ACMD(do_maul)
         return;
     }
 
-    // These first two tests, BigBrother and Sanctuary, they really need to be standardized.
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
         send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
         return;
     }
 
-    if (GET_MOVE(ch) < 15) {
+    if (GET_MOVE(ch) < maul_cost) {
         send_to_char("You are too tired for this right now.\r\n", ch);
         return;
     }
@@ -1325,15 +1318,6 @@ ACMD(do_maul)
         act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
     }
 
-    // Goals with this skill:
-    // * It can stack up to ten times.
-    // * It would be great if it had its own internal cooldown (so it does not use the delay system).
-    // * Unsure exactly how to stack the buff and debuff.  Probably use the Fast-Acting affect system.
-
-    // Can use a new Cooldown Manager for skill internal cooldowns.  This could eventually be extended
-    // to handle things such as "this target can only be affected by a certain spell once every 'x' seconds",
-    // to limit confuse or hallucinate spam etc.
-
     int prob = get_prob_skill(ch, victim, SKILL_MAUL);
 
     if (prob < 0) {
@@ -1343,10 +1327,5 @@ ACMD(do_maul)
         apply_maul_char(ch);
         damage(ch, victim, number(1, 4), SKILL_MAUL, 0);
     }
-
-    if (utils::get_specialization(*ch) == game_types::PS_Defender) {
-        GET_MOVE(ch) -= 7;
-    } else {
-        GET_MOVE(ch) -= 15;
-    }
+    GET_MOVE(ch) -= maul_cost;
 }

@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern struct room_data world;
+
 #define RACE_SOME_ORC(caster) ((GET_RACE(caster) == RACE_URUK || GET_RACE(caster) == RACE_ORC || GET_RACE(caster) == RACE_MAGUS))
 
 int get_mage_caster_level(const char_data* caster)
@@ -111,14 +113,13 @@ int apply_spell_damage(char_data* caster, char_data* victim, int damage_dealt, i
 
 bool different_zone(int was_in, int to_room)
 {
-    return (was_in / 100) != (to_room / 100);
+    return world[was_in].zone != world[to_room].zone;
 }
 
 /*
  * external structures
  */
 
-extern struct room_data world;
 extern struct obj_data* obj_proto;
 extern struct obj_data* object_list;
 extern struct char_data* character_list;
@@ -1002,6 +1003,7 @@ ASPELL(spell_relocate)
         return;
 
     zon_start = world[caster->in_room].zone;
+    was_in = caster->in_room;
     x = zone_table[zon_start].x;
     y = zone_table[zon_start].y;
     del_x = del_y = 0;

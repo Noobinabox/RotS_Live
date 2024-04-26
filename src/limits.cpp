@@ -295,8 +295,7 @@ float move_gain(const char_data* character)
     gain += (stats.con + stats.dex) / 2.0;
 
     /* Expertise for Rangers and Travelling Skill */
-    float expertise_modifier = (get_prof_level(PROF_RANGER, *character) / 6.0f);
-    expertise_modifier += (get_raw_knowledge(*character, SKILL_TRAVELLING) / 20.0f);
+    float expertise_modifier = (get_prof_level(PROF_RANGER, *character) / 6.0) + (get_raw_knowledge(*character, SKILL_TRAVELLING) / 40);
     gain += expertise_modifier;
 
     /* Skill/Spell calculations */
@@ -333,7 +332,7 @@ float move_gain(const char_data* character)
         }
 
         if (race == RACE_BEORNING) {
-            gain *= 1.75;
+            gain *= 1.50;
         }
 
         if (race == RACE_OLOGHAI) {

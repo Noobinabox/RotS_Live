@@ -1316,11 +1316,16 @@ void affect_update_person(struct char_data* i, int mode)
                     break;
 
                 case SPELL_ASPHYXIATION:
+                    int zone, under_water_zone, death_modifier;
+                    zone = world[i->in_room].zone;
+                    under_water_zone = 262;
+                    death_modifier = zone == under_water_zone ? 80 : 40;
+
                     if (!(can_breathe(i))) {
-                        if (af->modifier > 40) {
+                        if (af->modifier > death_modifier) {
                             send_to_char("You gasp one final time as your body loses its battle for life...\n\r", i);
-                            act("$n gasps one last time... and dies.", TRUE, i, 0, 0, TO_ROOM);
-                            raw_kill(i, NULL, SPELL_ASPHYXIATION);
+                            act("$n gasps one last time... and dies.", TRUE, i, nullptr, nullptr, TO_ROOM);
+                            raw_kill(i, nullptr, SPELL_ASPHYXIATION);
                             return;
                         }
                         if (af->modifier > 20) {

@@ -355,6 +355,68 @@ void add_prompt(char* prompt, struct char_data* ch, long flag);
 timeval opt_time;
 int pulse = 0; // moved here from being a local variable
 
+void msdp_update() {
+    for(auto desc = descriptor_list; desc; desc = desc->next) {
+        if (!desc->character || IS_NPC(desc->character)) {
+            continue;
+        }
+
+        if (!desc->pProtocol) {
+            continue;
+        }
+
+        MSDPSetString(desc, eMSDP_CHARACTER_NAME, GET_NAME(desc->character));
+        MSDPSetNumber(desc, eMSDP_ALIGNMENT, GET_ALIGNMENT(desc->character));
+        MSDPSetNumber(desc, eMSDP_EXPERIENCE, GET_EXP(desc->character));
+        MSDPSetNumber(desc, eMSDP_EXPERIENCE_MAX, GET_EXP(desc->character));
+        MSDPSetNumber(desc, eMSDP_HEALTH, GET_HIT(desc->character));
+        MSDPSetNumber(desc, eMSDP_HEALTH_MAX , GET_MAX_HIT(desc->character));
+        MSDPSetString(desc, eMSDP_ROOM, world[desc->character->in_room].name);
+        MSDPSetNumber(desc, eMSDP_ROOM_VNUM, world[desc->character->in_room].number);
+        MSDPSetNumber(desc, eMSDP_LEVEL, GET_LEVEL(desc->character));
+        MSDPSetNumber(desc, eMSDP_MANA, GET_MANA(desc->character));
+        MSDPSetNumber(desc, eMSDP_MANA_MAX, GET_MAX_MANA(desc->character));
+        MSDPSetNumber(desc, eMSDP_MOVEMENT, GET_MOVE(desc->character));
+        MSDPSetNumber(desc, eMSDP_MOVEMENT_MAX, GET_MAX_MOVE(desc->character));
+        MSDPSetNumber(desc, eMSDP_MONEY, GET_GOLD(desc->character));
+
+
+        MSDPSetNumber(desc, eMSDP_SPIRIT, GET_SPIRIT(desc->character));
+        std::string exits_names;
+        MSDPFlush(desc, eMSDP_ROOM_EXITS);
+        for (int exits = 0; exits <= NUM_OF_DIRS; exits++) {
+            if (world[desc->character->in_room].dir_option[exits]) {
+                switch(exits) {
+                    case 0:
+                        exits_names = "n ";
+                        break;
+                    case 1:
+                        exits_names += "e ";
+                        break;
+                    case 2:
+                        exits_names += "s ";
+                        break;
+                    case 3:
+                        exits_names += "w ";
+                        break;
+                    case 4:
+                        exits_names += "u ";
+                        break;
+                    case 5:
+                        exits_names += "d ";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        MSDPSetArray(desc, eMSDP_ROOM_EXITS, exits_names.c_str());
+
+        MSDPUpdate(desc);
+    }
+}
+
 void game_loop(SocketType s)
 {
     fd_set input_set, output_set, exc_set;
@@ -715,6 +777,8 @@ void game_loop(SocketType s)
             // clean-up expose elements
             clean_expose_elements();
         }
+
+        msdp_update();
 
         if (!(pulse % (60 * 4))) /* one minute */
         {

@@ -2876,6 +2876,8 @@ void nanny(struct descriptor_data* d, char* arg)
             REMOVE_BIT(PRF_FLAGS(d->character), PRF_DISPTEXT);
             d->character->temp = 0;
             update_memory_list(d->character);
+            d->pProtocol = ProtocolCreate();
+            ProtocolNegotiate(d);
             break;
         case '3':
             SEND_TO_Q(background, d);

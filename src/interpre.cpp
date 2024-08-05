@@ -2834,6 +2834,8 @@ void nanny(struct descriptor_data* d, char* arg)
             report_news(d->character);
             report_mail(d->character);
             send_to_char(WELC_MESSG, d->character);
+
+            
             send_to_char("\n\r", d->character);
 
             /* if level 0, start out the new character */
@@ -2878,6 +2880,8 @@ void nanny(struct descriptor_data* d, char* arg)
             update_memory_list(d->character);
             d->pProtocol = ProtocolCreate();
             ProtocolNegotiate(d);
+            extern void msdp_room_update(char_data* ch);
+            msdp_room_update(d->character);
             break;
         case '3':
             SEND_TO_Q(background, d);

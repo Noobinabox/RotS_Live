@@ -1944,36 +1944,6 @@ bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data
     return number(offense / 3, offense) < number(defense / 2, defense) ? false : true;
 }
 
-void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
-{
-
-    if (weapon == NULL) {
-        return;
-    }
-
-    if (!weapon->obj_flags.is_weapon_poisoned()) {
-        return;
-    }
-
-    if (does_victim_save_on_weapon_poison(victim, weapon)) {
-
-        act("You feel your body fend off the poison.", TRUE, attacker, 0, victim, TO_VICT);
-        return;
-    }
-
-    struct affected_type af;
-    af.type = SPELL_POISON;
-    af.duration = weapon->obj_flags.get_poison_duration();
-    af.modifier = 0;
-    af.location = APPLY_NONE;
-    af.bitvector = AFF_POISON;
-    affect_join(victim, &af, FALSE, FALSE);
-
-    damage(attacker, victim, 5, SPELL_POISON, 0);
-    weapon->obj_flags.poisoned = false;
-    return;
-}
-
 /*UPDATE* integreate parry message with other messages */
 void do_parry(struct char_data* ch, struct char_data* victim, int type)
 {

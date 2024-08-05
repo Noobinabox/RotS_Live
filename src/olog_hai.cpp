@@ -7,7 +7,6 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
-#include <iostream>
 #include <string>
 
 extern struct room_data world;

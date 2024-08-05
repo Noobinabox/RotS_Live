@@ -138,7 +138,6 @@ typedef enum
     eMSDP_ALIGNMENT,
     eMSDP_EXPERIENCE,
     eMSDP_EXPERIENCE_MAX,
-    eMSDP_EXPERIENCE_TNL,
     eMSDP_HEALTH,
     eMSDP_HEALTH_MAX,
     eMSDP_LEVEL,
@@ -153,17 +152,37 @@ typedef enum
     eMSDP_MOVEMENT_MAX,
     eMSDP_HITROLL,
     eMSDP_DAMROLL,
+    eMSDP_SPIRIT,
     eMSDP_AC,
     eMSDP_STR,
     eMSDP_INT,
-    eMSDP_WIS,
+    eMSDP_WILL,
     eMSDP_DEX,
     eMSDP_CON,
+    eMSDP_LEA,
     eMSDP_STR_PERM,
     eMSDP_INT_PERM,
-    eMSDP_WIS_PERM,
+    eMSDP_WIL_PERM,
     eMSDP_DEX_PERM,
     eMSDP_CON_PERM,
+    eMSDP_LEA_PERM,
+    eMDSP_SPELL_SAVE,
+    eMDSP_SPELL_PEN,
+    eMDSP_SPELL_POWER,
+    eMDSP_ARMOUR_ABS,
+    eMDSP_OFFENSIVE_BONUS,
+    eMDSP_PARRY,
+    eMDSP_DODGE,
+    eMDSP_ATTACK_SPEED,
+    eMDSP_TACTIC,
+    eMDSP_PERCEPTION,
+    eMDSP_WILLPOWER,
+    eMDSP_SKILL_ENCUMBRANCE,
+    eMDSP_MOVEMENT_ENCUMBRANCE,
+    eMDSP_HEALTH_REGENERATION,
+    eMDSP_STAMINA_REGENERATION,
+    eMDSP_MOVEMENT_REGENERATION,
+
 
     /* Combat */
     eMSDP_OPPONENT_HEALTH,
@@ -178,6 +197,7 @@ typedef enum
     eMSDP_ROOM_NAME,
     eMSDP_ROOM_VNUM,
     eMSDP_WORLD_TIME,
+    eMDSP_WEATHER,
 
     /* Configuration */
     eMSDP_CLIENT_ID,
@@ -201,7 +221,6 @@ typedef enum
     eMSDP_GAUGE_4,
     eMSDP_GAUGE_5,
 
-    eMSDP_SPIRIT,
 
     eMSDP_MAX                   /* This must always be last */
 } variable_t;

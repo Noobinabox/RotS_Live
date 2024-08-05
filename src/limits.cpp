@@ -191,9 +191,13 @@ float get_bonus_hit_gain(const char_data* character)
     for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next) {
         if (affect->type == SPELL_CURING) {
             bonus_gain += affect->modifier;
-        } else if (affect->type == SPELL_RESTLESSNESS) {
+        }
+
+        if (affect->type == SPELL_RESTLESSNESS) {
             bonus_gain -= affect->modifier;
-        } else if (affect->type == SPELL_REGENERATION) {
+        }
+
+        if (affect->type == SPELL_REGENERATION) {
             bonus_gain += affect->duration * 6 / (float)FAST_UPDATE_RATE;
         }
     }

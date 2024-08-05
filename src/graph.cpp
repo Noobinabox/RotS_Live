@@ -223,7 +223,7 @@ void hunt_victim(struct char_data* ch)
             found = 1;
 
     if (!found) {
-        do_say(ch, "Damn!  My prey is gone!!", 0, 0, 0);
+        do_say(ch,  "Damn!  My prey is gone!!", 0, 0, 0);
         ch->specials.hunting = 0;
         return;
     }
@@ -242,7 +242,7 @@ void hunt_victim(struct char_data* ch)
     }
 }
 
-char* track_desc(int track_age)
+const char* track_desc(int track_age)
 {
     switch (track_age) {
     case 0:
@@ -284,7 +284,7 @@ char* track_desc(int track_age)
     }
 }
 
-char* water_track_desc(int track_age)
+const char* water_track_desc(int track_age)
 {
     switch (track_age) {
     case 0:

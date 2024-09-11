@@ -8,7 +8,6 @@
  *  CircleMUD is based on DikuMUD, Copyright (C) 1990, 1991.               *
  ************************************************************************ */
 
-#include "platdef.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -721,7 +720,7 @@ ACMD(do_move)
                 }
             } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
-                need_move *= 1.5;
+                need_move *= 1.25;
             }
 
             const auto room_type = world[ch->in_room].sector_type;

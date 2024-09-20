@@ -720,7 +720,7 @@ ACMD(do_move)
                 }
             } else if (IS_AFFECTED(ch, AFF_SNEAK)) {
                 snuck_out(ch);
-                need_move *= 1.25;
+                need_move *= 1.50;
             }
 
             const auto room_type = world[ch->in_room].sector_type;

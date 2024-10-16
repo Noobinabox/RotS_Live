@@ -146,6 +146,20 @@ ACMD(do_hit)
     }
 }
 
+bool should_assist_master(char_data* ch)
+{
+    auto master = ch->master;
+
+    if (!master) {
+        return false;
+    }
+
+    auto master_in_room = master->in_room;
+    auto ch_in_room = ch->in_room;
+
+    return (master_in_room == ch_in_room);
+}
+
 ACMD(do_assist)
 {
     struct char_data *helpee, *opponent;
@@ -167,6 +181,10 @@ ACMD(do_assist)
     } else
         helpee = 0;
 
+    if (should_assist_master(ch) && !helpee) {
+        helpee = ch->master;
+    }
+
     if (!helpee) {
         send_to_char("Whom do you wish to assist?\n\r", ch);
         return;
@@ -175,10 +193,6 @@ ACMD(do_assist)
     if (helpee == ch)
         send_to_char("You can't help yourself any more than this!\n\r", ch);
     else {
-        //      for (opponent = world[ch->in_room].people; opponent &&
-        //	     (opponent->specials.fighting != helpee);
-        //	   opponent = opponent->next_in_room)
-        //	;
         opponent = helpee->specials.fighting;
         if (!opponent)
             act("But nobody is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);

@@ -153,6 +153,10 @@ bool should_assist_master(char_data* ch)
     if (!master) {
         return false;
     }
+    
+    if (IS_NPC(ch)) {
+        return false;
+    }
 
     auto master_in_room = master->in_room;
     auto ch_in_room = ch->in_room;
@@ -181,42 +185,48 @@ ACMD(do_assist)
     } else
         helpee = 0;
 
-    if (should_assist_master(ch) && !helpee) {
-        helpee = ch->master;
-    }
 
     if (!helpee) {
         send_to_char("Whom do you wish to assist?\n\r", ch);
         return;
     }
 
-    if (helpee == ch)
-        send_to_char("You can't help yourself any more than this!\n\r", ch);
-    else {
-        opponent = helpee->specials.fighting;
-        if (!opponent)
-            act("But nobody is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
-        else if (!CAN_SEE(ch, opponent))
-            act("You can't see who is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
-        else {
-
-            game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-            if (!bb_instance.is_target_valid(ch, opponent)) {
-                send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.\r\n", ch);
-                return;
-            }
-
-            send_to_char("You join the fight!\n\r", ch);
-            act("$N assists you!", 0, helpee, 0, ch, TO_CHAR);
-            act("$n assists $N.", FALSE, ch, 0, helpee, TO_NOTVICT);
-            tmpwtl.targ1.type = TARGET_CHAR;
-            tmpwtl.targ1.ptr.ch = opponent;
-            tmpwtl.targ1.ch_num = opponent->abs_number;
-            tmpwtl.cmd = CMD_HIT;
-            tmpwtl.subcmd = 0;
-            do_hit(ch, argument, &tmpwtl, CMD_HIT, SCMD_MURDER);
-        }
+    if (should_assist_master(ch)) {
+        helpee = ch->master;
     }
+
+    if (helpee == ch) {
+        send_to_char("You can't help yourself any more than this!\n\r", ch);
+        return;
+    }
+
+    opponent = helpee->specials.fighting;
+
+    if (!opponent) {
+        act("But nobody is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
+        return;
+    }
+
+    if (!CAN_SEE(ch, opponent)) {
+        act("You can't see who is fighting $M!", FALSE, ch, 0, helpee, TO_CHAR);
+        return;
+    }
+
+    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    if (!bb_instance.is_target_valid(ch, opponent)) {
+        send_to_char("You feel the Gods looking down upon you, and protecting your target.  Your hand is stayed.\r\n", ch);
+        return;
+    }
+
+    send_to_char("You join the fight!\n\r", ch);
+    act("$N assists you!", 0, helpee, 0, ch, TO_CHAR);
+    act("$n assists $N.", FALSE, ch, 0, helpee, TO_NOTVICT);
+    tmpwtl.targ1.type = TARGET_CHAR;
+    tmpwtl.targ1.ptr.ch = opponent;
+    tmpwtl.targ1.ch_num = opponent->abs_number;
+    tmpwtl.cmd = CMD_HIT;
+    tmpwtl.subcmd = 0;
+    do_hit(ch, argument, &tmpwtl, CMD_HIT, SCMD_MURDER);
 }
 
 ACMD(do_slay)

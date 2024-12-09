@@ -846,19 +846,8 @@ ASPELL(spell_identify)
     }
 
     do_identify_object(caster, obj);
-    if (!affected_by_spell(caster, SPELL_HAZE)) {
-        af.type = SPELL_HAZE;
-        af.duration = 1;
-        af.modifier = 1;
-        af.location = APPLY_NONE;
-        af.bitvector = AFF_HAZE;
-
-        affect_to_char(caster, &af);
-    }
-
     int level = get_mage_caster_level(caster);
     GET_MOVE(caster) = GET_MOVE(caster) - level;
-    send_to_char("You feel dizzy and tired from your mental exertion.\r\n", caster);
 }
 
 /*----------------------------------------------------------------------------------------------------------*/

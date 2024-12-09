@@ -1777,6 +1777,7 @@ ACMD(do_date)
 {
     long ct;
     char* tmstr;
+    extern long boot_time;
 
     if (IS_NPC(ch))
         return;
@@ -1785,6 +1786,8 @@ ACMD(do_date)
     tmstr = (char*)asctime(localtime(&ct));
     *(tmstr + strlen(tmstr) - 1) = '\0';
     sprintf(buf, "Current machine time: %s\n\r", tmstr);
+    send_to_char(buf, ch);
+    sprintf(buf, "Last reboot on: %s\n\r", asctime(localtime(&boot_time)));
     send_to_char(buf, ch);
 }
 

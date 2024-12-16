@@ -2506,6 +2506,10 @@ void nanny(struct descriptor_data* d, char* arg)
                     tmp_ch->specials.timer = 0;
                     REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
                     STATE(d) = CON_PLYNG;
+                    d->pProtocol = ProtocolCreate();
+                    ProtocolNegotiate(d);
+                    extern void msdp_room_update(char_data* ch);
+                    msdp_room_update(d->character);
                     return;
                 }
 

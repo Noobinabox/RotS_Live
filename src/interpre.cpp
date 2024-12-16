@@ -2850,6 +2850,12 @@ void nanny(struct descriptor_data* d, char* arg)
             /* ensure character has correct practice sessions available on log-in */
             d->character->update_available_practice_sessions();
 
+            /* update msdp room information */
+            d->pProtocol = ProtocolCreate();
+            ProtocolNegotiate(d);
+            extern void msdp_room_update(char_data* ch);
+            msdp_room_update(d->character);
+
             do_look(d->character, "", 0, 0, 0);
 
             /* report how long they must wait until unretire */
@@ -2878,10 +2884,6 @@ void nanny(struct descriptor_data* d, char* arg)
             REMOVE_BIT(PRF_FLAGS(d->character), PRF_DISPTEXT);
             d->character->temp = 0;
             update_memory_list(d->character);
-            d->pProtocol = ProtocolCreate();
-            ProtocolNegotiate(d);
-            extern void msdp_room_update(char_data* ch);
-            msdp_room_update(d->character);
             break;
         case '3':
             SEND_TO_Q(background, d);

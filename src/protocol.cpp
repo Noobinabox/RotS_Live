@@ -33,7 +33,6 @@
  ******************************************************************************/
 
 #include "comm.h"
-#include "structs.h"
 
 static void Write(descriptor_t *apDescriptor, char *apData) {
   // wtf is fcommand?!

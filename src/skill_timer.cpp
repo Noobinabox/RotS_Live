@@ -1,7 +1,6 @@
 #include "skill_timer.h"
 #include "char_utils.h"
 #include "structs.h"
-#include "utils.h"
 
 template <>
 game_timer::skill_timer* world_singleton<game_timer::skill_timer>::m_pInstance(0);

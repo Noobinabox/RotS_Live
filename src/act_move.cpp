@@ -50,31 +50,6 @@ extern struct char_data* waiting_list;
 void stop_hiding(struct char_data* ch, char);
 void do_power_of_arda(char_data* ch);
 
-string reverse_direction(int dir)
-{
-    switch (dir) {
-    case 0:
-        return ("the south");
-        break;
-    case 1:
-        return ("the west");
-        break;
-    case 2:
-        return ("the north");
-        break;
-    case 3:
-        return ("the east");
-        break;
-    case 4:
-        return ("below");
-        break;
-    case 5:
-        return ("above");
-        break;
-    };
-    return ("");
-}
-
 ACMD(do_look);
 
 bool should_double_strength(char_data* character)
@@ -607,8 +582,16 @@ bool is_exit_valid(const room_direction_data room_direction) {
 void msdp_room_update(char_data* ch) {
     if (utils::is_npc(*ch)) {
         return;
+    } 
+
+    if (!ch->desc->pProtocol) {
+        return;
     }
 
+    MSDPSetString(ch->desc, eMSDP_ROOM_NAME, world[ch->desc->character->in_room].name);
+    MSDPSetNumber(ch->desc, eMSDP_ROOM_VNUM, world[ch->desc->character->in_room].number);
+    
+      
     std::string msdp_room = {};
     msdp_room += (char)MSDP_VAR;
     msdp_room += "VNUM";

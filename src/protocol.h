@@ -142,7 +142,7 @@ typedef enum
     eMSDP_HEALTH_MAX,
     eMSDP_LEVEL,
     eMSDP_RACE,
-    eMSDP_CLASS,
+    eMSDP_CLASS, // TODO: reuse this
     eMSDP_MANA,
     eMSDP_MANA_MAX,
     eMSDP_WIMPY,
@@ -150,10 +150,10 @@ typedef enum
     eMSDP_MONEY,
     eMSDP_MOVEMENT,
     eMSDP_MOVEMENT_MAX,
-    eMSDP_HITROLL,
-    eMSDP_DAMROLL,
+    eMSDP_HITROLL, // TODO: reuse this
+    eMSDP_DAMROLL, // TODO: reuse this
     eMSDP_SPIRIT,
-    eMSDP_AC,
+    eMSDP_AC, // TODO: reuse this
     eMSDP_STR,
     eMSDP_INT,
     eMSDP_WILL,
@@ -221,6 +221,7 @@ typedef enum
     eMSDP_GAUGE_4,
     eMSDP_GAUGE_5,
 
+    /* Group Information  */
 
     eMSDP_MAX                   /* This must always be last */
 } variable_t;
@@ -229,11 +230,11 @@ typedef struct
 {
     variable_t   Variable;      /* The enum type of this variable */
     const char  *pName;         /* The string name of this variable */
-    bool       bString;       /* Is this variable a string or a number? */
-    bool       bConfigurable; /* Can it be configured by the client? */
-    bool       bWriteOnce;    /* Can only set this variable once */
-    bool       bGUI;          /* It's a special GUI configuration variable */
+    bool         bString;       /* Is this variable a string or a number? */
+    bool         bConfigurable; /* Can it be configured by the client? */
+    bool         bWriteOnce;    /* Can only set this variable once */
     int          Min;           /* The minimum valid value or string length */
+    bool         bGUI;          /* It's a special GUI configuration variable */
     int          Max;           /* The maximum valid value or string length */
     int          Default;       /* The default value for a number */
     const char  *pDefault;      /* The default value for a string */
@@ -243,8 +244,8 @@ typedef struct
 {
     bool       bReport;       /* Is this variable being reported? */
     bool       bDirty;        /* Does this variable need to be sent again? */
-    int          ValueInt;      /* The numeric value of the variable */
-    char        *pValueString;  /* The string value of the variable */
+    int        ValueInt;      /* The numeric value of the variable */
+    char      *pValueString;  /* The string value of the variable */
 } MSDP_t;
 
 typedef struct
@@ -257,22 +258,22 @@ typedef struct
 struct protocol_t
 {
     int       WriteOOB;         /* Used internally to indicate OOB data */
-    bool    Negotiated[eNEGOTIATED_MAX];
-    bool    bIACMode;         /* Current mode - deals with broken packets */
-    bool    bNegotiated;      /* Indicates client successfully negotiated */
-    bool    bRenegotiate;     /* Workaround for clients that autoconnect */
-    bool    bNeedMXPVersion;  /* Workaround for clients that autoconnect */
-    bool    bBlockMXP;        /* Used internally based on MXP version */
-    bool    bTTYPE;           /* The client supports TTYPE */
-    bool    bECHO;            /* Toggles ECHO on/off */
-    bool    bNAWS;            /* The client supports NAWS */
-    bool    bCHARSET;         /* The client supports CHARSET */
-    bool    bMSDP;            /* The client supports MSDP */
-    bool    bMSSP;            /* The client supports MSSP */
-    bool    bATCP;            /* The client supports ATCP */
-    bool    bMSP;             /* The client supports MSP */
-    bool    bMXP;             /* The client supports MXP */
-    bool    bMCCP;            /* The client supports MCCP */
+    bool      Negotiated[eNEGOTIATED_MAX];
+    bool      bIACMode;         /* Current mode - deals with broken packets */
+    bool      bNegotiated;      /* Indicates client successfully negotiated */
+    bool      bRenegotiate;     /* Workaround for clients that autoconnect */
+    bool      bNeedMXPVersion;  /* Workaround for clients that autoconnect */
+    bool      bBlockMXP;        /* Used internally based on MXP version */
+    bool      bTTYPE;           /* The client supports TTYPE */
+    bool      bECHO;            /* Toggles ECHO on/off */
+    bool      bNAWS;            /* The client supports NAWS */
+    bool      bCHARSET;         /* The client supports CHARSET */
+    bool      bMSDP;            /* The client supports MSDP */
+    bool      bMSSP;            /* The client supports MSSP */
+    bool      bATCP;            /* The client supports ATCP */
+    bool      bMSP;             /* The client supports MSP */
+    bool      bMXP;             /* The client supports MXP */
+    bool      bMCCP;            /* The client supports MCCP */
     support_t b256Support;      /* The client supports XTerm 256 colors */
     int       ScreenWidth;      /* The client's screen width */
     int       ScreenHeight;     /* The client's screen height */

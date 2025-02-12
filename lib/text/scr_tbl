@@ -104,8 +104,8 @@ script, then you will need to use a SEND function.
     IF_IS_NPC            DO_FOLLOW           OBJ_FROM_CHAR
     IF_STR_CONTAINS      DO_GIVE             OBJ_FROM_ROOM
     IF_STR_EQUAL         DO_HIT              OBJ_TO_CHAR
-                         DO_REMOVE           OBJ_TO_ROOM
-                         DO_SAY
+    IF_INT_GREATER       DO_REMOVE           OBJ_TO_ROOM
+    IF_INT_TRUE          DO_SAY
                          DO_SOCIAL
                          DO_WAIT
                          DO_YELL
@@ -815,6 +815,13 @@ script will skip the whole block if the integers are not equal.
 
 IF_INT_LESS - compares two integers to see if one is less than the other.
 Works in the same way as above.
+
+
+IF_INT_GREATER - compares two integers to see if one is greater than the other.
+Works in the same way as above.
+
+
+IF_INT_TRUE - check if an integer is true.
 
 
 IF_IS_NPC - if the character is an npc the next command is executed

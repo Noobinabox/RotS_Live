@@ -87,6 +87,8 @@
 #define SCRIPT_SET_INT_RANDOM 69 // Assign a random number between two values to an integer
 #define SCRIPT_EQUIP_CHAR 70 // Load a number of objects to a char and then do wear_all
 #define SCRIPT_SET_INT_WAR_STATUS 71 // Set an int to 1 if whities lead fame war, -1 if darkies lead fame war and 0 if the sides are equal
+#define SCRIPT_IF_INT_GREATER 72 //  Test to see whether one integer is greater than another
+#define SCRIPT_IF_INT_TRUE 73 //  Test to see whether one integer is greater than 0
 
 #define SCRIPT_COMMAND_NONE 99 //  Given to new or unused commands
 // 999 - reserved for script loading - do not use

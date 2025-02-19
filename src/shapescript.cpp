@@ -758,6 +758,16 @@ void show_command(char_data* ch, script_data* script)
             get_param_text(script->param[0]), get_param_text(script->param[1]), script->text);
         break;
 
+    case SCRIPT_IF_INT_GREATER:
+        sprintf(buf, "[%d] IF_INT_GREATER:      is %s greater than %s? (%s)\n\r", script->number,
+            get_param_text(script->param[0]), get_param_text(script->param[1]), script->text);
+        break;
+
+    case SCRIPT_IF_INT_TRUE:
+        sprintf(buf, "[%d] IF_INT_TRUE:         is %s true? (%s)\n\r", script->number,
+            get_param_text(script->param[0]), script->text);
+        break;
+
     case SCRIPT_IF_IS_NPC:
         sprintf(buf, "[%d] IF_IS_NPC:           is %s a mobile? (%s)\n\r", script->number,
             get_param_text(script->param[0]), script->text);
@@ -1305,6 +1315,7 @@ void extra_coms_script(struct char_data* ch, char* argument)
         memset(input[0], 0, 50);                                 \
         memset(input[1], 0, 50);                                 \
         memset(input[2], 0, 50);                                 \
+        memset(input[3], 0, 50);                                 \
         for (i = 0; i < num; i++) {                              \
             while ((arg[tmp2] != ' ') && (arg[tmp2]))            \
                 tmp2++;                                          \
@@ -1701,6 +1712,20 @@ void shape_center_script(struct char_data* ch, char* arg)
 
             case SCRIPT_IF_INT_LESS:
                 SCRIPTPARAMCHANGE("Enter integers to compare (eg int1 ch1.level)", 2);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+
+            case SCRIPT_IF_INT_GREATER:
+                SCRIPTPARAMCHANGE("Enter integers to compare (eg int1 ch1.level)", 2);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+
+            case SCRIPT_IF_INT_TRUE:
+                SCRIPTPARAMCHANGE("Enter integer to test (eg int1 ch1.level)", 2);
                 SHAPE_SCRIPT(ch)
                     ->editflag
                     = 5;
@@ -2279,6 +2304,10 @@ int get_command(char* command)
             return SCRIPT_IF_INT_EQUAL;
         if (!strcmp(command, "IF_INT_LESS"))
             return SCRIPT_IF_INT_LESS;
+        if (!strcmp(command, "IF_INT_GREATER"))
+            return SCRIPT_IF_INT_GREATER;
+        if (!strcmp(command, "IF_INT_TRUE"))
+            return SCRIPT_IF_INT_TRUE;
         if (!strcmp(command, "IF_IS_NPC"))
             return SCRIPT_IF_IS_NPC;
         if (!strcmp(command, "IF_STR_CONTAINS"))

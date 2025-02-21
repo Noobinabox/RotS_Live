@@ -1476,7 +1476,6 @@ int run_script(struct info_script* info, struct script_data* position)
                     if (IS_RIDING(tmpch))
                         stop_riding(tmpch);
                     char_from_room(tmpch);
-                    char_to_room(tmpch, tmpint);
                     char_to_room(tmpch, real_room(tmprm->number));
                 }
             }

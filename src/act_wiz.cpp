@@ -31,7 +31,7 @@
 #include "warrior_spec_handlers.h"
 #include "zone.h"
 
-#define IMM_SEE_INVIS_OBJ_MIN_LVL 92
+const int IMM_SEE_INVIS_OBJ_MIN_LVL = 92;
 
 /*   external vars  */
 extern FILE* player_fl;

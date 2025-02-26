@@ -1146,27 +1146,30 @@ int run_script(struct info_script* info, struct script_data* position)
             break;
         
         case SCRIPT_IF_INT_FALSE:
-            if (curr->param[0]) {
-                ptrint = 0;
-                ptrint = get_int_param(curr->param[0], info);
-                if (!ptrint) {
-                    exit = TRUE;
-                    break;
-                }
-                if (*ptrint < 1) {
-                    curr = curr->next;
-                } else {
-                    if (curr->next) {
-                        if (curr->next->command_type == SCRIPT_BEGIN) {
-                            curr = curr->next;
-                            curr = get_next_command(curr);
-                        } else
-                            curr = curr->next->next;
-                    } else
-                        exit = TRUE;
-                }
-            } else
+            if (!curr->param[0]) {
                 exit = TRUE;
+                break;
+            }
+            ptrint = 0;
+            ptrint = get_int_param(curr->param[0], info);
+            if (!ptrint) {
+                exit = TRUE;
+                break;
+            }
+            if (*ptrint < 1) {
+                curr = curr->next;
+            } else {
+                if (curr->next) {
+                    if (curr->next->command_type == SCRIPT_BEGIN) {
+                        curr = curr->next;
+                        curr = get_next_command(curr);
+                    } else {
+                        curr = curr->next->next;
+                    }
+                } else {
+                    exit = TRUE;
+                }
+            }
             break;
 
         case SCRIPT_IF_IS_NPC:
@@ -1461,9 +1464,8 @@ int run_script(struct info_script* info, struct script_data* position)
                 tmpch = get_char_param(curr->param[1], info);
                 tmpint = real_room(curr->param[0]);
                 if ((tmpch) && (tmpint > -1)) {
-                    if (IS_RIDING(tmpch)) {
+                    if (IS_RIDING(tmpch))
                         stop_riding(tmpch);
-                    }
                     char_from_room(tmpch);
                     char_to_room(tmpch, tmpint);
                 }
@@ -1476,8 +1478,9 @@ int run_script(struct info_script* info, struct script_data* position)
                 tmpch = get_char_param(curr->param[1], info);
                 tmprm = get_room_param(curr->param[0], info);
                 if ((tmpch) && (tmpint > -1)) {
-                    if (IS_RIDING(tmpch))
+                    if (IS_RIDING(tmpch)) {
                         stop_riding(tmpch);
+                    }
                     char_from_room(tmpch);
                     char_to_room(tmpch, real_room(tmprm->number));
                 }

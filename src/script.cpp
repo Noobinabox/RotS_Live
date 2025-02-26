@@ -1149,21 +1149,22 @@ int run_script(struct info_script* info, struct script_data* position)
             if (curr->param[0]) {
                 ptrint = 0;
                 ptrint = get_int_param(curr->param[0], info);
-                if (ptrint) {
-                    if (*ptrint < 1) {
-                        curr = curr->next;
-                    } else {
-                        if (curr->next) {
-                            if (curr->next->command_type == SCRIPT_BEGIN) {
-                                curr = curr->next;
-                                curr = get_next_command(curr);
-                            } else
-                                curr = curr->next->next;
-                        } else
-                            exit = TRUE;
-                    }
-                } else
+                if (!ptrint) {
                     exit = TRUE;
+                    break;
+                }
+                if (*ptrint < 1) {
+                    curr = curr->next;
+                } else {
+                    if (curr->next) {
+                        if (curr->next->command_type == SCRIPT_BEGIN) {
+                            curr = curr->next;
+                            curr = get_next_command(curr);
+                        } else
+                            curr = curr->next->next;
+                    } else
+                        exit = TRUE;
+                }
             } else
                 exit = TRUE;
             break;
@@ -1264,8 +1265,9 @@ int run_script(struct info_script* info, struct script_data* position)
         case SCRIPT_LOAD_OBJ_X:
             if (curr->param[0] && curr->param[1]) {
                 tmpobj = read_object(info->ob[0]->item_number, REAL);
-                if (tmpobj)
+                if (tmpobj) {
                     assign_obj_param(curr->param[1], info, tmpobj);
+                }
             }
             curr = curr->next;
             break;
@@ -1459,8 +1461,9 @@ int run_script(struct info_script* info, struct script_data* position)
                 tmpch = get_char_param(curr->param[1], info);
                 tmpint = real_room(curr->param[0]);
                 if ((tmpch) && (tmpint > -1)) {
-                    if (IS_RIDING(tmpch))
+                    if (IS_RIDING(tmpch)) {
                         stop_riding(tmpch);
+                    }
                     char_from_room(tmpch);
                     char_to_room(tmpch, tmpint);
                 }

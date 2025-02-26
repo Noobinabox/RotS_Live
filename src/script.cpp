@@ -1170,20 +1170,26 @@ int run_script(struct info_script* info, struct script_data* position)
         case SCRIPT_IF_ROOM_SUNLIT:
             if (!curr->param[0]) { 
                 exit = TRUE;
+                break;
             }
             tmprm = get_room_param(curr->param[0], info);
             if (!tmprm) {
                 exit = TRUE;
+                break;
             }
             if (IS_SUNLIT(tmprm->number)) {
                 curr = curr->next;
             } else {
-                if (!curr->next) { exit = TRUE; break; }
+                if (!curr->next) {
+                    exit = TRUE;
+                    break;
+                }
                 if (curr->next->command_type == SCRIPT_BEGIN) {
                     curr = curr->next;
                     curr = get_next_command(curr);
-                } else
+                } else {
                     curr = curr->next->next;
+                }
             }
             break;
             

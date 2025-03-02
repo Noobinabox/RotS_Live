@@ -653,11 +653,13 @@ ASPELL(spell_divination)
     sprintf(buff, "Living beings in the room:\n\r");
     if (cur_room.people) {
         for (char_data* character = cur_room.people; character; character = character->next_in_room) {
-            strcat(buff, GET_NAME(character));
-            if (character->next_in_room) {
-                strcat(buff, ", ");
-            } else {
-                strcat(buff, ".\n\r");
+            if(caster->player.level >= GET_INVIS_LEV(character)) {
+                strcat(buff, GET_NAME(character));
+                if (character->next_in_room) {
+                    strcat(buff, ", ");
+                } else {
+                    strcat(buff, ".\n\r");
+                }
             }
         }
         send_to_char(buff, caster);
@@ -668,11 +670,13 @@ ASPELL(spell_divination)
     if (cur_room.contents) {
         sprintf(buff, "Objects in the room:\n\r");
         for (obj_data* item = cur_room.contents; item; item = item->next_content) {
-            strcat(buff, item->short_description);
-            if (item->next_content) {
-                strcat(buff, ", ");
-            } else {
-                strcat(buff, ".\n\r");
+            if (CAN_SEE_OBJ(caster, item)) {
+                strcat(buff, item->short_description);
+                if (item->next_content) {
+                    strcat(buff, ", ");
+                } else {
+                    strcat(buff, ".\n\r");
+                }
             }
         }
         send_to_char(buff, caster);

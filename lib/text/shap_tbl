@@ -1167,12 +1167,14 @@ The if_flags are as follows :
 24 -- perform if total whitie fame is *NOT* greater than darkie fame
 32 -- perform if total darkie fame is greater than total whitie fame
 40 -- perform if total darkie fame is *NOT* greater than whitie fame
+64 -- perform if sun is up
+72 -- perform if sun is *NOT* up
 
 Note that the if_flag is a bit vector.  The above values are sample
 values for people who do not need complex if flags.  The bit vector
 works as follows:
 
-    |  1 |  2 |  4 |  8 | 16 | 32 |    |    |    |  . . .
+    |  1 |  2 |  4 |  8 | 16 | 32 | 64 |    |    |  . . .
 
 In order to require that multiple events happen, simply add if values
 1, 2, 4, 8, 16 and 32.  The values 9, 10, 12, 24 and 40 CANNOT be

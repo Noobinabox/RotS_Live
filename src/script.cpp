@@ -732,6 +732,7 @@ int run_script(struct info_script* info, struct script_data* position)
     char_data* tmpch2;
     struct waiting_type tmpwtl;
     obj_data* tmpobj = 0;
+    int tobjcnt;
     int tmpint, tmpint2;
     struct follow_type *k, *next_fol;
 
@@ -769,8 +770,10 @@ int run_script(struct info_script* info, struct script_data* position)
             if (curr->param[0] && curr->param[1] && curr->param[2] && curr->param[3]) {
                 tmpobj = 0;
                 tmpch = get_char_param(curr->param[2], info);
-                if (tmpch)
+                if (tmpch) {
                     tmpobj = get_obj_in_list_num_containers(real_object(curr->param[0]), tmpch->carrying);
+                    tobjcnt = count_obj_in_list(real_object(curr->param[0]), tmpch->carrying);
+                }
                 ptrint = get_int_param(curr->param[3], info);
 
                 // just in case somone puts something like obj1.vnum here...
@@ -779,7 +782,7 @@ int run_script(struct info_script* info, struct script_data* position)
                 if (tmpobj) {
                     assign_obj_param(curr->param[1], info, tmpobj);
                     if (ptrint)
-                        *ptrint = 1;
+                        *ptrint = tobjcnt;
                 } else if (ptrint)
                     *ptrint = 0;
             }
@@ -790,8 +793,10 @@ int run_script(struct info_script* info, struct script_data* position)
             if (curr->param[0] && curr->param[1] && curr->param[2] && curr->param[3]) {
                 tmpobj = 0;
                 tmprm = get_room_param(curr->param[2], info);
-                if (tmprm)
+                if (tmprm) {
                     tmpobj = get_obj_in_list_vnum(curr->param[0], tmprm->contents);
+                    tobjcnt = count_obj_in_list(real_object(curr->param[0]), tmprm->contents);
+                }
                 ptrint = get_int_param(curr->param[3], info);
 
                 // just in case somone puts something like obj1.vnum here...
@@ -800,7 +805,7 @@ int run_script(struct info_script* info, struct script_data* position)
                 if (tmpobj) {
                     assign_obj_param(curr->param[1], info, tmpobj);
                     if (ptrint)
-                        *ptrint = 1;
+                        *ptrint = tobjcnt;
                 } else if (ptrint)
                     *ptrint = 0;
             }
@@ -1092,6 +1097,54 @@ int run_script(struct info_script* info, struct script_data* position)
                 exit = TRUE;
             break;
 
+        case SCRIPT_IF_INT_GREATER:
+            if (curr->param[0] && curr->param[1]) {
+                ptrint = 0;
+                ptrint2 = 0;
+                ptrint = get_int_param(curr->param[0], info);
+                ptrint2 = get_int_param(curr->param[1], info);
+                if (ptrint && ptrint2) {
+                    if (*ptrint > *ptrint2) {
+                        curr = curr->next;
+                    } else {
+                        if (curr->next) {
+                            if (curr->next->command_type == SCRIPT_BEGIN) {
+                                curr = curr->next;
+                                curr = get_next_command(curr);
+                            } else
+                                curr = curr->next->next;
+                        } else
+                            exit = TRUE;
+                    }
+                } else
+                    exit = TRUE;
+            } else
+                exit = TRUE;
+            break;
+
+        case SCRIPT_IF_INT_TRUE:
+            if (curr->param[0]) {
+                ptrint = 0;
+                ptrint = get_int_param(curr->param[0], info);
+                if (ptrint) {
+                    if (*ptrint > 0) {
+                        curr = curr->next;
+                    } else {
+                        if (curr->next) {
+                            if (curr->next->command_type == SCRIPT_BEGIN) {
+                                curr = curr->next;
+                                curr = get_next_command(curr);
+                            } else
+                                curr = curr->next->next;
+                        } else
+                            exit = TRUE;
+                    }
+                } else
+                    exit = TRUE;
+            } else
+                exit = TRUE;
+            break;
+
         case SCRIPT_IF_IS_NPC:
             if (curr->param[0]) {
                 tmpch = get_char_param(curr->param[0], info);
@@ -1114,6 +1167,32 @@ int run_script(struct info_script* info, struct script_data* position)
                 exit = TRUE;
             break;
 
+        case SCRIPT_IF_ROOM_SUNLIT:
+            if (!curr->param[0]) { 
+                exit = TRUE;
+                break;
+            }
+            tmprm = get_room_param(curr->param[0], info);
+            if (!tmprm) {
+                exit = TRUE;
+                break;
+            }
+            if (IS_SUNLIT(tmprm->number)) {
+                curr = curr->next;
+            } else {
+                if (!curr->next) {
+                    exit = TRUE;
+                    break;
+                }
+                if (curr->next->command_type == SCRIPT_BEGIN) {
+                    curr = curr->next;
+                    curr = get_next_command(curr);
+                } else {
+                    curr = curr->next->next;
+                }
+            }
+            break;
+            
         case SCRIPT_IF_STR_CONTAINS:
             if (curr->param[0]) {
                 txt1 = get_text_param(curr->param[0], info);

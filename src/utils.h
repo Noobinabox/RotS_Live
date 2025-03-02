@@ -236,6 +236,8 @@ void untrack_specialized_mage(char_data* mage);
 
 #define IS_LIGHT(room) (!IS_DARK(room))
 
+#define IS_SUNLIT(room) ((weather_info.sunlight == SUN_LIGHT || weather_info.sunlight == SUN_RISE) && IS_LIGHT(room))
+
 #define GET_INVIS_LEV(ch) ((ch)->specials.invis_level)
 
 #define WIMP_LEVEL(ch) ((ch)->specials2.wimp_level)

@@ -773,6 +773,11 @@ void show_command(char_data* ch, script_data* script)
             get_param_text(script->param[0]), script->text);
         break;
 
+    case SCRIPT_IF_ROOM_SUNLIT:
+        sprintf(buf, "[%d] IF_ROOM_SUNLIT:      does %s have sun? (%s)\n\r", script->number,
+            get_param_text(script->param[0]), script->text);
+        break;
+    
     case SCRIPT_IF_STR_CONTAINS:
         sprintf(buf, "[%d] IF_STR_CONTAINS:     does %s contain "
                      "%s"
@@ -1738,6 +1743,13 @@ void shape_center_script(struct char_data* ch, char* arg)
                     = 5;
                 break;
 
+            case SCRIPT_IF_ROOM_SUNLIT:
+                SCRIPTPARAMCHANGE("Enter room to check if the sun is out (eg ch1.room)", 1);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+            
             case SCRIPT_IF_STR_CONTAINS:
                 SCRIPTPARAMCHANGE("Enter main string variable which you want to check (eg ch1.name, str1)", 1);
                 SHAPE_SCRIPT(ch)
@@ -2310,6 +2322,8 @@ int get_command(char* command)
             return SCRIPT_IF_INT_TRUE;
         if (!strcmp(command, "IF_IS_NPC"))
             return SCRIPT_IF_IS_NPC;
+        if (!strcmp(command, "IF_ROOM_SUNLIT"))
+            return SCRIPT_IF_ROOM_SUNLIT;
         if (!strcmp(command, "IF_STR_CONTAINS"))
             return SCRIPT_IF_STR_CONTAINS;
         if (!strcmp(command, "IF_STR_EQUAL"))

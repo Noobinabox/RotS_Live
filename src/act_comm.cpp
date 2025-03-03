@@ -115,6 +115,12 @@ ACMD(do_say)
     }
 }
 
+
+void convert_string(const char* str, int hide_invisible, struct char_data* ch,
+    struct obj_data* obj, void* vict_obj,
+    struct char_data* to, const char* buf);
+extern char act_buffer[MAX_STRING_LENGTH];
+
 ACMD(do_gsay)
 {
     int message_index = 0;
@@ -143,8 +149,11 @@ ACMD(do_gsay)
         // Alert the player that their message has been sent.
         if (PRF_FLAGGED(ch, PRF_ECHO)) {
             sprintf(buf, "$CGYou group-say '%s'\n\r", argument + message_index);
-            act(buf, FALSE, ch, NULL, NULL, TO_CHAR);
-            // send_to_char(buf, ch);
+            char* str = act_buffer;
+            // Had to mimic act() but can't use it because of position check and
+            // send_to_char won't do coloring.
+            convert_string(buf, FALSE, ch, NULL, NULL, ch, str);
+            SEND_TO_Q(str, ch->desc);
         } else {
             send_to_char("Ok.\n\r", ch);
         }

@@ -80,6 +80,7 @@ void big_brother::populate_skill_sets()
     m_harmful_skills.insert(SPELL_WORD_OF_SHOCK);
     m_harmful_skills.insert(SPELL_LEACH);
     m_harmful_skills.insert(SPELL_BLACK_ARROW);
+    m_harmful_skills.insert(SPELL_SPEAR_OF_DARKNESS);
     m_harmful_skills.insert(SPELL_CONFUSE);
     m_harmful_skills.insert(SKILL_TRAP);
     m_harmful_skills.insert(SKILL_WINDBLAST);

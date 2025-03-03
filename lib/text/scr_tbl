@@ -106,7 +106,8 @@ script, then you will need to use a SEND function.
     IF_STR_EQUAL         DO_HIT              OBJ_FROM_ROOM
     IF_INT_GREATER       DO_REMOVE           OBJ_TO_CHAR
     IF_INT_TRUE          DO_SAY              OBJ_TO_ROOM
-    IF_INT_FALSE         DO_SOCIAL
+    IF_INT_FALSE         DO_SOCIAL           IF_ROOM_SUNLIT
+
                          DO_WAIT
                          DO_YELL
 
@@ -829,6 +830,10 @@ IF_INT_FALSE - check if an integer is false.
 
 IF_IS_NPC - if the character is an npc the next command is executed
 - Paramters: ch1, ch2, ch3
+
+
+IF_ROOM_SUNLIT - if the room is lit by the sun the next command is executed
+- Paramters: room (ch1.room)
 
 
 IF_STR_CONTAINS - if a text field contains the specified text the next command is executed. Enter the specified text in UPPERCASE.

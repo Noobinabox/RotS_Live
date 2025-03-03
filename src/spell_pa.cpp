@@ -583,7 +583,7 @@ ACMD(do_cast)
             }
             spell_index = tmp;
 
-        } else if (wtl && (wtl->targ1.type == TARGET_OTHER)) {
+        } else if (wtl && (wtl->targ1.type == TARGET_OTHER || (wtl->targ1.type != TARGET_OTHER && wtl->targ1.ch_num == SPELL_CURE_SELF))) {
             spell_index = wtl->targ1.ch_num;
         } else { // wtl is no good, using the argument line.
             if (!argument) {

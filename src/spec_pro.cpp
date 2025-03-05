@@ -1603,6 +1603,293 @@ SPECIAL(mob_magic_user)
     return FALSE;
 }
 
+// TODO: firebolt only, is returning FALSE -- causing a second action to kick off??
+// note: also see spec_pro_message
+SPECIAL(mob_magic_user_spec)
+{
+    struct char_data *tmpch, *tmpch_next;
+    char_data* target;
+    int spell_number = 0, tgt;
+
+    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host); // casters health percentage
+    double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host); // casters mana percentage
+
+    char *fm = strstr(host->player.name, "fmage");
+    char *lm = strstr(host->player.name, "lmage");
+    char *cm = strstr(host->player.name, "cmage");
+    char *dm = strstr(host->player.name, "dmage");
+    char *om = strstr(host->player.name, "lumage");
+    char *cj = strstr(host->player.name, "conj");
+
+    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)           /// WHAT is SPECIAL_SELF ??
+        return FALSE;
+
+    //if (host->delay.wait_value && host->delay.subcmd) {
+    if (host->delay.wait_value && host->delay.cmd) {
+        return FALSE;
+    }
+
+    if(host->interrupt_count > 0) {
+        if(strstr(host->player.name, "debug")) {
+            sprintf(buf, "Interrupt count: %d",  host->interrupt_count);
+            mudlog(buf, SPL, LEVEL_GOD, FALSE);
+        }
+    }
+
+    // do conj
+    if(!host->specials.fighting && cj) {
+        // handle regen
+        if(!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_REGENERATION;
+            host->points.spirit = 100;
+        }
+
+        // handle curing sat
+        if(!utils::is_affected_by_spell(*host, SPELL_CURING) && spell_number == 0) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_CURING;
+            host->points.spirit = 100;
+        }
+    }
+
+    // handle cure self
+    if(!host->specials.fighting && spell_number == 0) {
+        host->interrupt_count = 0;
+        host->interrupt_time = 0;
+
+        if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
+           (current_health_pct <= .9 &&  utils::is_affected_by_spell(*host, SPELL_SHIELD)  && current_mana_pct >= .5)) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_CURE_SELF;
+        }
+    }
+
+    // Handle interrupts and switch tactics ability
+    if(host->specials.fighting && host->interrupt_count > 0 && spell_number == 0) {
+        if(host->interrupt_time > 0) {
+            host->interrupt_time = host->interrupt_time - 1;
+            if(strstr(host->player.name, "debug")) {
+                sprintf(buf, "Interrupt deduct time, remaining: %d",  host->interrupt_time);
+                mudlog(buf, BRF, LEVEL_GOD, FALSE);
+            }
+            if(host->interrupt_time == 0) {
+                host->interrupt_count = host->interrupt_count - 1;
+                if(strstr(host->player.name, "debug")) {
+                    mudlog("Interrupt deducting 1", BRF, LEVEL_GOD, FALSE);
+                }
+                if(host->interrupt_count > 0) {
+                    host->interrupt_time = 10;
+                    if(strstr(host->player.name, "debug")) {
+                        mudlog("Interrupt RESET timer", BRF, LEVEL_GOD, FALSE);
+                    }
+                }
+            }
+        }
+        if(host->interrupt_count >= 3) {
+            if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                    if (tmpch->specials.fighting == host) {
+                        send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
+                        stop_fighting(tmpch);
+                    }
+                }
+                stop_fighting(host);
+                target = host;
+                tgt = TARGET_CHAR;
+                spell_number = SPELL_SHIELD;
+            }
+        }
+    }
+
+    // Damage Spells
+    if(target != host) {
+        target = choose_caster_target(host);
+        if (target == nullptr) {
+            return FALSE;
+        }
+        if(host->specials.fighting) {
+            tgt = TARGET_OTHER;
+
+            if(fm) {
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_CHILL_RAY, SPELL_FIREBOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_FIREBOLT, SPELL_FIREBALL};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    int my_tmp_spells[] = {SPELL_FIREBALL};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                }
+
+            } else if(lm) {
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                        int my_tmp_spells[] = {SPELL_LIGHTNING_STRIKE};
+                        int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                        int chance = number(0, len);
+                        spell_number = my_tmp_spells[chance];
+                    } else {
+                        int my_tmp_spells[] = {SPELL_LIGHTNING_BOLT};
+                        int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                        int chance = number(0, len);
+                        spell_number = my_tmp_spells[chance];
+                    }
+                }
+
+            } else if(cm) {
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    int my_tmp_spells[] = {SPELL_CONE_OF_COLD};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                }
+
+            } else if(dm) {
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_CHILL_RAY, SPELL_DARK_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    int my_tmp_spells[] = {SPELL_SEARING_DARKNESS};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                }
+
+            } else if(om) { //lhu
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_LEACH, SPELL_DARK_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    if(SUN_PENALTY(host)) {
+                        int my_tmp_spells[] = {SPELL_WORD_OF_AGONY};
+                        int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                        int chance = number(0, len);
+                        spell_number = my_tmp_spells[chance];
+                    } else {
+                        int my_tmp_spells[] = {SPELL_SPEAR_OF_DARKNESS};
+                        int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                        int chance = number(0, len);
+                        spell_number = my_tmp_spells[chance];
+                    }
+                }
+
+            } else {
+                if(current_health_pct <= .25) {
+                    int my_tmp_spells[] = {SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .5) {
+                    int my_tmp_spells[] = {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else if(current_health_pct <= .75) {
+                    int my_tmp_spells[] = {SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                } else {
+                    int my_tmp_spells[] = {SPELL_FIREBOLT, SPELL_EARTHQUAKE};
+                    int len = (sizeof my_tmp_spells / sizeof my_tmp_spells[0]) - 1;
+                    int chance = number(0, len);
+                    spell_number = my_tmp_spells[chance];
+                }
+            }
+        }
+    }
+
+    if (spell_number == 0) {
+        return FALSE;
+    }
+    if(strstr(host->player.name, "debug")) {
+        sprintf(buf, "Prog Spell Info-> CH: %s,  Spell: %d, Tgt: %d", GET_NAME(target), spell_number, tgt);
+        mudlog(buf, SPL, LEVEL_GOD, FALSE);
+    }
+    waiting_type wtl_base;
+    wtl_base.cmd = CMD_CAST;
+    wtl_base.subcmd = 0;
+    wtl_base.targ1.ch_num = spell_number;
+    wtl_base.targ1.type = tgt;
+    wtl_base.targ2.ptr.ch = target;
+    wtl_base.targ2.ch_num = target->abs_number;
+    wtl_base.targ2.type = TARGET_CHAR;
+    wtl_base.targ2.choice = TAR_CHAR_ROOM;
+    wtl_base.flg = 1;
+    do_cast(host, "", &wtl_base, CMD_CAST, 0);
+    return TRUE;
+}
+
 int warrior_abilities[] = {
     CMD_KICK,
     CMD_BASH,

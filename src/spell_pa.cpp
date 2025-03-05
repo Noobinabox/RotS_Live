@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "comm.h"
 #include "db.h"
@@ -539,11 +540,24 @@ ACMD(do_cast)
     struct waiting_type tmpwtl;
     int casting_time;
 
+    int npc_can_cast_self = 0;
+    int npc_self_spells[] = {SPELL_REGENERATION, SPELL_CURE_SELF, SPELL_CURING, SPELL_SHIELD};
+    int nss_len = sizeof npc_self_spells / sizeof npc_self_spells[0];
+
     tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
     player_spec::battle_mage_handler battle_mage_handler(ch);
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
+        if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {
+            if(strstr(ch->player.name, "debug")) {
+                mudlog( "Interrupted", SPL, LEVEL_GOD, FALSE);
+            }
+            ch->interrupt_count = ch->interrupt_count + 1;
+            if(ch->interrupt_time == 0) {
+                ch->interrupt_time = 10;
+            }
+        }
         return;
     }
 
@@ -567,6 +581,14 @@ ACMD(do_cast)
 
     int spell_index = 0;
     if (!wtl || (wtl && !wtl->subcmd)) {
+        /* handling for later check to see if mob can cast self */
+        for (int i = 0; i < nss_len; i++) {
+            if (npc_self_spells[i] == wtl->targ1.ch_num) {
+                npc_can_cast_self = 1;
+                break;
+            }
+        }
+
         /* this takes the argument from the target parser */
         if (wtl && (wtl->targ1.type == TARGET_TEXT)) {
             arg = wtl->targ1.ptr.text->text;
@@ -583,7 +605,8 @@ ACMD(do_cast)
             }
             spell_index = tmp;
 
-        } else if (wtl && (wtl->targ1.type == TARGET_OTHER || (wtl->targ1.type != TARGET_OTHER && wtl->targ1.ch_num == SPELL_CURE_SELF))) {
+        // npc_can_cast_self
+        } else if (wtl && (wtl->targ1.type == TARGET_OTHER || (wtl->targ1.type != TARGET_OTHER && npc_can_cast_self))) {
             spell_index = wtl->targ1.ch_num;
         } else { // wtl is no good, using the argument line.
             if (!argument) {
@@ -695,6 +718,11 @@ ACMD(do_cast)
                 } else if (GET_CASTING(ch) == CASTING_SLOW) {
                     casting_time = int(CASTING_TIME(ch, spell_index) / .75);
                 }
+            }
+
+            if(strstr(ch->player.name, "debug")) {
+                sprintf(buf, "DO_CAST-> Casting: %d, Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
+                mudlog(buf, SPL, LEVEL_GOD, FALSE);
             }
 
             WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);

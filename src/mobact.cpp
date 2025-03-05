@@ -19,6 +19,7 @@
 #include "interpre.h"
 #include "structs.h"
 #include "utils.h"
+#include <string.h>
 
 /* external structs */
 extern struct char_data* character_list;
@@ -81,6 +82,12 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
+    if(strstr(ch->player.name, "debug")) {
+        sprintf(buf, "MOB_ACT-> Initial DelayCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
+            ch->delay.cmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
+        mudlog(buf, SPL, LEVEL_GOD, FALSE);
+    }
+
     if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
         sprintf(buf, "mobile_act called for %s in %d.",
             GET_NAME(ch), ch->in_room);
@@ -124,6 +131,18 @@ void one_mobile_activity(char_data* ch)
                     return;
                 }
             }
+        }
+
+        // This is working like a rescue, when ch is already busy (occurs when methods above return FALSE when they should be TRUE)
+        if(ch->delay.wait_value && ch->delay.cmd) {
+            // NOTE: swap the next 2 conditions to see all the failing? mobs
+            //if(TRUE) {
+            if(strstr(ch->player.name, "debug")) {
+                sprintf(buf, "DOUBLE_MOB_ACT-> Mob Vnum: %d, Proc DelayCmd: %d, DelayTime: %d", mob_index[ch->nr].virt, ch->delay.cmd, ch->delay.wait_value);
+                mudlog(buf, SPL, LEVEL_GOD, FALSE);
+                mudlog("MOB_ACT-> Proc is Busy so RETURNING", SPL, LEVEL_GOD, FALSE);
+            }
+            return;
         }
 
         /* mob - helper */

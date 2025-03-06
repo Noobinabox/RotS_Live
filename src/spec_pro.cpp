@@ -1609,10 +1609,10 @@ SPECIAL(mob_magic_user_spec)
 {
     struct char_data *tmpch, *tmpch_next;
     char_data* target;
-    int spell_number = 0, tgt;
+    int tgt, spell_number = 0;
 
-    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host); // casters health percentage
-    double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host); // casters mana percentage
+    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
+    double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
     char *fm = strstr(host->player.name, "fmage");
     char *lm = strstr(host->player.name, "lmage");
@@ -1621,10 +1621,10 @@ SPECIAL(mob_magic_user_spec)
     char *om = strstr(host->player.name, "lumage");
     char *cj = strstr(host->player.name, "conj");
 
-    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)           /// WHAT is SPECIAL_SELF ??
+    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
-    //if (host->delay.wait_value && host->delay.subcmd) {
+    //if (host->delay.wait_value && host->delay.subcmd) { // was there a reason mob_magic_user checks delay.subcmd instead of delay.cmd??
     if (host->delay.wait_value && host->delay.cmd) {
         return FALSE;
     }

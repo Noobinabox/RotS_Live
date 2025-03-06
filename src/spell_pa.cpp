@@ -581,7 +581,7 @@ ACMD(do_cast)
 
     int spell_index = 0;
     if (!wtl || (wtl && !wtl->subcmd)) {
-        /* handling for later check to see if mob can cast self */
+        /* is mob allowed to cast this spell on self? */
         for (int i = 0; i < nss_len; i++) {
             if (npc_self_spells[i] == wtl->targ1.ch_num) {
                 npc_can_cast_self = 1;

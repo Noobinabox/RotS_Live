@@ -550,9 +550,7 @@ ACMD(do_cast)
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
         if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {
-            if(strstr(ch->player.name, "debug")) {
-                mudlog( "Interrupted", SPL, LEVEL_GOD, FALSE);
-            }
+            mudlog_debug_mob("Interrupted", ch);
             ch->interrupt_count = ch->interrupt_count + 1;
             if(ch->interrupt_time == 0) {
                 ch->interrupt_time = 10;
@@ -720,10 +718,8 @@ ACMD(do_cast)
                 }
             }
 
-            if(strstr(ch->player.name, "debug")) {
-                sprintf(buf, "DO_CAST-> Casting: %d, Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
-                mudlog(buf, SPL, LEVEL_GOD, FALSE);
-            }
+            sprintf(buf, "DO_CAST-> Casting: %d, Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
+            mudlog_debug_mob(buf, ch);
 
             WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
             ch->delay.targ1 = tmpwtl.targ1;

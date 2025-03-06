@@ -82,11 +82,9 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
-    if(strstr(ch->player.name, "debug")) {
-        sprintf(buf, "MOB_ACT-> Initial DelayCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
-            ch->delay.cmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
-        mudlog(buf, SPL, LEVEL_GOD, FALSE);
-    }
+    sprintf(buf, "MOB_ACT-> Initial DelayCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
+        ch->delay.cmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
+    mudlog_debug_mob("Interrupted", ch);
 
     if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
         sprintf(buf, "mobile_act called for %s in %d.",
@@ -138,10 +136,9 @@ void one_mobile_activity(char_data* ch)
             // NOTE: swap the next 2 conditions to see ALL loaded mobs as they try to find another cmd to do while they are already busy (very noisy)
             //if(TRUE) {
             if(strstr(ch->player.name, "debug")) {
-                sprintf(buf, "DOUBLE_MOB_ACT-> Mob Vnum: %d, Proc DelayCmd: %d, DelayTime: %d", mob_index[ch->nr].virt, ch->delay.cmd, ch->delay.wait_value);
                 mudlog(buf, SPL, LEVEL_GOD, FALSE);
-                mudlog("MOB_ACT-> Proc is Busy so RETURNING", SPL, LEVEL_GOD, FALSE);
             }
+            mudlog_debug_mob("MOB_ACT-> Proc is Busy so RETURNING", ch);
             return;
         }
 

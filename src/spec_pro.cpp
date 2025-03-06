@@ -1674,18 +1674,13 @@ SPECIAL(mob_magic_user_spec)
     if(host->specials.fighting && host->interrupt_count > 0 && spell_number == 0) {
         if(host->interrupt_time > 0) {
             host->interrupt_time = host->interrupt_time - 1;
-
             sprintf(buf, "Interrupt deduct time, remaining: %d",  host->interrupt_time);
             mudlog_debug_mob(buf, host);
-
             if(host->interrupt_time == 0) {
                 host->interrupt_count = host->interrupt_count - 1;
-
                 mudlog_debug_mob("Interrupt deducting 1", host);
-
                 if(host->interrupt_count > 0) {
                     host->interrupt_time = 10;
-
                     mudlog_debug_mob("Interrupt RESET timer", host);
                 }
             }
@@ -1821,10 +1816,9 @@ SPECIAL(mob_magic_user_spec)
     if (spell_number == 0) {
         return FALSE;
     }
-    if(strstr(host->player.name, "debug")) {
-        sprintf(buf, "Prog Spell Info-> CH: %s,  Spell: %d, Tgt: %d", GET_NAME(target), spell_number, tgt);
-        mudlog(buf, SPL, LEVEL_GOD, FALSE);
-    }
+    sprintf(buf, "Prog Spell Info-> CH: %s,  Spell: %d, Tgt: %d", GET_NAME(target), spell_number, tgt);
+    mudlog_debug_mob(buf, host);
+    
     waiting_type wtl_base;
     wtl_base.cmd = CMD_CAST;
     wtl_base.subcmd = 0;

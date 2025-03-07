@@ -1630,12 +1630,7 @@ SPECIAL(mob_magic_user_spec) {
     char *om = strstr(host->player.name, "lumage");
     char *cj = strstr(host->player.name, "conj");
 
-    if(host->interrupt_count > 0) {
-        sprintf(buf, "INTERUPT::CNT-> cnt: %d",  host->interrupt_count);
-        mudlog_debug_mob(buf, host);
-    }
-
-    // do conj
+    // conj: prioritize heal powers in non-combat
     if(!host->specials.fighting && cj) {
         // handle regen
         if(!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
@@ -1654,10 +1649,11 @@ SPECIAL(mob_magic_user_spec) {
         }
     }
 
-    // handle cure self
+    // handle the rest of non-combat
     if(!host->specials.fighting && spell_number == 0) {
         host->interrupt_count = 0;
         host->interrupt_time = 0;
+        // handle cure self
         if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
            (current_health_pct <= .9 &&  utils::is_affected_by_spell(*host, SPELL_SHIELD)  && current_mana_pct >= .5)) {
             target = host;
@@ -1666,39 +1662,24 @@ SPECIAL(mob_magic_user_spec) {
         }
     }
 
-    // Handle interrupts and switch tactics ability
-    if(host->specials.fighting && host->interrupt_count > 0 && spell_number == 0) {
-        if(host->interrupt_time > 0) {
-            host->interrupt_time = host->interrupt_time - 1;
-            sprintf(buf, "INTERUPT-> Deduct Time, Remaining: %d",  host->interrupt_time);
-            mudlog_debug_mob(buf, host);
-            if(host->interrupt_time == 0) {
-                host->interrupt_count = host->interrupt_count - 1;
-                mudlog_debug_mob("INTERUPT-> Deduct 1", host);
-                if(host->interrupt_count > 0) {
-                    host->interrupt_time = 10;
-                    mudlog_debug_mob("INTERUPT-> Reset Timer", host);
+    // switch tactics (for now, we use a super flash to have an attempt to cast shield)
+    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
+        if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+            for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                if (tmpch->specials.fighting == host) {
+                    //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
+                    stop_fighting(tmpch);
                 }
             }
-        }
-        if(host->interrupt_count >= 3) {
-            if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
-                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                    if (tmpch->specials.fighting == host) {
-                        send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
-                        stop_fighting(tmpch);
-                    }
-                }
-                stop_fighting(host);
-                target = host;
-                tgt = TARGET_CHAR;
-                spell_number = SPELL_SHIELD;
-            }
+            stop_fighting(host);
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_SHIELD;
         }
     }
 
     // Damage Spells
-    if(target != host) {
+    if(target != host && spell_number == 0) {
         target = choose_caster_target(host);
         if (target == nullptr) {
             return FALSE;
@@ -1812,7 +1793,7 @@ SPECIAL(mob_magic_user_spec) {
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE-> Tgt: %s, Spell#: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
+    sprintf(buf, "PROG::MAGE -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
     mudlog_debug_mob(buf, host);
     
     waiting_type wtl_base;

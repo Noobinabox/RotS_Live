@@ -82,7 +82,7 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
-    sprintf(buf, "MOB_ACT::INIT-> Cmd: %d, SCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
+    sprintf(buf, "MOB_ACT::INIT -> Cmd: %d, SCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
         ch->delay.cmd, ch->delay.subcmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
     mudlog_debug_mob(buf, ch);
 
@@ -97,6 +97,28 @@ void one_mobile_activity(char_data* ch)
     if (MOB_FLAGGED(ch, MOB_PET) && !utils::is_guardian(*ch) && ch->master && char_exists(ch->master_number)) {
         if (ch->in_room == ch->master->in_room) {
             is_passive = 1;
+        }
+    }
+
+    // handle interrupts
+    if(ch->interrupt_count > 0) {
+        sprintf(buf, "MOB_ACT::INTERUPT::INFO -> cnt: %d, time: %d", ch->interrupt_count, ch->interrupt_time);
+        mudlog_debug_mob(buf, ch);
+
+        if(ch->specials.fighting) {
+            if(ch->interrupt_time > 0) {
+                ch->interrupt_time = ch->interrupt_time - 1;
+                // sprintf(buf, "MOB_ACT::INTERUPT-> New Timer: %d", ch->interrupt_time);
+                // mudlog_debug_mob(buf, ch);
+                if(ch->interrupt_time == 0) {
+                    ch->interrupt_count = ch->interrupt_count - 1;
+                    mudlog_debug_mob("MOB_ACT::INTERUPT -> Deduct 1", ch);
+                    if(ch->interrupt_count > 0) {
+                        ch->interrupt_time = 10;
+                        mudlog_debug_mob("MOB_ACT::INTERUP T-> Reset Timer", ch);
+                    }
+                }
+            }
         }
     }
 
@@ -131,7 +153,8 @@ void one_mobile_activity(char_data* ch)
             }
         }
 
-        // STOP here if mob is now busy (I believe this occurs when methods above return FALSE when they should be TRUE)
+        // STOP here if mob is now busy (I believe this occurs when methods above return FALSE when they should be TRUE )
+        // BECAUSE: other things are checking subcmd and delay time BUT subcmd gets set to 0 ABOVE!??
         if(ch->delay.wait_value && ch->delay.cmd) {
             // NOTE: swap the next 2 conditions to see ALL loaded mobs as they try to find another cmd to do while they are already busy (very noisy)
             //if(TRUE) {

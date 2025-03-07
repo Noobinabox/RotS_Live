@@ -549,7 +549,6 @@ ACMD(do_cast)
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
-         //thinking how to extract this (here) AND use within more than one prog to affect a change of tactics
         //if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {
         if(IS_NPC(ch) && ch->interrupt_count < 3) {
             mudlog_debug_mob("---  Interrupted  ---", ch);

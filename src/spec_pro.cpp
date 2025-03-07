@@ -1608,7 +1608,7 @@ int pick_a_spell(int *my_tmp_spells) {
     return my_tmp_spells[chance];
 }
 
-// TODO: firebolt (maybe a dark spell was too), is returning FALSE -- causing a second action to kick off??
+// TODO: firebolt (maybe a dark spell was too), is returning FALSE? -- is causing a second action to kick off?
 // note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec) {
     // was there a reason mob_magic_user checks delay.subcmd & wait_value, when subcmd can be 0??

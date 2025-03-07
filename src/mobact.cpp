@@ -82,9 +82,9 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
-    sprintf(buf, "MOB_ACT-> Initial DelayCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
-        ch->delay.cmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
-    mudlog_debug_mob("Interrupted", ch);
+    sprintf(buf, "MOB_ACT::INIT-> Cmd: %d, SCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
+        ch->delay.cmd, ch->delay.subcmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
+    mudlog_debug_mob(buf, ch);
 
     if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
         sprintf(buf, "mobile_act called for %s in %d.",

@@ -1608,14 +1608,18 @@ int pick_a_spell(int *my_tmp_spells) {
     return my_tmp_spells[chance];
 }
 
-// TODO: firebolt only, is returning FALSE -- causing a second action to kick off??
+// TODO: firebolt (maybe a dark spell was too), is returning FALSE -- causing a second action to kick off??
 // note: also see spec_pro_message
-SPECIAL(mob_magic_user_spec)
-{
+SPECIAL(mob_magic_user_spec) {
+    // was there a reason mob_magic_user checks delay.subcmd & wait_value, when subcmd can be 0??
+    //if (host->delay.wait_value && host->delay.subcmd) {
+    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE) {
+        return FALSE;
+    }
+
     struct char_data *tmpch, *tmpch_next;
     char_data* target;
     int tgt, spell_number = 0;
-
     double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
@@ -1626,16 +1630,8 @@ SPECIAL(mob_magic_user_spec)
     char *om = strstr(host->player.name, "lumage");
     char *cj = strstr(host->player.name, "conj");
 
-    if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
-        return FALSE;
-
-    //if (host->delay.wait_value && host->delay.subcmd) { // was there a reason mob_magic_user checks delay.subcmd instead of delay.cmd??
-    if (host->delay.wait_value && host->delay.cmd) {
-        return FALSE;
-    }
-
     if(host->interrupt_count > 0) {
-        sprintf(buf, "Interrupt count: %d",  host->interrupt_count);
+        sprintf(buf, "INTERUPT::CNT-> cnt: %d",  host->interrupt_count);
         mudlog_debug_mob(buf, host);
     }
 
@@ -1674,14 +1670,14 @@ SPECIAL(mob_magic_user_spec)
     if(host->specials.fighting && host->interrupt_count > 0 && spell_number == 0) {
         if(host->interrupt_time > 0) {
             host->interrupt_time = host->interrupt_time - 1;
-            sprintf(buf, "Interrupt deduct time, remaining: %d",  host->interrupt_time);
+            sprintf(buf, "INTERUPT-> Deduct Time, Remaining: %d",  host->interrupt_time);
             mudlog_debug_mob(buf, host);
             if(host->interrupt_time == 0) {
                 host->interrupt_count = host->interrupt_count - 1;
-                mudlog_debug_mob("Interrupt deducting 1", host);
+                mudlog_debug_mob("INTERUPT-> Deduct 1", host);
                 if(host->interrupt_count > 0) {
                     host->interrupt_time = 10;
-                    mudlog_debug_mob("Interrupt RESET timer", host);
+                    mudlog_debug_mob("INTERUPT-> Reset Timer", host);
                 }
             }
         }
@@ -1816,7 +1812,7 @@ SPECIAL(mob_magic_user_spec)
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "Prog Spell Info-> CH: %s,  Spell: %d, Tgt: %d", GET_NAME(target), spell_number, tgt);
+    sprintf(buf, "PROG::MAGE-> Tgt: %s, Spell#: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
     mudlog_debug_mob(buf, host);
     
     waiting_type wtl_base;

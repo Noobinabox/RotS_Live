@@ -549,6 +549,7 @@ ACMD(do_cast)
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
+         //thinking how to extract this AND use within more than one prog to affect a change of tactics
         if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {
             mudlog_debug_mob("Interrupted", ch);
             ch->interrupt_count = ch->interrupt_count + 1;
@@ -718,7 +719,7 @@ ACMD(do_cast)
                 }
             }
 
-            sprintf(buf, "DO_CAST-> Casting: %d, Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
+            sprintf(buf, "DO_CAST-> Spell: %d, C-Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
             mudlog_debug_mob(buf, ch);
 
             WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);

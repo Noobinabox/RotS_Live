@@ -1621,8 +1621,8 @@ SPECIAL(mob_magic_user_spec) {
     char_data* target;
     int my_tmp_spells[4];
     int tgt, spell_number = 0;
-    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
-    double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
+    double current_health_pct = (double)GET_HIT(host)  / (double)GET_MAX_HIT(host);
+    double current_mana_pct   = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
     char *fm = strstr(host->player.name, "fmage");
     char *lm = strstr(host->player.name, "lmage");
@@ -1650,10 +1650,8 @@ SPECIAL(mob_magic_user_spec) {
         }
     }
 
-    // handle the rest of non-combat
+    // handle other non-combat
     if(!host->specials.fighting && spell_number == 0) {
-        host->interrupt_count = 0;                                      //TODO: how to extract this? test in mob_act
-        host->interrupt_time = 0;
         // handle cure self
         if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
            (current_health_pct <= .9 &&  utils::is_affected_by_spell(*host, SPELL_SHIELD)  && current_mana_pct >= .5)) {
@@ -1685,91 +1683,105 @@ SPECIAL(mob_magic_user_spec) {
         if (target == nullptr) {
             return FALSE;
         }
-        if(host->specials.fighting) {
+        if(host->specials.fighting && spell_number == 0) {
             tgt = TARGET_OTHER;
 
-            if(fm) {
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
-                } else {
-                    int my_tmp_spells[] = {1, SPELL_FIREBALL};
-                }
-
-            } else if(lm) {
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
-                } else {
-                    if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
-                        int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
-                    } else {
-                        int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
+            if(cj) {
+                int chance = number(1, 100);
+                if(chance > 75) {
+                    host->points.spirit = 100;
+                    if(!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
+                        spell_number = SPELL_CONFUSE;
                     }
-                }
-
-            } else if(cm) {
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
-                } else {
-                    int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
-                }
-
-            } else if(dm) {
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
-                } else {
-                    int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
-                }
-
-            } else if(om) { //lhu
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
-                } else {
-                    if(SUN_PENALTY(host)) {
-                        int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
-                    } else {
-                        int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
+                    if(!om && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
+                        spell_number = SPELL_POISON;
                     }
-                }
-
-            } else {
-                if(current_health_pct <= .25) {
-                    int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                } else if(current_health_pct <= .5) {
-                    int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                } else if(current_health_pct <= .75) {
-                    int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
-                } else {
-                    int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
                 }
             }
-            spell_number = pick_a_spell(my_tmp_spells);
+            if(spell_number == 0) {
+                if(fm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                    }
+
+                } else if(lm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
+                    } else {
+                        if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
+                        }
+                    }
+
+                } else if(cm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                    }
+
+                } else if(dm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                    }
+
+                } else if(om) { //lhu
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
+                    } else {
+                        if(SUN_PENALTY(host)) {
+                            int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
+                        }
+                    }
+
+                } else {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
+                    } else {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
+                    }
+                }
+                spell_number = pick_a_spell(my_tmp_spells);
+            }
         }
     }
 
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
     mudlog_debug_mob(buf, host);
     
     waiting_type wtl_base;

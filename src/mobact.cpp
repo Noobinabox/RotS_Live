@@ -82,8 +82,8 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
-    sprintf(buf, "MOB_ACT::INIT -> Cmd: %d, SCmd: %d, DelayTime: %d, Mana: %d, HP: %d",
-        ch->delay.cmd, ch->delay.subcmd, ch->delay.wait_value, GET_MANA(ch), GET_HIT(ch));
+    sprintf(buf, "MOB_ACT::INIT -> Cmd: %d, SCmd: %d, DelayTime: %d, IntCnt: %d, IntTime: %d, Mana: %d, HP: %d",
+        ch->delay.cmd, ch->delay.subcmd, ch->delay.wait_value, ch->interrupt_count, ch->interrupt_time, GET_MANA(ch), GET_HIT(ch));
     mudlog_debug_mob(buf, ch);
 
     if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
@@ -101,18 +101,13 @@ void one_mobile_activity(char_data* ch)
     }
 
     // handle interrupts
-    if(ch->interrupt_count > 0) {
-        sprintf(buf, "MOB_ACT::INTERUPT::INFO -> cnt: %d, time: %d", ch->interrupt_count, ch->interrupt_time);
-        mudlog_debug_mob(buf, ch);
-
-        if(ch->specials.fighting) {
-            if(ch->interrupt_time > 0) {
-                ch->interrupt_time = ch->interrupt_time - 1;
-                if(ch->interrupt_time == 0) {
-                    ch->interrupt_count = ch->interrupt_count - 1;
-                    if(ch->interrupt_count > 0) {
-                        ch->interrupt_time = 10;
-                    }
+    if(ch->specials.fighting && ch->interrupt_count > 0) {
+        if(ch->interrupt_time > 0) {
+            ch->interrupt_time = ch->interrupt_time - 1;
+            if(ch->interrupt_time == 0) {
+                ch->interrupt_count = ch->interrupt_count - 1;
+                if(ch->interrupt_count > 0) {
+                    ch->interrupt_time = 10;
                 }
             }
         }
@@ -159,6 +154,11 @@ void one_mobile_activity(char_data* ch)
             }
             mudlog_debug_mob("MOB_ACT-> Proc is Busy so RETURNING", ch);
             return;
+        }
+
+        if(!ch->specials.fighting) {
+            ch->interrupt_count = 0;
+            ch->interrupt_time = 0;
         }
 
         /* mob - helper */

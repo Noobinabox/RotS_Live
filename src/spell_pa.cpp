@@ -547,6 +547,10 @@ ACMD(do_cast)
     tmpwtl.targ1.type = tmpwtl.targ2.type = TARGET_NONE;
     player_spec::battle_mage_handler battle_mage_handler(ch);
 
+    // could add handling here for base interrupt=3 stop casting mob handling, 
+    //    but should block mainly damage spells in combat (could consider letting powers try?)
+    //    also if so, ignore this basic handling for: ch->specials.store_prog_number == 31
+
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
         //if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {

@@ -1664,16 +1664,19 @@ SPECIAL(mob_magic_user_spec) {
     // switch tactics (for now, we use a super flash to have an attempt to cast shield)
     if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
         if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
-            for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                if (tmpch->specials.fighting == host) {
-                    //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
-                    stop_fighting(tmpch);
+            int chance = number(1, 100);
+            if(chance > 50) {
+                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                    if (tmpch->specials.fighting == host) {
+                        //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
+                        stop_fighting(tmpch);
+                    }
                 }
+                stop_fighting(host);
+                target = host;
+                tgt = TARGET_CHAR;
+                spell_number = SPELL_SHIELD;
             }
-            stop_fighting(host);
-            target = host;
-            tgt = TARGET_CHAR;
-            spell_number = SPELL_SHIELD;
         }
     }
 
@@ -1698,7 +1701,7 @@ SPECIAL(mob_magic_user_spec) {
                     }
                 }
             }
-            if(spell_number == 0) {
+            if(spell_number == 0 && host->interrupt_count != 3) {
                 if(fm) {
                     if(current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};

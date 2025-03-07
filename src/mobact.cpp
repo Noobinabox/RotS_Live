@@ -108,14 +108,10 @@ void one_mobile_activity(char_data* ch)
         if(ch->specials.fighting) {
             if(ch->interrupt_time > 0) {
                 ch->interrupt_time = ch->interrupt_time - 1;
-                // sprintf(buf, "MOB_ACT::INTERUPT-> New Timer: %d", ch->interrupt_time);
-                // mudlog_debug_mob(buf, ch);
                 if(ch->interrupt_time == 0) {
                     ch->interrupt_count = ch->interrupt_count - 1;
-                    mudlog_debug_mob("MOB_ACT::INTERUPT -> Deduct 1", ch);
                     if(ch->interrupt_count > 0) {
                         ch->interrupt_time = 10;
-                        mudlog_debug_mob("MOB_ACT::INTERUP T-> Reset Timer", ch);
                     }
                 }
             }

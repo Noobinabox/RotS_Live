@@ -1619,6 +1619,7 @@ SPECIAL(mob_magic_user_spec) {
 
     struct char_data *tmpch, *tmpch_next;
     char_data* target;
+    int my_tmp_spells[4];
     int tgt, spell_number = 0;
     double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
@@ -1651,7 +1652,7 @@ SPECIAL(mob_magic_user_spec) {
 
     // handle the rest of non-combat
     if(!host->specials.fighting && spell_number == 0) {
-        host->interrupt_count = 0;
+        host->interrupt_count = 0;                                      //TODO: how to extract this? test in mob_act
         host->interrupt_time = 0;
         // handle cure self
         if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
@@ -1690,103 +1691,78 @@ SPECIAL(mob_magic_user_spec) {
             if(fm) {
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     int my_tmp_spells[] = {1, SPELL_FIREBALL};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 }
 
             } else if(lm) {
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
                         int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
-                        spell_number = pick_a_spell(my_tmp_spells);
                     } else {
                         int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
-                        spell_number = pick_a_spell(my_tmp_spells);
                     }
                 }
 
             } else if(cm) {
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 }
 
             } else if(dm) {
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 }
 
             } else if(om) { //lhu
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     if(SUN_PENALTY(host)) {
                         int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
-                        spell_number = pick_a_spell(my_tmp_spells);
                     } else {
                         int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
-                        spell_number = pick_a_spell(my_tmp_spells);
                     }
                 }
 
             } else {
                 if(current_health_pct <= .25) {
                     int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .5) {
                     int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else if(current_health_pct <= .75) {
                     int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 } else {
                     int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
-                    spell_number = pick_a_spell(my_tmp_spells);
                 }
             }
+            spell_number = pick_a_spell(my_tmp_spells);
         }
     }
 

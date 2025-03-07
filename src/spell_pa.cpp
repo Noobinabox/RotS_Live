@@ -549,7 +549,8 @@ ACMD(do_cast)
 
     // could add handling here for base interrupt=3 stop casting mob handling, 
     //    but should block mainly damage spells in combat (could consider letting powers try?)
-    //    also if so, ignore this basic handling for: ch->specials.store_prog_number == 31
+    //    also if so, ignore this basic handling for: ch->specials.store_prog_number==31 
+    //      OR BETTER YET: ch->interrupt_handling=1 SET BY a prog that wants to handle itself
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);

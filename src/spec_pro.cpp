@@ -1701,7 +1701,7 @@ SPECIAL(mob_magic_user_spec) {
                     }
                 }
             }
-            if(spell_number == 0 && host->interrupt_count != 3) {
+            if(spell_number == 0 && host->interrupt_count < 3) {
                 if(fm) {
                     if(current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};

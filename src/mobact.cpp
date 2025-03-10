@@ -19,7 +19,6 @@
 #include "interpre.h"
 #include "structs.h"
 #include "utils.h"
-//#include <string.h>
 
 /* external structs */
 extern struct char_data* character_list;

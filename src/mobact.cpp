@@ -100,14 +100,12 @@ void one_mobile_activity(char_data* ch)
     }
 
     // handle interrupts
-    if(ch->specials.fighting && ch->interrupt_count > 0) {
-        if(ch->interrupt_time > 0) {
-            ch->interrupt_time = ch->interrupt_time - 1;
-            if(ch->interrupt_time == 0) {
-                ch->interrupt_count = ch->interrupt_count - 1;
-                if(ch->interrupt_count > 0) {
-                    ch->interrupt_time = 10;
-                }
+    if(ch->specials.fighting && ch->interrupt_count > 0 && ch->interrupt_time > 0) {
+        ch->interrupt_time = ch->interrupt_time - 1;
+        if(ch->interrupt_time == 0) {
+            ch->interrupt_count = ch->interrupt_count - 1;
+            if(ch->interrupt_count > 0) {
+                ch->interrupt_time = 10;
             }
         }
     }

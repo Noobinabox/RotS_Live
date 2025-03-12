@@ -367,7 +367,7 @@ struct skill_data skills[MAX_SKILLS] = {
     { "pragmatism", PROF_CLERIC, 6, spell_pragmatism,
         POSITION_FIGHTING, 5, 12, 26, 10, 1, 0, PLRSPEC_NONE },
     { "haze", PROF_CLERIC, 5, spell_haze,
-        POSITION_FIGHTING, 1, 16, 16, 10, 1, 0, PLRSPEC_ILLU },
+        POSITION_FIGHTING, 1, 16, 2066, 10, 1, 0, PLRSPEC_ILLU },
     { "fear", PROF_CLERIC, 12, spell_fear,
         POSITION_FIGHTING, 5, 12, 18, 10, 1, 1, PLRSPEC_ILLU },
     { "divination", PROF_CLERIC, 13, spell_divination,

@@ -515,6 +515,7 @@ ACMD(do_group)
             return;
         }
 
+        int added_char = 0;
         if (string_func::equals(buf, "all")) {
             for (follow_type* follower = ch->followers; follower; follower = follower->next) {
                 char_data* potential_member = follower->follower;
@@ -522,11 +523,18 @@ ACMD(do_group)
                     // Can only add ungrouped members to your group.
                     if (potential_member->group == NULL && !other_side(ch, potential_member)) {
                         add_character_to_group(potential_member, ch);
+                        added_char = 1;
                     }
                 } else {
                     // Follower clean-up is done here.  Unsure why, don't want to change functionality though.
                     follower->follower = NULL;
                 }
+            }
+            if(added_char) {
+                return;
+            } else {
+                send_to_char("You have no followers to group.\n\r", ch);
+                return;
             }
         }
 

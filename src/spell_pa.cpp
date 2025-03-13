@@ -628,12 +628,6 @@ ACMD(do_cast)
             spell_index = tmp;
         }
 
-        // only allow NPCs and god race to cast in rooms (for now)
-        if(spell_index == SPELL_HAZE && !(IS_NPC(ch) || GET_RACE(ch) == 0)) {
-            send_to_char("You cannot cast to room.\n\r", ch);
-            return;
-        }
-
         const skill_data& spell = skills[spell_index];
         /* Checking for the spell validity now */
         switch (spell.type) {
@@ -691,6 +685,12 @@ ACMD(do_cast)
             }
         }
         /* supposedly, we have ch.delay formed now, except for delay value. */
+
+        // only allow NPCs and god race to cast in rooms (for now)
+        if(spell_index == SPELL_HAZE && tmpwtl.targ2.type == 0 && !ch->specials.fighting && !(IS_NPC(ch) || GET_RACE(ch) == 0)) {
+            send_to_char("You cannot cast to room.\n\r", ch);
+            return;
+        }
 
         if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING)) {
             /* putting the player into waiting list */

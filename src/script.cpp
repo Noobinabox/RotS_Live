@@ -34,6 +34,8 @@
 #include "structs.h"
 #include "utils.h"
 #include "zone.h"
+//#include "combat_manager.h"
+#include "spells.h"
 
 // External declarations
 ACMD(do_say);
@@ -888,6 +890,64 @@ int run_script(struct info_script* info, struct script_data* position)
                     perform_give(tmpch, tmpch2, tmpobj);
                 tmpobj = 0;
                 assign_obj_param(curr->param[2], info, tmpobj);
+            }
+            curr = curr->next;
+            break;
+
+        case SCRIPT_APPLY_DMG_ENG:
+            if (curr->param[0] && curr->param[1]) {
+                tmpch = get_char_param(curr->param[0], info);
+                for (tmpch2 = world[tmpch->in_room].people; tmpch2; tmpch2 = tmpch2->next_in_room) {
+                    if (tmpch2->specials.fighting == tmpch) {
+                        //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
+                        //stop_fighting(tmpch);
+                        ptrint = get_int_param(curr->param[1], info);
+                        int dmg_int = (int)*ptrint;
+                        double min_dmg = (double)dmg_int - (double)dmg_int * .1;
+                        double max_dmg = (double)dmg_int + (double)dmg_int * .1;
+                        int dmg = number((int)min_dmg, (int)max_dmg);
+                        //int dmg2 = number(min_dmg, max_dmg);
+
+                        ptrint2 = get_int_param(curr->param[2], info);
+                        int dmg_type = (int)*ptrint2;
+                        if(dmg_type == 0) {
+                            //dmg_type = game_rules::weapon_hit_type(tmpch->equipment[WIELD]->get_weapon_type());
+                            dmg_type = SKILL_CONCUSSION;
+                            //dmg_type = 9;
+                        }
+                        //check mob for weapon and use that type, else no type?? or hit type?
+
+                        // get tmpch2 hit location
+                        //int hit_location = get_hit_location(*tmpch2);
+                        int location = 0;
+                        int tmp = 0;
+                        if (bodyparts[GET_BODYTYPE(tmpch2)].bodyparts) {
+                            tmp = number(1, 100);
+                            for (; tmp > 0 && location < MAX_BODYPARTS; location++)
+                                tmp -= bodyparts[GET_BODYTYPE(tmpch2)].percent[location];
+                        }
+                        if (location)
+                            location--;
+
+int before_hit = GET_HIT(tmpch2);
+
+sprintf(buf, "param: %d, min:%f, max:%f, dmg:%d type:%d, loc:%d, ch2.hits:%d", *ptrint, min_dmg, max_dmg, dmg, dmg_type, location, before_hit );
+mudlog(buf, SPL, LEVEL_GOD, FALSE);
+
+
+                        if (tmpch && tmpch2 && damage) {
+                            //apply_damage(tmpch, tmpch2, damage, dmg_type, hit_location);
+                            // combat_manager::apply_weapon_damage& cm_instance = combat_manager::apply_weapon_damage::instance();
+                            // cm_instance(tmpch, tmpch2, damage);
+                            send_to_char("YOU ARE HIT!\n\r", tmpch2);
+                            damage(tmpch, tmpch2, dmg, dmg_type, location);
+sprintf(buf, "BEFORE hps:%d  dmg:%d  AFTER ch2.hit:%d", before_hit, dmg, GET_HIT(tmpch2) );
+mudlog(buf, SPL, LEVEL_GOD, FALSE);
+
+                        }
+
+                    }
+                }
             }
             curr = curr->next;
             break;

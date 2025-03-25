@@ -1751,9 +1751,9 @@ bool see_hidden(char_data* host, char_data* tmpch) {
     see_hide  = orig_hide;
     // COMMENT OUT 3 LINES BELOW to use ONLY THE STANDARD see_hiding() calc
     if(GET_LEVEL(host) >= 40) {
-        see_hide = (GET_LEVEL(host) * 2) + number(-7,20) + number(-7,20) + number(-7,20);   // set to max of 120 upper cap?
+        see_hide = (GET_LEVEL(host) * 2) + number(-7,20) + number(-7,20) + number(-7,20);
     }
-    vuln_st = IS_VULNERABLE(host, PLRSPEC_STLH); // 64 if TRUE:
+    vuln_st = IS_VULNERABLE(host, PLRSPEC_STLH);
     if(vuln_st > 0) {
         see_hide = see_hide - (see_hide * .5);
     }
@@ -1895,7 +1895,7 @@ SPECIAL(mob_ranger_new) {
                 } else {
                     tmp = BFS_NO_PATH;
                 }
-                if (tmp >= 0) { // found the way, moving there
+                if (tmp >= 0) {
                     do_move(ch, "", 0, tmp + 1, 0);
                     do_hide(host, "", 0, 0, 0);
                     host->spec_busy = false;

@@ -1905,7 +1905,6 @@ SPECIAL(mob_ranger_new) {
         }
     } /* mob memory/hunter */
 
-
     // TRACKING
     tmproom = &world[host->in_room];
     mintime = 999;

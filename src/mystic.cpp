@@ -1083,8 +1083,9 @@ ASPELL(spell_haze)
 
     if (!victim && !obj && !(caster->specials.fighting)) { /*hazing the room*/
 
-        if (!caster)
+        if (!caster) {
             return;
+        }
 
         int level = get_mystic_caster_level(caster);
         af.type = ROOMAFF_SPELL;
@@ -1094,11 +1095,13 @@ ASPELL(spell_haze)
         af.bitvector = 0;
 
         if ((oldaf = room_affected_by_spell(&world[caster->in_room], SPELL_HAZE))) {
-            if (oldaf->duration < af.duration)
+            if (oldaf->duration < af.duration) {
                 oldaf->duration = af.duration;
+            }
 
-            if (oldaf->modifier < af.modifier)
+            if (oldaf->modifier < af.modifier) {
                 oldaf->modifier = af.modifier;
+            }
         } else {
             affect_to_room(&world[caster->in_room], &af);
         }
@@ -1108,6 +1111,7 @@ ASPELL(spell_haze)
 
         return;
     }
+
     if (!victim && caster->specials.fighting) {
         victim = caster->specials.fighting;
     }

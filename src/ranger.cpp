@@ -1496,10 +1496,10 @@ ACMD(do_tame)
         victim = (struct char_data*)wtl->targ1.ptr.ch;
     }
 
-    double r_lvl = (double)GET_PROF_LEVEL(PROF_RANGER, ch) / 3;
-    double tm_skl = (double)tame_skill / 30;
-    double skl_total = r_lvl + tm_skl;
-    levels_over_required = (int)skl_total - GET_LEVEL(victim) - get_followers_level(ch);
+    double ranger_level = (double)GET_PROF_LEVEL(PROF_RANGER, ch) / 3;
+    double divided_tame_skill = (double)tame_skill / 30;
+    double skill_total = ranger_level + divided_tame_skill;
+    levels_over_required = (int)skill_total - GET_LEVEL(victim) - get_followers_level(ch);
 
     if (affected_by_spell(victim, SKILL_CALM))
         levels_over_required += 1;

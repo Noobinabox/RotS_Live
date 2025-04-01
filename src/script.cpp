@@ -907,10 +907,7 @@ int run_script(struct info_script* info, struct script_data* position)
 
         case SCRIPT_APPLY_DMG_ENG:
             // tmpch is the source char (whose engaged gets targeted) and tmpch2 is the char being hit
-            // 50% chance to hit each target, the actual proc chance should happen outside call
-            // general room messages should be handled in script
-            // dont use on weapons, ch1 would be the hitter and it would reverse targets
-
+            // note if used on weapons, ch1 would be the attacker and it would proc on the attackers engaged (reversed)
             if (curr->param[0] && curr->param[1]) {
                 tmpch = get_char_param(curr->param[0], info);
 

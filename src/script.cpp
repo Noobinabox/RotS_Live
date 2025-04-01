@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex>
 
 #include "comm.h"
 #include "db.h"
@@ -75,7 +76,8 @@ void clear_script_info(info_script* inf);
 int trigger_char_hear(char_data* ch, char_data* speaking, char* text);
 int trigger_char_damage(char_data* vict, char_data* ch);
 int trigger_object_damage(obj_data* obj, char_data* vict, char_data* ch);
-
+int armor_effect(struct char_data* ch, struct char_data* victim,
+    int damage, int location, int w_type);
 // Returns the index position of a script in the script_table when supplied with a vnum
 // -1 == script not found (0 is a valid position in the script_table)
 
@@ -714,12 +716,21 @@ script_data* get_next_command(script_data* curr)
         return 0;
 }
 
+void send_parsed_message(char *cmsg , char_data* ch1, char_data* ch2) {
+    char output[500];
+    std::string test = cmsg;
+    test = std::regex_replace(test, std::regex("CH1"), GET_NAME(ch1));
+    strcpy(output, test.c_str());
+    output[0] = toupper(output[0]);
+    send_to_char(output, ch2);
+}
+
 int run_script(struct info_script* info, struct script_data* position)
 {
     char output[500];
     int return_value = 1;
     int exit = FALSE;
-    int x;
+    int x, dam;
     int* ptrint;
     int* ptrint2;
     int* ptrint3;
@@ -895,30 +906,29 @@ int run_script(struct info_script* info, struct script_data* position)
             break;
 
         case SCRIPT_APPLY_DMG_ENG:
+            // tmpch is the source char (whose engaged gets targeted) and tmpch2 is the char being hit
+            // 50% chance to hit each target, the actual proc chance should happen outside call
+            // general room messages should be handled in script
+            // dont use on weapons, ch1 would be the hitter and it would reverse targets
+
             if (curr->param[0] && curr->param[1]) {
                 tmpch = get_char_param(curr->param[0], info);
+
                 for (tmpch2 = world[tmpch->in_room].people; tmpch2; tmpch2 = tmpch2->next_in_room) {
                     if (tmpch2->specials.fighting == tmpch) {
-                        //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
-                        //stop_fighting(tmpch);
                         ptrint = get_int_param(curr->param[1], info);
-                        int dmg_int = (int)*ptrint;
+                        int    dmg_int = (int)*ptrint;
                         double min_dmg = (double)dmg_int - (double)dmg_int * .1;
                         double max_dmg = (double)dmg_int + (double)dmg_int * .1;
-                        int dmg = number((int)min_dmg, (int)max_dmg);
-                        //int dmg2 = number(min_dmg, max_dmg);
+                        int        dmg = number((int)min_dmg, (int)max_dmg);
 
                         ptrint2 = get_int_param(curr->param[2], info);
                         int dmg_type = (int)*ptrint2;
                         if(dmg_type == 0) {
-                            //dmg_type = game_rules::weapon_hit_type(tmpch->equipment[WIELD]->get_weapon_type());
+                            // note: detect weapon of ch1?
                             dmg_type = SKILL_CONCUSSION;
-                            //dmg_type = 9;
                         }
-                        //check mob for weapon and use that type, else no type?? or hit type?
 
-                        // get tmpch2 hit location
-                        //int hit_location = get_hit_location(*tmpch2);
                         int location = 0;
                         int tmp = 0;
                         if (bodyparts[GET_BODYTYPE(tmpch2)].bodyparts) {
@@ -926,26 +936,28 @@ int run_script(struct info_script* info, struct script_data* position)
                             for (; tmp > 0 && location < MAX_BODYPARTS; location++)
                                 tmp -= bodyparts[GET_BODYTYPE(tmpch2)].percent[location];
                         }
-                        if (location)
+                        if (location) {
                             location--;
-
-int before_hit = GET_HIT(tmpch2);
-
-sprintf(buf, "param: %d, min:%f, max:%f, dmg:%d type:%d, loc:%d, ch2.hits:%d", *ptrint, min_dmg, max_dmg, dmg, dmg_type, location, before_hit );
-mudlog(buf, SPL, LEVEL_GOD, FALSE);
-
-
-                        if (tmpch && tmpch2 && damage) {
-                            //apply_damage(tmpch, tmpch2, damage, dmg_type, hit_location);
-                            // combat_manager::apply_weapon_damage& cm_instance = combat_manager::apply_weapon_damage::instance();
-                            // cm_instance(tmpch, tmpch2, damage);
-                            send_to_char("YOU ARE HIT!\n\r", tmpch2);
-                            damage(tmpch, tmpch2, dmg, dmg_type, location);
-sprintf(buf, "BEFORE hps:%d  dmg:%d  AFTER ch2.hit:%d", before_hit, dmg, GET_HIT(tmpch2) );
-mudlog(buf, SPL, LEVEL_GOD, FALSE);
-
                         }
+                        // from "void hit": should evade or dodge be considered?
+                        tmp = bodyparts[GET_BODYTYPE(tmpch2)].armor_location[location];
+                        dam = armor_effect(tmpch, tmpch2, dmg, tmp, dmg_type);
 
+                        tmpint2 = 100;
+                        tmpint = number(1,tmpint2);
+                        if (tmpch && tmpch2 && dmg && tmpch != tmpch2 && tmpint < (tmpint2 / 2)) {
+                            int before_hit = GET_HIT(tmpch2);
+                            damage(tmpch, tmpch2, dmg, dmg_type, location);
+                            sprintf(output, curr->text, txt1);
+                            strcat(output, "\n\r\n\r");
+                            send_parsed_message(output , tmpch, tmpch2);
+
+                            if(strstr(tmpch->player.name, "debug")) {
+                                sprintf(buf, " AFTER::HIT->  chance:%d  base-dmg:%d  final-dmg:%d  pre-hps:%d  aft-hps:%d ",
+                                                tmpint, dmg, dam, before_hit, GET_HIT(tmpch2) );
+                                mudlog(buf, SPL, LEVEL_GOD, FALSE);
+                            }
+                        }
                     }
                 }
             }

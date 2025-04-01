@@ -685,7 +685,7 @@ void show_command(char_data* ch, script_data* script)
 
     case SCRIPT_APPLY_DMG_ENG:
         sprintf(buf, "[%d] ACT APPLY_DMG_ENG    (of char: %s, dmg: %s, type: %s)\n\r", script->number,
-            get_param_text(script->param[0]), get_param_text(script->param[1]), get_param_text(script->param[2]));
+            get_param_text(script->param[0]), get_param_text(script->param[1]), get_param_text(script->param[2]), script->text);
         break;
 
     case SCRIPT_DO_REMOVE:
@@ -1644,7 +1644,7 @@ void shape_center_script(struct char_data* ch, char* arg)
                 break;
 
             case SCRIPT_APPLY_DMG_ENG:
-                SCRIPTPARAMCHANGE("Enter mob (ch1), rand dmg(int), and optional dmg type (int)", 3);
+                SCRIPTPARAMCHANGE("Enter mob (ch1), rand dmg(int), and optional dmg type (int), msg", 3);
                 SHAPE_SCRIPT(ch)
                     ->editflag
                     = 5;

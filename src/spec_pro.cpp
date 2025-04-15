@@ -1806,6 +1806,9 @@ bool prog_do_hunter(char_data* host) {
             && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
 }
 
+// Works with HUNTER and MEMORY flags, handled below
+// Opt: alias keyword "stab" makes it favor ambushing
+//    : alias keyword "hunt" makes it hunt tracks
 SPECIAL(mob_ranger_new) {
     waiting_type tmpwtl;
     char_data* tmpch;
@@ -1849,12 +1852,12 @@ SPECIAL(mob_ranger_new) {
     }
 
     /* Ambush */
-    if (tmpch && tmpch != host && !host->specials.fighting && !tmpch->specials.fighting) {
+    if (tmpch && tmpch != host && strstr(ch->player.name, "stab") && !host->specials.fighting && !tmpch->specials.fighting) {
         do_spec_ambush(host, tmpch);
         return 1;
     }
-    // atk if target is fighting already
-    if(tmpch && tmpch != host && !host->specials.fighting && tmpch->specials.fighting) {
+    // else attack
+    if(tmpch && tmpch != host && !host->specials.fighting) {
         do_spec_hit(host, tmpch);
         return 1;
     }
@@ -1872,11 +1875,11 @@ SPECIAL(mob_ranger_new) {
             if (ch->master == vict) {
                 forget(ch, vict);
             } else { // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
-                if(should_attack(host, tmpch) && !host->specials.fighting && !vict->specials.fighting) {
+                if(should_attack(host, tmpch) && strstr(ch->player.name, "stab") && !host->specials.fighting && !vict->specials.fighting) {
                     do_spec_ambush(host, tmpch);
                     return 1;
                 }
-                if(should_attack(host, tmpch) && !host->specials.fighting && vict->specials.fighting) {
+                if(should_attack(host, tmpch) && !host->specials.fighting) {
                     do_spec_hit(host, tmpch);
                     return 1;
                 }
@@ -1905,44 +1908,47 @@ SPECIAL(mob_ranger_new) {
         }
     } /* mob memory/hunter */
 
-    // TRACKING
     tmproom = &world[host->in_room];
     mintime = 999;
     mintmp = NUM_OF_TRACKS;
     if(ch->delay.wait_value == 0) {
-        for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
-            tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
-            dir = (tmproom->room_track[tmp].data & 7); // the direction
-            room_data exit_room;
 
-            if(CAN_GO(host, dir)) {
-                exit_room = world[EXIT(host, dir)->to_room];
+        // TRACKING
+        if(strstr(ch->player.name, "hunt")) {
+            for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
+                tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
+                dir = (tmproom->room_track[tmp].data & 7); // the direction
+                room_data exit_room;
+
+                if(CAN_GO(host, dir)) {
+                    exit_room = world[EXIT(host, dir)->to_room];
+                }
+
+                if ((tmproom->room_track[tmp].char_number < 0)
+                        && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number))
+                            || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX) )
+                        && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
+                    //NOTE: these get set on every true pass, so it would be the last matching track, unless sorting was done on the random order of tracks
+                    mintime = tmp2;
+                    mintmp = tmp;
+                }
             }
 
-            if ((tmproom->room_track[tmp].char_number < 0)
-                    && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number))
-                        || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX) )
-                    && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
-                //NOTE: these get set on every true pass, so it would be the last matching track, unless sorting was done on the random order of tracks
-                mintime = tmp2;
-                mintmp = tmp;
+            if (mintmp < NUM_OF_TRACKS) {
+                tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
+                tmpwtl.subcmd = 0;
+                do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
+                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+                        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+                    do_hide(host, "", 0, 0, 0);
+                }
+                tmpwtl.targ1.cleanup();
+                ch->spec_busy = false;
+                return 1;
             }
         }
 
-        if (mintmp < NUM_OF_TRACKS) {
-            tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
-            tmpwtl.subcmd = 0;
-            do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
-            if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-                    || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
-                do_hide(host, "", 0, 0, 0);
-            }
-            tmpwtl.targ1.cleanup();
-            ch->spec_busy = false;
-            return 1;
-        }
-
-        // try move, if so hide again
+        // default: try move and hide again
         if (GET_POS(host) == POSITION_STANDING) {
             tmpwtl.cmd = number(1, NUM_OF_DIRS);
             tmpwtl.subcmd = 0;

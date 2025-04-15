@@ -1912,7 +1912,6 @@ SPECIAL(mob_ranger_new) {
     mintime = 999;
     mintmp = NUM_OF_TRACKS;
     if(ch->delay.wait_value == 0) {
-
         // TRACKING
         if(strstr(ch->player.name, "hunt")) {
             for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
@@ -1963,7 +1962,7 @@ SPECIAL(mob_ranger_new) {
             }
             tmpwtl.targ1.cleanup();
         }
-   }
+    }
     ch->spec_busy = false;
     return 1;  //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a consistant flow
 }

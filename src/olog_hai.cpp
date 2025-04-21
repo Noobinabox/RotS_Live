@@ -279,7 +279,7 @@ void apply_stomp_affect(char_data* attacker, char_data* victim)
         damage(attacker, victim, 0, SKILL_STOMP, 0);
         return;
     }
-    int wait_delay = PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE);
+    int wait_delay = number(8, PULSE_VIOLENCE);
     apply_victim_delay(victim, wait_delay);
     damage(attacker, victim, calculate_stomp_damage(*attacker, prob), SKILL_STOMP, 0);
 }
@@ -379,6 +379,9 @@ ACMD(do_cleave)
     send_to_char("You arch back and swing your weapon with great velocity!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_cleave_damage);
     timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);
+    // Stun the Olog-hai after using the skill
+    WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),
+        0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 
 ACMD(do_smash)
@@ -496,7 +499,7 @@ ACMD(do_overrun)
         send_to_char("You cannot use this skill yet.\r\n", ch);
         return;
     }
-    int total_moves = utils::get_prof_level(PROF_WARRIOR, *ch) / 8;
+    int total_moves = utils::get_prof_level(PROF_WARRIOR, *ch) / 8 + number(-1, 1);
     int loop_moves = 0;
     int dis;
     char_data* tmpch = nullptr;
@@ -566,4 +569,16 @@ ACMD(do_stomp)
     send_to_char("You jump into the air and slam down feet first onto the ground!\n\r", ch);
     olog_hai::room_target(ch, &olog_hai::apply_stomp_affect);
     timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
+
+    // Stun the Olog-hai after using the skill
+    WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE),
+        0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+
+    auto mount = ch->mount_data.mount;
+
+    // If mounted stun the mount as well.
+    if (mount) {
+        WAIT_STATE_FULL(mount, PULSE_VIOLENCE * 2,
+            0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
+    }
 }

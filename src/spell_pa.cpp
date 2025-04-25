@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "comm.h"
 #include "db.h"
@@ -554,9 +553,8 @@ ACMD(do_cast)
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate anymore!\n\r", ch);
-        //if(IS_NPC(ch) && ch->specials.store_prog_number == 31) {
-        if(IS_NPC(ch) && ch->interrupt_count < 3) {
-            mudlog_debug_mob("---  Interrupted  ---", ch);
+
+        if (utils::is_npc(*ch) && ch->interrupt_count < 3) {
             ch->interrupt_count = ch->interrupt_count + 1;
             if(ch->interrupt_time == 0) {
                 ch->interrupt_time = 10;
@@ -723,9 +721,6 @@ ACMD(do_cast)
                     casting_time = int(CASTING_TIME(ch, spell_index) / .75);
                 }
             }
-
-            sprintf(buf, "DO_CAST::INFO -> Spell: %d, C-Time: %d, Mana: %d", spell_index, casting_time, GET_MANA(ch));
-            mudlog_debug_mob(buf, ch);
 
             WAIT_STATE_BRIEF(ch, casting_time, cmd, spell_index, 30, AFF_WAITING | AFF_WAITWHEEL);
             ch->delay.targ1 = tmpwtl.targ1;

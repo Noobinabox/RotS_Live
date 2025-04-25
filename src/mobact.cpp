@@ -81,10 +81,6 @@ void one_mobile_activity(char_data* ch)
     if (!IS_NPC(ch))
         return;
 
-    sprintf(buf, "MOB_ACT::INIT -> Cmd: %d, SCmd: %d, DelayTime: %d, IntCnt: %d, IntTime: %d, Mana: %d, HP: %d",
-        ch->delay.cmd, ch->delay.subcmd, ch->delay.wait_value, ch->interrupt_count, ch->interrupt_time, GET_MANA(ch), GET_HIT(ch));
-    mudlog_debug_mob(buf, ch);
-
     if ((ch->in_room < 0) || (ch->in_room > top_of_world)) {
         sprintf(buf, "mobile_act called for %s in %d.",
             GET_NAME(ch), ch->in_room);
@@ -144,10 +140,6 @@ void one_mobile_activity(char_data* ch)
         // STOP here if mob is now busy (I believe this occurs when methods above return FALSE when they should be TRUE )
         // BECAUSE: other things are checking subcmd and delay time BUT subcmd gets set to 0 ABOVE!??
         if(ch->delay.wait_value && ch->delay.cmd) {
-            // NOTE: swap the next 3 lines, to see ALL loaded mobs as they try to find another cmd to do, while they are already busy (very noisy)
-            // sprintf(buf, "MOB_ACT-> Proc is Busy so RETURNING")
-            // mudlog(buf, SPL, LEVEL_GOD, TRUE);
-            mudlog_debug_mob("MOB_ACT-> Proc is Busy so RETURNING", ch);
             return;
         }
 

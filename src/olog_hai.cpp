@@ -550,6 +550,7 @@ ACMD(do_frenzy) {
   olog_hai::apply_frenzy_affect(ch);
   timer.add_skill_timer(*ch, SKILL_FRENZY, FRENZY_TIMER);
 }
+
 ACMD(do_stomp) {
   one_argument(argument, arg);
   if (!olog_hai::is_skill_valid(ch, SKILL_STOMP)) {
@@ -572,12 +573,4 @@ ACMD(do_stomp) {
   // Stun the Olog-hai after using the skill
   WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0,
                   59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
-
-  auto mount = ch->mount_data.mount;
-
-  // If mounted stun the mount as well.
-  if (mount) {
-    WAIT_STATE_FULL(mount, PULSE_VIOLENCE * 2, 0, 0, 59, 0, 0, 0, AFF_WAITING,
-                    TARGET_NONE);
-  }
 }

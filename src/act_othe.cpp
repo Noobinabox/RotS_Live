@@ -528,6 +528,7 @@ ACMD(do_group)
                     follower->follower = NULL;
                 }
             }
+            return;
         }
 
         if (char_data* potential_member = get_char_room_vis(ch, buf)) {

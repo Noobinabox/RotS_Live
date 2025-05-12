@@ -845,7 +845,9 @@ ACMD(do_move)
             } else if (IS_AFFECTED(ch, AFF_SNEAK))
                 snuck_in(ch);
 
-            special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
+            if(!ch->spec_busy) {
+                special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
+            }
 
             call_trigger(ON_ENTER, (void*)&world[ch->in_room], (void*)ch, 0);
 

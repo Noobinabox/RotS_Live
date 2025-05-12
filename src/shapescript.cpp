@@ -626,13 +626,13 @@ void show_command(char_data* ch, script_data* script)
         break;
 
     case SCRIPT_ASSIGN_INV:
-        sprintf(buf, "[%d] SYS ASSIGN_INV       vnum: %d inv of: %s, assign to: %s, int result: %s\n\r",
-            script->number, script->param[0], get_param_text(script->param[2]), get_param_text(script->param[1]), get_param_text(script->param[3]));
+        sprintf(buf, "[%d] SYS ASSIGN_INV       vnum: %d assign to: %s, inv of: %s, int result: %s\n\r",
+            script->number, script->param[0], get_param_text(script->param[1]), get_param_text(script->param[2]), get_param_text(script->param[3]));
         break;
 
     case SCRIPT_ASSIGN_ROOM:
-        sprintf(buf, "[%d] SYS ASSIGN_ROOM      vnum: %d room: %s, assign to: %s, int result: %s\n\r",
-            script->number, script->param[0], get_param_text(script->param[2]), get_param_text(script->param[1]), get_param_text(script->param[3]));
+        sprintf(buf, "[%d] SYS ASSIGN_ROOM      vnum: %d assign to: %s, room: %s, int result: %s\n\r",
+            script->number, script->param[0], get_param_text(script->param[1]), get_param_text(script->param[2]), get_param_text(script->param[3]));
         break;
 
     case SCRIPT_ASSIGN_STR:
@@ -768,6 +768,11 @@ void show_command(char_data* ch, script_data* script)
             get_param_text(script->param[0]), script->text);
         break;
 
+    case SCRIPT_IF_INT_FALSE:
+        sprintf(buf, "[%d] IF_INT_FALSE:        is %s false? (%s)\n\r", script->number,
+            get_param_text(script->param[0]), script->text);
+        break;
+
     case SCRIPT_IF_IS_NPC:
         sprintf(buf, "[%d] IF_IS_NPC:           is %s a mobile? (%s)\n\r", script->number,
             get_param_text(script->param[0]), script->text);
@@ -802,6 +807,11 @@ void show_command(char_data* ch, script_data* script)
     case SCRIPT_LOAD_OBJ:
         sprintf(buf, "[%d] SYS LOAD_OBJ         vnum: %d, obj variable: %s (%s)\n\r", script->number,
             script->param[0], get_param_text(script->param[1]), script->text);
+        break;
+
+    case SCRIPT_LOAD_OBJ_X:
+        sprintf(buf, "[%d] SYS LOAD_OBJ_X       object: %s, obj variable: %s (%s)\n\r", script->number,
+            get_param_text(script->param[1]), get_param_text(script->param[1]), script->text);
         break;
 
     case SCRIPT_OBJ_FROM_CHAR:
@@ -914,6 +924,11 @@ void show_command(char_data* ch, script_data* script)
     case SCRIPT_TELEPORT_CHAR_X:
         sprintf(buf, "[%d] SYS TELEPORT_CHAR_X  to room: %d, character: %s (%s)\n\r", script->number,
             script->param[0], get_param_text(script->param[1]), script->text);
+        break;
+
+    case SCRIPT_TELEPORT_CHAR_XL:
+        sprintf(buf, "[%d] SYS TELEPORT_CHAR_XL room of: %s, character: %s (%s)\n\r", script->number,
+            get_param_text(script->param[0]), get_param_text(script->param[1]), script->text);
         break;
 
     default:
@@ -1736,6 +1751,13 @@ void shape_center_script(struct char_data* ch, char* arg)
                     = 5;
                 break;
 
+            case SCRIPT_IF_INT_FALSE:
+                SCRIPTPARAMCHANGE("Enter integer to test (eg int1 ch1.level)", 2);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+
             case SCRIPT_IF_IS_NPC:
                 SCRIPTPARAMCHANGE("Enter character to check if they are a mobile (eg ch1)", 1);
                 SHAPE_SCRIPT(ch)
@@ -1773,6 +1795,13 @@ void shape_center_script(struct char_data* ch, char* arg)
 
             case SCRIPT_LOAD_OBJ:
                 SCRIPTPARAMCHANGE("Enter vnum of object and object variable to assign to (eg 5400 ob1)", 2);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+
+            case SCRIPT_LOAD_OBJ_X:
+                SCRIPTPARAMCHANGE("Enter object to copy and object variable to assign to (eg ob1.vnum ob2)", 2);
                 SHAPE_SCRIPT(ch)
                     ->editflag
                     = 5;
@@ -1920,7 +1949,14 @@ void shape_center_script(struct char_data* ch, char* arg)
                 break;
 
             case SCRIPT_TELEPORT_CHAR_X:
-                SCRIPTPARAMCHANGE("Enter room to teleport the character to and the character:", 2);
+                SCRIPTPARAMCHANGE("Enter room num to teleport to and the character:", 2);
+                SHAPE_SCRIPT(ch)
+                    ->editflag
+                    = 5;
+                break;
+
+            case SCRIPT_TELEPORT_CHAR_XL:
+                SCRIPTPARAMCHANGE("Enter chX.room (ch1.room) to teleport to and the character:", 2);
                 SHAPE_SCRIPT(ch)
                     ->editflag
                     = 5;
@@ -2320,6 +2356,8 @@ int get_command(char* command)
             return SCRIPT_IF_INT_GREATER;
         if (!strcmp(command, "IF_INT_TRUE"))
             return SCRIPT_IF_INT_TRUE;
+        if (!strcmp(command, "IF_INT_FALSE"))
+            return SCRIPT_IF_INT_FALSE;
         if (!strcmp(command, "IF_IS_NPC"))
             return SCRIPT_IF_IS_NPC;
         if (!strcmp(command, "IF_ROOM_SUNLIT"))
@@ -2335,6 +2373,8 @@ int get_command(char* command)
             return SCRIPT_LOAD_MOB;
         if (!strcmp(command, "LOAD_OBJ"))
             return SCRIPT_LOAD_OBJ;
+        if (!strcmp(command, "LOAD_OBJ_X"))
+            return SCRIPT_LOAD_OBJ_X;
         return 0;
 
     case 'O':
@@ -2414,6 +2454,8 @@ int get_command(char* command)
             return SCRIPT_TELEPORT_CHAR;
         if (!strcmp(command, "TELEPORT_CHAR_X"))
             return SCRIPT_TELEPORT_CHAR_X;
+        if (!strcmp(command, "TELEPORT_CHAR_XL"))
+            return SCRIPT_TELEPORT_CHAR_XL;
         return 0;
 
     default:

@@ -35,6 +35,8 @@ const int constexpr PRACS_PER_LEVEL = 3;
 const int constexpr LEA_PRAC_FACTOR = 5;
 const int constexpr LIGHT_WEAPON_WEIGHT_CUTOFF = 235;
 
+const int constexpr PLAYER_RACE_MAX = 100;
+
 const int constexpr INVALID_GUARDIAN = -1;
 const int constexpr AGGRESSIVE_GUARDIAN = 0;
 const int constexpr DEFENSIVE_GUARDIAN = 1;
@@ -1747,6 +1749,8 @@ public:
     struct waiting_type delay;
     struct char_data* next_die; /* next to die in the death_waiting_list :(  */
     int classpoints; /* Only used for character creation in interpre.cc new_player_select.  Move variable elsewhere? */
+
+    bool spec_busy;
 };
 
 struct race_bodypart_data {

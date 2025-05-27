@@ -1,19 +1,12 @@
 CHARACTER_NAME
 
-This variable displays the name of your current character. It is typically
-shown in status prompts, system messages, and logs. Your character name is
-unique within the game world and is used to identify you to other players and
-NPCs.
+This variable displays the name of your current character. 
 
 #
 ALIGNMENT
 
 This variable represents your character’s moral and ethical standing, ranging
-from -500 (deeply evil) to +500 (strongly good). A value near 0 indicates a
-neutral alignment. Alignment can influence how NPCs treat you, which factions
-or classes are available, and how certain spells or effects behave. Your
-alignment may shift over time based on your actions and choices in the game
-world.
+from -500 (deeply evil) to +500 (strongly good). 
 
 #
 HEALTH
@@ -25,12 +18,12 @@ when you take damage from combat, traps, spells, or other harmful effects.
 HEALTH_MAX
 
 This variable shows the maximum amount of health points (HP) your character can
-currently have. It determines the upper limit for healing and damage tracking.
-Your max health can be influenced by your level, class, constitution, gear,
-buffs, or other in-game effects. While HEALTH reflects your present
-condition, HEALTH_MAX defines your total potential health capacity.
+currently have.Your max health can be influenced by your level, class,
+constitution, gear, buffs, or other in-game effects. While HEALTH reflects your
+present condition, HEALTH_MAX defines your total potential health capacity.
 
 See also: HEALTH
+
 #
 ROOM_NAME
 
@@ -55,6 +48,8 @@ LEVEL
 This variable shows your character’s current level, which reflects their
 overall progress, power, and experience within the game. As your level
 increases, you may gain access to new skills, spells, equipment, and areas.
+
+See also: help levels
 
 #
 MANA
@@ -99,8 +94,8 @@ surviving in challenging environments.
 MONEY
 
 This variable shows the amount of copper your character currently possesses.
- This stat can be influenced by gear, buffs,
-debuffs, and leveling.
+
+See also: help money
 
 #
 RACE
@@ -108,15 +103,21 @@ RACE
 Different races in Arda have varying abilities and disadvantages; here is a
 basic chart comparing the attributes of all player controllable races.
 
+See also: help races
+
 #
 STR
 
 This variable shows your character’s current strength stat.
 
+See also: help strength
+
 #
 INT
 
 This variable shows your character’s current intelligence stat.
+
+See also: help intelligence
 
 #
 WILL
@@ -124,66 +125,81 @@ WILL
 This variable shows your character’s current will stat, representing mental
 strength, focus, and resistance.
 
+See also: help will
+
 #
 DEX
 
 This variable shows your character’s current dexterity stat.
+
+See also: help dexterity
 
 #
 CON
 
 This variable shows your character’s current constitution stat.
 
+See also: help constitution
+
 #
 LEA
 
 This variable shows your character’s current learning stat.
+
+See also: help learning
 
 #
 STR_PERM
 
 This variable shows your character’s maximum strength stat.
 
+See also: help strength, man msdp str
+
 #
 INT_PERM
 
-
 This variable shows your character’s maximum intelligence stat.
+
+See also: help intelligence, man msdp int
 
 #
 WILL_PERM
 
-
 This variable shows your character’s maximum will stat, representing mental
 strength, focus, and resistance.
+
+See also: help will, man msdp will
 
 #
 DEX_PERM
 
-
 This variable shows your character’s maximum dexterity stat.
+
+See also: help dexterity, man msdp dexterity
 
 #
 CON_PERM
 
-
 This variable shows your character’s maximum constitution stat.
+
+See also: help constitution, man msdp constitution
 
 #
 LEA_PERM
 
-
 This variable shows your character’s maximum learning stat.
+
+See also: help learning, man msdp learning
 
 #
 WIMPY
 
-
 This variable shows your character’s current wimpy health setting.
+
+See also: help wimpy
 
 #
 SPELL_SAVE
-
 
 This variable shows your character’s current spell save value.
 
@@ -196,4 +212,125 @@ This variable shows your character’s current spell peneration value.
 SPELL_POWER
 
 This variable shows your character’s current spell power value.
+
+#
+ARMOUR_ABS
+
+This variable shows your character's current armour absorption.
+
+#
+OFFENSIVE_BONUS
+
+This variable shows your character's current offensive bonus, also
+known as OB
+
+See also: help offensive bonus
+
+#
+PARRY
+
+This variable shows your character's current parry, also known as pb.
+
+See also: help parry
+
+#
+DODGE
+
+This variable shows your character's current dodge bonus, also
+known as db.
+
+See also: help dodge
+
+#
+ATTACK_SPEED
+
+This variable shows your character's current attack speed.
+
+See also: help attack speed
+
+#
+TACTIC
+
+This variable shows your character's current tactic.
+
+See also: help tactics
+
+#
+PERCEPTION
+
+This variable shows your character's perception percentage.
+
+See also: help perception
+
+#
+WILLPOWER
+
+This variable shows your character's current willpower.
+
+See also: help willpower
+
+#
+SKILL_ENCUMBRANCE
+
+This variable shows your character's current skill encumbrance.
+
+See also: help encumbrance
+
+#
+MOVEMENT_ENCUMBRANCE
+
+This variable shows your character's current movement encumbrance.
+
+See also: help encumbrance
+
+#
+HEALTH_REGENERATION
+
+This variable shows your character's current health regeneration per minute.
+Powers such as regeneration and curing saturation affect your health
+regeneration score.
+
+See also: man power regeneration, man power curing saturation, man spec
+regeneration
+
+#
+STAMINA_REGENERATION
+
+This variable shows your character's current stamina regeneration per minute.
+
+See also: help stamina
+
+#
+MOVEMENT_REGENERATION
+
+This variable shows your character's current movement regeneration per minute.
+
+#
+WEATHER
+
+This variable shows the weather for the current room your character is in.
+
+See also: help weather
+
+#
+OPPONENT_HEALTH
+
+This variable shows your currently engaged opponent's health percentage.
+
+#
+OPPONENT_NAME
+
+This variable shows your currently engaged opponent's name.
+
+#
+OPPONENT_LEVEL
+
+This variable shows your currently engaged opponent's level.
+
+#
+SPIRIT
+
+This variable shows your current spirits available to your character.
+
+See also: help spirit
 #~

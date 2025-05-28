@@ -47,6 +47,7 @@ void stop_riding(char_data* ch);
 extern int cost_per_day(obj_data* obj);
 extern struct script_head* script_table;
 extern int top_of_script_table;
+extern void msdp_room_update(char_data* ch);
 
 extern int restrict;
 extern int top_of_world;
@@ -305,6 +306,7 @@ ACMD(do_goto)
 
     act(buf, TRUE, ch, 0, 0, TO_ROOM);
     do_look(ch, "", wtl, 0, 0);
+    msdp_room_update(ch);
 }
 
 ACMD(do_trans)

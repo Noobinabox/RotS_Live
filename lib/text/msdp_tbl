@@ -1,0 +1,336 @@
+CHARACTER_NAME
+
+This variable displays the name of your current character. 
+
+#
+ALIGNMENT
+
+This variable represents your character’s moral and ethical standing, ranging
+from -500 (deeply evil) to +500 (strongly good). 
+
+#
+HEALTH
+
+This variable shows your character’s current health points (HP). It decreases
+when you take damage from combat, traps, spells, or other harmful effects.
+
+#
+HEALTH_MAX
+
+This variable shows the maximum amount of health points (HP) your character can
+currently have.Your max health can be influenced by your level, class,
+constitution, gear, buffs, or other in-game effects. While HEALTH reflects your
+present condition, HEALTH_MAX defines your total potential health capacity.
+
+See also: HEALTH
+
+#
+ROOM_NAME
+
+This variable displays the name of the room or location your character is
+currently in. Room names help you navigate the world, remember important
+places, and communicate your location to others. The name may also hint at the
+area's theme, danger level, or notable features.
+
+#
+ROOM_VNUM
+
+This variable displays the unique identification number (vnum) of the room your
+character is currently in. VNUMs are used internally by the game to reference
+specific locations and are especially useful for builders, developers, and
+advanced players using maps, triggers, or scripts. While not always needed for
+casual play, knowing the room VNUM can help with navigation, bug reporting, and
+quest tracking.
+
+#
+LEVEL
+
+This variable shows your character’s current level, which reflects their
+overall progress, power, and experience within the game. As your level
+increases, you may gain access to new skills, spells, equipment, and areas.
+
+See also: help levels
+
+#
+MANA
+
+This variable shows your character’s current mana points (stamina), which are
+used to cast spells and activate certain magical abilities. Mana decreases when
+you use spells and regenerates over time or through rest, items, or special
+abilities. Managing your mana is essential for magic users, as running out can
+leave you unable to cast critical spells during combat or exploration.
+
+#
+MANA_MAX
+
+This variable shows the maximum amount of mana your character can currently
+have. It sets the upper limit for your spellcasting resource and determines how
+many spells or abilities you can use before needing to recover. Your max mana
+may be influenced by factors such as class, level, intelligence or wisdom,
+gear, and magical effects.
+
+See also: MANA
+#
+MOVEMENT
+
+This variable shows your character’s current movement points, which are used to
+travel between rooms, especially in wilderness or difficult terrain. Each step
+or action that requires physical effort may reduce your movement total.
+Movement points regenerate over time and can also be restored through rest,
+items, or abilities. If you run out of movement, your travel may be slowed or
+halted until you recover.
+
+#
+MOVEMENT_MAX
+
+This variable shows the maximum number of movement points your character can
+currently have. It determines how far or how often you can move before needing
+to rest or recover. Your max movement is influenced by your level, stats like
+dexterity, class, equipment, and temporary effects such as buffs or debuffs.
+Maintaining a high movement max is important for exploring, escaping, and
+surviving in challenging environments.
+
+#
+MONEY
+
+This variable shows the amount of copper your character currently possesses.
+
+See also: help money
+
+#
+RACE
+
+Different races in Arda have varying abilities and disadvantages; here is a
+basic chart comparing the attributes of all player controllable races.
+
+See also: help races
+
+#
+STR
+
+This variable shows your character’s current strength stat.
+
+See also: help strength
+
+#
+INT
+
+This variable shows your character’s current intelligence stat.
+
+See also: help intelligence
+
+#
+WILL
+
+This variable shows your character’s current will stat, representing mental
+strength, focus, and resistance.
+
+See also: help will
+
+#
+DEX
+
+This variable shows your character’s current dexterity stat.
+
+See also: help dexterity
+
+#
+CON
+
+This variable shows your character’s current constitution stat.
+
+See also: help constitution
+
+#
+LEA
+
+This variable shows your character’s current learning stat.
+
+See also: help learning
+
+#
+STR_PERM
+
+This variable shows your character’s maximum strength stat.
+
+See also: help strength, man msdp str
+
+#
+INT_PERM
+
+This variable shows your character’s maximum intelligence stat.
+
+See also: help intelligence, man msdp int
+
+#
+WILL_PERM
+
+This variable shows your character’s maximum will stat, representing mental
+strength, focus, and resistance.
+
+See also: help will, man msdp will
+
+#
+DEX_PERM
+
+This variable shows your character’s maximum dexterity stat.
+
+See also: help dexterity, man msdp dexterity
+
+#
+CON_PERM
+
+This variable shows your character’s maximum constitution stat.
+
+See also: help constitution, man msdp constitution
+
+#
+LEA_PERM
+
+This variable shows your character’s maximum learning stat.
+
+See also: help learning, man msdp learning
+
+#
+WIMPY
+
+This variable shows your character’s current wimpy health setting.
+
+See also: help wimpy
+
+#
+SPELL_SAVE
+
+This variable shows your character’s current spell save value.
+
+#
+SPELL_PEN
+
+This variable shows your character’s current spell peneration value.
+
+#
+SPELL_POWER
+
+This variable shows your character’s current spell power value.
+
+#
+ARMOUR_ABS
+
+This variable shows your character's current armour absorption.
+
+#
+OFFENSIVE_BONUS
+
+This variable shows your character's current offensive bonus, also
+known as OB
+
+See also: help offensive bonus
+
+#
+PARRY
+
+This variable shows your character's current parry, also known as pb.
+
+See also: help parry
+
+#
+DODGE
+
+This variable shows your character's current dodge bonus, also
+known as db.
+
+See also: help dodge
+
+#
+ATTACK_SPEED
+
+This variable shows your character's current attack speed.
+
+See also: help attack speed
+
+#
+TACTIC
+
+This variable shows your character's current tactic.
+
+See also: help tactics
+
+#
+PERCEPTION
+
+This variable shows your character's perception percentage.
+
+See also: help perception
+
+#
+WILLPOWER
+
+This variable shows your character's current willpower.
+
+See also: help willpower
+
+#
+SKILL_ENCUMBRANCE
+
+This variable shows your character's current skill encumbrance.
+
+See also: help encumbrance
+
+#
+MOVEMENT_ENCUMBRANCE
+
+This variable shows your character's current movement encumbrance.
+
+See also: help encumbrance
+
+#
+HEALTH_REGENERATION
+
+This variable shows your character's current health regeneration per minute.
+Powers such as regeneration and curing saturation affect your health
+regeneration score.
+
+See also: man power regeneration, man power curing saturation, man spec
+regeneration
+
+#
+STAMINA_REGENERATION
+
+This variable shows your character's current stamina regeneration per minute.
+
+See also: help stamina
+
+#
+MOVEMENT_REGENERATION
+
+This variable shows your character's current movement regeneration per minute.
+
+#
+WEATHER
+
+This variable shows the weather for the current room your character is in.
+
+See also: help weather
+
+#
+OPPONENT_HEALTH
+
+This variable shows your currently engaged opponent's health percentage.
+
+#
+OPPONENT_NAME
+
+This variable shows your currently engaged opponent's name.
+
+#
+OPPONENT_LEVEL
+
+This variable shows your currently engaged opponent's level.
+
+#
+SPIRIT
+
+This variable shows your current spirits available to your character.
+
+See also: help spirit
+#~

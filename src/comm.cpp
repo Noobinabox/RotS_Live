@@ -28,12 +28,14 @@
 #include "handler.h"
 #include "interpre.h"
 #include "limits.h"
+#include "protocol.h"
 #include "script.h"
 #include "skill_timer.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
 #include "zone.h"
+#include "warrior_spec_handlers.h"
 
 #include <cstdlib>
 #include <ctime>
@@ -69,6 +71,7 @@ extern unsigned long stat_whitie_counter;
 extern unsigned long stat_darkie_counter;
 extern unsigned long stat_whitie_legend_counter;
 extern unsigned long stat_darkie_legend_counter;
+extern int get_percent_absorb(char_data* character);
 
 /* local globals */
 struct descriptor_data *descriptor_list = 0, *next_to_process = 0;
@@ -354,6 +357,106 @@ void add_prompt(char* prompt, struct char_data* ch, long flag);
 /* Accept pnew connects, relay commands, and call 'heartbeat-functs' */
 timeval opt_time;
 int pulse = 0; // moved here from being a local variable
+
+int get_health_percent(char_data* character) {
+    const float current_health = GET_HIT(character);
+    const float max_health = GET_MAX_HIT(character);
+    const float health_percent = (current_health / max_health) * 100.0f;
+
+    return (int)health_percent;
+}
+
+void msdp_update() {
+    for(auto desc = descriptor_list; desc; desc = desc->next) {
+        if (!desc->character || IS_NPC(desc->character)) {
+            continue;
+        }
+
+        if (!desc->pProtocol) {
+            continue;
+        }
+
+        MSDPSetString(desc, eMSDP_CHARACTER_NAME, GET_NAME(desc->character));
+        MSDPSetNumber(desc, eMSDP_ALIGNMENT, GET_ALIGNMENT(desc->character));
+        MSDPSetNumber(desc, eMSDP_EXPERIENCE_MAX, xp_to_level(GET_LEVEL(desc->character) + 1) - xp_to_level(GET_LEVEL(desc->character)));
+        MSDPSetNumber(desc, eMSDP_EXPERIENCE, xp_to_level(GET_LEVEL(desc->character) + 1) - GET_EXP(desc->character));
+        MSDPSetNumber(desc, eMSDP_HEALTH, GET_HIT(desc->character));
+        MSDPSetNumber(desc, eMSDP_HEALTH_MAX , GET_MAX_HIT(desc->character));
+        MSDPSetString(desc, eMSDP_ROOM_NAME, world[desc->character->in_room].name);
+        MSDPSetNumber(desc, eMSDP_ROOM_VNUM, world[desc->character->in_room].number);
+        MSDPSetNumber(desc, eMSDP_LEVEL, GET_LEVEL(desc->character));
+        MSDPSetNumber(desc, eMSDP_MANA, GET_MANA(desc->character));
+        MSDPSetNumber(desc, eMSDP_MANA_MAX, GET_MAX_MANA(desc->character));
+        MSDPSetNumber(desc, eMSDP_MOVEMENT, GET_MOVE(desc->character));
+        MSDPSetNumber(desc, eMSDP_MOVEMENT_MAX, GET_MAX_MOVE(desc->character));
+        MSDPSetNumber(desc, eMSDP_MONEY, GET_GOLD(desc->character));
+        MSDPSetString(desc, eMSDP_RACE, pc_races[utils::get_race(*desc->character)]);
+        MSDPSetNumber(desc, eMSDP_STR, GET_STR(desc->character));
+        MSDPSetNumber(desc, eMSDP_INT, GET_INT(desc->character));
+        MSDPSetNumber(desc, eMSDP_WILL, GET_WILL(desc->character));
+        MSDPSetNumber(desc, eMSDP_DEX, GET_DEX(desc->character));
+        MSDPSetNumber(desc, eMSDP_CON, GET_CON(desc->character));
+        MSDPSetNumber(desc, eMSDP_LEA, GET_LEA(desc->character));
+        MSDPSetNumber(desc, eMSDP_STR_PERM, GET_STR_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_INT_PERM, GET_INT_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_WIL_PERM, GET_WILL_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_DEX_PERM, GET_DEX_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_CON_PERM, GET_CON_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_LEA_PERM, GET_LEA_BASE(desc->character));
+        MSDPSetNumber(desc, eMSDP_WIMPY, WIMP_LEVEL(desc->character));
+        MSDPSetNumber(desc, eMDSP_SPELL_SAVE, GET_SAVE(desc->character));
+
+        player_spec::battle_mage_handler battle_mage_handler(desc->character);
+        MSDPSetNumber(desc, eMDSP_SPELL_PEN, battle_mage_handler.get_bonus_spell_pen(desc->character->points.get_spell_pen()));
+        MSDPSetNumber(desc, eMDSP_SPELL_POWER, battle_mage_handler.get_bonus_spell_power(desc->character->points.get_spell_power()));
+
+        MSDPSetNumber(desc, eMDSP_ARMOUR_ABS, get_percent_absorb(desc->character));
+        MSDPSetNumber(desc, eMDSP_OFFENSIVE_BONUS, get_real_OB(desc->character));
+        MSDPSetNumber(desc, eMDSP_PARRY, get_real_parry(desc->character));
+        MSDPSetNumber(desc, eMDSP_DODGE, get_real_dodge(desc->character));
+        MSDPSetNumber(desc, eMDSP_ATTACK_SPEED, utils::get_energy_regen(*desc->character) / 5);
+
+        extern char* tactics[];
+        MSDPSetString(desc, eMDSP_TACTIC, tactics[GET_TACTICS(desc->character)-1]);
+
+        MSDPSetNumber(desc, eMDSP_PERCEPTION, GET_PERCEPTION(desc->character));
+        MSDPSetNumber(desc, eMDSP_WILLPOWER, GET_WILLPOWER(desc->character));
+        MSDPSetNumber(desc, eMDSP_SKILL_ENCUMBRANCE, utils::get_encumbrance(*desc->character));
+        MSDPSetNumber(desc, eMDSP_MOVEMENT_ENCUMBRANCE, utils::get_leg_encumbrance(*desc->character));
+        MSDPSetNumber(desc, eMDSP_HEALTH_REGENERATION, (int)hit_gain(desc->character));
+        MSDPSetNumber(desc, eMDSP_STAMINA_REGENERATION, (int)mana_gain(desc->character));
+        MSDPSetNumber(desc, eMDSP_MOVEMENT_REGENERATION, (int)move_gain(desc->character));
+
+        auto sector_type = world[desc->character->in_room].sector_type;
+        auto weather_type = weather_info.sky[sector_type];
+        extern char* weather_messages[8][13] ;
+        
+        if (OUTSIDE(desc->character)) {
+            MSDPSetString(desc, eMDSP_WEATHER, weather_messages[weather_type + 2][sector_type]);
+        } else {
+            MSDPSetString(desc, eMDSP_WEATHER, "You can have no feeling about the weather here.");
+        }
+
+        auto opponent = desc->character->specials.fighting;
+        if (opponent && utils::is_npc(*opponent)) {
+            MSDPSetNumber(desc, eMSDP_OPPONENT_HEALTH, get_health_percent(opponent));
+            MSDPSetString(desc, eMSDP_OPPONENT_NAME, GET_NAME(opponent));
+            MSDPSetString(desc, eMSDP_OPPONENT_LEVEL, std::to_string(GET_LEVEL(opponent)).c_str());
+        } else if(opponent && utils::is_pc(*opponent)) {
+            MSDPSetNumber(desc, eMSDP_OPPONENT_HEALTH, get_health_percent(opponent));
+            MSDPSetString(desc, eMSDP_OPPONENT_NAME, pc_star_types[utils::get_race(*opponent)]);
+            MSDPSetString(desc, eMSDP_OPPONENT_LEVEL, "???");
+        } else {
+            MSDPSetNumber(desc, eMSDP_OPPONENT_HEALTH, 0);
+            MSDPSetString(desc, eMSDP_OPPONENT_NAME, "");
+            MSDPSetString(desc, eMSDP_OPPONENT_LEVEL, "");
+        }
+
+        MSDPSetNumber(desc, eMSDP_SPIRIT, GET_SPIRIT(desc->character));
+
+        MSDPUpdate(desc);
+    }
+}
 
 void game_loop(SocketType s)
 {
@@ -715,6 +818,8 @@ void game_loop(SocketType s)
             // clean-up expose elements
             clean_expose_elements();
         }
+
+        msdp_update();
 
         if (!(pulse % (60 * 4))) /* one minute */
         {
@@ -1361,6 +1466,7 @@ int process_input(struct descriptor_data* t)
     sofar = flag = 0;
     begin = strlen(t->buf);
 
+
     /* Read in some stuff */
     do {
         thisround = read(t->descriptor, t->buf + begin + sofar,
@@ -1380,6 +1486,8 @@ int process_input(struct descriptor_data* t)
             }
         }
     } while (!ISNEWL(*(t->buf + begin + sofar - 1)));
+    
+
 
     if (t->character)
         t->character->specials.timer = 0;

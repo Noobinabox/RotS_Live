@@ -18,7 +18,6 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
-#include "script.h"
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
@@ -57,7 +56,6 @@ extern void stop_hiding(struct char_data* ch, char);
 extern void update_pos(struct char_data* victim);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
-extern void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon);
 extern void say_spell(char_data* caster, int spell_index);
 
 const int GATHER_FOOD = 7218;

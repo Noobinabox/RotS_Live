@@ -3215,7 +3215,9 @@ struct help_index_summary help_content[] = {
     { "shape", "Information regarding the shaping interface",
         "text/shap_tbl", 0, 0, 1, 0 },
     { "script", "Information and tutorials for writing scripts",
-        "text/scr_tbl", 0, 0, 1, 0 }
+        "text/scr_tbl", 0, 0, 1, 0 },
+    {"msdp", "MSDP Protocol information",
+    "text/msdp_tbl", 0, 0, 0, 0}
 };
 
 int num_of_ferries = 1;

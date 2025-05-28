@@ -1,9 +1,6 @@
 #include "skill_timer.h"
 #include "char_utils.h"
-#include "comm.h"
 #include "structs.h"
-#include "utils.h"
-#include <vector>
 
 template <>
 game_timer::skill_timer* world_singleton<game_timer::skill_timer>::m_pInstance(0);
@@ -23,7 +20,6 @@ void skill_timer::add_skill_timer(const char_data& ch, const int skill_id, const
     data.player_id = player_id;
     data.skill_id = skill_id;
     data.counter = counter;
-    vmudlog(CMP, "Skill cooldown set: char:[%s] skill:[%s] counter:[%d]", utils::get_name(ch), utils::get_skill_name(skill_id), counter);
     m_skill_timer.push_back(data);
     add_global_cooldown(player_id);
 }
@@ -49,7 +45,6 @@ void skill_timer::update_skill_timer()
         if (data.counter > 0) {
             data.counter -= 1;
         } else {
-            vmudlog(CMP, "Skill cooldown expired char:[%d] skill:[%d]", data.player_id, data.skill_id);
             m_skill_timer.erase(m_skill_timer.begin() + i);
         }
     }
@@ -61,7 +56,6 @@ void skill_timer::add_global_cooldown(int ch_id)
     data.player_id = ch_id;
     data.skill_id = GLOBAL_SKILL;
     data.counter = GLOBAL_COOLDOWN_COUNTER;
-    vmudlog(CMP, "Skill cooldown set: char[%d] counter[%d]", ch_id, GLOBAL_COOLDOWN_COUNTER);
     m_skill_timer.push_back(data);
 }
 

@@ -425,11 +425,11 @@ extern struct race_bodypart_data bodyparts[MAX_BODYTYPES];
 #define GET_OB(ch) ((ch)->points.OB)
 #define SET_OB(ch) ((ch)->points.OB)
 
-#define GET_SPELL_PEN(ch) ((ch)->points.spell_pen);
-#define SET_SPELL_PEN(ch) ((ch)->points.spell_pen);
+#define GET_SPELL_PEN(ch) ((ch)->points.spell_pen)
+#define SET_SPELL_PEN(ch) ((ch)->points.spell_pen)
 
-#define GET_SPELL_POWER(ch) ((ch)->points.spell_power);
-#define SET_SPELL_POWER(ch) ((ch)->points.spell_power);
+#define GET_SPELL_POWER(ch) ((ch)->points.spell_power)
+#define SET_SPELL_POWER(ch) ((ch)->points.spell_power)
 
 #define GET_WILLPOWER(ch) ((ch)->points.willpower)
 

@@ -16,6 +16,7 @@
 #include "db.h"
 #include "handler.h"
 #include "interpre.h"
+#include "protocol.h"
 #include "script.h"
 #include "spells.h"
 #include "structs.h"
@@ -48,31 +49,6 @@ void death_cry(struct char_data* ch);
 extern struct char_data* waiting_list;
 void stop_hiding(struct char_data* ch, char);
 void do_power_of_arda(char_data* ch);
-
-string reverse_direction(int dir)
-{
-    switch (dir) {
-    case 0:
-        return ("the south");
-        break;
-    case 1:
-        return ("the west");
-        break;
-    case 2:
-        return ("the north");
-        break;
-    case 3:
-        return ("the east");
-        break;
-    case 4:
-        return ("below");
-        break;
-    case 5:
-        return ("above");
-        break;
-    };
-    return ("");
-}
 
 ACMD(do_look);
 
@@ -576,6 +552,96 @@ int racial_movement_reduction(const int room_type, const int race, const int mov
     return movement_cost;
 }
 
+bool is_exit_valid(const room_direction_data room_direction) {
+    auto to_room = room_direction.to_room;
+    auto exit_info = room_direction.exit_info;
+
+    if (!to_room || to_room == NOWHERE) {
+        return false;
+    }
+
+    if (exit_info == NOWHERE) {
+        return false;
+    }
+
+    if (IS_SET(exit_info, EX_ISBROKEN)) {
+        return false;
+    }
+
+    if (IS_SET(exit_info, EX_NOWALK)) {
+        return false;
+    }
+
+    if (IS_SET(exit_info, EX_ISHIDDEN)) {
+        return false;
+    }
+
+    return true;
+}
+
+void msdp_room_update(char_data* ch) {
+    if (utils::is_npc(*ch)) {
+        return;
+    } 
+
+    if (!ch->desc->pProtocol) {
+        return;
+    }
+
+    MSDPSetString(ch->desc, eMSDP_ROOM_NAME, world[ch->desc->character->in_room].name);
+    MSDPSetNumber(ch->desc, eMSDP_ROOM_VNUM, world[ch->desc->character->in_room].number);
+    
+      
+    std::string msdp_room = {};
+    msdp_room += (char)MSDP_VAR;
+    msdp_room += "VNUM";
+    msdp_room += (char)MSDP_VAL;
+    msdp_room += std::to_string(world[ch->in_room].number);
+    msdp_room += (char)MSDP_VAR;
+    msdp_room += "NAME";
+    msdp_room += (char)MSDP_VAL;
+    msdp_room += world[ch->in_room].name;
+    msdp_room += (char)MSDP_VAR;
+    msdp_room += "EXITS";
+    msdp_room += (char)MSDP_VAL;
+    msdp_room += (char)MSDP_ARRAY_OPEN;
+    std::string exits_names = {};
+    const std::string direction[NUM_OF_DIRS] = {"n", "e", "s", "w", "u", "d"};
+
+    for (int exits = 0; exits < NUM_OF_DIRS; exits++) {
+        if (ch->in_room == NOWHERE) {
+            break;
+        }
+        
+        if (world[ch->in_room].dir_option[exits] == nullptr) {
+            continue;
+        }
+
+        const room_direction_data room_direction = *world[ch->in_room].dir_option[exits];
+
+        if (is_exit_valid(room_direction)) {
+            msdp_room += (char)MSDP_VAL;
+            msdp_room += std::to_string(world[room_direction.to_room].number);
+            exits_names += (char)MSDP_VAL;
+            exits_names += direction[exits];
+        }
+    }
+    msdp_room += (char)MSDP_ARRAY_CLOSE;
+    msdp_room += (char)MSDP_VAR;
+    msdp_room += "TERRAIN";
+    msdp_room += (char)MSDP_VAL;
+
+    extern char* sector_types[];
+    msdp_room += sector_types[world[ch->in_room].sector_type];
+
+    // Room exits need to be sent first before anything else
+    MSDPSetArray(ch->desc, eMSDP_ROOM_EXITS, exits_names.c_str());
+    MSDPSend(ch->desc, eMSDP_ROOM_EXITS);
+    MSDPSetTable(ch->desc, eMSDP_ROOM, msdp_room.c_str());
+
+    MSDPUpdate(ch->desc);
+}
+
 ACMD(do_move)
 /* do_move is under construction to account for riding... !!!!  */
 {
@@ -889,6 +955,8 @@ ACMD(do_move)
 
             res_flag = perform_move_mount(ch->mount_data.mount, cmd);
         }
+
+        msdp_room_update(ch);
 
         mounts = 0;
         if (IS_RIDING(ch))

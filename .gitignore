@@ -69,6 +69,8 @@ src/.vs/
 *build*/
 .gitignore
 
+# Clang
+.cache
 
 # Rust
 target/

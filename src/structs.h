@@ -24,6 +24,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "protocol.h"
 
 #define MAX_ALIAS (30 + GET_LEVEL(ch) * 2)
 const int constexpr MAX_SPIRITS = 90000;
@@ -1994,6 +1995,7 @@ struct descriptor_data {
     struct char_data* original; /* original char if switched		*/
     struct snoop_data snoop; /* to snoop people			*/
     struct descriptor_data* next; /* link to next descriptor		*/
+    protocol_t *pProtocol;
 };
 
 struct msg_type {

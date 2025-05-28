@@ -34,6 +34,8 @@ const int constexpr PRACS_PER_LEVEL = 3;
 const int constexpr LEA_PRAC_FACTOR = 5;
 const int constexpr LIGHT_WEAPON_WEIGHT_CUTOFF = 235;
 
+const int constexpr PLAYER_RACE_MAX = 100;
+
 const int constexpr INVALID_GUARDIAN = -1;
 const int constexpr AGGRESSIVE_GUARDIAN = 0;
 const int constexpr DEFENSIVE_GUARDIAN = 1;
@@ -1748,6 +1750,8 @@ public:
     int classpoints; /* Only used for character creation in interpre.cc new_player_select.  Move variable elsewhere? */
     int interrupt_count = 0; /* Meant to store times interupted so that npc mages know to stop casting in battle */
     int interrupt_time = 0;  /* Meant to be a countdown timer to remove 1 from interrupt_count */
+
+    bool spec_busy;
 };
 
 struct race_bodypart_data {

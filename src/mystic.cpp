@@ -1077,11 +1077,44 @@ ASPELL(spell_hallucinate)
 ASPELL(spell_haze)
 {
     struct affected_type af;
+    struct affected_type* oldaf;
     int loc_level, my_duration, tmp;
     affected_type* tmpaf;
 
-    if (!victim)
+    if (!victim && !obj && !(caster->specials.fighting)) { /*hazing the room*/
+
+        if (!caster) {
+            return;
+        }
+
+        int level = get_mystic_caster_level(caster);
+        af.type = ROOMAFF_SPELL;
+        af.duration = (level) / 3;
+        af.modifier = level / 2;
+        af.location = SPELL_HAZE;
+        af.bitvector = 0;
+
+        if ((oldaf = room_affected_by_spell(&world[caster->in_room], SPELL_HAZE))) {
+            if (oldaf->duration < af.duration) {
+                oldaf->duration = af.duration;
+            }
+
+            if (oldaf->modifier < af.modifier) {
+                oldaf->modifier = af.modifier;
+            }
+        } else {
+            affect_to_room(&world[caster->in_room], &af);
+        }
+
+        act("$n breathes out a disorientating mist.", TRUE, caster, 0, 0, TO_ROOM);
+        send_to_char("You breathe out a disorientating mist.\n\r", caster);
+
         return;
+    }
+
+    if (!victim && caster->specials.fighting) {
+        victim = caster->specials.fighting;
+    }
 
     if ((type == SPELL_TYPE_ANTI) && is_object) {
         for (tmpaf = caster->affected, tmp = 0; (tmp < MAX_AFFECT) && tmpaf;

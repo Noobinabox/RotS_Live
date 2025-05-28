@@ -106,12 +106,12 @@ OVERRUN
 [Group       ] Warrior
 [Level       ] 15
 [Offensive   ] Yes
-[Cooldown    ] 60 Seconds
+[Cooldown    ] 120 Seconds
 [Description ]
 --- When given a direction the Olog-Hai will charge through each room bashing
 every mob as they move throught it. If the Olog-Hai can't charge the full
 distance they will charge into the wall at full force taking damage. The skill
-is on a cooldown and can be used every 60 seconds.
+is on a cooldown and can be used every 120 seconds.
 
 #
 FRENZY
@@ -134,13 +134,13 @@ SMASH
 [Group       ] Warrior
 [Level       ] 20
 [Offensive   ] Yes
-[Cooldown    ] 60 Seconds
+[Cooldown    ] 120 Seconds
 [Description ]
 ---The Smash skill makes an attempt to slam into a chosen target, causing a descent
 amount of damage, and possibly dismounting the target. The success of a smash
 depends on how well you are learned in the skill, and your warrior level. There is a
 small chance this skill can hit a random target in the room. This skill is on a 
-cooldown of 60 seconds.
+cooldown of 120 seconds.
 
 #
 CLEAVE
@@ -149,12 +149,12 @@ CLEAVE
 [Group       ] Warrior
 [Level       ] 25
 [Offensive   ] Yes
-[Cooldown    ] 30 Seconds
+[Cooldown    ] 60 Seconds
 [Description ]
 ---The Cleave skill makes an attempt to damage every creature in the same room as the
 Olog-Hai. The success of a cleave depends on how well you are learned in the skill,
 and your warrior level. The damage is greatly increased with the weight of your weapon.
-This skills is on a cooldown of 30 seconds.
+This skills is on a cooldown of 60 seconds.
 
 #
 STOMP
@@ -163,12 +163,12 @@ STOMP
 [Group       ] Warrior
 [Level       ] 27
 [Offensive   ] Yes
-[Cooldown    ] 60 Seconds
+[Cooldown    ] 120 Seconds
 [Description ]
 ---The Stomp skill makes an attempt to damage and stun every create in the same room as
 the Olog-Hai. The success of a stomp depends on how well you are learned in the skill,
 and your warrior level. The damage is greately increased with the weight of your weapon.
-This skill is on a cooldown of 60 seconds.
+This skill is on a cooldown of 120 seconds.
 
 #
 MARK

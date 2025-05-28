@@ -52,6 +52,7 @@ extern struct time_info_data time_info;
 extern skill_teach_data guildmasters[MAX_SKILLS];
 extern ferry_boat_type ferry_boat_data[];
 extern ferry_captain_type ferry_captain_data[];
+int find_first_step(int, int);
 
 ACMD(do_ambush);
 ACMD(do_hide);
@@ -1924,6 +1925,8 @@ SPECIAL(mob_ranger)
     if (mintmp < NUM_OF_TRACKS) {
         tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
         tmpwtl.subcmd = 0;
+        // below is bugged! Within do_move() it calls for this proc again right after it moves the char, skipping the ON_ENTER call for each in-between room,
+        //   likely doesnt leave tracks in the middle rooms either, also it moves rather instantly since its looping in a single one_mobile_activity call
         do_move(host, "", &tmpwtl, (tmproom->room_track[mintmp].data & 7) + 1, 0);
         tmpwtl.targ1.cleanup();
         return 0;
@@ -1935,7 +1938,231 @@ SPECIAL(mob_ranger)
             do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
         tmpwtl.targ1.cleanup();
     }
-    return 0;
+    return 0; // Because this isn't a 1: If the mob moves above, when it leaves this prog it can move again from continuing one_mobile_activity (also double delays)
+}
+
+/* Created for the new ranger prog */
+bool see_hidden(char_data* host, char_data* tmpch) {
+    int hide, vuln_st, my_hide, orig_hide, see_hide;
+
+    orig_hide = see_hiding(host);
+    see_hide  = orig_hide;
+    // COMMENT OUT 3 LINES BELOW to use ONLY THE STANDARD see_hiding() calc
+    if(GET_LEVEL(host) >= 40) {
+        see_hide = (GET_LEVEL(host) * 2) + number(-7,20) + number(-7,20) + number(-7,20);
+    }
+    vuln_st = IS_VULNERABLE(host, PLRSPEC_STLH);
+    if(vuln_st > 0) {
+        see_hide = see_hide - (see_hide * .5);
+    }
+    hide    = 0;
+    hide    = GET_HIDING(tmpch);
+    my_hide = GET_HIDING(host);
+    return (!(hide > 0) || (hide > 0 && (see_hide > hide) ));
+}
+
+// note: we dont check if fighting here, because its also used for ambush
+bool should_attack(char_data* host, char_data* tmpch) {
+    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
+    return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch)
+            && (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch))));
+}
+
+void do_spec_ambush(char_data* host, char_data* tmpch) {
+    waiting_type tmpwtl;
+    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    tmpwtl.cmd = CMD_AMBUSH;
+    tmpwtl.subcmd = 0;
+    tmpwtl.targ1.type = TARGET_CHAR;
+    tmpwtl.targ1.ptr.ch = tmpch;
+    tmpwtl.targ1.ch_num = tmpch->abs_number;
+    do_ambush(host, "", &tmpwtl, CMD_AMBUSH, 0);
+    tmpwtl.targ1.cleanup();
+    host->spec_busy = false;
+}
+
+void do_spec_hit(char_data* host, char_data* tmpch) {
+    waiting_type tmpwtl;
+    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    if (GET_INT(host) <= 6) {
+        act("$n snarls and lunges at $N!", FALSE, host, 0, tmpch, TO_ROOM);
+    } else {
+        act("$n grins evilly and attacks $N!", FALSE, host, 0, tmpch, TO_ROOM);
+    }
+    sscanf(tmpch->player.name, "%s", buf);
+    tmpwtl.targ1.type = TARGET_CHAR;
+    tmpwtl.targ1.ptr.ch = tmpch;
+    tmpwtl.targ1.ch_num = tmpch->abs_number;
+    tmpwtl.cmd = CMD_HIT;
+    do_hit(host, buf, &tmpwtl, 0, 0);
+    host->spec_busy = false;
+}
+
+bool prog_do_hunter(char_data* host) {
+    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT)))
+            && !IS_SET(host->specials2.act, MOB_SENTINEL) && (GET_POS(host) == POSITION_STANDING)
+            && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+}
+
+// Works with HUNTER and MEMORY flags, handled below
+// Opt: alias keyword "stab" makes it favor ambushing
+//    : alias keyword "hunt" makes it hunt tracks
+SPECIAL(mob_ranger_new) {
+    waiting_type tmpwtl;
+    char_data* tmpch;
+    room_data* tmproom;
+    struct memory_rec* names;
+    struct char_data *vict;
+    int tmp, tmp2, mintime, mintmp, dir;
+
+    long racial_aggr  = host->specials2.pref;
+    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
+
+    bzero((char*)&tmpwtl, sizeof(waiting_type));
+
+    if (host->in_room == NOWHERE)
+        return 0;
+    if ((callflag != SPECIAL_SELF) && (callflag != SPECIAL_ENTER))
+        return 0;
+
+    ch->spec_busy = true; // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
+
+    if (GET_POS(host) < POSITION_FIGHTING) {
+        update_pos(host);
+    }
+
+    // hide here for pop or after fighting and didnt move
+    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+            || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+        do_hide(host, "", 0, 0, 0);
+    }
+
+    tmpch = 0;
+    if ((callflag == SPECIAL_ENTER) && ch && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
+        tmpch = ch;
+    } else if (callflag == SPECIAL_SELF) {
+        // should this pick a random target, instead of first?
+        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+            if (should_attack(host, tmpch)) {
+                break;
+            }
+        }
+    }
+
+    /* Ambush */
+    if (tmpch && tmpch != host && strstr(ch->player.name, "stab") && !host->specials.fighting && !tmpch->specials.fighting) {
+        do_spec_ambush(host, tmpch);
+        return 1;
+    }
+    // else attack
+    if(tmpch && tmpch != host && !host->specials.fighting) {
+        do_spec_hit(host, tmpch);
+        return 1;
+    }
+
+    // MEMORY / HUNTER
+    if (prog_do_hunter(host)) {
+        vict = 0;
+        for (names = ch->specials.memory; names && !vict;
+            names = names->next_on_mob) {
+            if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room == ch->in_room) && CAN_SEE(ch, names->enemy)) {
+                vict = names->enemy;
+            }
+        }
+        if (vict) {
+            if (ch->master == vict) {
+                forget(ch, vict);
+            } else { // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
+                if(should_attack(host, tmpch) && strstr(ch->player.name, "stab") && !host->specials.fighting && !vict->specials.fighting) {
+                    do_spec_ambush(host, tmpch);
+                    return 1;
+                }
+                if(should_attack(host, tmpch) && !host->specials.fighting) {
+                    do_spec_hit(host, tmpch);
+                    return 1;
+                }
+            }
+        }
+        if (IS_SET(ch->specials2.act, MOB_HUNTER) || IS_AFFECTED(ch, AFF_HUNT)) {
+            int modifier = 0;
+            if (IS_AFFECTED(ch, AFF_CONFUSE)) {
+                modifier = get_confuse_modifier(ch);
+            }
+
+            for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
+                if(names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room != NOWHERE)
+                        && (number(0, 100) > modifier)) {
+                    tmp = find_first_step(ch->in_room, names->enemy->in_room);
+                } else {
+                    tmp = BFS_NO_PATH;
+                }
+                if (tmp >= 0) {
+                    do_move(ch, "", 0, tmp + 1, 0);
+                    do_hide(host, "", 0, 0, 0);
+                    host->spec_busy = false;
+                    return 1;
+                }
+            }
+        }
+    } /* mob memory/hunter */
+
+    tmproom = &world[host->in_room];
+    mintime = 999;
+    mintmp = NUM_OF_TRACKS;
+    if(ch->delay.wait_value == 0) {
+        // TRACKING
+        if(strstr(ch->player.name, "hunt")) {
+            for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
+                tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
+                dir = (tmproom->room_track[tmp].data & 7); // the direction
+                room_data exit_room;
+
+                if(CAN_GO(host, dir)) {
+                    exit_room = world[EXIT(host, dir)->to_room];
+                }
+
+                if ((tmproom->room_track[tmp].char_number < 0)
+                        && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number))
+                            || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX) )
+                        && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
+                    //NOTE: these get set on every true pass, so it would be the last matching track, unless sorting was done on the random order of tracks
+                    mintime = tmp2;
+                    mintmp = tmp;
+                }
+            }
+
+            if (mintmp < NUM_OF_TRACKS) {
+                tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
+                tmpwtl.subcmd = 0;
+                do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
+                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+                        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+                    do_hide(host, "", 0, 0, 0);
+                }
+                tmpwtl.targ1.cleanup();
+                ch->spec_busy = false;
+                return 1;
+            }
+        }
+
+        // default: try move and hide again
+        if (GET_POS(host) == POSITION_STANDING) {
+            tmpwtl.cmd = number(1, NUM_OF_DIRS);
+            tmpwtl.subcmd = 0;
+            if (CAN_GO(host, tmpwtl.cmd - 1)) {
+                do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
+                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+                        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+                    do_hide(host, "", 0, 0, 0);
+                }
+                tmpwtl.targ1.cleanup();
+                return 1;
+            }
+            tmpwtl.targ1.cleanup();
+        }
+    }
+    ch->spec_busy = false;
+    return 1;  //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a consistant flow
 }
 
 /*

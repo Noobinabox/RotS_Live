@@ -711,6 +711,16 @@ ACMD(do_cast)
         }
         /* supposedly, we have ch.delay formed now, except for delay value. */
 
+        // only allow NPCs and god race to cast in rooms (for now)
+        auto restricted_room_haze_cast = spell_index == SPELL_HAZE &&
+                           tmpwtl.targ2.type == 0 && !ch->specials.fighting &&
+                           !(IS_NPC(ch) || GET_RACE(ch) == 0);
+
+        if (restricted_room_haze_cast) {
+          send_to_char("You cannot cast to room.\n\r", ch);
+          return;
+        }
+
         if (!(prepared_spell == spell_index) && !IS_SET(ch->specials.affected_by, AFF_WAITING)) {
             /* putting the player into waiting list */
             casting_time = CASTING_TIME(ch, spell_index);

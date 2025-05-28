@@ -74,3 +74,6 @@ src/.vs/
 
 # Rust
 target/
+
+# cmake
+.cache

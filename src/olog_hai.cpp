@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "base_utils.h"
 #include "big_brother.h"
 #include "char_utils.h"
 #include "comm.h"
@@ -489,6 +490,13 @@ ACMD(do_overrun) {
     int loop_moves = 0;
     int dis;
     char_data *tmpch = nullptr;
+
+    // WARNING: Due to bug in overrun, we need to remove hunt aff
+    // otherwise the olog-hai will hit the same target multiple times in a row.
+    if (utils::is_affected_by(*ch, AFF_HUNT)) {
+        REMOVE_BIT(ch->specials.affected_by, AFF_HUNT);
+    }
+
     for (dis = 0; dis <= total_moves; dis++) {
         olog_hai::room_target(ch, &olog_hai::apply_overrun_damage);
 

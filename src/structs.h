@@ -1748,6 +1748,8 @@ public:
     struct waiting_type delay;
     struct char_data* next_die; /* next to die in the death_waiting_list :(  */
     int classpoints; /* Only used for character creation in interpre.cc new_player_select.  Move variable elsewhere? */
+    int interrupt_count = 0; /* Meant to store times interupted so that npc mages know to stop casting in battle */
+    int interrupt_time = 0;  /* Meant to be a countdown timer to remove 1 from interrupt_count */
 
     bool spec_busy;
 };

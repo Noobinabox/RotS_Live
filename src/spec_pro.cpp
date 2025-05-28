@@ -1604,6 +1604,204 @@ SPECIAL(mob_magic_user)
     return FALSE;
 }
 
+int pick_a_spell(int *my_tmp_spells) {
+    int chance = number(1, my_tmp_spells[0]);
+    return my_tmp_spells[chance];
+}
+
+// TODO: firebolt (maybe a dark spell was too), is returning FALSE? -- is causing a second action to kick off?
+// note: also see spec_pro_message
+SPECIAL(mob_magic_user_spec) {
+    // was there a reason mob_magic_user checks delay.subcmd & wait_value, when subcmd can be 0??
+    //if (host->delay.wait_value && host->delay.subcmd) {
+    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE) {
+        return FALSE;
+    }
+
+    struct char_data *tmpch, *tmpch_next;
+    char_data* target;
+    int my_tmp_spells[4];
+    int tgt, spell_number = 0;
+    double current_health_pct = (double)GET_HIT(host)  / (double)GET_MAX_HIT(host);
+    double current_mana_pct   = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
+
+    char *fm = strstr(host->player.name, "fmage");
+    char *lm = strstr(host->player.name, "lmage");
+    char *cm = strstr(host->player.name, "cmage");
+    char *dm = strstr(host->player.name, "dmage");
+    char *om = strstr(host->player.name, "lumage");
+    char *cj = strstr(host->player.name, "conj");
+
+    // conj: prioritize heal powers in non-combat
+    if(!host->specials.fighting && cj) {
+        // handle regen
+        if(!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_REGENERATION;
+            host->points.spirit = 100;
+        }
+
+        // handle curing sat
+        if(!utils::is_affected_by_spell(*host, SPELL_CURING) && spell_number == 0) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_CURING;
+            host->points.spirit = 100;
+        }
+    }
+
+    // handle other non-combat
+    if(!host->specials.fighting && spell_number == 0) {
+        // handle cure self
+        if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
+           (current_health_pct <= .9 &&  utils::is_affected_by_spell(*host, SPELL_SHIELD)  && current_mana_pct >= .5)) {
+            target = host;
+            tgt = TARGET_CHAR;
+            spell_number = SPELL_CURE_SELF;
+        }
+    }
+
+    // switch tactics (for now, we use a super flash to have an attempt to cast shield)
+    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
+        if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+            int chance = number(1, 100);
+            if(chance > 50) {
+                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                    if (tmpch->specials.fighting == host) {
+                        //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
+                        stop_fighting(tmpch);
+                    }
+                }
+                stop_fighting(host);
+                target = host;
+                tgt = TARGET_CHAR;
+                spell_number = SPELL_SHIELD;
+            }
+        }
+    }
+
+    // Damage Spells
+    if(target != host && spell_number == 0) {
+        target = choose_caster_target(host);
+        if (target == nullptr) {
+            return FALSE;
+        }
+        if(host->specials.fighting && spell_number == 0) {
+            tgt = TARGET_OTHER;
+
+            if(cj) {
+                int chance = number(1, 100);
+                if(chance > 75) {
+                    host->points.spirit = 100;
+                    if(!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
+                        spell_number = SPELL_CONFUSE;
+                    }
+                    if(!om && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
+                        spell_number = SPELL_POISON;
+                    }
+                }
+            }
+            if(spell_number == 0 && host->interrupt_count < 3) {
+                if(fm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                    }
+
+                } else if(lm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
+                    } else {
+                        if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
+                        }
+                    }
+
+                } else if(cm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                    }
+
+                } else if(dm) {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
+                    } else {
+                        int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                    }
+
+                } else if(om) { //lhu
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
+                    } else {
+                        if(SUN_PENALTY(host)) {
+                            int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
+                        }
+                    }
+
+                } else {
+                    if(current_health_pct <= .25) {
+                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
+                    } else if(current_health_pct <= .5) {
+                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
+                    } else if(current_health_pct <= .75) {
+                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
+                    } else {
+                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
+                    }
+                }
+                spell_number = pick_a_spell(my_tmp_spells);
+            }
+        }
+    }
+
+    if (spell_number == 0) {
+        return FALSE;
+    }
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
+    mudlog_debug_mob(buf, host);
+    
+    waiting_type wtl_base;
+    wtl_base.cmd = CMD_CAST;
+    wtl_base.subcmd = 0;
+    wtl_base.targ1.ch_num = spell_number;
+    wtl_base.targ1.type = tgt;
+    wtl_base.targ2.ptr.ch = target;
+    wtl_base.targ2.ch_num = target->abs_number;
+    wtl_base.targ2.type = TARGET_CHAR;
+    wtl_base.targ2.choice = TAR_CHAR_ROOM;
+    wtl_base.flg = 1;
+    do_cast(host, "", &wtl_base, CMD_CAST, 0);
+    return TRUE;
+}
+
 int warrior_abilities[] = {
     CMD_KICK,
     CMD_BASH,

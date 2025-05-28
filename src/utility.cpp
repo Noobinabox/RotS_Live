@@ -1101,6 +1101,12 @@ void mudlog(char* str, char type, sh_int level, byte file)
     return;
 }
 
+void mudlog_debug_mob(char *buf, char_data *ch) {
+    if(strstr(ch->player.name, "debug")) {
+        mudlog(buf, SPL, LEVEL_GOD, FALSE);
+    }
+}
+
 void vmudlog(char type, char* format, ...)
 {
 #define BUFSIZE 2048

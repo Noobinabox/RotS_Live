@@ -1711,7 +1711,11 @@ SPECIAL(mob_magic_user_spec) {
                     } else if(current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                        if(GET_LEVEL(host) >= 40) {
+                            int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_FIREBOLT};
+                        }
                     }
 
                 } else if(lm) {
@@ -1722,7 +1726,7 @@ SPECIAL(mob_magic_user_spec) {
                     } else if(current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
                     } else {
-                        if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                        if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING && GET_LEVEL(host) >= 40) {
                             int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
                         } else {
                             int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
@@ -1737,7 +1741,11 @@ SPECIAL(mob_magic_user_spec) {
                     } else if(current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                        if(GET_LEVEL(host) >= 40) {
+                            int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
+                        }
                     }
 
                 } else if(dm) {
@@ -1748,7 +1756,11 @@ SPECIAL(mob_magic_user_spec) {
                     } else if(current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                        if(GET_LEVEL(host) >= 40) {
+                            int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_DARK_BOLT};
+                        }
                     }
 
                 } else if(om) { //lhu
@@ -1759,10 +1771,10 @@ SPECIAL(mob_magic_user_spec) {
                     } else if(current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
                     } else {
-                        if(SUN_PENALTY(host)) {
-                            int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
+                        if(SUN_PENALTY(host) || GET_LEVEL(host) < 40) {
+                            int my_tmp_spells[] = {2, SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW};
                         } else {
-                            int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
+                            int my_tmp_spells[] = {2, SPELL_SPEAR_OF_DARKNESS, SPELL_BLACK_ARROW};
                         }
                     }
 

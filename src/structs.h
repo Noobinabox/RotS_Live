@@ -881,6 +881,7 @@ const int constexpr RACE_HARADRIM = 18;
 #define RACE_UNDEAD 16
 #define RACE_TROLL 20
 
+
 #define localtime(x) localtime((time_t*)x)
 #ifndef CONSTANTSMARK
 extern char* pc_races[];
@@ -983,7 +984,7 @@ extern char* pc_named_star_types[];
 #define PRF_CHAT (1 << 20)
 #define PRF_ROOMFLAGS (1 << 22)
 #define PRF_SPAM (1 << 23)
-#define PRF_AUTOEX (1 << 24)
+#define PRF_AUTOEX (1 << 24) // TODO: Replace this is PRF_MSDP
 #define PRF_WRAP (1 << 25)
 #define PRF_LATIN1 (1 << 26)
 #define PRF_SPINNER (1 << 27)

@@ -2947,7 +2947,7 @@ void init_char(struct char_data *ch) {
 
   /* The default preference flags */
   PRF_FLAGS(ch) |= PRF_SPAM | PRF_NARRATE | PRF_CHAT | PRF_WIZ | PRF_SING |
-                   PRF_PROMPT | PRF_ECHO | PRF_AUTOEX | PRF_SPINNER;
+                   PRF_PROMPT | PRF_ECHO | PRF_SPINNER;
 }
 
 /* returns the real number of the room with given virt number */

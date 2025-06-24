@@ -1556,7 +1556,6 @@ char* change_comm[] = {
 ACMD(do_toggle);
 ACMD(do_title);
 ACMD(do_wimpy);
-ACMD(do_spam);
 
 ACMD(do_set)
 {

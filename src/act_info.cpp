@@ -2806,7 +2806,7 @@ ACMD(do_toggle) {
             "         NoTell: %-3s\r\n"
             "   Compact Mode: %-3s    "
             "Narrate Channel: %-3s    "
-            "  Autoexit Mode: %-3s\r\n"
+            "      MSDP Mode: %-3s\r\n"
             "      Spam Mode: %-3s    "
             "   Chat Channel: %-3s    "
             " Incognito Mode: %-3s\r\n"
@@ -2823,7 +2823,7 @@ ACMD(do_toggle) {
             "Advanced Prompt: %-3s    ",
             ONOFF(PRF_FLAGGED(ch, PRF_PROMPT)), ONOFF(PRF_FLAGGED(ch, PRF_BRIEF)),
             ONOFF(PRF_FLAGGED(ch, PRF_NOTELL)), ONOFF(PRF_FLAGGED(ch, PRF_COMPACT)),
-            ONOFF(PRF_FLAGGED(ch, PRF_NARRATE)), ONOFF(PRF_FLAGGED(ch, PRF_AUTOEX)),
+            ONOFF(PRF_FLAGGED(ch, PRF_NARRATE)), ONOFF(PRF_FLAGGED(ch, PRF_MSDP)),
             ONOFF(PRF_FLAGGED(ch, PRF_SPAM)), ONOFF(PRF_FLAGGED(ch, PRF_CHAT)),
             ONOFF(!PRF_FLAGGED(ch, PLR_INCOGNITO)), ONOFF(PRF_FLAGGED(ch, PRF_ECHO)),
             ONOFF(PRF_FLAGGED(ch, PRF_SING)), ONOFF(PRF_FLAGGED(ch, PRF_MENTAL)),

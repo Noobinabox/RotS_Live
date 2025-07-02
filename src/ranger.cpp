@@ -763,6 +763,13 @@ ambush_get_valid_victim(struct char_data* ch, struct waiting_type* target)
         return NULL;
     }
 
+    if ((IS_AFFECTED(ch, AFF_CHARM) && ch->master == victim) ||
+        (IS_AFFECTED(victim, AFF_CHARM) && victim->master == ch)) {
+        act("$N is just such a good friend, you simply can't hit $M.", FALSE, ch, 0, victim,
+            TO_CHAR);
+        return NULL;
+    }
+
     /* Can happen for TARGET_CHAR */
     if (ch->in_room != victim->in_room) {
         send_to_char("Your victim is no longer here.\r\n", ch);

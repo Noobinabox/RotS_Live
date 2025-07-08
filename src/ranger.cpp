@@ -128,6 +128,10 @@ ACMD(do_ride)
                     break;
                 }
             }
+            if(!mountch) {
+                send_to_char("You have no mount to switch to.\n\r", ch);
+                return;
+            }
         }
 
         // handle dismount if next mount found

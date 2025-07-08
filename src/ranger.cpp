@@ -72,12 +72,13 @@ ACMD(do_gen_com);
 
 ACMD(do_ride)
 {
-
     follow_type* tmpfol;
     char_data* potential_mount;
     char_data* mountch;
+    int cnt;
+    string next_word = "next";
 
-    if (char_exists(ch->mount_data.mount_number) && ch->mount_data.mount) {
+    if (char_exists(ch->mount_data.mount_number) && ch->mount_data.mount && !strcasestr(argument, next_word)) {
         send_to_char("You are riding already.\n\r", ch);
         return;
     }
@@ -96,7 +97,8 @@ ACMD(do_ride)
     mountch = 0;
     if (!*argument) {
         for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
-            if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower) && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
+            if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower) 
+                    && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
                 break;
             }
         }
@@ -110,47 +112,96 @@ ACMD(do_ride)
         }
     } else {
 
-        potential_mount = get_char_room_vis(ch, argument);
-        if (!potential_mount) {
-            send_to_char("There is nobody by that name.\n\r", ch);
-            return;
-        }
-
-        if (IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act, MOB_MOUNT) || !IS_NPC(potential_mount)) {
-            send_to_char("You can not ride this.\n\r", ch);
-            return;
-        }
-
-        if (IS_AGGR_TO(potential_mount, ch) && !affected_by_spell(potential_mount, SKILL_CALM)) {
-            act("$N doesn't want you to ride $M.", FALSE, ch, 0, potential_mount, TO_CHAR);
-            return;
-        }
-
-        if (potential_mount->mount_data.mount) {
-            act("$N is not in a position for you to ride.", FALSE, ch, 0, potential_mount, TO_CHAR);
-            return;
-        }
-
-        if (potential_mount->master && potential_mount->master != ch) {
-            send_to_char("That mount is already following someone else.\r\n", ch);
-            return;
-        }
-
-        if (affected_by_spell(potential_mount, SKILL_CALM)) {
-            if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) {
-                if (!is_strong_enough_to_tame(ch->master, potential_mount, false)) {
-                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
-                    return;
-                }
-            } else {
-                if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
-                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
-                    return;
+        if(strcasestr(argument, next_word) && IS_RIDING(ch) == true) {
+            for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
+                if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower)
+                        && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
+                    mountch = tmpfol->follower;
+                    break;
                 }
             }
         }
 
-        mountch = potential_mount;
+        if(strcasestr(argument, next_word) && IS_RIDING(ch) == false) {
+            cnt = 0;
+            for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
+                if(cnt == 0) {
+                    cnt++;
+                    continue;
+                }
+                if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower) 
+                        && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
+                    mountch = tmpfol->follower;
+                    break;
+                }
+            }
+
+        }
+
+        if(mountch) {
+            if (IS_RIDING(ch) == true) {
+                char_data* mount = ch->mount_data.mount;
+                if (mount != NULL) {
+                    char_data* were_rider = NULL;
+                    if (IS_RIDDEN(mount)) {
+                        were_rider = mount->mount_data.rider;
+                    } else {
+                        sprintf(buf, "Screwed mount %s, all be wary!", GET_NAME(mount));
+                        mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
+                        were_rider = NULL;
+                    }
+
+                    stop_riding(ch);
+                    if (IS_NPC(mount) && were_rider == ch && ch->specials.fighting != mount) {
+                        add_follower(mount, ch, FOLLOW_MOVE);
+                    }
+                }
+            }
+        }
+
+        if(!mountch) {
+
+            potential_mount = get_char_room_vis(ch, argument);
+            if (!potential_mount) {
+                send_to_char("There is nobody by that name.\n\r", ch);
+                return;
+            }
+
+            if (IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act, MOB_MOUNT) || !IS_NPC(potential_mount)) {
+                send_to_char("You can not ride this.\n\r", ch);
+                return;
+            }
+
+            if (IS_AGGR_TO(potential_mount, ch) && !affected_by_spell(potential_mount, SKILL_CALM)) {
+                act("$N doesn't want you to ride $M.", FALSE, ch, 0, potential_mount, TO_CHAR);
+                return;
+            }
+
+            if (potential_mount->mount_data.mount) {
+                act("$N is not in a position for you to ride.", FALSE, ch, 0, potential_mount, TO_CHAR);
+                return;
+            }
+
+            if (potential_mount->master && potential_mount->master != ch) {
+                send_to_char("That mount is already following someone else.\r\n", ch);
+                return;
+            }
+
+            if (affected_by_spell(potential_mount, SKILL_CALM)) {
+                if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) {
+                    if (!is_strong_enough_to_tame(ch->master, potential_mount, false)) {
+                        send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
+                        return;
+                    }
+                } else {
+                    if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
+                        send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
+                        return;
+                    }
+                }
+            }
+             mountch = potential_mount;
+        }
     }
 
     if (!mountch)

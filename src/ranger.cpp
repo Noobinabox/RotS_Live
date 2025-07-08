@@ -112,8 +112,16 @@ ACMD(do_ride)
         }
     } else {
 
-        if(strcasestr(argument, next_word) && IS_RIDING(ch) == true) {
+        // handle mount swapping 
+        if(strcasestr(argument, next_word)) {
+            cnt = 0;
             for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
+                if(IS_RIDING(ch) == false) {
+                    if(cnt == 0) {
+                    cnt++;
+                    continue;
+                }
+                }
                 if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower)
                         && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
                     mountch = tmpfol->follower;
@@ -122,45 +130,28 @@ ACMD(do_ride)
             }
         }
 
-        if(strcasestr(argument, next_word) && IS_RIDING(ch) == false) {
-            cnt = 0;
-            for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
-                if(cnt == 0) {
-                    cnt++;
-                    continue;
+        // handle dismount if next mount found
+        if(mountch && IS_RIDING(ch) == true) {
+            char_data* mount = ch->mount_data.mount;
+            if (mount != NULL) {
+                char_data* were_rider = NULL;
+                if (IS_RIDDEN(mount)) {
+                    were_rider = mount->mount_data.rider;
+                } else {
+                    sprintf(buf, "Screwed mount %s, all be wary!", GET_NAME(mount));
+                    mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
+                    were_rider = NULL;
                 }
-                if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower) 
-                        && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
-                    mountch = tmpfol->follower;
-                    break;
-                }
-            }
 
-        }
-
-        if(mountch) {
-            if (IS_RIDING(ch) == true) {
-                char_data* mount = ch->mount_data.mount;
-                if (mount != NULL) {
-                    char_data* were_rider = NULL;
-                    if (IS_RIDDEN(mount)) {
-                        were_rider = mount->mount_data.rider;
-                    } else {
-                        sprintf(buf, "Screwed mount %s, all be wary!", GET_NAME(mount));
-                        mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
-                        were_rider = NULL;
-                    }
-
-                    stop_riding(ch);
-                    if (IS_NPC(mount) && were_rider == ch && ch->specials.fighting != mount) {
-                        add_follower(mount, ch, FOLLOW_MOVE);
-                    }
+                stop_riding(ch);
+                if (IS_NPC(mount) && were_rider == ch && ch->specials.fighting != mount) {
+                    add_follower(mount, ch, FOLLOW_MOVE);
                 }
             }
         }
 
+        // handle normal ride
         if(!mountch) {
-
             potential_mount = get_char_room_vis(ch, argument);
             if (!potential_mount) {
                 send_to_char("There is nobody by that name.\n\r", ch);

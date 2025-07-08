@@ -112,7 +112,7 @@ ACMD(do_ride)
         }
     } else {
 
-        // handle mount swapping 
+        // handle mount swapping, check if there is a next mount 
         if(strcasestr(argument, next_word)) {
             cnt = 0;
             for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {

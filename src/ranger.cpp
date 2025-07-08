@@ -116,11 +116,9 @@ ACMD(do_ride)
         if(strcasestr(argument, next_word)) {
             cnt = 0;
             for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
-                if(IS_RIDING(ch) == false) {
-                    if(cnt == 0) {
+                if(IS_RIDING(ch) == false && cnt == 0) {
                     cnt++;
                     continue;
-                }
                 }
                 if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower)
                         && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {

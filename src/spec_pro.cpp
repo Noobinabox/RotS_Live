@@ -2031,20 +2031,22 @@ SPECIAL(mob_ranger_new) {
         update_pos(host);
     }
 
-    // hide here for pop or after fighting and didnt move
-    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-            || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
-        do_hide(host, "", 0, 0, 0);
-    }
-
     tmpch = 0;
-    if ((callflag == SPECIAL_ENTER) && ch && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
-        tmpch = ch;
-    } else if (callflag == SPECIAL_SELF) {
-        // should this pick a random target, instead of first?
-        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-            if (should_attack(host, tmpch)) {
-                break;
+    if(!host->specials.fighting) {
+        // hide here for pop or after fighting and didnt move
+        if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
+                || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+            do_hide(host, "", 0, 0, 0);
+        }
+
+        if ((callflag == SPECIAL_ENTER) && ch && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
+            tmpch = ch;
+        } else if (callflag == SPECIAL_SELF) {
+            // should this pick a random target, instead of first?
+            for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                if (should_attack(host, tmpch)) {
+                    break;
+                }
             }
         }
     }
@@ -2109,7 +2111,7 @@ SPECIAL(mob_ranger_new) {
     tmproom = &world[host->in_room];
     mintime = 999;
     mintmp = NUM_OF_TRACKS;
-    if(ch->delay.wait_value == 0) {
+    if(ch->delay.wait_value == 0 && !host->specials.fighting) {
         // TRACKING
         if(strstr(ch->player.name, "hunt")) {
             for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {

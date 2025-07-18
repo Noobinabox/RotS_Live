@@ -1592,21 +1592,25 @@ SPECIAL(mob_magic_user_spec) {
     double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
-    char *fm = strstr(host->player.name, "fmage");
-    char *lm = strstr(host->player.name, "lmage");
-    char *cm = strstr(host->player.name, "cmage");
-    char *dm = strstr(host->player.name, "dmage");
-    char *om = strstr(host->player.name, "lumage");
-    char *cj = strstr(host->player.name, "conj");
+    char *fire_mage = strstr(host->player.name, "fmage");
+    char *lightning_mage = strstr(host->player.name, "lmage");
+    char *cold_mage = strstr(host->player.name, "cmage");
+    char *dark_mage = strstr(host->player.name, "dmage");
+    char *lhuth_mage = strstr(host->player.name, "lumage");
+    char *conjurer = strstr(host->player.name, "conj");
+    const int high_level_mage = 40;
+    const double bruised_health_pct = 0.75;
+    const double hurt_health_pct = 0.5;
+    const double bloodied_health_pct = 0.25;
 
     // conj: prioritize heal powers in non-combat
-    if (!host->specials.fighting && cj) {
+    if (!host->specials.fighting && conjurer) {
         // handle regen
         if (!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
             target = host;
             tgt = TARGET_CHAR;
             spell_number = SPELL_REGENERATION;
-            host->points.spirit = 100;
+            utils::set_spirits(host, 100);
         }
 
         // handle curing sat
@@ -1614,7 +1618,7 @@ SPECIAL(mob_magic_user_spec) {
             target = host;
             tgt = TARGET_CHAR;
             spell_number = SPELL_CURING;
-            host->points.spirit = 100;
+            utils::set_spirits(host, 100);
         }
     }
 
@@ -1659,90 +1663,105 @@ SPECIAL(mob_magic_user_spec) {
         if (host->specials.fighting && spell_number == 0) {
             tgt = TARGET_OTHER;
 
-            if (cj) {
+            if (conjurer) {
                 int chance = number(1, 100);
                 if (chance > 75) {
                     host->points.spirit = 100;
                     if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
                     }
-                    if (!om && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
+                    if (!lhuth_mage && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
                         spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
             }
             if (spell_number == 0 && host->interrupt_count < 3) {
-                if (fm) {
-                    if (current_health_pct <= .25) {
+                if (fire_mage) {
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                        if (GET_LEVEL(host) >= high_level_mage) {
+                            int my_tmp_spells[] = {1, SPELL_FIREBALL};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_FIREBOLT};
+                        }
                     }
 
-                } else if (lm) {
-                    if (current_health_pct <= .25) {
+                } else if (lightning_mage) {
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
                     } else {
+
                         if (OUTSIDE(host) &&
-                            weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                            weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING &&
+                            GET_LEVEL(host) >= 40) {
                             int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
                         } else {
                             int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
                         }
                     }
 
-                } else if (cm) {
-                    if (current_health_pct <= .25) {
+                } else if (cold_mage) {
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                        if (GET_LEVEL(host) >= high_level_mage) {
+                            int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
+                        }
                     }
 
-                } else if (dm) {
-                    if (current_health_pct <= .25) {
+                } else if (dark_mage) {
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
                     } else {
-                        int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                        if (GET_LEVEL(host) >= high_level_mage) {
+                            int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
+                        } else {
+                            int my_tmp_spells[] = {1, SPELL_DARK_BOLT};
+                        }
                     }
 
-                } else if (om) { // lhu
-                    if (current_health_pct <= .25) {
+                } else if (lhuth_mage) { // lhu
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
                     } else {
-                        if (SUN_PENALTY(host)) {
-                            int my_tmp_spells[] = {1, SPELL_WORD_OF_AGONY};
+
+                        if (SUN_PENALTY(host) || GET_LEVEL(host) < high_level_mage) {
+                            int my_tmp_spells[] = {2, SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW};
                         } else {
-                            int my_tmp_spells[] = {1, SPELL_SPEAR_OF_DARKNESS};
+                            int my_tmp_spells[] = {2, SPELL_SPEAR_OF_DARKNESS, SPELL_BLACK_ARROW};
                         }
                     }
 
                 } else {
-                    if (current_health_pct <= .25) {
+                    if (current_health_pct <= bloodied_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= .5) {
+                    } else if (current_health_pct <= hurt_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= .75) {
+                    } else if (current_health_pct <= bruised_health_pct) {
                         int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
                     } else {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};

@@ -21,6 +21,7 @@
 #include "spells.h"
 #include "structs.h"
 #include "utils.h"
+#include "zone.h" /* For zone_table */
 
 #include "big_brother.h"
 #include "char_utils.h"
@@ -1567,8 +1568,17 @@ ACMD(do_tame) {
                 return;
             }
 
-            if (victim->master)
+            if (victim->master) {
                 stop_follower(victim, FOLLOW_MOVE);
+            }
+
+            if (GET_LOADLINE(victim)) {
+                zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing--;
+                if (zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing < 0) {
+                    zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing = 0;
+                }
+            }
+
             affect_from_char(victim, SKILL_TAME);
             add_follower(victim, ch, FOLLOW_MOVE);
 

@@ -233,8 +233,6 @@ void apply_smash_damage(char_data *attacker, char_data *victim, int prob) {
         if (number() >= 0.50) {
             damage(attacker, mount, dam / 2, SKILL_SMASH, 0);
         }
-        int wait_delay = (PULSE_VIOLENCE + number(0, PULSE_VIOLENCE) / 2);
-        apply_victim_delay(victim, wait_delay);
         return;
     }
     damage(attacker, victim, dam, SKILL_SMASH, 0);
@@ -369,8 +367,8 @@ ACMD(do_cleave) {
     olog_hai::room_target(ch, &olog_hai::apply_cleave_damage);
     timer.add_skill_timer(*ch, SKILL_CLEAVE, CLEAVE_TIMER);
     // Stun the Olog-hai after using the skill
-    WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0,
-                    AFF_WAITING, TARGET_NONE);
+    int wait_delay = number(8, PULSE_VIOLENCE);
+    WAIT_STATE_FULL(ch, wait_delay, 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }
 
 ACMD(do_smash) {
@@ -564,6 +562,6 @@ ACMD(do_stomp) {
     timer.add_skill_timer(*ch, SKILL_STOMP, STOMP_TIMER);
 
     // Stun the Olog-hai after using the skill
-    WAIT_STATE_FULL(ch, PULSE_VIOLENCE * 4 / 3 + number(0, PULSE_VIOLENCE), 0, 0, 59, 0, 0, 0,
-                    AFF_WAITING, TARGET_NONE);
+    int wait_delay = number(8, PULSE_VIOLENCE);
+    WAIT_STATE_FULL(ch, wait_delay, 0, 0, 59, 0, 0, 0, AFF_WAITING, TARGET_NONE);
 }

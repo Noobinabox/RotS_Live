@@ -1631,6 +1631,7 @@ SPECIAL(mob_magic_user_spec) {
     char *dm = strstr(host->player.name, "dmage");
     char *om = strstr(host->player.name, "lumage");
     char *cj = strstr(host->player.name, "conj");
+    char *sh = strstr(host->player.name, "shield");
 
     // conj: prioritize heal powers in non-combat
     if(!host->specials.fighting && cj) {
@@ -1663,7 +1664,7 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // switch tactics (for now, we use a super flash to have an attempt to cast shield)
-    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
+    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0 && sh) {
         if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
             int chance = number(1, 100);
             if(chance > 50) {
@@ -1785,7 +1786,7 @@ SPECIAL(mob_magic_user_spec) {
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d", GET_NAME(target), spell_number, tgt, host->interrupt_count);
     mudlog_debug_mob(buf, host);
     
     waiting_type wtl_base;

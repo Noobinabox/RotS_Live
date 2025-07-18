@@ -218,8 +218,6 @@ ACMD(do_diagnose);
 ACMD(do_reload);
 ACMD(do_last);
 ACMD(do_track);
-ACMD(do_spam);
-ACMD(do_autoexit);
 ACMD(do_shape);
 ACMD(do_zone);
 ACMD(do_slay);
@@ -496,8 +494,8 @@ const char* command[] = {
     "track",
     "whoami",
     "vstat",
-    "beep", /* spam */
-    "lose", /* autoexit */
+    "beep",
+    "lose",
     "shape",
     "zone", /* 201 */
     "slay",

@@ -28,24 +28,24 @@
 #include "char_utils.h"
 
 /*   external vars  */
-extern int get_number(char** name);
+extern int get_number(char **name);
 extern int num_of_ferries;
 extern int num_of_captains;
 extern char guildmaster_number;
-extern char* dirs[];
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
-extern int mark_calculate_wait(const char_data* ch);
-extern int shoot_calculate_wait(const char_data* archer);
+extern char *dirs[];
+extern void raw_kill(char_data *ch, char_data *killer, int attacktype);
+extern int mark_calculate_wait(const char_data *ch);
+extern int shoot_calculate_wait(const char_data *archer);
 extern byte language_number;
 extern byte language_skills[];
-extern struct char_data* character_list;
-extern struct char_data* combat_list;
-extern struct char_data* waiting_list; /* in db.cpp */
+extern struct char_data *character_list;
+extern struct char_data *combat_list;
+extern struct char_data *waiting_list; /* in db.cpp */
 extern struct command_info cmd_info[];
-extern struct descriptor_data* descriptor_list;
-extern struct index_data* mob_index;
-extern struct index_data* obj_index;
-extern struct obj_data* object_list;
+extern struct descriptor_data *descriptor_list;
+extern struct index_data *mob_index;
+extern struct index_data *obj_index;
+extern struct obj_data *object_list;
 extern struct room_data world;
 extern struct skill_data skills[MAX_SKILLS];
 extern struct time_info_data time_info;
@@ -76,12 +76,11 @@ ACMD(do_kick);
 ACMD(do_stat);
 
 struct social_type {
-    char* cmd;
+    char *cmd;
     int next_line;
 };
 
-char* how_good(int percent)
-{
+char *how_good(int percent) {
 
     static char buf[256];
 
@@ -115,8 +114,7 @@ char* how_good(int percent)
  * pracs_used: pracs used * 100000 with adjustments
  */
 
-void recalc_skills(struct char_data* ch)
-{
+void recalc_skills(struct char_data *ch) {
 
     int skill_no, pracs_used, tmps, tmp, difficulty, skill_level;
     if (!ch->knowledge || !ch->skills)
@@ -137,7 +135,8 @@ void recalc_skills(struct char_data* ch)
 
         /* pracs /= coof. - (lvl/30)*(1-coof) (where coof 0 to 1) */
         if (skills[skill_no].type != PROF_WARRIOR) {
-            tmps = GET_PROF_COOF((int)skills[skill_no].type, ch) - skill_level * (1000 - GET_PROF_COOF((int)skills[skill_no].type, ch)) / 30;
+            tmps = GET_PROF_COOF((int)skills[skill_no].type, ch) -
+                   skill_level * (1000 - GET_PROF_COOF((int)skills[skill_no].type, ch)) / 30;
 
             if (skill_level < 20)
                 tmps = tmps * (80 + skill_level) / 100 + 200 - skills[(int)skill_no].level * 10;
@@ -200,13 +199,13 @@ void recalc_skills(struct char_data* ch)
     if (!IS_NPC(ch) && (GET_RACE(ch) == RACE_MAGUS) && (GET_RAW_KNOWLEDGE(ch, SPELL_BLINK) == 0))
         SET_KNOWLEDGE(ch, SPELL_BLINK, 10);
 
-    if (!IS_NPC(ch) && (GET_RACE(ch) == RACE_BEORNING) && (GET_RAW_KNOWLEDGE(ch, SKILL_NATURAL_ATTACK) == 0)) {
+    if (!IS_NPC(ch) && (GET_RACE(ch) == RACE_BEORNING) &&
+        (GET_RAW_KNOWLEDGE(ch, SKILL_NATURAL_ATTACK) == 0)) {
         SET_KNOWLEDGE(ch, SKILL_NATURAL_ATTACK, 10);
     }
 }
 
-SPECIAL(guild)
-{
+SPECIAL(guild) {
 
     int tmp, prog, len, request, level;
     char str[255];
@@ -246,18 +245,17 @@ SPECIAL(guild)
         ;
     if (!*arg) {
         act(guildmasters[prog].list_message, FALSE, host, 0, ch, TO_VICT);
-        sprintf(str, "You have %d practice sessions left.\n\r",
-            ch->specials2.spells_to_learn);
+        sprintf(str, "You have %d practice sessions left.\n\r", ch->specials2.spells_to_learn);
         send_to_char(str, ch);
         for (tmp = 0; tmp < MAX_SKILLS; tmp++) {
             if (guildmasters[prog].knowledge[tmp] > 0) {
                 level = GET_PROF_LEVEL((int)skills[(int)tmp].type, ch);
 
-                if ((skills[tmp].level <= level) && (!IS_SET(skills[tmp].learn_type, LEARN_SPEC) || (GET_SPEC(ch) == skills[tmp].skill_spec))) {
+                if ((skills[tmp].level <= level) && (!IS_SET(skills[tmp].learn_type, LEARN_SPEC) ||
+                                                     (GET_SPEC(ch) == skills[tmp].skill_spec))) {
 
-                    sprintf(str, "%-25s %3d%%     Taught to: %-12s\n\r",
-                        skills[tmp].name, ch->knowledge[tmp],
-                        how_good(guildmasters[prog].knowledge[tmp]));
+                    sprintf(str, "%-25s %3d%%     Taught to: %-12s\n\r", skills[tmp].name,
+                            ch->knowledge[tmp], how_good(guildmasters[prog].knowledge[tmp]));
                     send_to_char(str, ch);
                 }
             }
@@ -294,7 +292,8 @@ SPECIAL(guild)
             return TRUE;
         }
 
-        if (IS_SET(skills[request].learn_type, LEARN_SPEC) && !(GET_SPEC(ch) == skills[request].skill_spec)) {
+        if (IS_SET(skills[request].learn_type, LEARN_SPEC) &&
+            !(GET_SPEC(ch) == skills[request].skill_spec)) {
             send_to_char("You are not dedicated enough for this.\n\r", ch);
             return TRUE;
         }
@@ -322,13 +321,11 @@ SPECIAL(guild)
     return TRUE;
 }
 
-ACMD(do_practice)
-{
+ACMD(do_practice) {
     int tmp;
     char str[255], str2[30];
 
-    sprintf(str, "You have %d practice sessions left\n\r",
-        ch->specials2.spells_to_learn);
+    sprintf(str, "You have %d practice sessions left\n\r", ch->specials2.spells_to_learn);
     send_to_char(str, ch);
     if (!ch->skills || !ch->knowledge) {
         send_to_char("But you don't have skill memory anyway.\n\r", ch);
@@ -338,40 +335,35 @@ ACMD(do_practice)
         if (GET_RAW_SKILL(ch, tmp) > 0) {
             str2[0] = 0;
             if (skills[tmp].type == PROF_MAGE)
-                sprintf(str2, "(%3d time,   %3d stamina)",
-                    CASTING_TIME(ch, tmp), USE_MANA(ch, tmp));
+                sprintf(str2, "(%3d time,   %3d stamina)", CASTING_TIME(ch, tmp),
+                        USE_MANA(ch, tmp));
             else if (skills[tmp].type == PROF_CLERIC)
-                sprintf(str2, "(%3d time, %3d spirit)",
-                    CASTING_TIME(ch, tmp), USE_SPIRIT(ch, tmp));
+                sprintf(str2, "(%3d time, %3d spirit)", CASTING_TIME(ch, tmp), USE_SPIRIT(ch, tmp));
             else if (tmp == SKILL_BEND_TIME)
-                sprintf(str2, "(%3d time,   %3d stamina)",
-                    skills[tmp].beats, ch->abilities.mana);
+                sprintf(str2, "(%3d time,   %3d stamina)", skills[tmp].beats, ch->abilities.mana);
             else if (tmp == SKILL_MARK)
-                sprintf(str2, "(%3d time,   %3d stamina)",
-                    mark_calculate_wait(ch), skills[tmp].min_usesmana);
+                sprintf(str2, "(%3d time,   %3d stamina)", mark_calculate_wait(ch),
+                        skills[tmp].min_usesmana);
             else if (tmp == SKILL_ARCHERY)
-                sprintf(str2, "(%3d time)",
-                    shoot_calculate_wait(ch));
+                sprintf(str2, "(%3d time)", shoot_calculate_wait(ch));
             else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {
-                sprintf(str2, "(%3d time,   %3d stamina)",
-                    skills[tmp].beats, skills[tmp].min_usesmana);
+                sprintf(str2, "(%3d time,   %3d stamina)", skills[tmp].beats,
+                        skills[tmp].min_usesmana);
             } else if (CASTING_TIME(ch, tmp))
-                sprintf(str2, "(%3d time)",
-                    skills[tmp].beats);
+                sprintf(str2, "(%3d time)", skills[tmp].beats);
             else
                 strcpy(str2, "");
 
-            sprintf(str, "%-25s %-12s %s\n\r",
-                skills[tmp].name, how_good(ch->knowledge[tmp]), str2);
+            sprintf(str, "%-25s %-12s %s\n\r", skills[tmp].name, how_good(ch->knowledge[tmp]),
+                    str2);
             send_to_char(str, ch);
         }
 }
 
-ACMD(do_pracreset)
-{
+ACMD(do_pracreset) {
     int tmp;
-    char* arg;
-    struct char_data* vict;
+    char *arg;
+    struct char_data *vict;
 
     if (wtl && (wtl->targ1.type == TARGET_CHAR) && char_exists(wtl->targ1.ch_num))
         vict = wtl->targ1.ptr.ch;
@@ -396,7 +388,8 @@ ACMD(do_pracreset)
     for (tmp = 0; tmp < MAX_SKILLS; tmp++) {
         vict->knowledge[tmp] = 0;
         vict->skills[tmp] = 0;
-        vict->specials2.spells_to_learn = GET_LEVEL(vict) * PRACS_PER_LEVEL + GET_LEVEL(vict) * GET_LEA(vict) / LEA_PRAC_FACTOR + 10;
+        vict->specials2.spells_to_learn = GET_LEVEL(vict) * PRACS_PER_LEVEL +
+                                          GET_LEVEL(vict) * GET_LEA(vict) / LEA_PRAC_FACTOR + 10;
     }
 
     utils::set_specialization(*vict, game_types::PS_None);
@@ -411,11 +404,10 @@ ACMD(do_pracreset)
         FALSE, ch, 0, vict, TO_VICT);
 }
 
-SPECIAL(pet_shops)
-{
+SPECIAL(pet_shops) {
     char buf[MAX_STRING_LENGTH], pet_name[256];
     int pet_room;
-    struct char_data* pet;
+    struct char_data *pet;
 
     pet_room = ch->in_room + 1;
 
@@ -423,7 +415,7 @@ SPECIAL(pet_shops)
         send_to_char("Available pets are:\n\r", ch);
         for (pet = world[pet_room].people; pet; pet = pet->next_in_room) {
             sprintf(buf, "%-20s - %s\n\r", pet->player.short_descr,
-                money_message(3 * GET_EXP(pet)));
+                    money_message(3 * GET_EXP(pet)));
             send_to_char(buf, ch);
         }
         return (TRUE);
@@ -515,75 +507,71 @@ SPECIAL(pet_shops)
 #define KIT_NOARMOR (KIT_RANGER | KIT_MYSTIC | KIT_MAGE)
 
 struct kit_item {
-    int vnum; /* The virtual number of the object to be in the kit */
+    int vnum;   /* The virtual number of the object to be in the kit */
     int number; /* How many of this item should be loaded */
-    int level; /* The highest level that this object will load for */
-    int race; /* A bitvector of races this will load for */
-    int coef; /* A bitvector of classes this will load for */
+    int level;  /* The highest level that this object will load for */
+    int race;   /* A bitvector of races this will load for */
+    int coef;   /* A bitvector of classes this will load for */
 };
 
 struct kit_item kit_eq[] = {
-    { 6500, 1, KIT_LOWBIE, KIT_RACEALL, KIT_CLASSALL }, /* small wooden shield */
-    { 6023, 1, KIT_MIDBIE, KIT_RACEALL, KIT_CLASSALL }, /* leather belt */
+    {6500, 1, KIT_LOWBIE, KIT_RACEALL, KIT_CLASSALL}, /* small wooden shield */
+    {6023, 1, KIT_MIDBIE, KIT_RACEALL, KIT_CLASSALL}, /* leather belt */
 
-    { 7001, 2, KIT_ALWAYS, KIT_WHITIE, KIT_CLASSALL }, /* torches */
-    { 7138, 1, KIT_LEGEND, KIT_WHITIE, KIT_CLASSALL }, /* water skin */
-    { 7700, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* large sack */
-    { 7240, 2, KIT_LEGEND, KIT_WHITIE, KIT_CLASSALL }, /* cram */
-    { 7635, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* MB map */
-    { 7622, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* LT map */
-    { 7602, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* Vinyanost Map */
-    { 6309, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* wool cloak */
-    { 6013, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* leather boots */
-    { 6009, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR }, /* leather jerkin */
-    { 6017, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR }, /* thick leather pants */
-    { 6016, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR }, /* thick leather helm */
-    { 6304, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR }, /* white cotton hood */
-    { 6300, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR }, /* white cotton shirt */
-    { 6301, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR }, /* white cotton pants */
-    { 5401, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL }, /* dagger (to butcher) */
+    {7001, 2, KIT_ALWAYS, KIT_WHITIE, KIT_CLASSALL}, /* torches */
+    {7138, 1, KIT_LEGEND, KIT_WHITIE, KIT_CLASSALL}, /* water skin */
+    {7700, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* large sack */
+    {7240, 2, KIT_LEGEND, KIT_WHITIE, KIT_CLASSALL}, /* cram */
+    {7635, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* MB map */
+    {7622, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* LT map */
+    {7602, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* Vinyanost Map */
+    {6309, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* wool cloak */
+    {6013, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* leather boots */
+    {6009, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR},    /* leather jerkin */
+    {6017, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR},    /* thick leather pants */
+    {6016, 1, KIT_LOWBIE, KIT_WHITIE, KIT_ARMOR},    /* thick leather helm */
+    {6304, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR},  /* white cotton hood */
+    {6300, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR},  /* white cotton shirt */
+    {6301, 1, KIT_LOWBIE, KIT_WHITIE, KIT_NOARMOR},  /* white cotton pants */
+    {5401, 1, KIT_LOWBIE, KIT_WHITIE, KIT_CLASSALL}, /* dagger (to butcher) */
 
     /* Dwarves get axe regardless */
-    { 5208, 1, KIT_LOWBIE, KIT_DWA, KIT_CLASSALL },
+    {5208, 1, KIT_LOWBIE, KIT_DWA, KIT_CLASSALL},
     /* Hobbits get shortsword regardless */
-    { 5008, 1, KIT_LOWBIE, KIT_HOB, KIT_CLASSALL },
+    {5008, 1, KIT_LOWBIE, KIT_HOB, KIT_CLASSALL},
     /* Warrior humans and elves get broadsword */
-    { 5003, 1, KIT_LOWBIE, KIT_WHITIE & ~(KIT_DWA | KIT_HOB), KIT_WARRIOR },
+    {5003, 1, KIT_LOWBIE, KIT_WHITIE & ~(KIT_DWA | KIT_HOB), KIT_WARRIOR},
     /* Non-warrior humans and elves get longsword */
-    { 5002, 1, KIT_LOWBIE, KIT_WHITIE & ~(KIT_DWA | KIT_HOB),
-        KIT_CLASSALL & ~KIT_WARRIOR },
+    {5002, 1, KIT_LOWBIE, KIT_WHITIE & ~(KIT_DWA | KIT_HOB), KIT_CLASSALL & ~KIT_WARRIOR},
 
-    { 7139, 1, KIT_LEGEND, KIT_DARKIE, KIT_CLASSALL }, /* leather flask */
-    { 7703, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* leather bag */
-    { 7206, 4, KIT_LEGEND, KIT_DARKIE, KIT_CLASSALL }, /* dried strip of flesh */
-    { 6333, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* black robe */
-    { 6035, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* ironshod boots */
-    { 6123, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* rusted chain shirt */
-    { 6124, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* rusted chain legging */
-    { 6125, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL }, /* rusted chain coif */
+    {7139, 1, KIT_LEGEND, KIT_DARKIE, KIT_CLASSALL}, /* leather flask */
+    {7703, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* leather bag */
+    {7206, 4, KIT_LEGEND, KIT_DARKIE, KIT_CLASSALL}, /* dried strip of flesh */
+    {6333, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* black robe */
+    {6035, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* ironshod boots */
+    {6123, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* rusted chain shirt */
+    {6124, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* rusted chain legging */
+    {6125, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL}, /* rusted chain coif */
 
     /* Rusted iron hammer for warrior darkies */
-    { 5304, 1, KIT_LOWBIE, KIT_DARKIE, KIT_WARRIOR },
+    {5304, 1, KIT_LOWBIE, KIT_DARKIE, KIT_WARRIOR},
     /* Bone scimitar for any other class */
-    { 5011, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL & ~KIT_WARRIOR }
-};
+    {5011, 1, KIT_LOWBIE, KIT_DARKIE, KIT_CLASSALL & ~KIT_WARRIOR}};
 
 int kit_item_num = sizeof(kit_eq) / sizeof(kit_item);
 
-SPECIAL(kit_room)
-{
+SPECIAL(kit_room) {
     int i, j, num_items;
     int rnum;
     int level;
     int coef;
-    struct obj_data* o;
+    struct obj_data *o;
 
     if (cmd != CMD_ASK || callflag != SPECIAL_COMMAND)
         return FALSE;
 
     if (PLR_FLAGGED(ch, PLR_WAS_KITTED)) {
-        act("Sorry, you've already received a set of equipment.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("Sorry, you've already received a set of equipment.", FALSE, ch, NULL, NULL, TO_CHAR);
         return TRUE;
     }
 
@@ -603,7 +591,8 @@ SPECIAL(kit_room)
 
     num_items = 0;
     for (i = 0; i < kit_item_num; ++i) {
-        if (level <= kit_eq[i].level && IS_SET(1 << GET_RACE(ch), kit_eq[i].race) && IS_SET(coef, kit_eq[i].coef)) {
+        if (level <= kit_eq[i].level && IS_SET(1 << GET_RACE(ch), kit_eq[i].race) &&
+            IS_SET(coef, kit_eq[i].coef)) {
             rnum = real_object(kit_eq[i].vnum);
             for (j = 0; j < kit_eq[i].number; ++j) {
                 o = read_object(rnum, REAL);
@@ -616,23 +605,19 @@ SPECIAL(kit_room)
 
     SET_BIT(PLR_FLAGS(ch), PLR_WAS_KITTED);
     if (!num_items)
-        act("You don't need any free equipment!",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("You don't need any free equipment!", FALSE, ch, NULL, NULL, TO_CHAR);
     else if (level <= KIT_LOWBIE)
-        act("You receive a set of basic equipment.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("You receive a set of basic equipment.", FALSE, ch, NULL, NULL, TO_CHAR);
     else if (level > KIT_LOWBIE && level <= KIT_MIDBIE)
-        act("You receive some essentials to help in your recovery.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("You receive some essentials to help in your recovery.", FALSE, ch, NULL, NULL,
+            TO_CHAR);
     else if (level > KIT_MIDBIE && level <= KIT_LEGEND)
-        act("You receive a few useful items.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("You receive a few useful items.", FALSE, ch, NULL, NULL, TO_CHAR);
     else if (level > KIT_LEGEND && level <= KIT_ALWAYS)
-        act("You receive only the bare necessities.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("You receive only the bare necessities.", FALSE, ch, NULL, NULL, TO_CHAR);
     else
-        act("Impossible case in kit_room.  Please notify an immortal.",
-            FALSE, ch, NULL, NULL, TO_CHAR);
+        act("Impossible case in kit_room.  Please notify an immortal.", FALSE, ch, NULL, NULL,
+            TO_CHAR);
 
     return TRUE;
 }
@@ -640,12 +625,11 @@ SPECIAL(kit_room)
 /*
  * Special procedures for objects
  */
-SPECIAL(obj_willpower)
-{
-    obj_data* obj;
-    char_data* holder;
+SPECIAL(obj_willpower) {
+    obj_data *obj;
+    char_data *holder;
 
-    obj = (obj_data*)(host);
+    obj = (obj_data *)(host);
 
     if (!(obj))
         return 0;
@@ -665,8 +649,7 @@ SPECIAL(obj_willpower)
  * Proc's for mobs begin here.
  */
 
-SPECIAL(snake)
-{
+SPECIAL(snake) {
     if (cmd)
         return FALSE;
 
@@ -676,7 +659,8 @@ SPECIAL(snake)
     if (GET_POS(ch) != POSITION_FIGHTING)
         return FALSE;
 
-    if (host->specials.fighting && (host->specials.fighting->in_room == host->in_room) && (number(0, 42 - GET_LEVEL(host)) < std::min(1 + GET_LEVEL(host) / 4, 4))) {
+    if (host->specials.fighting && (host->specials.fighting->in_room == host->in_room) &&
+        (number(0, 42 - GET_LEVEL(host)) < std::min(1 + GET_LEVEL(host) / 4, 4))) {
         act("$n bites $N!", 1, host, 0, host->specials.fighting, TO_NOTVICT);
         act("$n bites you!", 1, host, 0, host->specials.fighting, TO_VICT);
         spell_poison(host, "", SPELL_TYPE_SPELL, host->specials.fighting, 0, 0, 0);
@@ -696,12 +680,12 @@ SPECIAL(snake)
  *   - 2: Closing the gate
  */
 
-SPECIAL(gatekeeper)
-{
+SPECIAL(gatekeeper) {
     int doordir;
-    char* msg;
+    char *msg;
 
-    if (callflag != SPECIAL_NONE && callflag != SPECIAL_SELF && callflag != SPECIAL_COMMAND && callflag != SPECIAL_DELAY)
+    if (callflag != SPECIAL_NONE && callflag != SPECIAL_SELF && callflag != SPECIAL_COMMAND &&
+        callflag != SPECIAL_DELAY)
         return FALSE;
 
     if (GET_POS(host) < POSITION_SITTING)
@@ -721,7 +705,8 @@ SPECIAL(gatekeeper)
             if (weather_info.sunlight >= SUN_RISE && weather_info.sunlight < SUN_SET)
                 for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                     if (EXIT(host, doordir))
-                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && EXIT(host, doordir)->keyword != NULL) {
+                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                            EXIT(host, doordir)->keyword != NULL) {
                             do_unlock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                             do_open(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                         }
@@ -730,7 +715,8 @@ SPECIAL(gatekeeper)
             if (weather_info.sunlight < SUN_RISE || weather_info.sunlight >= SUN_SET)
                 for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                     if (EXIT(host, doordir))
-                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && EXIT(host, doordir)->keyword != NULL) {
+                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                            EXIT(host, doordir)->keyword != NULL) {
                             do_close(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                             do_lock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                         }
@@ -768,7 +754,9 @@ SPECIAL(gatekeeper)
             /* Get the direction of the door */
             for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                 if (EXIT(host, doordir))
-                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && (!EXIT(host, doordir)->keyword || (!*arg || !strcmp(arg, EXIT(host, doordir)->keyword))))
+                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                        (!EXIT(host, doordir)->keyword ||
+                         (!*arg || !strcmp(arg, EXIT(host, doordir)->keyword))))
                         break;
 
             if (doordir == NUM_OF_DIRS) {
@@ -781,9 +769,8 @@ SPECIAL(gatekeeper)
         }
 
         /* Wait between 1 and 3 ticks. */
-        WAIT_STATE_FULL(host, number(2, 4), -1,
-            (cmd == CMD_KNOCK) ? 1 : 2,
-            30, 0, ch->abs_number, ch, 0, TARGET_CHAR);
+        WAIT_STATE_FULL(host, number(2, 4), -1, (cmd == CMD_KNOCK) ? 1 : 2, 30, 0, ch->abs_number,
+                        ch, 0, TARGET_CHAR);
 
         return FALSE;
     }
@@ -830,10 +817,8 @@ SPECIAL(gatekeeper)
 
     /* Can these two acts be consolidated? */
     if ((host->delay.subcmd == 1) && (ch->in_room == host->in_room)) {
-        act("$n shifts uncertainly and peers at $N.",
-            FALSE, host, 0, ch, TO_NOTVICT);
-        act("$n shifts uncertainly and peers at you.",
-            FALSE, host, 0, ch, TO_VICT);
+        act("$n shifts uncertainly and peers at $N.", FALSE, host, 0, ch, TO_NOTVICT);
+        act("$n shifts uncertainly and peers at you.", FALSE, host, 0, ch, TO_VICT);
         host->delay.cmd = host->delay.subcmd = 0;
         return FALSE;
     }
@@ -849,8 +834,7 @@ SPECIAL(gatekeeper)
     if (host->delay.subcmd == 1 || host->delay.subcmd == 2) {
         do_unlock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
         do_open(host, EXIT(host, doordir)->keyword, 0, 0, 0);
-        WAIT_STATE_FULL(host, 15, -1, 3, 30, 0,
-            ch->abs_number, ch, 0, TARGET_CHAR);
+        WAIT_STATE_FULL(host, 15, -1, 3, 30, 0, ch->abs_number, ch, 0, TARGET_CHAR);
         return FALSE;
     }
 
@@ -876,8 +860,7 @@ SPECIAL(gatekeeper)
  *   - closed, if it's night time.
  *
  */
-SPECIAL(gatekeeper_no_knock)
-{
+SPECIAL(gatekeeper_no_knock) {
     int doordir;
 
     if (GET_POS(host) < POSITION_SITTING)
@@ -891,7 +874,8 @@ SPECIAL(gatekeeper_no_knock)
             if (weather_info.sunlight >= SUN_RISE && weather_info.sunlight < SUN_SET)
                 for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                     if (EXIT(host, doordir))
-                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && EXIT(host, doordir)->keyword != NULL) {
+                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                            EXIT(host, doordir)->keyword != NULL) {
                             do_unlock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                             do_open(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                         }
@@ -899,7 +883,8 @@ SPECIAL(gatekeeper_no_knock)
             if (weather_info.sunlight < SUN_RISE || weather_info.sunlight >= SUN_SET)
                 for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                     if (EXIT(host, doordir))
-                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && EXIT(host, doordir)->keyword != NULL) {
+                        if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                            EXIT(host, doordir)->keyword != NULL) {
                             do_close(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                             do_lock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                         }
@@ -944,12 +929,12 @@ SPECIAL(gatekeeper_no_knock)
  *  - 1: Going to open the door
  *  - 2: Going to close the door
  */
-SPECIAL(gatekeeper2)
-{
-    char* msg;
+SPECIAL(gatekeeper2) {
+    char *msg;
     int doordir;
 
-    if (callflag != SPECIAL_NONE && callflag != SPECIAL_SELF && callflag != SPECIAL_COMMAND && callflag != SPECIAL_DELAY)
+    if (callflag != SPECIAL_NONE && callflag != SPECIAL_SELF && callflag != SPECIAL_COMMAND &&
+        callflag != SPECIAL_DELAY)
         return FALSE;
 
     if (GET_POS(host) < POSITION_SITTING)
@@ -963,7 +948,8 @@ SPECIAL(gatekeeper2)
         if (!cmd || ch == NULL) {
             for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                 if (EXIT(host, doordir))
-                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && EXIT(host, doordir)->keyword != NULL) {
+                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                        EXIT(host, doordir)->keyword != NULL) {
                         do_close(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                         do_lock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
                     }
@@ -975,8 +961,7 @@ SPECIAL(gatekeeper2)
 
         /* Don't trust someone you can't see */
         if (!CAN_SEE(host, ch)) {
-            do_gen_com(host, "Who is out there?",
-                0, 0, SCMD_YELL);
+            do_gen_com(host, "Who is out there?", 0, 0, SCMD_YELL);
 
             return FALSE;
         }
@@ -1006,7 +991,9 @@ SPECIAL(gatekeeper2)
 
             for (doordir = 0; doordir < NUM_OF_DIRS; doordir++)
                 if (EXIT(host, doordir))
-                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) && (!EXIT(host, doordir)->keyword || (!*arg || !strcmp(arg, EXIT(host, doordir)->keyword))))
+                    if (IS_SET(EXIT(host, doordir)->exit_info, EX_ISDOOR) &&
+                        (!EXIT(host, doordir)->keyword ||
+                         (!*arg || !strcmp(arg, EXIT(host, doordir)->keyword))))
                         break;
 
             if (doordir == NUM_OF_DIRS) {
@@ -1025,9 +1012,8 @@ SPECIAL(gatekeeper2)
          * will result in having no delay, a wait state of 2 will
          * result in a 2 tick delay, and so on.
          */
-        WAIT_STATE_FULL(host, number(2, 4), -1,
-            cmd == CMD_KNOCK ? 1 : 2,
-            30, 0, ch->abs_number, ch, 0, TARGET_CHAR);
+        WAIT_STATE_FULL(host, number(2, 4), -1, cmd == CMD_KNOCK ? 1 : 2, 30, 0, ch->abs_number, ch,
+                        0, TARGET_CHAR);
         return FALSE;
     }
 
@@ -1062,8 +1048,7 @@ SPECIAL(gatekeeper2)
     doordir = host->delay.targ2.ch_num;
 
     if (ch && IS_AGGR_TO(host, ch)) {
-        asprintf(&msg, "To arms! The enemy is at %s!",
-            world[ch->in_room].name);
+        asprintf(&msg, "To arms! The enemy is at %s!", world[ch->in_room].name);
         do_gen_com(host, msg, 0, 0, SCMD_YELL);
         free(msg);
         host->delay.cmd = host->delay.subcmd = 0;
@@ -1074,10 +1059,8 @@ SPECIAL(gatekeeper2)
         return FALSE;
 
     if (host->delay.subcmd == 1 && ch->in_room == host->in_room) {
-        act("$n shifts uncertainly and peers at $N.",
-            FALSE, host, 0, ch, TO_NOTVICT);
-        act("$n shifts uncertainly and peers at you.",
-            FALSE, host, 0, ch, TO_VICT);
+        act("$n shifts uncertainly and peers at $N.", FALSE, host, 0, ch, TO_NOTVICT);
+        act("$n shifts uncertainly and peers at you.", FALSE, host, 0, ch, TO_VICT);
         host->delay.cmd = host->delay.subcmd = 0;
         return FALSE;
     }
@@ -1093,8 +1076,7 @@ SPECIAL(gatekeeper2)
     if (host->delay.subcmd == 1 || host->delay.subcmd == 2) {
         do_unlock(host, EXIT(host, doordir)->keyword, 0, 0, 0);
         do_open(host, EXIT(host, doordir)->keyword, 0, 0, 0);
-        WAIT_STATE_FULL(host, 15, -1, 3, 30, 0,
-            ch->abs_number, ch, 0, TARGET_CHAR);
+        WAIT_STATE_FULL(host, 15, -1, 3, 30, 0, ch->abs_number, ch, 0, TARGET_CHAR);
         return FALSE;
     }
 
@@ -1110,8 +1092,7 @@ SPECIAL(gatekeeper2)
     return FALSE;
 }
 
-SPECIAL(room_temple)
-{
+SPECIAL(room_temple) {
     if (callflag != SPECIAL_COMMAND || !host)
         return FALSE;
 
@@ -1131,8 +1112,7 @@ SPECIAL(room_temple)
 
 /* The Ferry */
 
-void boot_ferries()
-{
+void boot_ferries() {
     int tmp, num;
     for (num = 0; num < num_of_ferries; num++)
         for (tmp = 0; tmp < ferry_boat_data[num].length; tmp++) {
@@ -1142,16 +1122,17 @@ void boot_ferries()
 
     for (num = 0; num < num_of_captains; num++) {
         for (tmp = 0; tmp < ferry_captain_data[num].length; tmp++) {
-            ferry_captain_data[num].ferry_route[tmp] = real_room(ferry_captain_data[num].ferry_route[tmp]);
-            ferry_captain_data[num].cabin_route[tmp] = real_room(ferry_captain_data[num].cabin_route[tmp]);
+            ferry_captain_data[num].ferry_route[tmp] =
+                real_room(ferry_captain_data[num].ferry_route[tmp]);
+            ferry_captain_data[num].cabin_route[tmp] =
+                real_room(ferry_captain_data[num].cabin_route[tmp]);
         }
         ferry_captain_data[num].num_of_ferry = real_object(ferry_captain_data[num].num_of_ferry);
     }
 }
 
-void _recursive_move(struct char_data* ch, struct obj_data* hostobj)
-{
-    struct follow_type* tmpfol;
+void _recursive_move(struct char_data *ch, struct obj_data *hostobj) {
+    struct follow_type *tmpfol;
     int num, tmp, was_in;
 
     if (!ch || !hostobj)
@@ -1187,16 +1168,14 @@ void _recursive_move(struct char_data* ch, struct obj_data* hostobj)
         if (tmpfol->follower->in_room == was_in) {
             if (IS_RIDING(tmpfol->follower)) {
                 send_to_char("You can not enter it riding.\n\r", tmpfol->follower);
-                act("ACK! $N could not follow you in.", FALSE, ch, 0,
-                    tmpfol->follower, TO_CHAR);
+                act("ACK! $N could not follow you in.", FALSE, ch, 0, tmpfol->follower, TO_CHAR);
             } else
                 _recursive_move(tmpfol->follower, hostobj);
         }
 }
 
-SPECIAL(ferry_boat)
-{
-    struct obj_data* hostobj = (struct obj_data*)host;
+SPECIAL(ferry_boat) {
+    struct obj_data *hostobj = (struct obj_data *)host;
     int tmp, num, was_in;
 
     if ((cmd != CMD_ENTER) || !ch)
@@ -1226,10 +1205,9 @@ SPECIAL(ferry_boat)
     return TRUE;
 }
 
-SPECIAL(ferry_captain)
-{
+SPECIAL(ferry_captain) {
     struct obj_data *tmpobj, *ferryobj;
-    struct char_data* tmpch;
+    struct char_data *tmpch;
     int tmp, num, new_room, old_room;
 
     num = host->specials.store_prog_number;
@@ -1247,8 +1225,7 @@ SPECIAL(ferry_captain)
         return FALSE;
 
     tmp = ferry_captain_data[num].ferry_route[ferry_captain_data[num].marker];
-    for (ferryobj = world[tmp].contents; ferryobj;
-         ferryobj = ferryobj->next_content) {
+    for (ferryobj = world[tmp].contents; ferryobj; ferryobj = ferryobj->next_content) {
         if (ferryobj->item_number == ferry_captain_data[num].num_of_ferry)
             break;
     }
@@ -1279,27 +1256,24 @@ SPECIAL(ferry_captain)
         act("$n steps out from the shadows.", TRUE, host, 0, 0, TO_ROOM);
     }
 
-    if ((ferry_captain_data[num].timer == 0) && (ferry_captain_data[num].stop_time[ferry_captain_data[num].marker] > 0)) {
+    if ((ferry_captain_data[num].timer == 0) &&
+        (ferry_captain_data[num].stop_time[ferry_captain_data[num].marker] > 0)) {
         tmp = host->in_room;
         host->in_room = ferryobj->in_room;
-        act(ferry_captain_data[num].leave_to_outside,
-            FALSE, host, ferryobj, 0, TO_ROOM);
+        act(ferry_captain_data[num].leave_to_outside, FALSE, host, ferryobj, 0, TO_ROOM);
         host->in_room = tmp;
-        act(ferry_captain_data[num].leave_to_inside,
-            FALSE, host, 0, 0, TO_ROOM);
+        act(ferry_captain_data[num].leave_to_inside, FALSE, host, 0, 0, TO_ROOM);
     }
 
     ferry_captain_data[num].marker++;
     if (ferry_captain_data[num].marker >= ferry_captain_data[num].length)
         ferry_captain_data[num].marker = 0;
 
-    act(ferry_captain_data[num].move_out_inside,
-        FALSE, host, ferryobj, 0, TO_ROOM);
+    act(ferry_captain_data[num].move_out_inside, FALSE, host, ferryobj, 0, TO_ROOM);
 
     tmp = host->in_room;
     host->in_room = ferryobj->in_room;
-    act(ferry_captain_data[num].move_out_outside,
-        FALSE, host, ferryobj, 0, TO_ROOM);
+    act(ferry_captain_data[num].move_out_outside, FALSE, host, ferryobj, 0, TO_ROOM);
     host->in_room = tmp;
 
     obj_from_room(ferryobj);
@@ -1320,8 +1294,7 @@ SPECIAL(ferry_captain)
             tmpch->next_in_room = world[new_room].people;
         else
             world[old_room].people = world[new_room].people;
-        for (tmpobj = world[old_room].contents; tmpobj;
-             tmpobj = tmpobj->next_content)
+        for (tmpobj = world[old_room].contents; tmpobj; tmpobj = tmpobj->next_content)
             if (!tmpobj->next_content)
                 break;
         if (tmpobj)
@@ -1337,29 +1310,25 @@ SPECIAL(ferry_captain)
         for (tmpch = world[new_room].people; tmpch; tmpch = tmpch->next_in_room) {
             tmpch->in_room = new_room;
         }
-        for (tmpobj = world[new_room].contents; tmpobj;
-             tmpobj = tmpobj->next_content)
+        for (tmpobj = world[new_room].contents; tmpobj; tmpobj = tmpobj->next_content)
             tmpobj->in_room = new_room;
     }
 
-    ferry_captain_data[num].timer = ferry_captain_data[num].stop_time[ferry_captain_data[num].marker];
+    ferry_captain_data[num].timer =
+        ferry_captain_data[num].stop_time[ferry_captain_data[num].marker];
 
     if (ferry_captain_data[num].timer == 0) {
-        act(ferry_captain_data[num].move_in_inside,
-            TRUE, host, ferryobj, 0, TO_ROOM);
+        act(ferry_captain_data[num].move_in_inside, TRUE, host, ferryobj, 0, TO_ROOM);
         tmp = host->in_room;
         host->in_room = ferryobj->in_room;
-        act(ferry_captain_data[num].move_in_outside,
-            FALSE, host, ferryobj, 0, TO_ROOM);
+        act(ferry_captain_data[num].move_in_outside, FALSE, host, ferryobj, 0, TO_ROOM);
         host->in_room = tmp;
     } else {
-        act(ferry_captain_data[num].arrive_to_inside,
-            FALSE, host, ferryobj, 0, TO_ROOM);
+        act(ferry_captain_data[num].arrive_to_inside, FALSE, host, ferryobj, 0, TO_ROOM);
 
         tmp = host->in_room;
         host->in_room = ferryobj->in_room;
-        act(ferry_captain_data[num].arrive_to_outside,
-            FALSE, host, ferryobj, 0, TO_ROOM);
+        act(ferry_captain_data[num].arrive_to_outside, FALSE, host, ferryobj, 0, TO_ROOM);
         host->in_room = tmp;
     }
     return TRUE;
@@ -1373,22 +1342,21 @@ SPECIAL(ferry_captain)
  */
 
 int spell_list[][4] = {
-    { SPELL_MAGIC_MISSILE, SPELL_MAGIC_MISSILE, SPELL_WORD_OF_PAIN, SPELL_CURSE }, /*level 5*/
-    { SPELL_CHILL_RAY, SPELL_CHILL_RAY, SPELL_LEACH, SPELL_PRAGMATISM }, /*level 5*/
-    { SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE }, /*level 15*/
-    { SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_BLACK_ARROW, SPELL_TERROR }, /*level 20*/
-    { SPELL_FIREBOLT, SPELL_DARK_BOLT, SPELL_WORD_OF_AGONY, SPELL_POISON }, /*level 25*/
-    { SPELL_CONE_OF_COLD, SPELL_CONE_OF_COLD, SPELL_BLACK_ARROW, SPELL_POISON }, /*level 30*/
-    { SPELL_FIREBOLT, SPELL_CHILL_RAY, SPELL_BLACK_ARROW, SPELL_CURSE }, /*level 35*/
-    { SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_TERROR }, /*level 40*/
-    { SPELL_CONE_OF_COLD, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE }, /*level 45*/
-    { SPELL_FIREBALL, SPELL_SEARING_DARKNESS, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE }, /*level 50*/
+    {SPELL_MAGIC_MISSILE, SPELL_MAGIC_MISSILE, SPELL_WORD_OF_PAIN, SPELL_CURSE},      /*level 5*/
+    {SPELL_CHILL_RAY, SPELL_CHILL_RAY, SPELL_LEACH, SPELL_PRAGMATISM},                /*level 5*/
+    {SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE},            /*level 15*/
+    {SPELL_LIGHTNING_BOLT, SPELL_DARK_BOLT, SPELL_BLACK_ARROW, SPELL_TERROR},         /*level 20*/
+    {SPELL_FIREBOLT, SPELL_DARK_BOLT, SPELL_WORD_OF_AGONY, SPELL_POISON},             /*level 25*/
+    {SPELL_CONE_OF_COLD, SPELL_CONE_OF_COLD, SPELL_BLACK_ARROW, SPELL_POISON},        /*level 30*/
+    {SPELL_FIREBOLT, SPELL_CHILL_RAY, SPELL_BLACK_ARROW, SPELL_CURSE},                /*level 35*/
+    {SPELL_FIREBALL, SPELL_CONE_OF_COLD, SPELL_SPEAR_OF_DARKNESS, SPELL_TERROR},      /*level 40*/
+    {SPELL_CONE_OF_COLD, SPELL_DARK_BOLT, SPELL_DARK_BOLT, SPELL_CURSE},              /*level 45*/
+    {SPELL_FIREBALL, SPELL_SEARING_DARKNESS, SPELL_SPEAR_OF_DARKNESS, SPELL_CONFUSE}, /*level 50*/
 
 };
 
 namespace {
-int choose_mystic_spell(char_data* caster, char_data* target)
-{
+int choose_mystic_spell(char_data *caster, char_data *target) {
     if (caster == target) {
         /*
          * When this mob_type is poisoned it will cast remove
@@ -1429,8 +1397,7 @@ int choose_mystic_spell(char_data* caster, char_data* target)
  * of checks to give the mob in question the
  * Correct set of spells to cast from.
  */
-int get_mob_spell_type(const char_data* caster)
-{
+int get_mob_spell_type(const char_data *caster) {
     if (GET_RACE(caster) == RACE_MAGUS)
         return 2;
     else if (GET_RACE(caster) == RACE_URUK || GET_RACE(caster) == RACE_ORC)
@@ -1439,8 +1406,7 @@ int get_mob_spell_type(const char_data* caster)
         return 0;
 }
 
-int choose_mage_spell(const char_data* caster, const char_data* target)
-{
+int choose_mage_spell(const char_data *caster, const char_data *target) {
     // Heal up if low
     if (caster == target) {
         if (caster->tmpabilities.hit < caster->abilities.hit / 3) {
@@ -1451,7 +1417,8 @@ int choose_mage_spell(const char_data* caster, const char_data* target)
     }
 
     // Allow wimpy mobs to peace out.
-    if (IS_SET(MOB_FLAGS(caster), MOB_WIMPY) && (caster->tmpabilities.hit < caster->abilities.hit / 4)) {
+    if (IS_SET(MOB_FLAGS(caster), MOB_WIMPY) &&
+        (caster->tmpabilities.hit < caster->abilities.hit / 4)) {
         return SPELL_BLINK;
     }
 
@@ -1479,8 +1446,7 @@ int choose_mage_spell(const char_data* caster, const char_data* target)
     return spell_list[spell_list_index][spell_var];
 }
 
-bool is_engaged_with_victim(const char_data* character, const char_data* victim)
-{
+bool is_engaged_with_victim(const char_data *character, const char_data *victim) {
     if (victim == nullptr || character == nullptr) {
         return false;
     }
@@ -1498,9 +1464,10 @@ bool is_engaged_with_victim(const char_data* character, const char_data* victim)
 
     // Targets are engaged through character's group.
     if (character->group != nullptr) {
-        const group_data& group = *character->group;
-        for (const char_data* group_member : group) {
-            if (group_member->specials.fighting == victim || victim->specials.fighting == group_member) {
+        const group_data &group = *character->group;
+        for (const char_data *group_member : group) {
+            if (group_member->specials.fighting == victim ||
+                victim->specials.fighting == group_member) {
                 return true;
             }
         }
@@ -1509,8 +1476,7 @@ bool is_engaged_with_victim(const char_data* character, const char_data* victim)
     return false;
 }
 
-char_data* choose_caster_target(char_data* caster)
-{
+char_data *choose_caster_target(char_data *caster) {
     // Choose an initial target.  If the caster isn't fighting anyone, it will be himself.
     // Otherwise, it will be someone that is in combat with him.
     if (caster->specials.fighting == nullptr) {
@@ -1520,8 +1486,10 @@ char_data* choose_caster_target(char_data* caster)
     // NPC casters will preferentially target characters that are fighting them or
     // group members of those characters.
     int valid_count = 0;
-    char_data* target = caster->specials.fighting; // default target is the character the caster is engaged with
-    for (char_data* character = world[caster->in_room].people; character != nullptr; character = character->next_in_room) {
+    char_data *target =
+        caster->specials.fighting; // default target is the character the caster is engaged with
+    for (char_data *character = world[caster->in_room].people; character != nullptr;
+         character = character->next_in_room) {
 
         if (!is_engaged_with_victim(character, caster)) {
             continue;
@@ -1537,10 +1505,9 @@ char_data* choose_caster_target(char_data* caster)
 
     return target;
 }
-} // end anonymous helper name_space
+} // namespace
 
-SPECIAL(mob_cleric)
-{
+SPECIAL(mob_cleric) {
     if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
@@ -1548,7 +1515,7 @@ SPECIAL(mob_cleric)
         return FALSE;
     }
 
-    char_data* target = choose_caster_target(host);
+    char_data *target = choose_caster_target(host);
     if (target == nullptr)
         return FALSE;
 
@@ -1573,8 +1540,7 @@ SPECIAL(mob_cleric)
     return FALSE;
 }
 
-SPECIAL(mob_magic_user)
-{
+SPECIAL(mob_magic_user) {
     if (callflag != SPECIAL_SELF || host->in_room == NOWHERE)
         return FALSE;
 
@@ -1582,7 +1548,7 @@ SPECIAL(mob_magic_user)
         return FALSE;
     }
 
-    char_data* target = choose_caster_target(host);
+    char_data *target = choose_caster_target(host);
     if (target == nullptr)
         return FALSE;
 
@@ -1609,21 +1575,22 @@ int pick_a_spell(int *my_tmp_spells) {
     return my_tmp_spells[chance];
 }
 
-// TODO: firebolt (maybe a dark spell was too), is returning FALSE? -- is causing a second action to kick off?
-// note: also see spec_pro_message
+// TODO: firebolt (maybe a dark spell was too), is returning FALSE? -- is causing a second action to
+// kick off? note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec) {
     // was there a reason mob_magic_user checks delay.subcmd & wait_value, when subcmd can be 0??
-    //if (host->delay.wait_value && host->delay.subcmd) {
-    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE) {
+    // if (host->delay.wait_value && host->delay.subcmd) {
+    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF ||
+        host->in_room == NOWHERE) {
         return FALSE;
     }
 
     struct char_data *tmpch, *tmpch_next;
-    char_data* target;
+    char_data *target;
     int my_tmp_spells[4];
     int tgt, spell_number = 0;
-    double current_health_pct = (double)GET_HIT(host)  / (double)GET_MAX_HIT(host);
-    double current_mana_pct   = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
+    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
+    double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
     char *fm = strstr(host->player.name, "fmage");
     char *lm = strstr(host->player.name, "lmage");
@@ -1633,9 +1600,9 @@ SPECIAL(mob_magic_user_spec) {
     char *cj = strstr(host->player.name, "conj");
 
     // conj: prioritize heal powers in non-combat
-    if(!host->specials.fighting && cj) {
+    if (!host->specials.fighting && cj) {
         // handle regen
-        if(!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
+        if (!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
             target = host;
             tgt = TARGET_CHAR;
             spell_number = SPELL_REGENERATION;
@@ -1643,7 +1610,7 @@ SPECIAL(mob_magic_user_spec) {
         }
 
         // handle curing sat
-        if(!utils::is_affected_by_spell(*host, SPELL_CURING) && spell_number == 0) {
+        if (!utils::is_affected_by_spell(*host, SPELL_CURING) && spell_number == 0) {
             target = host;
             tgt = TARGET_CHAR;
             spell_number = SPELL_CURING;
@@ -1652,10 +1619,11 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // handle other non-combat
-    if(!host->specials.fighting && spell_number == 0) {
+    if (!host->specials.fighting && spell_number == 0) {
         // handle cure self
-        if((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) || 
-           (current_health_pct <= .9 &&  utils::is_affected_by_spell(*host, SPELL_SHIELD)  && current_mana_pct >= .5)) {
+        if ((current_health_pct <= .9 && !utils::is_affected_by_spell(*host, SPELL_SHIELD)) ||
+            (current_health_pct <= .9 && utils::is_affected_by_spell(*host, SPELL_SHIELD) &&
+             current_mana_pct >= .5)) {
             target = host;
             tgt = TARGET_CHAR;
             spell_number = SPELL_CURE_SELF;
@@ -1663,13 +1631,14 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // switch tactics (for now, we use a super flash to have an attempt to cast shield)
-    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
-        if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+    if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
+        if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
             int chance = number(1, 100);
-            if(chance > 50) {
+            if (chance > 50) {
                 for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
                     if (tmpch->specials.fighting == host) {
-                        //send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);  //no message?? futile if p has reatk trig?
+                        // send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
+                        // //no message?? futile if p has reatk trig?
                         stop_fighting(tmpch);
                     }
                 }
@@ -1682,33 +1651,34 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // Damage Spells
-    if(target != host && spell_number == 0) {
+    if (target != host && spell_number == 0) {
         target = choose_caster_target(host);
         if (target == nullptr) {
             return FALSE;
         }
-        if(host->specials.fighting && spell_number == 0) {
+        if (host->specials.fighting && spell_number == 0) {
             tgt = TARGET_OTHER;
 
-            if(cj) {
+            if (cj) {
                 int chance = number(1, 100);
-                if(chance > 75) {
+                if (chance > 75) {
                     host->points.spirit = 100;
-                    if(!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
+                    if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
                     }
-                    if(!om && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
+                    if (!om && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
+                        spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
             }
-            if(spell_number == 0 && host->interrupt_count < 3) {
-                if(fm) {
-                    if(current_health_pct <= .25) {
+            if (spell_number == 0 && host->interrupt_count < 3) {
+                if (fm) {
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
                     } else {
                         if(GET_LEVEL(host) >= 40) {
@@ -1718,14 +1688,15 @@ SPECIAL(mob_magic_user_spec) {
                         }
                     }
 
-                } else if(lm) {
-                    if(current_health_pct <= .25) {
+                } else if (lm) {
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
                     } else {
+
                         if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING && GET_LEVEL(host) >= 40) {
                             int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
                         } else {
@@ -1733,12 +1704,12 @@ SPECIAL(mob_magic_user_spec) {
                         }
                     }
 
-                } else if(cm) {
-                    if(current_health_pct <= .25) {
+                } else if (cm) {
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
                     } else {
                         if(GET_LEVEL(host) >= 40) {
@@ -1748,12 +1719,12 @@ SPECIAL(mob_magic_user_spec) {
                         }
                     }
 
-                } else if(dm) {
-                    if(current_health_pct <= .25) {
+                } else if (dm) {
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
                     } else {
                         if(GET_LEVEL(host) >= 40) {
@@ -1763,14 +1734,15 @@ SPECIAL(mob_magic_user_spec) {
                         }
                     }
 
-                } else if(om) { //lhu
-                    if(current_health_pct <= .25) {
+                } else if (om) { // lhu
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
                     } else {
+
                         if(SUN_PENALTY(host) || GET_LEVEL(host) < 40) {
                             int my_tmp_spells[] = {2, SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW};
                         } else {
@@ -1779,11 +1751,11 @@ SPECIAL(mob_magic_user_spec) {
                     }
 
                 } else {
-                    if(current_health_pct <= .25) {
+                    if (current_health_pct <= .25) {
                         int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if(current_health_pct <= .5) {
+                    } else if (current_health_pct <= .5) {
                         int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if(current_health_pct <= .75) {
+                    } else if (current_health_pct <= .75) {
                         int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
                     } else {
                         int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
@@ -1797,9 +1769,10 @@ SPECIAL(mob_magic_user_spec) {
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number, tgt);
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d", GET_NAME(target), spell_number,
+            tgt);
     mudlog_debug_mob(buf, host);
-    
+
     waiting_type wtl_base;
     wtl_base.cmd = CMD_CAST;
     wtl_base.subcmd = 0;
@@ -1815,31 +1788,21 @@ SPECIAL(mob_magic_user_spec) {
 }
 
 int warrior_abilities[] = {
-    CMD_KICK,
-    CMD_BASH,
-    0,
-    0,
-    CMD_KICK,
-    0,
-    0,
-    CMD_BASH,
-    0,
+    CMD_KICK, CMD_BASH, 0, 0, CMD_KICK, 0, 0, CMD_BASH, 0,
 };
 
-SPECIAL(mob_warrior)
-{
+SPECIAL(mob_warrior) {
     waiting_type wtl_base;
     int com_num, num, tmp, kick_var;
-    char_data* tmpch;
-    char_data* tar_ch;
+    char_data *tmpch;
+    char_data *tar_ch;
     char arg1[] = "";
-    char* argptr = arg1;
+    char *argptr = arg1;
 
     if ((callflag != SPECIAL_SELF) || (host->in_room == NOWHERE))
         return FALSE;
 
-    for (num = 0, tmpch = world[ch->in_room].people; tmpch;
-         tmpch = tmpch->next_in_room)
+    for (num = 0, tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room)
         if (!IS_NPC(tmpch))
             num++;
 
@@ -1875,8 +1838,7 @@ SPECIAL(mob_warrior)
     return FALSE;
 }
 
-SPECIAL(mob_ranger)
-{
+SPECIAL(mob_ranger) {
     /*
      * Ranger mobs were coded to kick, but coded incorrectly
      * I removed the kick as it wasn't a random Kick, rather
@@ -1885,11 +1847,11 @@ SPECIAL(mob_ranger)
      */
 
     waiting_type tmpwtl;
-    char_data* tmpch;
-    room_data* tmproom;
+    char_data *tmpch;
+    room_data *tmproom;
     int tmp, tmp2, mintime, mintmp;
 
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    bzero((char *)&tmpwtl, sizeof(waiting_type));
 
     if (host->in_room == NOWHERE)
         return 0;
@@ -1902,8 +1864,7 @@ SPECIAL(mob_ranger)
     if ((callflag == SPECIAL_ENTER) && ch && IS_AGGR_TO(host, ch))
         tmpch = ch;
     else if (callflag == SPECIAL_SELF) {
-        for (tmpch = world[host->in_room].people; tmpch;
-             tmpch = tmpch->next_in_room)
+        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room)
             if ((tmpch != host) && CAN_SEE(host, tmpch) && IS_AGGR_TO(host, tmpch))
                 break;
     }
@@ -1919,9 +1880,9 @@ SPECIAL(mob_ranger)
         return 1;
     }
 
-    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-            || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
-        && ch->delay.wait_value == 0)
+    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
+         IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+        ch->delay.wait_value == 0)
         do_hide(host, "", 0, 0, 0);
 
     tmproom = &world[host->in_room];
@@ -1929,7 +1890,9 @@ SPECIAL(mob_ranger)
     mintmp = NUM_OF_TRACKS;
     for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
         tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
-        if ((tmproom->room_track[tmp].char_number < 0) && (host->specials2.pref & (1 << -tmproom->room_track[tmp].char_number)) && tmp2 < mintime) {
+        if ((tmproom->room_track[tmp].char_number < 0) &&
+            (host->specials2.pref & (1 << -tmproom->room_track[tmp].char_number)) &&
+            tmp2 < mintime) {
             mintime = tmp2;
             mintmp = tmp;
         }
@@ -1937,8 +1900,10 @@ SPECIAL(mob_ranger)
     if (mintmp < NUM_OF_TRACKS) {
         tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
         tmpwtl.subcmd = 0;
-        // below is bugged! Within do_move() it calls for this proc again right after it moves the char, skipping the ON_ENTER call for each in-between room,
-        //   likely doesnt leave tracks in the middle rooms either, also it moves rather instantly since its looping in a single one_mobile_activity call
+        // below is bugged! Within do_move() it calls for this proc again right after it moves the
+        // char, skipping the ON_ENTER call for each in-between room,
+        //   likely doesnt leave tracks in the middle rooms either, also it moves rather instantly
+        //   since its looping in a single one_mobile_activity call
         do_move(host, "", &tmpwtl, (tmproom->room_track[mintmp].data & 7) + 1, 0);
         tmpwtl.targ1.cleanup();
         return 0;
@@ -1950,39 +1915,40 @@ SPECIAL(mob_ranger)
             do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
         tmpwtl.targ1.cleanup();
     }
-    return 0; // Because this isn't a 1: If the mob moves above, when it leaves this prog it can move again from continuing one_mobile_activity (also double delays)
+    return 0; // Because this isn't a 1: If the mob moves above, when it leaves this prog it can
+              // move again from continuing one_mobile_activity (also double delays)
 }
 
 /* Created for the new ranger prog */
-bool see_hidden(char_data* host, char_data* tmpch) {
+bool see_hidden(char_data *host, char_data *tmpch) {
     int hide, vuln_st, my_hide, orig_hide, see_hide;
 
     orig_hide = see_hiding(host);
-    see_hide  = orig_hide;
+    see_hide = orig_hide;
     // COMMENT OUT 3 LINES BELOW to use ONLY THE STANDARD see_hiding() calc
-    if(GET_LEVEL(host) >= 40) {
-        see_hide = (GET_LEVEL(host) * 2) + number(-7,20) + number(-7,20) + number(-7,20);
+    if (GET_LEVEL(host) >= 40) {
+        see_hide = (GET_LEVEL(host) * 2) + number(-7, 20) + number(-7, 20) + number(-7, 20);
     }
     vuln_st = IS_VULNERABLE(host, PLRSPEC_STLH);
-    if(vuln_st > 0) {
+    if (vuln_st > 0) {
         see_hide = see_hide - (see_hide * .5);
     }
-    hide    = 0;
-    hide    = GET_HIDING(tmpch);
+    hide = 0;
+    hide = GET_HIDING(tmpch);
     my_hide = GET_HIDING(host);
-    return (!(hide > 0) || (hide > 0 && (see_hide > hide) ));
+    return (!(hide > 0) || (hide > 0 && (see_hide > hide)));
 }
 
 // note: we dont check if fighting here, because its also used for ambush
-bool should_attack(char_data* host, char_data* tmpch) {
+bool should_attack(char_data *host, char_data *tmpch) {
     int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
-    return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch)
-            && (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch))));
+    return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch) &&
+            (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch))));
 }
 
-void do_spec_ambush(char_data* host, char_data* tmpch) {
+void do_spec_ambush(char_data *host, char_data *tmpch) {
     waiting_type tmpwtl;
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    bzero((char *)&tmpwtl, sizeof(waiting_type));
     tmpwtl.cmd = CMD_AMBUSH;
     tmpwtl.subcmd = 0;
     tmpwtl.targ1.type = TARGET_CHAR;
@@ -1993,9 +1959,9 @@ void do_spec_ambush(char_data* host, char_data* tmpch) {
     host->spec_busy = false;
 }
 
-void do_spec_hit(char_data* host, char_data* tmpch) {
+void do_spec_hit(char_data *host, char_data *tmpch) {
     waiting_type tmpwtl;
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    bzero((char *)&tmpwtl, sizeof(waiting_type));
     if (GET_INT(host) <= 6) {
         act("$n snarls and lunges at $N!", FALSE, host, 0, tmpch, TO_ROOM);
     } else {
@@ -2010,10 +1976,11 @@ void do_spec_hit(char_data* host, char_data* tmpch) {
     host->spec_busy = false;
 }
 
-bool prog_do_hunter(char_data* host) {
-    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT)))
-            && !IS_SET(host->specials2.act, MOB_SENTINEL) && (GET_POS(host) == POSITION_STANDING)
-            && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+bool prog_do_hunter(char_data *host) {
+    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) ||
+             (IS_AFFECTED(host, AFF_HUNT))) &&
+            !IS_SET(host->specials2.act, MOB_SENTINEL) && (GET_POS(host) == POSITION_STANDING) &&
+            !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
 }
 
 // Works with HUNTER and MEMORY flags, handled below
@@ -2021,53 +1988,61 @@ bool prog_do_hunter(char_data* host) {
 //    : alias keyword "hunt" makes it hunt tracks
 SPECIAL(mob_ranger_new) {
     waiting_type tmpwtl;
-    char_data* tmpch;
-    room_data* tmproom;
-    struct memory_rec* names;
+    char_data *tmpch;
+    room_data *tmproom;
+    struct memory_rec *names;
     struct char_data *vict;
     int tmp, tmp2, mintime, mintmp, dir;
 
-    long racial_aggr  = host->specials2.pref;
+    long racial_aggr = host->specials2.pref;
     int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
 
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
+    bzero((char *)&tmpwtl, sizeof(waiting_type));
 
     if (host->in_room == NOWHERE)
         return 0;
     if ((callflag != SPECIAL_SELF) && (callflag != SPECIAL_ENTER))
         return 0;
 
-    ch->spec_busy = true; // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
+    ch->spec_busy =
+        true; // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
 
     if (GET_POS(host) < POSITION_FIGHTING) {
         update_pos(host);
     }
 
-    // hide here for pop or after fighting and didnt move
-    if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-            || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
-        do_hide(host, "", 0, 0, 0);
-    }
-
     tmpch = 0;
-    if ((callflag == SPECIAL_ENTER) && ch && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
-        tmpch = ch;
-    } else if (callflag == SPECIAL_SELF) {
-        // should this pick a random target, instead of first?
-        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-            if (should_attack(host, tmpch)) {
-                break;
+    const bool is_engaged = host->specials.fighting != nullptr;
+    const bool is_not_engaged = !is_engaged;
+    if (is_not_engaged) {
+        // hide here for pop or after fighting and didnt move
+        if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
+             IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+            host->delay.wait_value == 0) {
+            do_hide(host, "", 0, 0, 0);
+        }
+
+        if ((callflag == SPECIAL_ENTER) && ch &&
+            (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
+            tmpch = ch;
+        } else if (callflag == SPECIAL_SELF) {
+            // should this pick a random target, instead of first?
+            for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                if (should_attack(host, tmpch)) {
+                    break;
+                }
             }
         }
     }
 
     /* Ambush */
-    if (tmpch && tmpch != host && strstr(ch->player.name, "stab") && !host->specials.fighting && !tmpch->specials.fighting) {
+    if (tmpch && tmpch != host && strstr(ch->player.name, "stab") && is_not_engaged &&
+        !tmpch->specials.fighting) {
         do_spec_ambush(host, tmpch);
         return 1;
     }
     // else attack
-    if(tmpch && tmpch != host && !host->specials.fighting) {
+    if (tmpch && tmpch != host && is_not_engaged) {
         do_spec_hit(host, tmpch);
         return 1;
     }
@@ -2075,21 +2050,23 @@ SPECIAL(mob_ranger_new) {
     // MEMORY / HUNTER
     if (prog_do_hunter(host)) {
         vict = 0;
-        for (names = ch->specials.memory; names && !vict;
-            names = names->next_on_mob) {
-            if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room == ch->in_room) && CAN_SEE(ch, names->enemy)) {
+        for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
+            if (names->enemy && char_exists(names->enemy_number) &&
+                (names->enemy->in_room == ch->in_room) && CAN_SEE(ch, names->enemy)) {
                 vict = names->enemy;
             }
         }
         if (vict) {
             if (ch->master == vict) {
                 forget(ch, vict);
-            } else { // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
-                if(should_attack(host, tmpch) && strstr(ch->player.name, "stab") && !host->specials.fighting && !vict->specials.fighting) {
+            } else { // below needed: these attacks only occurr if mob_memory and not otherwise aggr
+                     // to
+                if (should_attack(host, tmpch) && strstr(ch->player.name, "stab") &&
+                    is_not_engaged && !vict->specials.fighting) {
                     do_spec_ambush(host, tmpch);
                     return 1;
                 }
-                if(should_attack(host, tmpch) && !host->specials.fighting) {
+                if (should_attack(host, tmpch) && is_not_engaged) {
                     do_spec_hit(host, tmpch);
                     return 1;
                 }
@@ -2102,8 +2079,8 @@ SPECIAL(mob_ranger_new) {
             }
 
             for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
-                if(names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room != NOWHERE)
-                        && (number(0, 100) > modifier)) {
+                if (names->enemy && char_exists(names->enemy_number) &&
+                    (names->enemy->in_room != NOWHERE) && (number(0, 100) > modifier)) {
                     tmp = find_first_step(ch->in_room, names->enemy->in_room);
                 } else {
                     tmp = BFS_NO_PATH;
@@ -2121,23 +2098,25 @@ SPECIAL(mob_ranger_new) {
     tmproom = &world[host->in_room];
     mintime = 999;
     mintmp = NUM_OF_TRACKS;
-    if(ch->delay.wait_value == 0) {
+    if (ch->delay.wait_value == 0 && is_not_engaged) {
         // TRACKING
-        if(strstr(ch->player.name, "hunt")) {
+        if (strstr(ch->player.name, "hunt")) {
             for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
                 tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
                 dir = (tmproom->room_track[tmp].data & 7); // the direction
                 room_data exit_room;
 
-                if(CAN_GO(host, dir)) {
+                if (CAN_GO(host, dir)) {
                     exit_room = world[EXIT(host, dir)->to_room];
                 }
 
-                if ((tmproom->room_track[tmp].char_number < 0)
-                        && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number))
-                            || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX) )
-                        && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
-                    //NOTE: these get set on every true pass, so it would be the last matching track, unless sorting was done on the random order of tracks
+                if ((tmproom->room_track[tmp].char_number < 0) &&
+                    ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number)) ||
+                     (is_aggressive &&
+                      (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) &&
+                    tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
+                    // NOTE: these get set on every true pass, so it would be the last matching
+                    // track, unless sorting was done on the random order of tracks
                     mintime = tmp2;
                     mintmp = tmp;
                 }
@@ -2147,8 +2126,9 @@ SPECIAL(mob_ranger_new) {
                 tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
                 tmpwtl.subcmd = 0;
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-                        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
+                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                    host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }
                 tmpwtl.targ1.cleanup();
@@ -2163,8 +2143,9 @@ SPECIAL(mob_ranger_new) {
             tmpwtl.subcmd = 0;
             if (CAN_GO(host, tmpwtl.cmd - 1)) {
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host)
-                        || IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) && host->delay.wait_value == 0) {
+                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
+                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                    host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }
                 tmpwtl.targ1.cleanup();
@@ -2174,7 +2155,8 @@ SPECIAL(mob_ranger_new) {
         }
     }
     ch->spec_busy = false;
-    return 1;  //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a consistant flow
+    return 1; //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a
+              // consistant flow
 }
 
 /*
@@ -2183,25 +2165,24 @@ SPECIAL(mob_ranger_new) {
  * and to the room.
  */
 
-char* dance_description[][2] = {
-    { "jumps merrily up and down, dancing happily.", "You happily jump up and down" },
-    { "steps in a little circle, clapping $s hands together",
-        "You step in a little circle, clapping your hands together" },
-    { "advances a little forward, then retreats, humming the tune.",
-        "You advance a little forward, then retreat, humming the tune" },
-    { "red in face, speeds up the temp, tapping out $s rhythm.",
-        "You speed up the temp, tapping out the rhythm" },
-    { "waves happily, inviting you to join $s dance",
-        "You look around, hoping to find a dance partner" },
-    { "is tired and breathes heavily, but continues $s dance.",
-        "You wipe your sweaty face, tired, but dancing is so much fun" }
-};
+char *dance_description[][2] = {
+    {"jumps merrily up and down, dancing happily.", "You happily jump up and down"},
+    {"steps in a little circle, clapping $s hands together",
+     "You step in a little circle, clapping your hands together"},
+    {"advances a little forward, then retreats, humming the tune.",
+     "You advance a little forward, then retreat, humming the tune"},
+    {"red in face, speeds up the temp, tapping out $s rhythm.",
+     "You speed up the temp, tapping out the rhythm"},
+    {"waves happily, inviting you to join $s dance",
+     "You look around, hoping to find a dance partner"},
+    {"is tired and breathes heavily, but continues $s dance.",
+     "You wipe your sweaty face, tired, but dancing is so much fun"}};
 
-SPECIAL(mob_jig)
-{
+SPECIAL(mob_jig) {
     int dance_desc;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_JIG)
             return FALSE;
@@ -2229,7 +2210,7 @@ SPECIAL(mob_jig)
     return FALSE;
 }
 
-int get_exit_width(room_data* room, int exit);
+int get_exit_width(room_data *room, int exit);
 
 /*
  * Well in answer to Vakaurs' prayers i've removed
@@ -2237,8 +2218,11 @@ int get_exit_width(room_data* room, int exit);
  * with one.
  */
 
-#define BLOCK_CHANCE(host, ch, width) \
-    (((GET_SKILL(host, SKILL_BLOCK) + 110) / (1 + width) / (CAN_SEE(host, ch) ? 1 : 2) / (GET_POS(host) < POSITION_STANDING ? 3 : 1) - 3 * width) * GET_WEIGHT(host) / (GET_WEIGHT(ch) + 10 * GET_DEX(ch)))
+#define BLOCK_CHANCE(host, ch, width)                                                              \
+    (((GET_SKILL(host, SKILL_BLOCK) + 110) / (1 + width) / (CAN_SEE(host, ch) ? 1 : 2) /           \
+          (GET_POS(host) < POSITION_STANDING ? 3 : 1) -                                            \
+      3 * width) *                                                                                 \
+     GET_WEIGHT(host) / (GET_WEIGHT(ch) + 10 * GET_DEX(ch)))
 
 /*
 SPECIAL(block_exit) {
@@ -2288,11 +2272,11 @@ SPECIAL(block_exit) {
 }
 */
 
-SPECIAL(block_exit_north)
-{
+SPECIAL(block_exit_north) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2334,11 +2318,11 @@ SPECIAL(block_exit_north)
     }
 }
 
-SPECIAL(block_exit_east)
-{
+SPECIAL(block_exit_east) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2379,11 +2363,11 @@ SPECIAL(block_exit_east)
         return FALSE;
     }
 }
-SPECIAL(block_exit_south)
-{
+SPECIAL(block_exit_south) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2424,11 +2408,11 @@ SPECIAL(block_exit_south)
         return FALSE;
     }
 }
-SPECIAL(block_exit_west)
-{
+SPECIAL(block_exit_west) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2469,11 +2453,11 @@ SPECIAL(block_exit_west)
         return FALSE;
     }
 }
-SPECIAL(block_exit_up)
-{
+SPECIAL(block_exit_up) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2514,11 +2498,11 @@ SPECIAL(block_exit_up)
         return FALSE;
     }
 }
-SPECIAL(block_exit_down)
-{
+SPECIAL(block_exit_down) {
     int width, chance;
 
-    if ((callflag == SPECIAL_COMMAND) && (ch == host) && ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
+    if ((callflag == SPECIAL_COMMAND) && (ch == host) &&
+        ((cmd < 0) || (cmd_info[cmd].minimum_position > POSITION_RESTING))) {
 
         if (cmd == CMD_BLOCK)
             return FALSE;
@@ -2560,9 +2544,8 @@ SPECIAL(block_exit_down)
     }
 }
 
-SPECIAL(resetter)
-{
-    struct follow_type* tmpfol;
+SPECIAL(resetter) {
+    struct follow_type *tmpfol;
     struct waiting_type wtltmp;
     int reroll_count;
 
@@ -2592,7 +2575,8 @@ SPECIAL(resetter)
         if (GET_LEVEL(ch) == 6) {
             if (ch->specials2.rerolls >= 41) {
                 wtltmp.targ2.type = TARGET_TEXT;
-                wtltmp.targ2.ptr.text = get_from_txt_block_pool("Sorry, you have exceeded the amount of times you can reroll statistics.");
+                wtltmp.targ2.ptr.text = get_from_txt_block_pool(
+                    "Sorry, you have exceeded the amount of times you can reroll statistics.");
                 wtltmp.cmd = CMD_TELL;
                 wtltmp.subcmd = 0;
                 do_tell(host, "", &wtltmp, CMD_TELL, 0);
@@ -2609,7 +2593,8 @@ SPECIAL(resetter)
             return 0;
         } else {
             wtltmp.targ2.type = TARGET_TEXT;
-            wtltmp.targ2.ptr.text = get_from_txt_block_pool("Only level 6 characters may reroll statistics.");
+            wtltmp.targ2.ptr.text =
+                get_from_txt_block_pool("Only level 6 characters may reroll statistics.");
             wtltmp.cmd = 0;
             do_tell(host, "", &wtltmp, CMD_TELL, 0);
             wtltmp.targ2.cleanup();
@@ -2620,7 +2605,8 @@ SPECIAL(resetter)
         wtltmp.targ1.ptr.ch = ch;
         wtltmp.targ1.ch_num = ch->abs_number;
         wtltmp.targ2.type = TARGET_TEXT;
-        wtltmp.targ2.ptr.text = get_from_txt_block_pool("You may ask me for a pracreset and rerolls.");
+        wtltmp.targ2.ptr.text =
+            get_from_txt_block_pool("You may ask me for a pracreset and rerolls.");
         wtltmp.cmd = CMD_TELL;
         wtltmp.subcmd = 0;
         do_tell(host, "", &wtltmp, CMD_TELL, 0);
@@ -2646,12 +2632,10 @@ SPECIAL(resetter)
  *           this is NULL.  Otherwise, it's the wtl for a command
  *           entered by host.
  */
-SPECIAL(react_trap)
-{
+SPECIAL(react_trap) {
     struct waiting_type w;
     ACMD(do_trap);
-    int target_check(struct char_data*, int,
-        struct target_data*, struct target_data*);
+    int target_check(struct char_data *, int, struct target_data *, struct target_data *);
 
     if (callflag != SPECIAL_COMMAND && callflag != SPECIAL_ENTER)
         return FALSE;
@@ -2683,9 +2667,8 @@ SPECIAL(react_trap)
     return FALSE;
 }
 
-SPECIAL(ar_tarthalon)
-{ // Ar-Tarthalon summons help when fighting
-    char_data* victim; // in the form of 2 more wights from nearby
+SPECIAL(ar_tarthalon) { // Ar-Tarthalon summons help when fighting
+    char_data *victim;  // in the form of 2 more wights from nearby
     waiting_type tmpwtl;
 
     if (GET_POS(host) != POSITION_FIGHTING)
@@ -2710,14 +2693,17 @@ SPECIAL(ar_tarthalon)
         victim = get_char("karahaz");
         if (victim)
             if (world[victim->in_room].number != 8483)
-                do_say(host, "Karahaz!  Master swordsman, Come!  Rid my tomb of these intruders!", 0, 0, 0);
+                do_say(host, "Karahaz!  Master swordsman, Come!  Rid my tomb of these intruders!",
+                       0, 0, 0);
             else
                 switch (number(0, 6)) {
                 case 4:
-                    do_say(host, "Karahaz, may these mere mortals feel the power of your blade!", 0, 0, 0);
+                    do_say(host, "Karahaz, may these mere mortals feel the power of your blade!", 0,
+                           0, 0);
                     break;
                 case 5:
-                    do_say(host, "I require your service once again Karahaz - do not fail me.", 0, 0, 0);
+                    do_say(host, "I require your service once again Karahaz - do not fail me.", 0,
+                           0, 0);
                     break;
                 }
     }
@@ -2777,12 +2763,11 @@ SPECIAL(ar_tarthalon)
  * If the spawned Ghouls are not fighting they
  * return to the ground whence they came
  */
-SPECIAL(ghoul)
-{
-    struct char_data* mob;
+SPECIAL(ghoul) {
+    struct char_data *mob;
     int tmpno, num_followers = 0;
     struct follow_type *j, *k;
-    obj_data* obj;
+    obj_data *obj;
 
     if (GET_POS(host) != POSITION_FIGHTING) {
         if (host->followers && !number(0, 10)) {
@@ -2809,7 +2794,8 @@ SPECIAL(ghoul)
         num_followers++;
     }
     if (num_followers < 3) {
-        act("Decaying hands claw their way out of the ground as $n emerges.", TRUE, host, 0, 0, TO_ROOM);
+        act("Decaying hands claw their way out of the ground as $n emerges.", TRUE, host, 0, 0,
+            TO_ROOM);
         mob = read_mobile(real_mobile(15300), REAL);
         char_to_room(mob, host->in_room);
         add_follower(mob, host, FOLLOW_MOVE);
@@ -2817,13 +2803,9 @@ SPECIAL(ghoul)
     return 0;
 }
 
-SPECIAL(swarm)
-{
-    return 0;
-}
+SPECIAL(swarm) { return 0; }
 
-SPECIAL(dragon)
-{
+SPECIAL(dragon) {
     struct char_data *tmpch, *tmpch_next;
     int dam_value, mob_level;
 
@@ -2848,19 +2830,19 @@ SPECIAL(dragon)
     return 0;
 }
 
-SPECIAL(vampire_huntress)
-{ // Thuringwethil - in bat form she hunts through her zone
+SPECIAL(vampire_huntress) {         // Thuringwethil - in bat form she hunts through her zone
     struct char_data *victim, *mob; // quite quickly.  If she comes across a PC she will either
-    waiting_type tmpwtl; // continue on her way, attack, or abduct the victim taking
-    int to_room, tmpno; // them back to the dungeons of her tower.
+    waiting_type tmpwtl;            // continue on her way, attack, or abduct the victim taking
+    int to_room, tmpno;             // them back to the dungeons of her tower.
     struct affected_type af;
-    obj_data* obj;
-    room_data* room;
+    obj_data *obj;
+    room_data *room;
     // If she is too badly hurt in a fight, she will flee back to
     // her tower and change into human form and regenerate.  Once
     if (host->in_room == NOWHERE) // healed she will once again assume bat form and hunt her
-        return 0; // zone.  NB she returns to the safety of her tower during the
-    if ((GET_POS(host) != POSITION_FIGHTING) && (!IS_SET(host->specials.affected_by, AFF_BASH))) { // day.
+        return 0;                 // zone.  NB she returns to the safety of her tower during the
+    if ((GET_POS(host) != POSITION_FIGHTING) &&
+        (!IS_SET(host->specials.affected_by, AFF_BASH))) { // day.
         switch (world[host->in_room].number) {
         case 15375:
             to_room = 15374;
@@ -2972,15 +2954,15 @@ SPECIAL(vampire_huntress)
         tmpno = number(0, 2);
         if (tmpno) { // 33% she will fly off, 33% attack, 33% kidnap
             victim = 0;
-            for (victim = world[host->in_room].people; victim;
-                 victim = victim->next_in_room)
+            for (victim = world[host->in_room].people; victim; victim = victim->next_in_room)
                 if ((victim != host) && CAN_SEE(host, victim) && !IS_NPC(victim))
                     break;
             if (victim && GET_LEVEL(victim) < LEVEL_GOD) {
                 if (tmpno == 1) {
                     if (IS_RIDING(victim))
                         stop_riding(victim);
-                    act("$n swoops down suddenly and you find yourself carried away!!", FALSE, host, 0, victim, TO_VICT);
+                    act("$n swoops down suddenly and you find yourself carried away!!", FALSE, host,
+                        0, victim, TO_VICT);
                     act("$n is carried away by $N!!", FALSE, victim, 0, host, TO_ROOM);
                     char_from_room(victim);
                     if (victim->player.race > 5)
@@ -2990,7 +2972,9 @@ SPECIAL(vampire_huntress)
                     char_from_room(host);
                     char_to_room(host, real_room(15379));
                     send_to_char("You are carried at great speed through the trees.\n\r\n", victim);
-                    send_to_char("Branches and trees all flash past, and you are powerless to prevent it.\n\r\n", victim);
+                    send_to_char("Branches and trees all flash past, and you are powerless to "
+                                 "prevent it.\n\r\n",
+                                 victim);
                     act("$n bites you!", FALSE, host, 0, victim, TO_VICT);
                     af.type = SPELL_POISON; // replace with more powerful poison when coded
                     af.duration = 24;
@@ -2999,10 +2983,15 @@ SPECIAL(vampire_huntress)
                     af.bitvector = AFF_POISON;
                     affect_join(victim, &af, FALSE, FALSE);
                     send_to_char("You feel extremely sick.\n\r", victim);
-                    send_to_char("For a moment the pain is too great and you lose consciousness...\n\r\n\n", victim);
+                    send_to_char(
+                        "For a moment the pain is too great and you lose consciousness...\n\r\n\n",
+                        victim);
                     GET_HIT(victim) = GET_HIT(victim) * 4 / 5;
-                    send_to_char("You come to lying on a stone floor, bruised but still alive!.\n\r\n", victim);
-                    act("$n seems to fall through the roof to land painfully on the floor.", FALSE, victim, 0, 0, TO_ROOM);
+                    send_to_char(
+                        "You come to lying on a stone floor, bruised but still alive!.\n\r\n",
+                        victim);
+                    act("$n seems to fall through the roof to land painfully on the floor.", FALSE,
+                        victim, 0, 0, TO_ROOM);
                     GET_POS(victim) = POSITION_RESTING;
                     room = &world[victim->in_room];
                     SET_BIT(room->dir_option[0]->exit_info, EX_CLOSED);
@@ -3061,10 +3050,9 @@ SPECIAL(vampire_huntress)
  * and hits very fast. If she heals completely she
  * will change back into a bat and patrol the area
  */
-SPECIAL(thuringwethil)
-{
+SPECIAL(thuringwethil) {
     struct char_data *victim, *tmpch;
-    obj_data* obj;
+    obj_data *obj;
     int tmpno;
     waiting_type tmpwtl;
 
@@ -3096,8 +3084,8 @@ SPECIAL(thuringwethil)
         affect_from_char(host, SPELL_POISON);
     if (affected_by_spell(host, SPELL_CONFUSE))
         affect_from_char(host, SPELL_CONFUSE);
-    if (GET_POS(host) != POSITION_FIGHTING && GET_POS(host) != POSITION_RESTING
-        && GET_HIT(host) == GET_MAX_HIT(host)) {
+    if (GET_POS(host) != POSITION_FIGHTING && GET_POS(host) != POSITION_RESTING &&
+        GET_HIT(host) == GET_MAX_HIT(host)) {
         act("$n melts away into the shadows.", FALSE, host, 0, 0, TO_ROOM);
         char_from_room(host);
         char_to_room(host, real_room(15379));
@@ -3123,9 +3111,8 @@ SPECIAL(thuringwethil)
     return 0;
 }
 
-SPECIAL(vampire_doorkeep)
-{
-    struct char_data* victim;
+SPECIAL(vampire_doorkeep) {
+    struct char_data *victim;
     room_data *room, *room2;
     int close_it;
 
@@ -3143,33 +3130,37 @@ SPECIAL(vampire_doorkeep)
                 if (victim->equipment[WEAR_LIGHT]->item_number == real_object(7008))
                     close_it = 0;
             if (!number(0, 100) && GET_POS(victim) != POSITION_FIGHTING)
-                act("A huge wolf suddenly appears, charges at $n and vanishes!", FALSE, victim, 0, 0, TO_ROOM);
+                act("A huge wolf suddenly appears, charges at $n and vanishes!", FALSE, victim, 0,
+                    0, TO_ROOM);
         }
     if (close_it)
         if (!IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)) {
             SET_BIT(room->dir_option[2]->exit_info, EX_CLOSED);
-            sprintf(buf, "The %s blurs for a second... then closes.\n\r", room->dir_option[2]->keyword);
+            sprintf(buf, "The %s blurs for a second... then closes.\n\r",
+                    room->dir_option[2]->keyword);
             send_to_room(buf, real_room(15345));
             SET_BIT(room2->dir_option[0]->exit_info, EX_CLOSED);
-            sprintf(buf, "The %s blurs for a second... then closes.\n\r", room2->dir_option[0]->keyword);
+            sprintf(buf, "The %s blurs for a second... then closes.\n\r",
+                    room2->dir_option[0]->keyword);
             send_to_room(buf, real_room(15355));
         }
     if (!close_it)
         if (IS_SET(room->dir_option[2]->exit_info, EX_CLOSED)) {
             REMOVE_BIT(room->dir_option[2]->exit_info, EX_CLOSED);
-            sprintf(buf, "The %s blurs for a second... then opens..\n\r", room->dir_option[2]->keyword);
+            sprintf(buf, "The %s blurs for a second... then opens..\n\r",
+                    room->dir_option[2]->keyword);
             send_to_room(buf, real_room(15345));
             REMOVE_BIT(room2->dir_option[0]->exit_info, EX_CLOSED);
-            sprintf(buf, "The %s blurs for a second... then opens.\n\r", room2->dir_option[0]->keyword);
+            sprintf(buf, "The %s blurs for a second... then opens.\n\r",
+                    room2->dir_option[0]->keyword);
             send_to_room(buf, real_room(15355));
         }
     return 0;
 }
 
-SPECIAL(vampire_killer)
-{
+SPECIAL(vampire_killer) {
     struct char_data *victim, *victim2;
-    room_data* room = 0;
+    room_data *room = 0;
     int which_room;
     waiting_type tmpwtl;
 
@@ -3181,10 +3172,12 @@ SPECIAL(vampire_killer)
             return 0;
         act("$n leans over and bites $N on the neck!!", TRUE, host, 0, victim, TO_NOTVICT);
         act("$n leans over and bites you on the neck!!", FALSE, host, 0, victim, TO_VICT);
-        send_to_char("\n\rYou feel a moment of intense pain... as your numb body slumps to the floor.\n\r\n", victim);
+        send_to_char(
+            "\n\rYou feel a moment of intense pain... as your numb body slumps to the floor.\n\r\n",
+            victim);
         send_to_char("You are dead, sorry...\n\r", victim);
         sprintf(buf, "%s killed by %s at %s", GET_NAME(victim), GET_NAME(host),
-            world[victim->in_room].name);
+                world[victim->in_room].name);
         mudlog(buf, BRF, LEVEL_GOD, TRUE);
         add_exploit_record(EXPLOIT_MOBDEATH, victim, GET_IDNUM(host), GET_NAME(host));
         raw_kill(victim, host, 0);
@@ -3235,7 +3228,7 @@ SPECIAL(vampire_killer)
         if (number(0, 10))
             return 0; // Slow him down a bit
         if (which_room == 3)
-            which_room = number(1, 2); // If both whities and darkies are there 50% which
+            which_room = number(1, 2);         // If both whities and darkies are there 50% which
         switch (world[host->in_room].number) { // one
         case 15395:
             tmpwtl.cmd = 2;
@@ -3286,41 +3279,43 @@ SPECIAL(vampire_killer)
     return 0;
 }
 
-SPECIAL(healing_plant)
-{
+SPECIAL(healing_plant) {
     if (callflag != SPECIAL_SELF)
         return 0;
 
     int level = std::max(1, GET_LEVEL(host) / 2);
 
-    for (char_data* character = world[host->in_room].people; character != NULL; character = character->next_in_room) {
+    for (char_data *character = world[host->in_room].people; character != NULL;
+         character = character->next_in_room) {
         if (IS_GOOD(character) && host != character) {
-            GET_HIT(character) = std::min(GET_MAX_HIT(character), GET_HIT(character) + number(1, level));
+            GET_HIT(character) =
+                std::min(GET_MAX_HIT(character), GET_HIT(character) + number(1, level));
         }
     }
 
     return 0;
 }
 
-SPECIAL(vortex_elevator)
-{ // For now, this little func serves the sole and only purpose ...
-    struct char_data* tmpchar; // of allowing me (Aggrippa) to play with it and learn the mechanics.
-    for (tmpchar = world[host->in_room].people; tmpchar; tmpchar = tmpchar->next_in_room) // for all players present in the room ...
-        if (host != tmpchar) { // For all mobs in room, except vortex ...
-            act("$n makes $N very dizzy!", TRUE, host, 0, tmpchar, TO_NOTVICT); // Tell everybody that 'tmpchar' is dizzy
+SPECIAL(vortex_elevator) {     // For now, this little func serves the sole and only purpose ...
+    struct char_data *tmpchar; // of allowing me (Aggrippa) to play with it and learn the mechanics.
+    for (tmpchar = world[host->in_room].people; tmpchar;
+         tmpchar = tmpchar->next_in_room) // for all players present in the room ...
+        if (host != tmpchar) {            // For all mobs in room, except vortex ...
+            act("$n makes $N very dizzy!", TRUE, host, 0, tmpchar,
+                TO_NOTVICT); // Tell everybody that 'tmpchar' is dizzy
             if (!IS_NPC(tmpchar))
-                act("$n makes you very dizy!", FALSE, host, 0, tmpchar, TO_VICT); // and tell it tmpchar , unless ofcourse he's a mob
+                act("$n makes you very dizy!", FALSE, host, 0, tmpchar,
+                    TO_VICT); // and tell it tmpchar , unless ofcourse he's a mob
         }
     return 0;
 }
 
-SPECIAL(wolf_summoner)
-{
+SPECIAL(wolf_summoner) {
 #define FOLLOWER GET_VNUM(host) + 1
 #define MAX_FOLLOWER (GET_LEVEL(host) / 3)
 #define CHANCE 2
-    struct char_data* wolf;
-    struct follow_type* f;
+    struct char_data *wolf;
+    struct follow_type *f;
     int num_followers = 0;
     if ((GET_POS(host) == POSITION_FIGHTING) && (number(1, 10) > CHANCE)) {
 
@@ -3350,19 +3345,20 @@ SPECIAL(wolf_summoner)
         char_to_room(wolf, host->in_room);
         add_follower(wolf, host, FOLLOW_MOVE);
         // make wolf a follower
-        if (host->specials.fighting) // always check you have a valid pointer.  Also host->next_fighting points to the next character on the fighting_list - not someone fighting them
+        if (host->specials.fighting) // always check you have a valid pointer.  Also
+                                     // host->next_fighting points to the next character on the
+                                     // fighting_list - not someone fighting them
             hit(wolf, host->specials.fighting, TYPE_UNDEFINED);
         // make wolf assist
     }
     return 0;
 }
 
-SPECIAL(reciter)
-{ // reciting mob
-    struct obj_data* o;
+SPECIAL(reciter) { // reciting mob
+    struct obj_data *o;
     int quitting = 0;
-    char* e;
-    char* c = host->specials.recite_lines;
+    char *e;
+    char *c = host->specials.recite_lines;
     if (GET_HIT(ch) < 1) {
         quitting = 1;
         goto remove_scroll;
@@ -3376,11 +3372,12 @@ SPECIAL(reciter)
         if (e) {
             *e = '\0';
             if (*c == '+')
-                act((char*)(c + 1), TRUE, host, 0, 0, TO_ROOM);
+                act((char *)(c + 1), TRUE, host, 0, 0, TO_ROOM);
             else
                 do_say(host, c, 0, 0, 0);
             *e = '\n';
-            host->specials.recite_lines = e + 2; // it appears, asif each line is terminated by a two character combination
+            host->specials.recite_lines =
+                e + 2; // it appears, asif each line is terminated by a two character combination
         } else
             host->specials.recite_lines = NULL;
         return 0;
@@ -3388,8 +3385,8 @@ SPECIAL(reciter)
 // Not singing
 remove_scroll:
     for (o = host->carrying; ((o) && (o->name) && (strcmp(o->name, "textscroll"))); o = o->next)
-        ; // find a scroll
-    if (o) { // found the scroll?
+        ;                         // find a scroll
+    if (o) {                      // found the scroll?
         if (!o->ex_description) { // scroll has no extended description
             mudlog("reciter: missing poem's description", BRF, LEVEL_GOD, TRUE);
             return 0;
@@ -3412,8 +3409,7 @@ remove_scroll:
 
 #define HERALD_LEN 1024
 
-SPECIAL(herald)
-{
+SPECIAL(herald) {
     char hbuf[HERALD_LEN];
     struct memory_rec *mr, *pr;
 
@@ -3449,8 +3445,7 @@ SPECIAL(herald)
         mudlog("herald: missing death_cry2", BRF, LEVEL_GOD, TRUE);
         return 0;
     }
-    snprintf(hbuf, HERALD_LEN - 1, host->player.death_cry2,
-        ch->player.name, ch->player.title);
+    snprintf(hbuf, HERALD_LEN - 1, host->player.death_cry2, ch->player.name, ch->player.title);
     do_say(host, hbuf, 0, 0, 0);
 
     return 0;

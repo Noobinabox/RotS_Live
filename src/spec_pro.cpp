@@ -1599,11 +1599,11 @@ SPECIAL(mob_magic_user_spec) {
     char *dark_mage = strstr(host->player.name, "dmage");
     char *lhuth_mage = strstr(host->player.name, "lumage");
     char *conjurer = strstr(host->player.name, "conj");
+    char *shield_mage = strstr(host->player.name, "shield");
     const int high_level_mage = 40;
     const double bruised_health_pct = 0.75;
     const double hurt_health_pct = 0.5;
     const double bloodied_health_pct = 0.25;
-
 
     // conj: prioritize heal powers in non-combat
     if (!host->specials.fighting && conjurer) {
@@ -1637,8 +1637,8 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // switch tactics (for now, we use a super flash to have an attempt to cast shield)
-    if(host->specials.fighting && host->interrupt_count == 3 && spell_number == 0 && sh) {
-        if(!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+    if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0 && shield_mage) {
+        if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
             int chance = number(1, 100);
             if (chance > 50) {
                 for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
@@ -1777,7 +1777,8 @@ SPECIAL(mob_magic_user_spec) {
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d", GET_NAME(target), spell_number, tgt, host->interrupt_count);
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d",
+            GET_NAME(target), spell_number, tgt, host->interrupt_count);
     mudlog_debug_mob(buf, host);
 
     waiting_type wtl_base;

@@ -31,32 +31,32 @@
 #include <sstream>
 #include <vector>
 
-typedef char* string;
+typedef char *string;
 
 /*
  * External Variables and structures
  */
 
-extern struct char_data* character_list;
-extern struct char_data* waiting_list;
+extern struct char_data *character_list;
+extern struct char_data *waiting_list;
 extern struct room_data world;
 extern struct skill_data skills[];
-extern int find_door(struct char_data* ch, char* type, char* dir);
-extern int get_followers_level(struct char_data*);
-extern int old_search_block(char*, int, unsigned int, const char**, int);
-extern int get_number(char** name);
-extern int get_real_stealth(struct char_data*);
+extern int find_door(struct char_data *ch, char *type, char *dir);
+extern int get_followers_level(struct char_data *);
+extern int old_search_block(char *, int, unsigned int, const char **, int);
+extern int get_number(char **name);
+extern int get_real_stealth(struct char_data *);
 extern int rev_dir[];
-extern int show_tracks(struct char_data* ch, char* name, int mode);
+extern int show_tracks(struct char_data *ch, char *name, int mode);
 extern int top_of_world;
-extern char* dirs[];
-extern void appear(struct char_data* ch);
-extern void check_break_prep(struct char_data*);
-extern void stop_hiding(struct char_data* ch, char);
-extern void update_pos(struct char_data* victim);
-int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
-int check_hallucinate(struct char_data* ch, struct char_data* victim);
-extern void say_spell(char_data* caster, int spell_index);
+extern char *dirs[];
+extern void appear(struct char_data *ch);
+extern void check_break_prep(struct char_data *);
+extern void stop_hiding(struct char_data *ch, char);
+extern void update_pos(struct char_data *victim);
+int check_simple_move(struct char_data *ch, int cmd, int *move_cost, int mode);
+int check_hallucinate(struct char_data *ch, struct char_data *victim);
+extern void say_spell(char_data *caster, int spell_index);
 
 const int GATHER_FOOD = 7218;
 const int GATHER_LIGHT = 7007;
@@ -70,12 +70,11 @@ ACMD(do_move);
 ACMD(do_hit);
 ACMD(do_gen_com);
 
-ACMD(do_ride)
-{
+ACMD(do_ride) {
 
-    follow_type* tmpfol;
-    char_data* potential_mount;
-    char_data* mountch;
+    follow_type *tmpfol;
+    char_data *potential_mount;
+    char_data *mountch;
 
     if (char_exists(ch->mount_data.mount_number) && ch->mount_data.mount) {
         send_to_char("You are riding already.\n\r", ch);
@@ -96,7 +95,8 @@ ACMD(do_ride)
     mountch = 0;
     if (!*argument) {
         for (tmpfol = ch->followers; tmpfol; tmpfol = tmpfol->next) {
-            if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room && IS_NPC(tmpfol->follower) && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
+            if (char_exists(tmpfol->fol_number) && tmpfol->follower->in_room == ch->in_room &&
+                IS_NPC(tmpfol->follower) && IS_SET(tmpfol->follower->specials2.act, MOB_MOUNT)) {
                 break;
             }
         }
@@ -116,7 +116,8 @@ ACMD(do_ride)
             return;
         }
 
-        if (IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act, MOB_MOUNT) || !IS_NPC(potential_mount)) {
+        if (IS_NPC(potential_mount) && !IS_SET(potential_mount->specials2.act, MOB_MOUNT) ||
+            !IS_NPC(potential_mount)) {
             send_to_char("You can not ride this.\n\r", ch);
             return;
         }
@@ -139,12 +140,14 @@ ACMD(do_ride)
         if (affected_by_spell(potential_mount, SKILL_CALM)) {
             if (IS_NPC(ch) && MOB_FLAGGED(ch, MOB_ORC_FRIEND) && ch->master) {
                 if (!is_strong_enough_to_tame(ch->master, potential_mount, false)) {
-                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch->master);
+                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n",
+                                 ch->master);
                     return;
                 }
             } else {
                 if (!is_strong_enough_to_tame(ch, potential_mount, false)) {
-                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n", ch);
+                    send_to_char("Your skill with animals is insufficient to ride that beast.\r\n",
+                                 ch);
                     return;
                 }
             }
@@ -182,7 +185,8 @@ ACMD(do_ride)
         act("$n mounts $N.", FALSE, ch, 0, mountch, TO_ROOM);
 
         for (potential_mount = mountch->mount_data.rider;
-             potential_mount->mount_data.next_rider && char_exists(potential_mount->mount_data.next_rider_number);
+             potential_mount->mount_data.next_rider &&
+             char_exists(potential_mount->mount_data.next_rider_number);
              potential_mount = potential_mount->mount_data.next_rider)
             ;
 
@@ -192,8 +196,7 @@ ACMD(do_ride)
     IS_CARRYING_W(mountch) += GET_WEIGHT(ch) + IS_CARRYING_W(ch);
 }
 
-ACMD(do_dismount)
-{
+ACMD(do_dismount) {
     if (ch == NULL) {
         sprintf(buf, "Dismount called without a character.  Exiting.");
         mudlog(buf, NRM, LEVEL_IMMORT, TRUE);
@@ -203,9 +206,9 @@ ACMD(do_dismount)
     if (IS_RIDING(ch) == false) {
         send_to_char("You are not riding anything.\n\r", ch);
     } else {
-        char_data* mount = ch->mount_data.mount;
+        char_data *mount = ch->mount_data.mount;
         if (mount != NULL) {
-            char_data* were_rider = NULL;
+            char_data *were_rider = NULL;
             if (IS_RIDDEN(mount)) {
                 were_rider = mount->mount_data.rider;
             } else {
@@ -222,8 +225,7 @@ ACMD(do_dismount)
     }
 }
 
-ACMD(do_track)
-{
+ACMD(do_track) {
     int count;
 
     if (subcmd == -1) {
@@ -248,9 +250,9 @@ ACMD(do_track)
         }
         send_to_char("You start searching the ground for tracks.\n\r", ch);
         act("$n searches the ground for tracks.", TRUE, ch, 0, 0, TO_ROOM);
-        WAIT_STATE_FULL(ch, skills[SKILL_TRACK].beats, CMD_TRACK, 1, 30,
-            0, 0, get_from_txt_block_pool(argument),
-            AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
+        WAIT_STATE_FULL(ch, skills[SKILL_TRACK].beats, CMD_TRACK, 1, 30, 0, 0,
+                        get_from_txt_block_pool(argument), AFF_WAITING | AFF_WAITWHEEL,
+                        TARGET_TEXT);
         return;
     }
     if (ch->delay.targ1.type == TARGET_TEXT)
@@ -270,26 +272,25 @@ ACMD(do_track)
  */
 int sector_variables[] = {
     -200, /*Floor*/
-    -70, /*City*/
-    20, /*Field*/
-    20, /*Forest*/
-    0, /*Hills*/
-    -20, /*Mountains*/
+    -70,  /*City*/
+    20,   /*Field*/
+    20,   /*Forest*/
+    0,    /*Hills*/
+    -20,  /*Mountains*/
     -200, /*Water*/
     -200, /*No_Swim Water*/
     -200, /*UnderWater*/
-    -30, /*Road*/
+    -30,  /*Road*/
     -200, /*Crack*/
-    20, /*Dense Forest*/
-    20 /*Swamp*/
+    20,   /*Dense Forest*/
+    20    /*Swamp*/
 };
 
 /*
  * This function checks the conditions needed to gather
  * with success.
  */
-int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
-{
+int check_gather_conditions(struct char_data *ch, int percent, int gather_type) {
 
     /*
      * The way gather was originally implemented was terrible,
@@ -320,24 +321,24 @@ int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
     case SECT_CITY:
         send_to_char("You might have better luck "
                      "outside of city\n\r",
-            ch);
+                     ch);
         return FALSE;
     case SECT_FIELD:
         send_to_char("Learning how to gather herbs better or,"
                      " perhaps, going to the forest could help.\r\n",
-            ch);
+                     ch);
         return FALSE;
     case SECT_SWAMP:
         if (gather_type == 2) {
             send_to_char("Trying to gather dry kindle-wood in a swamp is"
                          " an exercise in futility.\r\n",
-                ch);
+                         ch);
             return FALSE;
         }
         if (GET_RACE(ch) < 9) {
             send_to_char("There are no plants or herbs of any value"
                          " to you here.\r\n",
-                ch);
+                         ch);
             return FALSE;
         } else
             return TRUE;
@@ -352,9 +353,8 @@ int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
     return TRUE;
 }
 
-ACMD(do_gather_food)
-{
-    struct obj_data* obj;
+ACMD(do_gather_food) {
+    struct obj_data *obj;
     struct affected_type af;
     sh_int percent, move_use, GatherType;
     int affects_last, ranger_bonus;
@@ -365,19 +365,8 @@ ACMD(do_gather_food)
      * a neat little array, and used search_block to get the desired
      * values.
      */
-    static char* gather_type[] = {
-        "",
-        "food",
-        "light",
-        "healing",
-        "energy",
-        "bow",
-        "arrows",
-        "dust",
-        "poison",
-        "antidote",
-        "\n"
-    };
+    static char *gather_type[] = {"",       "food", "light",  "healing",  "energy", "bow",
+                                  "arrows", "dust", "poison", "antidote", "\n"};
 
     if (IS_SHADOW(ch)) {
         send_to_char("You are too insubstantial to do that.\n\r", ch);
@@ -405,21 +394,23 @@ ACMD(do_gather_food)
         one_argument(argument, arg);
         GatherType = search_block(arg, gather_type, 0);
         if (GatherType == -1) { /*If we can't find an argument */
-            send_to_char("You can gather food, healing, energy, bows, arrows, dust, or light.\n\r", ch);
+            send_to_char("You can gather food, healing, energy, bows, arrows, dust, or light.\n\r",
+                         ch);
             return;
         }
-        if (!check_gather_conditions(ch, percent, GatherType)) /*Checks sector and race conditions */
+        if (!check_gather_conditions(ch, percent,
+                                     GatherType)) /*Checks sector and race conditions */
             return;
 
         /*And we've passed our conditions so we're going on now to try and gather */
-        WAIT_STATE_FULL(ch, MIN(25, 40 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5), CMD_GATHER_FOOD, GatherType,
-            30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        WAIT_STATE_FULL(ch, MIN(25, 40 - GET_SKILL(ch, SKILL_GATHER_FOOD) / 5), CMD_GATHER_FOOD,
+                        GatherType, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
         GET_MOVE(ch) -= move_use;
         break;
     default:
         if (number(0, 100) > (subcmd < 3 ? percent : percent - 10)) {
 
-            const char* gather_type = nullptr;
+            const char *gather_type = nullptr;
             switch (subcmd) {
             case 2:
                 gather_type = "a torch";
@@ -441,7 +432,8 @@ ACMD(do_gather_food)
                 break;
             }
 
-            sprintf(buf, "You tried to gather %s, but could not find anything useful.\n\r", gather_type);
+            sprintf(buf, "You tried to gather %s, but could not find anything useful.\n\r",
+                    gather_type);
             send_to_char(buf, ch);
 
             return;
@@ -458,45 +450,50 @@ ACMD(do_gather_food)
                 if ((obj = read_object(GATHER_FOOD, VIRT)) != NULL) {
                     send_to_char("You look around, and manage to find some edible"
                                  " roots and berries.\n\r",
-                        ch);
+                                 ch);
                     obj_to_char(obj, ch);
                 } else
                     send_to_char("Minor problem in gather food. Could not create item."
                                  " Please notify imps.\n\r",
-                        ch);
+                                 ch);
                 break;
             case 2:
                 if ((obj = read_object(GATHER_LIGHT, VIRT)) != NULL) {
                     send_to_char("You gather some wood and fashion it into a"
                                  " crude torch.\n\r",
-                        ch);
+                                 ch);
                     obj_to_char(obj, ch);
                 } else
                     send_to_char("Problem in gather light.  Could not create item."
                                  "Please notify imps.\n\r",
-                        ch);
+                                 ch);
                 break;
             case 3:
-                GET_HIT(ch) = MIN(GET_HIT(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) / 3
-                        + GET_PROF_LEVEL(PROF_RANGER, ch),
-                    GET_MAX_HIT(ch));
+                GET_HIT(ch) = MIN(GET_HIT(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) / 3 +
+                                      GET_PROF_LEVEL(PROF_RANGER, ch),
+                                  GET_MAX_HIT(ch));
                 send_to_char("You look around, and manage to find some healing"
                              " herbs.\n\r",
-                    ch);
+                             ch);
                 break;
             case 4:
-                GET_MOVE(ch) = MIN(GET_MOVE(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) * 2 / 3 + GET_PROF_LEVEL(PROF_RANGER, ch), GET_MAX_MOVE(ch));
+                GET_MOVE(ch) = MIN(GET_MOVE(ch) + GET_SKILL(ch, SKILL_GATHER_FOOD) * 2 / 3 +
+                                       GET_PROF_LEVEL(PROF_RANGER, ch),
+                                   GET_MAX_MOVE(ch));
 
                 send_to_char("You manage to find some herbs which have given you energy."
                              "\n\r",
-                    ch);
+                             ch);
                 break;
             case 5:
                 if ((obj = read_object(GATHER_BOW, VIRT)) != NULL) {
                     obj_to_char(obj, ch);
-                    send_to_char("You manage to find some branches that you fashion into a bow.\n\r", ch);
+                    send_to_char(
+                        "You manage to find some branches that you fashion into a bow.\n\r", ch);
                 } else {
-                    send_to_char("Problem in gather bow. Could not create item. Please notify imps.\n\r", ch);
+                    send_to_char(
+                        "Problem in gather bow. Could not create item. Please notify imps.\n\r",
+                        ch);
                 }
                 break;
             case 6:
@@ -504,15 +501,20 @@ ACMD(do_gather_food)
                     obj_to_char(obj, ch);
                     send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);
                 } else {
-                    send_to_char("Problem in gather arrows. Could not create item. Please notify imps.\n\r", ch);
+                    send_to_char(
+                        "Problem in gather arrows. Could not create item. Please notify imps.\n\r",
+                        ch);
                 }
                 break;
             case 7:
                 if ((obj = read_object(GATHER_DUST, VIRT)) != NULL) {
                     obj_to_char(obj, ch);
-                    send_to_char("You manage to find some suitable dust for blinding your victim.\n\r", ch);
+                    send_to_char(
+                        "You manage to find some suitable dust for blinding your victim.\n\r", ch);
                 } else {
-                    send_to_char("Problem in gather dust. Could not create item. Please notify imps.\n\r", ch);
+                    send_to_char(
+                        "Problem in gather dust. Could not create item. Please notify imps.\n\r",
+                        ch);
                 }
                 break;
             }
@@ -524,8 +526,8 @@ ACMD(do_gather_food)
              * close to that mark.
              */
 
-            ranger_bonus = number(GET_PROF_LEVEL(PROF_RANGER, ch) / 4,
-                GET_PROF_LEVEL(PROF_RANGER, ch) / 3);
+            ranger_bonus =
+                number(GET_PROF_LEVEL(PROF_RANGER, ch) / 4, GET_PROF_LEVEL(PROF_RANGER, ch) / 3);
             affects_last = 22 - ranger_bonus;
             if (subcmd == 3 || subcmd == 4) {
                 af.type = SKILL_GATHER_FOOD;
@@ -540,14 +542,13 @@ ACMD(do_gather_food)
     } /*subcommand switch statement*/
 }
 
-ACMD(do_pick)
-{
+ACMD(do_pick) {
     byte percent;
     int door, other_room;
     char type[MAX_INPUT_LENGTH], dir[MAX_INPUT_LENGTH];
-    struct room_direction_data* back;
-    struct obj_data* obj;
-    struct char_data* victim;
+    struct room_direction_data *back;
+    struct obj_data *obj;
+    struct char_data *victim;
 
     if (IS_SHADOW(ch)) {
         send_to_char("You are too insubstantial to do that.\n\r", ch);
@@ -564,8 +565,7 @@ ACMD(do_pick)
 
     if (!*type)
         send_to_char("Pick what?\n\r", ch);
-    else if (generic_find(argument, FIND_OBJ_INV | FIND_OBJ_ROOM,
-                 ch, &victim, &obj))
+    else if (generic_find(argument, FIND_OBJ_INV | FIND_OBJ_ROOM, ch, &victim, &obj))
 
         if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
@@ -607,8 +607,8 @@ ACMD(do_pick)
             }
             REMOVE_BIT(EXIT(ch, door)->exit_info, EX_LOCKED);
             if (EXIT(ch, door)->keyword)
-                act("$n skillfully picks the lock of the $F.", 0, ch, 0,
-                    EXIT(ch, door)->keyword, TO_ROOM);
+                act("$n skillfully picks the lock of the $F.", 0, ch, 0, EXIT(ch, door)->keyword,
+                    TO_ROOM);
             else
                 act("$n picks the lock of the door.", TRUE, ch, 0, 0, TO_ROOM);
             send_to_char("The lock quickly yields to your skills.\n\r", ch);
@@ -623,8 +623,7 @@ ACMD(do_pick)
         }
 }
 
-void stop_hiding(struct char_data* ch, char mode)
-{
+void stop_hiding(struct char_data *ch, char mode) {
     /*
      *if mode is FALSE, then we don't send the "step" message
      */
@@ -636,8 +635,7 @@ void stop_hiding(struct char_data* ch, char mode)
     GET_HIDING(ch) = 0;
 }
 
-ACMD(do_hide)
-{
+ACMD(do_hide) {
     sh_int hide_skill, hide_chance;
     char first_argument[260];
 
@@ -672,7 +670,7 @@ ACMD(do_hide)
         if (GET_KNOWLEDGE(ch, SKILL_HIDE) <= 0)
             send_to_char("You cover your eyes with your hands and "
                          "hope you can't be seen.\n\r",
-                ch);
+                         ch);
         /*
          * The code below determines the beats taken to perform
          * a hide, based on whether or not people have snuck into
@@ -683,16 +681,21 @@ ACMD(do_hide)
             if (IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN))
                 if (IS_SET(ch->specials2.hide_flags, HIDING_WELL))
                     /* Hiding well after sneaking in -> 7 beats*/
-                    WAIT_STATE_BRIEF(ch, skills[SKILL_HIDE].beats * (IS_SET(ch->specials2.hide_flags, HIDING_WELL) * 2) - 1,
-                        CMD_HIDE, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+                    WAIT_STATE_BRIEF(ch,
+                                     skills[SKILL_HIDE].beats *
+                                             (IS_SET(ch->specials2.hide_flags, HIDING_WELL) * 2) -
+                                         1,
+                                     CMD_HIDE, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
                 else
                     /* Hiding after sneaking in -> 3 beats*/
-                    WAIT_STATE_BRIEF(ch, skills[SKILL_HIDE].beats - 1,
-                        CMD_HIDE, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+                    WAIT_STATE_BRIEF(ch, skills[SKILL_HIDE].beats - 1, CMD_HIDE, 1, 30,
+                                     AFF_WAITING | AFF_WAITWHEEL);
             else
                 /*Hiding well with no sneak -> 9 beats, with four being default for normal hide*/
-                WAIT_STATE_BRIEF(ch, skills[SKILL_HIDE].beats * (IS_SET(ch->specials2.hide_flags, HIDING_WELL) * 2 + 1),
-                    CMD_HIDE, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+                WAIT_STATE_BRIEF(ch,
+                                 skills[SKILL_HIDE].beats *
+                                     (IS_SET(ch->specials2.hide_flags, HIDING_WELL) * 2 + 1),
+                                 CMD_HIDE, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
 
             if (IS_SET(ch->specials2.hide_flags, HIDING_WELL))
                 send_to_char("You carefully choose a place to hide.\n\r", ch);
@@ -725,8 +728,7 @@ ACMD(do_hide)
         SET_BIT(ch->specials.affected_by, AFF_HIDE);
 }
 
-ACMD(do_sneak)
-{
+ACMD(do_sneak) {
     if (IS_NPC(ch)) {
         send_to_char("Either you sneak or you don't.\r\n", ch);
         return;
@@ -746,10 +748,8 @@ ACMD(do_sneak)
  * the intended victim is not a VALID victim, then we return
  * NULL.
  */
-struct char_data*
-ambush_get_valid_victim(struct char_data* ch, struct waiting_type* target)
-{
-    struct char_data* victim;
+struct char_data *ambush_get_valid_victim(struct char_data *ch, struct waiting_type *target) {
+    struct char_data *victim;
 
     if (target->targ1.type == TARGET_TEXT)
         victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
@@ -758,28 +758,35 @@ ambush_get_valid_victim(struct char_data* ch, struct waiting_type* target)
             victim = target->targ1.ptr.ch;
     }
 
-    if (victim == NULL) {
+    if (victim == nullptr) {
         send_to_char("Ambush who?\r\n", ch);
-        return NULL;
+        return nullptr;
+    }
+
+    if ((IS_AFFECTED(ch, AFF_CHARM) && ch->master == victim) ||
+        (IS_AFFECTED(victim, AFF_CHARM) && victim->master == ch)) {
+        act("$N is just such a good friend, you simply can't hit $M.", FALSE, ch, 0, victim,
+            TO_CHAR);
+        return nullptr;
     }
 
     /* Can happen for TARGET_CHAR */
     if (ch->in_room != victim->in_room) {
         send_to_char("Your victim is no longer here.\r\n", ch);
-        return NULL;
+        return nullptr;
     }
 
     if (victim->specials.fighting) {
         send_to_char("Your target is too alert!\n\r", ch);
-        return NULL;
+        return nullptr;
     }
     if (victim == ch) {
         send_to_char("How can you sneak up on yourself?\n\r", ch);
-        return NULL;
+        return nullptr;
     }
     if (!CAN_SEE(ch, victim)) {
         send_to_char("Ambush who?\r\n", ch);
-        return NULL;
+        return nullptr;
     }
 
     return victim;
@@ -791,8 +798,7 @@ ambush_get_valid_victim(struct char_data* ch, struct waiting_type* target)
  * the return value denotes how WELL the ambush succeeded.
  * Higher return values denote more successful ambushes.
  */
-int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
-{
+int ambush_calculate_success(struct char_data *ch, struct char_data *victim) {
     int percent;
 
     percent = number(-100, 0);
@@ -811,8 +817,7 @@ int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
     return percent;
 }
 
-int calculate_ambush_damage_cap(const char_data* attacker)
-{
+int calculate_ambush_damage_cap(const char_data *attacker) {
     assert(attacker);
 
     int ranger_level = utils::get_prof_level(PROF_RANGER, *attacker);
@@ -830,8 +835,7 @@ int calculate_ambush_damage_cap(const char_data* attacker)
  * against an opponent with no awareness, the modifier should be
  * on the order of 60.
  */
-int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier)
-{
+int ambush_calculate_damage(char_data *attacker, char_data *victim, int modifier) {
     if (modifier <= 0)
         return 0;
 
@@ -849,7 +853,8 @@ int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier
     damage_dealt *= std::min(GET_HIT(victim), GET_PROF_LEVEL(PROF_RANGER, attacker) * 20);
 
     /* Penalize for gear encumbrance and weapon encumbrance */
-    damage_dealt /= 400 + 5 * (utils::get_encumbrance(*attacker) + utils::get_leg_encumbrance(*attacker) + weapon_bulk * weapon_bulk);
+    damage_dealt /= 400 + 5 * (utils::get_encumbrance(*attacker) +
+                               utils::get_leg_encumbrance(*attacker) + weapon_bulk * weapon_bulk);
 
     /* Add a small constant amount of damage */
     damage_dealt += GET_PROF_LEVEL(PROF_RANGER, attacker) - GET_LEVELA(victim) + 10;
@@ -878,16 +883,15 @@ int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier
     return damage_dealt;
 }
 
-ACMD(do_ambush)
-{
-    struct char_data* victim;
+ACMD(do_ambush) {
+    struct char_data *victim;
     int success;
     int dmg;
 
     if (IS_SHADOW(ch)) {
         send_to_char("Hmm, perhaps you've spent too much time in"
                      " mortal lands.\r\n",
-            ch);
+                     ch);
         return;
     }
 
@@ -899,7 +903,7 @@ ACMD(do_ambush)
     if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
         send_to_char("A peaceful feeling overwhelms you, and you cannot bring"
                      " yourself to attack.\n\r",
-            ch);
+                     ch);
         return;
     }
 
@@ -908,7 +912,7 @@ ACMD(do_ambush)
         return;
     }
 
-    struct obj_data* weapon;
+    struct obj_data *weapon;
     weapon = ch->equipment[WIELD];
     game_types::weapon_type w_type = weapon->get_weapon_type();
 
@@ -936,7 +940,7 @@ ACMD(do_ambush)
         act("$n renouces $s sanctuary!", FALSE, ch, 0, 0, TO_ROOM);
     }
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
 
     switch (subcmd) {
     case -1:
@@ -953,19 +957,20 @@ ACMD(do_ambush)
             return;
 
         if (!bb_instance.is_target_valid(ch, victim)) {
-            send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.\r\n", ch);
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.  "
+                         "You don't leave your cover.\r\n",
+                         ch);
             return;
         }
 
         /* TARGET_CHAR stores the victim, TARGET_TEXT stores the keyword */
         if (wtl->targ1.type == TARGET_CHAR)
             WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats, CMD_AMBUSH, 1, 30, 0,
-                GET_ABS_NUM(victim), victim,
-                AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+                            GET_ABS_NUM(victim), victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
         else
-            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats, CMD_AMBUSH, 1, 30, 0,
-                0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-                AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
+            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats, CMD_AMBUSH, 1, 30, 0, 0,
+                            get_from_txt_block_pool(wtl->targ1.ptr.text->text),
+                            AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
 
         return;
 
@@ -974,7 +979,7 @@ ACMD(do_ambush)
             vmudlog(BRF, "ERROR: ambush callback with no context");
             send_to_char("Error: ambush callback with no callback context.\r\n"
                          "Please report this to an immortal.\r\n",
-                ch);
+                         ch);
             return;
         }
 
@@ -983,7 +988,9 @@ ACMD(do_ambush)
             return;
 
         if (!bb_instance.is_target_valid(ch, victim)) {
-            send_to_char("You feel the Gods looking down upon you, and protecting your target.  You don't leave your cover.\r\n", ch);
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.  "
+                         "You don't leave your cover.\r\n",
+                         ch);
             return;
         }
 
@@ -1018,11 +1025,9 @@ ACMD(do_ambush)
  * optional trap target keyword, which is stored in
  * target->targ1.ptr.text->text.
  */
-struct char_data*
-trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
-{
-    char* keyword;
-    struct char_data* victim;
+struct char_data *trap_get_valid_victim(struct char_data *ch, struct waiting_type *target) {
+    char *keyword;
+    struct char_data *victim;
 
     if (target->targ1.type == TARGET_NONE)
         victim = target->targ2.ptr.ch;
@@ -1065,8 +1070,7 @@ trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
     return victim;
 }
 
-void trap_cleanup_quiet(struct char_data* ch)
-{
+void trap_cleanup_quiet(struct char_data *ch) {
     abort_delay(ch);
     ch->delay.targ1.cleanup();
     ch->delay.targ2.cleanup();
@@ -1075,8 +1079,7 @@ void trap_cleanup_quiet(struct char_data* ch)
         ch->specials.store_prog_number = 0;
 }
 
-bool can_do_trap(char_data& character, int subcmd)
-{
+bool can_do_trap(char_data &character, int subcmd) {
     const int max_trap_weapon_bulk = 2;
 
     if (IS_SHADOW(&character)) {
@@ -1094,7 +1097,7 @@ bool can_do_trap(char_data& character, int subcmd)
         return false;
     }
 
-    const obj_data* weapon = character.equipment[WIELD];
+    const obj_data *weapon = character.equipment[WIELD];
     if (!weapon) {
         if (subcmd != 0) {
             if (subcmd == -1)
@@ -1129,14 +1132,14 @@ bool can_do_trap(char_data& character, int subcmd)
     return true;
 }
 
-bool is_valid_subcommand(char_data& character, int sub_command, const waiting_type* wtl)
-{
+bool is_valid_subcommand(char_data &character, int sub_command, const waiting_type *wtl) {
     /* Sanity check ... All subcmds past 0 are callbacks and require a context */
     if (sub_command > 0 && wtl == NULL) {
         vmudlog(BRF, "do_trap: subcmd=%d, but the context is NULL!", sub_command);
-        vsend_to_char(&character, "ERROR: trap subcommand is %d, but the context is null.\r\n"
-                                  "Please report this message to an immortal.\r\n",
-            sub_command);
+        vsend_to_char(&character,
+                      "ERROR: trap subcommand is %d, but the context is null.\r\n"
+                      "Please report this message to an immortal.\r\n",
+                      sub_command);
 
         return false;
     }
@@ -1145,11 +1148,11 @@ bool is_valid_subcommand(char_data& character, int sub_command, const waiting_ty
 }
 
 // drelidan:  Copied ACMD macro here so I could see the arguments.
-// void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int subcmd)
-ACMD(do_trap)
-{
+// void do_trap(struct char_data *ch, char *argument, struct waiting_type * wtl, int cmd, int
+// subcmd)
+ACMD(do_trap) {
     static int ignore_recursion = 0;
-    struct char_data* victim;
+    struct char_data *victim;
     int dmg;
     int success;
 
@@ -1161,7 +1164,7 @@ ACMD(do_trap)
     if (!is_valid_subcommand(*ch, subcmd, wtl))
         return;
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
 
     /*
      * Subcommand callbacks:
@@ -1198,13 +1201,12 @@ ACMD(do_trap)
 
         /* If there's a target keyword, then store it */
         if (wtl->targ1.type == TARGET_TEXT) {
-            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
-                0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-                AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
+            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0, 0,
+                            get_from_txt_block_pool(wtl->targ1.ptr.text->text),
+                            AFF_WAITING | AFF_WAITWHEEL, TARGET_TEXT);
         } else {
-            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0,
-                0, NULL,
-                AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+            WAIT_STATE_FULL(ch, skills[SKILL_AMBUSH].beats * 2, CMD_TRAP, 1, 30, 0, 0, NULL,
+                            AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
         }
         break;
 
@@ -1213,13 +1215,10 @@ ACMD(do_trap)
 
         /* Use the wait state to store the target data */
         if (wtl->targ1.type == TARGET_TEXT) {
-            WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
-                0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-                0, TARGET_TEXT);
+            WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0, 0,
+                            get_from_txt_block_pool(wtl->targ1.ptr.text->text), 0, TARGET_TEXT);
         } else {
-            WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0,
-                0, NULL,
-                0, TARGET_NONE);
+            WAIT_STATE_FULL(ch, -1, CMD_TRAP, 2, 30, 0, 0, NULL, 0, TARGET_NONE);
         }
 
         /* We use spec_prog 16 for people with trap */
@@ -1248,13 +1247,11 @@ ACMD(do_trap)
          */
         ignore_recursion = 1;
         if (wtl->targ1.type == TARGET_TEXT) {
-            WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
-                0, get_from_txt_block_pool(wtl->targ1.ptr.text->text),
-                AFF_WAITING, TARGET_TEXT);
+            WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0, 0,
+                            get_from_txt_block_pool(wtl->targ1.ptr.text->text), AFF_WAITING,
+                            TARGET_TEXT);
         } else {
-            WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0,
-                0, NULL,
-                AFF_WAITING, TARGET_NONE);
+            WAIT_STATE_FULL(ch, 1, CMD_TRAP, 3, 40, 0, 0, NULL, AFF_WAITING, TARGET_NONE);
         }
 
         /* WAIT_STATE_FULL clobbers targ2 unconditionally, so we refill it */
@@ -1276,7 +1273,9 @@ ACMD(do_trap)
         }
 
         if (!bb_instance.is_target_valid(ch, victim)) {
-            send_to_char("You feel the Gods looking down upon you, and protecting your target.  You remain in wait...\r\n", ch);
+            send_to_char("You feel the Gods looking down upon you, and protecting your target.  "
+                         "You remain in wait...\r\n",
+                         ch);
 
             /* Reset the trap.  do_trap subcmd=1 does exactly this. */
             do_trap(ch, "", wtl, CMD_TRAP, 1);
@@ -1293,9 +1292,8 @@ ACMD(do_trap)
             dmg = dmg >> 1; // Cut the damage in half?  Easier ways to do this.  dmg = dmg >> 1;
 
             // Set a bash affection on the victim
-            WAIT_STATE_FULL(victim, 5,
-                CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
-                TARGET_IGNORE);
+            WAIT_STATE_FULL(victim, 5, CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH,
+                            TARGET_IGNORE);
 
             damage(ch, victim, dmg, SKILL_TRAP, 0);
         }
@@ -1308,10 +1306,9 @@ ACMD(do_trap)
     }
 }
 
-ACMD(do_calm)
-{
+ACMD(do_calm) {
     int calm_skill;
-    struct char_data* victim;
+    struct char_data *victim;
     struct waiting_type tmpwtl;
     struct affected_type af;
 
@@ -1347,11 +1344,10 @@ ACMD(do_calm)
             send_to_char("Your victim is no longer among us.\r\n", ch);
             return;
         }
-        victim = (struct char_data*)wtl->targ1.ptr.ch;
+        victim = (struct char_data *)wtl->targ1.ptr.ch;
         break;
     default:
-        sprintf(buf2, "do_calm: illegal subcommand '%d'.\r\n",
-            subcmd);
+        sprintf(buf2, "do_calm: illegal subcommand '%d'.\r\n", subcmd);
         mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
         return;
     }
@@ -1379,26 +1375,23 @@ ACMD(do_calm)
     switch (subcmd) {
     case 0:
         if (!GET_SKILL(ch, SKILL_CALM)) {
-            send_to_char("Learn how to calm properly first!\n\r",
-                ch);
+            send_to_char("Learn how to calm properly first!\n\r", ch);
             return;
         }
         /* #define is here for readability only. */
 
-#define CALM_WAIT_BEATS \
-    skills[SKILL_CALM].beats * 2 * GET_LEVEL(victim) / (GET_PROF_LEVEL(PROF_RANGER, ch) + calm_skill / 15)
+#define CALM_WAIT_BEATS                                                                            \
+    skills[SKILL_CALM].beats * 2 * GET_LEVEL(victim) /                                             \
+        (GET_PROF_LEVEL(PROF_RANGER, ch) + calm_skill / 15)
 
-        WAIT_STATE_FULL(ch, CALM_WAIT_BEATS, CMD_CALM, 1, 50,
-            0, GET_ABS_NUM(victim), victim,
-            AFF_WAITING | AFF_WAITWHEEL,
-            TARGET_CHAR);
+        WAIT_STATE_FULL(ch, CALM_WAIT_BEATS, CMD_CALM, 1, 50, 0, GET_ABS_NUM(victim), victim,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
 #undef CALM_WAIT_BEATS
 
         break;
     case 1:
         if (ch->in_room != victim->in_room) {
-            send_to_char("You target is not here any longer.\r\n",
-                ch);
+            send_to_char("You target is not here any longer.\r\n", ch);
             return;
         }
         if (calm_skill > number(0, 150)) { /* success */
@@ -1424,19 +1417,18 @@ ACMD(do_calm)
         break;
 
     default: /* Shouldn't ever happen */
-        sprintf(buf2, "do_calm: illegal subcommand '%d'.\r\n",
-            subcmd);
+        sprintf(buf2, "do_calm: illegal subcommand '%d'.\r\n", subcmd);
         mudlog(buf2, NRM, LEVEL_IMMORT, TRUE);
         abort_delay(ch);
         return;
     }
 }
 
-bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_followers)
-{
+bool is_strong_enough_to_tame(char_data *tamer, char_data *animal, bool include_current_followers) {
     int tame_skill = GET_SKILL(tamer, SKILL_TAME) + GET_RAW_SKILL(tamer, SKILL_ANIMALS) / 2;
 
-    int levels_over_required = (GET_PROF_LEVEL(PROF_RANGER, tamer) / 3 + tame_skill / 30 - GET_LEVEL(animal));
+    int levels_over_required =
+        (GET_PROF_LEVEL(PROF_RANGER, tamer) / 3 + tame_skill / 30 - GET_LEVEL(animal));
     if (include_current_followers) {
         levels_over_required - get_followers_level(tamer);
     }
@@ -1450,10 +1442,9 @@ bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_
     return levels_over_required >= 0;
 }
 
-ACMD(do_tame)
-{
+ACMD(do_tame) {
     int tame_skill, levels_over_required;
-    struct char_data* victim = NULL;
+    struct char_data *victim = NULL;
     struct waiting_type tmpwtl;
     struct affected_type af;
 
@@ -1465,7 +1456,7 @@ ACMD(do_tame)
     if (IS_NPC(ch) && IS_AFFECTED(ch, AFF_CHARM)) {
         send_to_char("Your superior would not approve of your building"
                      " an army.\n\r",
-            ch);
+                     ch);
         return;
     }
     tame_skill = GET_SKILL(ch, SKILL_TAME) + GET_RAW_SKILL(ch, SKILL_ANIMALS) / 2;
@@ -1491,7 +1482,7 @@ ACMD(do_tame)
             send_to_char("Your victim is no longer among us.\r\n", ch);
             return;
         }
-        victim = (struct char_data*)wtl->targ1.ptr.ch;
+        victim = (struct char_data *)wtl->targ1.ptr.ch;
     }
 
     double ranger_level = (double)GET_PROF_LEVEL(PROF_RANGER, ch) / 3;
@@ -1552,9 +1543,11 @@ ACMD(do_tame)
             return;
         }
 
-        WAIT_STATE_FULL(ch, skills[SKILL_TAME].beats * GET_LEVEL(victim) * 2 / (GET_PROF_LEVEL(PROF_RANGER, ch) + 1), CMD_TAME, 1, 50, 0,
-            GET_ABS_NUM(victim), victim, AFF_WAITING | AFF_WAITWHEEL,
-            TARGET_CHAR);
+        WAIT_STATE_FULL(ch,
+                        skills[SKILL_TAME].beats * GET_LEVEL(victim) * 2 /
+                            (GET_PROF_LEVEL(PROF_RANGER, ch) + 1),
+                        CMD_TAME, 1, 50, 0, GET_ABS_NUM(victim), victim,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
         return;
 
     case 1:
@@ -1624,11 +1617,10 @@ ACMD(do_tame)
     }
 }
 
-ACMD(do_whistle)
-{
+ACMD(do_whistle) {
     int rm_num, zone_num, cur_room_num;
-    struct room_data* rm;
-    struct char_data* tmpch;
+    struct room_data *rm;
+    struct char_data *tmpch;
 
     cur_room_num = ch->in_room;
     zone_num = world[cur_room_num].zone;
@@ -1640,12 +1632,11 @@ ACMD(do_whistle)
 
     if (!subcmd) { /* setting a delay */
         send_to_char("You gather your breath.\r\n", ch);
-        WAIT_STATE_FULL(ch, skills[SKILL_WHISTLE].beats, CMD_WHISTLE, 1, 50, 0,
-            0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        WAIT_STATE_FULL(ch, skills[SKILL_WHISTLE].beats, CMD_WHISTLE, 1, 50, 0, 0, 0,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
         return;
     } else if (subcmd == 1) {
-        if ((GET_SKILL(ch, SKILL_WHISTLE) + (GET_RACE(ch) == 13 ? 99 : 0))
-            < number(0, 99)) {
+        if ((GET_SKILL(ch, SKILL_WHISTLE) + (GET_RACE(ch) == 13 ? 99 : 0)) < number(0, 99)) {
             send_to_char("You whistle, but can barely hear yourself.\r\n", ch);
             act("$n whistles softly.", FALSE, ch, 0, 0, TO_ROOM);
 
@@ -1689,8 +1680,7 @@ ACMD(do_whistle)
     }
 }
 
-ACMD(do_stalk)
-{
+ACMD(do_stalk) {
     int dir;
 
     if (IS_SHADOW(ch)) {
@@ -1699,8 +1689,7 @@ ACMD(do_stalk)
     }
 
     if (!wtl || wtl->targ1.type != TARGET_DIR) {
-        send_to_char("Improper command target - please notify an immortal.\n\r",
-            ch);
+        send_to_char("Improper command target - please notify an immortal.\n\r", ch);
         return;
     }
 
@@ -1729,8 +1718,8 @@ ACMD(do_stalk)
         return;
     }
 
-    WAIT_STATE_BRIEF(ch, skills[SKILL_STALK].beats, dir + 1, SCMD_STALK,
-        30, AFF_WAITING | AFF_WAITWHEEL);
+    WAIT_STATE_BRIEF(ch, skills[SKILL_STALK].beats, dir + 1, SCMD_STALK, 30,
+                     AFF_WAITING | AFF_WAITWHEEL);
     ch->delay.targ1.type = TARGET_DIR;
     ch->delay.targ1.ch_num = dir;
 
@@ -1740,9 +1729,8 @@ ACMD(do_stalk)
     return;
 }
 
-ACMD(do_cover)
-{
-    room_data* tmproom;
+ACMD(do_cover) {
+    room_data *tmproom;
     int tmp, dir, dt, tr_time;
 
     if (IS_SHADOW(ch)) {
@@ -1760,7 +1748,8 @@ ACMD(do_cover)
         if (GET_KNOWLEDGE(ch, SKILL_STALK) <= 0) {
             send_to_char("You fumble around, trying to tidy up the place.\r\n", ch);
         } else {
-            WAIT_STATE_BRIEF(ch, skills[SKILL_STALK].beats, CMD_COVER, 1, 30, AFF_WAITING | AFF_WAITWHEEL);
+            WAIT_STATE_BRIEF(ch, skills[SKILL_STALK].beats, CMD_COVER, 1, 30,
+                             AFF_WAITING | AFF_WAITWHEEL);
             send_to_char("You start covering up the tracks.\r\n", ch);
         }
         act("$n moves around, making small adjustments.", TRUE, ch, 0, 0, TO_ROOM);
@@ -1775,7 +1764,8 @@ ACMD(do_cover)
     tmproom = &world[ch->in_room];
 
     for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
-        if (tmproom->room_track[tmp].char_number != 0 && GET_KNOWLEDGE(ch, SKILL_STALK) * 2 > number(1, 100)) {
+        if (tmproom->room_track[tmp].char_number != 0 &&
+            GET_KNOWLEDGE(ch, SKILL_STALK) * 2 > number(1, 100)) {
             dt = number(1, 20);
             tr_time = tmproom->room_track[tmp].condition;
             dir = tmproom->room_track[tmp].data & 7;
@@ -1793,8 +1783,7 @@ ACMD(do_cover)
     send_to_char("You sweep over the room, getting rid of the tracks.\r\n", ch);
 }
 
-ACMD(do_hunt)
-{
+ACMD(do_hunt) {
     if (IS_SHADOW(ch)) {
         send_to_char("You can't notice details like that.\r\n", ch);
         return;
@@ -1830,15 +1819,14 @@ ACMD(do_hunt)
  *     calls can determine whether or not we should bonus this
  *     character for his sneaking
  */
-void snuck_in(struct char_data* ch)
-{
+void snuck_in(struct char_data *ch) {
     GET_HIDING(ch) = number(hide_prof(ch) / 3, hide_prof(ch) * 4 / 5);
     if (GET_HIDING(ch) > 0) {
         SET_BIT(ch->specials.affected_by, AFF_HIDE);
     }
     SET_BIT(ch->specials2.hide_flags, HIDING_SNUCK_IN);
 
-    char_data* observer = NULL;
+    char_data *observer = NULL;
     for (observer = world[ch->in_room].people; observer; observer = observer->next_in_room) {
         if (observer != ch && CAN_SEE(ch, observer)) {
             break;
@@ -1895,9 +1883,8 @@ void snuck_in(struct char_data* ch)
  * confirming a successful sneak.  Do note that snuck_in does
  * assume that the sneak was performed successfully.
  */
-void snuck_out(struct char_data* ch)
-{
-    struct char_data* t;
+void snuck_out(struct char_data *ch) {
+    struct char_data *t;
 
     for (t = world[ch->in_room].people; t; t = t->next_in_room)
         if (t != ch && CAN_SEE(ch, t))
@@ -1924,12 +1911,12 @@ void snuck_out(struct char_data* ch)
  * performing a normal hide; the high end assumes the hider is
  * performing a hide well.
  */
-int hide_prof(struct char_data* hider)
-{
+int hide_prof(struct char_data *hider) {
     int hide_value;
-    int get_real_stealth(struct char_data*);
+    int get_real_stealth(struct char_data *);
 
-    hide_value = GET_SKILL(hider, SKILL_HIDE) + get_real_stealth(hider) + GET_PROF_LEVEL(PROF_RANGER, hider) - 30;
+    hide_value = GET_SKILL(hider, SKILL_HIDE) + get_real_stealth(hider) +
+                 GET_PROF_LEVEL(PROF_RANGER, hider) - 30;
 
     return hide_value;
 }
@@ -1943,8 +1930,7 @@ int hide_prof(struct char_data* hider)
  *  - the specialization of `seeker' (stealth spec gets a bonus)
  *  - the race of `seeker' (elves get a bonus)
  */
-int see_hiding(struct char_data* seeker)
-{
+int see_hiding(struct char_data *seeker) {
     int can_see, awareness;
 
     if (IS_NPC(seeker))
@@ -1963,22 +1949,21 @@ int see_hiding(struct char_data* seeker)
     return can_see;
 }
 
-bool check_archery_accuracy(const char_data& archer, const char_data& victim)
-{
+bool check_archery_accuracy(const char_data &archer, const char_data &victim) {
     using namespace utils;
 
     double probability = get_prof_level(PROF_RANGER, archer) * 0.01; // 30% chance at 30r
-    probability -= get_skill_penalty(archer) * 0.0001; // minus any skill penalty
-    probability -= get_dodge_penalty(archer) * 0.0001; // minus any dodge penalty
-    probability *= get_skill(archer, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
+    probability -= get_skill_penalty(archer) * 0.0001;               // minus any skill penalty
+    probability -= get_dodge_penalty(archer) * 0.0001;               // minus any dodge penalty
+    probability *=
+        get_skill(archer, SKILL_ACCURACY) * 0.01; // scaled by skill - 100% gives us the above
 
     double roll = number();
 
     return roll < probability;
 }
 
-int shoot_calculate_success(const char_data& archer)
-{
+int shoot_calculate_success(const char_data &archer) {
     int success_chance = 0;
     success_chance += utils::get_skill(archer, SKILL_ARCHERY);
     success_chance += utils::get_skill(archer, SKILL_ACCURACY) / 10;
@@ -1986,13 +1971,12 @@ int shoot_calculate_success(const char_data& archer)
     return success_chance;
 }
 
-int get_hit_location(const char_data& victim)
-{
+int get_hit_location(const char_data &victim) {
     int hit_location = 0;
 
     int body_type = victim.player.bodytype;
 
-    const race_bodypart_data& body_data = bodyparts[body_type];
+    const race_bodypart_data &body_data = bodyparts[body_type];
     if (body_data.bodyparts != 0) {
         int roll = number(1, 100);
         while (roll > 0 && hit_location < MAX_BODYPARTS) {
@@ -2006,21 +1990,22 @@ int get_hit_location(const char_data& victim)
     return hit_location;
 }
 
-int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage, int location)
-{
+int apply_armor_to_arrow_damage(char_data &archer, char_data &victim, int damage, int location) {
     /* Bogus hit location */
     if (location < 0 || location > MAX_WEAR)
         return 0;
 
     /* If they've got armor, let's let it do its thing */
-    obj_data* armor = victim.equipment[location];
+    obj_data *armor = victim.equipment[location];
     if (armor) {
-        const obj_flag_data& obj_flags = armor->obj_flags;
+        const obj_flag_data &obj_flags = armor->obj_flags;
         if (obj_flags.is_chain() || obj_flags.is_metal()) {
             // The target has armor, but we made an accurate shot.
             if (check_archery_accuracy(archer, victim)) {
-                act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_CHAR);
-                act("$n manages to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim, TO_NOTVICT);
+                act("You manage to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim,
+                    TO_CHAR);
+                act("$n manages to find a weakness in $N's armor!", TRUE, &archer, NULL, &victim,
+                    TO_NOTVICT);
                 act("$n notices a weakness in your armor!", TRUE, &archer, NULL, &victim, TO_VICT);
                 return damage;
             }
@@ -2048,8 +2033,7 @@ int apply_armor_to_arrow_damage(char_data& archer, char_data& victim, int damage
 //============================================================================
 // Returns a multiplier to archery damage based on ranger level.
 //============================================================================
-double get_ranger_level_multiplier(int ranger_level)
-{
+double get_ranger_level_multiplier(int ranger_level) {
     const double base_multiplier = 0.8;
 
     if (ranger_level <= 20)
@@ -2057,7 +2041,8 @@ double get_ranger_level_multiplier(int ranger_level)
 
     // ranger level > 20
     int num_steps = ranger_level - 20;
-    return base_multiplier + num_steps * 0.02; // ranger level 20 is 80% damage, 25 is 90% damage, 30 is base damage
+    return base_multiplier +
+           num_steps * 0.02; // ranger level 20 is 80% damage, 25 is 90% damage, 30 is base damage
 }
 
 /*
@@ -2074,8 +2059,8 @@ double get_ranger_level_multiplier(int ranger_level)
  * slyon: Feb 3, 2017 - Added arrowto_dam into the equation
  * drelidan: Feburary 7, 2017 - Add weapon damage into the equation.
  */
-int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data* arrow, int& hit_location)
-{
+int shoot_calculate_damage(char_data *archer, char_data *victim, const obj_data *arrow,
+                           int &hit_location) {
     using namespace utils;
 
     int ranger_level = get_prof_level(PROF_RANGER, *archer);
@@ -2084,9 +2069,10 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
 
     int arrow_todam = arrow->obj_flags.value[1];
 
-    obj_data* bow = archer->equipment[WIELD];
+    obj_data *bow = archer->equipment[WIELD];
     double weapon_damage = get_weapon_damage(bow);
-    double random_cap = (arrow_todam + weapon_damage) * 1.25; // should be between ~4 and 30 at the ABSOLUTE max
+    double random_cap =
+        (arrow_todam + weapon_damage) * 1.25; // should be between ~4 and 30 at the ABSOLUTE max
 
     double random_factor_1 = number(random_cap);
 
@@ -2098,7 +2084,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
     int arrow_hit_location = get_hit_location(*victim);
 
     int body_type = victim->player.bodytype;
-    const race_bodypart_data& body_data = bodyparts[body_type];
+    const race_bodypart_data &body_data = bodyparts[body_type];
 
     // Apply damage reduction.
     int armor_location = body_data.armor_location[arrow_hit_location];
@@ -2108,8 +2094,7 @@ int shoot_calculate_damage(char_data* archer, char_data* victim, const obj_data*
     return damage;
 }
 
-int shoot_calculate_wait(const char_data* archer)
-{
+int shoot_calculate_wait(const char_data *archer) {
     const int base_beats = 12;
     int min_beats = 4;
 
@@ -2139,19 +2124,19 @@ int shoot_calculate_wait(const char_data* archer)
  * --------------------------- Change Log --------------------------------
  * drelidan: Jan 26, 2017 - Created function
  */
-bool does_arrow_break(const char_data* archer, const char_data* victim, obj_data* arrow, int hit_location)
-{
+bool does_arrow_break(const char_data *archer, const char_data *victim, obj_data *arrow,
+                      int hit_location) {
     if (hit_location < 0 || hit_location > MAX_WEAR) {
         return false;
     }
 
-    obj_data* armor = victim->equipment[hit_location];
+    obj_data *armor = victim->equipment[hit_location];
 
     if (armor == nullptr) {
         return false;
     }
 
-    const obj_flag_data& obj_flags = armor->obj_flags;
+    const obj_flag_data &obj_flags = armor->obj_flags;
 
     if (obj_flags.is_chain() || obj_flags.is_metal()) {
         int break_percentage = arrow->obj_flags.value[3];
@@ -2188,8 +2173,7 @@ bool does_arrow_break(const char_data* archer, const char_data* victim, obj_data
  * slyon: Jan 25, 2017 - Created function
  * drelidan: Jan 26, 2017 - Implemented function logic.
  */
-bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
-{
+bool move_arrow_to_victim(char_data *archer, char_data *victim, obj_data *arrow) {
     // Remove object from the character.
     if (arrow->in_obj) {
         obj_from_obj(arrow);
@@ -2224,8 +2208,7 @@ bool move_arrow_to_victim(char_data* archer, char_data* victim, obj_data* arrow)
  * --------------------------- Change Log --------------------------------
  * drelidan: Feb 07, 2017 - Created function
  */
-void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
-{
+void move_arrow_to_room(char_data *archer, obj_data *arrow, int room_num) {
     // Remove object from the character.
     if (arrow->in_obj) {
         obj_from_obj(arrow);
@@ -2234,7 +2217,8 @@ void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
     obj_to_char(arrow, archer); // Move it into his inventory.
 
     // tag arrow in value slot 2 of the shooter
-    arrow->obj_flags.value[2] = utils::is_pc(*archer) ? (int)archer->specials2.idnum : (int)archer->abs_number;
+    arrow->obj_flags.value[2] =
+        utils::is_pc(*archer) ? (int)archer->specials2.idnum : (int)archer->abs_number;
 
     // Move the arrow to the room.
     obj_from_char(arrow);
@@ -2249,51 +2233,51 @@ void move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
  * slyon: Jan 24, 2017 - Created function
  * slyon: Jan 25, 2017 - Renamed function to better reflect what it's doing
  */
-bool can_ch_shoot(char_data* archer)
-{
+bool can_ch_shoot(char_data *archer) {
     using namespace utils;
 
     if (is_shadow(*archer)) {
         send_to_char("Hmm, perhaps you've spent too much time in the "
                      " mortal lands.\r\n",
-            archer);
+                     archer);
         return false;
     }
 
     if (is_npc(*archer) && is_mob_flagged(*archer, MOB_ORC_FRIEND)) {
         int dex = archer->get_cur_dex();
         if (dex < 18) {
-            char_data* receiver = archer->master ? archer->master : archer;
+            char_data *receiver = archer->master ? archer->master : archer;
             send_to_char("Your clumsy follower lacks the dexterity to use a bow.", receiver);
             return false;
         }
     }
 
-    const room_data& room = world[archer->in_room];
+    const room_data &room = world[archer->in_room];
     if (is_set(room.room_flags, (long)PEACEROOM)) {
         send_to_char("A peaceful feeling overwhelms you, and you cannot bring"
                      " yourself to attack.\r\n",
-            archer);
+                     archer);
         return false;
     }
 
-    const obj_data* weapon = archer->equipment[WIELD];
+    const obj_data *weapon = archer->equipment[WIELD];
     if (!weapon || !isname("bow", weapon->name)) {
         send_to_char("You must be wielding a bow to shoot.\r\n", archer);
         return false;
     }
 
-    const obj_data* quiver = archer->equipment[WEAR_BACK];
+    const obj_data *quiver = archer->equipment[WEAR_BACK];
     if (!quiver || !quiver->is_quiver()) {
         if (is_pc(*archer)) {
             send_to_char("You must be wearing a quiver on your back.\r\n", archer);
             return false;
         } else {
             // Ensure that the NPC has an arrow.
-            obj_data* arrow = NULL;
+            obj_data *arrow = NULL;
 
-            // Must be a follower and shooting from their inventory.  Find the first missile they have.
-            for (obj_data* item = archer->carrying; item; item = item->next) {
+            // Must be a follower and shooting from their inventory.  Find the first missile they
+            // have.
+            for (obj_data *item = archer->carrying; item; item = item->next) {
                 if (item->obj_flags.type_flag == ITEM_MISSILE) {
                     arrow = item;
                     break;
@@ -2301,7 +2285,7 @@ bool can_ch_shoot(char_data* archer)
             }
 
             if (arrow == NULL) {
-                char_data* receiver = archer->master ? archer->master : archer;
+                char_data *receiver = archer->master ? archer->master : archer;
                 send_to_char("Your follower is out of arrows.", receiver);
                 return false;
             }
@@ -2332,9 +2316,8 @@ bool can_ch_shoot(char_data* archer)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-char_data* is_target_valid(char_data* archer, waiting_type* target)
-{
-    char_data* victim = nullptr;
+char_data *is_target_valid(char_data *archer, waiting_type *target) {
+    char_data *victim = nullptr;
 
     if (target->targ1.type == TARGET_TEXT) {
         victim = get_char_room_vis(archer, target->targ1.ptr.text->text);
@@ -2374,8 +2357,7 @@ char_data* is_target_valid(char_data* archer, waiting_type* target)
 //============================================================================
 // Moves the arrow to the room specified.
 //============================================================================
-void do_move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
-{
+void do_move_arrow_to_room(char_data *archer, obj_data *arrow, int room_num) {
     send_to_char("Your arrow harmlessly flies past your target.\r\n", archer);
     move_arrow_to_room(archer, arrow, room_num);
 }
@@ -2384,8 +2366,7 @@ void do_move_arrow_to_room(char_data* archer, obj_data* arrow, int room_num)
 // Handles an arrow hitting a target - calculating and applying damage, and
 // moving the arrow to that target.
 //============================================================================
-void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
-{
+void on_arrow_hit(char_data *archer, char_data *victim, obj_data *arrow) {
     int hit_location = 0;
     int damage_dealt = shoot_calculate_damage(archer, victim, arrow, hit_location);
     if (!does_arrow_break(archer, victim, arrow, hit_location)) {
@@ -2396,7 +2377,8 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
     } else if (GET_SHOOTING(archer) == SHOOTING_SLOW) {
         damage_dealt = damage_dealt * 2;
     }
-    sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt, GET_NAME(victim));
+    sprintf(buf, "%s archery damage of %3d to %s.", GET_NAME(archer), damage_dealt,
+            GET_NAME(victim));
     mudlog(buf, NRM, LEVEL_GRGOD, TRUE);
 
     damage(archer, victim, damage_dealt, SKILL_ARCHERY, hit_location);
@@ -2406,16 +2388,15 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
 // Handles the arrow hitting another target.  Currently only considers characters
 // in combat with the victim as potential targets.
 //============================================================================
-void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
-{
-    const room_data& room = world[archer->in_room];
+void change_arrow_target(char_data *archer, char_data *victim, obj_data *arrow) {
+    const room_data &room = world[archer->in_room];
 
     // Get the list of people that are in-combat with the victim, and
     // ensure that the archer isn't in the list of potential targets.
 
-    typedef std::vector<char_data*>::iterator iter;
+    typedef std::vector<char_data *>::iterator iter;
 
-    std::vector<char_data*> potential_targets = utils::get_engaged_characters(victim, room);
+    std::vector<char_data *> potential_targets = utils::get_engaged_characters(victim, room);
 
     iter archer_iter = std::remove(potential_targets.begin(), potential_targets.end(), archer);
     if (archer_iter != potential_targets.end()) {
@@ -2432,7 +2413,7 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
         do_move_arrow_to_room(archer, arrow, archer->in_room);
     } else {
         int target_roll = number(0, potential_targets.size() - 1);
-        char_data* new_victim = potential_targets.at(target_roll);
+        char_data *new_victim = potential_targets.at(target_roll);
 
         send_to_char("Your shot misses your target and flies into someone else!\r\n", archer);
         on_arrow_hit(archer, new_victim, arrow);
@@ -2442,15 +2423,14 @@ void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
 //============================================================================
 // Gets the room that the arrow will land in.
 //============================================================================
-int get_arrow_landing_location(const room_data& room)
-{
+int get_arrow_landing_location(const room_data &room) {
     // The arrow flies into an adjacent room.
     // Build the possible exit list...
     int valid_dirs = 0;
-    int exit_indices[NUM_OF_DIRS] = { -1 };
+    int exit_indices[NUM_OF_DIRS] = {-1};
     for (int i = 0; i < NUM_OF_DIRS; ++i) {
         // The room exit exits and goes somewhere.
-        room_direction_data* dir = room.dir_option[i];
+        room_direction_data *dir = room.dir_option[i];
         if (dir && dir->to_room != NOWHERE) {
             // The exit has a door...
             if (utils::is_set(dir->exit_info, EX_ISDOOR)) {
@@ -2483,9 +2463,8 @@ int get_arrow_landing_location(const room_data& room)
 // The arrow may impact into someone else, go into a separate room, or land
 // harmlessly on the ground (if it doesn't break).
 //============================================================================
-void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
-{
-    const room_data& room = world[archer->in_room];
+void on_arrow_miss(char_data *archer, char_data *victim, obj_data *arrow) {
+    const room_data &room = world[archer->in_room];
 
     double roll = number();
     roll -= 0.20;
@@ -2514,13 +2493,13 @@ void on_arrow_miss(char_data* archer, char_data* victim, obj_data* arrow)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created ACMD
  */
-ACMD(do_shoot)
-{
+ACMD(do_shoot) {
     one_argument(argument, arg);
 
     if (subcmd == -1) {
         send_to_char("You could not concentrate on shooting anymore!\r\n", ch);
-        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
+        ch->specials.ENERGY =
+            std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 
         // Clean-up targets.
         wtl->targ1.cleanup();
@@ -2531,11 +2510,13 @@ ACMD(do_shoot)
     if (!can_ch_shoot(ch))
         return;
 
-    char_data* victim = is_target_valid(ch, wtl);
+    char_data *victim = is_target_valid(ch, wtl);
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
-        send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
+        send_to_char("You feel the Gods looking down upon you, and protecting your target.  You "
+                     "lower your bow.\r\n",
+                     ch);
         return;
     }
 
@@ -2564,7 +2545,8 @@ ACMD(do_shoot)
             } else if (GET_SEX(ch) == SEX_FEMALE) {
                 act("$n draws back her bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
             } else {
-                act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0, TO_ROOM);
+                act("$n draws back their bow and prepares to fire...\r\n", FALSE, ch, 0, 0,
+                    TO_ROOM);
             }
         }
 
@@ -2574,7 +2556,8 @@ ACMD(do_shoot)
 
         int wait_delay = shoot_calculate_wait(ch);
         SET_CURRENT_PARRY(ch) = 0;
-        WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+        WAIT_STATE_FULL(ch, wait_delay, CMD_SHOOT, 1, 30, 0, victim->abs_number, victim,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {
         if (victim == NULL) {
@@ -2592,13 +2575,14 @@ ACMD(do_shoot)
         }
 
         // Get the arrow.
-        obj_data* arrow = NULL;
-        obj_data* quiver = ch->equipment[WEAR_BACK];
+        obj_data *arrow = NULL;
+        obj_data *quiver = ch->equipment[WEAR_BACK];
         if (quiver) {
             arrow = quiver->contains;
         } else {
-            // Must be a follower and shooting from their inventory.  Find the first missile they have.
-            for (obj_data* item = ch->carrying; item; item = item->next) {
+            // Must be a follower and shooting from their inventory.  Find the first missile they
+            // have.
+            for (obj_data *item = ch->carrying; item; item = item->next) {
                 if (item->obj_flags.type_flag == ITEM_MISSILE) {
                     arrow = item;
                     break;
@@ -2624,7 +2608,8 @@ ACMD(do_shoot)
             on_arrow_miss(ch, victim, arrow);
         }
 
-        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after loosing an arrow.
+        ch->specials.ENERGY =
+            std::min(ch->specials.ENERGY, 0); // reset swing timer after loosing an arrow.
 
         // Clean-up targets.
         wtl->targ1.cleanup();
@@ -2644,8 +2629,7 @@ ACMD(do_shoot)
 // back.
 //============================================================================
 
-void put_arrow_quiver(char_data* character, obj_data* arrow, obj_data* quiver)
-{
+void put_arrow_quiver(char_data *character, obj_data *arrow, obj_data *quiver) {
     if (GET_OBJ_WEIGHT(quiver) + GET_OBJ_WEIGHT(arrow) > quiver->obj_flags.value[0]) {
         act("$p won't fit in $P.", FALSE, character, arrow, quiver, TO_CHAR);
     } else {
@@ -2658,10 +2642,10 @@ void put_arrow_quiver(char_data* character, obj_data* arrow, obj_data* quiver)
 // Gets all arrows in the object list that are tagged to the character.  These
 // arrows are placed in the 'arrows' vector.
 //============================================================================
-void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vector<obj_data*>& arrows)
-{
+void get_tagged_arrows(const char_data *character, obj_data *obj_list,
+                       std::vector<obj_data *> &arrows) {
     // Iterate through items in the list.
-    for (obj_data* item = obj_list; item; item = item->next_content) {
+    for (obj_data *item = obj_list; item; item = item->next_content) {
         if (item->obj_flags.type_flag == ITEM_MISSILE) {
             if (!IS_NPC(character)) {
                 if (item->obj_flags.value[2] == character->specials2.idnum) {
@@ -2679,10 +2663,9 @@ void get_tagged_arrows(const char_data* character, obj_data* obj_list, std::vect
 //============================================================================
 // Gets all arrows in the room that are tagged to the character passed in.
 //============================================================================
-void get_room_tagged_arrows(const char_data* character, std::vector<obj_data*>& arrows)
-{
-    const room_data& room = world[character->in_room];
-    obj_data* obj_list = room.contents;
+void get_room_tagged_arrows(const char_data *character, std::vector<obj_data *> &arrows) {
+    const room_data &room = world[character->in_room];
+    obj_data *obj_list = room.contents;
 
     return get_tagged_arrows(character, obj_list, arrows);
 }
@@ -2691,13 +2674,12 @@ void get_room_tagged_arrows(const char_data* character, std::vector<obj_data*>& 
 // Gets all arrows from the corpses in the room that are tagged to the
 // character passed in.
 //============================================================================
-void get_corpse_tagged_arrows(const char_data* character, std::vector<obj_data*>& arrows)
-{
-    const room_data& room = world[character->in_room];
-    obj_data* obj_list = room.contents;
+void get_corpse_tagged_arrows(const char_data *character, std::vector<obj_data *> &arrows) {
+    const room_data &room = world[character->in_room];
+    obj_data *obj_list = room.contents;
 
     // Iterate through items in the list.
-    for (obj_data* item = obj_list; item; item = item->next_content) {
+    for (obj_data *item = obj_list; item; item = item->next_content) {
         if (strstr(item->name, "corpse") != NULL) {
             get_tagged_arrows(character, item->contains, arrows);
         }
@@ -2708,13 +2690,13 @@ void get_corpse_tagged_arrows(const char_data* character, std::vector<obj_data*>
 // Recovers arrows that have been tagged by a player from the room that the
 // player is in, and any corpses within the room.
 //============================================================================
-void do_recover(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
-{
+void do_recover(char_data *character, char *argument, waiting_type *wait_list, int command,
+                int sub_command) {
     if (character == NULL)
         return;
 
     bool has_quiver;
-    obj_data* quiver = character->equipment[WEAR_BACK];
+    obj_data *quiver = character->equipment[WEAR_BACK];
     if (!quiver || !quiver->is_quiver()) {
         has_quiver = false;
     } else {
@@ -2736,7 +2718,7 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     int max_inventory = utils::get_carry_item_limit(*character);
     int max_carry_weight = utils::get_carry_weight_limit(*character);
 
-    std::vector<obj_data*> arrows_to_get;
+    std::vector<obj_data *> arrows_to_get;
     get_room_tagged_arrows(character, arrows_to_get);
     get_corpse_tagged_arrows(character, arrows_to_get);
 
@@ -2747,13 +2729,13 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
 
     int num_recovered = 0;
 
-    typedef std::vector<obj_data*>::iterator iter;
+    typedef std::vector<obj_data *>::iterator iter;
     for (iter arrow_iter = arrows_to_get.begin(); arrow_iter != arrows_to_get.end(); ++arrow_iter) {
-        obj_data* arrow = *arrow_iter;
+        obj_data *arrow = *arrow_iter;
         if (character->specials.carry_items < max_inventory) {
             if (character->specials.carry_weight + arrow->get_weight() < max_carry_weight) {
                 ++num_recovered;
-                obj_data* arrow_container = arrow->in_obj;
+                obj_data *arrow_container = arrow->in_obj;
                 if (arrow_container) {
                     obj_from_obj(arrow);
                 }
@@ -2775,7 +2757,8 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
     }
 
     std::ostringstream message_writer;
-    message_writer << "You recover " << num_recovered << (num_recovered > 1 ? " arrows." : " arrow.") << std::endl;
+    message_writer << "You recover " << num_recovered
+                   << (num_recovered > 1 ? " arrows." : " arrow.") << std::endl;
     std::string message = message_writer.str();
     send_to_char(message.c_str(), character);
 
@@ -2791,20 +2774,14 @@ void do_recover(char_data* character, char* argument, waiting_type* wait_list, i
    ------------------------------Change Log---------------------------------------
    slyon: Sept 6, 2017 - Documented
 ==================================================================================*/
-void do_scan(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command)
-{
-    struct char_data* i;
+void do_scan(char_data *character, char *argument, waiting_type *wait_list, int command,
+             int sub_command) {
+    struct char_data *i;
     int is_in, dir, dis, maxdis, found = 0;
 
-    const char* distance[] = {
-        "right here",
-        "immediately ",
-        "nearby ",
-        "a ways ",
-        "far ",
-        "very far ",
-        "extremely far ",
-        "impossibly far ",
+    const char *distance[] = {
+        "right here", "immediately ", "nearby ",        "a ways ",
+        "far ",       "very far ",    "extremely far ", "impossibly far ",
     };
 
     if (character == NULL)
@@ -2843,17 +2820,21 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
                 for (i = world[character->in_room].people; i; i = i->next_in_room) {
                     if ((!((character == i) && (dis == 0))) && CAN_SEE(character, i)) {
                         if (dis > 0) {
-                            sprintf(buf, "%33s: %s%s%s%s", (IS_NPC(i) ? GET_NAME(i) : pc_star_types[i->player.race]), distance[dis],
-                                ((dis > 0) && (dir < (NUM_OF_DIRS - 2))) ? "to the " : "",
-                                (dis > 0) ? dirs[dir] : "",
-                                ((dis > 0) && (dir > (NUM_OF_DIRS - 3))) ? "wards" : "");
+                            sprintf(buf, "%33s: %s%s%s%s",
+                                    (IS_NPC(i) ? GET_NAME(i) : pc_star_types[i->player.race]),
+                                    distance[dis],
+                                    ((dis > 0) && (dir < (NUM_OF_DIRS - 2))) ? "to the " : "",
+                                    (dis > 0) ? dirs[dir] : "",
+                                    ((dis > 0) && (dir > (NUM_OF_DIRS - 3))) ? "wards" : "");
                             act(buf, TRUE, character, 0, 0, TO_CHAR);
                         }
                         found++;
                     }
                 }
             }
-            if (!CAN_GO(character, dir) || (world[character->in_room].dir_option[dir]->to_room == is_in) || (IS_SET(EXIT(character, dir)->exit_info, EX_NO_LOOK)))
+            if (!CAN_GO(character, dir) ||
+                (world[character->in_room].dir_option[dir]->to_room == is_in) ||
+                (IS_SET(EXIT(character, dir)->exit_info, EX_NO_LOOK)))
                 break;
             else
                 character->in_room = world[character->in_room].dir_option[dir]->to_room;
@@ -2871,8 +2852,7 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_duration(char_data* marker)
-{
+int mark_calculate_duration(char_data *marker) {
     int mark_duration = utils::get_prof_level(PROF_RANGER, *marker) - 10;
     mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return mark_duration;
@@ -2885,8 +2865,7 @@ int mark_calculate_duration(char_data* marker)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_damage(char_data* marker, char_data* victim)
-{
+int mark_calculate_damage(char_data *marker, char_data *victim) {
     int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
     int str_factor = marker->tmpabilities.str / 5;
     int dex_factor = marker->tmpabilities.dex / 3;
@@ -2906,8 +2885,7 @@ int mark_calculate_damage(char_data* marker, char_data* victim)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_hit(char_data* marker, char_data* victim)
-{
+void on_mark_hit(char_data *marker, char_data *victim) {
     struct affected_type af;
     int damage_dealt = mark_calculate_damage(marker, victim);
     if (!utils::is_affected_by_spell(*victim, SKILL_MARK)) {
@@ -2929,8 +2907,7 @@ void on_mark_hit(char_data* marker, char_data* victim)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-void on_mark_miss(char_data* marker, char_data* victim)
-{
+void on_mark_miss(char_data *marker, char_data *victim) {
     damage(marker, victim, 0, SKILL_MARK, 0);
 }
 
@@ -2943,8 +2920,7 @@ void on_mark_miss(char_data* marker, char_data* victim)
    slyon: June 12, 2018 - Remove archery and make success based on touch attack
    slyon: April 21, 2020 - Changes success rate to a better formula
 ==================================================================================*/
-int mark_calculate_success(char_data* marker, char_data* victim)
-{
+int mark_calculate_success(char_data *marker, char_data *victim) {
     int prob = GET_SKILL(marker, SKILL_MARK);
     prob -= get_real_dodge(victim);
     prob -= get_real_parry(victim) / 2;
@@ -2962,8 +2938,7 @@ int mark_calculate_success(char_data* marker, char_data* victim)
    slyon: Sept 6, 2017 - Created
    slyon: June 12, 2018 - Redesigned check
 ==================================================================================*/
-bool can_ch_mark(char_data* ch)
-{
+bool can_ch_mark(char_data *ch) {
     using namespace utils;
     // Check to see if archer is a player haradrim
     if (GET_RACE(ch) != RACE_HARADRIM) {
@@ -2982,7 +2957,8 @@ bool can_ch_mark(char_data* ch)
     }
 
     if (IS_SET(world[ch->in_room].room_flags, PEACEROOM)) {
-        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        send_to_char(
+            "A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
         return false;
     }
 
@@ -3000,9 +2976,8 @@ bool can_ch_mark(char_data* ch)
    ------------------------------Change Log---------------------------------------
    slyon: June 12, 2018 - Created
 ==================================================================================*/
-char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
-{
-    char_data* victim = NULL;
+char_data *is_targ_valid_mark(char_data *marker, waiting_type *target) {
+    char_data *victim = NULL;
 
     if (target->targ1.type == TARGET_TEXT) {
         victim = get_char_room_vis(marker, target->targ1.ptr.text->text);
@@ -3045,8 +3020,7 @@ char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
    ------------------------------Change Log---------------------------------------
    slyon: June 12, 2018 - Created
 ==================================================================================*/
-int mark_calculate_wait(const char_data* marker)
-{
+int mark_calculate_wait(const char_data *marker) {
     const int base_beats = 12;
     const int min_beats = 6;
 
@@ -3067,13 +3041,13 @@ int mark_calculate_wait(const char_data* marker)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-ACMD(do_mark)
-{
+ACMD(do_mark) {
     one_argument(argument, arg);
 
     if (subcmd == -1) {
         send_to_char("You lost your concentration and miss your target!\r\n", ch);
-        ch->specials.ENERGY = std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
+        ch->specials.ENERGY =
+            std::min(ch->specials.ENERGY, 0); // reset swing timer after interruption.
 
         // Clean-up targets.
         wtl->targ1.cleanup();
@@ -3084,11 +3058,13 @@ ACMD(do_mark)
     if (!can_ch_mark(ch))
         return;
 
-    char_data* victim = is_targ_valid_mark(ch, wtl);
+    char_data *victim = is_targ_valid_mark(ch, wtl);
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
-        send_to_char("You feel the Gods looking down upon you, and protecting your target.  You lower your bow.\r\n", ch);
+        send_to_char("You feel the Gods looking down upon you, and protecting your target.  You "
+                     "lower your bow.\r\n",
+                     ch);
         return;
     }
 
@@ -3106,14 +3082,16 @@ ACMD(do_mark)
         send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
 
         if (!utils::is_affected_by(*ch, AFF_HIDE)) {
-            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
+            act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch,
+                0, 0, TO_ROOM);
         }
 
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
 
         int wait_delay = mark_calculate_wait(ch);
-        WAIT_STATE_FULL(ch, wait_delay, CMD_MARK, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+        WAIT_STATE_FULL(ch, wait_delay, CMD_MARK, 1, 30, 0, victim->abs_number, victim,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
     case 1: {
         if (victim == NULL) {
@@ -3154,10 +3132,9 @@ ACMD(do_mark)
     }
 }
 
-bool can_ch_blind(char_data* ch, int mana_cost)
-{
-    const room_data& room = world[ch->in_room];
-    obj_data* dust = NULL;
+bool can_ch_blind(char_data *ch, int mana_cost) {
+    const room_data &room = world[ch->in_room];
+    obj_data *dust = NULL;
 
     if (GET_RACE(ch) != RACE_HARADRIM) {
         send_to_char("Unrecognized Command.\r\n", ch);
@@ -3170,13 +3147,14 @@ bool can_ch_blind(char_data* ch, int mana_cost)
     }
 
     if (utils::is_npc(*ch)) {
-        char_data* receiver = ch->master ? ch->master : ch;
+        char_data *receiver = ch->master ? ch->master : ch;
         send_to_char("Your follower lacks the knowledge to blind a target.\r\n", receiver);
         return false;
     }
 
     if (utils::is_set(room.room_flags, (long)PEACEROOM)) {
-        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        send_to_char(
+            "A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
         return false;
     }
 
@@ -3191,7 +3169,7 @@ bool can_ch_blind(char_data* ch, int mana_cost)
     }
 
     if (ch->carrying != NULL) {
-        for (obj_data* item = ch->carrying; item; item = item->next_content) {
+        for (obj_data *item = ch->carrying; item; item = item->next_content) {
             if (item->item_number == real_object(GATHER_DUST)) {
                 dust = item;
                 break;
@@ -3199,7 +3177,8 @@ bool can_ch_blind(char_data* ch, int mana_cost)
         }
 
         if (dust == NULL) {
-            send_to_char("You do not possess the appropriate materials to blind your target.\r\n", ch);
+            send_to_char("You do not possess the appropriate materials to blind your target.\r\n",
+                         ch);
             return false;
         }
     }
@@ -3207,9 +3186,8 @@ bool can_ch_blind(char_data* ch, int mana_cost)
     return true;
 }
 
-char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
-{
-    char_data* victim = NULL;
+char_data *is_targ_blind_valid(char_data *ch, waiting_type *target) {
+    char_data *victim = NULL;
 
     if (target->targ1.type == TARGET_TEXT) {
         victim = get_char_room_vis(ch, target->targ1.ptr.text->text);
@@ -3246,8 +3224,7 @@ char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
     return victim;
 }
 
-int harad_skill_calculate_save(char_data* ch, char_data* victim, int skill_check)
-{
+int harad_skill_calculate_save(char_data *ch, char_data *victim, int skill_check) {
     int random_roll = number(0, 99);
 
     // Attacker calculations
@@ -3268,16 +3245,14 @@ int harad_skill_calculate_save(char_data* ch, char_data* victim, int skill_check
     return attack_dc - victim_save;
 }
 
-void on_dust_miss(char_data* ch, char_data* victim, int mana_cost)
-{
+void on_dust_miss(char_data *ch, char_data *victim, int mana_cost) {
     byte sex = ch->player.sex;
 
     GET_MANA(ch) -= (mana_cost >> 1);
     damage(ch, victim, 0, SKILL_BLINDING, 0);
 }
 
-void on_dust_hit(char_data* ch, char_data* victim, int mana_cost)
-{
+void on_dust_hit(char_data *ch, char_data *victim, int mana_cost) {
     int ranger_bonus = 15; // Setting this as a default for now.
     struct affected_type af;
     int affects_last = 22 - ranger_bonus;
@@ -3303,8 +3278,7 @@ void on_dust_hit(char_data* ch, char_data* victim, int mana_cost)
   ------------------------------Change Log---------------------------------------
   slyon: Sept 27, 2017 - Created
 ==================================================================================*/
-ACMD(do_blinding)
-{
+ACMD(do_blinding) {
     const int mana_cost = skills[SKILL_BLINDING].min_usesmana;
 
     one_argument(argument, arg);
@@ -3322,15 +3296,16 @@ ACMD(do_blinding)
         return;
     }
 
-    char_data* victim = is_targ_blind_valid(ch, wtl);
+    char_data *victim = is_targ_blind_valid(ch, wtl);
 
     if (victim == NULL) {
         return;
     }
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
     if (!bb_instance.is_target_valid(ch, victim)) {
-        send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+        send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n",
+                     ch);
         return;
     }
 
@@ -3354,7 +3329,8 @@ ACMD(do_blinding)
         wtl->targ1.cleanup();
         wtl->targ2.cleanup();
 
-        WAIT_STATE_FULL(ch, skills[SKILL_BLINDING].beats, CMD_BLINDING, 1, 30, 0, victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
+        WAIT_STATE_FULL(ch, skills[SKILL_BLINDING].beats, CMD_BLINDING, 1, 30, 0,
+                        victim->abs_number, victim, AFF_WAITING | AFF_WAITWHEEL, TARGET_CHAR);
     } break;
 
     case 1: {
@@ -3372,8 +3348,8 @@ ACMD(do_blinding)
             return;
         }
 
-        obj_data* dust = NULL;
-        for (obj_data* item = ch->carrying; item; item = item->next_content) {
+        obj_data *dust = NULL;
+        for (obj_data *item = ch->carrying; item; item = item->next_content) {
             if (item->item_number == real_object(GATHER_DUST)) {
                 dust = item;
                 break;
@@ -3409,9 +3385,8 @@ ACMD(do_blinding)
     }
 }
 
-bool can_harad_use_skill(char_data* ch, int mana_cost, int move_cost, int skill)
-{
-    const room_data& room = world[ch->in_room];
+bool can_harad_use_skill(char_data *ch, int mana_cost, int move_cost, int skill) {
+    const room_data &room = world[ch->in_room];
     if (GET_RACE(ch) != RACE_HARADRIM) {
         send_to_char("Unrecognized command.\r\n", ch);
         return false;
@@ -3423,13 +3398,14 @@ bool can_harad_use_skill(char_data* ch, int mana_cost, int move_cost, int skill)
     }
 
     if (utils::is_npc(*ch)) {
-        char_data* receiver = ch->master ? ch->master : ch;
+        char_data *receiver = ch->master ? ch->master : ch;
         send_to_char("Your follower lacks the knowledge to bend time.\r\n", receiver);
         return false;
     }
 
     if (utils::is_set(room.room_flags, (long)PEACEROOM)) {
-        send_to_char("A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
+        send_to_char(
+            "A peaceful feeling overwhelms you, and you cannot bring yourself to attack.\r\n", ch);
         return false;
     }
 
@@ -3451,8 +3427,7 @@ bool can_harad_use_skill(char_data* ch, int mana_cost, int move_cost, int skill)
     return true;
 }
 
-bool check_skill_success(char_data* ch, int skill)
-{
+bool check_skill_success(char_data *ch, int skill) {
     int skill_percent = utils::get_skill(*ch, skill);
     int roll = number(1, 99);
     if (roll > skill_percent)
@@ -3461,8 +3436,7 @@ bool check_skill_success(char_data* ch, int skill)
         return true;
 }
 
-void on_bend_success(char_data* ch, int mana_cost, int move_cost)
-{
+void on_bend_success(char_data *ch, int mana_cost, int move_cost) {
     GET_MANA(ch) -= mana_cost;
     GET_MOVE(ch) -= move_cost;
 
@@ -3486,8 +3460,7 @@ void on_bend_success(char_data* ch, int mana_cost, int move_cost)
   ------------------------------Change Log---------------------------------------
   slyon: Oct 04, 2018 - Created
 ==================================================================================*/
-ACMD(do_bendtime)
-{
+ACMD(do_bendtime) {
     const int mana_cost = ch->abilities.mana;
     const int move_cost = 100;
 
@@ -3516,9 +3489,11 @@ ACMD(do_bendtime)
         wtl->targ2.cleanup();
 
         send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
-        act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0, 0, TO_ROOM);
+        act("$n begins quietly muttering some strange, foreign powerful words.\n\r", FALSE, ch, 0,
+            0, TO_ROOM);
 
-        WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        WAIT_STATE_FULL(ch, skills[SKILL_BEND_TIME].beats, CMD_BENDTIME, 1, 30, 0, 0, 0,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
         say_spell(ch, SKILL_BEND_TIME);
@@ -3539,10 +3514,9 @@ ACMD(do_bendtime)
     }
 }
 
-void on_windblast_hit(char_data* ch)
-{
+void on_windblast_hit(char_data *ch) {
     int i, attempt, res, die, move_cost = 0;
-    struct char_data* tmpch;
+    struct char_data *tmpch;
     stop_riding(ch);
     if (GET_TACTICS(ch) == TACTICS_BERSERK) {
         send_to_char("You stand your ground against the blast of thunderous force!", ch);
@@ -3555,12 +3529,18 @@ void on_windblast_hit(char_data* ch)
 
     for (i = 0; i < 6; i++) {
         attempt = number(0, NUM_OF_DIRS - 1);
-        res = CAN_GO(ch, attempt) && !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOFLEE) && !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOWALK);
+        res = CAN_GO(ch, attempt) && !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOFLEE) &&
+              !IS_SET(EXIT(ch, attempt)->exit_info, EX_NOWALK);
 
         if (res) {
             res = !IS_SET(world[EXIT(ch, attempt)->to_room].room_flags, DEATH);
             if (IS_NPC(ch)) {
-                res = res && ((!IS_SET(ch->specials2.act, MOB_STAY_ZONE) || (world[EXIT(ch, attempt)->to_room].zone == world[ch->in_room].zone)) && (!IS_SET(ch->specials2.act, MOB_STAY_TYPE) || (world[EXIT(ch, attempt)->to_room].sector_type == world[ch->in_room].sector_type)));
+                res =
+                    res && ((!IS_SET(ch->specials2.act, MOB_STAY_ZONE) ||
+                             (world[EXIT(ch, attempt)->to_room].zone == world[ch->in_room].zone)) &&
+                            (!IS_SET(ch->specials2.act, MOB_STAY_TYPE) ||
+                             (world[EXIT(ch, attempt)->to_room].sector_type ==
+                              world[ch->in_room].sector_type)));
             }
         }
 
@@ -3582,7 +3562,8 @@ void on_windblast_hit(char_data* ch)
                 }
 
                 send_to_char("A wave of thunderous force sweeps you out!", ch);
-                act("$n gets sweep out from the wave of thunderous force!", FALSE, ch, 0, 0, TO_ROOM);
+                act("$n gets sweep out from the wave of thunderous force!", FALSE, ch, 0, 0,
+                    TO_ROOM);
 
                 do_move(ch, dirs[attempt], 0, attempt + 1, SCMD_FLEE);
                 return;
@@ -3595,11 +3576,10 @@ void on_windblast_hit(char_data* ch)
     return;
 }
 
-void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
-{
+void on_windblast_success(char_data *ch, int mana_cost, int move_cost) {
     int dam_value, tmp, power_level;
     struct char_data *tmpch, *tmpch_next;
-    room_data* cur_room;
+    room_data *cur_room;
 
     GET_MANA(ch) -= mana_cost;
     GET_MOVE(ch) -= move_cost;
@@ -3613,7 +3593,7 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
 
     dam_value = number(1, 30) + power_level;
 
-    game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+    game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
 
     send_to_char("Vile black wind eminates from you, slamming into all!\r\n", ch);
 
@@ -3621,7 +3601,8 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
         tmpch_next = tmpch->next_in_room;
         if (tmpch != ch) {
             if (!bb_instance.is_target_valid(ch, tmpch)) {
-                send_to_char("You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
+                send_to_char(
+                    "You feel the Gods looking down upon you, and protecting your target.\r\n", ch);
                 continue;
             }
 
@@ -3646,8 +3627,7 @@ void on_windblast_success(char_data* ch, int mana_cost, int move_cost)
   ------------------------------Change Log---------------------------------------
   slyon: Feb 17, 2019 - Created
 ==================================================================================*/
-ACMD(do_windblast)
-{
+ACMD(do_windblast) {
     const int mana_cost = skills[SKILL_BLINDING].min_usesmana;
     const int move_cost = 40;
 
@@ -3671,8 +3651,10 @@ ACMD(do_windblast)
         wtl->targ2.cleanup();
 
         send_to_char("You start to draw powers from the land and gods of old.\r\n", ch);
-        act("$n begins quietly muttering some strange, foreign powerful words.\r\n", FALSE, ch, 0, 0, TO_ROOM);
-        WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0, AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
+        act("$n begins quietly muttering some strange, foreign powerful words.\r\n", FALSE, ch, 0,
+            0, TO_ROOM);
+        WAIT_STATE_FULL(ch, skills[SKILL_WINDBLAST].beats, CMD_WINDBLAST, 1, 30, 0, 0, 0,
+                        AFF_WAITING | AFF_WAITWHEEL, TARGET_NONE);
     } break;
     case 1: {
         say_spell(ch, SKILL_WINDBLAST);

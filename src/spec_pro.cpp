@@ -1665,7 +1665,7 @@ void get_spells(int *spell_list, int mage_type, int health, char_data* host) {
     sprintf(buf, "MType: %d,    Spell_Tier: %d, Pct: %.2f", mage_type, health, percents[health]);
     mudlog_aliased_mob(buf, host, "spells");
     for(int i=0; i < indvidual_spells_length; i++) {
-        if(spell_list, new_spell_list[mage_type][health][i] != 0) {
+        if(new_spell_list[mage_type][health][i] != 0) {
             add_spell_to_list(spell_list, new_spell_list[mage_type][health][i], host);
         }
     }

@@ -1570,43 +1570,170 @@ SPECIAL(mob_magic_user) {
     return FALSE;
 }
 
-int pick_a_spell(int *my_tmp_spells) {
-    int chance = number(1, my_tmp_spells[0]);
-    return my_tmp_spells[chance];
+/*  New Mage Below  */
+const int fire_mage       = 0;
+const int lightning_mage  = 1;
+const int cold_mage       = 2;
+const int dark_mage       = 3;
+const int lhuth_mage      = 4;
+const int default_mage    = 5;
+
+const int mage_types = 6;
+const char* mage_aliases[] = {"fmage", "lmage", "cmage", "dmage", "lumage", "defaultm"};
+
+const double full_pct          = 0.76;
+const double three_quarter_pct = 0.51;
+const double half_pct          = 0.26;
+const double quarter_pct       = 0.0;
+
+const int hp_brackets = 4;
+const double percents[] = {full_pct, three_quarter_pct, half_pct, quarter_pct };
+
+const int indvidual_spells_length = 4;
+
+int new_spell_list[mage_types][hp_brackets][indvidual_spells_length] = {
+    {   // fire mage
+        { SPELL_FIREBOLT},
+        { SPELL_FIREBOLT },
+        { SPELL_CHILL_RAY, SPELL_FIREBOLT },
+        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
+    },
+    {   // lightning mage
+        { SPELL_LIGHTNING_BOLT },
+        { SPELL_LIGHTNING_BOLT },
+        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
+        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
+    },
+    {   // cold mage
+        { SPELL_CHILL_RAY },
+        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
+        { SPELL_CHILL_RAY },
+        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
+    },
+    {   // dark mage
+        { SPELL_DARK_BOLT },
+        { SPELL_DARK_BOLT },
+        { SPELL_CHILL_RAY, SPELL_DARK_BOLT },
+        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
+    },
+    {   // lhuth mage
+        { SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW },
+        { SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW },
+        { SPELL_DARK_BOLT,     SPELL_BLACK_ARROW },
+        { SPELL_LEACH,         SPELL_DARK_BOLT }
+    },
+    {   // default mage
+        { SPELL_FIREBOLT,  SPELL_LIGHTNING_BOLT },
+        { SPELL_FIREBOLT,  SPELL_LIGHTNING_BOLT },
+        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
+        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
+    }
+};
+
+int pick_a_spell(int *spell_list, char_data* host) {
+    if(has_alias(host, "spells")) {
+        sprintf(buf, "----------");
+        mudlog_aliased_mob(buf, host, "spells");
+        for(int i=1; i <= spell_list[0]; i++) {
+            sprintf(buf, "Spell: %d", spell_list[i]);
+            mudlog_aliased_mob(buf, host, "spells");
+        }
+    }
+    int chance = number(1, spell_list[0]);
+    return spell_list[chance];
 }
 
-// TODO: firebolt (maybe a dark spell was too), is returning FALSE? -- is causing a second action to
-// kick off? note: also see spec_pro_message
+// add spell and avoid dupes
+void add_spell_to_list(int *spell_list, int spell, char_data* host) {
+    int found = 0;
+    for(int i=1; i <= spell_list[0]; i++) {
+        if((int)spell_list[i] == (int)spell) {
+            found += 1;
+            break;
+        }
+    }
+    if(found == 0) {
+        sprintf(buf, "ADDING: %d", spell);
+        mudlog_aliased_mob(buf, host, "spells");
+        spell_list[0] += 1;
+        spell_list[spell_list[0]] = spell;
+    }
+}
+
+// fetch spells from hp bracket
+void get_spells(int *spell_list, int mage_type, int health, char_data* host) {
+    sprintf(buf, "MType: %d,    Spell_Tier: %d, Pct: %.2f", mage_type, health, percents[health]);
+    mudlog_aliased_mob(buf, host, "spells");
+    for(int i=0; i < indvidual_spells_length; i++) {
+        if(spell_list, new_spell_list[mage_type][health][i] != 0) {
+            add_spell_to_list(spell_list, new_spell_list[mage_type][health][i], host);
+        }
+    }
+}
+
+// check if correct level and add spell
+void add_leveled_spell_to_list(int *spell_list, int spell, int mage_type, int cur_mage_type,
+    char* keyword, char_data* host, int min_level) {
+    if(GET_LEVEL(host) >= min_level && mage_type == cur_mage_type && has_alias(host, keyword)) {
+        sprintf(buf, "MType: %d    (HL_SPELL)", mage_type);
+        mudlog_aliased_mob(buf, host, "spells");
+        add_spell_to_list(spell_list, spell, host);
+    }
+}
+
+// lookup spells by mage type and hp thresholds
+void get_combat_spells(char_data* host, int *spell_list, double current_health_pct, double current_mana_pct) {
+    for(int mage_type = 0; mage_type < mage_types; mage_type++) {
+        char* keyword = (char*)mage_aliases[mage_type];
+        if (has_alias(host, keyword)) {
+            int current_tier = hp_brackets;
+            for (int i=0; i < hp_brackets; i++) {
+                if (current_health_pct >= percents[i]) {
+                    current_tier = i;
+                    break;
+                }
+            }
+            get_spells(spell_list, mage_type, current_tier, host);
+
+            // restricted spells
+            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, keyword, host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, keyword, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type, keyword, host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type, keyword, host, 30);
+            if (OUTSIDE(host) &&
+                weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
+                add_leveled_spell_to_list(spell_list, SPELL_LIGHTNING_STRIKE, lightning_mage, mage_type, keyword, host, 35);
+            }
+            if (!SUN_PENALTY(host)) {
+                add_leveled_spell_to_list(spell_list, SPELL_SPEAR_OF_DARKNESS, lhuth_mage, mage_type, keyword, host, 40);
+            }
+        }
+    }
+}
+
+// NOTE: firebolt (maybe a dark spell was too), is returning FALSE? 
+//       - was seeing scenarios where casting when already casting, but no longer an issue?
+// note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec) {
     // was there a reason mob_magic_user checks delay.subcmd & wait_value, when subcmd can be 0??
     // if (host->delay.wait_value && host->delay.subcmd) {
+    const int bonus_to_cast = 20;
+    int chance_to_cast = GET_LEVEL(host) + bonus_to_cast;
     if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF ||
-        host->in_room == NOWHERE) {
+        host->in_room == NOWHERE || (number(1-100) > chance_to_cast)) {
         return FALSE;
     }
 
     struct char_data *tmpch, *tmpch_next;
     char_data *target;
-    int my_tmp_spells[4];
-    int tgt, spell_number = 0;
-
+    int spell_list[20]; // the first index is the count of spells
+    int tgt = 0;
+    int spell_number = 0;
     double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
-    char *fire_mage = strstr(host->player.name, "fmage");
-    char *lightning_mage = strstr(host->player.name, "lmage");
-    char *cold_mage = strstr(host->player.name, "cmage");
-    char *dark_mage = strstr(host->player.name, "dmage");
-    char *lhuth_mage = strstr(host->player.name, "lumage");
-    char *conjurer = strstr(host->player.name, "conj");
-    char *shield_mage = strstr(host->player.name, "shield");
-    const int high_level_mage = 40;
-    const double bruised_health_pct = 0.75;
-    const double hurt_health_pct = 0.5;
-    const double bloodied_health_pct = 0.25;
-
     // conj: prioritize heal powers in non-combat
-    if (!host->specials.fighting && conjurer) {
+    if (!host->specials.fighting && has_alias(host, "conj")) {
         // handle regen
         if (!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
             target = host;
@@ -1636,140 +1763,64 @@ SPECIAL(mob_magic_user_spec) {
         }
     }
 
-    // switch tactics (for now, we use a super flash to have an attempt to cast shield)
-    if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0 && shield_mage) {
-        if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
-            int chance = number(1, 100);
-            if (chance > 50) {
-                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                    if (tmpch->specials.fighting == host) {
-                        // send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
-                        // //no message?? futile if p has reatk trig?
-                        stop_fighting(tmpch);
+    // handle switch tactics (when mob is max interrupted)
+    if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
+        // shield tact: we use a "super flash" to have an attempt to cast shield
+        if(has_alias(host, "shield")) {
+            if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+                if (number(1, 100) > 50) {
+                    for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                        if (tmpch->specials.fighting == host) {
+                            // send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
+                            // no message?? futile if p has react trig?
+                            stop_fighting(tmpch);
+                        }
                     }
+                    stop_fighting(host);
+                    target = host;
+                    tgt = TARGET_CHAR;
+                    spell_number = SPELL_SHIELD;
                 }
-                stop_fighting(host);
-                target = host;
-                tgt = TARGET_CHAR;
-                spell_number = SPELL_SHIELD;
             }
         }
     }
 
-    // Damage Spells
+    // handle terror
+    if (has_alias(host, "terror") && host->specials.fighting && spell_number == 0
+            && (current_health_pct <= quarter_pct)) {
+        if (number(1, 100) > 80) {
+            target = host;
+            tgt = TARGET_OTHER;
+            spell_number = SPELL_TERROR;
+            utils::set_spirits(host, 100);
+        }
+    }
+
+    // Combat Focus
     if (target != host && spell_number == 0) {
+        spell_list[0] = 0;
         target = choose_caster_target(host);
         if (target == nullptr) {
             return FALSE;
         }
         if (host->specials.fighting && spell_number == 0) {
             tgt = TARGET_OTHER;
-
-            if (conjurer) {
-                int chance = number(1, 100);
-                if (chance > 75) {
+            if (has_alias(host, "conj")) {
+                if (number(1, 100) > 75) {
                     host->points.spirit = 100;
                     if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
                     }
-                    if (!lhuth_mage && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
+                    if (!has_alias(host, "lumage") && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
                         spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
             }
+            // Normal combat casting
             if (spell_number == 0 && host->interrupt_count < 3) {
-                if (fire_mage) {
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_FIREBOLT};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_FIREBALL};
-                    } else {
-                        if (GET_LEVEL(host) >= high_level_mage) {
-                            int my_tmp_spells[] = {1, SPELL_FIREBALL};
-                        } else {
-                            int my_tmp_spells[] = {1, SPELL_FIREBOLT};
-                        }
-                    }
-
-                } else if (lightning_mage) {
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT};
-                    } else {
-
-                        if (OUTSIDE(host) &&
-                            weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING &&
-                            GET_LEVEL(host) >= 40) {
-                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_STRIKE};
-                        } else {
-                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
-                        }
-                    }
-
-                } else if (cold_mage) {
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_CONE_OF_COLD};
-                    } else {
-                        if (GET_LEVEL(host) >= high_level_mage) {
-                            int my_tmp_spells[] = {1, SPELL_CONE_OF_COLD};
-                        } else {
-                            int my_tmp_spells[] = {1, SPELL_LIGHTNING_BOLT};
-                        }
-                    }
-
-                } else if (dark_mage) {
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_DARK_BOLT};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_SEARING_DARKNESS};
-                    } else {
-                        if (GET_LEVEL(host) >= high_level_mage) {
-                            int my_tmp_spells[] = {1, SPELL_SEARING_DARKNESS};
-                        } else {
-                            int my_tmp_spells[] = {1, SPELL_DARK_BOLT};
-                        }
-                    }
-
-                } else if (lhuth_mage) { // lhu
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_LEACH, SPELL_DARK_BOLT};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_DARK_BOLT, SPELL_BLACK_ARROW};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_BLACK_ARROW, SPELL_WORD_OF_AGONY};
-                    } else {
-
-                        if (SUN_PENALTY(host) || GET_LEVEL(host) < high_level_mage) {
-                            int my_tmp_spells[] = {2, SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW};
-                        } else {
-                            int my_tmp_spells[] = {2, SPELL_SPEAR_OF_DARKNESS, SPELL_BLACK_ARROW};
-                        }
-                    }
-
-                } else {
-                    if (current_health_pct <= bloodied_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_MAGIC_MISSILE, SPELL_CHILL_RAY};
-                    } else if (current_health_pct <= hurt_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT};
-                    } else if (current_health_pct <= bruised_health_pct) {
-                        int my_tmp_spells[] = {2, SPELL_LIGHTNING_BOLT, SPELL_FIREBOLT};
-                    } else {
-                        int my_tmp_spells[] = {2, SPELL_FIREBOLT, SPELL_EARTHQUAKE};
-                    }
-                }
-                spell_number = pick_a_spell(my_tmp_spells);
+                get_combat_spells(host, spell_list, current_health_pct, current_mana_pct);
+                spell_number = pick_a_spell(spell_list, host);
             }
         }
     }
@@ -1777,8 +1828,9 @@ SPECIAL(mob_magic_user_spec) {
     if (spell_number == 0) {
         return FALSE;
     }
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d",
-            GET_NAME(target), spell_number, tgt, host->interrupt_count);
+
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d, Hit%: %.2f",
+            GET_NAME(target), spell_number, tgt, host->interrupt_count, current_health_pct);
     mudlog_debug_mob(buf, host);
 
     waiting_type wtl_base;

@@ -85,14 +85,14 @@ static const char s_Gauge5[] =
  ******************************************************************************/
 
 /* Macros for readability, but you can remove them if you don't like them */
-#define NUMBER_READ_ONLY false, false, false, false, -1, -1, 0, NULL
-#define NUMBER_READ_ONLY_SET_TO(x) false, false, false, false, -1, -1, x, NULL
-#define STRING_READ_ONLY true, false, false, false, -1, -1, 0, NULL
+#define NUMBER_READ_ONLY false, false, false, false, false, -1, 0, NULL
+#define NUMBER_READ_ONLY_SET_TO(x) false, false, false, false, false, -1, x, NULL
+#define STRING_READ_ONLY true, false, false, false, false, -1, 0, NULL
 #define NUMBER_IN_THE_RANGE(x, y) false, true, false, false, x, y, 0, NULL
 #define BOOLEAN_SET_TO(x) false, true, false, false, 0, 1, x, NULL
 #define STRING_WITH_LENGTH_OF(x, y) true, true, false, false, x, y, 0, NULL
-#define STRING_WRITE_ONCE(x, y) true, true, true, false, -1, -1, 0, NULL
-#define STRING_GUI(x) true, false, false, true, -1, -1, 0, x
+#define STRING_WRITE_ONCE(x, y) true, true, true, false, false, -1, 0, NULL
+#define STRING_GUI(x) true, false, false, true, false, -1, 0, x
 
 static variable_name_t VariableNameTable[eMSDP_MAX + 1] = {
     /* General */
@@ -188,7 +188,7 @@ static variable_name_t VariableNameTable[eMSDP_MAX + 1] = {
     {eMSDP_GAUGE_4, "GAUGE_4", STRING_GUI(s_Gauge4)},
     {eMSDP_GAUGE_5, "GAUGE_5", STRING_GUI(s_Gauge5)},
 
-    {eMSDP_MAX, "", false} /* This must always be last. */
+    {eMSDP_MAX, "", NUMBER_READ_ONLY} /* This must always be last. */
 };
 
 /******************************************************************************

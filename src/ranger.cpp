@@ -59,13 +59,17 @@ int check_simple_move(struct char_data *ch, int cmd, int *move_cost, int mode);
 int check_hallucinate(struct char_data *ch, struct char_data *victim);
 extern void say_spell(char_data *caster, int spell_index);
 
-const int GATHER_FOOD = 7218;
-const int GATHER_LIGHT = 7007;
-const int GATHER_BOW = 2700;
-const int GATHER_ARROW = 2720;
-const int GATHER_DUST = 2100;
-const int GATHER_POISON = 4614;
-const int GATHER_ANTIDOTE = 4615;
+namespace Gather {
+enum class Item : int {
+    Food = 7218,
+    Light = 7007,
+    Bow = 2720,
+    Arrow = 2720,
+    Dust = 2100,
+    Poison = 4614,
+    Antidote = 4615
+};
+}
 
 ACMD(do_move);
 ACMD(do_hit);
@@ -448,7 +452,7 @@ ACMD(do_gather_food) {
              */
             switch (subcmd) {
             case 1:
-                if ((obj = read_object(GATHER_FOOD, VIRT)) != NULL) {
+                if ((obj = read_object(static_cast<int>(Gather::Item::Food), VIRT)) != NULL) {
                     send_to_char("You look around, and manage to find some edible"
                                  " roots and berries.\n\r",
                                  ch);
@@ -459,7 +463,7 @@ ACMD(do_gather_food) {
                                  ch);
                 break;
             case 2:
-                if ((obj = read_object(GATHER_LIGHT, VIRT)) != NULL) {
+                if ((obj = read_object(static_cast<int>(Gather::Item::Light), VIRT)) != NULL) {
                     send_to_char("You gather some wood and fashion it into a"
                                  " crude torch.\n\r",
                                  ch);
@@ -487,7 +491,7 @@ ACMD(do_gather_food) {
                              ch);
                 break;
             case 5:
-                if ((obj = read_object(GATHER_BOW, VIRT)) != NULL) {
+                if ((obj = read_object(static_cast<int>(Gather::Item::Bow), VIRT)) != NULL) {
                     obj_to_char(obj, ch);
                     send_to_char(
                         "You manage to find some branches that you fashion into a bow.\n\r", ch);
@@ -498,7 +502,7 @@ ACMD(do_gather_food) {
                 }
                 break;
             case 6:
-                if ((obj = read_object(GATHER_ARROW, VIRT)) != NULL) {
+                if ((obj = read_object(static_cast<int>(Gather::Item::Arrow), VIRT)) != NULL) {
                     obj_to_char(obj, ch);
                     send_to_char("You manage to craft an arrow out of twigs near by.\n\r", ch);
                 } else {
@@ -508,7 +512,7 @@ ACMD(do_gather_food) {
                 }
                 break;
             case 7:
-                if ((obj = read_object(GATHER_DUST, VIRT)) != NULL) {
+                if ((obj = read_object(static_cast<int>(Gather::Item::Dust), VIRT)) != NULL) {
                     obj_to_char(obj, ch);
                     send_to_char(
                         "You manage to find some suitable dust for blinding your victim.\n\r", ch);
@@ -3180,7 +3184,7 @@ bool can_ch_blind(char_data *ch, int mana_cost) {
 
     if (ch->carrying != NULL) {
         for (obj_data *item = ch->carrying; item; item = item->next_content) {
-            if (item->item_number == real_object(GATHER_DUST)) {
+            if (item->item_number == real_object(static_cast<int>(Gather::Item::Dust))) {
                 dust = item;
                 break;
             }
@@ -3360,7 +3364,7 @@ ACMD(do_blinding) {
 
         obj_data *dust = NULL;
         for (obj_data *item = ch->carrying; item; item = item->next_content) {
-            if (item->item_number == real_object(GATHER_DUST)) {
+            if (item->item_number == real_object(static_cast<int>(Gather::Item::Dust))) {
                 dust = item;
                 break;
             }

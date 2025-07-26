@@ -30,33 +30,33 @@
 #include <algorithm>
 #include <cmath>
 
-extern char* pc_race_types[];
+extern char *pc_race_types[];
 
 #define READ_TITLE(ch) pc_race_types[GET_RACE(ch)]
 
-extern struct char_data* character_list;
-extern struct obj_data* object_list;
+extern struct char_data *character_list;
+extern struct obj_data *object_list;
 extern struct room_data world;
 extern int top_of_world;
 extern struct time_info_data time_info;
 extern struct skill_data skills[];
-extern char* spell_wear_off_msg[];
-extern struct char_data* fast_update_list;
+extern char *spell_wear_off_msg[];
+extern struct char_data *fast_update_list;
 extern int circle_shutdown;
-extern struct char_data* death_waiting_list;
+extern struct char_data *death_waiting_list;
 
-void recalc_skills(struct char_data* ch);
+void recalc_skills(struct char_data *ch);
 
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
-void one_mobile_activity(char_data* ch);
+extern void raw_kill(char_data *ch, char_data *killer, int attacktype);
+void one_mobile_activity(char_data *ch);
 
 #define MIN_RANK 1
 #define MAX_RANK 10
 
 ACMD(do_flee);
-char saves_spell(struct char_data* ch, sh_int level, int bonus);
-void stop_riding(struct char_data* ch);
-char char_perception_check(struct char_data* ch);
+char saves_spell(struct char_data *ch, sh_int level, int bonus);
+void stop_riding(struct char_data *ch);
+char char_perception_check(struct char_data *ch);
 int get_sun_level(int room);
 
 /* When age < 15 return the value p0 */
@@ -65,8 +65,7 @@ int get_sun_level(int room);
 /* When age in 45..59 calculate the line between p3 & p4 */
 /* When age in 60..79 calculate the line between p4 & p5 */
 /* When age >= 80 return the value p6 */
-int graf(int age, int p0, int p1, int p2, int p3, int p4, int p5, int p6)
-{
+int graf(int age, int p0, int p1, int p2, int p3, int p4, int p5, int p6) {
 
     if (age < 15)
         return (p0); /* < 15   */
@@ -82,13 +81,9 @@ int graf(int age, int p0, int p1, int p2, int p3, int p4, int p5, int p6)
         return (p6); /* >= 80 */
 }
 
-int xp_to_level(int lvl)
-{
-    return lvl * lvl * 1500;
-}
+int xp_to_level(int lvl) { return lvl * lvl * 1500; }
 
-inline void advance_mini_level(struct char_data* ch)
-{
+inline void advance_mini_level(struct char_data *ch) {
     int i, n;
     i = ++GET_MINI_LEVEL(ch);
     /* add on average 2 HP/level */
@@ -115,8 +110,7 @@ inline void advance_mini_level(struct char_data* ch)
     GET_MAX_MINI_LEVEL(ch) = std::max(GET_MAX_MINI_LEVEL(ch), GET_MINI_LEVEL(ch));
 }
 
-double adjust_regen_for_level(int character_level, double regen_amount)
-{
+double adjust_regen_for_level(int character_level, double regen_amount) {
     // No extra regen for characters over level 10.
     if (character_level > 10)
         return regen_amount;
@@ -128,21 +122,18 @@ double adjust_regen_for_level(int character_level, double regen_amount)
     return adjusted_amount;
 }
 
-float get_bonus_mana_gain(const char_data* character)
-{
-    return character->points.mana_regen;
-}
+float get_bonus_mana_gain(const char_data *character) { return character->points.mana_regen; }
 
 /* manapoint gain pr. game hour */
-float mana_gain(const char_data* character)
-{
+float mana_gain(const char_data *character) {
     using namespace utils;
 
     float gain(character->player.level);
     if (is_pc(*character)) {
-        const char_ability_data& abils = character->tmpabilities;
+        const char_ability_data &abils = character->tmpabilities;
         gain = 8.0 + abils.intel / 2.0 + abils.wil / 5.0;
-        gain = gain + get_prof_level(PROF_MAGE, *character) / 5.0 + get_prof_level(PROF_CLERIC, *character) / 5.0;
+        gain = gain + get_prof_level(PROF_MAGE, *character) / 5.0 +
+               get_prof_level(PROF_CLERIC, *character) / 5.0;
 
         switch (character->specials.position) {
         case POSITION_SLEEPING:
@@ -156,7 +147,8 @@ float mana_gain(const char_data* character)
             break;
         }
     } else {
-        // NPCs that aren't in combat regenerate mana 50% faster to compensate for increased player health/mana regen.
+        // NPCs that aren't in combat regenerate mana 50% faster to compensate for increased player
+        // health/mana regen.
         if (character->specials.fighting == NULL) {
             gain *= 1.5;
         }
@@ -178,8 +170,7 @@ float mana_gain(const char_data* character)
     return gain;
 }
 
-float get_bonus_hit_gain(const char_data* character)
-{
+float get_bonus_hit_gain(const char_data *character) {
     float perception_modifier = utils::get_perception(*character) / 100.0f;
 
     // Early out if we have no perception.
@@ -188,7 +179,7 @@ float get_bonus_hit_gain(const char_data* character)
 
     // Iterate through affect list for regeneration spells.
     float bonus_gain = 0.0f;
-    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next) {
+    for (affected_type *affect = character->affected; affect != nullptr; affect = affect->next) {
         if (affect->type == SPELL_CURING) {
             bonus_gain += affect->modifier;
         }
@@ -206,14 +197,15 @@ float get_bonus_hit_gain(const char_data* character)
 }
 
 /* Hitpoint gain pr. game hour */
-float hit_gain(const char_data* character)
-{
+float hit_gain(const char_data *character) {
     using namespace utils;
 
     float gain(character->player.level);
 
     if (is_pc(*character)) {
-        gain = 8.0 + character->tmpabilities.con / 2.0 + get_prof_level(PROF_WARRIOR, *character) / 3.0 + get_prof_level(PROF_RANGER, *character) / 5.0;
+        gain = 8.0 + character->tmpabilities.con / 2.0 +
+               get_prof_level(PROF_WARRIOR, *character) / 3.0 +
+               get_prof_level(PROF_RANGER, *character) / 5.0;
 
         switch (character->specials.position) {
         case POSITION_SLEEPING:
@@ -227,13 +219,16 @@ float hit_gain(const char_data* character)
             break;
         }
     } else {
-        // NPCs that aren't in combat regenerate health 50% faster to compensate for increased player health/mana regen.
+        // NPCs that aren't in combat regenerate health 50% faster to compensate for increased
+        // player health/mana regen.
         if (character->specials.fighting == NULL) {
             gain *= 1.5;
         }
     }
 
-    if (is_affected_by(*character, AFF_POISON)) {
+    bool is_poisoned = is_affected_by(*character, AFF_POISON);
+
+    if (is_poisoned) {
         gain *= 0.25;
     }
 
@@ -241,7 +236,7 @@ float hit_gain(const char_data* character)
         gain *= 0.25;
     }
 
-    if (GET_RACE(character) == RACE_OLOGHAI) {
+    if (GET_RACE(character) == RACE_OLOGHAI && !is_poisoned) {
         gain *= 1.5;
     }
 
@@ -253,8 +248,7 @@ float hit_gain(const char_data* character)
     return gain;
 }
 
-float get_bonus_move_gain(const char_data* character)
-{
+float get_bonus_move_gain(const char_data *character) {
     float perception_modifier = utils::get_perception(*character) / 100.0f;
 
     // Early out if we have no perception.
@@ -263,7 +257,7 @@ float get_bonus_move_gain(const char_data* character)
 
     // Iterate through affect list for regeneration spells.
     float bonus_gain = 0.0f;
-    for (affected_type* affect = character->affected; affect != nullptr; affect = affect->next) {
+    for (affected_type *affect = character->affected; affect != nullptr; affect = affect->next) {
         if (affect->type == SPELL_CURING) {
             bonus_gain -= affect->modifier;
         } else if (affect->type == SPELL_RESTLESSNESS) {
@@ -276,15 +270,16 @@ float get_bonus_move_gain(const char_data* character)
     return (bonus_gain * perception_modifier) + character->points.move_regen;
 }
 
-float move_gain(const char_data* character)
+float move_gain(const char_data *character)
 /* move gain pr. game hour */
 {
     using namespace utils;
 
-    const char_ability_data& stats = character->tmpabilities;
+    const char_ability_data &stats = character->tmpabilities;
     if (is_npc(*character)) {
         if (is_mob_flagged(*character, MOB_MOUNT)) {
-            return 26 + (character->player.level * 2) + stats.con + stats.dex + get_bonus_move_gain(character);
+            return 26 + (character->player.level * 2) + stats.con + stats.dex +
+                   get_bonus_move_gain(character);
         }
     }
 
@@ -299,7 +294,8 @@ float move_gain(const char_data* character)
     gain += (stats.con + stats.dex) / 2.0;
 
     /* Expertise for Rangers and Travelling Skill */
-    float expertise_modifier = (get_prof_level(PROF_RANGER, *character) / 6.0) + (get_raw_knowledge(*character, SKILL_TRAVELLING) / 40);
+    float expertise_modifier = (get_prof_level(PROF_RANGER, *character) / 6.0) +
+                               (get_raw_knowledge(*character, SKILL_TRAVELLING) / 40);
     gain += expertise_modifier;
 
     /* Skill/Spell calculations */
@@ -319,9 +315,9 @@ float move_gain(const char_data* character)
 
     if (is_npc(*character)) {
         // Tames get double move regen (have to be animals).
-        if (affected_by_spell(const_cast<char_data*>(character), SKILL_TAME)) {
+        if (affected_by_spell(const_cast<char_data *>(character), SKILL_TAME)) {
             gain *= 2.0;
-            char_data* master = character->master;
+            char_data *master = character->master;
             if (master && get_specialization(*master) == PLRSPEC_PETS) {
                 // If the tamer is animals spec, double move regen again.
                 gain *= 2.0;
@@ -331,6 +327,8 @@ float move_gain(const char_data* character)
         return gain - 5;
     } else {
         int race = character->player.race;
+        bool is_poisoned = is_affected_by(*character, AFF_POISON);
+
         if (race == RACE_WOOD || race == RACE_HIGH) {
             gain += 5.0;
         }
@@ -339,11 +337,11 @@ float move_gain(const char_data* character)
             gain *= 1.50;
         }
 
-        if (race == RACE_OLOGHAI) {
+        if (race == RACE_OLOGHAI && !is_poisoned) {
             gain *= 1.50;
         }
 
-        if (is_affected_by(*character, AFF_POISON)) {
+        if (is_poisoned) {
             gain *= 0.25;
         }
 
@@ -362,8 +360,7 @@ float move_gain(const char_data* character)
     }
 }
 
-void set_title(char_data* character)
-{
+void set_title(char_data *character) {
     if (GET_TITLE(character))
         RELEASE(GET_TITLE(character));
     CREATE(GET_TITLE(character), char, strlen(READ_TITLE(character)) + 5);
@@ -372,14 +369,13 @@ void set_title(char_data* character)
     *(GET_TITLE(character) + 4) = toupper(*(GET_TITLE(character) + 4));
 }
 
-void check_autowiz(struct char_data* ch)
-{
+void check_autowiz(struct char_data *ch) {
     char buf[100];
     extern int min_wizlist_lev;
 
     if (GET_LEVEL(ch) >= LEVEL_IMMORT) {
-        sprintf(buf, "nice ../bin/autowiz %d %s %d %s %d &", min_wizlist_lev,
-            WIZLIST_FILE, LEVEL_IMMORT, IMMLIST_FILE, getpid());
+        sprintf(buf, "nice ../bin/autowiz %d %s %d %s %d &", min_wizlist_lev, WIZLIST_FILE,
+                LEVEL_IMMORT, IMMLIST_FILE, getpid());
         mudlog("Initiating autowiz.", NRM, LEVEL_IMMORT, FALSE);
         system(buf);
     }
@@ -402,8 +398,7 @@ void check_autowiz(struct char_data* ch)
  * because I've never seen this 10,000 exp loss minimum come into
  * play.
  */
-void gain_exp(struct char_data* ch, int gain)
-{
+void gain_exp(struct char_data *ch, int gain) {
     if (GET_LEVEL(ch) < 0)
         return;
 
@@ -426,8 +421,7 @@ void gain_exp(struct char_data* ch, int gain)
  * when creating new implementors or when a player dies from a
  * mob death.
  */
-void gain_exp_regardless(char_data* character, int gain)
-{
+void gain_exp_regardless(char_data *character, int gain) {
     /* NPCs aren't allowed to gain experience */
     if (IS_NPC(character))
         return;
@@ -438,7 +432,8 @@ void gain_exp_regardless(char_data* character, int gain)
     if (gain > 0) {
         GET_EXP(character) += gain;
 
-        for (temp_int = GET_MINI_LEVEL(character); temp_int * temp_int * 3 / 20 <= GET_EXP(character); temp_int++) {
+        for (temp_int = GET_MINI_LEVEL(character);
+             temp_int * temp_int * 3 / 20 <= GET_EXP(character); temp_int++) {
             if (temp_int > GET_MINI_LEVEL(character)) {
                 advance_mini_level(character);
                 is_altered = true;
@@ -455,7 +450,8 @@ void gain_exp_regardless(char_data* character, int gain)
         while (xp_to_level(GET_LEVEL(character)) - 20000 > GET_EXP(character)) {
             GET_LEVEL(character) = GET_LEVEL(character) - 1;
             GET_MINI_LEVEL(character) = 100 * GET_LEVEL(character);
-            SPELLS_TO_LEARN(character) -= PRACS_PER_LEVEL + GET_LEA_BASE(character) / LEA_PRAC_FACTOR;
+            SPELLS_TO_LEARN(character) -=
+                PRACS_PER_LEVEL + GET_LEA_BASE(character) / LEA_PRAC_FACTOR;
 
             send_to_char("You lose a level!\n\r", character);
         }
@@ -473,8 +469,7 @@ void gain_exp_regardless(char_data* character, int gain)
     }
 }
 
-void gain_condition(struct char_data* ch, int condition, int value)
-{
+void gain_condition(struct char_data *ch, int condition, int value) {
     if (GET_COND(ch, condition) == -1) /* No change */
         return;
 
@@ -507,13 +502,12 @@ void gain_condition(struct char_data* ch, int condition, int value)
     }
 }
 
-void Crash_extract_objs(obj_data*);
+void Crash_extract_objs(obj_data *);
 
 //============================================================================
 // Returns 1 if the char was extracted, 0 otherwise
 //============================================================================
-int check_idling(char_data* character)
-{
+int check_idling(char_data *character) {
     extern int r_mortal_idle_room[];
 
     // Gods get their own checks, and are never auto-disconnected.
@@ -532,7 +526,7 @@ int check_idling(char_data* character)
             // Mark the character as AFK and give them AFK protection after 3 minute.
             SET_BIT(PLR_FLAGS(character), PLR_ISAFK);
 
-            game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+            game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
             bb_instance.on_character_afked(character);
             if (!was_afk) {
                 send_to_char("You have been idle, and are now flagged as AFK.\r\n", character);
@@ -598,14 +592,13 @@ void update_room_tracks();
 void update_bleed_tracks();
 extern int LOOT_DECAY_TIME;
 
-void point_update(void)
-{
+void point_update(void) {
     int recalc_flag = 0, full_update, feeling, mytime, tmp;
     void update_char_objects(struct char_data * ch); /* handler.c */
-    void extract_obj(struct obj_data * obj); /* handler.c */
+    void extract_obj(struct obj_data * obj);         /* handler.c */
     struct char_data *i, *next_dude;
     struct obj_data *j, *next_thing, *jj, *next_thing2;
-    struct affected_type* hjp;
+    struct affected_type *hjp;
 
     /* characters */
     recalc_zone_power();
@@ -637,7 +630,8 @@ void point_update(void)
         affect_total(i, AFFECT_TOTAL_TIME);
         feeling = report_zone_power(i);
         // hint/stench messages no longer automatic
-        if ((GET_LEVEL(i) < LEVEL_IMMORT) && (GET_POS(i) > POSITION_SLEEPING) && !IS_SET(PLR_FLAGS(i), PLR_WRITING)) {
+        if ((GET_LEVEL(i) < LEVEL_IMMORT) && (GET_POS(i) > POSITION_SLEEPING) &&
+            !IS_SET(PLR_FLAGS(i), PLR_WRITING)) {
             if ((feeling < 0) && !(number(0, 3))) {
                 send_to_char("You catch a waft of evil stench in the air.\n\r", i);
             }
@@ -753,7 +747,7 @@ void point_update(void)
                 if (GET_ITEM_TYPE(j) == ITEM_CONTAINER) {
                     // If this is a corpse, let big brother know that it is decaying.
                     if (j->obj_flags.value[3] == 1) {
-                        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+                        game_rules::big_brother &bb_instance = game_rules::big_brother::instance();
                         bb_instance.on_corpse_decayed(j);
                     }
 
@@ -785,7 +779,8 @@ void point_update(void)
             //      printf("resetting fountain %s\n",j->name);
             j->obj_flags.value[1] = j->obj_flags.value[0];
         } else if (GET_ITEM_TYPE(j) == ITEM_LIGHT) {
-            if ((j->obj_flags.value[2] > 0) && (j->obj_flags.value[3] > 0) && !(IS_NPC(j->carried_by)))
+            if ((j->obj_flags.value[2] > 0) && (j->obj_flags.value[3] > 0) &&
+                !(IS_NPC(j->carried_by)))
                 j->obj_flags.value[2]--;
             if ((j->obj_flags.value[2] == 0) && (j->obj_flags.value[3] > 0)) {
                 // the torch went out messages
@@ -801,7 +796,8 @@ void point_update(void)
                     recount_light_room(j->in_room);
                 }
                 extract_obj(j);
-            } else if ((j->obj_flags.value[2] < 3) && (j->obj_flags.value[2] >= 0) && (j->obj_flags.value[3] > 0)) {
+            } else if ((j->obj_flags.value[2] < 3) && (j->obj_flags.value[2] >= 0) &&
+                       (j->obj_flags.value[3] > 0)) {
                 // the torch flickers messages
 
                 if (j->carried_by) {
@@ -814,8 +810,8 @@ void point_update(void)
                     //	  recount_light_room(j->in_room);
                 }
             }
-        } else if ((GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (!j->obj_flags.value[3])
-            && (!j->carried_by) && (j->in_room != NOWHERE)) {
+        } else if ((GET_ITEM_TYPE(j) == ITEM_CONTAINER) && (!j->obj_flags.value[3]) &&
+                   (!j->carried_by) && (j->in_room != NOWHERE)) {
             /* the object is not a corpse, and is on the ground... */
             /* restoring its closed/locked state */
             if (!(j->obj_flags.value[1] & CONT_CLOSED) && (j->obj_flags.value[4] & CONT_CLOSED))
@@ -829,9 +825,8 @@ void point_update(void)
     }
 }
 
-void update_room_tracks()
-{
-    room_data* tmproom;
+void update_room_tracks() {
+    room_data *tmproom;
     int roomnum, tmp;
 
     for (roomnum = 0; roomnum <= top_of_world; roomnum++) {
@@ -846,9 +841,8 @@ void update_room_tracks()
     }
 }
 
-void update_bleed_tracks()
-{
-    room_data* tmproom;
+void update_bleed_tracks() {
+    room_data *tmproom;
     int roomnum, tmp;
 
     for (roomnum = 0; roomnum <= top_of_world; roomnum++) {
@@ -867,8 +861,7 @@ void update_bleed_tracks()
  * Function called when a character chooses "1" from the main
  * menu and the character's level is 0.
  */
-void do_start(struct char_data* ch)
-{
+void do_start(struct char_data *ch) {
     int tmp;
     extern int top_of_p_table; /* From db.cc */
 
@@ -933,10 +926,9 @@ void do_start(struct char_data* ch)
 // Simply checks that a character can breathe in the room they are in.
 // If not, they are affected by asphyxiation, the effects of which are dealt with elsewhere.
 
-void check_breathing(char_data* ch)
-{
+void check_breathing(char_data *ch) {
     affected_type newaf;
-    affected_type* tmpaf;
+    affected_type *tmpaf;
 
     tmpaf = affected_by_spell(ch, SPELL_ASPHYXIATION);
     if (!(can_breathe(ch))) {
@@ -964,15 +956,11 @@ void check_breathing(char_data* ch)
     }
 }
 
-bool is_rank_valid(int ranking)
-{
-    return (ranking != PKILL_UNRANKED)
-        && (ranking >= MIN_RANK)
-        && (ranking <= MAX_RANK);
+bool is_rank_valid(int ranking) {
+    return (ranking != PKILL_UNRANKED) && (ranking >= MIN_RANK) && (ranking <= MAX_RANK);
 }
 
-void set_player_moves(struct char_data* ch, int mod, bool mode)
-{
+void set_player_moves(struct char_data *ch, int mod, bool mode) {
     if (!mode)
         mod = -mod;
 
@@ -981,16 +969,14 @@ void set_player_moves(struct char_data* ch, int mod, bool mode)
     ch->tmpabilities.move += mod;
 }
 
-void set_player_ob(struct char_data* ch, int mod, bool mode)
-{
+void set_player_ob(struct char_data *ch, int mod, bool mode) {
     if (!mode)
         mod = -mod;
 
     SET_OB(ch) += mod;
 }
 
-void set_player_hit(struct char_data* ch, int mod, bool mode)
-{
+void set_player_hit(struct char_data *ch, int mod, bool mode) {
     if (mode == false)
         mod = -mod;
 
@@ -999,8 +985,7 @@ void set_player_hit(struct char_data* ch, int mod, bool mode)
     ch->tmpabilities.hit += mod;
 }
 
-void set_player_con(struct char_data* ch, int mod, bool mode)
-{
+void set_player_con(struct char_data *ch, int mod, bool mode) {
     if (mode == false)
         mod = -mod;
 
@@ -1008,8 +993,7 @@ void set_player_con(struct char_data* ch, int mod, bool mode)
     ch->abilities.con += mod;
 }
 
-void set_player_mana(struct char_data* ch, int mod, bool mode)
-{
+void set_player_mana(struct char_data *ch, int mod, bool mode) {
     if (mode == false)
         mod = -mod;
 
@@ -1018,8 +1002,7 @@ void set_player_mana(struct char_data* ch, int mod, bool mode)
     ch->tmpabilities.mana += mod;
 }
 
-void set_player_damage(struct char_data* ch, int mod, bool mode)
-{
+void set_player_damage(struct char_data *ch, int mod, bool mode) {
     if (!mode)
         mod = -mod;
 
@@ -1029,15 +1012,13 @@ void set_player_damage(struct char_data* ch, int mod, bool mode)
     ch->points.damage += mod;
 }
 
-void set_player_spell_pen(struct char_data* ch, int mod, bool mode)
-{
+void set_player_spell_pen(struct char_data *ch, int mod, bool mode) {
     if (!mode)
         mod = -mod;
     ch->points.spell_pen += mod;
 }
 
-void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode)
-{
+void assign_pk_mage_bonus(struct char_data *ch, int tier, bool mode) {
     switch (tier) {
     case 1:
         set_player_mana(ch, 15, mode);
@@ -1062,8 +1043,7 @@ void assign_pk_mage_bonus(struct char_data* ch, int tier, bool mode)
     }
 }
 
-void assign_pk_mystic_bonus(struct char_data* ch, int tier, bool mode)
-{
+void assign_pk_mystic_bonus(struct char_data *ch, int tier, bool mode) {
     switch (tier) {
     case 1:
         set_player_con(ch, 2, mode);
@@ -1080,8 +1060,7 @@ void assign_pk_mystic_bonus(struct char_data* ch, int tier, bool mode)
     }
 }
 
-void assign_pk_ranger_bonus(struct char_data* ch, int tier, bool mode)
-{
+void assign_pk_ranger_bonus(struct char_data *ch, int tier, bool mode) {
     switch (tier) {
     case 1:
         set_player_con(ch, 2, mode);
@@ -1108,8 +1087,7 @@ void assign_pk_ranger_bonus(struct char_data* ch, int tier, bool mode)
     }
 }
 
-void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode)
-{
+void assign_pk_warrior_bonus(struct char_data *ch, int tier, bool mode) {
     switch (tier) {
     case 1:
         set_player_con(ch, 2, mode);
@@ -1135,8 +1113,7 @@ void assign_pk_warrior_bonus(struct char_data* ch, int tier, bool mode)
     }
 }
 
-void assign_pk_bonuses(struct char_data* ch, int coeff, int tier, bool mode)
-{
+void assign_pk_bonuses(struct char_data *ch, int coeff, int tier, bool mode) {
     switch (coeff) {
     case PROF_MAGE:
         assign_pk_mage_bonus(ch, tier, mode);
@@ -1155,21 +1132,19 @@ void assign_pk_bonuses(struct char_data* ch, int coeff, int tier, bool mode)
     }
 }
 
-void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff)
-{
+void remove_fame_war_bonuses(struct char_data *ch, struct affected_type *pkaff) {
     int coeff = utils::get_highest_coeffs(*ch);
-    affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
+    affected_type *aff = affected_by_spell(ch, SPELL_FAME_WAR);
     assign_pk_bonuses(ch, coeff, aff->modifier, false);
     recalc_abilities(ch);
 }
 
-void do_fame_war_bonuses(struct char_data* ch)
-{
+void do_fame_war_bonuses(struct char_data *ch) {
     if (IS_NPC(ch))
         return;
 
     int ranking = pkill_get_rank_by_character(ch, true) + 1;
-    affected_type* pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
+    affected_type *pkaff = affected_by_spell(ch, SPELL_FAME_WAR);
 
     if (!is_rank_valid(ranking) && !pkaff) {
         ch->player.ranking = ranking;
@@ -1186,7 +1161,8 @@ void do_fame_war_bonuses(struct char_data* ch)
     }
 
     if ((ranking == ch->player.ranking && pkaff) // ranking hasn't changed
-        || ((ranking != ch->player.ranking && pkaff) && (pkaff->modifier == tier))) // ranking has but tier hasn't
+        || ((ranking != ch->player.ranking && pkaff) &&
+            (pkaff->modifier == tier))) // ranking has but tier hasn't
     {
         pkaff->duration = 100;
     }
@@ -1217,9 +1193,8 @@ void do_fame_war_bonuses(struct char_data* ch)
     ch->player.ranking = ranking;
 }
 
-void do_power_of_arda(char_data* ch)
-{
-    affected_type* tmpaf;
+void do_power_of_arda(char_data *ch) {
+    affected_type *tmpaf;
     affected_type newaf;
     int level, maxlevel;
 
@@ -1236,7 +1211,9 @@ void do_power_of_arda(char_data* ch)
         }
         if (tmpaf) {
             if (tmpaf->modifier > maxlevel)
-                tmpaf->modifier = MAX(tmpaf->modifier - level, 30); // if you are in a shady room, the affection can never disappear
+                tmpaf->modifier =
+                    MAX(tmpaf->modifier - level,
+                        30); // if you are in a shady room, the affection can never disappear
             else
                 tmpaf->modifier = MIN(tmpaf->modifier + level, 400);
             tmpaf->duration = 100; // to keep the affection going
@@ -1264,9 +1241,8 @@ void do_power_of_arda(char_data* ch)
     }
 }
 
-void affect_update_person(struct char_data* i, int mode)
-{
-    affected_type* otheraf;
+void affect_update_person(struct char_data *i, int mode) {
+    affected_type *otheraf;
     // mode != 0 for fast_update
 
     static struct affected_type *af, *next_af_dude;
@@ -1327,8 +1303,11 @@ void affect_update_person(struct char_data* i, int mode)
 
                     if (!(can_breathe(i))) {
                         if (af->modifier > death_modifier) {
-                            send_to_char("You gasp one final time as your body loses its battle for life...\n\r", i);
-                            act("$n gasps one last time... and dies.", TRUE, i, nullptr, nullptr, TO_ROOM);
+                            send_to_char("You gasp one final time as your body loses its battle "
+                                         "for life...\n\r",
+                                         i);
+                            act("$n gasps one last time... and dies.", TRUE, i, nullptr, nullptr,
+                                TO_ROOM);
                             raw_kill(i, nullptr, SPELL_ASPHYXIATION);
                             return;
                         }
@@ -1373,13 +1352,12 @@ void affect_update_person(struct char_data* i, int mode)
 
 ASPELL(spell_poison);
 
-void affect_update_room(struct room_data* room)
-{
+void affect_update_room(struct room_data *room) {
     struct affected_type *tmpaf, *next_tmpaf, *checkaf;
     struct affected_type newaf;
     struct char_data *tmpch, *next_tmpch;
     int time_phase, tmp, direction, mod, roomnum, movechance;
-    extern char* dirs[];
+    extern char *dirs[];
 
     time_phase = get_current_time_phase();
 
@@ -1390,7 +1368,8 @@ void affect_update_room(struct room_data* room)
 
         switch (tmpaf->type) {
         case ROOMAFF_SPELL:
-            if ((tmpaf->location >= 0) && (tmpaf->location < MAX_SKILLS) && skills[tmpaf->location].spell_pointer) {
+            if ((tmpaf->location >= 0) && (tmpaf->location < MAX_SKILLS) &&
+                skills[tmpaf->location].spell_pointer) {
                 if (tmpaf->location == SPELL_MIST_OF_BAAZUNGA)
                     if (!IS_SET(room->room_flags, SHADOWY))
                         SET_BIT(room->room_flags, SHADOWY);
@@ -1400,22 +1379,26 @@ void affect_update_room(struct room_data* room)
                         next_tmpch = tmpch->next_in_room;
 
                         /* 1 in 13 chance that a room spell won't do anything */
-                        if (!(tmp = number(0, 12)) || (skills[tmpaf->location].is_fast && !number(0, 2))) {
-                            (skills[tmpaf->location].spell_pointer)(tmpch, "", SPELL_TYPE_SPELL, tmpch, 0, 0, 0);
+                        if (!(tmp = number(0, 12)) ||
+                            (skills[tmpaf->location].is_fast && !number(0, 2))) {
+                            (skills[tmpaf->location].spell_pointer)(tmpch, "", SPELL_TYPE_SPELL,
+                                                                    tmpch, 0, 0, 0);
                         }
                     }
                 } else {
-                    sprintf(buf2, "Attempt to cast spell %d in room %d",
-                        tmpaf->location, room->number);
+                    sprintf(buf2, "Attempt to cast spell %d in room %d", tmpaf->location,
+                            room->number);
                     mudlog(buf2, NRM, LEVEL_GOD, FALSE);
                 }
             }
         }
 
-        if (((time_phase == tmpaf->time_phase) || ((tmpaf->type == ROOMAFF_SPELL) && skills[tmpaf->location].is_fast))
-            && (tmpaf->duration > 0))
+        if (((time_phase == tmpaf->time_phase) ||
+             ((tmpaf->type == ROOMAFF_SPELL) && skills[tmpaf->location].is_fast)) &&
+            (tmpaf->duration > 0))
             tmpaf->duration--;
-        if (tmpaf->location == SPELL_MIST_OF_BAAZUNGA && tmpaf->duration > 0 && time_phase == tmpaf->time_phase) {
+        if (tmpaf->location == SPELL_MIST_OF_BAAZUNGA && tmpaf->duration > 0 &&
+            time_phase == tmpaf->time_phase) {
             /* 70% chance of mist thinking about moving */
             sprintf(buf, "check mist movement");
             mudlog(buf, NRM, LEVEL_GOD, FALSE);
@@ -1427,12 +1410,11 @@ void affect_update_room(struct room_data* room)
                     mudlog(buf, NRM, LEVEL_GOD, FALSE);
                 } else if (room->dir_option[direction]->to_room != NOWHERE) {
                     roomnum = room->dir_option[direction]->to_room;
-                    if (!(room_affected_by_spell(&world[roomnum],
-                            SPELL_MIST_OF_BAAZUNGA))) {
+                    if (!(room_affected_by_spell(&world[roomnum], SPELL_MIST_OF_BAAZUNGA))) {
                         if (tmpaf->modifier != 1)
                             REMOVE_BIT(room->room_flags, SHADOWY);
-                        if ((checkaf = room_affected_by_spell(&world[roomnum],
-                                 SPELL_MIST_OF_BAAZUNGA))) {
+                        if ((checkaf =
+                                 room_affected_by_spell(&world[roomnum], SPELL_MIST_OF_BAAZUNGA))) {
                             mod = checkaf->modifier;
                             sprintf(buf, "WARNING LOMAN: Mist already in move to room");
                             mudlog(buf, NRM, LEVEL_GOD, FALSE);
@@ -1466,12 +1448,11 @@ void affect_update_room(struct room_data* room)
     }
 }
 
-extern universal_list* affected_list;
+extern universal_list *affected_list;
 
-extern universal_list* affected_list_pool;
+extern universal_list *affected_list_pool;
 
-void affect_update()
-{
+void affect_update() {
     universal_list *tmplist, *tmplist2, *tmplist3;
     ;
     char mybuf[1000];
@@ -1499,12 +1480,12 @@ void affect_update()
     }
 }
 
-void fast_update()
-{
+void fast_update() {
     int freq = FAST_UPDATE_RATE;
-    for (char_data* character = character_list; character != nullptr; character = character->next) {
+    for (char_data *character = character_list; character != nullptr; character = character->next) {
 
-        // Note:  Regen values can be negative, so we can't test if a character is below max as an optimization.
+        // Note:  Regen values can be negative, so we can't test if a character is below max as an
+        // optimization.
 
         float health_regen_base = hit_gain(character) / freq;
         int hitregen = int(health_regen_base);
@@ -1534,8 +1515,10 @@ void fast_update()
             return;
         }
 
-        GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
-        GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
+        GET_MANA(character) =
+            std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
+        GET_MOVE(character) =
+            std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
 
         // Make sure characters moves don't drop below zero.
         GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);

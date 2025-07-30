@@ -158,7 +158,7 @@ bool should_assist_master(char_data *ch) {
         return false;
     }
 
-    if (IS_NPC(ch)) {
+    if (IS_NPC(ch) && IS_NPC(master)) {
         return false;
     }
 

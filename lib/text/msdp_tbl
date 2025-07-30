@@ -52,6 +52,28 @@ increases, you may gain access to new skills, spells, equipment, and areas.
 See also: help levels
 
 #
+EXPERIENCE
+
+This variable shows how much more experience points (XP) your character needs
+to reach the next level.
+
+#
+EXPERIENCE_MAX
+
+This variable shows the maximum amount of experience points needed to reach
+the next level.
+
+#
+WIMPY
+
+This variable shows your character’s current wimpy setting.
+
+#
+WORLD_TIME
+
+This is the current time in the game world.
+
+#
 MANA
 
 This variable shows your character’s current mana points (stamina), which are

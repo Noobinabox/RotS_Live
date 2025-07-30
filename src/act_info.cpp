@@ -3799,7 +3799,7 @@ ACMD(do_compare) {
 }
 
 static char *stat_defects[] = {
-    "weakened", "duped", "dispirited", "clumsy", "sickly", "retarded", "\n",
+    "weakened", "duped", "dispirited", "clumsy", "sickly", "bewildered", "\n",
 };
 
 static char *stat_attrs[] = {"horribly", "strongly", "strongly", "seriously", "seriously", "quite",

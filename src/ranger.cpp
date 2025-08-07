@@ -63,7 +63,7 @@ namespace Gather {
 enum class Item : int {
     Food = 7218,
     Light = 7007,
-    Bow = 2720,
+    Bow = 2700,
     Arrow = 2720,
     Dust = 2100,
     Poison = 4614,

@@ -1448,10 +1448,12 @@ bool is_strong_enough_to_tame(char_data *tamer, char_data *animal, bool include_
 }
 
 ACMD(do_tame) {
-    int tame_skill, levels_over_required;
+    int tame_skill, levels_over_required, tmp_abil;
+    double tmp_skl;
     struct char_data *victim = NULL;
     struct waiting_type tmpwtl;
     struct affected_type af;
+    affected_type *existing_affect;
 
     if (IS_SHADOW(ch)) {
         send_to_char("You are too insubstantial to do that.\r\n", ch);
@@ -1490,10 +1492,8 @@ ACMD(do_tame) {
         victim = (struct char_data *)wtl->targ1.ptr.ch;
     }
 
-    double ranger_level = (double)GET_PROF_LEVEL(PROF_RANGER, ch) / 3;
-    double divided_tame_skill = (double)tame_skill / 30;
-    double skill_total = ranger_level + divided_tame_skill;
-    levels_over_required = (int)skill_total - GET_LEVEL(victim) - get_followers_level(ch);
+    levels_over_required = (GET_PROF_LEVEL(PROF_RANGER, ch) / 3 + tame_skill / 30 -
+                            GET_LEVEL(victim) - get_followers_level(ch));
 
     if (affected_by_spell(victim, SKILL_CALM))
         levels_over_required += 1;
@@ -1566,23 +1566,21 @@ ACMD(do_tame) {
             return;
         }
 
-        if (tame_skill * (levels_over_required + 1) / 5 > number(0, 100)) {
+        tmp_skl = ((double)GET_SKILL(ch, SKILL_TAME) / (double)110);
+        tmp_abil = tmp_skl * 95 + (double)GET_PROF_LEVEL(PROF_RANGER, ch) / (double)36 * 9;
+        existing_affect = affected_by_spell(ch, SPELL_ANGER);
+        if (existing_affect && existing_affect->duration > 2) {
+            tmp_abil = tmp_abil - (double)tmp_abil * .2;
+        }
+
+        if (tmp_abil > number(0, 100)) {
             if (circle_follow(victim, ch, FOLLOW_MOVE)) {
                 send_to_char("Sorry, following in circles is not allowed.\r\n", ch);
                 return;
             }
 
-            if (victim->master) {
+            if (victim->master)
                 stop_follower(victim, FOLLOW_MOVE);
-            }
-
-            if (GET_LOADLINE(victim)) {
-                zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing--;
-                if (zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing < 0) {
-                    zone_table[GET_LOADZONE(victim)].cmd[GET_LOADLINE(victim) - 1].existing = 0;
-                }
-            }
-
             affect_from_char(victim, SKILL_TAME);
             add_follower(victim, ch, FOLLOW_MOVE);
 

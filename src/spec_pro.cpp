@@ -1998,10 +1998,14 @@ bool see_hidden(char_data *host, char_data *tmpch) {
 }
 
 // note: we dont check if fighting here, because its also used for ambush
+//TODO: factor in god nohassle
 bool should_attack(char_data *host, char_data *tmpch) {
     int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
     return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch) &&
-            (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch))));
+                see_hidden(host, tmpch) && !PRF_FLAGGED(tmpch, PRF_NOHASSLE)
+            && ( IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch)) ||
+                host->specials.fighting && (GET_POS(host) > POSITION_SITTING) )
+        );
 }
 
 void do_spec_ambush(char_data *host, char_data *tmpch) {
@@ -2034,11 +2038,12 @@ void do_spec_hit(char_data *host, char_data *tmpch) {
     host->spec_busy = false;
 }
 
-bool prog_do_hunter(char_data *host) {
-    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) ||
-             (IS_AFFECTED(host, AFF_HUNT))) &&
-            !IS_SET(host->specials2.act, MOB_SENTINEL) && (GET_POS(host) == POSITION_STANDING) &&
-            !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+bool prog_do_hunter(char_data *host, int is_wimpy) {
+    return (
+        ( IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) ||
+            (IS_AFFECTED(host, AFF_HUNT)) )
+        && (GET_POS(host) == POSITION_STANDING) && !is_wimpy && !(MOB_FLAGGED(host, MOB_PET)) &&
+            host->specials.memory && !host->specials.fighting );
 }
 
 // Works with HUNTER and MEMORY flags, handled below
@@ -2051,6 +2056,7 @@ SPECIAL(mob_ranger_new) {
     struct memory_rec *names;
     struct char_data *vict;
     int tmp, tmp2, mintime, mintmp, dir;
+    int is_wimpy = 0;
 
     long racial_aggr = host->specials2.pref;
     int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
@@ -2062,11 +2068,18 @@ SPECIAL(mob_ranger_new) {
     if ((callflag != SPECIAL_SELF) && (callflag != SPECIAL_ENTER))
         return 0;
 
-    ch->spec_busy =
-        true; // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
+    // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
+    ch->spec_busy = true;
 
     if (GET_POS(host) < POSITION_FIGHTING) {
         update_pos(host);
+    }
+
+    const int wimpy_health_limit = GET_MAX_HIT(host) / 5;
+    if (GET_HIT(host) <= wimpy_health_limit) {
+        sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), wimpy_health_limit);
+        mudlog_debug_mob(buf, host);
+        is_wimpy = 1;
     }
 
     tmpch = 0;
@@ -2080,11 +2093,11 @@ SPECIAL(mob_ranger_new) {
             do_hide(host, "", 0, 0, 0);
         }
 
-        if ((callflag == SPECIAL_ENTER) && ch &&
+        if ((callflag == SPECIAL_ENTER) && ch && !is_wimpy && !PRF_FLAGGED(ch, PRF_NOHASSLE) &&
             (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
             tmpch = ch;
-        } else if (callflag == SPECIAL_SELF) {
-            // should this pick a random target, instead of first?
+        } else if (callflag == SPECIAL_SELF && !is_wimpy) {
+            // should this pick a random target, instead of first? or if MOB_SWITCHING??
             for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
                 if (should_attack(host, tmpch)) {
                     break;
@@ -2095,18 +2108,30 @@ SPECIAL(mob_ranger_new) {
 
     /* Ambush */
     if (tmpch && tmpch != host && strstr(ch->player.name, "stab") && is_not_engaged &&
-        !tmpch->specials.fighting) {
+        !tmpch->specials.fighting && !is_wimpy) {
         do_spec_ambush(host, tmpch);
         return 1;
     }
     // else attack
-    if (tmpch && tmpch != host && is_not_engaged) {
+    if (tmpch && tmpch != host && is_not_engaged && !is_wimpy) {
         do_spec_hit(host, tmpch);
         return 1;
     }
 
+    // MOB_SWITCHING
+    if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !is_wimpy) {
+        for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+            // also tgt someone invis ??
+            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch) && tmpch != host->specials.fighting) {
+                host->specials.fighting = tmpch;
+                act("$n turns to fight $N!", TRUE, host, 0, tmpch, TO_ROOM);
+                break;
+            }
+        }
+    }
+
     // MEMORY / HUNTER
-    if (prog_do_hunter(host)) {
+    if (prog_do_hunter(host, is_wimpy)) {
         vict = 0;
         for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
             if (names->enemy && char_exists(names->enemy_number) &&
@@ -2117,8 +2142,8 @@ SPECIAL(mob_ranger_new) {
         if (vict) {
             if (ch->master == vict) {
                 forget(ch, vict);
-            } else { // below needed: these attacks only occurr if mob_memory and not otherwise aggr
-                     // to
+             // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
+            } else {
                 if (should_attack(host, tmpch) && strstr(ch->player.name, "stab") &&
                     is_not_engaged && !vict->specials.fighting) {
                     do_spec_ambush(host, tmpch);
@@ -2158,7 +2183,7 @@ SPECIAL(mob_ranger_new) {
     mintmp = NUM_OF_TRACKS;
     if (ch->delay.wait_value == 0 && is_not_engaged) {
         // TRACKING
-        if (strstr(ch->player.name, "hunt")) {
+        if (strstr(ch->player.name, "hunt") && !is_wimpy) {
             for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
                 tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
                 dir = (tmproom->room_track[tmp].data & 7); // the direction
@@ -2170,8 +2195,8 @@ SPECIAL(mob_ranger_new) {
 
                 if ((tmproom->room_track[tmp].char_number < 0) &&
                     ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number)) ||
-                     (is_aggressive &&
-                      (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) &&
+                    (is_aggressive &&
+                    (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) &&
                     tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
                     // NOTE: these get set on every true pass, so it would be the last matching
                     // track, unless sorting was done on the random order of tracks
@@ -2185,7 +2210,7 @@ SPECIAL(mob_ranger_new) {
                 tmpwtl.subcmd = 0;
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
                 if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                    IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
                     host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }
@@ -2196,13 +2221,13 @@ SPECIAL(mob_ranger_new) {
         }
 
         // default: try move and hide again
-        if (GET_POS(host) == POSITION_STANDING) {
+        if (!IS_SET(host->specials2.act, MOB_SENTINEL) && GET_POS(host) == POSITION_STANDING) {
             tmpwtl.cmd = number(1, NUM_OF_DIRS);
             tmpwtl.subcmd = 0;
             if (CAN_GO(host, tmpwtl.cmd - 1)) {
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
                 if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                    IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
                     host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }
@@ -2212,6 +2237,7 @@ SPECIAL(mob_ranger_new) {
             tmpwtl.targ1.cleanup();
         }
     }
+
     ch->spec_busy = false;
     return 1; //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a
               // consistant flow

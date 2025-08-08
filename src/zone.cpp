@@ -390,6 +390,7 @@ void zone_update(void)
  *    Bit 5 (0x10) - require that the good side lead the race war
  *    Bit 6 (0x20) - require that the evil side lead the race war
  *    Bit 7 (0x40) - check if sun is up
+ *    Bit 8 (0x80) - check if player in zone
  *
  * Note that some fine tuned properties of bitvectors aren't
  * kept here: for example, you can't require one event to
@@ -398,8 +399,9 @@ void zone_update(void)
  * all requirements.  We'd need an anti-requirement bit for
  * each event if we wanted to allow that sort of control.
  */
-int check_if_flag(int if_flag, int last_cmd, int last_mob, int last_obj)
-{
+int check_if_flag(int if_flag, int last_cmd, int last_mob, int last_obj, int zone) {
+    int is_empty(int);
+
     int require_last_cmd;
     int require_last_mob;
     int require_last_obj;
@@ -407,52 +409,62 @@ int check_if_flag(int if_flag, int last_cmd, int last_mob, int last_obj)
     int require_evil_fame_lead;
     int invert_requirements;
     int require_sun_up;
-    
+    int require_players_in_zone;
+
     require_last_cmd = if_flag & 0x01;
     require_last_mob = if_flag & 0x02;
     require_last_obj = if_flag & 0x04;
     require_good_fame_lead = if_flag & 0x10;
     require_evil_fame_lead = if_flag & 0x20;
     require_sun_up = if_flag & 0x40;
+    require_players_in_zone = if_flag & 0x80;
 
     invert_requirements = if_flag & 0x08;
     if (invert_requirements) {
-        if (require_last_cmd && last_cmd == 1)
+        if (require_last_cmd && last_cmd == 1) {
             return 0;
-
-        if (require_last_mob && last_mob == 1)
+        }
+        if (require_last_mob && last_mob == 1) {
             return 0;
-
-        if (require_last_obj && last_obj == 1)
+        }
+        if (require_last_obj && last_obj == 1) {
             return 0;
-
-        if (require_good_fame_lead && pkill_get_good_fame() > pkill_get_evil_fame())
+        }
+        if (require_good_fame_lead && pkill_get_good_fame() > pkill_get_evil_fame()) {
             return 0;
-
-        if (require_evil_fame_lead && pkill_get_evil_fame() > pkill_get_good_fame())
+        }
+        if (require_evil_fame_lead && pkill_get_evil_fame() > pkill_get_good_fame()) {
             return 0;
-        
-        if (require_sun_up && (weather_info.sunlight == SUN_LIGHT || weather_info.sunlight == SUN_RISE))
+        }
+        if (require_sun_up && (weather_info.sunlight == SUN_LIGHT || weather_info.sunlight == SUN_RISE)) {
             return 0;
+        }
+        if (require_players_in_zone && !is_empty(zone)) {
+            return 0;
+        }
     } else {
-        if (require_last_cmd && last_cmd == 0)
+        if (require_last_cmd && last_cmd == 0) {
             return 0;
-
-        if (require_last_mob && last_mob == 0)
+        }
+        if (require_last_mob && last_mob == 0) {
             return 0;
-
-        if (require_last_obj && last_obj == 0)
+        }
+        if (require_last_obj && last_obj == 0) {
             return 0;
-
-        if (require_good_fame_lead && pkill_get_good_fame() <= pkill_get_evil_fame())
+        }
+        if (require_good_fame_lead && pkill_get_good_fame() <= pkill_get_evil_fame()) {
             return 0;
-
-        if (require_evil_fame_lead && pkill_get_evil_fame() <= pkill_get_good_fame())
+        }
+        if (require_evil_fame_lead && pkill_get_evil_fame() <= pkill_get_good_fame()) {
             return 0;
-        if (require_sun_up && (weather_info.sunlight == SUN_DARK || weather_info.sunlight == SUN_SET))
+        }
+        if (require_sun_up && (weather_info.sunlight == SUN_DARK || weather_info.sunlight == SUN_SET)) {
             return 0;
+        }
+        if (require_players_in_zone && is_empty(zone)) {
+            return 0;
+        }
     }
-
     return 1;
 }
 
@@ -493,7 +505,7 @@ void reset_zone(int zone)
     for (cmd_no = 0; cmd_no < zone_table[zone].cmdno; cmd_no++) {
 
         /* Make sure the if_flag requirements are met */
-        should_execute = check_if_flag(ZCMD.if_flag, last_cmd, last_mob, last_obj);
+        should_execute = check_if_flag(ZCMD.if_flag, last_cmd, last_mob, last_obj, zone);
         if (should_execute) {
             switch (ZCMD.command) {
             case '*': /* ignore command */

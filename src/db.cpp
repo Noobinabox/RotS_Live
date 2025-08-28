@@ -1233,6 +1233,7 @@ struct char_data *read_mobile(int nr, int type) {
   character_list = mob;
 
   mob_index[i].number++;
+  mob_index[i].func = 0;
 
   register_npc_char(mob);
 

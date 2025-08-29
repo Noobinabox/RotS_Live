@@ -1469,18 +1469,44 @@ int process_input(struct descriptor_data* t)
 
     /* Read in some stuff */
     do {
-        thisround = read(t->descriptor, t->buf + begin + sofar,
-            MAX_STRING_LENGTH - (begin + sofar) - 1);
-        if (thisround > 0)
-            sofar += thisround;
-        else {
-            if (thisround < 0)
+        char inbuf[2048];
+        thisround = read(t->descriptor, inbuf, sizeof(inbuf));
+        if (thisround > 0) {
+            /* Filter out telnet/MSDP negotiation if protocol is active */
+            if (t->pProtocol) {
+                char filtered[MAX_STRING_LENGTH];
+                filtered[0] = '\0';
+                ProtocolInput(t, inbuf, thisround, filtered);
+
+                int add = (int)strlen(filtered);
+                int room = MAX_STRING_LENGTH - (begin + sofar) - 1;
+                if (add > room)
+                    add = room;
+                if (add > 0) {
+                    memcpy(t->buf + begin + sofar, filtered, add);
+                    sofar += add;
+                    *(t->buf + begin + sofar) = 0;
+                }
+            } else {
+                /* No protocol yet; append raw bytes (clamped) */
+                int room = MAX_STRING_LENGTH - (begin + sofar) - 1;
+                int add = thisround;
+                if (add > room)
+                    add = room;
+                if (add > 0) {
+                    memcpy(t->buf + begin + sofar, inbuf, add);
+                    sofar += add;
+                    *(t->buf + begin + sofar) = 0;
+                }
+            }
+        } else {
+            if (thisround < 0) {
                 if (errno != EWOULDBLOCK) {
                     perror("Read1 - ERROR");
                     return (-1);
                 } else
                     break;
-            else {
+            } else {
                 log("EOF encountered on socket read.");
                 return (-1);
             }

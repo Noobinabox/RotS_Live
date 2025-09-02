@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
         pos++;
     }
 
-    if (pos < argc)
+    if (pos < argc) {
         if (!isdigit(*argv[pos])) {
             fprintf(stderr, "Usage: %s [-m] [-q] [-r] [-s] [-p] [-d pathname] [ port # ]\n",
                     argv[0]);
@@ -226,6 +226,7 @@ int main(int argc, char **argv) {
             printf("Illegal port #\n");
             exit(0);
         }
+    }
 
     /* Create the pidfile and log some info */
     sprintf(buf, "echo %d > .ageland.pid", getpid());

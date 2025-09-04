@@ -332,25 +332,37 @@ ACMD(do_practice) {
     for (tmp = 0; tmp < MAX_SKILLS; tmp++)
         if (GET_RAW_SKILL(ch, tmp) > 0) {
             str2[0] = 0;
-            if (skills[tmp].type == PROF_MAGE)
-                sprintf(str2, "(%3d time,   %3d stamina)", CASTING_TIME(ch, tmp),
-                        USE_MANA(ch, tmp));
-            else if (skills[tmp].type == PROF_CLERIC)
+            if (skills[tmp].type == PROF_MAGE) {
+                auto casting_time = CASTING_TIME(ch, tmp);
+                auto casting = GET_CASTING(ch);
+                auto mana_cost = USE_MANA(ch, tmp);
+
+                if (casting == CASTING_FAST) {
+                    casting_time = std::max(1, (casting_time + 1) / 2);
+                    mana_cost = mana_cost * 3 / 2;
+                } else if (casting == CASTING_SLOW) {
+                    casting_time = std::max(1, (casting_time * 3 + 1) / 2);
+                    mana_cost = (mana_cost * 1 + 1) / 2;
+                }
+
+                sprintf(str2, "(%3d time,   %3d stamina)", casting_time, mana_cost);
+            } else if (skills[tmp].type == PROF_CLERIC) {
                 sprintf(str2, "(%3d time, %3d spirit)", CASTING_TIME(ch, tmp), USE_SPIRIT(ch, tmp));
-            else if (tmp == SKILL_BEND_TIME)
+            } else if (tmp == SKILL_BEND_TIME) {
                 sprintf(str2, "(%3d time,   %3d stamina)", skills[tmp].beats, ch->abilities.mana);
-            else if (tmp == SKILL_MARK)
+            } else if (tmp == SKILL_MARK) {
                 sprintf(str2, "(%3d time,   %3d stamina)", mark_calculate_wait(ch),
                         skills[tmp].min_usesmana);
-            else if (tmp == SKILL_ARCHERY)
+            } else if (tmp == SKILL_ARCHERY) {
                 sprintf(str2, "(%3d time)", shoot_calculate_wait(ch));
-            else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {
+            } else if (skills[tmp].type == PROF_RANGER && skills[tmp].min_usesmana > 10) {
                 sprintf(str2, "(%3d time,   %3d stamina)", skills[tmp].beats,
                         skills[tmp].min_usesmana);
-            } else if (CASTING_TIME(ch, tmp))
+            } else if (CASTING_TIME(ch, tmp)) {
                 sprintf(str2, "(%3d time)", skills[tmp].beats);
-            else
+            } else {
                 strcpy(str2, "");
+            }
 
             sprintf(str, "%-25s %-12s %s\n\r", skills[tmp].name, how_good(ch->knowledge[tmp]),
                     str2);
@@ -1569,70 +1581,63 @@ SPECIAL(mob_magic_user) {
 }
 
 /*  New Mage Below  */
-const int fire_mage       = 0;
-const int lightning_mage  = 1;
-const int cold_mage       = 2;
-const int dark_mage       = 3;
-const int lhuth_mage      = 4;
-const int default_mage    = 5;
+const int fire_mage = 0;
+const int lightning_mage = 1;
+const int cold_mage = 2;
+const int dark_mage = 3;
+const int lhuth_mage = 4;
+const int default_mage = 5;
 
 const int mage_types = 6;
-const char* mage_aliases[] = {"fmage", "lmage", "cmage", "dmage", "lumage", "defaultm"};
+const char *mage_aliases[] = {"fmage", "lmage", "cmage", "dmage", "lumage", "defaultm"};
 
-const double full_pct          = 0.76;
+const double full_pct = 0.76;
 const double three_quarter_pct = 0.51;
-const double half_pct          = 0.26;
-const double quarter_pct       = 0.0;
+const double half_pct = 0.26;
+const double quarter_pct = 0.0;
 
 const int hp_brackets = 4;
-const double percents[] = {full_pct, three_quarter_pct, half_pct, quarter_pct };
+const double percents[] = {full_pct, three_quarter_pct, half_pct, quarter_pct};
 
 const int indvidual_spells_length = 4;
 
 int new_spell_list[mage_types][hp_brackets][indvidual_spells_length] = {
-    {   // fire mage
-        { SPELL_FIREBOLT},
-        { SPELL_FIREBOLT },
-        { SPELL_CHILL_RAY, SPELL_FIREBOLT },
-        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
-    },
-    {   // lightning mage
-        { SPELL_LIGHTNING_BOLT },
-        { SPELL_LIGHTNING_BOLT },
-        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
-        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
-    },
-    {   // cold mage
-        { SPELL_CHILL_RAY },
-        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
-        { SPELL_CHILL_RAY },
-        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
-    },
-    {   // dark mage
-        { SPELL_DARK_BOLT },
-        { SPELL_DARK_BOLT },
-        { SPELL_CHILL_RAY, SPELL_DARK_BOLT },
-        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
-    },
-    {   // lhuth mage
-        { SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW },
-        { SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW },
-        { SPELL_DARK_BOLT,     SPELL_BLACK_ARROW },
-        { SPELL_LEACH,         SPELL_DARK_BOLT }
-    },
-    {   // default mage
-        { SPELL_FIREBOLT,  SPELL_LIGHTNING_BOLT },
-        { SPELL_FIREBOLT,  SPELL_LIGHTNING_BOLT },
-        { SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT },
-        { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE }
-    }
-};
+    {// fire mage
+     {SPELL_FIREBOLT},
+     {SPELL_FIREBOLT},
+     {SPELL_CHILL_RAY, SPELL_FIREBOLT},
+     {SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE}},
+    {// lightning mage
+     {SPELL_LIGHTNING_BOLT},
+     {SPELL_LIGHTNING_BOLT},
+     {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT},
+     {SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE}},
+    {// cold mage
+     {SPELL_CHILL_RAY},
+     {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT},
+     {SPELL_CHILL_RAY},
+     {SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE}},
+    {// dark mage
+     {SPELL_DARK_BOLT},
+     {SPELL_DARK_BOLT},
+     {SPELL_CHILL_RAY, SPELL_DARK_BOLT},
+     {SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE}},
+    {// lhuth mage
+     {SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW},
+     {SPELL_WORD_OF_AGONY, SPELL_BLACK_ARROW},
+     {SPELL_DARK_BOLT, SPELL_BLACK_ARROW},
+     {SPELL_LEACH, SPELL_DARK_BOLT}},
+    {// default mage
+     {SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT},
+     {SPELL_FIREBOLT, SPELL_LIGHTNING_BOLT},
+     {SPELL_CHILL_RAY, SPELL_LIGHTNING_BOLT},
+     {SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE}}};
 
-int pick_a_spell(int *spell_list, char_data* host) {
-    if(has_alias(host, "spells")) {
+int pick_a_spell(int *spell_list, char_data *host) {
+    if (has_alias(host, "spells")) {
         sprintf(buf, "----------");
         mudlog_aliased_mob(buf, host, "spells");
-        for(int i=1; i <= spell_list[0]; i++) {
+        for (int i = 1; i <= spell_list[0]; i++) {
             sprintf(buf, "Spell: %d", spell_list[i]);
             mudlog_aliased_mob(buf, host, "spells");
         }
@@ -1642,15 +1647,15 @@ int pick_a_spell(int *spell_list, char_data* host) {
 }
 
 // add spell and avoid dupes
-void add_spell_to_list(int *spell_list, int spell, char_data* host) {
+void add_spell_to_list(int *spell_list, int spell, char_data *host) {
     int found = 0;
-    for(int i=1; i <= spell_list[0]; i++) {
-        if((int)spell_list[i] == (int)spell) {
+    for (int i = 1; i <= spell_list[0]; i++) {
+        if ((int)spell_list[i] == (int)spell) {
             found += 1;
             break;
         }
     }
-    if(found == 0) {
+    if (found == 0) {
         sprintf(buf, "ADDING: %d", spell);
         mudlog_aliased_mob(buf, host, "spells");
         spell_list[0] += 1;
@@ -1659,11 +1664,11 @@ void add_spell_to_list(int *spell_list, int spell, char_data* host) {
 }
 
 // fetch spells from hp bracket
-void get_spells(int *spell_list, int mage_type, int health, char_data* host) {
+void get_spells(int *spell_list, int mage_type, int health, char_data *host) {
     sprintf(buf, "MType: %d,    Spell_Tier: %d, Pct: %.2f", mage_type, health, percents[health]);
     mudlog_aliased_mob(buf, host, "spells");
-    for(int i=0; i < indvidual_spells_length; i++) {
-        if(new_spell_list[mage_type][health][i] != 0) {
+    for (int i = 0; i < indvidual_spells_length; i++) {
+        if (new_spell_list[mage_type][health][i] != 0) {
             add_spell_to_list(spell_list, new_spell_list[mage_type][health][i], host);
         }
     }
@@ -1671,8 +1676,8 @@ void get_spells(int *spell_list, int mage_type, int health, char_data* host) {
 
 // check if correct level and add spell
 void add_leveled_spell_to_list(int *spell_list, int spell, int mage_type, int cur_mage_type,
-    char* keyword, char_data* host, int min_level) {
-    if(GET_LEVEL(host) >= min_level && mage_type == cur_mage_type && has_alias(host, keyword)) {
+                               char *keyword, char_data *host, int min_level) {
+    if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type && has_alias(host, keyword)) {
         sprintf(buf, "MType: %d    (HL_SPELL)", mage_type);
         mudlog_aliased_mob(buf, host, "spells");
         add_spell_to_list(spell_list, spell, host);
@@ -1680,12 +1685,13 @@ void add_leveled_spell_to_list(int *spell_list, int spell, int mage_type, int cu
 }
 
 // lookup spells by mage type and hp thresholds
-void get_combat_spells(char_data* host, int *spell_list, double current_health_pct, double current_mana_pct) {
-    for(int mage_type = 0; mage_type < mage_types; mage_type++) {
-        char* keyword = (char*)mage_aliases[mage_type];
+void get_combat_spells(char_data *host, int *spell_list, double current_health_pct,
+                       double current_mana_pct) {
+    for (int mage_type = 0; mage_type < mage_types; mage_type++) {
+        char *keyword = (char *)mage_aliases[mage_type];
         if (has_alias(host, keyword)) {
             int current_tier = hp_brackets;
-            for (int i=0; i < hp_brackets; i++) {
+            for (int i = 0; i < hp_brackets; i++) {
                 if (current_health_pct >= percents[i]) {
                     current_tier = i;
                     break;
@@ -1694,22 +1700,28 @@ void get_combat_spells(char_data* host, int *spell_list, double current_health_p
             get_spells(spell_list, mage_type, current_tier, host);
 
             // restricted spells
-            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, keyword, host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, keyword, host, 30);
-            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type, keyword, host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type, keyword, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, keyword,
+                                      host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, keyword,
+                                      host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type,
+                                      keyword, host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type,
+                                      keyword, host, 30);
             if (OUTSIDE(host) &&
                 weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
-                add_leveled_spell_to_list(spell_list, SPELL_LIGHTNING_STRIKE, lightning_mage, mage_type, keyword, host, 35);
+                add_leveled_spell_to_list(spell_list, SPELL_LIGHTNING_STRIKE, lightning_mage,
+                                          mage_type, keyword, host, 35);
             }
             if (!SUN_PENALTY(host)) {
-                add_leveled_spell_to_list(spell_list, SPELL_SPEAR_OF_DARKNESS, lhuth_mage, mage_type, keyword, host, 40);
+                add_leveled_spell_to_list(spell_list, SPELL_SPEAR_OF_DARKNESS, lhuth_mage,
+                                          mage_type, keyword, host, 40);
             }
         }
     }
 }
 
-// NOTE: firebolt (maybe a dark spell was too), is returning FALSE? 
+// NOTE: firebolt (maybe a dark spell was too), is returning FALSE?
 //       - was seeing scenarios where casting when already casting, but no longer an issue?
 // note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec) {
@@ -1718,7 +1730,7 @@ SPECIAL(mob_magic_user_spec) {
     const int bonus_to_cast = 20;
     int chance_to_cast = GET_LEVEL(host) + bonus_to_cast;
     if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF ||
-        host->in_room == NOWHERE || (number(1-100) > chance_to_cast)) {
+        host->in_room == NOWHERE || (number(1 - 100) > chance_to_cast)) {
         return FALSE;
     }
 
@@ -1764,13 +1776,13 @@ SPECIAL(mob_magic_user_spec) {
     // handle switch tactics (when mob is max interrupted)
     if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
         // shield tact: we use a "super flash" to have an attempt to cast shield
-        if(has_alias(host, "shield")) {
+        if (has_alias(host, "shield")) {
             if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
                 if (number(1, 100) > 50) {
                     for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
                         if (tmpch->specials.fighting == host) {
-                            // send_to_char("A blinding flash of light makes you dizzy.\n\r\n", tmpch);
-                            // no message?? futile if p has react trig?
+                            // send_to_char("A blinding flash of light makes you dizzy.\n\r\n",
+                            // tmpch); no message?? futile if p has react trig?
                             stop_fighting(tmpch);
                         }
                     }
@@ -1784,8 +1796,8 @@ SPECIAL(mob_magic_user_spec) {
     }
 
     // handle terror
-    if (has_alias(host, "terror") && host->specials.fighting && spell_number == 0
-            && (current_health_pct <= quarter_pct)) {
+    if (has_alias(host, "terror") && host->specials.fighting && spell_number == 0 &&
+        (current_health_pct <= quarter_pct)) {
         if (number(1, 100) > 80) {
             target = host;
             tgt = TARGET_OTHER;
@@ -1809,8 +1821,8 @@ SPECIAL(mob_magic_user_spec) {
                     if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
                     }
-                    if (!has_alias(host, "lumage") && !utils::is_affected_by_spell(*target, SPELL_POISON) &&
-                        spell_number == 0) {
+                    if (!has_alias(host, "lumage") &&
+                        !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
@@ -1998,14 +2010,13 @@ bool see_hidden(char_data *host, char_data *tmpch) {
 }
 
 // note: we dont check if fighting here, because its also used for ambush
-//TODO: factor in god nohassle
+// TODO: factor in god nohassle
 bool should_attack(char_data *host, char_data *tmpch) {
     int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
     return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch) &&
-                see_hidden(host, tmpch) && !PRF_FLAGGED(tmpch, PRF_NOHASSLE)
-            && ( IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch)) ||
-                host->specials.fighting && (GET_POS(host) > POSITION_SITTING) )
-        );
+            see_hidden(host, tmpch) && !PRF_FLAGGED(tmpch, PRF_NOHASSLE) &&
+            (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch)) ||
+             host->specials.fighting && (GET_POS(host) > POSITION_SITTING)));
 }
 
 void do_spec_ambush(char_data *host, char_data *tmpch) {
@@ -2039,11 +2050,10 @@ void do_spec_hit(char_data *host, char_data *tmpch) {
 }
 
 bool prog_do_hunter(char_data *host, int is_wimpy) {
-    return (
-        ( IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) ||
-            (IS_AFFECTED(host, AFF_HUNT)) )
-        && (GET_POS(host) == POSITION_STANDING) && !is_wimpy && !(MOB_FLAGGED(host, MOB_PET)) &&
-            host->specials.memory && !host->specials.fighting );
+    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) ||
+             (IS_AFFECTED(host, AFF_HUNT))) &&
+            (GET_POS(host) == POSITION_STANDING) && !is_wimpy && !(MOB_FLAGGED(host, MOB_PET)) &&
+            host->specials.memory && !host->specials.fighting);
 }
 
 // Works with HUNTER and MEMORY flags, handled below
@@ -2122,7 +2132,8 @@ SPECIAL(mob_ranger_new) {
     if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !is_wimpy) {
         for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
             // also tgt someone invis ??
-            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch) && tmpch != host->specials.fighting) {
+            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch) &&
+                tmpch != host->specials.fighting) {
                 host->specials.fighting = tmpch;
                 act("$n turns to fight $N!", TRUE, host, 0, tmpch, TO_ROOM);
                 break;
@@ -2142,7 +2153,7 @@ SPECIAL(mob_ranger_new) {
         if (vict) {
             if (ch->master == vict) {
                 forget(ch, vict);
-             // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
+                // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
             } else {
                 if (should_attack(host, tmpch) && strstr(ch->player.name, "stab") &&
                     is_not_engaged && !vict->specials.fighting) {
@@ -2195,8 +2206,8 @@ SPECIAL(mob_ranger_new) {
 
                 if ((tmproom->room_track[tmp].char_number < 0) &&
                     ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number)) ||
-                    (is_aggressive &&
-                    (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) &&
+                     (is_aggressive &&
+                      (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) &&
                     tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
                     // NOTE: these get set on every true pass, so it would be the last matching
                     // track, unless sorting was done on the random order of tracks
@@ -2210,7 +2221,7 @@ SPECIAL(mob_ranger_new) {
                 tmpwtl.subcmd = 0;
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
                 if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                    IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
                     host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }
@@ -2227,7 +2238,7 @@ SPECIAL(mob_ranger_new) {
             if (CAN_GO(host, tmpwtl.cmd - 1)) {
                 do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
                 if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                    IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
+                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
                     host->delay.wait_value == 0) {
                     do_hide(host, "", 0, 0, 0);
                 }

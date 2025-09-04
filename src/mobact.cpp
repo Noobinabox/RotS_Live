@@ -114,6 +114,8 @@ void one_mobile_activity(char_data* ch)
 
         /* Examine call for special procedure */
         if (IS_SET(ch->specials2.act, MOB_SPEC) && !no_specials) {
+            sprintf(buf, "%s - find prog: %d, func:%d",  GET_NAME(ch), ch->specials2.act, mob_index[ch->nr].func);
+            mudlog_aliased_mob(buf, ch, "progdebug");
             if (!mob_index[ch->nr].func && ch->specials.store_prog_number) {
                 tmpfunc = (SPECIAL(*))virt_program_number(ch->specials.store_prog_number);
                 if (tmpfunc) {

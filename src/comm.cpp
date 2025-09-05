@@ -40,6 +40,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <string>
 
 #define MAX_HOSTNAME 256
 #define OPT_USEC 250000 /* time delay corresponding to 4 passes/sec */
@@ -364,6 +365,7 @@ int get_health_percent(char_data *character) {
 }
 
 void msdp_update() {
+    MSSPSetPlayers(0);
     for (auto desc = descriptor_list; desc; desc = desc->next) {
         if (!desc->character || IS_NPC(desc->character)) {
             continue;
@@ -442,7 +444,17 @@ void msdp_update() {
         extern char *weather_messages[8][13];
 
         if (OUTSIDE(desc->character)) {
-            MSDPSetString(desc, eMDSP_WEATHER, weather_messages[weather_type + 2][sector_type]);
+            const char *raw_weather = weather_messages[weather_type + 2][sector_type];
+            std::string weather_clean;
+            if (raw_weather) {
+                weather_clean.reserve(strlen(raw_weather));
+                for (const char *p = raw_weather; *p; ++p) {
+                    if (*p != '\r' && *p != '\n') {
+                        weather_clean.push_back(*p);
+                    }
+                }
+            }
+            MSDPSetString(desc, eMDSP_WEATHER, weather_clean.c_str());
         } else {
             MSDPSetString(desc, eMDSP_WEATHER, "You can have no feeling about the weather here.");
         }

@@ -2325,20 +2325,14 @@ static void SendMSSP(descriptor_t *apDescriptor) {
         {"UPTIME", FUNCTION_CALL(GetMSSP_Uptime)},
 
         /* Generic */
-        {"CRAWL DELAY", "-1"},
-        /*
-              { "HOSTNAME",           "" },
-              { "PORT",               "" },
-              { "CODEBASE",           "" },
-              { "CONTACT",            "" },
-              { "CREATED",            "" },
-              { "ICON",               "" },
-              { "IP",                 "" },
-              { "LANGUAGE",           "" },
-              { "LOCATION",           "" },
-              { "MINIMUM AGE",        "" },
-              { "WEBSITE",            "" },
-        */
+        {"CRAWL DELAY", "60"},
+        {"HOSTNAME", "rotsmud.org"},
+        {"PORT", "3791"},
+        {"CODEBASE", "c++"},
+        {"LANGUAGE", "English"},
+        {"LOCATION", "United States"},
+        {"MINIMUM AGE", "12"},
+        {"WEBSITE", "rotsmud.org"},
         /* Categorisation */
         /*
               { "FAMILY",             "" },

@@ -1,6 +1,7 @@
 # Beorning Race Configuration
 
 Listed below is all the racial configuration and design for Beorning:
+
 * Unable to use weapons or wear items
 * Natural attack
 * 20% natural armor
@@ -20,45 +21,57 @@ Listed below is all the racial configuration and design for Beorning:
 * Special hunt message that uses scent
 
 Things still needing to be done:
+
 * Special hunt message that uses scent
 * Rend
 * Maul
 * Bite
 * Groom Wounds
 
-### Swipe
+## Swipe
+
 This is an off-hand attack that has a scaling chance based on a calculated value.
 
-### Natural Attack
+## Natural Attack
+
 This allows them to use their claws for damage. When the player starts off at level 1 they will have 10% already learned and their damage is based off character level, warrior level, and strength.
 
-### Rend
+## Rend
+
 This ability can only be used when the target is based. It will deal a good amount of damage to the target if they aren't wearing any armor, and if they are wearing armor it will have a chance to remove it, placing the armor piece to the target's inventory. It will be a random roll on where the attacks hits with favor to the chest.
 
-### Maul
+## Maul
+
 This attack is a debuff and buff skill. When the Beorning does a maul on a target it will give them negatives to OB and DB, while applying a small amount of armor absorption to the Beorning. This ability will stack up to 5 times.
 
-### Bite
+## Bite
+
 This will be a standard damage attack on the target, and apply a small delay on both the target and beorning.
 
-### Groom Wounds
+## Groom Wounds
+
 This will be a 'Cure Self' style ability that costs moves.  Potentially make this a longer cooldown % based heal?
 
-### Specializations
-# Light Fighting:
+## Specializations
+
+### Light Fighting
+
 * Attack speed increases.  Other effects should work as normal (need to consider natural weapons as finesse weapons).
 * Bonus Rend effect?
 
-# Heavy Fighting:
+### Heavy Fighting
+
 * Increased natural armor %.
 * Bonus Maul effect/power?
 
-# Wild Fighting:
+### Wild Fighting
+
 * Rush forward wildly works as normal.
 * Passive OB boost?
 * Bonus Bite effect?
 
-# Defender:
+### Defender
+
 * Beornings learn to absorb some blows (AKA block).
 * Other passive effects as normal.
 * Bonus to Groom Wounds?

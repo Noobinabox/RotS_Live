@@ -252,18 +252,25 @@ float get_bonus_move_gain(const char_data *character) {
     float perception_modifier = utils::get_perception(*character) / 100.0f;
 
     // Early out if we have no perception.
-    if (perception_modifier <= 0.0f)
+    if (perception_modifier <= 0.0f) {
         return character->points.move_regen;
+    }
 
     // Iterate through affect list for regeneration spells.
     float bonus_gain = 0.0f;
     for (affected_type *affect = character->affected; affect != nullptr; affect = affect->next) {
-        if (affect->type == SPELL_CURING) {
+        switch (affect->type) {
+        case SPELL_CURING:
             bonus_gain -= affect->modifier;
-        } else if (affect->type == SPELL_RESTLESSNESS) {
+            break;
+        case SPELL_RESTLESSNESS:
             bonus_gain += affect->modifier;
-        } else if (affect->type == SPELL_VITALITY) {
+            break;
+        case SPELL_VITALITY:
             bonus_gain += affect->duration * 6 / (float)FAST_UPDATE_RATE;
+            break;
+        default:
+            break;
         }
     }
 
@@ -328,6 +335,7 @@ float move_gain(const char_data *character)
     } else {
         int race = character->player.race;
         bool is_poisoned = is_affected_by(*character, AFF_POISON);
+        bool is_marked = is_affected_by(*character, SKILL_MARK);
 
         if (race == RACE_WOOD || race == RACE_HIGH) {
             gain += 5.0;
@@ -337,15 +345,11 @@ float move_gain(const char_data *character)
             gain *= 1.50;
         }
 
-        if (race == RACE_OLOGHAI && !is_poisoned) {
+        if (race == RACE_OLOGHAI && (!is_poisoned || !is_marked)) {
             gain *= 1.50;
         }
 
-        if (is_poisoned) {
-            gain *= 0.25;
-        }
-
-        if (affected_by_spell(character, SKILL_MARK)) {
+        if (is_poisoned || is_marked) {
             gain *= 0.25;
         }
 

@@ -47,6 +47,8 @@ int str_cmp(char* arg1, char* arg2);
 int strn_cmp(char* arg1, char* arg2, int n);
 void log(const char* str);
 void mudlog(char* str, char type, sh_int level, byte file);
+void mudlog_debug_mob(char* buf, char_data* ch);
+void mudlog_aliased_mob(char* buf, char_data* ch, char *mob_alias);
 void vmudlog(char type, char* format, ...);
 void log_death_trap(struct char_data* ch);
 int number(int from, int to);
@@ -90,6 +92,8 @@ struct time_info_data age(struct char_data* ch);
 
 void track_specialized_mage(char_data* mage);
 void untrack_specialized_mage(char_data* mage);
+
+int has_alias(char_data* host, char *keyword);
 
 /* defines for fseek */
 #ifndef SEEK_SET
@@ -235,6 +239,8 @@ void untrack_specialized_mage(char_data* mage);
                                                                         weather_info.sunlight == SUN_DARK))))
 
 #define IS_LIGHT(room) (!IS_DARK(room))
+
+#define IS_SUNLIT(room) ((weather_info.sunlight == SUN_LIGHT || weather_info.sunlight == SUN_RISE) && IS_LIGHT(room))
 
 #define GET_INVIS_LEV(ch) ((ch)->specials.invis_level)
 
@@ -422,11 +428,11 @@ extern struct race_bodypart_data bodyparts[MAX_BODYTYPES];
 #define GET_OB(ch) ((ch)->points.OB)
 #define SET_OB(ch) ((ch)->points.OB)
 
-#define GET_SPELL_PEN(ch) ((ch)->points.spell_pen);
-#define SET_SPELL_PEN(ch) ((ch)->points.spell_pen);
+#define GET_SPELL_PEN(ch) ((ch)->points.spell_pen)
+#define SET_SPELL_PEN(ch) ((ch)->points.spell_pen)
 
-#define GET_SPELL_POWER(ch) ((ch)->points.spell_power);
-#define SET_SPELL_POWER(ch) ((ch)->points.spell_power);
+#define GET_SPELL_POWER(ch) ((ch)->points.spell_power)
+#define SET_SPELL_POWER(ch) ((ch)->points.spell_power)
 
 #define GET_WILLPOWER(ch) ((ch)->points.willpower)
 

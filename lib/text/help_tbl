@@ -1697,19 +1697,6 @@ list if you have notell on.
 
 See also: FLAGS TELL WHO SET
 #
-AUTOEXIT
-
-Autoexit will automatically show you the exits from the room
-when you enter it.  This option is extremely convinient.
-> set autoexit on 
-
-If you are a sun-hating uruk, you will see # characters around sunlit exits.
-
-For example:
-The Old Forest Road    Exits are: #E# #S# #W#
-
-See also: SET
-#
 INCOGNITO
 
 Other players will not see your level on who, however, you will gain no

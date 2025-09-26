@@ -37,6 +37,7 @@
 !_TAG_ROLE_DESCRIPTION!C++!header	local	/local header/
 !_TAG_ROLE_DESCRIPTION!C++!header	system	/system header/
 !_TAG_ROLE_DESCRIPTION!C++!macro	undef	/undefined/
+ACCEPTED	protocol.h	/^#define ACCEPTED /;"	d
 ACMD	act_comm.cpp	/^ACMD(do_afk)$/;"	f
 ACMD	act_comm.cpp	/^ACMD(do_alias)$/;"	f
 ACMD	act_comm.cpp	/^ACMD(do_ask)$/;"	f
@@ -203,6 +204,7 @@ ACMD	db.cpp	/^ACMD(do_reload)$/;"	f
 ACMD	fight.cpp	/^ACMD(do_twohand)$/;"	f
 ACMD	graph.cpp	/^ACMD(do_wiztrack)$/;"	f
 ACMD	interpre.h	/^#define ACMD(/;"	d
+ACMD	mob_csv_extract.cpp	/^ACMD(do_mob_csv_extract)$/;"	f
 ACMD	modify.cpp	/^ACMD(do_string)$/;"	f
 ACMD	obj2html.cpp	/^ACMD(do_obj2html)$/;"	f
 ACMD	objsave.cpp	/^ACMD(do_rent)$/;"	f
@@ -370,9 +372,9 @@ ASPELL	mystic.cpp	/^ASPELL(spell_hallucinate)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_haze)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_infravision)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_insight)$/;"	f
-ASPELL	mystic.cpp	/^ASPELL(spell_mass_insight) {$/;"	f
-ASPELL	mystic.cpp	/^ASPELL(spell_mass_regeneration) {$/;"	f
-ASPELL	mystic.cpp	/^ASPELL(spell_mass_vitality) {$/;"	f
+ASPELL	mystic.cpp	/^ASPELL(spell_mass_insight)$/;"	f
+ASPELL	mystic.cpp	/^ASPELL(spell_mass_regeneration)$/;"	f
+ASPELL	mystic.cpp	/^ASPELL(spell_mass_vitality)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_mind_block)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_poison)$/;"	f
 ASPELL	mystic.cpp	/^ASPELL(spell_pragmatism)$/;"	f
@@ -395,6 +397,7 @@ ASSIGNREALMOB	interpre.h	/^#define ASSIGNREALMOB(/;"	d
 ASSIGNREALOBJ	interpre.h	/^#define ASSIGNREALOBJ(/;"	d
 ASSIGNROOM	interpre.h	/^#define ASSIGNROOM(/;"	d
 AWAKE	utils.h	/^#define AWAKE(/;"	d
+AllocString	protocol.cpp	/^static char *AllocString(const char *apString) {$/;"	f	typeref:typename:char *	file:
 B	utility.cpp	/^#define B(/;"	d	file:
 BACKGROUND_FILE	db.h	/^#define BACKGROUND_FILE /;"	d
 BANNED_SITE_LENGTH	db.h	/^#define BANNED_SITE_LENGTH /;"	d
@@ -423,6 +426,7 @@ BOARDS_H	boards.h	/^#define BOARDS_H$/;"	d
 BOARD_DIR	boards.h	/^#define BOARD_DIR /;"	d
 BOARD_HTML_DIR	boards.h	/^#define BOARD_HTML_DIR /;"	d
 BODYTYPE_ANIMAL	structs.h	/^#define BODYTYPE_ANIMAL /;"	d
+BOOLEAN_SET_TO	protocol.cpp	/^#define BOOLEAN_SET_TO(/;"	d	file:
 BOTH	act_wiz.cpp	/^#define BOTH /;"	d	file:
 BRF	utils.h	/^#define BRF /;"	d
 BUFSIZE	comm.cpp	/^#define BUFSIZE /;"	d	file:
@@ -562,6 +566,7 @@ COLOR_ROOM	color.h	/^#define COLOR_ROOM /;"	d
 COLOR_SAY	color.h	/^#define COLOR_SAY /;"	d
 COLOR_TELL	color.h	/^#define COLOR_TELL /;"	d
 COLOR_YELL	color.h	/^#define COLOR_YELL /;"	d
+COLOUR_ON_BY_DEFAULT	protocol.h	/^#define COLOUR_ON_BY_DEFAULT /;"	d
 COMMANDO	interpre.cpp	/^#define COMMANDO(/;"	d	file:
 COMM_H	comm.h	/^#define COMM_H$/;"	d
 CONSTANTSMARK	consts.cpp	/^#define CONSTANTSMARK$/;"	d	file:
@@ -609,7 +614,11 @@ CWHT	color.h	/^#define CWHT /;"	d
 CYEL	color.h	/^#define CYEL /;"	d
 Check_zone_authority	act_wiz.cpp	/^int Check_zone_authority(int zonenum, char_data* ch)$/;"	f	typeref:typename:int
 Class_points	structs.h	/^    sh_int Class_points[5];$/;"	m	struct:prof_type	typeref:typename:sh_int[5]
+ColourRGB	protocol.cpp	/^const char *ColourRGB(descriptor_t *apDescriptor, const char *apRGB) {$/;"	f	typeref:typename:const char *
+ConfirmNegotiation	protocol.cpp	/^static bool ConfirmNegotiation(descriptor_t *apDescriptor,$/;"	f	typeref:typename:bool	file:
 Constitution	profs.cpp	/^    Constitution,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
+CopyoverGet	protocol.cpp	/^const char *CopyoverGet(descriptor_t *apDescriptor) {$/;"	f	typeref:typename:const char *
+CopyoverSet	protocol.cpp	/^void CopyoverSet(descriptor_t *apDescriptor, const char *apData) {$/;"	f	typeref:typename:void
 Crash_alias_load	objsave.cpp	/^int Crash_alias_load(struct char_data* ch, FILE* fp)$/;"	f	typeref:typename:int
 Crash_alias_save	objsave.cpp	/^int Crash_alias_save(struct char_data* ch, FILE* fp)$/;"	f	typeref:typename:int
 Crash_calculate_rent	objsave.cpp	/^void Crash_calculate_rent(struct obj_data* obj, int* cost)$/;"	f	typeref:typename:void
@@ -673,6 +682,7 @@ DRINK_POISON	structs.h	/^#define DRINK_POISON /;"	d
 DRINK_WATER	structs.h	/^#define DRINK_WATER /;"	d
 DRUNK	structs.h	/^#define DRUNK /;"	d
 DYNAMIC_TIME	spells.h	/^#define DYNAMIC_TIME /;"	d
+Default	protocol.h	/^    int          Default;       \/* The default value for a number *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:int
 Dexterity	profs.cpp	/^    Dexterity,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
 EAST	structs.h	/^#define EAST /;"	d
 ENERGY	structs.h	/^    int ENERGY; \/* current energy *\/$/;"	m	struct:char_special_data	typeref:typename:int
@@ -710,6 +720,7 @@ EX_NO_LOOK	structs.h	/^#define EX_NO_LOOK /;"	d
 EX_PICKPROOF	structs.h	/^#define EX_PICKPROOF /;"	d
 EX_RSLOCKED	structs.h	/^#define EX_RSLOCKED /;"	d
 Emergency_save	objsave.cpp	/^void Emergency_save(void)$/;"	f	typeref:typename:void
+ExecuteMSDPPair	protocol.cpp	/^static void ExecuteMSDPPair(descriptor_t *apDescriptor, const char *apVariable,$/;"	f	typeref:typename:void	file:
 FALSE	config.cpp	/^#define FALSE /;"	d	file:
 FALSE	utils.h	/^#define FALSE /;"	d
 FAST_UPDATE_RATE	structs.h	/^const int constexpr FAST_UPDATE_RATE = SECS_PER_MUD_HOUR * TICS_PER_SECOND \/ PULSE_FAST_UPDATE;$/;"	v	typeref:typename:const int 
@@ -737,6 +748,7 @@ FRENZY_TIMER	olog_hai.cpp	/^const int constexpr FRENZY_TIMER = 600;$/;"	v	typere
 FROM_STACK	mudlle2.cpp	/^long FROM_STACK(struct char_data* host)$/;"	f	typeref:typename:long
 FULL	structs.h	/^#define FULL /;"	d
 FULL_TARGET	interpre.cpp	/^#define FULL_TARGET /;"	d	file:
+FUNCTION_CALL	protocol.cpp	/^#define FUNCTION_CALL(/;"	d	file:
 GATHER_ANTIDOTE	ranger.cpp	/^const int GATHER_ANTIDOTE = 4615;$/;"	v	typeref:typename:const int
 GATHER_ARROW	ranger.cpp	/^const int GATHER_ARROW = 2720;$/;"	v	typeref:typename:const int
 GATHER_BOW	ranger.cpp	/^const int GATHER_BOW = 2700;$/;"	v	typeref:typename:const int
@@ -847,6 +859,11 @@ G_REMOVE_LVL	boards.h	/^#define G_REMOVE_LVL(/;"	d
 G_RNUM	boards.h	/^#define G_RNUM(/;"	d
 G_VNUM	boards.h	/^#define G_VNUM(/;"	d
 G_WRITE_LVL	boards.h	/^#define G_WRITE_LVL(/;"	d
+GetAnsiColour	protocol.cpp	/^static const char *GetAnsiColour(bool abBackground, int aRed, int aGreen,$/;"	f	typeref:typename:const char *	file:
+GetMSSP_Players	protocol.cpp	/^static const char *GetMSSP_Players() {$/;"	f	typeref:typename:const char *	file:
+GetMSSP_Uptime	protocol.cpp	/^static const char *GetMSSP_Uptime() {$/;"	f	typeref:typename:const char *	file:
+GetMxpTag	protocol.cpp	/^static char *GetMxpTag(const char *apTag, const char *apText) {$/;"	f	typeref:typename:char *	file:
+GetRGBColour	protocol.cpp	/^static const char *GetRGBColour(bool abBackground, int aRed, int aGreen,$/;"	f	typeref:typename:const char *	file:
 HANDBOOK_FILE	db.h	/^#define HANDBOOK_FILE /;"	d
 HANDLER_H	handler.h	/^#define HANDLER_H$/;"	d
 HEADER_BLOCK	mail.h	/^#define HEADER_BLOCK /;"	d
@@ -973,8 +990,11 @@ ITEM_WIELD	structs.h	/^#define ITEM_WIELD /;"	d
 ITEM_WILLPOWER	structs.h	/^#define ITEM_WILLPOWER /;"	d
 ITEM_WOODELF	structs.h	/^#define ITEM_WOODELF /;"	d
 ITEM_WORN	structs.h	/^#define ITEM_WORN /;"	d
+InfoMessage	protocol.cpp	/^static void InfoMessage(descriptor_t *apDescriptor, char *apData) {$/;"	f	typeref:typename:void	file:
 Intelligence	profs.cpp	/^    Intelligence,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
 Invalid	profs.cpp	/^    Invalid,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
+IsNumber	protocol.cpp	/^static bool IsNumber(const char *apString) {$/;"	f	typeref:typename:bool	file:
+IsValidColour	protocol.cpp	/^static bool IsValidColour(const char *apArgument) {$/;"	f	typeref:typename:bool	file:
 KEY_AB	db.cpp	/^#define KEY_AB(/;"	d	file:
 KEY_AFF	db.cpp	/^#define KEY_AFF(/;"	d	file:
 KEY_ARRAY	db.cpp	/^#define KEY_ARRAY(/;"	d	file:
@@ -1091,13 +1111,17 @@ MAX_MAXBOARD	structs.h	/^const int constexpr MAX_MAXBOARD = 22; \/* the max numb
 MAX_MAZE_RENT_MAPPINGS	db.h	/^#define MAX_MAZE_RENT_MAPPINGS /;"	d
 MAX_MESSAGES	structs.h	/^const int constexpr MAX_MESSAGES = 255;$/;"	v	typeref:typename:const int 
 MAX_MESSAGE_LENGTH	boards.h	/^#define MAX_MESSAGE_LENGTH /;"	d
+MAX_MSDP_SIZE	protocol.h	/^#define MAX_MSDP_SIZE /;"	d
+MAX_MSSP_BUFFER	protocol.h	/^#define MAX_MSSP_BUFFER /;"	d
 MAX_NAME_LENGTH	structs.h	/^const int constexpr MAX_NAME_LENGTH = 12;$/;"	v	typeref:typename:const int 
 MAX_NOTE_LENGTH	act_comm.cpp	/^#define MAX_NOTE_LENGTH /;"	d	file:
 MAX_OBJ_AFFECT	structs.h	/^#define MAX_OBJ_AFFECT /;"	d
+MAX_OUTPUT_BUFFER	protocol.h	/^#define MAX_OUTPUT_BUFFER /;"	d
 MAX_PCCHARACTERS	structs.h	/^const int constexpr MAX_PCCHARACTERS = 32000;$/;"	v	typeref:typename:const int 
 MAX_PLAYERS	comm.cpp	/^#define MAX_PLAYERS /;"	d	file:
 MAX_PROD	shop.cpp	/^#define MAX_PROD /;"	d	file:
 MAX_PROFS	structs.h	/^#define MAX_PROFS /;"	d
+MAX_PROTOCOL_BUFFER	protocol.h	/^#define MAX_PROTOCOL_BUFFER /;"	d
 MAX_PWD_LENGTH	structs.h	/^const int constexpr MAX_PWD_LENGTH = 10; \/* Used in char_file_u *DO*NOT*CHANGE* *\/$/;"	v	typeref:typename:const int 
 MAX_RACES	structs.h	/^const int constexpr MAX_RACES = 32;$/;"	v	typeref:typename:const int 
 MAX_RACE_NAME_LENGTH	structs.h	/^const int constexpr MAX_RACE_NAME_LENGTH = 14;$/;"	v	typeref:typename:const int 
@@ -1111,6 +1135,7 @@ MAX_STRING_LENGTH	structs.h	/^const int constexpr MAX_STRING_LENGTH = 8192;$/;"	
 MAX_TOUNGE	structs.h	/^#define MAX_TOUNGE /;"	d
 MAX_TRADE	shop.cpp	/^#define MAX_TRADE /;"	d	file:
 MAX_TYPES	spells.h	/^#define MAX_TYPES /;"	d
+MAX_VARIABLE_LENGTH	protocol.h	/^#define MAX_VARIABLE_LENGTH /;"	d
 MAX_WEAR	structs.h	/^#define MAX_WEAR /;"	d
 MAX_ZONES	structs.h	/^#define MAX_ZONES /;"	d
 MDL_PREFIX	db.h	/^#define MDL_PREFIX /;"	d
@@ -1167,15 +1192,42 @@ MOON_QUART2	structs.h	/^#define MOON_QUART2 /;"	d
 MOON_QUART3	structs.h	/^#define MOON_QUART3 /;"	d
 MOON_QUART4	structs.h	/^#define MOON_QUART4 /;"	d
 MOTD_FILE	db.h	/^#define MOTD_FILE /;"	d
+MSDPFlush	protocol.cpp	/^void MSDPFlush(descriptor_t *apDescriptor, variable_t aMSDP) {$/;"	f	typeref:typename:void
+MSDPSend	protocol.cpp	/^void MSDPSend(descriptor_t *apDescriptor, variable_t aMSDP) {$/;"	f	typeref:typename:void
+MSDPSendList	protocol.cpp	/^void MSDPSendList(descriptor_t *apDescriptor, const char *apVariable,$/;"	f	typeref:typename:void
+MSDPSendPair	protocol.cpp	/^void MSDPSendPair(descriptor_t *apDescriptor, const char *apVariable,$/;"	f	typeref:typename:void
+MSDPSendTable	protocol.cpp	/^void MSDPSendTable(descriptor_t *apDescriptor, variable_t aMSDP,$/;"	f	typeref:typename:void
+MSDPSetArray	protocol.cpp	/^void MSDPSetArray(descriptor_t *apDescriptor, variable_t aMSDP,$/;"	f	typeref:typename:void
+MSDPSetNumber	protocol.cpp	/^void MSDPSetNumber(descriptor_t *apDescriptor, variable_t aMSDP, int aValue) {$/;"	f	typeref:typename:void
+MSDPSetString	protocol.cpp	/^void MSDPSetString(descriptor_t *apDescriptor, variable_t aMSDP,$/;"	f	typeref:typename:void
+MSDPSetTable	protocol.cpp	/^void MSDPSetTable(descriptor_t *apDescriptor, variable_t aMSDP,$/;"	f	typeref:typename:void
+MSDPUpdate	protocol.cpp	/^void MSDPUpdate(descriptor_t *apDescriptor) {$/;"	f	typeref:typename:void
+MSDP_ARRAY_CLOSE	protocol.h	/^#define MSDP_ARRAY_CLOSE /;"	d
+MSDP_ARRAY_OPEN	protocol.h	/^#define MSDP_ARRAY_OPEN /;"	d
+MSDP_TABLE_CLOSE	protocol.h	/^#define MSDP_TABLE_CLOSE /;"	d
+MSDP_TABLE_OPEN	protocol.h	/^#define MSDP_TABLE_OPEN /;"	d
+MSDP_VAL	protocol.h	/^#define MSDP_VAL /;"	d
+MSDP_VAR	protocol.h	/^#define MSDP_VAR /;"	d
+MSDP_t	protocol.h	/^} MSDP_t;$/;"	t	typeref:struct:__anon35d14cad0508
 MSG_CURMSG	boards.h	/^#define MSG_CURMSG(/;"	d
 MSG_HEADING	boards.h	/^#define MSG_HEADING(/;"	d
 MSG_LEVEL	boards.h	/^#define MSG_LEVEL(/;"	d
 MSG_POSTTIME	boards.h	/^#define MSG_POSTTIME(/;"	d
 MSG_SLOTNUM	boards.h	/^#define MSG_SLOTNUM(/;"	d
+MSSPSetPlayers	protocol.cpp	/^void MSSPSetPlayers(int aPlayers) {$/;"	f	typeref:typename:void
+MSSP_VAL	protocol.h	/^#define MSSP_VAL /;"	d
+MSSP_VAR	protocol.h	/^#define MSSP_VAR /;"	d
+MSSP_t	protocol.h	/^} MSSP_t;$/;"	t	typeref:struct:__anon35d14cad0608
 MUDLLE_FILE	db.h	/^#define MUDLLE_FILE /;"	d
 MUDLLE_H	mudlle.h	/^#define MUDLLE_H$/;"	d
 MUDLLE_OLDFILE	db.h	/^#define MUDLLE_OLDFILE /;"	d
+MUD_NAME	protocol.h	/^#define MUD_NAME /;"	d
+MXPCreateTag	protocol.cpp	/^const char *MXPCreateTag(descriptor_t *apDescriptor, const char *apTag) {$/;"	f	typeref:typename:const char *
+MXPSendTag	protocol.cpp	/^void MXPSendTag(descriptor_t *apDescriptor, const char *apTag) {$/;"	f	typeref:typename:void
 MYSTIC_GUARDIAN	structs.h	/^const int constexpr MYSTIC_GUARDIAN = 2;$/;"	v	typeref:typename:const int 
+MatchString	protocol.cpp	/^static bool MatchString(const char *apFirst, const char *apSecond) {$/;"	f	typeref:typename:bool	file:
+Max	protocol.h	/^    int          Max;           \/* The maximum valid value or string length *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:int
+Min	protocol.h	/^    int          Min;           \/* The minimum valid value or string length *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:int
 NAME_SIZE	mail.h	/^#define NAME_SIZE /;"	d
 NANA	utils.h	/^#define NANA(/;"	d
 NEWINDEX_FILE	db.h	/^#define NEWINDEX_FILE /;"	d
@@ -1192,11 +1244,16 @@ NO_TELEPORT	structs.h	/^#define NO_TELEPORT /;"	d
 NPC	act_wiz.cpp	/^#define NPC /;"	d	file:
 NRM	utils.h	/^#define NRM /;"	d
 NUMBER	act_wiz.cpp	/^#define NUMBER /;"	d	file:
+NUMBER_IN_THE_RANGE	protocol.cpp	/^#define NUMBER_IN_THE_RANGE(/;"	d	file:
+NUMBER_READ_ONLY	protocol.cpp	/^#define NUMBER_READ_ONLY /;"	d	file:
+NUMBER_READ_ONLY_SET_TO	protocol.cpp	/^#define NUMBER_READ_ONLY_SET_TO(/;"	d	file:
 NUM_OF_BLOOD_TRAILS	structs.h	/^const int NUM_OF_BLOOD_TRAILS = 3;$/;"	v	typeref:typename:const int
 NUM_OF_BOARDS	boards.h	/^#define NUM_OF_BOARDS /;"	d
 NUM_OF_DIRS	structs.h	/^const int constexpr NUM_OF_DIRS = 6;$/;"	v	typeref:typename:const int 
 NUM_OF_TRACKS	structs.h	/^#define NUM_OF_TRACKS /;"	d
 NUM_STATS	profs.cpp	/^#define NUM_STATS /;"	d	file:
+Negotiate	protocol.cpp	/^static void Negotiate(descriptor_t *apDescriptor) {$/;"	f	typeref:typename:void	file:
+Negotiated	protocol.h	/^    bool    Negotiated[eNEGOTIATED_MAX];$/;"	m	struct:protocol_t	typeref:typename:bool[]
 OB	structs.h	/^    sh_int OB; \/* OB in normal tactics   *\/$/;"	m	struct:char_point_data	typeref:typename:sh_int
 OBJECT_OVERRIDE_AFFECTIONS	mystic.cpp	/^#define OBJECT_OVERRIDE_AFFECTIONS(/;"	d	file:
 OBJN	utils.h	/^#define OBJN(/;"	d
@@ -1352,6 +1409,7 @@ PROMPT_MANA	interpre.h	/^#define PROMPT_MANA /;"	d
 PROMPT_MAUL	interpre.h	/^#define PROMPT_MAUL /;"	d
 PROMPT_MOVE	interpre.h	/^#define PROMPT_MOVE /;"	d
 PROMPT_STAT	interpre.h	/^#define PROMPT_STAT /;"	d
+PROTOCOL_H	protocol.h	/^#define PROTOCOL_H$/;"	d
 PROTOS_H	protos.h	/^#define PROTOS_H$/;"	d
 PS_Animals	structs.h	/^    PS_Animals,$/;"	e	enum:game_types::player_specs
 PS_Arcane	structs.h	/^    PS_Arcane,$/;"	e	enum:game_types::player_specs
@@ -1379,6 +1437,17 @@ PULSE_MENTAL_FIGHT	structs.h	/^const int constexpr PULSE_MENTAL_FIGHT = 8;$/;"	v
 PULSE_MOBILE	structs.h	/^const int constexpr PULSE_MOBILE = 24;$/;"	v	typeref:typename:const int 
 PULSE_VIOLENCE	structs.h	/^const int constexpr PULSE_VIOLENCE = 12;$/;"	v	typeref:typename:const int 
 PULSE_ZONE	structs.h	/^const int constexpr PULSE_ZONE = 12;$/;"	v	typeref:typename:const int 
+ParseATCP	protocol.cpp	/^static void ParseATCP(descriptor_t *apDescriptor, const char *apData) {$/;"	f	typeref:typename:void	file:
+ParseMSDP	protocol.cpp	/^static void ParseMSDP(descriptor_t *apDescriptor, const char *apData) {$/;"	f	typeref:typename:void	file:
+PerformHandshake	protocol.cpp	/^static void PerformHandshake(descriptor_t *apDescriptor, char aCmd,$/;"	f	typeref:typename:void	file:
+PerformSubnegotiation	protocol.cpp	/^static void PerformSubnegotiation(descriptor_t *apDescriptor, char aCmd,$/;"	f	typeref:typename:void	file:
+PrefixString	protocol.cpp	/^static bool PrefixString(const char *apPart, const char *apWhole) {$/;"	f	typeref:typename:bool	file:
+ProtocolCreate	protocol.cpp	/^protocol_t *ProtocolCreate(void) {$/;"	f	typeref:typename:protocol_t *
+ProtocolDestroy	protocol.cpp	/^void ProtocolDestroy(protocol_t *apProtocol) {$/;"	f	typeref:typename:void
+ProtocolInput	protocol.cpp	/^void ProtocolInput(descriptor_t *apDescriptor, char *apData, int aSize,$/;"	f	typeref:typename:void
+ProtocolNegotiate	protocol.cpp	/^void ProtocolNegotiate(descriptor_t *apDescriptor) {$/;"	f	typeref:typename:void
+ProtocolNoEcho	protocol.cpp	/^void ProtocolNoEcho(descriptor_t *apDescriptor, bool abOn) {$/;"	f	typeref:typename:void
+ProtocolOutput	protocol.cpp	/^const char *ProtocolOutput(descriptor_t *apDescriptor, const char *apData,$/;"	f	typeref:typename:const char *
 RACE_ABBR	utils.h	/^#define RACE_ABBR(/;"	d
 RACE_BEORNING	structs.h	/^const int constexpr RACE_BEORNING = 6;$/;"	v	typeref:typename:const int 
 RACE_DWARF	structs.h	/^const int constexpr RACE_DWARF = 2;$/;"	v	typeref:typename:const int 
@@ -1409,6 +1478,7 @@ REAL	db.h	/^#define REAL /;"	d
 REALDIGCHANGE	shapezon.cpp	/^#define REALDIGCHANGE(/;"	d	file:
 RECREATE	utils.h	/^#define RECREATE(/;"	d
 REDUCED_MANA	spells.h	/^#define REDUCED_MANA /;"	d
+REJECTED	protocol.h	/^#define REJECTED /;"	d
 RELEASE	utils.h	/^#define RELEASE(/;"	d
 REMOVE_BIT	utils.h	/^#define REMOVE_BIT(/;"	d
 REMOVE_LIST	mudlle2.cpp	/^void REMOVE_LIST(struct char_data* host)$/;"	f	typeref:typename:void
@@ -1428,6 +1498,7 @@ RNUM	boards.h	/^#define RNUM /;"	d
 ROOMAFF_EXIT	structs.h	/^#define ROOMAFF_EXIT /;"	d
 ROOMAFF_SPELL	structs.h	/^#define ROOMAFF_SPELL /;"	d
 RP_RACE_CHECK	utils.h	/^#define RP_RACE_CHECK(/;"	d
+ReportBug	protocol.cpp	/^static void ReportBug(char *apText) {$/;"	f	typeref:typename:void	file:
 RotS_Stats	profs.cpp	/^enum RotS_Stats {$/;"	g	namespace:_INTERNAL	file:
 SANA	utils.h	/^#define SANA(/;"	d
 SAVEBUFLEN	db.cpp	/^#define SAVEBUFLEN /;"	d	file:
@@ -1662,6 +1733,7 @@ SECURITYROOM	structs.h	/^#define SECURITYROOM /;"	d
 SEEK_CUR	utils.h	/^#define SEEK_CUR /;"	d
 SEEK_END	utils.h	/^#define SEEK_END /;"	d
 SEEK_SET	utils.h	/^#define SEEK_SET /;"	d
+SEND	protocol.h	/^#define SEND /;"	d
 SEND_TO_Q	comm.h	/^#define SEND_TO_Q(/;"	d
 SENTINEL_ITEM_ID_VALUE	structs.h	/^constexpr const sh_int SENTINEL_ITEM_ID_VALUE = -17;$/;"	v	typeref:typename:const sh_int
 SET_BIT	utils.h	/^#define SET_BIT(/;"	d
@@ -1827,6 +1899,7 @@ SKY_SNOWING	structs.h	/^#define SKY_SNOWING /;"	d
 SMALL_BUFSIZE	structs.h	/^const int constexpr SMALL_BUFSIZE = 512;$/;"	v	typeref:typename:const int 
 SMALL_WORLD_RADIUS	structs.h	/^#define SMALL_WORLD_RADIUS /;"	d
 SMASH_TIMER	olog_hai.cpp	/^const int constexpr SMASH_TIMER = 60;$/;"	v	typeref:typename:const int 
+SNIPPET_VERSION	protocol.h	/^#define SNIPPET_VERSION /;"	d
 SOCMESS_FILE	db.h	/^#define SOCMESS_FILE /;"	d
 SORTING_COMMAND_INDEX	act_othe.cpp	/^#define SORTING_COMMAND_INDEX /;"	d	file:
 SOURCE_INVALID	structs.h	/^    SOURCE_INVALID,$/;"	e	enum:source_type
@@ -2002,6 +2075,10 @@ STAMP_PRICE	mail.h	/^#define STAMP_PRICE /;"	d
 START_MESSG	config.cpp	/^char* START_MESSG = "Welcome.  This is your new MUD character.\\n\\r"$/;"	v	typeref:typename:char *
 STATE	interpre.h	/^#define STATE(/;"	d
 STOMP_TIMER	olog_hai.cpp	/^const int constexpr STOMP_TIMER = 60;$/;"	v	typeref:typename:const int 
+STRING_GUI	protocol.cpp	/^#define STRING_GUI(/;"	d	file:
+STRING_READ_ONLY	protocol.cpp	/^#define STRING_READ_ONLY /;"	d	file:
+STRING_WITH_LENGTH_OF	protocol.cpp	/^#define STRING_WITH_LENGTH_OF(/;"	d	file:
+STRING_WRITE_ONCE	protocol.cpp	/^#define STRING_WRITE_ONCE(/;"	d	file:
 STRUCTS_H	structs.h	/^#define STRUCTS_H$/;"	d
 SUBST	shapeobj.cpp	/^#define SUBST(/;"	d	file:
 SUBST	shaperom.cpp	/^#define SUBST(/;"	d	file:
@@ -2013,7 +2090,13 @@ SUN_RISE	structs.h	/^#define SUN_RISE /;"	d
 SUN_SET	structs.h	/^#define SUN_SET /;"	d
 SWITCH	utils.h	/^#define SWITCH(/;"	d
 SWORD_HAND	fight.cpp	/^#define SWORD_HAND /;"	d	file:
+ScreenHeight	protocol.h	/^    int       ScreenHeight;     \/* The client's screen height *\/$/;"	m	struct:protocol_t	typeref:typename:int
+ScreenWidth	protocol.h	/^    int       ScreenWidth;      \/* The client's screen width *\/$/;"	m	struct:protocol_t	typeref:typename:int
+SendATCP	protocol.cpp	/^static void SendATCP(descriptor_t *apDescriptor, const char *apVariable,$/;"	f	typeref:typename:void	file:
+SendMSSP	protocol.cpp	/^static void SendMSSP(descriptor_t *apDescriptor) {$/;"	f	typeref:typename:void	file:
+SendNegotiationSequence	protocol.cpp	/^static void SendNegotiationSequence(descriptor_t *apDescriptor, char aCmd,$/;"	f	typeref:typename:void	file:
 SocketType	platdef.h	/^using SocketType = int;$/;"	t	typeref:typename:int
+SoundSend	protocol.cpp	/^void SoundSend(descriptor_t *apDescriptor, const char *apTrigger) {$/;"	f	typeref:typename:void
 Strength	profs.cpp	/^    Strength,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
 TACTICS_AGGRESSIVE	utils.h	/^#define TACTICS_AGGRESSIVE /;"	d
 TACTICS_BERSERK	utils.h	/^#define TACTICS_BERSERK /;"	d
@@ -2055,6 +2138,13 @@ TAR_SELF_ONLY	structs.h	/^#define TAR_SELF_ONLY /;"	d
 TAR_TEXT	structs.h	/^#define TAR_TEXT /;"	d
 TAR_TEXT_ALL	structs.h	/^#define TAR_TEXT_ALL /;"	d
 TAR_VALUE	structs.h	/^#define TAR_VALUE /;"	d
+TELOPT_ATCP	protocol.h	/^#define TELOPT_ATCP /;"	d
+TELOPT_CHARSET	protocol.h	/^#define TELOPT_CHARSET /;"	d
+TELOPT_MCCP	protocol.h	/^#define TELOPT_MCCP /;"	d
+TELOPT_MSDP	protocol.h	/^#define TELOPT_MSDP /;"	d
+TELOPT_MSP	protocol.h	/^#define TELOPT_MSP /;"	d
+TELOPT_MSSP	protocol.h	/^#define TELOPT_MSSP /;"	d
+TELOPT_MXP	protocol.h	/^#define TELOPT_MXP /;"	d
 TEMPORARY	char_utils.cpp	/^namespace TEMPORARY {$/;"	n	namespace:utils	file:
 TEMPORARY	char_utils_combat.cpp	/^namespace TEMPORARY {$/;"	n	namespace:utils	file:
 TEXT_LIST	mudlle2.cpp	/^void TEXT_LIST(struct char_data* host, char* targ)$/;"	f	typeref:typename:void
@@ -2097,6 +2187,9 @@ TYPE_SUFFERING	spells.h	/^#define TYPE_SUFFERING /;"	d
 TYPE_UNDEFINED	spells.h	/^#define TYPE_UNDEFINED /;"	d
 TYPE_WHIP	spells.h	/^#define TYPE_WHIP /;"	d
 TYPO_FILE	db.h	/^#define TYPO_FILE /;"	d
+UNICODE_FEMALE	protocol.h	/^#define UNICODE_FEMALE /;"	d
+UNICODE_MALE	protocol.h	/^#define UNICODE_MALE /;"	d
+UNICODE_NEUTER	protocol.h	/^#define UNICODE_NEUTER /;"	d
 UNMARK	graph.cpp	/^#define UNMARK(/;"	d	file:
 UP	structs.h	/^#define UP /;"	d
 UPPER	utils.h	/^#define UPPER(/;"	d
@@ -2109,9 +2202,14 @@ USE_SPIRIT	spells.h	/^#define USE_SPIRIT(/;"	d
 USING_LARGE	comm.h	/^#define USING_LARGE(/;"	d
 USING_SMALL	comm.h	/^#define USING_SMALL(/;"	d
 UTILS_H	utils.h	/^#define UTILS_H$/;"	d
+UnicodeAdd	protocol.cpp	/^void UnicodeAdd(char **apString, int aValue) {$/;"	f	typeref:typename:void
+UnicodeGet	protocol.cpp	/^char *UnicodeGet(int aValue) {$/;"	f	typeref:typename:char *
 VALID_EDGE	graph.cpp	/^#define VALID_EDGE(/;"	d	file:
 VIRT	db.h	/^#define VIRT /;"	d
 VNUM	boards.h	/^#define VNUM /;"	d
+ValueInt	protocol.h	/^    int          ValueInt;      \/* The numeric value of the variable *\/$/;"	m	struct:__anon35d14cad0508	typeref:typename:int
+Variable	protocol.h	/^    variable_t   Variable;      \/* The enum type of this variable *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:variable_t
+VariableNameTable	protocol.cpp	/^static variable_name_t VariableNameTable[eMSDP_MAX + 1] = {$/;"	v	typeref:typename:variable_name_t[]	file:
 WAIT_STATE	utils.h	/^#define WAIT_STATE(/;"	d
 WAIT_STATE_BRIEF	utils.h	/^#define WAIT_STATE_BRIEF(/;"	d
 WAIT_STATE_FULL	utils.h	/^#define WAIT_STATE_FULL(/;"	d
@@ -2168,6 +2266,8 @@ WT_UNUSED_1	structs.h	/^    WT_UNUSED_1,$/;"	e	enum:game_types::weapon_type
 WT_UNUSED_2	structs.h	/^    WT_UNUSED_2,$/;"	e	enum:game_types::weapon_type
 WT_WHIPPING	structs.h	/^    WT_WHIPPING,$/;"	e	enum:game_types::weapon_type
 Will	profs.cpp	/^    Will,$/;"	e	enum:_INTERNAL::RotS_Stats	file:
+Write	protocol.cpp	/^static void Write(descriptor_t *apDescriptor, char *apData) {$/;"	f	typeref:typename:void	file:
+WriteOOB	protocol.h	/^    int       WriteOOB;         \/* Used internally to indicate OOB data *\/$/;"	m	struct:protocol_t	typeref:typename:int
 XNAME_FILE	db.h	/^#define XNAME_FILE /;"	d
 YES	config.cpp	/^#define YES /;"	d	file:
 YESNO	utils.h	/^#define YESNO(/;"	d
@@ -2183,6 +2283,12 @@ __anon102589590111	char_utils_combat.cpp	/^namespace {$/;"	n	namespace:utils	fil
 __anon102589590211	char_utils_combat.cpp	/^namespace {$/;"	n	namespace:utils	file:
 __anon20d0bf1d0111	object_utils.cpp	/^namespace {$/;"	n	namespace:utils	file:
 __anon35b427860111	combat_manager.cpp	/^namespace {$/;"	n	namespace:game_rules	file:
+__anon35d14cad0103	protocol.h	/^{$/;"	g
+__anon35d14cad0203	protocol.h	/^{$/;"	g
+__anon35d14cad0303	protocol.h	/^{$/;"	g
+__anon35d14cad0408	protocol.h	/^{$/;"	s
+__anon35d14cad0508	protocol.h	/^{$/;"	s
+__anon35d14cad0608	protocol.h	/^{$/;"	s
 __anon3646dc480111	fight.cpp	/^namespace {$/;"	n	file:
 __anon3646dc480211	fight.cpp	/^namespace {$/;"	n	file:
 __anon3e5f48120108	pkill.cpp	/^typedef struct {$/;"	s	file:
@@ -2203,6 +2309,8 @@ __anonc55e5b280111	weapon_master_handler.cpp	/^namespace {$/;"	n	namespace:playe
 __anond270df7d0111	act_othe.cpp	/^namespace {$/;"	n	file:
 __anond270df7d0208	act_othe.cpp	/^struct {$/;"	s	file:
 __anondef00c5b0111	clerics.cpp	/^namespace {$/;"	n	file:
+__anonec141f460102	weather.cpp	/^    send_msdp_function([](descriptor_data* desc) {$/;"	f	function:another_hour	file:
+__anonec141f460202	weather.cpp	/^    send_msdp_function([](descriptor_data* desc) {$/;"	f	function:weather_change	file:
 __delete_rank	pkill.cpp	/^void __delete_rank(RANKING* rnk, int r, bool totalrank)$/;"	f	typeref:typename:void
 __insert_rank	pkill.cpp	/^void __insert_rank(RANKING* rnk, int a, long idx, bool totalrank)$/;"	f	typeref:typename:void
 __new_leader	pkill.cpp	/^__new_leader(char* name, int idx, int rank, int fame, int race, int side, int invalid)$/;"	f	typeref:typename:LEADER *
@@ -2279,6 +2387,7 @@ affected	structs.h	/^    struct affected_type* affected; \/* room affects *\/$/;
 affected	structs.h	/^    struct obj_affected_type affected[MAX_OBJ_AFFECT]; \/* Which abilities in PC to change  *\/$/;"	m	struct:obj_data	typeref:struct:obj_affected_type[]
 affected	structs.h	/^    struct obj_affected_type affected[MAX_OBJ_AFFECT];$/;"	m	struct:obj_file_elem	typeref:struct:obj_affected_type[]
 affected_bits	consts.cpp	/^char* affected_bits[] = {$/;"	v	typeref:typename:char * []
+affected_bits	mob_csv_extract.cpp	/^    long affected_bits{};$/;"	m	struct:mob_csv_data	typeref:typename:long	file:
 affected_by	structs.h	/^    long affected_by; \/* Bitvector for spells\/skills affected by *\/$/;"	m	struct:char_special_data	typeref:typename:long
 affected_by_spell	handler.cpp	/^affected_type* affected_by_spell(const char_data* ch, byte skill, affected_type* start_affect)$/;"	f	typeref:typename:affected_type *
 affected_list	handler.cpp	/^universal_list* affected_list = 0;$/;"	v	typeref:typename:universal_list *
@@ -2291,8 +2400,11 @@ age	utility.cpp	/^struct time_info_data age(struct char_data* ch)$/;"	f	typeref:
 age	zone.h	/^    int age; \/* current age of this zone (minutes) *\/$/;"	m	struct:zone_data	typeref:typename:int
 age_bleed_tracks	weather.cpp	/^void age_bleed_tracks()$/;"	f	typeref:typename:void
 age_room_tracks	weather.cpp	/^void age_room_tracks()$/;"	f	typeref:typename:void
+aggressive_flags	mob_csv_extract.cpp	/^    long aggressive_flags {};$/;"	m	struct:mob_csv_data	typeref:typename:long	file:
 alias	structs.h	/^    struct alias_list* alias; \/* aliases, 0 for mobs *\/$/;"	m	struct:char_special_data	typeref:struct:alias_list *
 alias_list	structs.h	/^struct alias_list {$/;"	s
+aliases	mob_csv_extract.cpp	/^    std::string aliases;$/;"	m	struct:mob_csv_data	typeref:typename:std::string	file:
+alignment	mob_csv_extract.cpp	/^    int alignment {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 alignment	structs.h	/^    int alignment; \/* +-1000 for alignments          *\/$/;"	m	struct:char_special2_data	typeref:typename:int
 alignment	structs.h	/^    int alignment; \/*changed*\/$/;"	m	struct:room_data	typeref:typename:int
 ambush_calculate_damage	ranger.cpp	/^int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier)$/;"	f	typeref:typename:int
@@ -2373,6 +2485,28 @@ autosave_time	config.cpp	/^int autosave_time = 4;$/;"	v	typeref:typename:int
 avail_descs	comm.cpp	/^int avail_descs; \/* max descriptors available *\/$/;"	v	typeref:typename:int
 average_mob_life	config.cpp	/^int average_mob_life = 40;$/;"	v	typeref:typename:int
 axe_subtypes	obj2html.cpp	/^struct obj2html_type axe_subtypes[] = {$/;"	v	typeref:struct:obj2html_type[]
+b256Support	protocol.h	/^    support_t b256Support;      \/* The client supports XTerm 256 colors *\/$/;"	m	struct:protocol_t	typeref:typename:support_t
+bATCP	protocol.h	/^    bool    bATCP;            \/* The client supports ATCP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bBlockMXP	protocol.h	/^    bool    bBlockMXP;        \/* Used internally based on MXP version *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bCHARSET	protocol.h	/^    bool    bCHARSET;         \/* The client supports CHARSET *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bConfigurable	protocol.h	/^    bool       bConfigurable; \/* Can it be configured by the client? *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:bool
+bDirty	protocol.h	/^    bool       bDirty;        \/* Does this variable need to be sent again? *\/$/;"	m	struct:__anon35d14cad0508	typeref:typename:bool
+bECHO	protocol.h	/^    bool    bECHO;            \/* Toggles ECHO on\/off *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bGUI	protocol.h	/^    bool       bGUI;          \/* It's a special GUI configuration variable *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:bool
+bIACMode	protocol.h	/^    bool    bIACMode;         \/* Current mode - deals with broken packets *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bMCCP	protocol.h	/^    bool    bMCCP;            \/* The client supports MCCP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bMSDP	protocol.h	/^    bool    bMSDP;            \/* The client supports MSDP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bMSP	protocol.h	/^    bool    bMSP;             \/* The client supports MSP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bMSSP	protocol.h	/^    bool    bMSSP;            \/* The client supports MSSP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bMXP	protocol.h	/^    bool    bMXP;             \/* The client supports MXP *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bNAWS	protocol.h	/^    bool    bNAWS;            \/* The client supports NAWS *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bNeedMXPVersion	protocol.h	/^    bool    bNeedMXPVersion;  \/* Workaround for clients that autoconnect *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bNegotiated	protocol.h	/^    bool    bNegotiated;      \/* Indicates client successfully negotiated *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bRenegotiate	protocol.h	/^    bool    bRenegotiate;     \/* Workaround for clients that autoconnect *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bReport	protocol.h	/^    bool       bReport;       \/* Is this variable being reported? *\/$/;"	m	struct:__anon35d14cad0508	typeref:typename:bool
+bString	protocol.h	/^    bool       bString;       \/* Is this variable a string or a number? *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:bool
+bTTYPE	protocol.h	/^    bool    bTTYPE;           \/* The client supports TTYPE *\/$/;"	m	struct:protocol_t	typeref:typename:bool
+bWriteOnce	protocol.h	/^    bool       bWriteOnce;    \/* Can only set this variable once *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:bool
 background	db.cpp	/^char* background = 0; \/* background story		*\/$/;"	v	typeref:typename:char *
 bad_pws	structs.h	/^    int bad_pws; \/* number of bad password attemps	*\/$/;"	m	struct:char_special2_data	typeref:typename:int
 bad_pws	structs.h	/^    int bad_pws; \/* number of bad pw attemps this login	*\/$/;"	m	struct:descriptor_data	typeref:typename:int
@@ -2381,10 +2515,10 @@ ban_list	ban.cpp	/^struct ban_list_element* ban_list = 0;$/;"	v	typeref:struct:b
 ban_list_element	db.h	/^struct ban_list_element {$/;"	s
 ban_types	consts.cpp	/^char* ban_types[] = {$/;"	v	typeref:typename:char * []
 bankAccount	shop.cpp	/^    int bankAccount; \/* Store all gold over 15000    *\/$/;"	m	struct:shop_data	typeref:typename:int	file:
-base_chance	warrior_spec_handlers.h	/^    const float base_chance = 0.25;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:const float
+base_chance	warrior_spec_handlers.h	/^            const float base_chance = 0.25;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:const float
 basenum	protos.h	/^    int basenum; \/* number of object in database, or -1  *\/$/;"	m	struct:shape_object	typeref:typename:int
 battle_mage_handler	battle_mage_handler.cpp	/^battle_mage_handler::battle_mage_handler(const char_data* in_character)$/;"	f	class:player_spec::battle_mage_handler
-battle_mage_handler	warrior_spec_handlers.h	/^class battle_mage_handler {$/;"	c	namespace:player_spec
+battle_mage_handler	warrior_spec_handlers.h	/^    class battle_mage_handler {$/;"	c	namespace:player_spec
 battle_mage_spec_data	structs.h	/^struct battle_mage_spec_data : public specialization_info {$/;"	s
 beats	spells.h	/^    byte beats; \/* Heartbeats until ready for next *\/$/;"	m	struct:skill_data	typeref:typename:byte
 begin	structs.h	/^    char_iter begin() { return members.begin(); }$/;"	f	class:group_data	typeref:typename:char_iter
@@ -2416,6 +2550,7 @@ board_info_type	boards.cpp	/^board_info_type::board_info_type(int objnum, int l_
 board_info_type	boards.h	/^struct board_info_type {$/;"	s
 board_msginfo	boards.h	/^struct board_msginfo {$/;"	s
 board_point	structs.h	/^    int board_point[MAX_MAXBOARD]; \/* pointers on the current messages *\/$/;"	m	struct:char_special_data	typeref:typename:int[]
+body_type	mob_csv_extract.cpp	/^    int body_type {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 bodypart_hit	structs.h	/^    ubyte bodypart_hit[MAX_BODYPARTS]; \/* hit points of individual body parts *\/$/;"	m	struct:char_point_data	typeref:typename:ubyte[]
 bodyparts	consts.cpp	/^struct race_bodypart_data bodyparts[MAX_BODYTYPES] = {$/;"	v	typeref:struct:race_bodypart_data[]
 bodyparts	structs.h	/^    sh_int bodyparts;$/;"	m	struct:race_bodypart_data	typeref:typename:sh_int
@@ -2461,6 +2596,7 @@ calculate_small_map	act_info.cpp	/^void calculate_small_map(int x, int y)$/;"	f	
 calculate_smash_damage	olog_hai.cpp	/^int calculate_smash_damage(char_data& attacker, int prob)$/;"	f	namespace:olog_hai	typeref:typename:int
 calculate_stomp_damage	olog_hai.cpp	/^int calculate_stomp_damage(char_data& attacker, int prob)$/;"	f	namespace:olog_hai	typeref:typename:int
 calculate_weapon_damage	combat_manager.cpp	/^double combat_manager::calculate_weapon_damage(const char_data& attacker)$/;"	f	class:game_rules::combat_manager	typeref:typename:double
+call_mask	mob_csv_extract.cpp	/^    int call_mask {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 call_trigger	script.cpp	/^int call_trigger(int trigger_type, void* subject, void* subject2, void* subject3)$/;"	f	typeref:typename:int
 can_attack	combat_manager.cpp	/^bool combat_manager::can_attack(char_data* attacker, char_data* victim)$/;"	f	class:game_rules::combat_manager	typeref:typename:bool
 can_bear_skill	act_offe.cpp	/^bool can_bear_skill(char_data* ch, int skill)$/;"	f	typeref:typename:bool
@@ -2529,9 +2665,9 @@ char_to_room	handler.cpp	/^void char_to_room(struct char_data* ch, int room)$/;"
 char_to_store	db.cpp	/^void char_to_store(struct char_data* ch, struct char_file_u* st)$/;"	f	typeref:typename:void
 char_vector	structs.h	/^typedef std::vector<struct char_data*> char_vector;$/;"	t	typeref:typename:std::vector<struct char_data * >
 character	structs.h	/^    struct char_data* character; \/* linked to char			*\/$/;"	m	struct:descriptor_data	typeref:struct:char_data *
-character	warrior_spec_handlers.h	/^    char_data* character = nullptr;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:char_data *
-character	warrior_spec_handlers.h	/^    char_data* character = nullptr;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:char_data *
-character	warrior_spec_handlers.h	/^    char_data* character = nullptr;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:char_data *
+character	warrior_spec_handlers.h	/^            char_data* character = nullptr;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:char_data *
+character	warrior_spec_handlers.h	/^            char_data* character = nullptr;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:char_data *
+character	warrior_spec_handlers.h	/^            char_data* character = nullptr;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:char_data *
 character_id_set	big_brother.h	/^    typedef std::set<int> character_id_set;$/;"	t	class:game_rules::big_brother	typeref:typename:std::set<int>
 character_list	db.cpp	/^struct char_data* character_list = 0; \/* global linked list of chars	*\/$/;"	v	typeref:struct:char_data *
 character_name	structs.h	/^    char* character_name;$/;"	m	class:group_roll	typeref:typename:char *
@@ -2565,7 +2701,6 @@ check_skill_success	ranger.cpp	/^bool check_skill_success(char_data* ch, int ski
 check_start_rooms	db.cpp	/^void check_start_rooms(void)$/;"	f	typeref:typename:void
 check_stat_increase	profs.cpp	/^void check_stat_increase(char_data* character)$/;"	f	namespace:__anon74893e800111	typeref:typename:void
 check_sun_change	weather.cpp	/^int check_sun_change()$/;"	f	typeref:typename:int
-check_weapon_poison	fight.cpp	/^void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)$/;"	f	typeref:typename:void
 checkpointing	signals.cpp	/^void checkpointing(int fake)$/;"	f	typeref:typename:void
 choice	structs.h	/^    int choice; \/* what kind of target is this   *\/$/;"	m	struct:target_data	typeref:typename:int
 choose_caster_target	spec_pro.cpp	/^char_data* choose_caster_target(char_data* caster)$/;"	f	namespace:__anonbe9831f10111	typeref:typename:char_data *
@@ -2593,6 +2728,7 @@ clear_script_info	script.cpp	/^void clear_script_info(info_script* inf)$/;"	f	ty
 cleave_proc_chance	weapon_master_handler.cpp	/^    constexpr const float cleave_proc_chance = 0.50f;$/;"	v	namespace:player_spec::__anonc55e5b280111	typeref:typename:const float
 close1	shop.cpp	/^    int close1, close2; \/* When does the shop close?		*\/$/;"	m	struct:shop_data	typeref:typename:int	file:
 close2	shop.cpp	/^    int close1, close2; \/* When does the shop close?		*\/$/;"	m	struct:shop_data	typeref:typename:int	file:
+close_file	mob_csv_extract.cpp	/^void mob_csv_extract::close_file(char_data* ch) const$/;"	f	class:mob_csv_extract	typeref:typename:void
 close_socket	comm.cpp	/^void close_socket(descriptor_data* conn_descriptor, int drop_all)$/;"	f	typeref:typename:void
 close_sockets	comm.cpp	/^void close_sockets(SocketType s)$/;"	f	typeref:typename:void
 closing_time	shop.cpp	/^void closing_time(struct char_data* keeper)$/;"	f	typeref:typename:void
@@ -2605,6 +2741,7 @@ cmd	zone.h	/^    struct reset_com* cmd; \/* command table for reset	          *\
 cmd_info	interpre.cpp	/^struct command_info cmd_info[MAX_CMD_LIST];$/;"	v	typeref:struct:command_info[]
 cmdno	zone.h	/^    int cmdno; \/* Number of zone commands *\/$/;"	m	struct:zone_data	typeref:typename:int
 coef	spec_pro.cpp	/^    int coef; \/* A bitvector of classes this will load for *\/$/;"	m	struct:kit_item	typeref:typename:int	file:
+coins	mob_csv_extract.cpp	/^    int coins {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 cold_spec_data	structs.h	/^    cold_spec_data()$/;"	f	struct:cold_spec_data
 cold_spec_data	structs.h	/^struct cold_spec_data : public elemental_spec_data {$/;"	s
 color_color	color.cpp	/^const char* color_color[] = {$/;"	v	typeref:typename:const char * []
@@ -2650,6 +2787,7 @@ const_char_iter	structs.h	/^typedef char_vector::const_iterator const_char_iter;
 const_char_set_iter	structs.h	/^typedef char_set::const_iterator const_char_set_iter;$/;"	t	typeref:typename:char_set::const_iterator
 constabilities	structs.h	/^    struct char_ability_data constabilities; \/* Rolled abilities *\/$/;"	m	struct:char_data	typeref:struct:char_ability_data
 constabilities	structs.h	/^    struct char_ability_data constabilities;$/;"	m	struct:char_file_u	typeref:struct:char_ability_data
+constitution	mob_csv_extract.cpp	/^    int constitution {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 contains	char_utils.cpp	/^bool contains(const char* a, const char* b) { return strstr(a, b) != NULL; }$/;"	f	namespace:string_func	typeref:typename:bool
 contains	structs.h	/^    bool contains(const char_data* character) { return std::find(members.begin(), members.end(),/;"	f	class:group_data	typeref:typename:bool
 contains	structs.h	/^    struct obj_data* contains; \/* Contains objects                 *\/$/;"	m	struct:obj_data	typeref:struct:obj_data *
@@ -2678,7 +2816,9 @@ create	wait_functions.h	/^    static void create()$/;"	f	class:game_types::wait_
 create_bulk	db.cpp	/^void room_data::create_bulk(int amount)$/;"	f	class:room_data	typeref:typename:void
 create_entry	db.cpp	/^int create_entry(char* name)$/;"	f	typeref:typename:int
 create_exit	db.cpp	/^void room_data::create_exit(int dir, int room, char connect)$/;"	f	class:room_data	typeref:typename:void
+create_file	mob_csv_extract.cpp	/^void mob_csv_extract::create_file(char_data* ch)$/;"	f	class:mob_csv_extract	typeref:typename:void
 create_function	utility.cpp	/^void* create_function(int elem_size, int elem_num, int line, const char* file)$/;"	f	typeref:typename:void *
+create_header	mob_csv_extract.cpp	/^void mob_csv_extract::create_header(char_data* ch) const$/;"	f	class:mob_csv_extract	typeref:typename:void
 create_money	handler.cpp	/^struct obj_data* create_money(int amount)$/;"	f	typeref:struct:obj_data *
 create_pointer	utility.cpp	/^void* create_pointer = 0;$/;"	v	typeref:typename:void *
 create_room	db.cpp	/^int room_data::create_room(int zone)$/;"	f	class:room_data	typeref:typename:int
@@ -2695,7 +2835,7 @@ cur_room	protos.h	/^    int cur_room; \/\/  Current room (if set)$/;"	m	struct:s
 cur_str	structs.h	/^    unsigned int cur_str; \/* current pointer position in *str     *\/$/;"	m	struct:descriptor_data	typeref:typename:unsigned int
 curr	protos.h	/^    struct zone_tree* curr; \/* currently reviewed command   *\/$/;"	m	struct:shape_zone	typeref:struct:zone_tree *
 current_bodypart	structs.h	/^    sh_int current_bodypart; \/* The number of current bodypart *\/$/;"	m	struct:char_special_data	typeref:typename:sh_int
-current_health	warrior_spec_handlers.h	/^    int current_health = 0;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
+current_health	warrior_spec_handlers.h	/^            int current_health = 0;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
 current_parry	structs.h	/^    sh_int current_parry; \/*parry currently affected by 'parry split' *\/$/;"	m	struct:char_special_data	typeref:typename:sh_int
 current_spec	structs.h	/^    game_types::player_specs current_spec;$/;"	m	struct:specialization_data	typeref:typename:game_types::player_specs
 current_spec_info	structs.h	/^    specialization_info* current_spec_info;$/;"	m	struct:specialization_data	typeref:typename:specialization_info *
@@ -2705,6 +2845,7 @@ dam_message	fight.cpp	/^void dam_message(int damage, char_data* attacker, char_d
 dam_weapon_type	fight.cpp	/^static struct dam_weapon_type {$/;"	s	file:
 dam_weapons	fight.cpp	/^} dam_weapons[] = {$/;"	v	typeref:struct:dam_weapon_type[]
 damage	fight.cpp	/^int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int hit_location)$/;"	f	typeref:typename:int
+damage	mob_csv_extract.cpp	/^    int damage {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 damage	structs.h	/^    sh_int damage; \/*  damage in normal tactics *\/$/;"	m	struct:char_point_data	typeref:typename:sh_int
 damage_details	structs.h	/^    damage_details()$/;"	f	class:damage_details
 damage_details	structs.h	/^    player_damage_details damage_details; \/* structure for storing damage data *\/$/;"	m	struct:char_data	typeref:typename:player_damage_details
@@ -2757,7 +2898,9 @@ description	zone.h	/^    char* description;$/;"	m	struct:zone_data	typeref:typen
 descriptor	structs.h	/^    SocketType descriptor; \/* file descriptor for socket	*\/$/;"	m	struct:descriptor_data	typeref:typename:SocketType
 descriptor_data	structs.h	/^struct descriptor_data {$/;"	s
 descriptor_list	comm.cpp	/^struct descriptor_data *descriptor_list = 0, *next_to_process = 0;$/;"	v	typeref:struct:descriptor_data *
+descriptor_t	protocol.h	/^typedef struct descriptor_data descriptor_t;$/;"	t	typeref:struct:descriptor_data
 dex	structs.h	/^    signed char dex;$/;"	m	struct:char_ability_data	typeref:typename:signed char
+dexterity	mob_csv_extract.cpp	/^    int dexterity {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 dflags	structs.h	/^    unsigned char dflags; \/* flags for this descriptor            *\/$/;"	m	struct:descriptor_data	typeref:typename:unsigned char
 diag_char_to_char	act_info.cpp	/^void diag_char_to_char(char_data* looked_at, char_data* viewer)$/;"	f	typeref:typename:void
 dice	utility.cpp	/^int dice(int number, int size)$/;"	f	typeref:typename:int
@@ -2804,6 +2947,7 @@ do_stat_character	act_wiz.cpp	/^void do_stat_character(struct char_data* ch, str
 do_stat_object	act_wiz.cpp	/^void do_stat_object(struct char_data* ch, struct obj_data* j)$/;"	f	typeref:typename:void
 do_stat_room	act_wiz.cpp	/^void do_stat_room(struct char_data* ch)$/;"	f	typeref:typename:void
 do_weapon_display	act_info.cpp	/^void do_weapon_display(struct char_data* ch, struct obj_data* j)$/;"	f	typeref:typename:void
+dodge	mob_csv_extract.cpp	/^    int dodge {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 dodge	structs.h	/^    sh_int dodge; \/* dodge. all in this file are tactics independent.*\/$/;"	m	struct:char_point_data	typeref:typename:sh_int
 does_armor_fail_spell	battle_mage_handler.cpp	/^bool battle_mage_handler::does_armor_fail_spell() const$/;"	f	class:player_spec::battle_mage_handler	typeref:typename:bool
 does_arrow_break	ranger.cpp	/^bool does_arrow_break(const char_data* archer, const char_data* victim, obj_data* arrow, int hit/;"	f	typeref:typename:bool
@@ -2829,6 +2973,105 @@ dump_all	obj2html.cpp	/^int dump_all; \/* If asserted, then we dump \/all object
 dump_output	obj2html.cpp	/^void dump_output(struct char_data* ch, FILE* f, struct obj2html_type* list)$/;"	f	typeref:typename:void
 duration	structs.h	/^    int duration; \/* For how long its effects will last      *\/$/;"	m	struct:affected_type	typeref:typename:int
 e	mage.cpp	/^    signed char e; \/\/ north\/east\/up coordinates$/;"	m	struct:loclife_coord	typeref:typename:signed char	file:
+eMDSP_ARMOUR_ABS	protocol.h	/^    eMDSP_ARMOUR_ABS,$/;"	e	enum:__anon35d14cad0303
+eMDSP_ATTACK_SPEED	protocol.h	/^    eMDSP_ATTACK_SPEED,$/;"	e	enum:__anon35d14cad0303
+eMDSP_DODGE	protocol.h	/^    eMDSP_DODGE,$/;"	e	enum:__anon35d14cad0303
+eMDSP_HEALTH_REGENERATION	protocol.h	/^    eMDSP_HEALTH_REGENERATION,$/;"	e	enum:__anon35d14cad0303
+eMDSP_MOVEMENT_ENCUMBRANCE	protocol.h	/^    eMDSP_MOVEMENT_ENCUMBRANCE,$/;"	e	enum:__anon35d14cad0303
+eMDSP_MOVEMENT_REGENERATION	protocol.h	/^    eMDSP_MOVEMENT_REGENERATION,$/;"	e	enum:__anon35d14cad0303
+eMDSP_OFFENSIVE_BONUS	protocol.h	/^    eMDSP_OFFENSIVE_BONUS,$/;"	e	enum:__anon35d14cad0303
+eMDSP_PARRY	protocol.h	/^    eMDSP_PARRY,$/;"	e	enum:__anon35d14cad0303
+eMDSP_PERCEPTION	protocol.h	/^    eMDSP_PERCEPTION,$/;"	e	enum:__anon35d14cad0303
+eMDSP_SKILL_ENCUMBRANCE	protocol.h	/^    eMDSP_SKILL_ENCUMBRANCE,$/;"	e	enum:__anon35d14cad0303
+eMDSP_SPELL_PEN	protocol.h	/^    eMDSP_SPELL_PEN,$/;"	e	enum:__anon35d14cad0303
+eMDSP_SPELL_POWER	protocol.h	/^    eMDSP_SPELL_POWER,$/;"	e	enum:__anon35d14cad0303
+eMDSP_SPELL_SAVE	protocol.h	/^    eMDSP_SPELL_SAVE,$/;"	e	enum:__anon35d14cad0303
+eMDSP_STAMINA_REGENERATION	protocol.h	/^    eMDSP_STAMINA_REGENERATION,$/;"	e	enum:__anon35d14cad0303
+eMDSP_TACTIC	protocol.h	/^    eMDSP_TACTIC,$/;"	e	enum:__anon35d14cad0303
+eMDSP_WEATHER	protocol.h	/^    eMDSP_WEATHER,$/;"	e	enum:__anon35d14cad0303
+eMDSP_WILLPOWER	protocol.h	/^    eMDSP_WILLPOWER,$/;"	e	enum:__anon35d14cad0303
+eMSDP_AC	protocol.h	/^    eMSDP_AC,$/;"	e	enum:__anon35d14cad0303
+eMSDP_AFFECTS	protocol.h	/^    eMSDP_AFFECTS,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ALIGNMENT	protocol.h	/^    eMSDP_ALIGNMENT,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ANSI_COLORS	protocol.h	/^    eMSDP_ANSI_COLORS,$/;"	e	enum:__anon35d14cad0303
+eMSDP_AREA_NAME	protocol.h	/^    eMSDP_AREA_NAME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_BUTTON_1	protocol.h	/^    eMSDP_BUTTON_1,$/;"	e	enum:__anon35d14cad0303
+eMSDP_BUTTON_2	protocol.h	/^    eMSDP_BUTTON_2,$/;"	e	enum:__anon35d14cad0303
+eMSDP_BUTTON_3	protocol.h	/^    eMSDP_BUTTON_3,$/;"	e	enum:__anon35d14cad0303
+eMSDP_BUTTON_4	protocol.h	/^    eMSDP_BUTTON_4,$/;"	e	enum:__anon35d14cad0303
+eMSDP_BUTTON_5	protocol.h	/^    eMSDP_BUTTON_5,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CHARACTER_NAME	protocol.h	/^    eMSDP_CHARACTER_NAME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CLASS	protocol.h	/^    eMSDP_CLASS,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CLIENT_ID	protocol.h	/^    eMSDP_CLIENT_ID,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CLIENT_VERSION	protocol.h	/^    eMSDP_CLIENT_VERSION,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CON	protocol.h	/^    eMSDP_CON,$/;"	e	enum:__anon35d14cad0303
+eMSDP_CON_PERM	protocol.h	/^    eMSDP_CON_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_DAMROLL	protocol.h	/^    eMSDP_DAMROLL,$/;"	e	enum:__anon35d14cad0303
+eMSDP_DEX	protocol.h	/^    eMSDP_DEX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_DEX_PERM	protocol.h	/^    eMSDP_DEX_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_EXPERIENCE	protocol.h	/^    eMSDP_EXPERIENCE,$/;"	e	enum:__anon35d14cad0303
+eMSDP_EXPERIENCE_MAX	protocol.h	/^    eMSDP_EXPERIENCE_MAX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_GAUGE_1	protocol.h	/^    eMSDP_GAUGE_1,$/;"	e	enum:__anon35d14cad0303
+eMSDP_GAUGE_2	protocol.h	/^    eMSDP_GAUGE_2,$/;"	e	enum:__anon35d14cad0303
+eMSDP_GAUGE_3	protocol.h	/^    eMSDP_GAUGE_3,$/;"	e	enum:__anon35d14cad0303
+eMSDP_GAUGE_4	protocol.h	/^    eMSDP_GAUGE_4,$/;"	e	enum:__anon35d14cad0303
+eMSDP_GAUGE_5	protocol.h	/^    eMSDP_GAUGE_5,$/;"	e	enum:__anon35d14cad0303
+eMSDP_HEALTH	protocol.h	/^    eMSDP_HEALTH,$/;"	e	enum:__anon35d14cad0303
+eMSDP_HEALTH_MAX	protocol.h	/^    eMSDP_HEALTH_MAX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_HITROLL	protocol.h	/^    eMSDP_HITROLL,$/;"	e	enum:__anon35d14cad0303
+eMSDP_INT	protocol.h	/^    eMSDP_INT,$/;"	e	enum:__anon35d14cad0303
+eMSDP_INT_PERM	protocol.h	/^    eMSDP_INT_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_LEA	protocol.h	/^    eMSDP_LEA,$/;"	e	enum:__anon35d14cad0303
+eMSDP_LEA_PERM	protocol.h	/^    eMSDP_LEA_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_LEVEL	protocol.h	/^    eMSDP_LEVEL,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MANA	protocol.h	/^    eMSDP_MANA,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MANA_MAX	protocol.h	/^    eMSDP_MANA_MAX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MAX	protocol.h	/^    eMSDP_MAX                   \/* This must always be last *\/$/;"	e	enum:__anon35d14cad0303
+eMSDP_MONEY	protocol.h	/^    eMSDP_MONEY,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MOVEMENT	protocol.h	/^    eMSDP_MOVEMENT,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MOVEMENT_MAX	protocol.h	/^    eMSDP_MOVEMENT_MAX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_MXP	protocol.h	/^    eMSDP_MXP,$/;"	e	enum:__anon35d14cad0303
+eMSDP_NONE	protocol.h	/^    eMSDP_NONE = -1,            \/* This must always be first. *\/$/;"	e	enum:__anon35d14cad0303
+eMSDP_OPPONENT_HEALTH	protocol.h	/^    eMSDP_OPPONENT_HEALTH,$/;"	e	enum:__anon35d14cad0303
+eMSDP_OPPONENT_HEALTH_MAX	protocol.h	/^    eMSDP_OPPONENT_HEALTH_MAX,$/;"	e	enum:__anon35d14cad0303
+eMSDP_OPPONENT_LEVEL	protocol.h	/^    eMSDP_OPPONENT_LEVEL,$/;"	e	enum:__anon35d14cad0303
+eMSDP_OPPONENT_NAME	protocol.h	/^    eMSDP_OPPONENT_NAME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_PLUGIN_ID	protocol.h	/^    eMSDP_PLUGIN_ID,$/;"	e	enum:__anon35d14cad0303
+eMSDP_PRACTICE	protocol.h	/^    eMSDP_PRACTICE,$/;"	e	enum:__anon35d14cad0303
+eMSDP_RACE	protocol.h	/^    eMSDP_RACE,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ROOM	protocol.h	/^    eMSDP_ROOM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ROOM_EXITS	protocol.h	/^    eMSDP_ROOM_EXITS,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ROOM_NAME	protocol.h	/^    eMSDP_ROOM_NAME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_ROOM_VNUM	protocol.h	/^    eMSDP_ROOM_VNUM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_SERVER_ID	protocol.h	/^    eMSDP_SERVER_ID,$/;"	e	enum:__anon35d14cad0303
+eMSDP_SERVER_TIME	protocol.h	/^    eMSDP_SERVER_TIME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_SNIPPET_VERSION	protocol.h	/^    eMSDP_SNIPPET_VERSION,$/;"	e	enum:__anon35d14cad0303
+eMSDP_SOUND	protocol.h	/^    eMSDP_SOUND,$/;"	e	enum:__anon35d14cad0303
+eMSDP_SPIRIT	protocol.h	/^    eMSDP_SPIRIT,$/;"	e	enum:__anon35d14cad0303
+eMSDP_STR	protocol.h	/^    eMSDP_STR,$/;"	e	enum:__anon35d14cad0303
+eMSDP_STR_PERM	protocol.h	/^    eMSDP_STR_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_UTF_8	protocol.h	/^    eMSDP_UTF_8,$/;"	e	enum:__anon35d14cad0303
+eMSDP_WILL	protocol.h	/^    eMSDP_WILL,$/;"	e	enum:__anon35d14cad0303
+eMSDP_WIL_PERM	protocol.h	/^    eMSDP_WIL_PERM,$/;"	e	enum:__anon35d14cad0303
+eMSDP_WIMPY	protocol.h	/^    eMSDP_WIMPY,$/;"	e	enum:__anon35d14cad0303
+eMSDP_WORLD_TIME	protocol.h	/^    eMSDP_WORLD_TIME,$/;"	e	enum:__anon35d14cad0303
+eMSDP_XTERM_256_COLORS	protocol.h	/^    eMSDP_XTERM_256_COLORS,$/;"	e	enum:__anon35d14cad0303
+eNEGOTIATED_ATCP	protocol.h	/^    eNEGOTIATED_ATCP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_CHARSET	protocol.h	/^    eNEGOTIATED_CHARSET,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_ECHO	protocol.h	/^    eNEGOTIATED_ECHO,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MAX	protocol.h	/^    eNEGOTIATED_MAX             \/* This must always be last *\/$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MCCP	protocol.h	/^    eNEGOTIATED_MCCP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MSDP	protocol.h	/^    eNEGOTIATED_MSDP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MSP	protocol.h	/^    eNEGOTIATED_MSP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MSSP	protocol.h	/^    eNEGOTIATED_MSSP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MXP	protocol.h	/^    eNEGOTIATED_MXP,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_MXP2	protocol.h	/^    eNEGOTIATED_MXP2,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_NAWS	protocol.h	/^    eNEGOTIATED_NAWS,$/;"	e	enum:__anon35d14cad0103
+eNEGOTIATED_TTYPE	protocol.h	/^    eNEGOTIATED_TTYPE,$/;"	e	enum:__anon35d14cad0103
+eNO	protocol.h	/^    eNO,$/;"	e	enum:__anon35d14cad0203
+eSOMETIMES	protocol.h	/^    eSOMETIMES,$/;"	e	enum:__anon35d14cad0203
+eUNKNOWN	protocol.h	/^    eUNKNOWN,$/;"	e	enum:__anon35d14cad0203
+eYES	protocol.h	/^    eYES$/;"	e	enum:__anon35d14cad0203
 echo_off	utility.cpp	/^void echo_off(int sock)$/;"	f	typeref:typename:void
 echo_on	utility.cpp	/^void echo_on(int sock)$/;"	f	typeref:typename:void
 edit_mudlle	shapemdl.cpp	/^void edit_mudlle(struct char_data* ch)$/;"	f	typeref:typename:void
@@ -2846,10 +3089,13 @@ encrypt_line_lp	utility.cpp	/^unsigned char encrypt_line_lp[1000];$/;"	v	typeref
 encumb	structs.h	/^    sh_int encumb; \/* how encumbered a player is, affects casting and$/;"	m	struct:char_point_data	typeref:typename:sh_int
 encumb_table	consts.cpp	/^sh_int encumb_table[MAX_WEAR] = {$/;"	v	typeref:typename:sh_int[]
 encumb_weight	structs.h	/^    sh_int encumb_weight; \/* weight for skill encumberance            *\/$/;"	m	struct:char_special_data	typeref:typename:sh_int
+encumbrance	mob_csv_extract.cpp	/^    int encumbrance {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 end	structs.h	/^    char_iter end() { return members.end(); }$/;"	f	class:group_data	typeref:typename:char_iter
 end	structs.h	/^    const_char_iter end() const { return members.end(); }$/;"	f	class:group_data	typeref:typename:const_char_iter
 enemy	structs.h	/^    struct char_data* enemy;$/;"	m	struct:memory_rec	typeref:struct:char_data *
 enemy_number	structs.h	/^    int enemy_number;$/;"	m	struct:memory_rec	typeref:typename:int
+energy	mob_csv_extract.cpp	/^    int energy {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
+energy_regeneration	mob_csv_extract.cpp	/^    int energy_regeneration {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 enforce_position	mobact.cpp	/^void enforce_position(struct char_data* ch, int new_pos)$/;"	f	typeref:typename:void
 entries	obj2html.cpp	/^int entries; \/* The number of entries in the current table so far*\/$/;"	v	typeref:typename:int
 equals	char_utils.cpp	/^bool equals(const char* a, const char* b) { return strcmp(a, b) == 0; }$/;"	f	namespace:string_func	typeref:typename:bool
@@ -2871,6 +3117,7 @@ exp	limits.h	/^    int exp;$/;"	m	struct:title_type	typeref:typename:int
 exp	structs.h	/^    int exp; \/* The experience of the player            *\/$/;"	m	struct:char_point_data	typeref:typename:int
 exp	structs.h	/^    int exp;$/;"	m	struct:follower_file_elem	typeref:typename:int
 exp_with_modifiers	fight.cpp	/^int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp)$/;"	f	typeref:typename:int
+experience	mob_csv_extract.cpp	/^    int experience {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 exploit_record	db.h	/^struct exploit_record {$/;"	s
 exposed_target	structs.h	/^    char_data* exposed_target;$/;"	m	struct:elemental_spec_data	typeref:typename:char_data *
 extension_next	structs.h	/^    room_data_extension* extension_next;$/;"	m	struct:room_data_extension	typeref:typename:room_data_extension *
@@ -2920,7 +3167,9 @@ fields	act_wiz.cpp	/^} fields[] = {$/;"	v	typeref:struct:set_struct[]
 fight_messages	db.cpp	/^struct message_list fight_messages[MAX_MESSAGES]; \/* fighting messages	*\/$/;"	v	typeref:struct:message_list[]
 fighting	structs.h	/^    struct char_data* fighting; \/* Opponent                             *\/$/;"	m	struct:char_special_data	typeref:struct:char_data *
 file	db.h	/^    FILE* file;$/;"	m	struct:help_index_summary	typeref:typename:FILE *
+file	mob_csv_extract.h	/^    FILE* file;$/;"	m	class:mob_csv_extract	typeref:typename:FILE *
 file_end_pos	mail.cpp	/^long file_end_pos = 0; \/* length of file *\/$/;"	v	typeref:typename:long
+file_location	mob_csv_extract.h	/^    std::string file_location = "..\/mobs\/mob.csv";$/;"	m	class:mob_csv_extract	typeref:typename:std::string
 file_to_string	db.cpp	/^int file_to_string(char* name, char* buf)$/;"	f	typeref:typename:int
 file_to_string_alloc	db.cpp	/^int file_to_string_alloc(char* name, char** buf)$/;"	f	typeref:typename:int
 filename	boards.h	/^    char filename[50]; \/* file to save this board to *\/$/;"	m	struct:board_info_type	typeref:typename:char[50]
@@ -3021,6 +3270,7 @@ genders	consts.cpp	/^char* genders[] = {$/;"	v	typeref:typename:char * []
 general_description	structs.h	/^    char* general_description; \/* When look DIR.                  *\/$/;"	m	struct:room_direction_data	typeref:typename:char *
 generate_damage_message	fight.cpp	/^void generate_damage_message(char_data* attacker, char_data* victim, int damage, int attacktype,/;"	f	typeref:typename:void
 generate_frenzy_message	olog_hai.cpp	/^void generate_frenzy_message(char_data* character)$/;"	f	namespace:olog_hai	typeref:typename:void
+generate_npc_stat	mob_csv_extract.cpp	/^std::string mob_csv_extract::generate_npc_stat(char_data* mob)$/;"	f	class:mob_csv_extract	typeref:typename:std::string
 generate_smash_dismount_messages	olog_hai.cpp	/^void generate_smash_dismount_messages(char_data* attacker, char_data* victim)$/;"	f	namespace:olog_hai	typeref:typename:void
 generic_find	handler.cpp	/^int generic_find(char* arg, int bitvector, struct char_data* ch,$/;"	f	typeref:typename:int
 generic_poison	spec_ass.cpp	/^struct obj_data generic_poison;$/;"	v	typeref:struct:obj_data
@@ -3085,6 +3335,8 @@ get_cur_int	structs.h	/^    int get_cur_int() const { return tmpabilities.intel;
 get_cur_lea	structs.h	/^    int get_cur_lea() const { return tmpabilities.lea; }$/;"	f	struct:char_data	typeref:typename:int
 get_cur_str	structs.h	/^    int get_cur_str() const { return tmpabilities.str; }$/;"	f	struct:char_data	typeref:typename:int
 get_cur_wil	structs.h	/^    int get_cur_wil() const { return tmpabilities.wil; }$/;"	f	struct:char_data	typeref:typename:int
+get_current_hit	char_utils.cpp	/^int get_current_hit(const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
+get_current_moves	char_utils.cpp	/^int get_current_moves(char_data* character)$/;"	f	namespace:utils	typeref:typename:int
 get_current_spec	structs.h	/^    game_types::player_specs get_current_spec() const { return current_spec; }$/;"	f	struct:specialization_data	typeref:typename:game_types::player_specs
 get_current_time_phase	utility.cpp	/^char get_current_time_phase()$/;"	f	typeref:typename:char
 get_damage_message_number	fight.cpp	/^int get_damage_message_number(int damage)$/;"	f	typeref:typename:int
@@ -3119,6 +3371,7 @@ get_from_room	act_obj1.cpp	/^void get_from_room(struct char_data* ch, char* arg)
 get_from_txt_block_pool	comm.cpp	/^struct txt_block* get_from_txt_block_pool(char* line)$/;"	f	typeref:struct:txt_block *
 get_group_leader	structs.h	/^    char_data* get_group_leader() const { return group ? group->get_leader() : NULL; }$/;"	f	struct:char_data	typeref:typename:char_data *
 get_guardian_type	consts.cpp	/^int get_guardian_type(int race_number, const char_data* in_guardian_mob)$/;"	f	typeref:typename:int
+get_health_percent	comm.cpp	/^int get_health_percent(char_data* character) {$/;"	f	typeref:typename:int
 get_highest_coeffs	char_utils.cpp	/^int get_highest_coeffs(const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
 get_hike_bonus	profs.cpp	/^int get_hike_bonus(const char_data& character, int profession)$/;"	f	namespace:__anon74893e800111	typeref:typename:int
 get_hit_location	combat_manager.cpp	/^    int get_hit_location(const char_data& victim)$/;"	f	namespace:game_rules::__anon35b427860111	typeref:typename:int
@@ -3145,14 +3398,15 @@ get_level_a	char_utils.cpp	/^int get_level_a(const char_data& character)$/;"	f	n
 get_level_abbr	act_info.cpp	/^get_level_abbr(sh_int level, sh_int race)$/;"	f	typeref:typename:char *	file:
 get_level_b	char_utils.cpp	/^int get_level_b(const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
 get_level_legend_cap	char_utils.cpp	/^int get_level_legend_cap(const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
-get_logged_in_count_message	comm.cpp	/^std::string get_logged_in_count_message(descriptor_data* list)$/;"	f	typeref:typename:std::string
 get_mage_caster_level	mage.cpp	/^int get_mage_caster_level(const char_data* caster)$/;"	f	typeref:typename:int
 get_mage_spec	structs.h	/^    elemental_spec_data* get_mage_spec() const$/;"	f	struct:specialization_data	typeref:typename:elemental_spec_data *
 get_magic_power	mage.cpp	/^int get_magic_power(const char_data* caster)$/;"	f	typeref:typename:int
 get_max_con	structs.h	/^    int get_max_con() const { return abilities.con; }$/;"	f	struct:char_data	typeref:typename:int
 get_max_dex	structs.h	/^    int get_max_dex() const { return abilities.dex; }$/;"	f	struct:char_data	typeref:typename:int
+get_max_hit	char_utils.cpp	/^int get_max_hit(const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
 get_max_int	structs.h	/^    int get_max_int() const { return abilities.intel; }$/;"	f	struct:char_data	typeref:typename:int
 get_max_lea	structs.h	/^    int get_max_lea() const { return abilities.lea; }$/;"	f	struct:char_data	typeref:typename:int
+get_max_moves	char_utils.cpp	/^int get_max_moves(char_data* character)$/;"	f	namespace:utils	typeref:typename:int
 get_max_practice_count	char_utils.cpp	/^int char_data::get_max_practice_count() const$/;"	f	class:char_data	typeref:typename:int
 get_max_race_prof_level	char_utils.cpp	/^int get_max_race_prof_level(int prof, const char_data& character)$/;"	f	namespace:utils	typeref:typename:int
 get_max_str	structs.h	/^    int get_max_str() const { return abilities.str; }$/;"	f	struct:char_data	typeref:typename:int
@@ -3327,6 +3581,7 @@ has_bonus_attack_speed	wild_fighting_handler.cpp	/^bool wild_fighting_handler::h
 has_critical_stat_damage	utility.cpp	/^int has_critical_stat_damage(struct char_data* ch)$/;"	f	typeref:typename:int
 has_key	act_move.cpp	/^obj_data* has_key(char_data* character, int key)$/;"	f	typeref:typename:obj_data *
 has_mail	mail.cpp	/^int has_mail(char* recipient)$/;"	f	typeref:typename:int
+has_proxy	comm.cpp	/^int has_proxy; \/* Game expects to be proxied *\/$/;"	v	typeref:typename:int
 he_or_she	char_utils.cpp	/^const char* he_or_she(const char_data& character)$/;"	f	namespace:utils	typeref:typename:const char *
 head	mudlle.h	/^    signed char head;$/;"	m	struct:special_list	typeref:typename:signed char
 head	structs.h	/^    struct txt_block* head;$/;"	m	struct:txt_q	typeref:struct:txt_block *
@@ -3336,7 +3591,8 @@ header_block_type_d	mail.h	/^struct header_block_type_d {$/;"	s
 heading	boards.h	/^    char* heading; \/* pointer to message's heading *\/$/;"	m	struct:board_msginfo	typeref:typename:char *
 heading_len	boards.h	/^    int heading_len; \/* size of header (for file write) *\/$/;"	m	struct:board_msginfo	typeref:typename:int
 health_diagnose	consts.cpp	/^struct prompt_type health_diagnose[] = {$/;"	v	typeref:struct:prompt_type[]
-health_percentage	warrior_spec_handlers.h	/^    float health_percentage = 0.0f;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:float
+health_percentage	warrior_spec_handlers.h	/^            float health_percentage = 0.0f;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:float
+health_point	mob_csv_extract.cpp	/^    int health_point {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 health_regen	structs.h	/^    int health_regen = 0; \/* bonus health regen from spells etc. *\/$/;"	m	struct:char_point_data	typeref:typename:int
 heavy_fighting_damage	structs.h	/^    unsigned int heavy_fighting_damage;$/;"	m	struct:heavy_fighting_data	typeref:typename:unsigned int
 heavy_fighting_data	structs.h	/^    heavy_fighting_data()$/;"	f	struct:heavy_fighting_data
@@ -3434,6 +3690,7 @@ int_tolist	mudlle.cpp	/^void int_tolist(struct char_data* host, struct char_data
 int_tostack	mudlle.cpp	/^void int_tostack(struct char_data* host, char* arg, int cmd,$/;"	f	typeref:typename:void
 int_unary_op	script.cpp	/^int int_unary_op(struct info_script* info, int command, int* a)$/;"	f	typeref:typename:int
 intel	structs.h	/^    signed char intel;$/;"	m	struct:char_ability_data	typeref:typename:signed char
+intelligence	mob_csv_extract.cpp	/^    int intelligence {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 introduce_char	interpre.cpp	/^void introduce_char(struct descriptor_data* d)$/;"	f	typeref:typename:void
 ints	protos.h	/^    int ints[3]; \/\/  Variables$/;"	m	struct:info_script	typeref:typename:int[3]
 inv_sorting	act_othe.cpp	/^std::array<std::string_view, 4> inv_sorting = { "default", "grouped", "alpha", "length" };$/;"	v	typeref:typename:std::array<std::string_view,4>
@@ -3452,7 +3709,7 @@ is_affected_by	char_utils.cpp	/^bool is_affected_by(const char_data& character, 
 is_affected_by_spell	char_utils.cpp	/^affected_type* is_affected_by_spell(char_data& character, int skill_id)$/;"	f	namespace:utils	typeref:typename:affected_type *
 is_artifact	object_utils.cpp	/^bool is_artifact(const obj_data& object)$/;"	f	namespace:utils	typeref:typename:bool
 is_awake	char_utils.cpp	/^bool is_awake(const char_data& character)$/;"	f	namespace:utils	typeref:typename:bool
-is_battle_spec	warrior_spec_handlers.h	/^    bool is_battle_spec = false;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:bool
+is_battle_spec	warrior_spec_handlers.h	/^            bool is_battle_spec = false;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:bool
 is_bite_targ_valid	act_offe.cpp	/^char_data* is_bite_targ_valid(char_data* biter, waiting_type* target)$/;"	f	typeref:typename:char_data *
 is_blocking	structs.h	/^    bool is_blocking;$/;"	m	struct:defender_data	typeref:typename:bool
 is_chain	structs.h	/^    bool is_chain() const { return material == 3; }$/;"	f	struct:obj_flag_data	typeref:typename:bool
@@ -3467,6 +3724,7 @@ is_empty	zone.cpp	/^int is_empty(int zone_nr)$/;"	f	typeref:typename:int
 is_engaged_with_victim	spec_pro.cpp	/^bool is_engaged_with_victim(const char_data* character, const char_data* victim)$/;"	f	namespace:__anonbe9831f10111	typeref:typename:bool
 is_evil	char_utils.cpp	/^bool is_evil(const char_data& character)$/;"	f	namespace:utils	typeref:typename:bool
 is_evil_race	char_utils.cpp	/^bool is_evil_race(const char_data& character)$/;"	f	namespace:utils	typeref:typename:bool
+is_exit_valid	act_move.cpp	/^bool is_exit_valid(const room_direction_data room_direction) {$/;"	f	typeref:typename:bool
 is_fast	spells.h	/^    byte is_fast; \/* non-zero if fast-updating skill *\/$/;"	m	struct:skill_data	typeref:typename:byte
 is_frenzy_active	fight.cpp	/^bool is_frenzy_active(char_data& attacker)$/;"	f	typeref:typename:bool
 is_frenzying	structs.h	/^    bool is_frenzying;$/;"	m	struct:wild_fighting_data	typeref:typename:bool
@@ -3533,7 +3791,7 @@ is_skill_offensive	big_brother.cpp	/^bool big_brother::is_skill_offensive(int sk
 is_skill_valid	olog_hai.cpp	/^bool is_skill_valid(char_data* ch, const int& skill_id)$/;"	f	namespace:olog_hai	typeref:typename:bool
 is_smash_target_valid	olog_hai.cpp	/^char_data* is_smash_target_valid(char_data* attacker, waiting_type* target)$/;"	f	namespace:olog_hai	typeref:typename:char_data *
 is_social	interpre.h	/^    byte is_social;$/;"	m	struct:command_info	typeref:typename:byte
-is_spell_free	spell_pa.cpp	/^bool is_spell_free(const int spell_index) {$/;"	f	namespace:__anonb40a49460111	typeref:typename:bool
+is_spell_free	spell_pa.cpp	/^bool is_spell_free(const int spell_index)$/;"	f	namespace:__anonb40a49460111	typeref:typename:bool
 is_stat_critical	clerics.cpp	/^bool is_stat_critical(const char_data* victim)$/;"	f	typeref:typename:bool
 is_strong_enough_to_tame	ranger.cpp	/^bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_follower/;"	f	typeref:typename:bool
 is_sunlit_exit	environment_utils.cpp	/^bool is_sunlit_exit(const weather_data& weather, const room_data& current_room, const room_data&/;"	f	namespace:utils	typeref:typename:bool
@@ -3615,10 +3873,12 @@ leader	structs.h	/^    struct char_data* leader;$/;"	m	class:group_data	typeref:
 learn_diff	spells.h	/^    int learn_diff; \/* difficulty *\/$/;"	m	struct:skill_data	typeref:typename:int
 learn_type	spells.h	/^    char learn_type; \/* If the skill is spec only set to 65 otherwise 1  *\/$/;"	m	struct:skill_data	typeref:typename:char
 learned_message	spells.h	/^    char* learned_message;$/;"	m	struct:skill_teach_data	typeref:typename:char *
+learning	mob_csv_extract.cpp	/^    int learning {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 leave_to_inside	interpre.h	/^    char leave_to_inside[255]; \/\/ $o - for the ferry$/;"	m	struct:ferry_captain_type	typeref:typename:char[255]
 leave_to_outside	interpre.h	/^    char leave_to_outside[255]; \/\/ $n stands for the captain,$/;"	m	struct:ferry_captain_type	typeref:typename:char[255]
 leg_encumb	structs.h	/^    int leg_encumb; \/* how encumbered is char for movement\/dodging? *\/$/;"	m	struct:char_special2_data	typeref:typename:int
 leg_encumb_table	consts.cpp	/^sh_int leg_encumb_table[MAX_WEAR] = {$/;"	v	typeref:typename:sh_int[]
+leg_encumbrance	mob_csv_extract.cpp	/^    int leg_encumbrance {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 len_str	structs.h	/^    unsigned int len_str; \/* present length of *str               *\/$/;"	m	struct:descriptor_data	typeref:typename:unsigned int
 length	interpre.h	/^    int length; \/\/ route length$/;"	m	struct:ferry_captain_type	typeref:typename:int
 length	interpre.h	/^    int length;$/;"	m	struct:ferry_boat_type	typeref:typename:int
@@ -3628,6 +3888,7 @@ level	act_wiz.cpp	/^        char level;$/;"	m	struct:ACMD::show_struct	typeref:t
 level	act_wiz.cpp	/^    char level;$/;"	m	struct:set_struct	typeref:typename:char	file:
 level	boards.h	/^    int level; \/* level of poster *\/$/;"	m	struct:board_msginfo	typeref:typename:int
 level	db.h	/^    sh_int level;$/;"	m	struct:player_index_element	typeref:typename:sh_int
+level	mob_csv_extract.cpp	/^    int level {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 level	protos.h	/^    int x, y, level;$/;"	m	struct:shape_zone	typeref:typename:int
 level	spec_pro.cpp	/^    int level; \/* The highest level that this object will load for *\/$/;"	m	struct:kit_item	typeref:typename:int	file:
 level	spells.h	/^    char level;$/;"	m	struct:skill_data	typeref:typename:char
@@ -3737,7 +3998,7 @@ m_weather	singleton.h	/^    const weather_data* m_weather;$/;"	m	class:world_sin
 m_working_data	act_info.cpp	/^    std::string m_working_data;$/;"	m	class:__anon771319790111::inventory_formatter	typeref:typename:std::string	file:
 m_world	combat_manager.h	/^    const room_data* m_world;$/;"	m	class:game_rules::combat_manager	typeref:typename:const room_data *
 m_world	singleton.h	/^    const room_data* m_world;$/;"	m	class:world_singleton	typeref:typename:const room_data *
-mage_level	warrior_spec_handlers.h	/^    int mage_level = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
+mage_level	warrior_spec_handlers.h	/^            int mage_level = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
 magi_power	zone.h	/^    int white_power, dark_power, magi_power; \/* power of races present *\/$/;"	m	struct:zone_data	typeref:typename:int
 mail_board	boards.cpp	/^struct mail_info_type* mail_board;$/;"	v	typeref:struct:mail_info_type *
 mail_index	mail.cpp	/^mail_index_type* mail_index = 0; \/* list of recs in the mail file  *\/$/;"	v	typeref:typename:mail_index_type *
@@ -3774,7 +4035,7 @@ material	structs.h	/^    signed char material; \/* what is it made of           
 material_messages	act_info.cpp	/^char* material_messages[] = {$/;"	v	typeref:typename:char * []
 maul_calculate_duration	act_offe.cpp	/^int maul_calculate_duration(char_data* mauler)$/;"	f	typeref:typename:int
 maul_damage_reduction	fight.cpp	/^int maul_damage_reduction(char_data* ch, int damage)$/;"	f	typeref:typename:int
-max_health	warrior_spec_handlers.h	/^    int max_health = 0;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
+max_health	warrior_spec_handlers.h	/^            int max_health = 0;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
 max_mini_level	structs.h	/^    int max_mini_level;$/;"	m	struct:char_special2_data	typeref:typename:int
 max_npc_corpse_time	config.cpp	/^int max_npc_corpse_time = 10;$/;"	v	typeref:typename:int
 max_num_items_looted	big_brother.h	/^        int max_num_items_looted;$/;"	m	struct:game_rules::big_brother::player_corpse_data	typeref:typename:int
@@ -3813,6 +4074,8 @@ minimum_position	spells.h	/^    byte minimum_position; \/* Position for caster *
 miss_msg	structs.h	/^    struct msg_type miss_msg; \/* messages when miss			*\/$/;"	m	struct:message_type	typeref:struct:msg_type
 missing_cash1	shop.cpp	/^    char* missing_cash1; \/* Message if keeper hasn't got cash    *\/$/;"	m	struct:shop_data	typeref:typename:char *	file:
 missing_cash2	shop.cpp	/^    char* missing_cash2; \/* Message if player hasn't got cash    *\/$/;"	m	struct:shop_data	typeref:typename:char *	file:
+mob_csv_data	mob_csv_extract.cpp	/^struct mob_csv_data {$/;"	s	file:
+mob_csv_extract	mob_csv_extract.h	/^class mob_csv_extract {$/;"	c
 mob_index	db.cpp	/^struct index_data* mob_index; \/* index table for mobile file	*\/$/;"	v	typeref:struct:index_data *
 mob_proto	db.cpp	/^struct char_data* mob_proto; \/* prototypes for mobs		*\/$/;"	v	typeref:struct:char_data *
 mobile_activity	mobact.cpp	/^void mobile_activity(void)$/;"	f	typeref:typename:void
@@ -3856,6 +4119,9 @@ move_out_outside	interpre.h	/^    char move_out_outside[255];$/;"	m	struct:ferry
 move_regen	structs.h	/^    int move_regen = 0; \/* bonus move regen from spells etc. *\/$/;"	m	struct:char_point_data	typeref:typename:int
 move_wearables_to_corpse	fight.cpp	/^void move_wearables_to_corpse(obj_data* corpse)$/;"	f	typeref:typename:void
 movement_loss	consts.cpp	/^int movement_loss[] = { \/* movement cost with a good load BTW. min. is 3\/4 .. 2->1 4->2.5 6->4/;"	v	typeref:typename:int[]
+moves	mob_csv_extract.cpp	/^    int moves {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
+msdp_room_update	act_move.cpp	/^void msdp_room_update(char_data* ch) {$/;"	f	typeref:typename:void
+msdp_update	comm.cpp	/^void msdp_update() {$/;"	f	typeref:typename:void
 msg	structs.h	/^    struct message_type* msg; \/* List of messages.			*\/$/;"	m	struct:message_list	typeref:struct:message_type *
 msg_index	boards.h	/^    struct board_msginfo* msg_index;$/;"	m	struct:board_info_type	typeref:struct:board_msginfo *
 msg_msgnum	boards.h	/^    virtual int msg_msgnum(int i) { return msg_index[i].msg_num; }$/;"	f	struct:board_info_type	typeref:typename:int
@@ -3871,6 +4137,7 @@ mudlog	utility.cpp	/^void mudlog(char* str, char type, sh_int level, byte file)$
 n	mage.cpp	/^    signed char n; \/\/$/;"	m	struct:loclife_coord	typeref:typename:signed char	file:
 name	db.h	/^    char name[MAX_NAME_LENGTH + 1];$/;"	m	struct:ban_list_element	typeref:typename:char[]
 name	db.h	/^    char* name;$/;"	m	struct:player_index_element	typeref:typename:char *
+name	mob_csv_extract.cpp	/^    std::string name;$/;"	m	struct:mob_csv_data	typeref:typename:std::string	file:
 name	pkill.h	/^    char* name;$/;"	m	struct:__anonb27b44b70208	typeref:typename:char *
 name	protos.h	/^    char* name; \/\/  Name of script$/;"	m	struct:shape_script	typeref:typename:char *
 name	protos.h	/^    char* name; \/\/  Name of the script$/;"	m	struct:script_head	typeref:typename:char *
@@ -3886,6 +4153,7 @@ name_to_drinkcon	act_obj2.cpp	/^void name_to_drinkcon(struct obj_data* obj, int 
 nameserver_is_slow	config.cpp	/^int nameserver_is_slow = YES;$/;"	v	typeref:typename:int
 nanny	interpre.cpp	/^void nanny(struct descriptor_data* d, char* arg)$/;"	f	typeref:typename:void
 natural_attack_dam	fight.cpp	/^int natural_attack_dam(struct char_data* attacker)$/;"	f	typeref:typename:int
+negotiated_t	protocol.h	/^} negotiated_t;$/;"	t	typeref:enum:__anon35d14cad0103
 net_cost_per_hour	structs.h	/^    int net_cost_per_hour;$/;"	m	struct:rent_info	typeref:typename:int
 new_mob	shapemob.cpp	/^void new_mob(struct char_data* ch)$/;"	f	typeref:typename:void
 new_mud	db.cpp	/^int new_mud = 0;$/;"	v	typeref:typename:int
@@ -3939,9 +4207,11 @@ no_such_item1	shop.cpp	/^    char* no_such_item1; \/* Message if keeper hasn't g
 no_such_item2	shop.cpp	/^    char* no_such_item2; \/* Message if player hasn't got an item *\/$/;"	m	struct:shop_data	typeref:typename:char *	file:
 nonblock	comm.cpp	/^void nonblock(SocketType s)$/;"	f	typeref:typename:void
 not_found	db.h	/^    char* not_found; \/* An argument was there, but no victim was found *\/$/;"	m	struct:social_messg	typeref:typename:char *
+npc_flags	mob_csv_extract.cpp	/^    long npc_flags {};$/;"	m	struct:mob_csv_data	typeref:typename:long	file:
 npc_prof_types	consts.cpp	/^char* npc_prof_types[] = {$/;"	v	typeref:typename:char * []
 nr	structs.h	/^    int nr; \/* monster nr (pos in file)      *\/$/;"	m	struct:char_data	typeref:typename:int
 nth	utility.cpp	/^char* nth(int n)$/;"	f	typeref:typename:char *
+null_speed	mob_csv_extract.cpp	/^    int null_speed {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 null_speed	structs.h	/^    int null_speed; \/*UPDATE* For temporary use, should be removed later*\/$/;"	m	struct:char_special_data	typeref:typename:int
 num_invalid	ban.cpp	/^int num_invalid = 0;$/;"	v	typeref:typename:int
 num_items_looted	big_brother.h	/^        int num_items_looted;$/;"	m	struct:game_rules::big_brother::player_corpse_data	typeref:typename:int
@@ -4021,6 +4291,7 @@ off_hand_energy	structs.h	/^    sh_int off_hand_energy;$/;"	m	struct:light_fight
 off_hand_energy_regen	structs.h	/^    sh_int off_hand_energy_regen;$/;"	m	struct:light_fighting_data	typeref:typename:sh_int
 off_hand_weapon	structs.h	/^    obj_data* off_hand_weapon;$/;"	m	struct:light_fighting_data	typeref:typename:obj_data *
 offense_if_weapon_hits	combat_manager.cpp	/^double combat_manager::offense_if_weapon_hits(char_data* attacker, char_data* victim, bool hit_a/;"	f	class:game_rules::combat_manager	typeref:typename:double
+offensive_bonus	mob_csv_extract.cpp	/^    int offensive_bonus {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 ohmask	obj2html.cpp	/^unsigned long ohmask = 1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 1 << 4;$/;"	v	typeref:typename:unsigned long
 old_create_entry	db.cpp	/^int old_create_entry(char* name)$/;"	f	typeref:typename:int
 old_search_block	interpre.cpp	/^int old_search_block(char* argument, int begin, unsigned int length, const char** list, int mode/;"	f	typeref:typename:int
@@ -4088,8 +4359,19 @@ owner	structs.h	/^    int owner;$/;"	m	struct:obj_data	typeref:typename:int
 owner	zone.h	/^    int owner; \/* one of the owners of zone\/object *\/$/;"	m	struct:owner_list	typeref:typename:int
 owner_list	zone.h	/^struct owner_list {$/;"	s
 owners	zone.h	/^    struct owner_list* owners;$/;"	m	struct:zone_data	typeref:struct:owner_list *
+pDefault	protocol.h	/^    const char  *pDefault;      \/* The default value for a string *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:const char *
+pFunction	protocol.h	/^    const char  *(*pFunction)();\/* Optional function to return the value *\/$/;"	m	struct:__anon35d14cad0608	typeref:typename:const char * (*)()
+pLastTTYPE	protocol.h	/^    char     *pLastTTYPE;       \/* Used for the cyclic TTYPE check *\/$/;"	m	struct:protocol_t	typeref:typename:char *
+pMXPVersion	protocol.h	/^    char     *pMXPVersion;      \/* The version of MXP supported *\/$/;"	m	struct:protocol_t	typeref:typename:char *
+pName	protocol.h	/^    const char  *pName;         \/* The name of the MSSP variable *\/$/;"	m	struct:__anon35d14cad0608	typeref:typename:const char *
+pName	protocol.h	/^    const char  *pName;         \/* The string name of this variable *\/$/;"	m	struct:__anon35d14cad0408	typeref:typename:const char *
+pProtocol	structs.h	/^    protocol_t *pProtocol;$/;"	m	struct:descriptor_data	typeref:typename:protocol_t *
+pValue	protocol.h	/^    const char  *pValue;        \/* The value of the MSSP variable *\/$/;"	m	struct:__anon35d14cad0608	typeref:typename:const char *
+pValueString	protocol.h	/^    char        *pValueString;  \/* The string value of the variable *\/$/;"	m	struct:__anon35d14cad0508	typeref:typename:char *
+pVariables	protocol.h	/^    MSDP_t  **pVariables;       \/* The MSDP variables *\/$/;"	m	struct:protocol_t	typeref:typename:MSDP_t **
 page_string	modify.cpp	/^void page_string(struct descriptor_data* d, char* str, int keep_internal)$/;"	f	typeref:typename:void
 param	protos.h	/^    int param[6]; \/\/  Parameters for command (if needed)  Refers to a char_script variable$/;"	m	struct:script_data	typeref:typename:int[6]
+parry	mob_csv_extract.cpp	/^    int parry {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 parry	structs.h	/^    sh_int parry; \/* parry in normal tactics *\/$/;"	m	struct:char_point_data	typeref:typename:sh_int
 parry_coef_mod	object_utils.cpp	/^        double parry_coef_mod;$/;"	m	struct:utils::__anon20d0bf1d0111::weapon_coef_mod	typeref:typename:double	file:
 parse_container	fight.cpp	/^void parse_container(obj_data* corpse, obj_data* container)$/;"	f	typeref:typename:void
@@ -4109,6 +4391,7 @@ pc_star_types	consts.cpp	/^char* pc_star_types[] = {$/;"	v	typeref:typename:char
 pcnpc	act_wiz.cpp	/^    char pcnpc;$/;"	m	struct:set_struct	typeref:typename:char	file:
 people	structs.h	/^    struct char_data* people; \/* List of NPC \/ PC in room           *\/$/;"	m	struct:room_data	typeref:struct:char_data *
 percent	structs.h	/^    sh_int percent[MAX_BODYPARTS];$/;"	m	struct:race_bodypart_data	typeref:typename:sh_int[]
+perception	mob_csv_extract.cpp	/^    int perception {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 perception	structs.h	/^    int perception; \/* perception changes between 0 and 100 *\/$/;"	m	struct:char_special2_data	typeref:typename:int
 perform_drop	act_obj1.cpp	/^int perform_drop(struct char_data* ch, struct obj_data* obj, sh_int RDR)$/;"	f	typeref:typename:int
 perform_drop_gold	act_obj1.cpp	/^void perform_drop_gold(struct char_data* ch, int amount, sh_int RDR)$/;"	f	typeref:typename:void
@@ -4276,6 +4559,7 @@ prompt_type	structs.h	/^struct prompt_type {$/;"	s
 prompt_value	structs.h	/^    int prompt_value; \/* value to be inserted into text prompt *\/$/;"	m	struct:char_special_data	typeref:typename:int
 proto	protos.h	/^    struct char_data* proto; \/* the proto to shape, to allocate here *\/$/;"	m	struct:shape_proto	typeref:struct:char_data *
 proto_chain	shapemob.cpp	/^int proto_chain[51] = {$/;"	v	typeref:typename:int[51]
+protocol_t	protocol.h	/^struct protocol_t$/;"	s
 ptr	structs.h	/^    } ptr;$/;"	m	struct:target_data	typeref:union:target_data::__anonb37368f3010a
 ptr	structs.h	/^    } ptr;$/;"	m	struct:universal_list	typeref:union:universal_list::__anonb37368f3040a
 pulse	comm.cpp	/^int pulse = 0; \/\/ moved here from being a local variable$/;"	v	typeref:typename:int
@@ -4300,6 +4584,7 @@ r_mortal_idle_room	consts.cpp	/^int r_mortal_idle_room[MAX_RACES];$/;"	v	typeref
 r_mortal_start_room	consts.cpp	/^int r_mortal_start_room[MAX_RACES];$/;"	v	typeref:typename:int[]
 r_retirement_home_room	db.cpp	/^int r_retirement_home_room; \/* rnum of retirement home      *\/$/;"	v	typeref:typename:int
 race	db.h	/^    sh_int race;$/;"	m	struct:player_index_element	typeref:typename:sh_int
+race	mob_csv_extract.cpp	/^    int race {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 race	pkill.h	/^    int race;$/;"	m	struct:__anonb27b44b70208	typeref:typename:int
 race	spec_pro.cpp	/^    int race; \/* A bitvector of races this will load for *\/$/;"	m	struct:kit_item	typeref:typename:int	file:
 race	structs.h	/^    byte race;$/;"	m	struct:char_file_u	typeref:typename:byte
@@ -4308,6 +4593,7 @@ race_abbrevs	consts.cpp	/^char* race_abbrevs[MAX_RACES + 40 \/*for mob ones*\/] 
 race_affect	consts.cpp	/^long race_affect[] = {$/;"	v	typeref:typename:long[]
 race_bodypart_data	structs.h	/^struct race_bodypart_data {$/;"	s
 race_modifiers	profs.cpp	/^sh_int race_modifiers[MAX_RACES][8] = {$/;"	v	typeref:typename:sh_int[][8]
+racial_movement_reduction	act_move.cpp	/^int racial_movement_reduction(const int room_type, const int race, const int movement_cost)$/;"	f	typeref:typename:int
 random_exit	mage.cpp	/^int random_exit(int room)$/;"	f	typeref:typename:int
 rank	db.h	/^    int rank;$/;"	m	struct:player_index_element	typeref:typename:int
 rank	pkill.h	/^    int rank;$/;"	m	struct:__anonb27b44b70208	typeref:typename:int
@@ -4338,7 +4624,6 @@ recalc_skills	spec_pro.cpp	/^void recalc_skills(struct char_data* ch)$/;"	f	type
 recalc_worn_weight	objsave.cpp	/^void recalc_worn_weight(char_data* character)$/;"	f	typeref:typename:void
 recalc_zone_power	handler.cpp	/^void recalc_zone_power()$/;"	f	typeref:typename:void
 recalculate_mob	shapemob.cpp	/^void recalculate_mob(struct char_data* ch)$/;"	f	typeref:typename:void
-racial_movement_reduction	act_move.cpp	/^int racial_movement_reduction(const int room_type, const int race, const int movement_cost) {$/;"	f	typeref:typename:int
 recipient	mail.h	/^    char recipient[NAME_SIZE + 1]; \/* who the mail is for *\/$/;"	m	struct:mail_index_type_d	typeref:typename:char[]
 recite_lines	structs.h	/^    char* recite_lines; \/* For reciters, how far read? *\/$/;"	m	struct:char_special_data	typeref:typename:char *
 record_crime	db.cpp	/^void record_crime(char_data* criminal, char_data* victim, int crime, int wit_type)$/;"	f	typeref:typename:void
@@ -4422,6 +4707,7 @@ reset_zone	zone.cpp	/^void reset_zone(int zone)$/;"	f	typeref:typename:void
 reshuffle	utility.cpp	/^void reshuffle(int* arr, int len)$/;"	f	typeref:typename:void
 resistance	structs.h	/^    sh_int resistance; \/* bitvector for resistances *\/$/;"	m	struct:char_special_data	typeref:typename:sh_int
 resistance_name	consts.cpp	/^char* resistance_name[] = {$/;"	v	typeref:typename:char * []
+resistances	mob_csv_extract.cpp	/^    int resistances {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 restore_stat	clerics.cpp	/^int restore_stat(char_data* character, int stat_num, int amount)$/;"	f	typeref:typename:int
 retire	utility.cpp	/^void retire(struct char_data* ch)$/;"	f	typeref:typename:void
 retired_allowed	interpre.h	/^    char retired_allowed;$/;"	m	struct:command_info	typeref:typename:char
@@ -4475,6 +4761,43 @@ run	delayed_command_interpreter.cpp	/^void delayed_command_interpreter::run()$/;
 run_script	script.cpp	/^int run_script(struct info_script* info, struct script_data* position)$/;"	f	typeref:typename:int
 run_the_game	comm.cpp	/^void run_the_game(sh_int port)$/;"	f	typeref:typename:void
 rush_forward_damage	structs.h	/^    unsigned int rush_forward_damage;$/;"	m	struct:wild_fighting_data	typeref:typename:unsigned int
+s_BackBlack	protocol.cpp	/^static const char s_BackBlack[] = "\\033[1;40m";   \/* Black background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackBlue	protocol.cpp	/^static const char s_BackBlue[] = "\\033[1;44m";    \/* Blue background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackCyan	protocol.cpp	/^static const char s_BackCyan[] = "\\033[1;46m";    \/* Cyan background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackGreen	protocol.cpp	/^static const char s_BackGreen[] = "\\033[1;42m";   \/* Green background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackMagenta	protocol.cpp	/^static const char s_BackMagenta[] = "\\033[1;45m"; \/* Magenta background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackRed	protocol.cpp	/^static const char s_BackRed[] = "\\033[1;41m";     \/* Red background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackWhite	protocol.cpp	/^static const char s_BackWhite[] = "\\033[1;47m";   \/* White background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BackYellow	protocol.cpp	/^static const char s_BackYellow[] = "\\033[1;43m";  \/* Yellow background *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldBlack	protocol.cpp	/^static const char s_BoldBlack[] = "\\033[1;30m";  \/* Grey foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldBlue	protocol.cpp	/^static const char s_BoldBlue[] = "\\033[1;34m";   \/* Bright blue foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldCyan	protocol.cpp	/^static const char s_BoldCyan[] = "\\033[1;36m";  \/* Bright cyan foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldGreen	protocol.cpp	/^static const char s_BoldGreen[] = "\\033[1;32m";  \/* Bright green foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldMagenta	protocol.cpp	/^static const char s_BoldMagenta[] =$/;"	v	typeref:typename:const char[]	file:
+s_BoldRed	protocol.cpp	/^static const char s_BoldRed[] = "\\033[1;31m";    \/* Bright red foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldWhite	protocol.cpp	/^static const char s_BoldWhite[] = "\\033[1;37m"; \/* Bright white foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_BoldYellow	protocol.cpp	/^static const char s_BoldYellow[] = "\\033[1;33m"; \/* Bright yellow foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_Button1	protocol.cpp	/^static const char s_Button1[] = "\\005\\002Help\\002help\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Button2	protocol.cpp	/^static const char s_Button2[] = "\\005\\002Look\\002look\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Button3	protocol.cpp	/^static const char s_Button3[] = "\\005\\002Score\\002help\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Button4	protocol.cpp	/^static const char s_Button4[] = "\\005\\002Equipment\\002equipment\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Button5	protocol.cpp	/^static const char s_Button5[] = "\\005\\002Inventory\\002inventory\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Clean	protocol.cpp	/^static const char s_Clean[] = "\\033[0;00m"; \/* Remove colour *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkBlack	protocol.cpp	/^static const char s_DarkBlack[] = "\\033[0;30m";   \/* Black foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkBlue	protocol.cpp	/^static const char s_DarkBlue[] = "\\033[0;34m";    \/* Blue foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkCyan	protocol.cpp	/^static const char s_DarkCyan[] = "\\033[0;36m";    \/* Cyan foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkGreen	protocol.cpp	/^static const char s_DarkGreen[] = "\\033[0;32m";   \/* Green foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkMagenta	protocol.cpp	/^static const char s_DarkMagenta[] = "\\033[0;35m"; \/* Magenta foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkRed	protocol.cpp	/^static const char s_DarkRed[] = "\\033[0;31m";     \/* Red foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkWhite	protocol.cpp	/^static const char s_DarkWhite[] = "\\033[0;37m";   \/* White foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_DarkYellow	protocol.cpp	/^static const char s_DarkYellow[] = "\\033[0;33m";  \/* Yellow foreground *\/$/;"	v	typeref:typename:const char[]	file:
+s_Gauge1	protocol.cpp	/^static const char s_Gauge1[] =$/;"	v	typeref:typename:const char[]	file:
+s_Gauge2	protocol.cpp	/^static const char s_Gauge2[] = "\\005\\002Mana\\002blue\\002MANA\\002MANA_MAX\\006";$/;"	v	typeref:typename:const char[]	file:
+s_Gauge3	protocol.cpp	/^static const char s_Gauge3[] =$/;"	v	typeref:typename:const char[]	file:
+s_Gauge4	protocol.cpp	/^static const char s_Gauge4[] =$/;"	v	typeref:typename:const char[]	file:
+s_Gauge5	protocol.cpp	/^static const char s_Gauge5[] =$/;"	v	typeref:typename:const char[]	file:
+s_Players	protocol.cpp	/^static int s_Players = 0;$/;"	v	typeref:typename:int	file:
+s_Uptime	protocol.cpp	/^static time_t s_Uptime = 0;$/;"	v	typeref:typename:time_t	file:
 sanctuary_msg	structs.h	/^    struct msg_type sanctuary_msg; \/* messages when hit on sanctuary	*\/$/;"	m	struct:message_type	typeref:struct:msg_type
 save_board	boards.cpp	/^void board_info_type::save_board()$/;"	f	class:board_info_type	typeref:typename:void
 save_char	db.cpp	/^void save_char(struct char_data* ch, int load_room, int notify_char)$/;"	f	typeref:typename:void
@@ -4487,6 +4810,7 @@ saves_mystic	spell_pa.cpp	/^char saves_mystic(struct char_data* ch)$/;"	f	typere
 saves_poison	spell_pa.cpp	/^char saves_poison(struct char_data* victim, struct char_data* caster)$/;"	f	typeref:typename:char
 saves_power	spell_pa.cpp	/^char saves_power(const char_data* victim, sh_int casting_power, sh_int save_bonus)$/;"	f	typeref:typename:char
 saves_spell	spell_pa.cpp	/^char saves_spell(struct char_data* ch, sh_int level, int bonus)$/;"	f	typeref:typename:char
+saving_throw	mob_csv_extract.cpp	/^    int saving_throw {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 saving_throw	structs.h	/^    int saving_throw; \/* saving throw for new mobiles *\/$/;"	m	struct:char_special2_data	typeref:typename:int
 say_spell	spell_pa.cpp	/^void say_spell(char_data* caster, int spell_index)$/;"	f	typeref:typename:void
 say_to_char	act_comm.cpp	/^void say_to_char(struct char_data* speaker, struct char_data* aud,$/;"	f	typeref:typename:void
@@ -4494,6 +4818,7 @@ sbyte	platdef.h	/^using sbyte = signed char;$/;"	t	typeref:typename:signed char
 scale_guardian	mystic.cpp	/^void scale_guardian(int guardian_type, const char_data* caster, char_data* guardian_mob, bool re/;"	f	typeref:typename:void
 scan_file	mail.cpp	/^int scan_file(void)$/;"	f	typeref:typename:int
 screen_width	config.cpp	/^sh_int screen_width = 79; \/* for line wrapping, if turned on *\/$/;"	v	typeref:typename:sh_int
+script	mob_csv_extract.cpp	/^    long script {};$/;"	m	struct:mob_csv_data	typeref:typename:long	file:
 script	protos.h	/^    struct script_data* script; \/\/  Current command in the script$/;"	m	struct:shape_script	typeref:struct:script_data *
 script	protos.h	/^    struct script_data* script; \/\/  The first command in the script$/;"	m	struct:script_head	typeref:struct:script_data *
 script_data	protos.h	/^struct script_data {$/;"	s
@@ -4512,6 +4837,7 @@ sector_variables	ranger.cpp	/^int sector_variables[] = {$/;"	v	typeref:typename:
 see_hiding	ranger.cpp	/^int see_hiding(struct char_data* seeker)$/;"	f	typeref:typename:int
 select_msg	boards.cpp	/^int board_info_type::select_msg(int msg, int softflag)$/;"	f	class:board_info_type	typeref:typename:int
 self_msg	structs.h	/^    struct msg_type self_msg; \/* messages when hit on god		*\/$/;"	m	struct:message_type	typeref:struct:msg_type
+send_msdp_function	weather.cpp	/^void send_msdp_function(void (*func)(descriptor_data* desc))$/;"	f	typeref:typename:void
 send_to_all	comm.cpp	/^void send_to_all(const char* message)$/;"	f	typeref:typename:void
 send_to_char	comm.cpp	/^void send_to_char(const char* message, char_data* character)$/;"	f	typeref:typename:void
 send_to_char	comm.cpp	/^void send_to_char(const char* message, int character_id)$/;"	f	typeref:typename:void
@@ -4680,14 +5006,15 @@ spare5	structs.h	/^    int spare5;$/;"	m	struct:rent_info	typeref:typename:int
 spare6	structs.h	/^    int spare6;$/;"	m	struct:rent_info	typeref:typename:int
 spare7	structs.h	/^    int spare7;$/;"	m	struct:rent_info	typeref:typename:int
 spear_subtypes	obj2html.cpp	/^struct obj2html_type spear_subtypes[] = {$/;"	v	typeref:struct:obj2html_type[]
-spec	warrior_spec_handlers.h	/^    game_types::player_specs spec;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:game_types::player_specs
-spec	warrior_spec_handlers.h	/^    game_types::player_specs spec;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:game_types::player_specs
+spec	warrior_spec_handlers.h	/^            game_types::player_specs spec;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:game_types::player_specs
+spec	warrior_spec_handlers.h	/^            game_types::player_specs spec;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:game_types::player_specs
 spec_pro_message	spec_ass.cpp	/^char* spec_pro_message[] = {$/;"	v	typeref:typename:char * []
 special	interpre.cpp	/^int special(struct char_data* ch, int cmd, char* arg, int callflag,$/;"	f	typeref:typename:int
 special_func	interpre.h	/^typedef int (*special_func)(char_data* host, char_data* character, int cmd, char* argument, int /;"	t	typeref:typename:int (*)(char_data * host,char_data * character,int cmd,char * argument,int callflag,waiting_type * wait_data)
 special_func_ptr	comm.h	/^typedef int (*special_func_ptr)(char_data* host, char_data* character, int cmd, char* argument, /;"	t	typeref:typename:int (*)(char_data * host,char_data * character,int cmd,char * argument,int call_flag,waiting_type * wait_list)
 special_list	mudlle.h	/^struct special_list {$/;"	s
-special_ptr	delayed_command_interpreter.cpp	/^    typedef int (*special_ptr)(char_data * ch, char_data * victim, int cmd, char* argument, int /;"	t	function:game_types::delayed_command_interpreter::run	typeref:typename:int (*)(char_data * ch,char_data * victim,int cmd,char * argument,int call_flag,waiting_type * wait_list)	file:
+special_program_number	mob_csv_extract.cpp	/^    int special_program_number {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
+special_ptr	delayed_command_interpreter.cpp	/^    typedef int (*special_ptr)(char_data* ch, char_data* victim, int cmd, char* argument, int ca/;"	t	function:game_types::delayed_command_interpreter::run	typeref:typename:int (*)(char_data * ch,char_data * victim,int cmd,char * argument,int call_flag,waiting_type * wait_list)	file:
 specialization	structs.h	/^    int specialization;$/;"	m	struct:char_prof_data	typeref:typename:int
 specialization_data	structs.h	/^    specialization_data()$/;"	f	struct:specialization_data
 specialization_data	structs.h	/^struct specialization_data {$/;"	s
@@ -4709,6 +5036,7 @@ spell_wear_off_msg	consts.cpp	/^char* spell_wear_off_msg[] = {$/;"	v	typeref:typ
 spells_to_learn	structs.h	/^    int spells_to_learn; \/* How many can you learn yet this level*\/$/;"	m	struct:char_special2_data	typeref:typename:int
 spirit	structs.h	/^    int spirit; \/* well, the spirit *\/$/;"	m	struct:char_point_data	typeref:typename:int
 spirit_death	fight.cpp	/^void spirit_death(char_data* character)$/;"	f	typeref:typename:void
+spirits	mob_csv_extract.cpp	/^    int spirits {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 spllog_mage_level	spell_pa.cpp	/^short spllog_mage_level; \/* the effective level of the caster *\/$/;"	v	typeref:typename:short
 spllog_save	spell_pa.cpp	/^short spllog_save; \/* the effective save computed in saves_spell *\/$/;"	v	typeref:typename:short
 spllog_saves	spell_pa.cpp	/^unsigned char spllog_saves; \/* 1: character saved, 0: character failed *\/$/;"	v	typeref:typename:unsigned char
@@ -4716,6 +5044,7 @@ sprintbit	utility.cpp	/^void sprintbit(long vektor, char* names[], char* result,
 sprinttype	utility.cpp	/^void sprinttype(int type, char* names[], char* result)$/;"	f	typeref:typename:void
 square_root	consts.cpp	/^sh_int square_root[171] = {$/;"	v	typeref:typename:sh_int[171]
 stabbing_proc_chance	weapon_master_handler.cpp	/^    constexpr const float stabbing_proc_chance = 0.50f;$/;"	v	namespace:player_spec::__anonc55e5b280111	typeref:typename:const float
+stamina	mob_csv_extract.cpp	/^    int stamina {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 stat_assigner	profs.cpp	/^    stat_assigner(char_data& character)$/;"	f	struct:_INTERNAL::stat_assigner	file:
 stat_assigner	profs.cpp	/^struct stat_assigner {$/;"	s	namespace:_INTERNAL	file:
 stat_attrs	act_info.cpp	/^static char* stat_attrs[] = {$/;"	v	typeref:typename:char * []	file:
@@ -4748,6 +5077,8 @@ str_dup	utility.cpp	/^char* str_dup(const char* source)$/;"	f	typeref:typename:c
 str_dynamic	protos.h	/^    int str_dynamic[3]; \/\/ Set dynamic[x] to 1 if script allocated str[x]$/;"	m	struct:info_script	typeref:typename:int[3]
 str_speed	structs.h	/^    int str_speed; \/*UPDATE* For temporary use, should be removed later*\/$/;"	m	struct:char_special_data	typeref:typename:int
 strcpy_lang	utility.cpp	/^char* strcpy_lang(char* str1, char* str2, byte freq, int maxlen)$/;"	f	typeref:typename:char *
+strength	mob_csv_extract.cpp	/^    int strength {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
+strength_speed	mob_csv_extract.cpp	/^    int strength_speed {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 string	act_move.cpp	/^typedef char* string;$/;"	t	typeref:typename:char *	file:
 string	ranger.cpp	/^typedef char* string;$/;"	t	typeref:typename:char *	file:
 string_add	modify.cpp	/^void string_add(struct descriptor_data* d, char* str)$/;"	f	typeref:typename:void
@@ -4767,14 +5098,15 @@ successful_chill_ray_count	structs.h	/^    int successful_chill_ray_count;$/;"	m
 successful_cone_of_cold_count	structs.h	/^    int successful_cone_of_cold_count;$/;"	m	struct:cold_spec_data	typeref:typename:int
 sun_events	weather.cpp	/^int sun_events[12][2] = { \/\/ Each month has two variables - sunrise and sunset$/;"	v	typeref:typename:int[12][2]
 sunlight	structs.h	/^    int sunlight; \/* And how much sun. (day\/night etc) *\/$/;"	m	struct:weather_data	typeref:typename:int
+support_t	protocol.h	/^} support_t;$/;"	t	typeref:enum:__anon35d14cad0203
 symbol	protos.h	/^    char symbol;$/;"	m	struct:shape_zone	typeref:typename:char
 symbol	zone.h	/^    char symbol; \/* NEW - symbol for the zone on the map *\/$/;"	m	struct:zone_data	typeref:typename:char
 symbol_to_map	db.cpp	/^void symbol_to_map(int x, int y, int symb)$/;"	f	typeref:typename:void
 tables	obj2html.cpp	/^int tables; \/* The number of tables written so far *\/$/;"	v	typeref:typename:int
 tactics	consts.cpp	/^char* tactics[] = {$/;"	v	typeref:typename:char * []
 tactics	structs.h	/^    ubyte tactics; \/* combat tactics of a person *\/$/;"	m	struct:char_special_data	typeref:typename:ubyte
-tactics	warrior_spec_handlers.h	/^    int tactics = -1;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
-tactics	warrior_spec_handlers.h	/^    int tactics = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
+tactics	warrior_spec_handlers.h	/^            int tactics = -1;$/;"	m	class:player_spec::wild_fighting_handler	typeref:typename:int
+tactics	warrior_spec_handlers.h	/^            int tactics = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
 tail	structs.h	/^    struct txt_block* tail;$/;"	m	struct:txt_q	typeref:struct:txt_block *
 tail	zone.cpp	/^    struct reset_q_element* tail;$/;"	m	struct:reset_q_type	typeref:struct:reset_q_element *	file:
 talks	structs.h	/^    byte talks[MAX_TOUNGE]; \/* PC s Tounges 0 for NPC           	*\/$/;"	m	struct:char_player_data	typeref:typename:byte[]
@@ -4820,6 +5152,7 @@ timer	structs.h	/^    int timer; \/* Timer for object                 *\/$/;"	m	
 timer	structs.h	/^    int timer; \/* Timer for update                        *\/$/;"	m	struct:char_special_data	typeref:typename:int
 timer	structs.h	/^    int timer;$/;"	m	struct:obj_file_elem	typeref:typename:int
 title	boards.h	/^    char title[50]; \/* used in html only *\/$/;"	m	struct:board_info_type	typeref:typename:char[50]
+title	mob_csv_extract.cpp	/^    std::string title;$/;"	m	struct:mob_csv_data	typeref:typename:std::string	file:
 title	obj2html.cpp	/^    char* title; \/* Title for a table of this type *\/$/;"	m	struct:obj2html_type	typeref:typename:char *	file:
 title	structs.h	/^    char title[80];$/;"	m	struct:char_file_u	typeref:typename:char[80]
 title	structs.h	/^    char* title; \/* PC \/ NPC s title                     	*\/$/;"	m	struct:char_player_data	typeref:typename:char *
@@ -4852,6 +5185,7 @@ to_string	char_utils.cpp	/^std::string light_fighting_data::to_string(char_data&
 to_string	char_utils.cpp	/^std::string lightning_spec_data::to_string(char_data& character) const$/;"	f	class:lightning_spec_data	typeref:typename:std::string
 to_string	char_utils.cpp	/^std::string specialization_data::to_string(char_data& character) const$/;"	f	class:specialization_data	typeref:typename:std::string
 to_string	char_utils.cpp	/^std::string wild_fighting_data::to_string(char_data& character) const$/;"	f	class:wild_fighting_data	typeref:typename:std::string
+to_string	mob_csv_extract.cpp	/^    std::string to_string() const$/;"	f	struct:mob_csv_data	typeref:typename:std::string	file:
 to_victim	fight.cpp	/^    char* to_victim;$/;"	m	struct:dam_weapon_type	typeref:typename:char *	file:
 tog_messages	act_othe.cpp	/^char* tog_messages[][4] = {$/;"	v	typeref:typename:char * [][4]
 toggle_bit	base_utils.h	/^void toggle_bit(T var, T bit)$/;"	f	namespace:utils	typeref:typename:void
@@ -4963,6 +5297,8 @@ value	structs.h	/^    int value;$/;"	m	struct:prompt_type	typeref:typename:int
 value	structs.h	/^    int value[5]; \/* Values of the item (see list) *\/ \/*changed*\/$/;"	m	struct:obj_flag_data	typeref:typename:int[5]
 value	structs.h	/^    sh_int value[5];$/;"	m	struct:obj_file_elem	typeref:typename:sh_int[5]
 value_array	act_info.cpp	/^char* value_array[][5] = {$/;"	v	typeref:typename:char * [][5]
+variable_name_t	protocol.h	/^} variable_name_t;$/;"	t	typeref:struct:__anon35d14cad0408
+variable_t	protocol.h	/^} variable_t;$/;"	t	typeref:enum:__anon35d14cad0303
 vict_found	db.h	/^    char* vict_found;$/;"	m	struct:social_messg	typeref:typename:char *
 victim	db.h	/^    sh_int victim;$/;"	m	struct:crime_record_type	typeref:typename:sh_int
 victim	pkill.h	/^    int victim;$/;"	m	struct:__anonb27b44b70108	typeref:typename:int
@@ -4977,10 +5313,12 @@ virt_obj_program_number	spec_ass.cpp	/^void* virt_obj_program_number(int number)
 virt_program_number	spec_ass.cpp	/^void* virt_program_number(int number)$/;"	f	typeref:typename:void *
 vmudlog	utility.cpp	/^void vmudlog(char type, char* format, ...)$/;"	f	typeref:typename:void
 vnum	boards.h	/^    long vnum; \/* vnum of this board *\/$/;"	m	struct:board_info_type	typeref:typename:long
+vnum	mob_csv_extract.cpp	/^    int vnum {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 vnum	spec_pro.cpp	/^    int vnum; \/* The virtual number of the object to be in the kit *\/$/;"	m	struct:kit_item	typeref:typename:int	file:
 vnum_mobile	db.cpp	/^int vnum_mobile(char* searchname, struct char_data* ch)$/;"	f	typeref:typename:int
 vnum_object	db.cpp	/^int vnum_object(char* searchname, struct char_data* ch)$/;"	f	typeref:typename:int
 vsend_to_char	comm.cpp	/^void vsend_to_char(char_data* character, char* format, ...)$/;"	f	typeref:typename:void
+vulnerabilities	mob_csv_extract.cpp	/^    int vulnerabilities {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 vulnerability	structs.h	/^    sh_int vulnerability; \/* bitvector for vulnerabilities *\/$/;"	m	struct:char_special_data	typeref:typename:sh_int
 vulnerability_name	consts.cpp	/^char* vulnerability_name[] = {$/;"	v	typeref:typename:char * []
 wait_list	wait_functions.cpp	/^wait_list::wait_list()$/;"	f	class:game_types::wait_list
@@ -4997,11 +5335,11 @@ waiting_type	structs.h	/^struct waiting_type {$/;"	s
 wants_to_flee	structs.h	/^    bool wants_to_flee;$/;"	m	struct:combat_result_struct	typeref:typename:bool
 warpoints	db.h	/^    int warpoints;$/;"	m	struct:player_index_element	typeref:typename:int
 warrior_abilities	spec_pro.cpp	/^int warrior_abilities[] = {$/;"	v	typeref:typename:int[]
-warrior_level	warrior_spec_handlers.h	/^    int warrior_level = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
+warrior_level	warrior_spec_handlers.h	/^            int warrior_level = 0;$/;"	m	class:player_spec::battle_mage_handler	typeref:typename:int
 was_ambushed	structs.h	/^    int was_ambushed;$/;"	m	struct:char_special_data	typeref:typename:int
 was_in_room	structs.h	/^    int was_in_room; \/* storage of location for linkdead people *\/$/;"	m	struct:char_special_data	typeref:typename:int
 water_track_desc	graph.cpp	/^char* water_track_desc(int track_age)$/;"	f	typeref:typename:char *
-weapon	warrior_spec_handlers.h	/^    const obj_data* weapon = nullptr;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:const obj_data *
+weapon	warrior_spec_handlers.h	/^            const obj_data* weapon = nullptr;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:const obj_data *
 weapon_coef_mod	object_utils.cpp	/^        weapon_coef_mod()$/;"	f	struct:utils::__anon20d0bf1d0111::weapon_coef_mod	file:
 weapon_coef_mod	object_utils.cpp	/^        weapon_coef_mod(double parry_coef, double ob_coef)$/;"	f	struct:utils::__anon20d0bf1d0111::weapon_coef_mod	file:
 weapon_coef_mod	object_utils.cpp	/^    struct weapon_coef_mod {$/;"	s	namespace:utils::__anon20d0bf1d0111	file:
@@ -5010,14 +5348,14 @@ weapon_flag_data	structs.h	/^struct weapon_flag_data {$/;"	s
 weapon_hit_type	combat_manager.cpp	/^    int weapon_hit_type(game_types::weapon_type weapon_type)$/;"	f	namespace:game_rules::__anon35b427860111	typeref:typename:int
 weapon_hit_type	fight.cpp	/^int weapon_hit_type(int weapon_type)$/;"	f	typeref:typename:int
 weapon_keywords	obj2html.cpp	/^char* weapon_keywords[][4] = {$/;"	v	typeref:typename:char * [][4]
-weapon_master_handler	warrior_spec_handlers.h	/^class weapon_master_handler {$/;"	c	namespace:player_spec
+weapon_master_handler	warrior_spec_handlers.h	/^    class weapon_master_handler {$/;"	c	namespace:player_spec
 weapon_master_handler	weapon_master_handler.cpp	/^weapon_master_handler::weapon_master_handler(char_data* in_character)$/;"	f	class:player_spec::weapon_master_handler
 weapon_master_handler	weapon_master_handler.cpp	/^weapon_master_handler::weapon_master_handler(char_data* in_character, const obj_data* in_weapon)$/;"	f	class:player_spec::weapon_master_handler
 weapon_skill_num	spells.h	/^inline int weapon_skill_num(game_types::weapon_type weapon_type)$/;"	f	typeref:typename:int
 weapon_skill_num	spells.h	/^inline int weapon_skill_num(int type)$/;"	f	typeref:typename:int
 weapon_subtypes	obj2html.cpp	/^struct obj2html_type weapon_subtypes[] = {$/;"	v	typeref:struct:obj2html_type[]
 weapon_type	structs.h	/^enum weapon_type {$/;"	g	namespace:game_types
-weapon_type	warrior_spec_handlers.h	/^    game_types::weapon_type weapon_type;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:game_types::weapon_type
+weapon_type	warrior_spec_handlers.h	/^            game_types::weapon_type weapon_type;$/;"	m	class:player_spec::weapon_master_handler	typeref:typename:game_types::weapon_type
 weapon_typemask	obj2html.cpp	/^weapon_typemask(struct obj_data* o)$/;"	f	typeref:typename:unsigned long
 weapon_types	act_info.cpp	/^char* weapon_types[] = {$/;"	v	typeref:typename:char * []
 weapon_willpower_damage	clerics.cpp	/^bool weapon_willpower_damage(char_data* attacker, char_data* victim)$/;"	f	typeref:typename:bool
@@ -5048,10 +5386,13 @@ wil	structs.h	/^    signed char wil;$/;"	m	struct:char_ability_data	typeref:type
 wild_fighting_data	structs.h	/^    wild_fighting_data()$/;"	f	struct:wild_fighting_data
 wild_fighting_data	structs.h	/^struct wild_fighting_data : public specialization_info {$/;"	s
 wild_fighting_effect	fight.cpp	/^int wild_fighting_effect(char_data* attacker, int damage)$/;"	f	typeref:typename:int
-wild_fighting_handler	warrior_spec_handlers.h	/^class wild_fighting_handler {$/;"	c	namespace:player_spec
+wild_fighting_handler	warrior_spec_handlers.h	/^    class wild_fighting_handler {$/;"	c	namespace:player_spec
 wild_fighting_handler	wild_fighting_handler.cpp	/^wild_fighting_handler::wild_fighting_handler(char_data* in_character)$/;"	f	class:player_spec::wild_fighting_handler
+will	mob_csv_extract.cpp	/^    int will {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 will_die	structs.h	/^    bool will_die;$/;"	m	struct:combat_result_struct	typeref:typename:bool
+will_teach	mob_csv_extract.cpp	/^    long will_teach {};$/;"	m	struct:mob_csv_data	typeref:typename:long	file:
 will_teach	structs.h	/^    long will_teach;$/;"	m	struct:char_special2_data	typeref:typename:long
+willpower	mob_csv_extract.cpp	/^    int willpower {};$/;"	m	struct:mob_csv_data	typeref:typename:int	file:
 willpower	structs.h	/^    sh_int willpower; \/* strength in mental fights *\/$/;"	m	struct:char_point_data	typeref:typename:sh_int
 wimp_level	structs.h	/^    int wimp_level; \/* Below this # of hit points, flee! *\/$/;"	m	struct:char_special2_data	typeref:typename:int
 wimpy	structs.h	/^    int wimpy;$/;"	m	struct:follower_file_elem	typeref:typename:int
@@ -5081,6 +5422,7 @@ write_script	shapescript.cpp	/^void write_script(FILE* f, struct char_data* ch)$
 write_to_descriptor	comm.cpp	/^int write_to_descriptor(int desc, char* txt)$/;"	f	typeref:typename:int
 write_to_descriptor_new	comm.cpp	/^int write_to_descriptor_new(int desc, char* txt)$/;"	f	typeref:typename:int
 write_to_file	mail.cpp	/^void write_to_file(void* buf, int size, long filepos)$/;"	f	typeref:typename:void
+write_to_file	mob_csv_extract.cpp	/^void mob_csv_extract::write_to_file(char_data* ch, const std::string& mob_data) const$/;"	f	class:mob_csv_extract	typeref:typename:void
 write_to_output	comm.cpp	/^void write_to_output(const char* txt, struct descriptor_data* t)$/;"	f	typeref:typename:void
 write_to_q	comm.cpp	/^void write_to_q(char* txt, struct txt_q* queue)$/;"	f	typeref:typename:void
 write_to_q_lang	comm.cpp	/^void write_to_q_lang(char* txt, struct txt_q* queue, int freq)$/;"	f	typeref:typename:void

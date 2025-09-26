@@ -275,7 +275,15 @@ int valid_name(char* newname)
      * If the length of the name is below the minimum length, return invalid.
      * special check for "all" so that people can still be called 'Alleth', etc
      */
-    if (strlen(newname) < MIN_NAME_LENGTH || strlen(newname) > MAX_NAME_LENGTH || !strcmp(newname, "all")) {
+    if (strlen(newname) < MIN_NAME_LENGTH || strlen(newname) > MAX_NAME_LENGTH) {
+        clear_invalid_list();
+        return 0;
+    }
+
+    if (str_cmp(newname, "all") == 0) {
+        sprintf(buf, "Invalid name '%s' (matched '%s')",
+                newname, "all");
+        mudlog(buf, NRM, LEVEL_GOD, TRUE);
         clear_invalid_list();
         return 0;
     }

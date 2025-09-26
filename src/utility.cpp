@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <cstring>
 
 #include "color.h"
 #include "comm.h"
@@ -1099,6 +1100,16 @@ void mudlog(char* str, char type, sh_int level, byte file)
             }
         }
     return;
+}
+
+void mudlog_debug_mob(char *buf, char_data *ch) {
+    mudlog_aliased_mob(buf, ch, "debug");
+}
+
+void mudlog_aliased_mob(char *buf, char_data *ch, char *mob_alias) {
+    if(strstr(ch->player.name, mob_alias)) {
+        mudlog(buf, SPL, LEVEL_GOD, FALSE);
+    }
 }
 
 void vmudlog(char type, char* format, ...)
@@ -2189,4 +2200,12 @@ char* PERS(struct char_data* target, struct char_data* observer,
         CAP(name);
 
     return name;
+}
+
+int has_alias(char_data* host, char *keyword) {
+    if(strstr(host->player.name, keyword)) {
+        return 1;
+    } else {
+        return 0;
+    }
 }

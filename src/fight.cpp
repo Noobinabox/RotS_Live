@@ -1208,12 +1208,10 @@ void group_gain(char_data* killer, char_data* dead_man)
         }
     }
 
-    for (auto killer_iter = involved_killers.begin(); killer_iter != involved_killers.end(); ++killer_iter) {
+    for (auto local_killer : involved_killers) {
         // Iterate over the group of each killer.
-        char_data* local_killer = *killer_iter;
         if (local_killer->group) {
-            for (auto group_iter = local_killer->group->begin(); group_iter != local_killer->group->end(); ++group_iter) {
-                char_data* groupee = *group_iter;
+            for (auto groupee : *local_killer->group) {
                 if (groupee->in_room == dead_man->in_room) {
                     if (utils::is_pc(*groupee)) {
                         player_killers.insert(groupee);
@@ -1231,8 +1229,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
                 // Master is in a different group than its pet.  Add credit to the master's group too.
                 if (master->group && (master->group != local_killer->group)) {
-                    for (auto group_iter = master->group->begin(); group_iter != master->group->end(); ++group_iter) {
-                        char_data* groupee = *group_iter;
+                    for (auto groupee : *master->group) {
                         if (groupee->in_room == dead_man->in_room) {
                             if (utils::is_pc(*groupee)) {
                                 player_killers.insert(groupee);
@@ -1244,7 +1241,7 @@ void group_gain(char_data* killer, char_data* dead_man)
         }
     }
 
-    if (player_killers.size() == 0)
+    if (player_killers.empty())
         return;
 
     int perception_total = 0;
@@ -1275,8 +1272,7 @@ void group_gain(char_data* killer, char_data* dead_man)
 
     share = share / level_total;
 
-    for (auto killer_iter = player_killers.begin(); killer_iter != player_killers.end(); ++killer_iter) {
-        char_data* character = *killer_iter;
+    for (auto character : player_killers) {
         if (character->player.level >= LEVEL_IMMORT)
             continue;
 
@@ -1946,36 +1942,6 @@ bool does_victim_save_on_weapon_poison(struct char_data* victim, struct obj_data
     int offense = (((strength * 2) * 8) * multipler) / 100;
     int defense = (GET_CON(victim) * 5) + (GET_WILLPOWER(victim) * 3) + (GET_RACE(victim) == RACE_WOOD ? 30 : 0);
     return number(offense / 3, offense) < number(defense / 2, defense) ? false : true;
-}
-
-void check_weapon_poison(char_data* attacker, char_data* victim, obj_data* weapon)
-{
-
-    if (weapon == NULL) {
-        return;
-    }
-
-    if (!weapon->obj_flags.is_weapon_poisoned()) {
-        return;
-    }
-
-    if (does_victim_save_on_weapon_poison(victim, weapon)) {
-
-        act("You feel your body fend off the poison.", TRUE, attacker, 0, victim, TO_VICT);
-        return;
-    }
-
-    struct affected_type af;
-    af.type = SPELL_POISON;
-    af.duration = weapon->obj_flags.get_poison_duration();
-    af.modifier = 0;
-    af.location = APPLY_NONE;
-    af.bitvector = AFF_POISON;
-    affect_join(victim, &af, FALSE, FALSE);
-
-    damage(attacker, victim, 5, SPELL_POISON, 0);
-    weapon->obj_flags.poisoned = false;
-    return;
 }
 
 /*UPDATE* integreate parry message with other messages */

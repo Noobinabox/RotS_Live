@@ -50,6 +50,7 @@ SPECIAL(block_exit_up);
 SPECIAL(block_exit_down);
 SPECIAL(resetter);
 SPECIAL(mob_ranger);
+SPECIAL(mob_ranger_new);
 SPECIAL(react_trap);
 SPECIAL(ar_tarthalon); // Special programs for dark lake mobiles
 SPECIAL(ghoul); //
@@ -62,6 +63,7 @@ SPECIAL(healing_plant);
 SPECIAL(ferry_boat);
 SPECIAL(ferry_captain);
 SPECIAL(dragon);
+SPECIAL(mob_magic_user_spec);
 
 SPECIAL(gen_board);
 
@@ -298,6 +300,9 @@ char* spec_pro_message[] = {
     "",
     "",
     "",
+    "",
+    "", // 30
+    "",
     ""
 };
 
@@ -366,6 +371,10 @@ void* virt_program_number(int number)
         return (void*)postmaster;
     case 30:
         return (void*)dragon;
+    case 31:
+        return (void*)mob_magic_user_spec;
+    case 32:
+        return (void*)mob_ranger_new;
     default:
         log("Virt_assign: unknown prog_number for special mob.");
         return 0;
@@ -438,6 +447,10 @@ special_func_ptr get_special_function(int number)
         return &postmaster;
     case 30:
         return &dragon;
+    case 31:
+        return &mob_magic_user_spec;
+    case 32:
+        return &mob_ranger_new;
     default:
         log("Virt_assign: unknown prog_number for special mob.");
         return 0;

@@ -218,8 +218,6 @@ ACMD(do_diagnose);
 ACMD(do_reload);
 ACMD(do_last);
 ACMD(do_track);
-ACMD(do_spam);
-ACMD(do_autoexit);
 ACMD(do_shape);
 ACMD(do_zone);
 ACMD(do_slay);
@@ -496,8 +494,8 @@ const char* command[] = {
     "track",
     "whoami",
     "vstat",
-    "beep", /* spam */
-    "lose", /* autoexit */
+    "beep",
+    "lose",
     "shape",
     "zone", /* 201 */
     "slay",
@@ -2506,6 +2504,10 @@ void nanny(struct descriptor_data* d, char* arg)
                     tmp_ch->specials.timer = 0;
                     REMOVE_BIT(PLR_FLAGS(d->character), PLR_MAILING | PLR_WRITING);
                     STATE(d) = CON_PLYNG;
+                    d->pProtocol = ProtocolCreate();
+                    ProtocolNegotiate(d);
+                    extern void msdp_room_update(char_data* ch);
+                    msdp_room_update(d->character);
                     return;
                 }
 
@@ -2834,6 +2836,8 @@ void nanny(struct descriptor_data* d, char* arg)
             report_news(d->character);
             report_mail(d->character);
             send_to_char(WELC_MESSG, d->character);
+
+            
             send_to_char("\n\r", d->character);
 
             /* if level 0, start out the new character */
@@ -2847,6 +2851,12 @@ void nanny(struct descriptor_data* d, char* arg)
 
             /* ensure character has correct practice sessions available on log-in */
             d->character->update_available_practice_sessions();
+
+            /* update msdp room information */
+            d->pProtocol = ProtocolCreate();
+            ProtocolNegotiate(d);
+            extern void msdp_room_update(char_data* ch);
+            msdp_room_update(d->character);
 
             do_look(d->character, "", 0, 0, 0);
 

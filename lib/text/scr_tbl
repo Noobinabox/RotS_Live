@@ -101,12 +101,13 @@ script, then you will need to use a SEND function.
     RETURN_FALSE         DO_DROP             EXTRACT_OBJ
     IF_INT_EQUAL         DO_EMOTE            LOAD_MOB
     IF_INT_LESS          DO_FLEE             LOAD_OBJ
-    IF_IS_NPC            DO_FOLLOW           OBJ_FROM_CHAR
-    IF_STR_CONTAINS      DO_GIVE             OBJ_FROM_ROOM
-    IF_STR_EQUAL         DO_HIT              OBJ_TO_CHAR
-                         DO_REMOVE           OBJ_TO_ROOM
-                         DO_SAY
-                         DO_SOCIAL
+    IF_IS_NPC            DO_FOLLOW           LOAD_OBJ_X
+    IF_STR_CONTAINS      DO_GIVE             OBJ_FROM_CHAR
+    IF_STR_EQUAL         DO_HIT              OBJ_FROM_ROOM
+    IF_INT_GREATER       DO_REMOVE           OBJ_TO_CHAR
+    IF_INT_TRUE          DO_SAY              OBJ_TO_ROOM
+    IF_INT_FALSE         DO_SOCIAL           IF_ROOM_SUNLIT
+
                          DO_WAIT
                          DO_YELL
 
@@ -118,8 +119,8 @@ script, then you will need to use a SEND function.
     SET_INT_DIV          GAIN_EXP
     SET_INT_RANDOM       TELEPORT_CHAR
     SET_INT_VALUE        TELEPORT_CHAR_X
-    SET_INT_WAR_STATUS   RAW_KILL
-    SET_EXIT_STATE
+    SET_INT_WAR_STATUS   TELEPORT_CHAR_XL
+    SET_EXIT_STATE       RAW_KILL
     CHANGE_EXIT_TO
 
 SEE ALSO: COMMANDS
@@ -817,8 +818,22 @@ IF_INT_LESS - compares two integers to see if one is less than the other.
 Works in the same way as above.
 
 
+IF_INT_GREATER - compares two integers to see if one is greater than the other.
+Works in the same way as above.
+
+
+IF_INT_TRUE - check if an integer is true.
+
+
+IF_INT_FALSE - check if an integer is false.
+
+
 IF_IS_NPC - if the character is an npc the next command is executed
 - Paramters: ch1, ch2, ch3
+
+
+IF_ROOM_SUNLIT - if the room is lit by the sun the next command is executed
+- Paramters: room (ch1.room)
 
 
 IF_STR_CONTAINS - if a text field contains the specified text the next command is executed. Enter the specified text in UPPERCASE.
@@ -837,6 +852,9 @@ LOAD_OBJ - load an object and assign it to an obx variable
 - Parameters: vnum of object
 ob1, ob2, ob3 (variable to assign new obj to)
 
+LOAD_OBJ_X - copy loaded object and assign it to an obx variable
+- Parameters: obX.vnum of object to copy
+ob1, ob2, ob3 (variable to assign new obj to)
 
 OBJ_FROM_CHAR - removes an object from a character's inventory and puts it into
 "limbo".  Useful for teleporting objects around.
@@ -937,6 +955,10 @@ ch1, ch2, ch3 (the character to move)
 
 TELEPORT_CHAR_X - take a character (leave followers behind) from a room and move to another room. NB no messages are sent to the rooms - the script must handle messages.
 - Parameters: vnum of room to move to
+ch1, ch2, ch3 (the character to move)
+
+TELEPORT_CHAR_XL - take a character (leave followers behind) from a room and move to another room. NB no messages are sent to the rooms - the script must handle messages.
+- Parameters: chX.room as room to move to
 ch1, ch2, ch3 (the character to move)
 #
 EXAMPLE

@@ -653,11 +653,13 @@ ASPELL(spell_divination)
     sprintf(buff, "Living beings in the room:\n\r");
     if (cur_room.people) {
         for (char_data* character = cur_room.people; character; character = character->next_in_room) {
-            strcat(buff, GET_NAME(character));
-            if (character->next_in_room) {
-                strcat(buff, ", ");
-            } else {
-                strcat(buff, ".\n\r");
+            if(caster->player.level >= GET_INVIS_LEV(character)) {
+                strcat(buff, GET_NAME(character));
+                if (character->next_in_room) {
+                    strcat(buff, ", ");
+                } else {
+                    strcat(buff, ".\n\r");
+                }
             }
         }
         send_to_char(buff, caster);
@@ -668,11 +670,13 @@ ASPELL(spell_divination)
     if (cur_room.contents) {
         sprintf(buff, "Objects in the room:\n\r");
         for (obj_data* item = cur_room.contents; item; item = item->next_content) {
-            strcat(buff, item->short_description);
-            if (item->next_content) {
-                strcat(buff, ", ");
-            } else {
-                strcat(buff, ".\n\r");
+            if (CAN_SEE_OBJ(caster, item)) {
+                strcat(buff, item->short_description);
+                if (item->next_content) {
+                    strcat(buff, ", ");
+                } else {
+                    strcat(buff, ".\n\r");
+                }
             }
         }
         send_to_char(buff, caster);
@@ -1073,11 +1077,44 @@ ASPELL(spell_hallucinate)
 ASPELL(spell_haze)
 {
     struct affected_type af;
+    struct affected_type* oldaf;
     int loc_level, my_duration, tmp;
     affected_type* tmpaf;
 
-    if (!victim)
+    if (!victim && !obj && !(caster->specials.fighting)) { /*hazing the room*/
+
+        if (!caster) {
+            return;
+        }
+
+        int level = get_mystic_caster_level(caster);
+        af.type = ROOMAFF_SPELL;
+        af.duration = (level) / 3;
+        af.modifier = level / 2;
+        af.location = SPELL_HAZE;
+        af.bitvector = 0;
+
+        if ((oldaf = room_affected_by_spell(&world[caster->in_room], SPELL_HAZE))) {
+            if (oldaf->duration < af.duration) {
+                oldaf->duration = af.duration;
+            }
+
+            if (oldaf->modifier < af.modifier) {
+                oldaf->modifier = af.modifier;
+            }
+        } else {
+            affect_to_room(&world[caster->in_room], &af);
+        }
+
+        act("$n breathes out a disorientating mist.", TRUE, caster, 0, 0, TO_ROOM);
+        send_to_char("You breathe out a disorientating mist.\n\r", caster);
+
         return;
+    }
+
+    if (!victim && caster->specials.fighting) {
+        victim = caster->specials.fighting;
+    }
 
     if ((type == SPELL_TYPE_ANTI) && is_object) {
         for (tmpaf = caster->affected, tmp = 0; (tmp < MAX_AFFECT) && tmpaf;

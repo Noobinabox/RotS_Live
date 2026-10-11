@@ -75,10 +75,10 @@ protected:
     static void make_light(obj_data& item, int hours_left, bool lit)
     {
         item.obj_flags.type_flag = ITEM_LIGHT;
-        item.obj_flags.value[2] = hours_left;
-        item.obj_flags.value[3] = 0;
+        item.obj_flags.value[LIGHT_HOURS_REMAINING_FUEL_INDEX] = hours_left;
+        item.obj_flags.value[LIGHT_IS_LIT_INDEX] = 0;
         if (lit) {
-            item.obj_flags.value[3] = 1;
+            item.obj_flags.value[LIGHT_IS_LIT_INDEX] = 1;
         }
     }
 
@@ -201,8 +201,8 @@ TEST_F(RecountLightRoomTest, CountsAWornLightThatNeverBurnsOut)
 TEST_F(RecountLightRoomTest, IgnoresAWornItemThatIsNotALight)
 {
     m_first_item.obj_flags.type_flag = ITEM_WEAPON;
-    m_first_item.obj_flags.value[2] = 4;
-    m_first_item.obj_flags.value[3] = 3;
+    m_first_item.obj_flags.value[LIGHT_HOURS_REMAINING_FUEL_INDEX] = 4;
+    m_first_item.obj_flags.value[LIGHT_IS_LIT_INDEX] = 3;
     m_first_person.equipment[WEAR_BODY] = &m_first_item;
     enter_room(m_first_person);
 
@@ -245,8 +245,8 @@ TEST_F(RecountLightRoomTest, IgnoresAnUnlitLightOnTheFloor)
 TEST_F(RecountLightRoomTest, CountsAFloorObjectOfAnyTypeWithItsLightValuesSet)
 {
     m_first_item.obj_flags.type_flag = ITEM_WEAPON;
-    m_first_item.obj_flags.value[2] = 4;
-    m_first_item.obj_flags.value[3] = 3;
+    m_first_item.obj_flags.value[LIGHT_HOURS_REMAINING_FUEL_INDEX] = 4;
+    m_first_item.obj_flags.value[LIGHT_IS_LIT_INDEX] = 3;
     drop_on_floor(m_first_item);
 
     recount_light_room(0);

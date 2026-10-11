@@ -184,9 +184,9 @@ void recount_light_room(int room)
         return;
     }
 
-    // value[2] is the hours of fuel left (negative never runs out); value[3] is set while lit.
     auto is_lit = [](const obj_data& item) -> bool {
-        return item.obj_flags.value[2] != 0 && item.obj_flags.value[3] != 0;
+        return item.obj_flags.value[LIGHT_HOURS_REMAINING_FUEL_INDEX] != 0
+            && item.obj_flags.value[LIGHT_IS_LIT_INDEX] != 0;
     };
     auto is_lit_light = [&is_lit](const obj_data* worn) -> bool {
         return worn != nullptr && worn->obj_flags.type_flag == ITEM_LIGHT && is_lit(*worn);

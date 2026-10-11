@@ -140,6 +140,13 @@ const int constexpr SECS_PER_MUD_YEAR = (12 * SECS_PER_MUD_MONTH);
 #define ITEM_SHIELD 24
 #define ITEM_LEVER 25
 
+/* For obj_flags.value[] of an ITEM_LIGHT */
+
+// The value slot holding a light's hours of fuel left; negative never runs out.
+constexpr int LIGHT_HOURS_REMAINING_FUEL_INDEX = 2;
+// The value slot that is non-zero while a light is lit.
+constexpr int LIGHT_IS_LIT_INDEX = 3;
+
 /* Bitvector for item materials (used in shop.cc) */
 
 // #define MATERIAL_USUAL_STUFF	(1 << 0)

@@ -285,6 +285,11 @@ int rename_char(struct char_data* ch, char* newname, std::string* error_message 
 bool load_exploit_records_for_character(const std::string& root_directory, const std::string& character_name, std::vector<exploit_record>* records, std::string* error_message = nullptr);
 bool write_exploit_record_for_character(const std::string& root_directory, const std::string& character_name, const exploit_record& record, std::string* error_message = nullptr);
 bool load_object_save_bytes_for_character(const std::string& root_directory, const std::string& character_name, std::string* bytes, std::string* error_message = nullptr);
+namespace objects_json {
+struct ObjectSaveData;
+}
+// Records the enchant weapon casts in a save from before enchants were recorded; see db.cpp.
+int record_old_object_enchants(objects_json::ObjectSaveData* data);
 
 struct social_messg {
     int hide;

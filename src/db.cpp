@@ -2194,7 +2194,9 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.cost = tmp2;
             obj_proto[i].obj_flags.cost_per_day = tmp3;
 
-            fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5);
+            /* An older line has four numbers: no version, not whatever tmp5 last held. */
+            if (fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5) < 5)
+                tmp5 = 0;
             obj_proto[i].obj_flags.level = tmp;
             obj_proto[i].obj_flags.rarity = tmp2;
             obj_proto[i].obj_flags.material = tmp3;
@@ -4962,6 +4964,85 @@ bool write_exploit_record_for_character(const std::string& root_directory, const
     return true;
 }
 
+namespace {
+
+// Weapons built +6 OB and magic. A saved copy of one is, field for field, a plain weapon someone
+// cast enchant weapon on, so the two are told apart by number.
+const int kWeaponsBuiltWithSixOb[] = { 5039, 5410, 5614 };
+
+bool is_unrecorded_enchant(const objects_json::ObjectRecord& record)
+{
+    if (!record.enchants.empty() || !IS_SET(record.extra_flags, ITEM_MAGIC))
+        return false;
+    if (record.affects[0].location != APPLY_OB || record.affects[0].modifier != 6)
+        return false;
+    for (size_t index = 1; index < record.affects.size(); ++index)
+        if (record.affects[index].location != APPLY_NONE)
+            return false;
+    for (int vnum : kWeaponsBuiltWithSixOb)
+        if (record.item_number == vnum)
+            return false;
+    const int rnum = real_object(record.item_number);
+    return rnum >= 0 && obj_proto[rnum].obj_flags.type_flag == ITEM_WEAPON;
+}
+
+// The spell leaves ITEM_ANTI_EVIL for a good caster and ITEM_ANTI_GOOD for an evil one. A copy
+// carrying both got one of them from its prototype; that one is not the caster's.
+int unrecorded_enchant_align(const objects_json::ObjectRecord& record)
+{
+    int flags = record.extra_flags & (ITEM_ANTI_GOOD | ITEM_ANTI_EVIL);
+    if (flags == (ITEM_ANTI_GOOD | ITEM_ANTI_EVIL))
+        flags &= ~obj_proto[real_object(record.item_number)].obj_flags.extra_flags;
+    if (flags == ITEM_ANTI_EVIL)
+        return ENCHANT_ALIGN_GOOD;
+    if (flags == ITEM_ANTI_GOOD)
+        return ENCHANT_ALIGN_EVIL;
+    return ENCHANT_ALIGN_NEUTRAL;
+}
+
+int record_old_enchants_in(std::vector<objects_json::ObjectRecord>* records)
+{
+    int recorded = 0;
+    for (objects_json::ObjectRecord& record : *records)
+        if (is_unrecorded_enchant(record)) {
+            record.enchants.push_back({ ENCHANT_OB, unrecorded_enchant_align(record), 6 });
+            recorded++;
+        }
+    return recorded;
+}
+
+// The same for a save still in its binary form; bytes with nothing to record are left as they
+// are. The tolerant read: an idle-out save has no follower section (see
+// write_linked_character_object_file).
+bool record_old_enchants_in_object_bytes(std::string* bytes, std::string* error_message)
+{
+    objects_json::ObjectSaveData data;
+    if (!objects_json::legacy_object_save_data_from_binary(*bytes, &data, nullptr, error_message))
+        return false;
+    if (record_old_object_enchants(&data) == 0)
+        return true;
+    return objects_json::object_save_data_to_binary(data, bytes, error_message);
+}
+
+} // namespace
+
+/*
+ * Before enchants were recorded on objects (obj_data::enchants), an enchant weapon cast was only
+ * what it left on the weapon: ITEM_MAGIC and +6 OB as the one affect. This gives each such weapon
+ * in a save from that time its record, once: load_object_save_bytes_for_character calls it for an
+ * object file still at OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS, and every save from then on is
+ * written at OBJECTS_SCHEMA_VERSION, where nothing is guessed. It reads only the saved copy and
+ * that its number is a weapon, so it gives the same answer whenever the character first returns.
+ * Returns how many it recorded.
+ */
+int record_old_object_enchants(objects_json::ObjectSaveData* data)
+{
+    int recorded = record_old_enchants_in(&data->objects);
+    for (objects_json::FollowerData& follower : data->followers)
+        recorded += record_old_enchants_in(&follower.objects);
+    return recorded;
+}
+
 bool load_object_save_bytes_for_character(const std::string& root_directory, const std::string& character_name, std::string* bytes, std::string* error_message)
 {
     if (bytes == nullptr) {
@@ -4974,8 +5055,12 @@ bool load_object_save_bytes_for_character(const std::string& root_directory, con
         return false;
 
     if (!owner_account_name.empty()) {
-        if (account::read_account_object_file(root_directory, owner_account_name, character_name, bytes, error_message))
+        int schema_version = objects_json::OBJECTS_SCHEMA_VERSION;
+        if (account::read_account_object_file(root_directory, owner_account_name, character_name, bytes, error_message, &schema_version)) {
+            if (schema_version == objects_json::OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS)
+                return record_old_enchants_in_object_bytes(bytes, error_message);
             return true;
+        }
 
         const std::string read_error = error_message ? *error_message : "";
         bool account_object_exists = false;
@@ -4994,7 +5079,14 @@ bool load_object_save_bytes_for_character(const std::string& root_directory, con
     FILE* runtime_file = std::fopen(runtime_path.c_str(), "rb");
     if (runtime_file != nullptr) {
         std::fclose(runtime_file);
-        return read_binary_file_contents(runtime_path, bytes, error_message);
+        if (!read_binary_file_contents(runtime_path, bytes, error_message))
+            return false;
+        // A bare .obj says nothing of when it was written, and the next save is written as
+        // recorded. One that will not parse is handed on as it is, for Crash_load to judge.
+        std::string recorded_bytes = *bytes;
+        if (record_old_enchants_in_object_bytes(&recorded_bytes, nullptr))
+            *bytes = std::move(recorded_bytes);
+        return true;
     }
 
     if (errno != ENOENT) {

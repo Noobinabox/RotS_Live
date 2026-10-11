@@ -1552,6 +1552,88 @@ TEST_F(BankerTest, WithdrawCoinsSavesTheCharacterBeforeTheVaultFile)
     EXPECT_NE(read_file(path("tester", "vault_light.json")).find("\"coins\": 2000"), std::string::npos);
 }
 
+TEST_F(BankerTest, AStoredObjectKeepsItsVersionAndItsEnchant)
+{
+    m_obj_proto[0].obj_flags.version = 4;
+    obj_data* sword = give(0);
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_GOOD, 6 };
+    apply_object_enchant(sword, enchant);
+    record_object_enchant(sword, enchant);
+
+    ASSERT_EQ(call(CMD_DEPOSIT, "sword"), TRUE);
+    ASSERT_EQ(vault()->slots.size(), 1u);
+    const objects_json::ObjectRecord& stored = vault()->slots[0].objects[0];
+    EXPECT_EQ(stored.version, 4);
+    ASSERT_EQ(stored.enchants.size(), 1u);
+    EXPECT_EQ(stored.enchants[0].type, ENCHANT_OB);
+    EXPECT_EQ(stored.enchants[0].align, ENCHANT_ALIGN_GOOD);
+    EXPECT_NE(read_file(path("tester", "vault_light.json")).find("\"enchants\""), std::string::npos)
+        << "and it is in the vault file, not only in memory";
+
+    ASSERT_EQ(call(CMD_WITHDRAW, "sword"), TRUE);
+    ASSERT_EQ(carried(0), 1);
+    const obj_data* back = m_player.carrying;
+    EXPECT_EQ(back->obj_flags.version, 4);
+    EXPECT_EQ(count_object_enchants(back), 1);
+    EXPECT_EQ(back->enchants[0].align, ENCHANT_ALIGN_GOOD);
+    EXPECT_EQ(back->affected[0].location, APPLY_OB);
+    EXPECT_EQ(back->affected[0].modifier, 6);
+    EXPECT_EQ(output().find("has been updated"), std::string::npos) << "already at its prototype's version: " << output();
+}
+
+/* The vault keeps the enchants the rent save keeps. One with no name could
+ * not be read back, and the whole vault file with it. */
+TEST_F(BankerTest, AnEnchantThisBuildCannotNameIsLeftOutOfTheVault)
+{
+    obj_data* sword = give(0);
+    sword->enchants[0] = { 99, ENCHANT_ALIGN_GOOD, 6 };
+    sword->enchants[1] = { ENCHANT_OB, 99, 6 };
+    sword->enchants[2] = { ENCHANT_OB, ENCHANT_ALIGN_EVIL, 6 };
+
+    ASSERT_EQ(call(CMD_DEPOSIT, "sword"), TRUE);
+    ASSERT_EQ(vault()->slots.size(), 1u);
+    const objects_json::ObjectRecord& stored = vault()->slots[0].objects[0];
+    ASSERT_EQ(stored.enchants.size(), 1u);
+    EXPECT_EQ(stored.enchants[0].align, ENCHANT_ALIGN_EVIL);
+
+    ASSERT_EQ(call(CMD_WITHDRAW, "sword"), TRUE) << output();
+    ASSERT_EQ(carried(0), 1);
+    EXPECT_EQ(count_object_enchants(m_player.carrying), 1);
+}
+
+TEST_F(BankerTest, WithdrawBringsAnOutdatedObjectUpToItsPrototypeVersion)
+{
+    obj_data* pack = give(1);
+    obj_data* sword = read_object(0, REAL);
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_EVIL, 6 };
+    apply_object_enchant(sword, enchant);
+    record_object_enchant(sword, enchant);
+    obj_to_obj(sword, pack);
+    ASSERT_EQ(call(CMD_DEPOSIT, "backpack"), TRUE);
+
+    // While it sat in the vault the builder made the sword glow and bumped it.
+    m_obj_proto[0].obj_flags.version = 2;
+    m_obj_proto[0].obj_flags.extra_flags = ITEM_GLOW;
+
+    // A withdrawal that does not go through tells the player nothing.
+    m_save_ok = false;
+    EXPECT_EQ(call(CMD_WITHDRAW, "backpack"), TRUE);
+    EXPECT_EQ(output().find("has been updated"), std::string::npos) << output();
+    ASSERT_EQ(vault()->slots.size(), 1u);
+    EXPECT_EQ(vault()->slots[0].objects[1].version, 0) << "what is still in the vault is as it was stored";
+
+    m_save_ok = true;
+    EXPECT_EQ(call(CMD_WITHDRAW, "backpack"), TRUE);
+    ASSERT_EQ(carried(1), 1);
+    const obj_data* inside = m_player.carrying->contains;
+    ASSERT_NE(inside, nullptr);
+    EXPECT_EQ(inside->obj_flags.version, 2);
+    EXPECT_EQ(inside->obj_flags.extra_flags, ITEM_GLOW | ITEM_MAGIC | ITEM_ANTI_GOOD) << "the enchant is kept";
+    EXPECT_EQ(inside->affected[0].modifier, 6);
+    EXPECT_NE(output().find("Your item, a bastard sword, has been updated."), std::string::npos) << output();
+    EXPECT_EQ(output().find("Your item, a leather backpack"), std::string::npos) << "the pack itself was not bumped";
+}
+
 TEST_F(BankerTest, WithdrawItemByNumberAndByKeyword)
 {
     give(0);
@@ -2001,6 +2083,19 @@ TEST_F(VaultCommandTest, PutRefusals)
     obj_to_char(read_object(0, REAL), &m_imm);
     EXPECT_NE(run("put tester 1 sword").find("That vault is full."), std::string::npos);
     EXPECT_EQ(imm_carried(0), 1);
+}
+
+TEST_F(VaultCommandTest, TakeBringsAnOutdatedObjectUpToItsPrototypeVersion)
+{
+    vault()->slots.push_back({ 5, { record(kSwordVnum, 0) } });
+    m_obj_proto[0].obj_flags.version = 2;
+    m_obj_proto[0].obj_flags.extra_flags = ITEM_GLOW;
+
+    const std::string out = run("take tester 1 1");
+    ASSERT_EQ(imm_carried(0), 1) << out;
+    EXPECT_EQ(m_imm.carrying->obj_flags.version, 2);
+    EXPECT_EQ(m_imm.carrying->obj_flags.extra_flags, ITEM_GLOW);
+    EXPECT_NE(out.find("Your item, a bastard sword, has been updated."), std::string::npos) << out;
 }
 
 TEST_F(VaultCommandTest, TakeAndPutNeedTheExactAccountName)

@@ -37,7 +37,9 @@ extern int generic_scalp;
 int get_number(char** name);
 
 int Crash_is_unrentable(struct obj_data* obj);
-struct obj_data* Crash_obj2char(struct char_data* ch, struct obj_file_elem* object);
+struct obj_data* Crash_obj2char(struct char_data* ch, struct obj_file_elem* object, const struct obj_file_extra& extra, struct char_data* owner);
+bool Crash_refresh_object(struct obj_data* obj, long idnum);
+void Crash_tell_object_refresh(struct char_data* ch, const char* name);
 
 using mob_options_detail::split_lines;
 using mob_options_detail::trim;
@@ -547,6 +549,10 @@ void append_record(struct obj_data* obj, int depth, std::vector<objects_json::Ob
     for (int i = 0; i < MAX_OBJ_AFFECT; ++i)
         record.affects[i] = { obj->affected[i].location, obj->affected[i].modifier };
     record.wear_pos = depth;
+    record.version = obj->obj_flags.version;
+    for (int i = 0; i < MAX_OBJ_ENCHANT; ++i) /* the slots the rent save keeps */
+        if (objects_json::enchant_is_known(obj->enchants[i].type, obj->enchants[i].align))
+            record.enchants.push_back({ obj->enchants[i].type, obj->enchants[i].align, obj->enchants[i].amount });
     if (record.item_number == generic_scalp) /* same stash Crash_obj2store uses */
         record.extra_flags = obj->obj_flags.value[4];
     out->push_back(record);
@@ -587,7 +593,15 @@ bank_rebuild bank_rebuild_records(const std::vector<objects_json::ObjectRecord>&
             elem.affected[i].location = record.affects[i].location;
             elem.affected[i].modifier = record.affects[i].modifier;
         }
-        struct obj_data* obj = Crash_obj2char(nullptr, &elem);
+        struct obj_file_extra extra { };
+        extra.version = record.version;
+        for (size_t i = 0; i < record.enchants.size() && i < MAX_OBJ_ENCHANT; ++i)
+            extra.enchants[i] = { (byte)record.enchants[i].type, (byte)record.enchants[i].align,
+                (sh_int)record.enchants[i].amount };
+        /* No owner: built as stored. A withdrawal refreshes what it hands over
+         * (refresh_withdrawn); if its save then fails, that object is thrown
+         * away and the vault still holds the item as stored. */
+        struct obj_data* obj = Crash_obj2char(nullptr, &elem, extra, nullptr);
         at_depth.resize(depth);
         at_depth.push_back(obj);
         if (!obj) { /* the prototype is gone: skipped, as the rent load skips it */
@@ -600,8 +614,6 @@ bank_rebuild bank_rebuild_records(const std::vector<objects_json::ObjectRecord>&
          * vault the charges left are kept, never more than a new one has. */
         if (GET_ITEM_TYPE(obj) == ITEM_WAND || GET_ITEM_TYPE(obj) == ITEM_STAFF)
             obj->obj_flags.value[2] = std::max(0, std::min<int>(obj->obj_flags.value[2], record.values[2]));
-        /* PR #343: once object versions are merged, refresh `obj` here, the
-         * same call Crash_load makes after Crash_obj2char. */
         struct obj_data* holder = nullptr;
         for (int d = depth - 1; d >= 0 && !holder; --d)
             holder = at_depth[d];
@@ -762,6 +774,17 @@ void extract_all(const std::vector<struct obj_data*>& objects)
 {
     for (struct obj_data* obj : objects)
         extract_obj(obj); /* takes its contents with it */
+}
+
+/* What a vault hands over is brought up to its prototype's version, as a login
+ * does for what a character carries. `names` gets what was refreshed, for the
+ * caller to tell `ch` once the handover has held. */
+void refresh_withdrawn(struct obj_data* obj, struct char_data* ch, std::vector<std::string>* names)
+{
+    if (Crash_refresh_object(obj, (long)GET_IDNUM(ch)))
+        names->push_back(obj->short_description);
+    for (struct obj_data* inside = obj->contains; inside; inside = inside->next_content)
+        refresh_withdrawn(inside, ch, names);
 }
 
 /* One line per stored object that could not be rebuilt, so staff can see what
@@ -1029,8 +1052,11 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
     int vnum = slots[pick].objects[0].item_number;
 
     GET_GOLD(ch) -= from_purse;
-    for (struct obj_data* obj : built.tops)
+    std::vector<std::string> refreshed;
+    for (struct obj_data* obj : built.tops) {
+        refresh_withdrawn(obj, ch, &refreshed);
         obj_to_char(obj, ch);
+    }
     bool character_written = false;
     if (!bank_save_character(ch, true, &character_written)) { /* character first; unsaved, it all stays in the vault */
         for (struct obj_data* obj : built.tops)
@@ -1063,6 +1089,8 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
 
     for (struct obj_data* obj : built.tops)
         send_to_char(vendor_wrap(std::string("You are handed ") + obj->short_description + ".").c_str(), ch);
+    for (const std::string& name : refreshed)
+        Crash_tell_object_refresh(ch, name.c_str());
     if (built.tops.empty())
         vendor_tell(host, ch, "That no longer exists. I have cleared it out.");
     else if (!built.missing.empty())
@@ -1530,8 +1558,11 @@ void vault_change(struct char_data* ch, bool take, char* text)
             return;
         }
         const int vnum = vault->slots[n - 1].objects[0].item_number;
-        for (struct obj_data* obj : built.tops)
+        std::vector<std::string> refreshed;
+        for (struct obj_data* obj : built.tops) {
+            refresh_withdrawn(obj, ch, &refreshed);
             obj_to_char(obj, ch);
+        }
         if (!bank_save_character(ch)) { /* the immortal first */
             for (struct obj_data* obj : built.tops)
                 obj_from_char(obj);
@@ -1546,6 +1577,8 @@ void vault_change(struct char_data* ch, bool take, char* text)
                 error);
         for (struct obj_data* obj : built.tops)
             send_to_char(vendor_wrap(std::string("You take ") + obj->short_description + " from the vault.").c_str(), ch);
+        for (const std::string& name : refreshed)
+            Crash_tell_object_refresh(ch, name.c_str());
         if (built.tops.empty())
             send_to_char("That slot held only deleted objects. It is now empty.\n\r", ch);
         for (int gone : built.missing) {

@@ -983,8 +983,9 @@ void shape_center_obj(struct char_data* ch, char* arg)
             break;
 
         case 22: {
-            /* No typed numbers: a bump always goes past every number used before, so a copy
-             * stamped with an old number can never be skipped. Off keeps the number, negated. */
+            /* No typed numbers: a bump goes one past the number in the world file, so it cannot
+             * land on a number this file has handed out. (A world file replaced by an older copy
+             * takes the count back with it: see the OBJ 22 help.) Off keeps the number, negated. */
             const int current = obj->obj_flags.version;
             const int last = current < 0 ? -current : current;
             if (!IS_SET(SHAPE_OBJECT(ch)->flags, SHAPE_DIGIT_ACTIVE)) {
@@ -1000,16 +1001,22 @@ void shape_center_obj(struct char_data* ch, char* arg)
                 SHAPE_OBJECT(ch)->position = shape_standup(ch, POSITION_SHAPING);
                 ch->specials.prompt_number = 3;
                 SET_BIT(SHAPE_OBJECT(ch)->flags, SHAPE_DIGIT_ACTIVE);
+                shape_prompt_hint(ch);
                 return;
             }
+            /* Exactly "b" or "o": "on" must not read as o and turn it off. */
             char* answer = arg;
             while (*answer && isspace(*answer))
                 answer++;
-            if (LOWER(*answer) == 'b') {
+            char* answer_end = answer + strlen(answer);
+            while (answer_end > answer && isspace(answer_end[-1]))
+                answer_end--;
+            const char choice = answer_end - answer == 1 ? LOWER(*answer) : '\0';
+            if (choice == 'b') {
                 obj->obj_flags.version = last + 1;
                 sprintf(tmpstr, "Version is now %s.\n\r", object_version_text(obj->obj_flags.version).c_str());
                 send_to_char(tmpstr, ch);
-            } else if (LOWER(*answer) == 'o' && current > 0) {
+            } else if (choice == 'o' && current > 0) {
                 obj->obj_flags.version = -current;
                 sprintf(tmpstr, "Version is now %s.\n\r", object_version_text(obj->obj_flags.version).c_str());
                 send_to_char(tmpstr, ch);
@@ -1422,8 +1429,10 @@ int load_object(struct char_data* ch, char* arg)
             ->object->obj_flags.cost_per_day
             = tmp;
 
-        if (5 != fscanf(f, "%d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5))
+        if (5 != fscanf(f, "%d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5)) {
             printf("Error reading12\n\r");
+            tmp5 = 0; /* an older line has four numbers: no version, not a leftover value */
+        }
         SHAPE_OBJECT(ch)
             ->object->obj_flags.level
             = tmp;

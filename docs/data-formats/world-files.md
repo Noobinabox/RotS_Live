@@ -198,10 +198,12 @@ Notes:
   `N` = on, `-N` = off (keeps `N` for the next bump). Set only through the object editor's
   field 22 (bump / off). When it is on and a player's saved copy holds a different number, the
   copy's affects, extra flags (except `ITEM_BROKEN`) and bitvector are refreshed from the
-  prototype at login; an enchant is not carried over
-  (`refresh_object_to_prototype_version`, `utility.cpp`; called from `Crash_obj2char`). The
-  copy's version is saved with it: an optional `"version"` in the character's objects JSON,
-  and in the binary record as a `VERSIONED_ID_VALUE` marker followed by one int (`structs.h`).
+  prototype at login, or when it is withdrawn from a bank vault; an enchant recorded on the
+  copy is put back if the object can still take it
+  (`refresh_object_to_prototype_version`, `utility.cpp`; called from `Crash_refresh_object`).
+  The copy's version is saved with it: an optional `"version"` in the character's objects
+  JSON, and in the binary record after a `VERSIONED_ID_VALUE` or `ENCHANTED_ID_VALUE` marker
+  (`structs.h`; see `object-rent-files.md`).
   The old `poisoned`/`poisondata`
   fields are commented out (`:1536-1540`).
 

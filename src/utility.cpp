@@ -2034,12 +2034,76 @@ std::string object_version_text(int version)
     return std::to_string(version > 0 ? version : -version) + (version > 0 ? " (on)" : " (off)");
 }
 
+int count_object_enchants(const obj_data* obj)
+{
+    int count = 0;
+    for (int i = 0; i < MAX_OBJ_ENCHANT; i++)
+        if (obj->enchants[i].type != ENCHANT_NONE)
+            count++;
+    return count;
+}
+
+std::string object_enchants_text(const obj_data* obj)
+{
+    std::string text;
+    for (int i = 0; i < MAX_OBJ_ENCHANT; i++) {
+        const obj_enchant_type& enchant = obj->enchants[i];
+        if (enchant.type == ENCHANT_NONE)
+            continue;
+        if (!text.empty())
+            text += ", ";
+        text += enchant.type == ENCHANT_OB ? "ob" : "unknown";
+        text += (enchant.amount < 0 ? " " : " +") + std::to_string(enchant.amount);
+        text += enchant.align == ENCHANT_ALIGN_GOOD ? " (good)" : enchant.align == ENCHANT_ALIGN_EVIL ? " (evil)" : " (neutral)";
+    }
+    return text.empty() ? "none" : text;
+}
+
+/* ENCHANT_OB is the enchant weapon spell, and this is the spell's own test. */
+bool object_takes_enchant(const obj_data* obj, const obj_enchant_type& enchant)
+{
+    if (enchant.type != ENCHANT_OB)
+        return false;
+    if (obj->obj_flags.type_flag != ITEM_WEAPON || IS_SET(obj->obj_flags.extra_flags, ITEM_MAGIC))
+        return false;
+    for (int i = 0; i < MAX_OBJ_AFFECT; i++)
+        if (obj->affected[i].location != APPLY_NONE)
+            return false;
+    return true;
+}
+
+/* Puts the enchant's effect on the object; the caller has asked object_takes_enchant. */
+void apply_object_enchant(obj_data* obj, const obj_enchant_type& enchant)
+{
+    if (enchant.type != ENCHANT_OB)
+        return;
+    SET_BIT(obj->obj_flags.extra_flags, ITEM_MAGIC);
+    obj->affected[0].location = APPLY_OB;
+    obj->affected[0].modifier = enchant.amount;
+    if (enchant.align == ENCHANT_ALIGN_GOOD)
+        SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_EVIL);
+    else if (enchant.align == ENCHANT_ALIGN_EVIL)
+        SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_GOOD);
+}
+
+bool record_object_enchant(obj_data* obj, const obj_enchant_type& enchant)
+{
+    for (int i = 0; i < MAX_OBJ_ENCHANT; i++)
+        if (obj->enchants[i].type == ENCHANT_NONE) {
+            obj->enchants[i] = enchant;
+            return true;
+        }
+    return false;
+}
+
 /*
  * A saved copy keeps its own affects, flags and bitvector (Crash_obj2char), so prototype changes
  * never reached it. When the prototype's version is on and differs from the copy's, those three
  * are taken from the prototype instead and the copy is stamped with the prototype's version.
  * Play state a save keeps is left alone: a broken key stays broken, drink and light contents,
- * the timer and loaded_by are untouched. An enchant is not carried over; it can be recast.
+ * the timer and loaded_by are untouched. Each enchant recorded on the copy is then put back if
+ * the object as the prototype now makes it can still take that enchant; one it cannot take is
+ * forgotten. Only the recorded list is used: nothing here guesses at an enchant from the affects.
  */
 bool refresh_object_to_prototype_version(obj_data* obj, const obj_data* proto)
 {
@@ -2053,6 +2117,15 @@ bool refresh_object_to_prototype_version(obj_data* obj, const obj_data* proto)
     for (int i = 0; i < MAX_OBJ_AFFECT; i++)
         obj->affected[i] = proto->affected[i];
     obj->obj_flags.version = proto_version;
+
+    for (int i = 0; i < MAX_OBJ_ENCHANT; i++) {
+        if (obj->enchants[i].type == ENCHANT_NONE)
+            continue;
+        if (object_takes_enchant(obj, obj->enchants[i]))
+            apply_object_enchant(obj, obj->enchants[i]);
+        else
+            obj->enchants[i] = obj_enchant_type {};
+    }
     return true;
 }
 

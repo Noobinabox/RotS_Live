@@ -634,6 +634,9 @@ void do_stat_object(struct char_data* ch, struct obj_data* j)
         send_to_char(buf, ch);
     }
 
+    sprintf(buf, "Enchants: %s\n\r", object_enchants_text(j).c_str());
+    send_to_char(buf, ch);
+
     strcpy(buf, "In room: ");
     if (j->in_room == NOWHERE)
         strcat(buf, "Nowhere");

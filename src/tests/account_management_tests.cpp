@@ -2975,14 +2975,23 @@ TEST(AccountManagement, MigrationWritesAccountNativeObjectFileWhenLegacyObjectDa
     ASSERT_TRUE(account::migrate_legacy_character_by_name(temp_directory.path(), "alpha-admin", "aragorn", 1700010102, &migration, &error_message)) << error_message;
     ASSERT_TRUE(account::account_object_file_exists(temp_directory.path(), "alpha-admin", "aragorn", &error_message));
 
+    // A legacy save is from before enchants were recorded, and the file says so: the first login
+    // reads that and records them (DbLoader.LoginRecordsOldEnchants...).
     std::string loaded_bytes;
-    ASSERT_TRUE(account::read_account_object_file(temp_directory.path(), "alpha-admin", "aragorn", &loaded_bytes, &error_message)) << error_message;
+    int schema_version = 0;
+    ASSERT_TRUE(account::read_account_object_file(temp_directory.path(), "alpha-admin", "aragorn", &loaded_bytes, &error_message, &schema_version)) << error_message;
+    EXPECT_EQ(schema_version, objects_json::OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS);
 
     objects_json::ObjectSaveData loaded;
     ASSERT_TRUE(objects_json::object_save_data_from_binary(loaded_bytes, &loaded, &error_message)) << error_message;
     ASSERT_EQ(loaded.objects.size(), 1u);
     EXPECT_EQ(loaded.objects[0].item_number, 3210);
     EXPECT_EQ(loaded.objects[0].wear_pos, WEAR_BODY);
+
+    // Once the game has saved the character, the file is current.
+    ASSERT_TRUE(account::write_account_object_file(temp_directory.path(), "alpha-admin", "aragorn", loaded_bytes, &error_message)) << error_message;
+    ASSERT_TRUE(account::read_account_object_file(temp_directory.path(), "alpha-admin", "aragorn", &loaded_bytes, &error_message, &schema_version)) << error_message;
+    EXPECT_EQ(schema_version, objects_json::OBJECTS_SCHEMA_VERSION);
 }
 
 TEST(AccountManagement, MigrationAcceptsLegacyObjectFileWithoutFollowerSection)

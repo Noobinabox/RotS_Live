@@ -104,6 +104,14 @@ std::string object_version_text(int version);
 // Brings a saved copy up to its prototype's version when the prototype's version is on (> 0) and
 // differs from the copy's. Returns true if it did; see the definition for what is kept.
 bool refresh_object_to_prototype_version(obj_data* obj, const obj_data* proto);
+// Enchants recorded on an object (obj_data::enchants). object_takes_enchant is whether the object
+// as it stands could be given the enchant; apply_object_enchant puts its affect and flags on;
+// record_object_enchant notes it in the first free slot (false when there is none).
+int count_object_enchants(const obj_data* obj);
+std::string object_enchants_text(const obj_data* obj); // "ob +6 (good)", or "none"
+bool object_takes_enchant(const obj_data* obj, const obj_enchant_type& enchant);
+void apply_object_enchant(obj_data* obj, const obj_enchant_type& enchant);
+bool record_object_enchant(obj_data* obj, const obj_enchant_type& enchant);
 sh_int get_race_perception(char_data* ch);
 int get_power_of_arda(char_data* ch);
 int has_critical_stat_damage(char_data* ch);

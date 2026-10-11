@@ -11,12 +11,27 @@
 
 namespace objects_json {
 
-static constexpr int OBJECTS_SCHEMA_VERSION = 1;
+static constexpr int OBJECTS_SCHEMA_VERSION = 2;
+// Files from before enchants were recorded on objects (ObjectRecord::enchants). Still read; an
+// enchant in one is only the affect and flags the spell left, and is recorded when the file is
+// next loaded for play (record_old_object_enchants). Every save writes OBJECTS_SCHEMA_VERSION.
+static constexpr int OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS = 1;
 
 struct ObjectAffectData {
     int location = 0;
     int modifier = 0;
 };
+
+// One obj_enchant_type; the codes are ENCHANT_XXX and ENCHANT_ALIGN_XXX.
+struct ObjectEnchantData {
+    int type = 0;
+    int align = 0;
+    int amount = 0;
+};
+
+// Whether this build has a name for both codes of an enchant. One it has no name for cannot be
+// written to the JSON, so every save leaves it out.
+bool enchant_is_known(int type, int align);
 
 struct ObjectRecord {
     int item_number = 0;
@@ -29,6 +44,7 @@ struct ObjectRecord {
     int wear_pos = 0;
     int loaded_by = 0;
     int version = 0; // obj_flag_data::version; optional in JSON, absent == 0
+    std::vector<ObjectEnchantData> enchants; // used slots only; optional in JSON, absent == none
 };
 
 struct RentData {

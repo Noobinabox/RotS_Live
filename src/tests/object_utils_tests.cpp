@@ -76,6 +76,7 @@ TEST(ObjectData, ReportsMeleeWeaponAsNotRangedWeapon) {
         << "Expected slashing weapons to not be recognized as ranged weapons.";
 }
 
+#include "../spells.h"
 #include "../utils.h"
 
 namespace {
@@ -152,9 +153,161 @@ TEST(ObjectVersionRefresh, TakesAffectsFlagsAndBitvectorFromThePrototypeAndKeeps
     }
 }
 
-TEST(ObjectVersionRefresh, DoesNotCarryAnEnchantOver)
+namespace {
+
+// What enchant weapon leaves on a plain weapon: the affect, the flags and the record.
+obj_data make_enchanted_weapon(int version, int align)
 {
-    // Even when the refreshed weapon could be enchanted again: players recast it.
+    obj_data copy = make_versioned_object(ITEM_WEAPON, version);
+    const obj_enchant_type enchant = { ENCHANT_OB, (byte)align, 6 };
+    apply_object_enchant(&copy, enchant);
+    record_object_enchant(&copy, enchant);
+    return copy;
+}
+
+} // namespace
+
+TEST(ObjectEnchant, ApplyAndRecordAreWhatTheSpellLeaves)
+{
+    obj_data good = make_enchanted_weapon(0, ENCHANT_ALIGN_GOOD);
+    EXPECT_EQ(good.obj_flags.extra_flags, ITEM_MAGIC | ITEM_ANTI_EVIL);
+    EXPECT_EQ(good.affected[0].location, APPLY_OB);
+    EXPECT_EQ(good.affected[0].modifier, 6);
+    EXPECT_EQ(count_object_enchants(&good), 1);
+    EXPECT_EQ(object_enchants_text(&good), "ob +6 (good)");
+
+    EXPECT_EQ(make_enchanted_weapon(0, ENCHANT_ALIGN_EVIL).obj_flags.extra_flags, ITEM_MAGIC | ITEM_ANTI_GOOD);
+    EXPECT_EQ(make_enchanted_weapon(0, ENCHANT_ALIGN_NEUTRAL).obj_flags.extra_flags, ITEM_MAGIC);
+
+    obj_data plain = make_versioned_object(ITEM_WEAPON, 0);
+    EXPECT_EQ(count_object_enchants(&plain), 0);
+    EXPECT_EQ(object_enchants_text(&plain), "none");
+}
+
+ASPELL(spell_enchant_weapon);
+
+TEST(ObjectEnchant, TheSpellRecordsTheCastersAlignmentAndRefusesAMagicWeapon)
+{
+    const struct {
+        int alignment;
+        int align;
+        long flags;
+    } cases[] = {
+        { 500, ENCHANT_ALIGN_GOOD, ITEM_MAGIC | ITEM_ANTI_EVIL },
+        { -500, ENCHANT_ALIGN_EVIL, ITEM_MAGIC | ITEM_ANTI_GOOD },
+        { 0, ENCHANT_ALIGN_NEUTRAL, ITEM_MAGIC },
+    };
+    for (const auto& expected : cases) {
+        char_data caster {};
+        GET_ALIGNMENT(&caster) = expected.alignment;
+        obj_data sword = make_versioned_object(ITEM_WEAPON, 0);
+
+        spell_enchant_weapon(&caster, nullptr, 0, nullptr, &sword, 0, 0);
+        EXPECT_EQ(sword.obj_flags.extra_flags, expected.flags) << expected.alignment;
+        EXPECT_EQ(sword.affected[0].location, APPLY_OB);
+        EXPECT_EQ(sword.affected[0].modifier, 6);
+        ASSERT_EQ(count_object_enchants(&sword), 1);
+        EXPECT_EQ(sword.enchants[0].type, ENCHANT_OB);
+        EXPECT_EQ(sword.enchants[0].align, expected.align);
+
+        // A second cast finds it magic and leaves it as it is.
+        spell_enchant_weapon(&caster, nullptr, 0, nullptr, &sword, 0, 0);
+        EXPECT_EQ(sword.affected[0].modifier, 6);
+        EXPECT_EQ(count_object_enchants(&sword), 1);
+    }
+
+    // A weapon the builder gave an affect holds too much magic already.
+    char_data caster {};
+    obj_data built = make_versioned_object(ITEM_WEAPON, 0);
+    built.affected[1] = { APPLY_DODGE, 2 };
+    spell_enchant_weapon(&caster, nullptr, 0, nullptr, &built, 0, 0);
+    EXPECT_EQ(built.obj_flags.extra_flags, 0);
+    EXPECT_EQ(built.affected[0].location, APPLY_NONE);
+    EXPECT_EQ(count_object_enchants(&built), 0);
+
+    // Armour is not a weapon.
+    obj_data helm = make_versioned_object(ITEM_ARMOR, 0);
+    spell_enchant_weapon(&caster, nullptr, 0, nullptr, &helm, 0, 0);
+    EXPECT_EQ(helm.obj_flags.extra_flags, 0);
+    EXPECT_EQ(count_object_enchants(&helm), 0);
+}
+
+TEST(ObjectEnchant, TakesAnEnchantOnlyWhereTheSpellWould)
+{
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_NEUTRAL, 6 };
+
+    obj_data plain = make_versioned_object(ITEM_WEAPON, 0);
+    EXPECT_TRUE(object_takes_enchant(&plain, enchant));
+
+    obj_data armor = make_versioned_object(ITEM_ARMOR, 0);
+    EXPECT_FALSE(object_takes_enchant(&armor, enchant));
+
+    obj_data magic = make_versioned_object(ITEM_WEAPON, 0);
+    magic.obj_flags.extra_flags = ITEM_MAGIC;
+    EXPECT_FALSE(object_takes_enchant(&magic, enchant));
+
+    obj_data with_affect = make_versioned_object(ITEM_WEAPON, 0);
+    with_affect.affected[1] = { APPLY_STR, 1 };
+    EXPECT_FALSE(object_takes_enchant(&with_affect, enchant));
+
+    const obj_enchant_type unknown = { 99, ENCHANT_ALIGN_NEUTRAL, 6 };
+    EXPECT_FALSE(object_takes_enchant(&plain, unknown));
+}
+
+TEST(ObjectEnchant, RecordsUpToMaxObjEnchant)
+{
+    obj_data obj = make_versioned_object(ITEM_WEAPON, 0);
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_NEUTRAL, 6 };
+    for (int i = 0; i < MAX_OBJ_ENCHANT; i++)
+        EXPECT_TRUE(record_object_enchant(&obj, enchant));
+    EXPECT_FALSE(record_object_enchant(&obj, enchant));
+    EXPECT_EQ(count_object_enchants(&obj), MAX_OBJ_ENCHANT);
+}
+
+TEST(ObjectVersionRefresh, PutsARecordedEnchantBackWhenThePrototypeStillTakesIt)
+{
+    // The builder changed something unrelated: the weapon now glows.
+    obj_data proto = make_versioned_object(ITEM_WEAPON, 2);
+    proto.obj_flags.extra_flags = ITEM_GLOW;
+
+    for (int align : { ENCHANT_ALIGN_GOOD, ENCHANT_ALIGN_EVIL, ENCHANT_ALIGN_NEUTRAL }) {
+        obj_data copy = make_enchanted_weapon(1, align);
+        const int cast_flags = copy.obj_flags.extra_flags;
+
+        EXPECT_TRUE(refresh_object_to_prototype_version(&copy, &proto));
+        EXPECT_EQ(copy.obj_flags.version, 2);
+        EXPECT_EQ(copy.affected[0].location, APPLY_OB);
+        EXPECT_EQ(copy.affected[0].modifier, 6);
+        EXPECT_EQ(copy.obj_flags.extra_flags, cast_flags | ITEM_GLOW);
+        EXPECT_EQ(count_object_enchants(&copy), 1);
+    }
+}
+
+TEST(ObjectVersionRefresh, ForgetsARecordedEnchantThePrototypeNoLongerTakes)
+{
+    // Each prototype now fails the spell's test in its own way.
+    obj_data with_affect = make_versioned_object(ITEM_WEAPON, 2);
+    with_affect.affected[0] = { APPLY_OB, 3 };
+    obj_data magic = make_versioned_object(ITEM_WEAPON, 2);
+    magic.obj_flags.extra_flags = ITEM_MAGIC;
+    obj_data not_a_weapon = make_versioned_object(ITEM_ARMOR, 2);
+
+    for (const obj_data* proto : { &with_affect, &magic, &not_a_weapon }) {
+        obj_data copy = make_enchanted_weapon(1, ENCHANT_ALIGN_GOOD);
+        copy.obj_flags.type_flag = proto->obj_flags.type_flag; // a copy is made from its prototype
+
+        EXPECT_TRUE(refresh_object_to_prototype_version(&copy, proto));
+        EXPECT_EQ(copy.affected[0].location, proto->affected[0].location);
+        EXPECT_EQ(copy.affected[0].modifier, proto->affected[0].modifier);
+        EXPECT_EQ(copy.obj_flags.extra_flags, proto->obj_flags.extra_flags) << "the caster's ANTI_EVIL went with it";
+        EXPECT_EQ(count_object_enchants(&copy), 0) << "a later refresh must not bring it back";
+    }
+}
+
+TEST(ObjectVersionRefresh, DoesNotGuessAtAnEnchantThatIsNotRecorded)
+{
+    // A weapon built +6 OB and magic looks exactly like this. Saves from before enchants were
+    // recorded get their records when they load (record_old_object_enchants), not here.
     obj_data proto = make_versioned_object(ITEM_WEAPON, 2);
     proto.obj_flags.extra_flags = ITEM_GLOW;
 
@@ -166,6 +319,18 @@ TEST(ObjectVersionRefresh, DoesNotCarryAnEnchantOver)
     EXPECT_EQ(copy.affected[0].location, APPLY_NONE);
     EXPECT_EQ(copy.affected[0].modifier, 0);
     EXPECT_EQ(copy.obj_flags.extra_flags, ITEM_GLOW);
+}
+
+TEST(ObjectVersionRefresh, AnEnchantSurvivesAFileRestoredToAnOlderVersion)
+{
+    // "Differs", not "newer": a world file put back at 3 moves a copy at 5 down with it.
+    obj_data proto = make_versioned_object(ITEM_WEAPON, 3);
+    obj_data copy = make_enchanted_weapon(5, ENCHANT_ALIGN_EVIL);
+
+    EXPECT_TRUE(refresh_object_to_prototype_version(&copy, &proto));
+    EXPECT_EQ(copy.obj_flags.version, 3);
+    EXPECT_EQ(copy.affected[0].modifier, 6);
+    EXPECT_EQ(copy.obj_flags.extra_flags, ITEM_MAGIC | ITEM_ANTI_GOOD);
 }
 
 TEST(ObjectVersionRefresh, ABrokenKeyStaysBroken)

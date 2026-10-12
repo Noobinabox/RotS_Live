@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import io
+import shlex
 import subprocess
+import sys
+import time
 from pathlib import Path
+from typing import Iterator, List, Optional
 
 import pytest
 
@@ -93,7 +97,7 @@ def test_local_launcher_kills_the_process_when_the_port_never_opens(
 ) -> None:
     stalling_script = tmp_path / "bin" / "ageland"
     stalling_script.parent.mkdir()
-    stalling_script.write_text("#!/bin/sh\nsleep 60\n", encoding="utf-8")
+    stalling_script.write_text("#!/bin/sh\nexec sleep 60\n", encoding="utf-8")
     stalling_script.chmod(0o700)
     run_dir = tmp_path / "run"
     run_dir.mkdir()
@@ -167,9 +171,11 @@ def test_docker_launcher_stops_the_container_when_start_fails(
     with pytest.raises(RuntimeError):
         docker.start(run_dir, lib_dir, port=4321, seed=1)
 
-    stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
-    assert len(stop_calls) == 1
-    assert stop_calls[0][4].startswith("rots-it-")
+    cleanup_calls = [argv for argv in recorded_argv if argv[:2] != ["docker", "port"]]
+    assert len(cleanup_calls) == 2
+    container_name = cleanup_calls[0][-1]
+    assert container_name.startswith("rots-it-")
+    assert cleanup_calls == [["docker", "stop", "-t", "5", container_name], ["docker", "rm", "-f", container_name]]
     assert fake_process.terminate_called or fake_process.kill_called
     assert fake_process.stdin.closed
 
@@ -179,7 +185,7 @@ def test_local_launcher_kills_the_process_when_interrupted_while_waiting(
 ) -> None:
     stalling_script = tmp_path / "bin" / "ageland"
     stalling_script.parent.mkdir()
-    stalling_script.write_text("#!/bin/sh\nsleep 60\n", encoding="utf-8")
+    stalling_script.write_text("#!/bin/sh\nexec sleep 60\n", encoding="utf-8")
     stalling_script.chmod(0o700)
     run_dir = tmp_path / "run"
     run_dir.mkdir()
@@ -196,7 +202,7 @@ def test_local_launcher_kills_the_process_when_interrupted_while_waiting(
         raise KeyboardInterrupt()
 
     monkeypatch.setattr(launcher.subprocess, "Popen", recording_popen)
-    monkeypatch.setattr(launcher, "wait_for_port", interrupted_wait)
+    monkeypatch.setattr(launcher, "wait_for_login_prompt", interrupted_wait)
 
     local = launcher.LocalProcessLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
     with pytest.raises(KeyboardInterrupt):
@@ -228,13 +234,18 @@ def test_docker_launcher_stops_the_container_when_interrupted_while_waiting(
     monkeypatch.setattr(launcher.subprocess, "run", interrupted_port_query)
 
     docker = launcher.DockerComposeLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
-    with pytest.raises(KeyboardInterrupt):
-        docker.start(run_dir, run_dir / "lib", port=4321, seed=1)
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            docker.start(run_dir, run_dir / "lib", port=4321, seed=1)
 
-    stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
-    assert len(stop_calls) == 1
-    assert stop_calls[0][4].startswith("rots-it-")
-    assert compose_process.poll() is not None
+        stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
+        assert len(stop_calls) == 1
+        assert stop_calls[0][4].startswith("rots-it-")
+        assert compose_process.poll() is not None
+    finally:
+        if compose_process.poll() is None:
+            compose_process.kill()
+            compose_process.wait()
 
 
 def test_docker_run_to_completion_stops_the_container_when_interrupted(
@@ -257,9 +268,11 @@ def test_docker_run_to_completion_stops_the_container_when_interrupted(
     with pytest.raises(KeyboardInterrupt):
         docker.run_to_completion("bin/rotstool", [], tmp_path, timeout=10)
 
-    stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
-    assert len(stop_calls) == 1
-    assert stop_calls[0][4].startswith("rots-it-tool-")
+    cleanup_calls = recorded_argv[1:]
+    assert len(cleanup_calls) == 2
+    container_name = cleanup_calls[0][-1]
+    assert container_name.startswith("rots-it-tool-")
+    assert cleanup_calls == [["docker", "stop", "-t", "5", container_name], ["docker", "rm", "-f", container_name]]
 
 
 def test_local_launcher_environment_is_clean_apart_from_sanitizer_tuning(
@@ -373,3 +386,376 @@ def test_docker_stop_closes_the_server_standard_input(tmp_path: Path, monkeypatc
     launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
 
     assert exited_process.stdin.closed
+
+
+# A stand-in for ageland's listener: argv is the port, then a directory for the files the test reads.
+FAKE_SERVER_PREAMBLE = """
+import socket
+import sys
+import time
+from pathlib import Path
+
+port = int(sys.argv[1])
+evidence_dir = Path(sys.argv[2])
+listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+listener.bind(("127.0.0.1", port))
+listener.listen(5)
+print("fake server listening", flush=True)
+# Telnet negotiation (IAC WILL ECHO) comes before the greeting, as from the real server.
+NEGOTIATION = bytes([255, 251, 1])
+"""
+
+# Accepts at once but sends the prompt, split across two writes, only after a delay.
+DELAYED_PROMPT_SERVER = FAKE_SERVER_PREAMBLE + """
+connection, _address = listener.accept()
+time.sleep(0.5)
+(evidence_dir / "prompt-sent").write_text("yes")
+connection.sendall(NEGOTIATION + b"Welcome\\r\\n\\r\\nAccount em")
+time.sleep(0.2)
+connection.sendall(b"ail: ")
+time.sleep(30)
+"""
+
+# Closes the first connection unanswered, as a port proxy does before the server listens.
+CLOSES_FIRST_CONNECTION_SERVER = FAKE_SERVER_PREAMBLE + """
+first_connection, _address = listener.accept()
+first_connection.close()
+second_connection, _address = listener.accept()
+(evidence_dir / "connections").write_text("2")
+second_connection.sendall(NEGOTIATION + b"Account email: ")
+time.sleep(30)
+"""
+
+# Accepts connections and never sends anything.
+SILENT_SERVER = FAKE_SERVER_PREAMBLE + """
+held_connections = []
+while True:
+    connection, _address = listener.accept()
+    held_connections.append(connection)
+"""
+
+# Fails during boot without ever listening.
+EXITS_BEFORE_LISTENING_SERVER = """
+import sys
+print("SYSERR: boot failed: zone 999 is missing", flush=True)
+sys.exit(3)
+"""
+
+
+class FakeServers:
+    """Starts fake server scripts with this test's Python and kills any still running at teardown."""
+
+    def __init__(self, work_dir: Path) -> None:
+        # Holds each script, its log and the evidence files it writes.
+        self._work_dir = work_dir
+        # Every process started, killed at teardown if still running.
+        self._processes: List[subprocess.Popen] = []
+
+    def start(self, source: str, port: int) -> subprocess.Popen:
+        """Runs source as a script with port and the evidence directory as arguments, logging to fake.log."""
+        script = self._work_dir / f"fake_server_{len(self._processes)}.py"
+        script.write_text(source, encoding="utf-8")
+        with self.log_path.open("ab") as log_file:
+            process = subprocess.Popen(
+                [sys.executable, str(script), str(port), str(self._work_dir)], stdin=subprocess.DEVNULL, stdout=log_file, stderr=subprocess.STDOUT,
+            )
+        self._processes.append(process)
+        return process
+
+    @property
+    def log_path(self) -> Path:
+        """The log every fake server writes to."""
+        return self._work_dir / "fake.log"
+
+    def kill_all(self) -> None:
+        """Kills every started process that is still running."""
+        for process in self._processes:
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+
+
+@pytest.fixture
+def fake_servers(tmp_path: Path) -> Iterator[FakeServers]:
+    """Fake servers for one test, all killed when it ends, whatever its outcome."""
+    servers = FakeServers(tmp_path)
+    try:
+        yield servers
+    finally:
+        servers.kill_all()
+
+
+def test_ready_waits_for_the_login_prompt_not_the_listening_port(tmp_path: Path, fake_servers: FakeServers) -> None:
+    port = launcher.allocate_free_port()
+    process = fake_servers.start(DELAYED_PROMPT_SERVER, port)
+
+    launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 10.0, process, fake_servers.log_path)
+
+    assert (tmp_path / "prompt-sent").exists()
+
+
+def test_ready_retries_a_connection_closed_before_the_prompt(tmp_path: Path, fake_servers: FakeServers) -> None:
+    port = launcher.allocate_free_port()
+    process = fake_servers.start(CLOSES_FIRST_CONNECTION_SERVER, port)
+
+    launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 10.0, process, fake_servers.log_path)
+
+    assert (tmp_path / "connections").read_text() == "2"
+
+
+def test_ready_reports_a_server_that_exits_before_listening_with_its_log_tail(fake_servers: FakeServers) -> None:
+    port = launcher.allocate_free_port()
+    process = fake_servers.start(EXITS_BEFORE_LISTENING_SERVER, port)
+
+    with pytest.raises(RuntimeError) as raised:
+        launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 10.0, process, fake_servers.log_path)
+
+    message = str(raised.value)
+    assert message.startswith("server exited with status 3 before it was ready")
+    assert "boot failed: zone 999 is missing" in message
+
+
+def test_ready_gives_up_on_a_server_that_never_sends_its_prompt(fake_servers: FakeServers) -> None:
+    port = launcher.allocate_free_port()
+    process = fake_servers.start(SILENT_SERVER, port)
+
+    started = time.monotonic()
+    with pytest.raises(RuntimeError) as raised:
+        launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 1.5, process, fake_servers.log_path)
+
+    assert time.monotonic() - started < 5.0
+    message = str(raised.value)
+    assert message.startswith(f"the server on {launcher.LOOPBACK}:{port} did not send its login prompt within 1.5s")
+    assert "fake server listening" in message
+
+
+def test_the_session_waits_for_the_same_login_prompt_as_the_launcher() -> None:
+    from rots_harness import session
+
+    assert launcher.LOGIN_EMAIL_PROMPT == "Account email:"
+    assert session.LOGIN_EMAIL_PROMPT is launcher.LOGIN_EMAIL_PROMPT
+
+
+class FakeComposeClient:
+    """A `docker compose run` client that records stop's calls in a shared event list."""
+
+    def __init__(self, events: list, waits_out_the_first_wait: bool = False) -> None:
+        # The ordered record of docker commands and process calls the test inspects.
+        self._events = events
+        # Whether the first wait times out, as a client that outlives docker stop does.
+        self._waits_out_the_first_wait = waits_out_the_first_wait
+        # How many times wait was called.
+        self._wait_calls = 0
+        # None while the client runs; set by kill or a successful wait.
+        self.returncode: Optional[int] = None
+        # Stands in for the pipe start opens; stop must close it.
+        self.stdin = io.BytesIO()
+        # Named in stop's warning if the client survives its kill.
+        self.pid = 4242
+
+    def poll(self) -> Optional[int]:
+        return self.returncode
+
+    def wait(self, timeout: Optional[float] = None) -> int:
+        self._events.append(("wait", timeout))
+        self._wait_calls += 1
+        if self._waits_out_the_first_wait and self._wait_calls == 1:
+            raise subprocess.TimeoutExpired(cmd="docker", timeout=timeout or 0)
+        self.returncode = 0
+        return 0
+
+    def kill(self) -> None:
+        self._events.append(("kill",))
+        self.returncode = -9
+
+
+def recording_docker(events: list, failing_command: Optional[str] = None, failure: Optional[BaseException] = None):
+    """A subprocess.run stand-in that records each docker argv; failing_command fails with failure or status 1."""
+
+    def fake_run(argv: List[str], **kwargs: object) -> subprocess.CompletedProcess:
+        events.append(("run", argv))
+        if argv[1] == failing_command:
+            if failure is not None:
+                raise failure
+            return subprocess.CompletedProcess(argv, 1, b"", b"")
+        return subprocess.CompletedProcess(argv, 0, b"", b"")
+
+    return fake_run
+
+
+def test_docker_stop_stops_the_container_then_waits_for_the_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker(events))
+    client = FakeComposeClient(events)
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", client, "rots-it-stop")  # type: ignore[arg-type]
+
+    launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events == [("run", ["docker", "stop", "-t", "5", "rots-it-stop"]), ("wait", 30)]
+    assert client.stdin.closed
+
+
+def test_docker_stop_kills_a_client_that_outlives_the_wait_and_removes_the_container(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker(events))
+    client = FakeComposeClient(events, waits_out_the_first_wait=True)
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", client, "rots-it-stop")  # type: ignore[arg-type]
+
+    launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events[:3] == [("run", ["docker", "stop", "-t", "5", "rots-it-stop"]), ("wait", 30), ("kill",)]
+    post_kill_wait = events[3]
+    assert post_kill_wait[0] == "wait" and post_kill_wait[1] is not None and post_kill_wait[1] > 0
+    assert events[4:] == [("run", ["docker", "rm", "-f", "rots-it-stop"])]
+    assert client.stdin.closed
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [None, subprocess.TimeoutExpired(cmd="docker", timeout=15), FileNotFoundError("docker")],
+    ids=["non-zero-exit", "timeout", "docker-missing"],
+)
+def test_docker_stop_removes_the_container_when_docker_stop_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: Optional[BaseException]
+) -> None:
+    events: list = []
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker(events, failing_command="stop", failure=failure))
+    client = FakeComposeClient(events)
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", client, "rots-it-stop")  # type: ignore[arg-type]
+
+    launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events[:2] == [("run", ["docker", "stop", "-t", "5", "rots-it-stop"]), ("run", ["docker", "rm", "-f", "rots-it-stop"])]
+    assert client.stdin.closed
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [None, subprocess.TimeoutExpired(cmd="docker", timeout=15), FileNotFoundError("docker")],
+    ids=["non-zero-exit", "timeout", "docker-missing"],
+)
+def test_a_failed_docker_rm_is_ignored(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: Optional[BaseException]) -> None:
+    events: list = []
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker(events, failing_command="rm", failure=failure))
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path)
+
+    docker._remove_container("rots-it-gone")
+
+    assert events == [("run", ["docker", "rm", "-f", "rots-it-gone"])]
+
+
+def test_docker_reads_the_published_port_from_docker_port(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    recorded_argv: List[List[str]] = []
+
+    def fake_port_query(argv: List[str], **kwargs: object) -> subprocess.CompletedProcess:
+        recorded_argv.append(argv)
+        return subprocess.CompletedProcess(argv, 0, "127.0.0.1:49153\n", "")
+
+    monkeypatch.setattr(launcher.subprocess, "run", fake_port_query)
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path)
+
+    host_port = docker._wait_for_published_port("rots-it-port", 4321, FakeComposeClient([]), tmp_path / "game.log")  # type: ignore[arg-type]
+
+    assert host_port == 49153
+    assert recorded_argv == [["docker", "port", "rots-it-port", "4321/tcp"]]
+
+
+def test_docker_runs_the_container_as_the_host_user(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.os, "getuid", lambda: 1234)
+    monkeypatch.setattr(launcher.os, "getgid", lambda: 5678)
+
+    environment = launcher.DockerComposeLauncher(repo_root=tmp_path)._docker_environment()
+
+    assert environment["ROTS_UID"] == "1234"
+    assert environment["ROTS_GID"] == "5678"
+
+
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+def test_run_to_completion_gives_the_program_no_standard_input(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launcher_class: type
+) -> None:
+    program = tmp_path / "bin" / "rotstool"
+    program.parent.mkdir()
+    program.write_text("", encoding="utf-8")
+    recorded_kwargs: List[dict] = []
+
+    def recording_run(argv: List[str], **kwargs: object) -> subprocess.CompletedProcess:
+        recorded_kwargs.append(kwargs)
+        return subprocess.CompletedProcess(argv, 0, b"done", None)
+
+    monkeypatch.setattr(launcher.subprocess, "run", recording_run)
+
+    result = launcher_class(repo_root=tmp_path).run_to_completion("bin/rotstool", [], tmp_path, timeout=10)
+
+    assert result == launcher.ToolResult(0, "done")
+    assert recorded_kwargs[0]["stdin"] == subprocess.DEVNULL
+
+
+def write_program_with_a_missing_interpreter(repo_root: Path, program_relative: str) -> Path:
+    """An executable script whose interpreter does not exist, as an i386 binary looks without its loader."""
+    program = repo_root / program_relative
+    program.parent.mkdir(parents=True, exist_ok=True)
+    program.write_text("#!/nonexistent/i386-loader\n", encoding="utf-8")
+    program.chmod(0o700)
+    return program
+
+
+def test_local_run_to_completion_explains_a_program_this_host_cannot_execute(tmp_path: Path) -> None:
+    program = write_program_with_a_missing_interpreter(tmp_path, "bin/rotstool")
+
+    with pytest.raises(RuntimeError) as raised:
+        launcher.LocalProcessLauncher(repo_root=tmp_path).run_to_completion("bin/rotstool", [], tmp_path, timeout=10)
+
+    assert str(raised.value) == (
+        f"cannot execute {program}: this host cannot run the i386 binaries; "
+        "install the 32-bit runtime (e.g. libc6:i386) or set ROTS_IT_LAUNCHER=docker"
+    )
+
+
+def test_local_start_explains_a_server_this_host_cannot_execute(tmp_path: Path) -> None:
+    program = write_program_with_a_missing_interpreter(tmp_path, "bin/ageland")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+
+    with pytest.raises(RuntimeError, match=f"cannot execute {program}: this host cannot run the i386 binaries"):
+        launcher.LocalProcessLauncher(repo_root=tmp_path).start(run_dir, run_dir / "lib", port=4321, seed=1)
+
+
+def test_local_run_to_completion_in_a_missing_directory_is_not_blamed_on_the_host(tmp_path: Path) -> None:
+    program = tmp_path / "bin" / "tool"
+    program.parent.mkdir()
+    program.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    program.chmod(0o700)
+
+    with pytest.raises(FileNotFoundError):
+        launcher.LocalProcessLauncher(repo_root=tmp_path).run_to_completion("bin/tool", [], tmp_path / "missing", timeout=10)
+
+
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+@pytest.mark.parametrize("binary_relative", ["/usr/local/bin/ageland", "../ageland", "bin/../../ageland"])
+def test_launchers_refuse_a_binary_outside_the_repo(tmp_path: Path, launcher_class: type, binary_relative: str) -> None:
+    with pytest.raises(ValueError, match="relative to the repository root"):
+        launcher_class(repo_root=tmp_path, binary_relative=binary_relative)
+
+
+def test_docker_server_script_quotes_every_path(tmp_path: Path) -> None:
+    run_dir = tmp_path / "build" / "integration" / "run dir"
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path, binary_relative="bin/age land")
+
+    command = docker.server_command(run_dir=run_dir, lib_dir=run_dir / "lib", port=4321, container_name="rots-it-q", seed=7)
+
+    assert shlex.split(command[-1]) == [
+        "ulimit", "-c", "0;", "cd", "/rots/build/integration/run dir", "&&",
+        "exec", "/rots/bin/age land", "--random-seed", "7", "-d", "/rots/build/integration/run dir/lib", "4321",
+    ]
+
+
+def test_docker_tool_script_quotes_every_path(tmp_path: Path) -> None:
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path)
+
+    command = docker.tool_command("bin/rots tool", ["fixtures", "write"], tmp_path / "build" / "work dir", "rots-it-tool-q")
+
+    assert shlex.split(command[-1]) == [
+        "ulimit", "-c", "0;", "cd", "/rots/build/work dir", "&&", "exec", "/rots/bin/rots tool", "fixtures", "write",
+    ]

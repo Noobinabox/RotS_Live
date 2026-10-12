@@ -8,10 +8,9 @@ import time
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
 
-from rots_harness.launcher import ServerHandle
+from rots_harness.launcher import LOGIN_EMAIL_PROMPT, ServerHandle
 from rots_harness.telnet import TelnetStreamSanitizer
 
-LOGIN_EMAIL_PROMPT = "Account email:"
 LOGIN_PASSWORD_PROMPT = "Account password:"
 ACCOUNT_MENU_PROMPT = "Choice:"
 ACCOUNT_MENU_PLAY = "2"

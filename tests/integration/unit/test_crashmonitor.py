@@ -158,3 +158,40 @@ def test_exit_already_reported_during_the_test_is_not_reported_again_after_stop(
     monitor = CrashMonitor(handle)
     assert any("exited" in problem for problem in monitor.check())
     assert monitor.check_after_stop() == [], "the mid-test exit is already the test's failure"
+
+
+def test_the_fatal_signal_line_is_a_crash_marker(tmp_path: Path) -> None:
+    handle = make_handle(tmp_path)
+    append_log(handle, "Sep 24 :: Error: signal 11\n")
+    assert CrashMonitor(handle).check() == ["crash marker in log: Sep 24 :: Error: signal 11"]
+
+
+def test_a_syserr_line_split_across_two_checks_is_reported_once_whole(tmp_path: Path) -> None:
+    handle = make_handle(tmp_path)
+    monitor = CrashMonitor(handle)
+    append_log(handle, "Sep 24 :: SYSERR: half a")
+    assert monitor.check() == [], "an unterminated line waits for the rest"
+    append_log(handle, " line\n")
+    assert monitor.check() == ["unexpected SYSERR: Sep 24 :: SYSERR: half a line"]
+    assert monitor.check() == []
+
+
+def test_an_unterminated_last_line_is_checked_after_stop(tmp_path: Path) -> None:
+    handle = make_handle(tmp_path, returncode=0)
+    append_log(handle, "Sep 24 :: Received SIGHUP, SIGINT, or SIGTERM.  Shutting down...\nSep 24 :: SYSERR: no newline")
+    assert CrashMonitor(handle).check_after_stop() == ["unexpected SYSERR: Sep 24 :: SYSERR: no newline"]
+
+
+def test_exit_status_zero_without_the_shutdown_notice_is_reported(tmp_path: Path) -> None:
+    handle = make_handle(tmp_path, returncode=0)
+    append_log(handle, "Sep 24 :: Boot db -- DONE.\n")
+    assert CrashMonitor(handle).check_after_stop() == ["server exited with status 0 without logging the shutdown notice"]
+
+
+def test_the_shutdown_notice_seen_by_an_earlier_check_still_counts_after_stop(tmp_path: Path) -> None:
+    handle = make_handle(tmp_path, returncode=None)
+    monitor = CrashMonitor(handle)
+    append_log(handle, "Sep 24 :: Received SIGHUP, SIGINT, or SIGTERM.  Shutting down...\n")
+    monitor.check()
+    handle.process.returncode = 0  # type: ignore[attr-defined]
+    assert monitor.check_after_stop() == []

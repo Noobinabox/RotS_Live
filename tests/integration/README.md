@@ -13,7 +13,8 @@ A scenario fails when the server shows trouble, even if its own checks pass:
 - a crash marker in the server log (a sanitizer report or the `Error: signal` line the
   server prints when it catches a fatal signal);
 - a `SYSERR` line the harness does not expect;
-- the server exiting during the test, or exiting with a non-zero status when it is stopped.
+- the server exiting during the test, or, when it is stopped, exiting with a non-zero status or
+  without logging its shutdown notice.
 
 `rots_harness/` holds the pieces (telnet, characters, launchers, the lib builder, crash
 checks, sessions); `conftest.py` turns them into pytest fixtures; `scenarios/` holds the

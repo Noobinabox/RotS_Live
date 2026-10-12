@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -132,3 +135,106 @@ def test_the_lock_gives_up_after_the_wait_and_names_the_holder(tmp_path: Path) -
         lock.acquire(purpose="unit test")
     assert clock.now >= 30
     assert sorted(path.name for path in lock_dir.iterdir()) == ["other-session.lock"]
+
+
+def test_a_dead_harness_holder_is_removed_and_the_lock_taken(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    dead_holder = lock_dir / "harness-it-424242-0123abcd.lock"
+    dead_holder.write_text("session: harness-it\n", encoding="utf-8")
+    checked_pids: list[int] = []
+    reports: list[str] = []
+
+    def nothing_is_running(pid: int) -> bool:
+        checked_pids.append(pid)
+        return False
+
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path, wait_seconds=0, report=reports.append, process_is_running=nothing_is_running)
+    lock.acquire(purpose="unit test")
+    assert lock.path is not None and lock.path.exists()
+    assert not dead_holder.exists()
+    assert checked_pids == [424242]
+    assert reports == ["removed stale Docker lock harness-it-424242-0123abcd.lock: process 424242 is no longer running"]
+    lock.release()
+
+
+def test_a_live_harness_holder_makes_acquire_wait(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    live_holder = lock_dir / "harness-it-424242-0123abcd.lock"
+    live_holder.write_text("session: harness-it\n", encoding="utf-8")
+    clock = FakeClock()
+    reports: list[str] = []
+    lock = dockerlock.DockerLock(
+        lock_dir, repo_root=tmp_path, wait_seconds=30, poll_seconds=5, clock=clock, sleep=clock.sleep,
+        report=reports.append, process_is_running=lambda _pid: True,
+    )
+    with pytest.raises(dockerlock.DockerLockHeld, match=live_holder.name):
+        lock.acquire(purpose="unit test")
+    assert clock.now >= 30
+    assert live_holder.exists()
+    assert len(reports) == 1 and reports[0].startswith("waiting up to 30s for the Docker lock") and live_holder.name in reports[0]
+
+
+@pytest.mark.parametrize("lock_name", ["claude-session-31337.lock", "slot-4-424242.lock", "harness-it-99.lock.lock", "my-harness-it-424242-0123abcd.lock"])
+def test_a_lock_not_named_by_the_harness_is_never_removed(tmp_path: Path, lock_name: str) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / lock_name).write_text("session: other\n", encoding="utf-8")
+    checked_pids: list[int] = []
+
+    def nothing_is_running(pid: int) -> bool:
+        checked_pids.append(pid)
+        return False
+
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path, wait_seconds=0, report=lambda _message: None, process_is_running=nothing_is_running)
+    with pytest.raises(dockerlock.DockerLockHeld, match=lock_name):
+        lock.acquire(purpose="unit test")
+    assert sorted(path.name for path in lock_dir.iterdir()) == [lock_name]
+    assert checked_pids == []
+
+
+@pytest.mark.parametrize("lock_name", ["harness-it-session.lock", "harness-it-abc-0123abcd.lock", "harness-it--0123abcd.lock", "harness-it-424242.lock"])
+def test_a_harness_lock_without_a_parsable_pid_is_left_alone(tmp_path: Path, lock_name: str) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / lock_name).write_text("session: harness-it\n", encoding="utf-8")
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path, wait_seconds=0, report=lambda _message: None, process_is_running=lambda _pid: False)
+    with pytest.raises(dockerlock.DockerLockHeld, match=lock_name):
+        lock.acquire(purpose="unit test")
+    assert sorted(path.name for path in lock_dir.iterdir()) == [lock_name]
+
+
+def test_a_dead_holder_already_removed_by_someone_else_is_not_an_error(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    dead_holder = lock_dir / "harness-it-424242-0123abcd.lock"
+    dead_holder.write_text("session: harness-it\n", encoding="utf-8")
+
+    def removed_while_checking(_pid: int) -> bool:
+        dead_holder.unlink()
+        return False
+
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path, wait_seconds=0, report=lambda _message: None, process_is_running=removed_while_checking)
+    lock.acquire(purpose="unit test")
+    assert lock.path is not None and lock.path.exists()
+    lock.release()
+
+
+def test_process_is_running_tells_a_live_process_from_a_reaped_one() -> None:
+    finished = subprocess.Popen([sys.executable, "-c", "pass"])
+    finished.wait()
+    assert dockerlock.process_is_running(os.getpid())
+    assert not dockerlock.process_is_running(finished.pid)
+
+
+def test_process_is_running_counts_a_process_it_may_not_signal_as_running(monkeypatch: pytest.MonkeyPatch) -> None:
+    def refuse(_pid: int, _signal: int) -> None:
+        raise PermissionError("not permitted")
+
+    monkeypatch.setattr(dockerlock.os, "kill", refuse)
+    assert dockerlock.process_is_running(1)
+
+
+def test_process_is_running_counts_a_pid_too_large_to_signal_as_running() -> None:
+    assert dockerlock.process_is_running(10 ** 30)

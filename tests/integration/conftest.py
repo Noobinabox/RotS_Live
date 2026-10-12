@@ -5,13 +5,15 @@ from __future__ import annotations
 import os
 import platform
 import shutil
+import sys
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import pytest
 
-from rots_harness import groups
+from rots_harness import groups, interrupts
 from rots_harness.characters import CharacterSet
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock
@@ -30,15 +32,46 @@ RUNS_ROOT = REPO_ROOT / "build" / "integration" / "runs"
 TEMPLATES_ROOT = REPO_ROOT / "build" / "integration" / "libs"
 # The seed rotstool and every server use unless ROTS_IT_SEED gives another.
 DEFAULT_SEED = 20261011
+# Where pytest_configure keeps the function that puts back the signal handlers it replaced.
+RESTORE_SIGNAL_HANDLERS_KEY = pytest.StashKey[Callable[[], None]]()
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Stops the run with a usage error when the -m expression names an unregistered marker."""
+    """Stops the run with a usage error when the -m expression names an unregistered marker.
+
+    Otherwise makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock is
+    released and every started server stopped.
+    """
     expression = config.getoption("markexpr", default="") or ""
     unknown = groups.unknown_marker_names(expression, groups.registered_marker_names(config.getini("markers")))
     if unknown:
         registered = ", ".join(groups.registered_marker_names(config.getini("markers")))
         raise pytest.UsageError(f"unknown group or marker {', '.join(unknown)} in -m {expression!r}; registered: {registered}")
+    config.stash[RESTORE_SIGNAL_HANDLERS_KEY] = interrupts.install_interrupt_handlers()
+
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    """Puts back the signal handlers pytest_configure replaced."""
+    restore_signal_handlers = config.stash.get(RESTORE_SIGNAL_HANDLERS_KEY, None)
+    if restore_signal_handlers is not None:
+        restore_signal_handlers()
+
+
+def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
+    """A function that writes one line to the terminal at once, even while pytest captures output.
+
+    Falls back to stderr when the capture or terminal plugin is absent (for example under -p no:terminal).
+    """
+    capture_manager = config.pluginmanager.get_plugin("capturemanager")
+    terminal_reporter = config.pluginmanager.get_plugin("terminalreporter")
+    if capture_manager is None or terminal_reporter is None:
+        return lambda message: print(message, file=sys.stderr, flush=True)
+
+    def write_line(message: str) -> None:
+        with capture_manager.global_and_fixture_disabled():
+            terminal_reporter.write_line(message)
+
+    return write_line
 
 
 def launcher_mode() -> str:
@@ -104,14 +137,14 @@ def harness_launcher() -> ServerLauncher:
 
 
 @pytest.fixture(scope="session")
-def docker_lock():
+def docker_lock(pytestconfig: pytest.Config):
     """The shared Docker lock, held for the whole session when the Docker launcher is in use; None otherwise."""
     if launcher_mode() != "docker":
         yield None
         return
     lock_dir = Path(os.environ.get("ROTS_IT_DOCKER_LOCK_DIR", str(DEFAULT_LOCK_DIR)))
     wait_seconds = float(os.environ.get("ROTS_IT_LOCK_WAIT", DEFAULT_WAIT_SECONDS))
-    lock = DockerLock(lock_dir, REPO_ROOT, wait_seconds=wait_seconds)
+    lock = DockerLock(lock_dir, REPO_ROOT, wait_seconds=wait_seconds, report=terminal_line_writer(pytestconfig))
     lock.acquire(purpose="integration test session")
     try:
         yield lock

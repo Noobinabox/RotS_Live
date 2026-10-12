@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 import uuid
@@ -14,6 +15,9 @@ DEFAULT_LOCK_DIR = Path("/tmp/rots-docker-lock")
 LOCK_FILE_PREFIX = "harness-it"
 DEFAULT_WAIT_SECONDS = 600.0
 POLL_SECONDS = 5.0
+# The name _try_acquire gives this harness's lock files; group 1 is the pid of the session that
+# wrote it. Only files with this exact shape are ever removed as stale.
+HARNESS_LOCK_NAME = re.compile(rf"{re.escape(LOCK_FILE_PREFIX)}-([0-9]+)-[0-9a-f]+\.lock")
 
 
 class DockerLockHeld(RuntimeError):
@@ -22,6 +26,19 @@ class DockerLockHeld(RuntimeError):
 
 def _report_to_stderr(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
+
+
+def process_is_running(pid: int) -> bool:
+    """Whether a process with this pid exists on this host; True when that cannot be ruled out."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except (OSError, OverflowError):
+        # PermissionError means the process exists but belongs to someone else. Any other failure,
+        # including a pid too large to pass to kill, leaves the lock to a person to judge.
+        return True
+    return True
 
 
 class DockerLock:
@@ -40,6 +57,7 @@ class DockerLock:
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
         report: Callable[[str], None] = _report_to_stderr,
+        process_is_running: Callable[[int], bool] = process_is_running,
     ) -> None:
         """Prepares the lock without touching the directory; a lock_dir of None disables locking."""
         # The shared lock directory, or None when this session runs nothing in Docker.
@@ -56,6 +74,8 @@ class DockerLock:
         self._sleep = sleep
         # Tells the person running the tests who holds the lock while acquire waits.
         self._report = report
+        # Tells whether the session that wrote a harness lock file is still alive; replaced in tests.
+        self._process_is_running = process_is_running
         # This session's own lock file while it is held, otherwise None.
         self._lock_path: Optional[Path] = None
 
@@ -92,6 +112,7 @@ class DockerLock:
         assert self._lock_dir is not None
         if not self._lock_dir.is_dir():
             raise RuntimeError(f"Docker lock directory {self._lock_dir} is missing; create it (see tests/integration/README.md, Shared Docker lock)")
+        self._remove_dead_harness_locks()
         others = sorted(path.name for path in self._lock_dir.glob("*.lock"))
         if others:
             raise DockerLockHeld(f"another session holds the Docker lock ({', '.join(others)}); see tests/integration/README.md")
@@ -120,6 +141,22 @@ class DockerLock:
         if others:
             self.release()
             raise DockerLockHeld(f"another session took the Docker lock at the same time ({', '.join(others)}); see tests/integration/README.md")
+
+    def _remove_dead_harness_locks(self) -> None:
+        """Removes every harness lock file whose session's process is no longer running on this host.
+
+        Lock files named any other way belong to other Docker jobs and are left for a person to judge.
+        """
+        assert self._lock_dir is not None
+        for lock_path in sorted(self._lock_dir.glob("*.lock")):
+            name_match = HARNESS_LOCK_NAME.fullmatch(lock_path.name)
+            if name_match is None:
+                continue
+            holder_pid = int(name_match.group(1))
+            if self._process_is_running(holder_pid):
+                continue
+            lock_path.unlink(missing_ok=True)
+            self._report(f"removed stale Docker lock {lock_path.name}: process {holder_pid} is no longer running")
 
     def release(self) -> None:
         """Removes this session's lock file if it holds one; does nothing otherwise."""

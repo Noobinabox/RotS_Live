@@ -80,7 +80,13 @@ Docker jobs on one host share the lock directory `/tmp/rots-docker-lock`: a job 
 no other job's `.lock` file is there. With the `docker` launcher the harness takes the lock
 itself as `harness-it-<pid>-<id>.lock`, holds it for the whole pytest session, and removes it
 at the end. While another job holds the lock it waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`),
-naming the holder, then fails.
+printing which lock files hold it, then fails.
+
+Ctrl-C, SIGTERM and SIGHUP all end the run the same way: the harness stops the server it
+started and removes its lock file. A `harness-it-<pid>-<id>.lock` whose process is no longer
+running (a run that was killed outright) is removed automatically, and the removal is printed.
+The harness never removes any other lock file; judge a stale one by the convention in the lock
+directory's `README.txt`.
 
 Do not hold a lock of your own around `make integration`: the harness would wait for it and
 then fail. If the directory does not exist, create it (`mkdir -p /tmp/rots-docker-lock`). The

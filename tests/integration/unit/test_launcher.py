@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import subprocess
 from pathlib import Path
 
@@ -128,6 +129,8 @@ def test_docker_launcher_stops_the_container_when_start_fails(
             self.terminate_called = False
             # Whether start's cleanup escalated to a kill.
             self.kill_called = False
+            # Stands in for the pipe start opens; cleanup must close it.
+            self.stdin = io.BytesIO()
 
         def poll(self) -> int | None:
             return None
@@ -168,6 +171,7 @@ def test_docker_launcher_stops_the_container_when_start_fails(
     assert len(stop_calls) == 1
     assert stop_calls[0][4].startswith("rots-it-")
     assert fake_process.terminate_called or fake_process.kill_called
+    assert fake_process.stdin.closed
 
 
 def test_local_launcher_environment_is_clean_apart_from_sanitizer_tuning(
@@ -223,6 +227,8 @@ def test_terminate_process_warns_instead_of_raising_when_the_process_survives_si
             self.terminate_calls = 0
             # How many times terminate_process escalated to a kill.
             self.kill_calls = 0
+            # Stands in for the server's stdin pipe; closed even though the process survives.
+            self.stdin = io.BytesIO()
 
         def poll(self) -> int | None:
             return None
@@ -243,3 +249,39 @@ def test_terminate_process_warns_instead_of_raising_when_the_process_survives_si
     assert stuck_process.terminate_calls == 1
     assert stuck_process.kill_calls == 1, "terminate_process must escalate to SIGKILL exactly once"
     assert "survived SIGKILL" in capsys.readouterr().err
+    assert stuck_process.stdin.closed
+
+
+class ExitedProcess:
+    """A server process that has already exited, holding the stdin pipe its launcher opened."""
+
+    def __init__(self) -> None:
+        # Stands in for the pipe the launcher opened; stop must close it.
+        self.stdin = io.BytesIO()
+        # The exit status poll reports.
+        self.returncode = 0
+
+    def poll(self) -> int:
+        return self.returncode
+
+    def wait(self, timeout: float | None = None) -> int:
+        return self.returncode
+
+
+def test_local_stop_closes_the_server_standard_input(tmp_path: Path) -> None:
+    exited_process = ExitedProcess()
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", exited_process)  # type: ignore[arg-type]
+
+    launcher.LocalProcessLauncher(repo_root=tmp_path).stop(handle)
+
+    assert exited_process.stdin.closed
+
+
+def test_docker_stop_closes_the_server_standard_input(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(launcher.subprocess, "run", lambda argv, **kwargs: subprocess.CompletedProcess(argv, 0, "", ""))
+    exited_process = ExitedProcess()
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", exited_process, "rots-it-stop")  # type: ignore[arg-type]
+
+    launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
+
+    assert exited_process.stdin.closed

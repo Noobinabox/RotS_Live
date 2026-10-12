@@ -85,21 +85,38 @@ def wait_for_port(host: str, port: int, timeout_seconds: float, process: subproc
     raise RuntimeError(f"server did not listen on {host}:{port} within {timeout_seconds}s; log tail:\n{read_log_tail(log_path)}")
 
 
-def terminate_process(process: subprocess.Popen) -> None:
-    """Terminates the process, escalating to a kill; never raises, warning on stderr if it survives."""
-    if process.poll() is not None:
+def close_standard_input(process: subprocess.Popen) -> None:
+    """Closes the process's stdin pipe, if it has one; never raises."""
+    if process.stdin is None:
         return
-    process.terminate()
     try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        process.kill()
+        process.stdin.close()
+    except OSError:
+        # Closing flushes buffered input; a process that has gone leaves a broken pipe.
+        pass
+
+
+def terminate_process(process: subprocess.Popen) -> None:
+    """Terminates the process, escalating to a kill, and closes its stdin pipe.
+
+    Never raises; warns on stderr if the process survives the kill.
+    """
+    try:
+        if process.poll() is not None:
+            return
+        process.terminate()
         try:
             process.wait(timeout=10)
         except subprocess.TimeoutExpired:
-            # A process the kernel will not reap (stuck in uninterruptible I/O) must not turn
-            # fixture teardown into a traceback; the missing exit status reports it instead.
-            print(f"server process {process.pid} survived SIGKILL for 10s", file=sys.stderr)
+            process.kill()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                # A process the kernel will not reap (stuck in uninterruptible I/O) must not turn
+                # fixture teardown into a traceback; the missing exit status reports it instead.
+                print(f"server process {process.pid} survived SIGKILL for 10s", file=sys.stderr)
+    finally:
+        close_standard_input(process)
 
 
 class ServerLauncher:
@@ -116,7 +133,10 @@ class ServerLauncher:
         raise NotImplementedError
 
     def stop(self, handle: ServerHandle) -> None:
-        """Stops the server behind handle; does nothing to a server that has already exited."""
+        """Stops the server behind handle and closes its stdin pipe.
+
+        Does not signal a server that has already exited.
+        """
         raise NotImplementedError
 
     def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
@@ -298,6 +318,7 @@ class DockerComposeLauncher(ServerLauncher):
                 handle.process.wait(timeout=30)
             except subprocess.TimeoutExpired:
                 handle.process.kill()
+        close_standard_input(handle.process)
 
     def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
         """See ServerLauncher.run_to_completion; also fails with the build command when the program is missing."""

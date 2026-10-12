@@ -5,8 +5,9 @@
 Each scenario boots its own `ageland` server on a throwaway lib, logs characters in over
 telnet, and checks what they see. The lib is built from the small test world in
 `tests/integration/world` plus an account and characters that `bin/rotstool` writes from the
-characters the scenario declares. Of a developer's `lib/`, only `lib/text` and the
-git-tracked `lib/misc` files are copied in.
+characters the scenario declares. Of a developer's `lib/`, only two parts are copied in:
+`lib/text` exactly as it stands in the working tree, and those `lib/misc` files that git
+tracks. Only `lib/misc` is limited to tracked files.
 
 A scenario fails when the server shows trouble, even if its own checks pass:
 
@@ -28,11 +29,13 @@ scenarios; `unit/` tests the harness itself without a server.
    make configure && cmake --build build --target ageland rotstool
    ```
 
-   The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container, for
-   example
+   The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container:
    `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'`.
+   That build is itself a Docker job, so take the shared Docker lock (below) for it first and
+   release it before running the scenarios. A run whose server binary or `rotstool` is missing
+   stops at once with the build command for its launcher.
 
-2. Create the virtual environment once, from the repository root (Python 3.10 or later):
+2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 
    ```bash
    python3 -m venv .venv && .venv/bin/pip install -r tests/integration/requirements.txt
@@ -46,15 +49,20 @@ make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 ```
 
-A group is a marker registered in `tests/integration/pytest.ini` (today `boot`). A name that no
-marker registers stops the run with a usage error that lists the registered names, so a
-misspelt group never passes by selecting nothing.
+A group is a marker registered in `tests/integration/pytest.ini` (today `boot`). `GROUP` may be
+an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
+name that neither `pytest.ini` nor pytest itself registers stops the run with a usage error that
+lists the registered names, so a misspelt group never passes by selecting nothing.
+
+Run one harness session per checkout at a time: every session in a checkout shares the template
+cache under `build/integration/libs/`.
 
 ## Launchers
 
 The harness runs the i386 programs in one of two ways:
 
-- `local` runs them directly. It is the default on Linux.
+- `local` runs them directly. It is the default on Linux, which needs the i386 runtime for it
+  (for example `libc6:i386`); without it, set `ROTS_IT_LAUNCHER=docker`.
 - `docker` runs each server and each `rotstool` call through `docker compose run` with this
   checkout's `rots` service. It is the default everywhere else. Every container is named
   `rots-it-...` and publishes the server on a random loopback port, so the service's fixed
@@ -74,6 +82,9 @@ Environment variables:
 | `ROTS_IT_KEEP` | unset | `1` keeps every run directory and template |
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
+
+A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT` or `ROTS_IT_BINARY` value the harness
+cannot use stops the run before any test with a usage error naming the variable and its value.
 
 ## Shared Docker lock
 
@@ -97,13 +108,16 @@ then fail. If the directory does not exist, create it (`mkdir -p /tmp/rots-docke
 
 Each test gets `build/integration/runs/<id>/` holding:
 
+- `test.txt`, the test's node id;
 - `lib/`, the test's own copy of the lib;
 - `game.log`, the server's output;
 - one transcript per character (`testimm.txt` for `Testimm`), the text the character read.
 
-A passing test's directory is deleted. It is kept, and its path printed, when the lib or
-server fails to set up after the lib was copied in, when any test in the session has failed,
-when the server's checks fail, or with `ROTS_IT_KEEP=1`. Template libs, one per character set,
+A passing test's directory is deleted. It is kept when the lib or server fails to set up after
+the lib was copied in, when any test in the session has failed, when the server's checks fail,
+when the run is interrupted (Ctrl-C, SIGTERM or SIGHUP), or with `ROTS_IT_KEEP=1`. Kept
+directories are listed, each with its test, in a "kept run directories" section at the end of
+the run. Template libs, one per character set,
 are built once per session under `build/integration/libs/` and deleted at the end unless
 `ROTS_IT_KEEP=1`.
 Containers use `build/integration/tmp` as their `TMPDIR`.

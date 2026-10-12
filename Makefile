@@ -62,7 +62,7 @@ integration-unit:
 	$(PYTHON) -m pytest tests/integration/unit -q
 
 integration:
-	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and $(GROUP))"
+	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"
 
 # DO NOT RUN THIS on a change you are about to commit. It is clang-format over the WHOLE
 # tree: ~1200 lines nobody touched get rewritten (db.cpp and act_wiz.cpp worst), and the

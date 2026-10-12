@@ -42,9 +42,10 @@ def test_the_template_has_the_copied_data_the_world_and_the_save_directories(tmp
     runner = FakeToolRunner()
     lib = libbuilder.LibTemplateBuilder(tmp_path, world, runner).build(tmp_path / "t1", CharacterSet((IMPLEMENTOR,)), seed=7)
     assert (lib / "text" / "motd").is_file()
-    assert sorted(path.name for path in (lib / "misc").iterdir()) == sorted(libbuilder.TRACKED_MISC_FILES)
-    for directory in libbuilder.BUCKETED_DIRECTORIES:
-        assert sorted(path.name for path in (lib / directory).iterdir()) == sorted(libbuilder.BUCKETS)
+    # Literal names: the git-tracked lib/misc files and the server's save-file buckets.
+    assert sorted(path.name for path in (lib / "misc").iterdir()) == ["badsites", "crimelist", "messages", "mudlle", "mudlle.old", "socials", "wizlist"]
+    for directory in ("players", "accounts", "account_characters", "plrobjs", "exploits"):
+        assert sorted(path.name for path in (lib / directory).iterdir()) == ["A-E", "F-J", "K-O", "P-T", "U-Z", "ZZZ"]
     assert (lib / "boards").is_dir()
     assert sorted(path.name for path in (lib / "world").iterdir()) == sorted(libbuilder.WORLD_CATEGORIES)
 

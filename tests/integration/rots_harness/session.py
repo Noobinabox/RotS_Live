@@ -14,7 +14,7 @@ from rots_harness.telnet import TelnetStreamSanitizer
 LOGIN_PASSWORD_PROMPT = "Account password:"
 ACCOUNT_MENU_PROMPT = "Choice:"
 ACCOUNT_MENU_PLAY = "2"
-CHARACTER_NUMBER_PROMPT = "Character number or name:"
+CHARACTER_CHOICE_PROMPT = "Character number or name:"
 CHARACTER_MENU_PROMPT = "Make your choice:"
 CHARACTER_MENU_ENTER = "1"
 ENTER_GAME_MARKER = "Here we go..."
@@ -22,7 +22,12 @@ BAD_CREDENTIALS_MARKER = "Invalid account credentials"
 ONE_CHARACTER_ONLINE_MARKER = "You are already connected as"
 ONE_CHARACTER_ONLINE_RULE = "an account may have one character online unless it owns a character above level 91 (interpre.cpp, first_restricting_active_account_session_for_account)"
 PROMPT_TERMINATORS = (">", "]")
-ANSI_PATTERN = re.compile(r"\x1b\[[0-9;]*m")
+# A complete control sequence: colour codes and the clear-screen pair ESC[H ESC[J.
+CSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+# A control sequence cut off at the end of the received text, still waiting for its final letter.
+INCOMPLETE_CSI_PATTERN = re.compile(r"\x1b(\[[0-9;?]*)?$")
+# How much of the unread text an error message quotes.
+PENDING_TEXT_QUOTED = 1500
 FAREWELL_MARKERS = ("Goodbye", "As you quit")
 
 
@@ -67,12 +72,10 @@ class Transcript:
 class GameSession:
     """A character's connection to a running server; every byte read is mirrored to a transcript file."""
 
-    def __init__(self, handle: ServerHandle, character_name: str, character_number: int, email: str, password: str, transcript_dir: Path) -> None:
-        """Connects to the server; login() then brings the character into the game."""
-        # Names the character in errors and in the transcript file name.
+    def __init__(self, handle: ServerHandle, character_name: str, email: str, password: str, transcript_dir: Path) -> None:
+        """Connects to the server; login() then brings the character into the game, picking it from the account's list by name."""
+        # Names the character in errors and in the transcript file name, and picks it at the character list.
         self._character_name = character_name
-        # The character's number in the account's character list.
-        self._character_number = character_number
         # The account credentials login() sends.
         self._email = email
         self._password = password
@@ -82,14 +85,16 @@ class GameSession:
         self._socket.settimeout(0.25)
         # Turns received bytes into text, carrying telnet negotiation split across reads.
         self._sanitizer = TelnetStreamSanitizer()
-        # Everything received so far, without telnet negotiation or colour codes.
+        # Everything received so far, without telnet negotiation or control sequences; only ever appended to.
         self._clean = ""
+        # The start of a control sequence split across reads, held back until its final letter arrives.
+        self._held_escape = ""
         # Length of the prefix of _clean already returned by expect, drain or command.
         self._consumed = 0
         # Set once close() runs; the socket is gone from then on.
         self._closed = False
         transcript_dir.mkdir(parents=True, exist_ok=True)
-        # Rewritten after every read so a failed run keeps what the character saw.
+        # Appended to after every read so a failed run keeps what the character saw.
         self._transcript_path = transcript_dir / f"{character_name.lower()}.txt"
 
     @property
@@ -114,10 +119,19 @@ class GameSession:
         except socket.timeout:
             return False
         if not chunk:
-            raise ConnectionError(f"{self.character_name}: server closed the connection")
+            raise ConnectionError(f"{self.character_name}: server closed the connection; unread text:\n{self._unconsumed()[-PENDING_TEXT_QUOTED:]}")
         self._sanitizer.feed(chunk)
-        self._clean = ANSI_PATTERN.sub("", self._sanitizer.text)
-        self._transcript_path.write_text(self._clean, encoding="utf-8")
+        received = self._held_escape + self._sanitizer.take_new_text()
+        incomplete = INCOMPLETE_CSI_PATTERN.search(received)
+        if incomplete is None:
+            self._held_escape = ""
+        else:
+            self._held_escape = received[incomplete.start():]
+            received = received[:incomplete.start()]
+        fresh = CSI_PATTERN.sub("", received)
+        self._clean += fresh
+        with self._transcript_path.open("a", encoding="utf-8", newline="") as transcript_file:
+            transcript_file.write(fresh)
         return True
 
     def _unconsumed(self) -> str:
@@ -136,7 +150,7 @@ class GameSession:
             if any(marker in pending for marker in markers):
                 return self._consume()
             if time.monotonic() >= deadline:
-                raise SessionTimeout(f"{self.character_name}: none of {list(markers)!r} within {timeout}s; pending text:\n{pending[-1500:]}")
+                raise SessionTimeout(f"{self.character_name}: none of {list(markers)!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
             self._pump()
 
     def drain(self, timeout: float = 0.5) -> str:
@@ -160,19 +174,20 @@ class GameSession:
             if ends_with_prompt(pending):
                 return Transcript(self._consume())
             if time.monotonic() >= deadline:
-                raise SessionTimeout(f"{self.character_name}: no prompt after {text!r} within {timeout}s; pending text:\n{pending[-1500:]}")
+                raise SessionTimeout(f"{self.character_name}: no prompt after {text!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
             self._pump()
 
     def login(self, timeout: float = 15.0) -> None:
-        """Logs in through the account menu and enters the game; raises LoginRefused with the game's words."""
+        """Logs in through the account menu, picks the character by name and enters the game; raises LoginRefused with the game's words."""
         self.expect([LOGIN_EMAIL_PROMPT], timeout)
         self.send_line(self._email)
         self.expect([LOGIN_PASSWORD_PROMPT], timeout)
         self.send_line(self._password)
         self._expect_or_refuse([ACCOUNT_MENU_PROMPT], timeout)
         self.send_line(ACCOUNT_MENU_PLAY)
-        self._expect_or_refuse([CHARACTER_NUMBER_PROMPT], timeout)
-        self.send_line(str(self._character_number))
+        self._expect_or_refuse([CHARACTER_CHOICE_PROMPT], timeout)
+        # The server matches the name against the whole roster ignoring case, so menu order does not matter.
+        self.send_line(self._character_name)
         self._expect_or_refuse([CHARACTER_MENU_PROMPT], timeout)
         self.send_line(CHARACTER_MENU_ENTER)
         self._expect_or_refuse([ENTER_GAME_MARKER], timeout)
@@ -189,9 +204,13 @@ class GameSession:
         return text
 
     def quit(self, timeout: float = 8.0) -> None:
-        """Quits the game and closes the connection either way; raises QuitRefused when no farewell arrives."""
-        self.send_line("quit")
+        """Quits the game and closes the connection either way; raises QuitRefused when no farewell arrives.
+
+        Text received before the quit is discarded first, so only a farewell that answers this quit counts.
+        """
         try:
+            self.drain(0.1)
+            self.send_line("quit")
             self.expect(FAREWELL_MARKERS, timeout)
         except SessionTimeout as refusal:
             raise QuitRefused(f"{self.character_name}: quit was refused or never answered") from refusal

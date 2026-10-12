@@ -46,3 +46,14 @@ def test_text_accumulates_across_feeds() -> None:
     sanitizer.feed(b"one ")
     sanitizer.feed(b"two")
     assert sanitizer.text == "one two"
+
+
+def test_take_new_text_returns_only_what_arrived_since_the_last_take() -> None:
+    sanitizer = TelnetStreamSanitizer()
+    sanitizer.feed(b"one ")
+    assert sanitizer.take_new_text() == "one "
+    sanitizer.feed(b"two\r")
+    assert sanitizer.take_new_text() == "two", "a CR waits for the byte after it"
+    sanitizer.feed(b"\x00three")
+    assert sanitizer.take_new_text() == "\rthree"
+    assert sanitizer.text == "one two\rthree"

@@ -132,7 +132,9 @@ def test_the_mage_starts_in_the_arena(server) -> None:
 ```
 
 All of a test's characters belong to one harness account, listed in marker order.
-`server.login(name)` returns a session whose `command(text)` returns the command's output; the
+`server.login(name)` picks the character by name from the account's character list, so the
+order does not matter to logging in. It returns a session whose `command(text)` returns the
+command's output; the
 fixture quits every session after the test. The game lets an account have only one character
 online unless the account owns a character above level 91, so a test that logs in two
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).

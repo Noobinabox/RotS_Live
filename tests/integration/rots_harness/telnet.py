@@ -25,6 +25,8 @@ class TelnetStreamSanitizer:
         self._pending_cr = False
         # Every text byte kept so far.
         self._sanitized = bytearray()
+        # Bytes of _sanitized already returned by take_new_text().
+        self._taken = 0
 
     def feed(self, chunk: bytes) -> str:
         """Adds a chunk and returns all text so far."""
@@ -81,3 +83,9 @@ class TelnetStreamSanitizer:
     def text(self) -> str:
         """All text kept so far, decoded as Latin-1."""
         return self._sanitized.decode("latin1", errors="ignore")
+
+    def take_new_text(self) -> str:
+        """The text kept since the last call, decoded as Latin-1."""
+        fresh = self._sanitized[self._taken:]
+        self._taken = len(self._sanitized)
+        return fresh.decode("latin1", errors="ignore")

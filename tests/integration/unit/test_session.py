@@ -20,8 +20,9 @@ def test_transcript_room_name_drops_the_exits_suffix() -> None:
     assert transcript.room_name() == "Arena Centre"
 
 
-def test_ansi_pattern_strips_colour_codes() -> None:
-    assert session.ANSI_PATTERN.sub("", "\x1b[33mArena Centre\x1b[0m") == "Arena Centre"
+def test_csi_pattern_strips_colour_codes_and_the_clear_screen() -> None:
+    assert session.CSI_PATTERN.sub("", "\x1b[33mArena Centre\x1b[0m") == "Arena Centre"
+    assert session.CSI_PATTERN.sub("", "\x1b[H\x1b[JArena Centre") == "Arena Centre"
 
 
 def test_prompt_detection_accepts_trailing_whitespace_and_both_terminators() -> None:
@@ -42,12 +43,16 @@ class FakeSocket:
         self._pending = greeting
         # Whether the session has closed the connection.
         self.closed = False
+        # Every line the session sent, in order and without the newline.
+        self.sent_lines: list[str] = []
 
     def settimeout(self, _timeout: float) -> None:
         pass
 
     def sendall(self, data: bytes) -> None:
-        answers = self._replies.get(data.decode("latin-1").strip(), [])
+        line = data.decode("latin-1").strip()
+        self.sent_lines.append(line)
+        answers = self._replies.get(line, [])
         if answers:
             self._pending += answers.pop(0)
 
@@ -68,11 +73,12 @@ ARENA = b"\r\nArena Centre    Exits are: N E S W\r\nThe centre of the harness ar
 
 
 def login_replies() -> dict[str, list[bytes]]:
-    """A server that lets Testmage (character 2) in: the account menu's "2" and the character number "2" are the same line, answered in turn."""
+    """A server that lets Testmage in when the session picks it by name from the character list."""
     return {
         "harness@example.com": [b"Account password: "],
         "Harness1x": [b"\r\nAccount: harness@example.com\r\n2) Play a linked character\r\n0) Log out\r\n\r\nChoice: "],
-        "2": [CHARACTER_LIST, CHARACTER_MENU],
+        "2": [CHARACTER_LIST],
+        "Testmage": [CHARACTER_MENU],
         "1": [b"\r\nThere is no unread news.\r\n\r\nHere we go...\r\n" + ARENA],
         "look": [ARENA],
     }
@@ -83,13 +89,14 @@ def connect_fake_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, replie
     fake_socket = FakeSocket(replies, greeting)
     monkeypatch.setattr(session.socket, "create_connection", lambda _address, timeout: fake_socket)
     handle = ServerHandle("127.0.0.1", 1, tmp_path / "game.log", None)  # type: ignore[arg-type]
-    return GameSession(handle, "Testmage", 2, "harness@example.com", "Harness1x", tmp_path), fake_socket
+    return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path), fake_socket
 
 
 def test_login_walks_the_account_menu_and_enters_the_game(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), GREETING)
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), GREETING)
     game_session.login(timeout=1.0)
     assert "Arena Centre" in game_session.everything
+    assert fake_socket.sent_lines[:4] == ["harness@example.com", "Harness1x", "2", "Testmage"], "the character is picked by name"
     assert (tmp_path / "testmage.txt").read_text(encoding="utf-8").rstrip().endswith("S:Powered>")
 
 
@@ -103,7 +110,7 @@ def test_bad_credentials_fail_the_login_at_once(monkeypatch: pytest.MonkeyPatch,
 
 def test_the_one_character_online_rule_fails_the_login_with_a_pointer(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     replies = login_replies()
-    replies["2"][1] = b"\r\nYou are already connected as Testimm. Reconnect to that character or log out before playing another character.\r\n"
+    replies["Testmage"][0] = b"\r\nYou are already connected as Testimm. Reconnect to that character or log out before playing another character.\r\n"
     game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, replies, GREETING)
     with pytest.raises(session.LoginRefused, match=r"(?s)already connected as Testimm.*above level 91"):
         game_session.login(timeout=1.0)
@@ -129,6 +136,69 @@ def test_quit_answered_with_goodbye_returns_and_marks_the_session_closed(monkeyp
     game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {"quit": [b"Goodbye, friend.. Come back soon!\r\n"]})
     game_session.quit(timeout=0.3)
     assert game_session.is_closed
+    assert fake_socket.closed
+
+
+class ScriptedSocket:
+    """Stands in for the server connection: each recv() returns the next scripted chunk, then times out."""
+
+    def __init__(self, chunks: list[bytes], close_after: bool = False) -> None:
+        # Chunks still to deliver, in order.
+        self._chunks = list(chunks)
+        # Whether recv() reports the server closing the connection once the chunks run out.
+        self._close_after = close_after
+
+    def settimeout(self, _timeout: float) -> None:
+        pass
+
+    def sendall(self, _data: bytes) -> None:
+        pass
+
+    def recv(self, _size: int) -> bytes:
+        if self._chunks:
+            return self._chunks.pop(0)
+        if self._close_after:
+            return b""
+        raise socket.timeout()
+
+    def close(self) -> None:
+        pass
+
+
+def connect_scripted_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, chunks: list[bytes], close_after: bool = False) -> GameSession:
+    """A session for Testmage whose connection delivers chunks one recv() at a time."""
+    scripted_socket = ScriptedSocket(chunks, close_after)
+    monkeypatch.setattr(session.socket, "create_connection", lambda _address, timeout: scripted_socket)
+    handle = ServerHandle("127.0.0.1", 1, tmp_path / "game.log", None)  # type: ignore[arg-type]
+    return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path)
+
+
+COLOURED_ROOM = b"\x1b[1;33mArena Centre\x1b[0m    Exits are: N\r\nS:Powered>"
+
+
+@pytest.mark.parametrize("split_at", range(1, len(COLOURED_ROOM)))
+def test_a_colour_code_split_across_reads_is_stripped_like_an_unsplit_one(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, split_at: int) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [COLOURED_ROOM[:split_at], COLOURED_ROOM[split_at:]])
+    text = game_session.expect(["S:Powered>"], timeout=1.0)
+    assert text == "Arena Centre    Exits are: N\r\nS:Powered>"
+    assert (tmp_path / "testmage.txt").read_bytes().decode("utf-8") == text
+
+
+def test_the_clear_screen_sequence_is_stripped(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [b"\x1b[H\x1b", b"[JNews\r\nS:Powered>"])
+    assert game_session.expect(["S:Powered>"], timeout=1.0) == "News\r\nS:Powered>"
+
+
+def test_a_closed_connection_error_quotes_the_unread_text(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [b"The ground shakes violently.\r\n"], close_after=True)
+    with pytest.raises(ConnectionError, match=r"(?s)server closed the connection.*The ground shakes violently"):
+        game_session.expect(["never sent"], timeout=1.0)
+
+
+def test_quit_is_not_satisfied_by_a_farewell_already_received(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, greeting=b"Goodbye, friend.. Come back soon!\r\n")
+    with pytest.raises(QuitRefused):
+        game_session.quit(timeout=0.3)
     assert fake_socket.closed
 
 

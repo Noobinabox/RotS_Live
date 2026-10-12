@@ -68,16 +68,15 @@ def test_spec_json_is_stable_for_equal_sets() -> None:
     assert CharacterSet((IMPLEMENTOR,)).spec_json() != CharacterSet((IMPLEMENTOR, custom_mage())).spec_json()
 
 
-def test_character_number_follows_marker_order_ignoring_case() -> None:
+def test_character_looks_names_up_ignoring_case() -> None:
     character_set = CharacterSet((IMPLEMENTOR, custom_mage()))
-    assert character_set.character_number("Testimm") == 1
-    assert character_set.character_number("testmage") == 2
+    assert character_set.character("testimm") is IMPLEMENTOR
     assert character_set.character("TESTMAGE").name == "Testmage"
 
 
 def test_an_unknown_name_is_refused() -> None:
     with pytest.raises(ValueError, match="Nobody is not in this test's characters"):
-        CharacterSet((IMPLEMENTOR,)).character_number("Nobody")
+        CharacterSet((IMPLEMENTOR,)).character("Nobody")
 
 
 def test_an_empty_character_set_is_refused() -> None:

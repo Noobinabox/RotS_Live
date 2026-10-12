@@ -101,14 +101,10 @@ class CharacterSet:
         """The fixture spec as rotstool reads it; equal sets give identical text, which keys the template cache."""
         return json.dumps(self.to_spec(), indent=2, sort_keys=True) + "\n"
 
-    def character_number(self, name: str) -> int:
-        """The character's number in the account menu: its 1-based position in the set."""
-        wanted = name.lower()
-        for position, character in enumerate(self.characters, start=1):
-            if character.name.lower() == wanted:
-                return position
-        raise ValueError(f"{name} is not in this test's characters: {', '.join(character.name for character in self.characters)}")
-
     def character(self, name: str) -> Character:
         """The character with this name, ignoring case; raises ValueError when absent."""
-        return self.characters[self.character_number(name) - 1]
+        wanted = name.lower()
+        for character in self.characters:
+            if character.name.lower() == wanted:
+                return character
+        raise ValueError(f"{name} is not in this test's characters: {', '.join(character.name for character in self.characters)}")

@@ -114,10 +114,7 @@ class HarnessServer:
     def login(self, name: str) -> GameSession:
         """Logs the named character in and returns its session; the fixture quits it after the test."""
         character = self.character_set.character(name)
-        game_session = GameSession(
-            self.handle, character.name, self.character_set.character_number(name),
-            self.character_set.email, self.character_set.password, self.run_dir,
-        )
+        game_session = GameSession(self.handle, character.name, self.character_set.email, self.character_set.password, self.run_dir)
         try:
             game_session.login()
         except BaseException:

@@ -1,4 +1,4 @@
-"""One character's telnet connection to the game: logs in, sends commands and records what the player reads."""
+"""One character's telnet connection to the game: logs in, sends commands, records what the player reads, and ends a test's connections."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import re
 import socket
 import time
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Iterable, List, Optional, Sequence
 
 from rots_harness.launcher import ServerHandle
 from rots_harness.telnet import TelnetStreamSanitizer
@@ -208,3 +208,24 @@ class GameSession:
             self._socket.close()
         except OSError:
             pass
+
+
+def end_sessions(sessions: Iterable[GameSession], server_alive: bool) -> list[str]:
+    """Quits each open session, or only closes it when the server has exited; returns the quit failures' messages.
+
+    Sessions already closed are skipped. A failed quit does not stop the rest from ending.
+    """
+    problems: list[str] = []
+    for game_session in sessions:
+        if game_session.is_closed:
+            continue
+        if not server_alive:
+            # An exited server cannot answer quit, and the caller's crash checks report the exit;
+            # a quit attempt would only add a second, misleading failure.
+            game_session.close()
+            continue
+        try:
+            game_session.quit()
+        except (QuitRefused, ConnectionError) as quit_failure:
+            problems.append(str(quit_failure))
+    return problems

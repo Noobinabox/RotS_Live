@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import socket
 from pathlib import Path
+from typing import Optional
 
 import pytest
 
 from rots_harness import session
 from rots_harness.launcher import ServerHandle
-from rots_harness.session import GameSession, QuitRefused, Transcript, ends_with_prompt
+from rots_harness.session import GameSession, QuitRefused, Transcript, end_sessions, ends_with_prompt
 
 
 def test_transcript_room_name_is_the_first_non_empty_line() -> None:
@@ -129,3 +130,64 @@ def test_quit_answered_with_goodbye_returns_and_marks_the_session_closed(monkeyp
     game_session.quit(timeout=0.3)
     assert game_session.is_closed
     assert fake_socket.closed
+
+
+class FakeEndingSession:
+    """Stands in for a GameSession at teardown: records quit and close, and can refuse the quit."""
+
+    def __init__(self, closed: bool = False, quit_failure: Optional[Exception] = None) -> None:
+        # Whether the connection is closed; close() and quit() set it.
+        self.closed = closed
+        # Raised by quit() after closing, as GameSession.quit does when no farewell arrives.
+        self._quit_failure = quit_failure
+        # How many times quit() and close() were called.
+        self.quit_calls = 0
+        self.close_calls = 0
+
+    @property
+    def is_closed(self) -> bool:
+        """True once the fake connection is closed."""
+        return self.closed
+
+    def quit(self) -> None:
+        """Counts the quit and closes the connection, then raises the configured failure, if any."""
+        self.quit_calls += 1
+        self.closed = True
+        if self._quit_failure is not None:
+            raise self._quit_failure
+
+    def close(self) -> None:
+        """Counts the close and closes the connection."""
+        self.close_calls += 1
+        self.closed = True
+
+
+def test_ending_sessions_on_a_live_server_quits_every_session() -> None:
+    sessions = [FakeEndingSession(), FakeEndingSession()]
+    assert end_sessions(sessions, server_alive=True) == []
+    assert [fake.quit_calls for fake in sessions] == [1, 1]
+    assert all(fake.is_closed for fake in sessions)
+
+
+def test_ending_sessions_on_an_exited_server_closes_them_without_quitting() -> None:
+    sessions = [FakeEndingSession(), FakeEndingSession()]
+    assert end_sessions(sessions, server_alive=False) == []
+    assert [fake.quit_calls for fake in sessions] == [0, 0]
+    assert [fake.close_calls for fake in sessions] == [1, 1]
+
+
+def test_ending_sessions_skips_sessions_already_closed() -> None:
+    already_closed = FakeEndingSession(closed=True)
+    for server_alive in (True, False):
+        assert end_sessions([already_closed], server_alive=server_alive) == []
+    assert already_closed.quit_calls == 0
+    assert already_closed.close_calls == 0
+
+
+def test_ending_sessions_collects_quit_failures_and_still_quits_the_rest() -> None:
+    refused = FakeEndingSession(quit_failure=QuitRefused("Testimm: quit was refused or never answered"))
+    disconnected = FakeEndingSession(quit_failure=ConnectionError("Testmage: server closed the connection"))
+    last = FakeEndingSession()
+    problems = end_sessions([refused, disconnected, last], server_alive=True)
+    assert problems == ["Testimm: quit was refused or never answered", "Testmage: server closed the connection"]
+    assert last.quit_calls == 1

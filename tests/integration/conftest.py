@@ -18,7 +18,7 @@ from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, Dock
 from rots_harness.launcher import DockerComposeLauncher, LocalProcessLauncher, ServerHandle, ServerLauncher, allocate_free_port
 from rots_harness.libbuilder import LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import keep_run_directory
-from rots_harness.session import GameSession, QuitRefused
+from rots_harness.session import GameSession, end_sessions
 
 # tests/integration: this file, pytest.ini and the test world.
 INTEGRATION_ROOT = Path(__file__).resolve().parent
@@ -164,18 +164,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         yield harness_server
     finally:
         try:
-            for game_session in harness_server.sessions:
-                if game_session.is_closed:
-                    continue
-                if not handle.is_alive():
-                    # An exited server cannot answer quit, and the crash checks already report
-                    # the exit; a quit attempt would only add a second, misleading failure.
-                    game_session.close()
-                    continue
-                try:
-                    game_session.quit()
-                except (QuitRefused, ConnectionError) as quit_failure:
-                    teardown_problems.append(str(quit_failure))
+            teardown_problems = end_sessions(harness_server.sessions, handle.is_alive())
         finally:
             harness_launcher.stop(handle)
         shutdown_problems = harness_server.monitor.check_after_stop()

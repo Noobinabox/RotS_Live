@@ -167,6 +167,11 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
             for game_session in harness_server.sessions:
                 if game_session.is_closed:
                     continue
+                if not handle.is_alive():
+                    # An exited server cannot answer quit, and the crash checks already report
+                    # the exit; a quit attempt would only add a second, misleading failure.
+                    game_session.close()
+                    continue
                 try:
                     game_session.quit()
                 except (QuitRefused, ConnectionError) as quit_failure:

@@ -871,3 +871,23 @@ def test_a_docker_start_whose_port_wait_spent_the_budget_names_the_whole_startup
         f"the server on {launcher.LOOPBACK}:49153 did not send its login prompt within the 300.0s startup timeout, "
         "part of which the wait for the published port used; log tail:"
     )
+
+
+# Sends a banner at once but the login prompt only after a delay, keeping the connection open.
+TEXT_BEFORE_PROMPT_SERVER = FAKE_SERVER_PREAMBLE + """
+connection, _address = listener.accept()
+connection.sendall(NEGOTIATION + b"Return of the Shadow\\r\\n")
+time.sleep(0.5)
+(evidence_dir / "prompt-sent").write_text("yes")
+connection.sendall(b"Account email: ")
+time.sleep(30)
+"""
+
+
+def test_ready_needs_the_prompt_itself_not_just_some_text(tmp_path: Path, fake_servers: FakeServers) -> None:
+    port = launcher.allocate_free_port()
+    process = fake_servers.start(TEXT_BEFORE_PROMPT_SERVER, port)
+
+    launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 10.0, process, fake_servers.log_path)
+
+    assert (tmp_path / "prompt-sent").exists()

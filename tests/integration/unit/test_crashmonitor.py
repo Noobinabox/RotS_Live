@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from rots_harness import crashmonitor
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.launcher import ServerHandle
@@ -195,3 +197,10 @@ def test_the_shutdown_notice_seen_by_an_earlier_check_still_counts_after_stop(tm
     monitor.check()
     handle.process.returncode = 0  # type: ignore[attr-defined]
     assert monitor.check_after_stop() == []
+
+
+@pytest.mark.parametrize("marker", ["AddressSanitizer", "LeakSanitizer", "UndefinedBehaviorSanitizer", "runtime error:"])
+def test_each_sanitizer_marker_is_a_crash_marker_on_its_own(tmp_path: Path, marker: str) -> None:
+    handle = make_handle(tmp_path)
+    append_log(handle, f"Sep 24 :: {marker} found something\n")
+    assert CrashMonitor(handle).check() == [f"crash marker in log: Sep 24 :: {marker} found something"]

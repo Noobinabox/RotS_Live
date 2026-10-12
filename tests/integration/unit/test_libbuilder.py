@@ -121,3 +121,14 @@ def test_discard_templates_removes_the_cache(tmp_path: Path) -> None:
     provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / "a")
     provider.discard_templates()
     assert not (tmp_path / "libs").exists()
+
+
+def test_each_seed_gets_its_own_template(tmp_path: Path) -> None:
+    world = make_repo(tmp_path)
+    runner = FakeToolRunner()
+    builder = libbuilder.LibTemplateBuilder(tmp_path, world, runner)
+    for seed in (7, 8):
+        provider = libbuilder.RunLibProvider(builder, tmp_path / "libs", seed=seed)
+        provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / str(seed))
+    assert len(runner.calls) == 2
+    assert len(list((tmp_path / "libs").iterdir())) == 2, "a template built for one seed must not be reused for another"

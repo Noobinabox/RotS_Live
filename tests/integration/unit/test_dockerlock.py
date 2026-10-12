@@ -279,3 +279,14 @@ def test_parse_wait_seconds_accepts_a_finite_number_of_at_least_zero(text: str, 
 def test_parse_wait_seconds_refuses_anything_else(text: str) -> None:
     with pytest.raises(ValueError):
         dockerlock.parse_wait_seconds(text)
+
+
+def test_a_harness_lock_name_with_text_after_it_is_never_removed(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    lock_name = "harness-it-123-abcd.lock.lock"
+    (lock_dir / lock_name).write_text("session: other\n", encoding="utf-8")
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path, wait_seconds=0, report=lambda _message: None, process_is_running=lambda _pid: False)
+    with pytest.raises(dockerlock.DockerLockHeld, match=lock_name):
+        lock.acquire(purpose="unit test")
+    assert sorted(path.name for path in lock_dir.iterdir()) == [lock_name]

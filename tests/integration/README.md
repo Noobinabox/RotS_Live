@@ -117,7 +117,9 @@ A passing test's directory is deleted. It is kept when the lib or server fails t
 the lib was copied in, when any test in the session has failed, when the server's checks fail,
 when the run is interrupted (Ctrl-C, SIGTERM or SIGHUP), or with `ROTS_IT_KEEP=1`. Kept
 directories are listed, each with its test, in a "kept run directories" section at the end of
-the run. Template libs, one per character set,
+the run. An interrupt from a terminal also reaches the server and ends it, so during an
+interrupted run the server checks do not fail the test: what they found is listed under the
+kept directory instead. Template libs, one per character set,
 are built once per session under `build/integration/libs/` and deleted at the end unless
 `ROTS_IT_KEEP=1`.
 Containers use `build/integration/tmp` as their `TMPDIR`.

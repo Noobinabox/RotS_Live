@@ -19,7 +19,7 @@ from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock
 from rots_harness.launcher import DockerComposeLauncher, LocalProcessLauncher, ServerHandle, ServerLauncher, allocate_free_port, check_repo_relative
 from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
-from rots_harness.retention import keep_run_directory
+from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
 
 # tests/integration: this file, pytest.ini and the test world.
@@ -38,36 +38,6 @@ DEFAULT_BINARY_RELATIVE = "bin/ageland"
 TEST_NAME_FILE = "test.txt"
 # Where pytest_configure keeps the function that puts back the signal handlers it replaced.
 RESTORE_SIGNAL_HANDLERS_KEY = pytest.StashKey[Callable[[], None]]()
-
-
-class RunDirectoryReport:
-    """Notes whether the run was interrupted and which run directories were kept, and lists them at the end of the run."""
-
-    def __init__(self) -> None:
-        # Set when Ctrl-C, SIGTERM or SIGHUP interrupts the run; pytest reports that before fixture teardown.
-        self.interrupted = False
-        # Each kept run directory with the node id of the test that used it, in the order they were kept.
-        self.kept: list[tuple[Path, str]] = []
-
-    def record_kept(self, run_dir: Path, node_id: str) -> None:
-        """Adds a run directory the end-of-run summary lists."""
-        self.kept.append((run_dir, node_id))
-
-    def summary_lines(self) -> list[str]:
-        """One line per kept run directory: its path, then its test's node id."""
-        return [f"{run_dir}  {node_id}" for run_dir, node_id in self.kept]
-
-    def pytest_keyboard_interrupt(self, excinfo: pytest.ExceptionInfo[BaseException]) -> None:
-        """Records the interruption so teardown keeps the interrupted test's run directory."""
-        self.interrupted = True
-
-    def pytest_terminal_summary(self, terminalreporter) -> None:
-        """Lists the kept run directories in their own section of the terminal summary."""
-        if not self.kept:
-            return
-        terminalreporter.section("kept run directories")
-        for line in self.summary_lines():
-            terminalreporter.write_line(line)
 
 
 # Where pytest_configure keeps the run's RunDirectoryReport.
@@ -201,6 +171,9 @@ class HarnessServer:
     sessions: list[GameSession] = field(default_factory=list)
     # Set by the crash checks; keeps the run directory.
     crash_detected: bool = False
+    # What the crash check found during an interrupted run, listed under the kept run directory
+    # instead of failing the test.
+    interrupted_problems: list[str] = field(default_factory=list)
 
     def login(self, name: str) -> GameSession:
         """Logs the named character in and returns its session; the fixture quits it after the test."""
@@ -274,7 +247,8 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     """A fresh server on a lib holding the test's declared characters, as a HarnessServer.
 
     After the test it quits every session, stops the server, and fails the test when a session
-    does not quit or the shutdown shows problems. The run directory, whose test.txt names the
+    does not quit or the shutdown shows problems; during an interrupted run those problems are
+    listed under the kept run directory instead. The run directory, whose test.txt names the
     test, is deleted unless the lib or server failed to set up after the lib was copied, any
     test in the session has failed, this server's checks failed, the run was interrupted, or
     ROTS_IT_KEEP=1. Kept directories are listed at the end of the run.
@@ -298,32 +272,44 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
             shutil.rmtree(run_dir, ignore_errors=True)
         raise
     harness_server = HarnessServer(handle, lib_dir, run_dir, character_set, CrashMonitor(handle))
-    teardown_problems: list[str] = []
     try:
         yield harness_server
     finally:
+        interruption: KeyboardInterrupt | None = None
+        teardown_problems: list[str] = []
         try:
-            teardown_problems = end_sessions(harness_server.sessions, handle.is_alive())
-        finally:
+            try:
+                teardown_problems = end_sessions(harness_server.sessions, handle.is_alive())
+            finally:
+                harness_launcher.stop(handle)
+        except KeyboardInterrupt as caught:
+            # Ctrl-C, SIGTERM or SIGHUP while sessions quit or the server stops. Stopping again
+            # finishes a stop the interrupt cut short; the interrupt is raised once the run
+            # directory is recorded.
+            interruption = caught
             harness_launcher.stop(handle)
-        shutdown_problems = harness_server.monitor.check_after_stop()
-        if shutdown_problems:
-            harness_server.crash_detected = True
-        keep = keep_run_directory(
-            keep_requested(), request.session.testsfailed, harness_server.crash_detected or bool(teardown_problems), report.interrupted,
-        )
+        problems = teardown_problems + harness_server.monitor.check_after_stop()
+        interrupted = report.interrupted or interruption is not None
+        keep = keep_run_directory(keep_requested(), request.session.testsfailed, harness_server.crash_detected or bool(problems), interrupted)
         if keep:
-            report.record_kept(run_dir, request.node.nodeid)
+            notes = harness_server.interrupted_problems + problems if interrupted else []
+            report.record_kept(run_dir, request.node.nodeid, notes)
         else:
             shutil.rmtree(run_dir, ignore_errors=True)
-        problems = teardown_problems + shutdown_problems
-        if problems:
+        if interruption is not None:
+            raise interruption
+        # An interrupt that reaches the server too ends it, so during one the problems are only
+        # listed with the kept run directory and the run's exit status reports the interrupt.
+        if problems and not interrupted:
             pytest.fail("problems while ending the test:\n" + "\n".join(problems))
 
 
 @pytest.fixture(autouse=True)
 def fail_on_server_crash(request: pytest.FixtureRequest):
-    """Fails a test that uses the server fixture when the server shows crash evidence by the end of the test."""
+    """Fails a test that uses the server fixture when the server shows crash evidence by the end of the test.
+
+    During an interrupted run the evidence is listed with the kept run directory instead.
+    """
     # Requesting server here registers its finalizer first; finalizers run last in, first out,
     # so this check runs while the server is still up, before the server fixture quits sessions.
     harness_server = request.getfixturevalue("server") if "server" in request.fixturenames else None
@@ -332,4 +318,7 @@ def fail_on_server_crash(request: pytest.FixtureRequest):
         problems = harness_server.monitor.check()
         if problems:
             harness_server.crash_detected = True
-            pytest.fail("server problems during this test:\n" + "\n".join(problems))
+            if request.config.stash[RUN_DIRECTORY_REPORT_KEY].interrupted:
+                harness_server.interrupted_problems.extend(problems)
+            else:
+                pytest.fail("server problems during this test:\n" + "\n".join(problems))

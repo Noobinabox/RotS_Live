@@ -24,11 +24,11 @@ scenarios; `unit/` tests the harness itself without a server.
 1. Build the server and `rotstool`:
 
    ```bash
-   cmake --build build --target ageland rotstool
+   make configure && cmake --build build --target ageland rotstool
    ```
 
-   The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container as
-   `docs/BUILD.md` describes, for example
+   The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container, for
+   example
    `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'`.
 
 2. Create the virtual environment once, from the repository root (Python 3.10 or later):
@@ -59,6 +59,9 @@ The harness runs the i386 programs in one of two ways:
   `rots-it-...` and publishes the server on a random loopback port, so the service's fixed
   `rots` container name and host port 1024 are never used. Everything a container touches
   lives under the checkout, which the service mounts at `/rots`.
+
+Sanitizer variables (`ASAN_OPTIONS`, `LSAN_OPTIONS`, `UBSAN_OPTIONS`, `ASAN_SYMBOLIZER_PATH`)
+are forwarded to the server by the `local` launcher only.
 
 Environment variables:
 
@@ -92,9 +95,10 @@ Each test gets `build/integration/runs/<id>/` holding:
 - one transcript per character (`testimm.txt` for `Testimm`), the text the character read.
 
 A passing test's directory is deleted. It is kept, and its path printed, when the lib or
-server fails to set up, when any test in the session has failed, when the server's checks fail,
-or with `ROTS_IT_KEEP=1`. Template libs, one per character set, are built once per session
-under `build/integration/libs/` and deleted at the end unless `ROTS_IT_KEEP=1`.
+server fails to set up after the lib was copied in, when any test in the session has failed,
+when the server's checks fail, or with `ROTS_IT_KEEP=1`. Template libs, one per character set,
+are built once per session under `build/integration/libs/` and deleted at the end unless
+`ROTS_IT_KEEP=1`.
 Containers use `build/integration/tmp` as their `TMPDIR`.
 
 ## Writing a scenario

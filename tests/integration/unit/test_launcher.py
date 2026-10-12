@@ -58,7 +58,7 @@ def test_local_run_to_completion_returns_status_and_combined_output(tmp_path: Pa
 
 
 def test_require_program_names_the_build_command_when_missing(tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="cmake --build build --target ageland rotstool"):
+    with pytest.raises(RuntimeError, match="make configure && cmake --build build --target ageland rotstool"):
         launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/rotstool")
 
 
@@ -172,6 +172,94 @@ def test_docker_launcher_stops_the_container_when_start_fails(
     assert stop_calls[0][4].startswith("rots-it-")
     assert fake_process.terminate_called or fake_process.kill_called
     assert fake_process.stdin.closed
+
+
+def test_local_launcher_kills_the_process_when_interrupted_while_waiting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    stalling_script = tmp_path / "bin" / "ageland"
+    stalling_script.parent.mkdir()
+    stalling_script.write_text("#!/bin/sh\nsleep 60\n", encoding="utf-8")
+    stalling_script.chmod(0o700)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+
+    recorded_processes: list[subprocess.Popen] = []
+    real_popen = launcher.subprocess.Popen
+
+    def recording_popen(*args: object, **kwargs: object) -> subprocess.Popen:
+        spawned_process = real_popen(*args, **kwargs)
+        recorded_processes.append(spawned_process)
+        return spawned_process
+
+    def interrupted_wait(*args: object, **kwargs: object) -> None:
+        raise KeyboardInterrupt()
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", recording_popen)
+    monkeypatch.setattr(launcher, "wait_for_port", interrupted_wait)
+
+    local = launcher.LocalProcessLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
+    with pytest.raises(KeyboardInterrupt):
+        local.start(run_dir, run_dir / "lib", port=launcher.allocate_free_port(), seed=1)
+
+    assert len(recorded_processes) == 1
+    assert recorded_processes[0].poll() is not None
+
+
+def test_docker_launcher_stops_the_container_when_interrupted_while_waiting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    binary = tmp_path / "bin" / "ageland"
+    binary.parent.mkdir()
+    binary.write_text("", encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+
+    compose_process = subprocess.Popen(["sleep", "60"], stdin=subprocess.PIPE)
+    recorded_argv: list[list[str]] = []
+
+    def interrupted_port_query(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        recorded_argv.append(argv)
+        if argv[:2] == ["docker", "port"]:
+            raise KeyboardInterrupt()
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: compose_process)
+    monkeypatch.setattr(launcher.subprocess, "run", interrupted_port_query)
+
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
+    with pytest.raises(KeyboardInterrupt):
+        docker.start(run_dir, run_dir / "lib", port=4321, seed=1)
+
+    stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
+    assert len(stop_calls) == 1
+    assert stop_calls[0][4].startswith("rots-it-")
+    assert compose_process.poll() is not None
+
+
+def test_docker_run_to_completion_stops_the_container_when_interrupted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    program = tmp_path / "bin" / "rotstool"
+    program.parent.mkdir()
+    program.write_text("", encoding="utf-8")
+    recorded_argv: list[list[str]] = []
+
+    def interrupted_compose_run(argv: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        recorded_argv.append(argv)
+        if argv[:3] == ["docker", "compose", "run"]:
+            raise KeyboardInterrupt()
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(launcher.subprocess, "run", interrupted_compose_run)
+
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path)
+    with pytest.raises(KeyboardInterrupt):
+        docker.run_to_completion("bin/rotstool", [], tmp_path, timeout=10)
+
+    stop_calls = [argv for argv in recorded_argv if argv[:4] == ["docker", "stop", "-t", "5"]]
+    assert len(stop_calls) == 1
+    assert stop_calls[0][4].startswith("rots-it-tool-")
 
 
 def test_local_launcher_environment_is_clean_apart_from_sanitizer_tuning(

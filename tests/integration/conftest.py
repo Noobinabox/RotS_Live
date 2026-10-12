@@ -144,8 +144,9 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     """A fresh server on a lib holding the test's declared characters, as a HarnessServer.
 
     After the test it quits every session, stops the server, and fails the test when a session
-    does not quit or the shutdown shows problems. The run directory is deleted unless the lib or server failed to set up, any test
-    in the session has failed, this server's checks failed, or ROTS_IT_KEEP=1.
+    does not quit or the shutdown shows problems. The run directory is deleted unless the lib or
+    server failed to set up after the lib was copied, any test in the session has failed, this
+    server's checks failed, or ROTS_IT_KEEP=1.
     """
     character_set = character_set_for(request)
     run_dir = RUNS_ROOT / uuid.uuid4().hex[:12]
@@ -154,9 +155,13 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         lib_dir = lib_provider.lib_for(character_set, run_dir)
         handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed())
     except Exception:
-        # keep_run_directory never sees this case: the run directory is always kept, because
-        # its game.log and lib are the only evidence of why the server did not start.
-        print(f"\nthe test's lib or server could not be set up; run directory kept at {run_dir}")
+        # keep_run_directory never sees this case: a run directory with anything in it is always
+        # kept, because its game.log and lib are the only evidence of why the server did not
+        # start. A failure before the lib was copied (a rotstool refusal) leaves it empty.
+        if any(run_dir.iterdir()):
+            print(f"\nthe test's lib or server could not be set up; run directory kept at {run_dir}")
+        else:
+            run_dir.rmdir()
         raise
     harness_server = HarnessServer(handle, lib_dir, run_dir, character_set, CrashMonitor(handle))
     teardown_problems: list[str] = []

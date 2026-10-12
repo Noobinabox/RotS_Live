@@ -6,7 +6,8 @@ from typing import Callable, Optional
 
 from rots_harness.launcher import ServerHandle
 
-# SYSERR fragments a harness boot is known to print. A boot on the integration branch prints none (checked 2026-10-11); add an entry only with the reason it is harmless.
+# SYSERR fragments a harness boot is known to print; a clean boot prints none.
+# Add an entry only with the reason it is harmless.
 DEFAULT_ALLOWED: tuple[str, ...] = ()
 # Lines that sanitizer runtimes write when they find an error.
 SANITIZER_MARKERS = ("AddressSanitizer", "LeakSanitizer", "UndefinedBehaviorSanitizer", "runtime error:")

@@ -15,7 +15,7 @@ from typing import Optional
 
 LOOPBACK = "127.0.0.1"
 INTEGRATION_TMP_RELATIVE = "build/integration/tmp"
-BUILD_COMMAND = "cmake --build build --target ageland rotstool"
+BUILD_COMMAND = "make configure && cmake --build build --target ageland rotstool"
 
 # Host variables the local launcher forwards to the server. Everything else is dropped so the
 # server sees a clean environment; sanitizer tuning (leak checks, signal handling, symbolizer
@@ -189,7 +189,9 @@ class LocalProcessLauncher(ServerLauncher):
             handle = ServerHandle(LOOPBACK, port, log_path, process)
             wait_for_port(LOOPBACK, port, self._startup_timeout, process, log_path)
             return handle
-        except Exception:
+        except BaseException:
+            # BaseException so a Ctrl-C during the wait also stops the server: the fixture never
+            # received the handle, so nothing else would.
             terminate_process(process)
             raise
 
@@ -287,7 +289,9 @@ class DockerComposeLauncher(ServerLauncher):
             handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)
             wait_for_port(LOOPBACK, host_port, self._startup_timeout, process, log_path)
             return handle
-        except Exception:
+        except BaseException:
+            # BaseException so a Ctrl-C during the waits also stops the container: the fixture
+            # never received the handle, so nothing else would.
             self._stop_container(container_name)
             if process is not None:
                 terminate_process(process)
@@ -331,7 +335,9 @@ class DockerComposeLauncher(ServerLauncher):
                 cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout,
             )
-        except subprocess.TimeoutExpired:
+        except BaseException:
+            # A timeout or a Ctrl-C kills only the compose client; the container keeps running
+            # (its --rm is applied by that client) until stopped here.
             self._stop_container(container_name)
             raise
         return ToolResult(completed.returncode, completed.stdout.decode("latin-1", errors="replace"))

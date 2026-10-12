@@ -213,10 +213,14 @@ class ServerLauncher:
         """
         raise NotImplementedError
 
+    def build_hint(self) -> str:
+        """The command that builds the programs where this launcher runs them."""
+        return BUILD_COMMAND
+
     def require_program(self, program_relative: str) -> None:
-        """Fails with the build command when the repo's program is missing."""
+        """Raises RuntimeError naming build_hint() when the repo's program is missing."""
         if not (self._repo_root / program_relative).exists():
-            raise RuntimeError(f"{program_relative} is missing; build it first: {BUILD_COMMAND}")
+            raise RuntimeError(f"{program_relative} is missing; build it first: {self.build_hint()}")
 
 
 class LocalProcessLauncher(ServerLauncher):
@@ -309,8 +313,8 @@ class DockerComposeLauncher(ServerLauncher):
         self._binary_relative = binary_relative
         # The compose service every container runs.
         self._service = service
-        # Seconds start waits for the port to be published and then for the server's login prompt;
-        # generous because the i386 server runs under emulation.
+        # Seconds start waits in all for the port to be published and then for the server's login
+        # prompt; generous because the i386 server runs under emulation.
         self._startup_timeout = startup_timeout
 
     def container_path(self, host_path: Path) -> str:
@@ -320,6 +324,10 @@ class DockerComposeLauncher(ServerLauncher):
         except ValueError as outside:
             raise ValueError(f"{host_path} is outside the repository at {self._repo_root}; the container cannot see it") from outside
         return "/rots/" + relative.as_posix()
+
+    def build_hint(self) -> str:
+        """The build command run inside the compose service, where the i386 toolchain is."""
+        return f"docker compose run --rm -T {self._service} bash -lc {shlex.quote(BUILD_COMMAND)}"
 
     def _run_prefix(self, container_name: str) -> list[str]:
         return [
@@ -377,6 +385,8 @@ class DockerComposeLauncher(ServerLauncher):
         self.require_program(self._binary_relative)
         container_name = f"rots-it-{uuid.uuid4().hex[:12]}"
         process: Optional[subprocess.Popen] = None
+        # One deadline covers both waits, so a slow port publication shortens the prompt wait.
+        deadline = time.monotonic() + self._startup_timeout
         try:
             log_path = run_dir / "game.log"
             with log_path.open("wb") as log_file:
@@ -384,9 +394,9 @@ class DockerComposeLauncher(ServerLauncher):
                     self.server_command(run_dir, lib_dir, port, container_name, seed),
                     cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, stdout=log_file, stderr=subprocess.STDOUT,
                 )
-            host_port = self._wait_for_published_port(container_name, port, process, log_path)
+            host_port = self._wait_for_published_port(container_name, port, process, log_path, deadline)
             handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)
-            wait_for_login_prompt(LOOPBACK, host_port, self._startup_timeout, process, log_path)
+            wait_for_login_prompt(LOOPBACK, host_port, max(0.0, deadline - time.monotonic()), process, log_path)
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the waits also stops the container: the fixture
@@ -397,9 +407,8 @@ class DockerComposeLauncher(ServerLauncher):
                 terminate_process(process)
             raise
 
-    def _wait_for_published_port(self, container_name: str, container_port: int, process: subprocess.Popen, log_path: Path) -> int:
-        """The host port Docker published for container_port; raises RuntimeError if compose exits or the wait times out."""
-        deadline = time.monotonic() + self._startup_timeout
+    def _wait_for_published_port(self, container_name: str, container_port: int, process: subprocess.Popen, log_path: Path, deadline: float) -> int:
+        """The host port Docker published for container_port; raises RuntimeError if compose exits or the monotonic deadline passes."""
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 raise RuntimeError(f"docker compose run exited with {process.returncode}; log tail:\n{read_log_tail(log_path)}")

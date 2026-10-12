@@ -18,7 +18,7 @@ from rots_harness.characters import CharacterSet
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock
 from rots_harness.launcher import DockerComposeLauncher, LocalProcessLauncher, ServerHandle, ServerLauncher, allocate_free_port
-from rots_harness.libbuilder import LibTemplateBuilder, RunLibProvider
+from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import keep_run_directory
 from rots_harness.session import GameSession, end_sessions
 
@@ -126,16 +126,26 @@ class HarnessServer:
 
 @pytest.fixture(scope="session")
 def harness_launcher() -> ServerLauncher:
-    """The launcher ROTS_IT_LAUNCHER selects, running ROTS_IT_BINARY (default bin/ageland)."""
+    """The launcher ROTS_IT_LAUNCHER selects, running ROTS_IT_BINARY (default bin/ageland).
+
+    Raises RuntimeError with that launcher's build command when the server or rotstool is missing.
+    """
     binary_relative = os.environ.get("ROTS_IT_BINARY", "bin/ageland")
     if launcher_mode() == "local":
-        return LocalProcessLauncher(REPO_ROOT, binary_relative)
-    return DockerComposeLauncher(REPO_ROOT, binary_relative)
+        selected: ServerLauncher = LocalProcessLauncher(REPO_ROOT, binary_relative)
+    else:
+        selected = DockerComposeLauncher(REPO_ROOT, binary_relative)
+    selected.require_program(binary_relative)
+    selected.require_program(ROTSTOOL_RELATIVE)
+    return selected
 
 
 @pytest.fixture(scope="session")
-def docker_lock(pytestconfig: pytest.Config):
-    """The shared Docker lock, held for the whole session when the Docker launcher is in use; None otherwise."""
+def docker_lock(pytestconfig: pytest.Config, harness_launcher: ServerLauncher):
+    """The shared Docker lock, held for the whole session when the Docker launcher is in use; None otherwise.
+
+    Requests harness_launcher so a missing build fails before the lock wait, not after it.
+    """
     if launcher_mode() != "docker":
         yield None
         return

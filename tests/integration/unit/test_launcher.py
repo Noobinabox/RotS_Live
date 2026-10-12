@@ -62,8 +62,18 @@ def test_local_run_to_completion_returns_status_and_combined_output(tmp_path: Pa
 
 
 def test_require_program_names_the_build_command_when_missing(tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="make configure && cmake --build build --target ageland rotstool"):
+    with pytest.raises(RuntimeError) as missing:
         launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/rotstool")
+    assert str(missing.value) == "bin/rotstool is missing; build it first: make configure && cmake --build build --target ageland rotstool"
+
+
+def test_docker_require_program_names_the_build_command_inside_the_container(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError) as missing:
+        launcher.DockerComposeLauncher(repo_root=tmp_path).require_program("bin/ageland")
+    assert str(missing.value) == (
+        "bin/ageland is missing; build it first: "
+        "docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'"
+    )
 
 
 def test_local_start_gives_the_server_a_standard_input_pipe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -655,7 +665,7 @@ def test_docker_reads_the_published_port_from_docker_port(tmp_path: Path, monkey
     monkeypatch.setattr(launcher.subprocess, "run", fake_port_query)
     docker = launcher.DockerComposeLauncher(repo_root=tmp_path)
 
-    host_port = docker._wait_for_published_port("rots-it-port", 4321, FakeComposeClient([]), tmp_path / "game.log")  # type: ignore[arg-type]
+    host_port = docker._wait_for_published_port("rots-it-port", 4321, FakeComposeClient([]), tmp_path / "game.log", time.monotonic() + 5.0)  # type: ignore[arg-type]
 
     assert host_port == 49153
     assert recorded_argv == [["docker", "port", "rots-it-port", "4321/tcp"]]
@@ -759,3 +769,48 @@ def test_docker_tool_script_quotes_every_path(tmp_path: Path) -> None:
     assert shlex.split(command[-1]) == [
         "ulimit", "-c", "0;", "cd", "/rots/build/work dir", "&&", "exec", "/rots/bin/rots tool", "fixtures", "write",
     ]
+
+
+class FakeClock:
+    """Stands in for the time module: monotonic() reads a settable value and sleep() advances it."""
+
+    def __init__(self, now: float) -> None:
+        # The value monotonic() returns.
+        self.now = now
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def test_docker_start_gives_both_waits_one_startup_deadline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = FakeClock(now=1000.0)
+    monkeypatch.setattr(launcher, "time", clock)
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: FakeComposeClient([]))
+    binary = tmp_path / "bin" / "ageland"
+    binary.parent.mkdir()
+    binary.write_text("", encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path, startup_timeout=300.0)
+    port_wait_deadlines: List[float] = []
+    login_wait_timeouts: List[float] = []
+
+    def slow_port_wait(container_name: str, container_port: int, process: object, log_path: Path, deadline: float) -> int:
+        port_wait_deadlines.append(deadline)
+        clock.now += 200.0
+        return 49153
+
+    def recording_login_wait(host: str, port: int, timeout_seconds: float, process: object, log_path: Path) -> None:
+        login_wait_timeouts.append(timeout_seconds)
+
+    monkeypatch.setattr(docker, "_wait_for_published_port", slow_port_wait)
+    monkeypatch.setattr(launcher, "wait_for_login_prompt", recording_login_wait)
+
+    handle = docker.start(run_dir, run_dir / "lib", port=4321, seed=1)
+
+    assert handle.port == 49153
+    assert port_wait_deadlines == [1300.0]
+    assert login_wait_timeouts == [100.0], "the login wait gets only what the port wait left"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import re
 import sys
@@ -26,6 +27,14 @@ class DockerLockHeld(RuntimeError):
 
 def _report_to_stderr(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
+
+
+def parse_wait_seconds(text: str) -> float:
+    """The lock wait in seconds that text gives; raises ValueError unless it is a finite number of at least 0."""
+    seconds = float(text)
+    if not math.isfinite(seconds) or seconds < 0:
+        raise ValueError(f"{text!r} is not a finite number of seconds of at least 0")
+    return seconds
 
 
 def process_is_running(pid: int) -> bool:
@@ -78,6 +87,8 @@ class DockerLock:
         self._process_is_running = process_is_running
         # This session's own lock file while it is held, otherwise None.
         self._lock_path: Optional[Path] = None
+        # Dead harness lock files this session could not remove and has already reported.
+        self._unremovable_reported: set[str] = set()
 
     @property
     def path(self) -> Path | None:
@@ -146,6 +157,8 @@ class DockerLock:
         """Removes every harness lock file whose session's process is no longer running on this host.
 
         Lock files named any other way belong to other Docker jobs and are left for a person to judge.
+        A dead holder's file that cannot be removed (another user's, in a sticky directory) is
+        reported once and then waited for like a live holder.
         """
         assert self._lock_dir is not None
         for lock_path in sorted(self._lock_dir.glob("*.lock")):
@@ -155,7 +168,13 @@ class DockerLock:
             holder_pid = int(name_match.group(1))
             if self._process_is_running(holder_pid):
                 continue
-            lock_path.unlink(missing_ok=True)
+            try:
+                lock_path.unlink(missing_ok=True)
+            except OSError as failure:
+                if lock_path.name not in self._unremovable_reported:
+                    self._unremovable_reported.add(lock_path.name)
+                    self._report(f"cannot remove stale Docker lock {lock_path.name} (process {holder_pid} is no longer running): {failure}")
+                continue
             self._report(f"removed stale Docker lock {lock_path.name}: process {holder_pid} is no longer running")
 
     def release(self) -> None:

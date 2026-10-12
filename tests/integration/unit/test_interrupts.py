@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import signal
+import threading
 from typing import Iterator, List
 
 import pytest
@@ -73,4 +74,22 @@ def test_restore_puts_the_original_handlers_back(default_handlers: None) -> None
     restore = interrupts.install_interrupt_handlers()
     assert all(callable(signal.getsignal(signal_number)) for signal_number in HANDLED_SIGNALS)
     restore()
+    assert all(signal.getsignal(signal_number) == signal.SIG_DFL for signal_number in HANDLED_SIGNALS)
+
+
+def test_installing_off_the_main_thread_changes_nothing(default_handlers: None) -> None:
+    outcomes: List[object] = []
+
+    def install_and_restore() -> None:
+        try:
+            restore = interrupts.install_interrupt_handlers()
+            restore()
+            outcomes.append("returned")
+        except BaseException as failure:
+            outcomes.append(failure)
+
+    worker = threading.Thread(target=install_and_restore)
+    worker.start()
+    worker.join()
+    assert outcomes == ["returned"]
     assert all(signal.getsignal(signal_number) == signal.SIG_DFL for signal_number in HANDLED_SIGNALS)

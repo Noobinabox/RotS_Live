@@ -16,7 +16,7 @@ import pytest
 from rots_harness import groups, interrupts
 from rots_harness.characters import CharacterSet
 from rots_harness.crashmonitor import CrashMonitor
-from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock
+from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock, parse_wait_seconds
 from rots_harness.launcher import DockerComposeLauncher, LocalProcessLauncher, ServerHandle, ServerLauncher, allocate_free_port, check_repo_relative
 from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
@@ -34,8 +34,9 @@ TEMPLATES_ROOT = REPO_ROOT / "build" / "integration" / "libs"
 DEFAULT_SEED = 20261011
 # The server binary when ROTS_IT_BINARY is unset.
 DEFAULT_BINARY_RELATIVE = "bin/ageland"
-# Names the test that used a run directory; written when the directory is made.
-TEST_NAME_FILE = "test.txt"
+# Names the test that used a run directory; written when the directory is made. The hyphen keeps
+# it apart from the transcripts, which are named after characters, whose names are letters only.
+TEST_NAME_FILE = "test-id.txt"
 # Where pytest_configure keeps the function that puts back the signal handlers it replaced.
 RESTORE_SIGNAL_HANDLERS_KEY = pytest.StashKey[Callable[[], None]]()
 
@@ -134,22 +135,18 @@ def lock_wait_seconds() -> float:
     if value is None:
         return DEFAULT_WAIT_SECONDS
     try:
-        seconds = float(value)
+        return parse_wait_seconds(value)
     except ValueError:
-        seconds = -1.0
-    # Written as "not >=" so NaN is refused too.
-    if not seconds >= 0:
-        raise pytest.UsageError(f"ROTS_IT_LOCK_WAIT must be a number of seconds of at least 0, not {value!r}")
-    return seconds
+        raise pytest.UsageError(f"ROTS_IT_LOCK_WAIT must be a finite number of seconds of at least 0, not {value!r}") from None
 
 
 def binary_relative() -> str:
-    """The server binary from ROTS_IT_BINARY or the default; raises pytest.UsageError unless it is relative and inside the repo."""
+    """The server binary from ROTS_IT_BINARY or the default; raises pytest.UsageError unless it names a path below the repo root."""
     value = os.environ.get("ROTS_IT_BINARY", DEFAULT_BINARY_RELATIVE)
     try:
         check_repo_relative(value)
     except ValueError:
-        raise pytest.UsageError(f"ROTS_IT_BINARY must be relative to the repository root and stay inside it, not {value!r}") from None
+        raise pytest.UsageError(f"ROTS_IT_BINARY must name a file relative to the repository root and inside it, not {value!r}") from None
     return value
 
 
@@ -248,7 +245,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
 
     After the test it quits every session, stops the server, and fails the test when a session
     does not quit or the shutdown shows problems; during an interrupted run those problems are
-    listed under the kept run directory instead. The run directory, whose test.txt names the
+    listed under the kept run directory instead. The run directory, whose test-id.txt names the
     test, is deleted unless the lib or server failed to set up after the lib was copied, any
     test in the session has failed, this server's checks failed, the run was interrupted, or
     ROTS_IT_KEEP=1. Kept directories are listed at the end of the run.
@@ -263,7 +260,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed())
     except BaseException:
         # BaseException so an interrupted setup keeps its evidence too. keep_run_directory never
-        # sees this case: a run directory holding more than test.txt is always kept, because its
+        # sees this case: a run directory holding more than test-id.txt is always kept, because its
         # game.log and lib are the only evidence of why the server did not start. A failure
         # before the lib was copied (a rotstool refusal) leaves nothing else in it.
         if any(entry.name != TEST_NAME_FILE for entry in run_dir.iterdir()):

@@ -803,7 +803,7 @@ def test_docker_start_gives_both_waits_one_startup_deadline(tmp_path: Path, monk
         clock.now += 200.0
         return 49153
 
-    def recording_login_wait(host: str, port: int, timeout_seconds: float, process: object, log_path: Path) -> None:
+    def recording_login_wait(host: str, port: int, timeout_seconds: float, process: object, log_path: Path, time_allowed: Optional[str] = None) -> None:
         login_wait_timeouts.append(timeout_seconds)
 
     monkeypatch.setattr(docker, "_wait_for_published_port", slow_port_wait)
@@ -814,3 +814,60 @@ def test_docker_start_gives_both_waits_one_startup_deadline(tmp_path: Path, monk
     assert handle.port == 49153
     assert port_wait_deadlines == [1300.0]
     assert login_wait_timeouts == [100.0], "the login wait gets only what the port wait left"
+
+
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+@pytest.mark.parametrize("binary_relative", ["", ".", "bin/.."])
+def test_launchers_refuse_a_binary_that_names_the_repo_root(tmp_path: Path, launcher_class: type, binary_relative: str) -> None:
+    with pytest.raises(ValueError, match="must name a file"):
+        launcher_class(repo_root=tmp_path, binary_relative=binary_relative)
+
+
+def test_require_program_counts_a_directory_as_missing(tmp_path: Path) -> None:
+    (tmp_path / "bin").mkdir()
+    with pytest.raises(RuntimeError, match="^bin is missing; build it first: "):
+        launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin")
+
+
+def test_local_run_to_completion_explains_a_program_in_a_format_this_host_cannot_execute(tmp_path: Path) -> None:
+    # No interpreter line and no machine code this host knows: exec fails with ENOEXEC, as an
+    # i386 binary does on a Mac.
+    program = tmp_path / "bin" / "rotstool"
+    program.parent.mkdir()
+    program.write_bytes(b"\x7fELF not a program for this host\n")
+    program.chmod(0o700)
+
+    with pytest.raises(RuntimeError) as raised:
+        launcher.LocalProcessLauncher(repo_root=tmp_path).run_to_completion("bin/rotstool", [], tmp_path, timeout=10)
+
+    assert str(raised.value) == f"cannot execute {program}: this host cannot run the i386 binaries; set ROTS_IT_LAUNCHER=docker"
+
+
+def test_a_docker_start_whose_port_wait_spent_the_budget_names_the_whole_startup_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    clock = FakeClock(now=1000.0)
+    monkeypatch.setattr(launcher, "time", clock)
+    monkeypatch.setattr(launcher.subprocess, "Popen", lambda *args, **kwargs: FakeComposeClient([]))
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker([]))
+    monkeypatch.setattr(launcher, "terminate_process", lambda process: None)
+    binary = tmp_path / "bin" / "ageland"
+    binary.parent.mkdir()
+    binary.write_text("", encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path, startup_timeout=300.0)
+
+    def port_wait_using_the_whole_budget(container_name: str, container_port: int, process: object, log_path: Path, deadline: float) -> int:
+        clock.now = deadline
+        return 49153
+
+    monkeypatch.setattr(docker, "_wait_for_published_port", port_wait_using_the_whole_budget)
+
+    with pytest.raises(RuntimeError) as raised:
+        docker.start(run_dir, run_dir / "lib", port=4321, seed=1)
+
+    assert str(raised.value).startswith(
+        f"the server on {launcher.LOOPBACK}:49153 did not send its login prompt within the 300.0s startup timeout, "
+        "part of which the wait for the published port used; log tail:"
+    )

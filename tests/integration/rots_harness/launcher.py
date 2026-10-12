@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import os
 import shlex
 import socket
@@ -76,18 +77,22 @@ def read_log_tail(log_path: Path, max_bytes: int = LOG_TAIL_BYTES) -> str:
 
 
 def check_repo_relative(relative_path: str) -> None:
-    """Raises ValueError unless relative_path is relative and stays inside the repository root."""
+    """Raises ValueError unless relative_path is relative and names something below the repository root, not the root itself."""
+    # normpath turns an empty path into ".", so the root check covers it too.
     normalized = os.path.normpath(relative_path)
-    if os.path.isabs(relative_path) or normalized == os.pardir or normalized.startswith(os.pardir + os.sep):
-        raise ValueError(f"{relative_path!r} must be a path relative to the repository root that stays inside it")
+    if os.path.isabs(relative_path) or normalized in (os.curdir, os.pardir) or normalized.startswith(os.pardir + os.sep):
+        raise ValueError(f"{relative_path!r} must name a file by a path relative to the repository root that stays inside it")
 
 
-def wait_for_login_prompt(host: str, port: int, timeout_seconds: float, process: subprocess.Popen, log_path: Path) -> None:
+def wait_for_login_prompt(
+    host: str, port: int, timeout_seconds: float, process: subprocess.Popen, log_path: Path, time_allowed: Optional[str] = None,
+) -> None:
     """Returns once a connection to host:port receives the server's login prompt.
 
     A refused connection, or one closed before the prompt arrives (as a Docker port proxy does
     while nothing listens behind it), is retried. Raises RuntimeError with the log tail when the
-    process exits first or the timeout passes.
+    process exits first or the timeout passes; time_allowed, when given, replaces
+    "within <timeout_seconds>s" in the timeout's message.
     """
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
@@ -102,7 +107,9 @@ def wait_for_login_prompt(host: str, port: int, timeout_seconds: float, process:
                 return
         time.sleep(READY_RETRY_SECONDS)
     _raise_if_exited(process, log_path)
-    raise RuntimeError(f"the server on {host}:{port} did not send its login prompt within {timeout_seconds}s; log tail:\n{read_log_tail(log_path)}")
+    if time_allowed is None:
+        time_allowed = f"within {timeout_seconds}s"
+    raise RuntimeError(f"the server on {host}:{port} did not send its login prompt {time_allowed}; log tail:\n{read_log_tail(log_path)}")
 
 
 def _raise_if_exited(process: subprocess.Popen, log_path: Path) -> None:
@@ -137,18 +144,24 @@ def _receives_login_prompt(connection: socket.socket, deadline: float, process: 
 
 @contextmanager
 def _explaining_unexecutable(program_path: Path) -> Iterator[None]:
-    """Turns the FileNotFoundError for an existing program this host cannot execute into a RuntimeError saying so."""
+    """Turns the exec error for an existing program this host cannot execute into a RuntimeError saying so."""
     try:
         yield
-    except FileNotFoundError as missing:
-        # Without the i386 loader, exec fails with ENOENT for a program that exists. The error then
-        # names the program; a missing working directory names the directory instead.
-        if missing.filename != str(program_path):
+    except OSError as failure:
+        # The error names the program when exec itself failed; a missing working directory names
+        # the directory instead.
+        if failure.filename != str(program_path):
             raise
-        raise RuntimeError(
-            f"cannot execute {program_path}: this host cannot run the i386 binaries; "
-            "install the 32-bit runtime (e.g. libc6:i386) or set ROTS_IT_LAUNCHER=docker"
-        ) from missing
+        if failure.errno == errno.ENOENT:
+            # A Linux host without the i386 loader fails the exec of a program that exists this way.
+            raise RuntimeError(
+                f"cannot execute {program_path}: this host cannot run the i386 binaries; "
+                "install the 32-bit runtime (e.g. libc6:i386) or set ROTS_IT_LAUNCHER=docker"
+            ) from failure
+        if failure.errno == errno.ENOEXEC:
+            # A host that cannot load i386 Linux programs at all, such as a Mac.
+            raise RuntimeError(f"cannot execute {program_path}: this host cannot run the i386 binaries; set ROTS_IT_LAUNCHER=docker") from failure
+        raise
 
 
 def close_standard_input(process: subprocess.Popen) -> None:
@@ -218,8 +231,8 @@ class ServerLauncher:
         return BUILD_COMMAND
 
     def require_program(self, program_relative: str) -> None:
-        """Raises RuntimeError naming build_hint() when the repo's program is missing."""
-        if not (self._repo_root / program_relative).exists():
+        """Raises RuntimeError naming build_hint() when the repo's program is missing or is not a file."""
+        if not (self._repo_root / program_relative).is_file():
             raise RuntimeError(f"{program_relative} is missing; build it first: {self.build_hint()}")
 
 
@@ -229,7 +242,7 @@ class LocalProcessLauncher(ServerLauncher):
     def __init__(self, repo_root: Path, binary_relative: str = "bin/ageland", startup_timeout: float = 60.0) -> None:
         """Prepares a launcher for the server at repo_root/binary_relative; starts nothing.
 
-        Raises ValueError when binary_relative is absolute or leaves the repo root.
+        Raises ValueError when binary_relative is absolute, leaves the repo root or names the root itself.
         """
         check_repo_relative(binary_relative)
         # The checkout whose bin/ holds the programs.
@@ -304,7 +317,7 @@ class DockerComposeLauncher(ServerLauncher):
     def __init__(self, repo_root: Path, binary_relative: str = "bin/ageland", service: str = "rots", startup_timeout: float = 300.0) -> None:
         """Prepares a launcher for the compose service in repo_root; starts nothing.
 
-        Raises ValueError when binary_relative is absolute or leaves the repo root.
+        Raises ValueError when binary_relative is absolute, leaves the repo root or names the root itself.
         """
         check_repo_relative(binary_relative)
         # The checkout holding docker-compose.yml, mounted at /rots inside the container.
@@ -396,7 +409,8 @@ class DockerComposeLauncher(ServerLauncher):
                 )
             host_port = self._wait_for_published_port(container_name, port, process, log_path, deadline)
             handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)
-            wait_for_login_prompt(LOOPBACK, host_port, max(0.0, deadline - time.monotonic()), process, log_path)
+            time_allowed = f"within the {self._startup_timeout}s startup timeout, part of which the wait for the published port used"
+            wait_for_login_prompt(LOOPBACK, host_port, max(0.0, deadline - time.monotonic()), process, log_path, time_allowed)
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the waits also stops the container: the fixture

@@ -31,7 +31,8 @@ scenarios; `unit/` tests the harness itself without a server.
 
    The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container:
    `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'`.
-   That build is itself a Docker job, so take the shared Docker lock (below) for it first and
+   That build is itself a Docker job, so take the shared Docker lock for it first, by hand as
+   the `README.txt` in `/tmp/rots-docker-lock` describes (see Shared Docker lock below), and
    release it before running the scenarios. A run whose server binary or `rotstool` is missing
    stops at once with the build command for its launcher.
 
@@ -76,11 +77,11 @@ Environment variables:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ROTS_IT_LAUNCHER` | `local` on Linux, `docker` elsewhere | `local` or `docker` |
-| `ROTS_IT_BINARY` | `bin/ageland` | the server binary, relative to the repository root |
+| `ROTS_IT_LAUNCHER` | `local` on Linux, `docker` elsewhere | `local` or `docker`; empty means the default |
+| `ROTS_IT_BINARY` | `bin/ageland` | the server binary file, relative to the repository root |
 | `ROTS_IT_SEED` | `20261011` | the random seed for `rotstool` and every server |
 | `ROTS_IT_KEEP` | unset | `1` keeps every run directory and template |
-| `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock |
+| `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock, a finite number |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
 
 A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT` or `ROTS_IT_BINARY` value the harness
@@ -108,7 +109,7 @@ then fail. If the directory does not exist, create it (`mkdir -p /tmp/rots-docke
 
 Each test gets `build/integration/runs/<id>/` holding:
 
-- `test.txt`, the test's node id;
+- `test-id.txt`, the test's node id;
 - `lib/`, the test's own copy of the lib;
 - `game.log`, the server's output;
 - one transcript per character (`testimm.txt` for `Testimm`), the text the character read.

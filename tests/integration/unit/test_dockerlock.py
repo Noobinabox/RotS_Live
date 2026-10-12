@@ -238,3 +238,44 @@ def test_process_is_running_counts_a_process_it_may_not_signal_as_running(monkey
 
 def test_process_is_running_counts_a_pid_too_large_to_signal_as_running() -> None:
     assert dockerlock.process_is_running(10 ** 30)
+
+
+def test_a_dead_holder_that_cannot_be_removed_is_waited_for_like_a_live_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    undeletable = lock_dir / "harness-it-424242-0123abcd.lock"
+    undeletable.write_text("session: harness-it\n", encoding="utf-8")
+    original_unlink = Path.unlink
+
+    def refuse_the_dead_holder(path: Path, missing_ok: bool = False) -> None:
+        # Another user's file in a sticky directory cannot be removed.
+        if path == undeletable:
+            raise PermissionError(13, "Permission denied", str(path))
+        original_unlink(path, missing_ok=missing_ok)
+
+    monkeypatch.setattr(Path, "unlink", refuse_the_dead_holder)
+    clock = FakeClock()
+    reports: list[str] = []
+    lock = dockerlock.DockerLock(
+        lock_dir, repo_root=tmp_path, wait_seconds=30, poll_seconds=5, clock=clock, sleep=clock.sleep,
+        report=reports.append, process_is_running=lambda _pid: False,
+    )
+    with pytest.raises(dockerlock.DockerLockHeld, match=undeletable.name):
+        lock.acquire(purpose="unit test")
+    assert clock.now >= 30
+    assert undeletable.exists()
+    assert [report for report in reports if report.startswith("cannot remove")] == [
+        f"cannot remove stale Docker lock {undeletable.name} (process 424242 is no longer running): [Errno 13] Permission denied: '{undeletable}'"
+    ]
+    assert len([report for report in reports if report.startswith("waiting up to")]) == 1
+
+
+@pytest.mark.parametrize("text, expected", [("0", 0.0), ("2.5", 2.5), ("600", 600.0)])
+def test_parse_wait_seconds_accepts_a_finite_number_of_at_least_zero(text: str, expected: float) -> None:
+    assert dockerlock.parse_wait_seconds(text) == expected
+
+
+@pytest.mark.parametrize("text", ["", "ten", "-1", "nan", "inf", "-inf", "infinity"])
+def test_parse_wait_seconds_refuses_anything_else(text: str) -> None:
+    with pytest.raises(ValueError):
+        dockerlock.parse_wait_seconds(text)

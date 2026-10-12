@@ -184,6 +184,17 @@ def test_a_colour_code_split_across_reads_is_stripped_like_an_unsplit_one(monkey
     assert (tmp_path / "testmage.txt").read_bytes().decode("utf-8") == text
 
 
+def test_text_after_a_colour_code_completed_by_a_later_read_is_not_lost(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [b"Here we go...\x1b[1;3", b"3mArena Centre\x1b[0m\r\nS:Powered>"])
+    assert game_session.expect(["Here we go..."], timeout=1.0) == "Here we go..."
+    assert game_session.expect(["S:Powered>"], timeout=1.0) == "Arena Centre\r\nS:Powered>"
+
+
+def test_a_read_ending_in_a_newline_is_never_held_back(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [b"stray \x1b\n"])
+    assert game_session.expect(["\n"], timeout=1.0) == "stray \x1b\n"
+
+
 def test_the_clear_screen_sequence_is_stripped(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     game_session = connect_scripted_session(monkeypatch, tmp_path, [b"\x1b[H\x1b", b"[JNews\r\nS:Powered>"])
     assert game_session.expect(["S:Powered>"], timeout=1.0) == "News\r\nS:Powered>"

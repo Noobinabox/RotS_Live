@@ -128,6 +128,8 @@ def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
     def write_line(message: str) -> None:
         with capture_manager.global_and_fixture_disabled():
             terminal_reporter.write_line(message)
+            # Piped or redirected output is block-buffered; without the flush the line waits there.
+            terminal_reporter.flush()
 
     return write_line
 

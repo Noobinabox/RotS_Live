@@ -25,7 +25,7 @@ PROMPT_TERMINATORS = (">", "]")
 # A complete control sequence: colour codes and the clear-screen pair ESC[H ESC[J.
 CSI_PATTERN = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 # A control sequence cut off at the end of the received text, still waiting for its final letter.
-INCOMPLETE_CSI_PATTERN = re.compile(r"\x1b(\[[0-9;?]*)?$")
+INCOMPLETE_CSI_PATTERN = re.compile(r"\x1b(\[[0-9;?]*)?\Z")
 # How much of the unread text an error message quotes.
 PENDING_TEXT_QUOTED = 1500
 FAREWELL_MARKERS = ("Goodbye", "As you quit")

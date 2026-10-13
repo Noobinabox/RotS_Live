@@ -429,6 +429,10 @@ public:
     sh_int butcher_item; /* virtual item to butcher, 0 for none, -1 for butchered */
     int prog_number; /* for special objects... */
     int script_number; /* identifies the script which is triggered under certain conditions */
+    /* Prototype: 0 = never versioned, > 0 = on, < 0 = off (keeps the last number for the next
+     * bump). Saved copy: the version it was made or last refreshed from. See
+     * Crash_refresh_object. */
+    int version;
     struct info_script* script_info; /* Pointer to char_script (protos.h) 0 if no script */
     bool poisoned;
     int poisondata[5];
@@ -461,6 +465,23 @@ struct obj_affected_type {
     int modifier; /* How much it changes by              */
 };
 
+/* An enchant a player cast on one object, recorded apart from the affect and flags it puts on
+ * the object so a version refresh can put it back (refresh_object_to_prototype_version). */
+struct obj_enchant_type {
+    byte type; /* ENCHANT_XXX; ENCHANT_NONE marks an unused slot */
+    byte align; /* ENCHANT_ALIGN_XXX: the caster's alignment     */
+    sh_int amount; /* how much it adds                             */
+};
+
+#define MAX_OBJ_ENCHANT 4
+
+#define ENCHANT_NONE 0
+#define ENCHANT_OB 1 /* enchant weapon: APPLY_OB in the first affect, ITEM_MAGIC */
+
+#define ENCHANT_ALIGN_NEUTRAL 0
+#define ENCHANT_ALIGN_GOOD 1 /* ITEM_ANTI_EVIL */
+#define ENCHANT_ALIGN_EVIL 2 /* ITEM_ANTI_GOOD */
+
 /* ======================== Structure for object ========================= */
 struct obj_data {
 public:
@@ -490,6 +511,7 @@ public:
 
     struct obj_flag_data obj_flags; /* Object information               */
     struct obj_affected_type affected[MAX_OBJ_AFFECT]; /* Which abilities in PC to change  */
+    struct obj_enchant_type enchants[MAX_OBJ_ENCHANT]; /* Enchants cast on this copy       */
 
     char* name; /* Title of object :get etc.        */
     char* description; /* When in room                     */
@@ -1970,6 +1992,13 @@ struct follower_file_elem {
 
 constexpr const sh_int SENTINEL_ITEM_ID_VALUE = -17;
 constexpr const sh_int DEPRECATED_ID_VALUE = -255;
+// A record whose item_number_deprecated is VERSIONED_ID_VALUE is followed by one int, the object
+// version (obj_flag_data::version). Only objects with a non-zero version are written this way, so a
+// save holding no versioned objects is byte-for-byte what it was before versions existed.
+constexpr const sh_int VERSIONED_ID_VALUE = -254;
+// A record whose item_number_deprecated is ENCHANTED_ID_VALUE is followed by one obj_file_extra.
+// Only objects carrying an enchant are written this way.
+constexpr const sh_int ENCHANTED_ID_VALUE = -253;
 struct obj_file_elem {
 
     sh_int item_number_deprecated; // this used to be the ID number, but it wasn't big enough.
@@ -1983,6 +2012,12 @@ struct obj_file_elem {
     sh_int wear_pos;
     int loaded_by; // idnum of immortal who loaded object.  0 if loaded by a zone command etc.
     int item_number; // this used to be spare2, but we needed more item numbers.
+};
+
+// What a saved object carries beyond its obj_file_elem; all zero for a plain record.
+struct obj_file_extra {
+    int version; // obj_flag_data::version
+    struct obj_enchant_type enchants[MAX_OBJ_ENCHANT];
 };
 
 #define RENT_UNDEF 0

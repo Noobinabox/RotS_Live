@@ -200,7 +200,7 @@ bool write_linked_character_object_file(const std::string& root_directory, const
     return write_account_object_json_file(root_directory, owner_account_name, character_name, object_data, error_message);
 }
 
-bool read_account_object_file(const std::string& root_directory, const std::string& account_name, const std::string& character_name, std::string* object_bytes, std::string* error_message)
+bool read_account_object_file(const std::string& root_directory, const std::string& account_name, const std::string& character_name, std::string* object_bytes, std::string* error_message, int* schema_version)
 {
     if (object_bytes == nullptr) {
         set_error(error_message, "Object-bytes output parameter must not be null.");
@@ -223,6 +223,8 @@ bool read_account_object_file(const std::string& root_directory, const std::stri
         return false;
     if (!objects_json::object_save_data_to_binary(object_data, object_bytes, error_message))
         return false;
+    if (schema_version != nullptr)
+        *schema_version = object_data.version;
 
     set_error(error_message, "");
     return true;

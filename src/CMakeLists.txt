@@ -229,6 +229,7 @@ set(ROTS_TEST_SOURCES
     tests/harness_request_tests.cpp
     tests/harness_standard_stream_channel_tests.cpp
     tests/harness_controlled_schedule_tests.cpp
+    tests/harness_options_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp
@@ -303,8 +304,32 @@ find_package(Threads REQUIRED)
 set(HARNESS_SOURCES
     harness/affect_hours_schedule.cpp
     harness/harness_controlled_schedule.cpp
+    harness/harness_options.cpp
     harness/harness_request.cpp
     harness/standard_stream_channel.cpp
+)
+
+# The test build of the server, whose world time advances only on the integration harness's
+# requests over standard input.
+add_executable(ageland_harness harness/main.cpp ${HARNESS_SOURCES})
+target_include_directories(ageland_harness PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/harness"
+)
+target_compile_options(ageland_harness PRIVATE
+    -w
+    -g
+)
+# -rdynamic exports the server's symbols so backtrace_symbols() can name crash frames.
+target_link_options(ageland_harness PRIVATE -g -rdynamic)
+target_link_libraries(ageland_harness PRIVATE
+    rots_server_objects
+    rots_codegen
+    crypt
+    Threads::Threads
+)
+set_target_properties(ageland_harness PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${ROTS_BIN_DIR}"
 )
 
 if(BUILD_TESTING)

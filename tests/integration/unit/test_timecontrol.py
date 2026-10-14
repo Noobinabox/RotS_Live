@@ -10,7 +10,15 @@ from typing import BinaryIO, Iterator, Tuple
 import pytest
 
 from rots_harness.session import SessionTimeout
-from rots_harness.timecontrol import OUTPUT_LOG_NAME, REPLY_PREFIX, TimeControl, TimeControlError, schedule_name_from_marker
+from rots_harness.timecontrol import (
+    DEFAULT_HOUR_TIMEOUT_SECONDS,
+    OUTPUT_LOG_NAME,
+    REPLY_PREFIX,
+    TimeControl,
+    TimeControlError,
+    parse_hour_timeout,
+    schedule_name_from_marker,
+)
 
 # Long enough for a reader thread to pass a line on; short enough to keep timeout tests quick.
 SHORT_TIMEOUT = 0.3
@@ -207,3 +215,17 @@ def test_an_output_log_that_cannot_be_opened_raises_from_the_constructor(tmp_pat
     missing_directory_log = tmp_path / "missing" / OUTPUT_LOG_NAME
     with pytest.raises(OSError):
         TimeControl(io.BytesIO(), io.BytesIO(), missing_directory_log)
+
+
+def test_hour_timeout_defaults_to_ten_seconds() -> None:
+    assert parse_hour_timeout(None) == DEFAULT_HOUR_TIMEOUT_SECONDS == 10.0
+
+
+def test_hour_timeout_reads_a_positive_number() -> None:
+    assert parse_hour_timeout("25.5") == 25.5
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "nan", "inf", "soon"])
+def test_hour_timeout_refuses_a_value_that_is_not_a_positive_finite_number(value: str) -> None:
+    with pytest.raises(ValueError):
+        parse_hour_timeout(value)

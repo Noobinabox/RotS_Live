@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import queue
 import re
 import threading
@@ -14,6 +15,9 @@ from rots_harness.session import SessionTimeout
 REPLY_PREFIX = "harness: "
 # The run-directory file that receives the server's ordinary stdout lines.
 OUTPUT_LOG_NAME = "stdout.log"
+# Seconds advance_hours allows per game hour when ROTS_IT_HOUR_TIMEOUT is unset: about twice an
+# hour's 20 passes at four passes a second, for the i386 emulator.
+DEFAULT_HOUR_TIMEOUT_SECONDS = 10.0
 
 
 class TimeControlError(AssertionError):
@@ -25,6 +29,19 @@ def schedule_name_from_marker(args: tuple) -> str:
     if len(args) != 1 or not isinstance(args[0], str) or not args[0]:
         raise ValueError(f"@pytest.mark.schedule takes one schedule name, not {args!r}")
     return args[0]
+
+
+def parse_hour_timeout(value: Optional[str]) -> float:
+    """Seconds allowed per game hour that value gives, or the default for None; raises ValueError unless positive and finite."""
+    if value is None:
+        return DEFAULT_HOUR_TIMEOUT_SECONDS
+    try:
+        seconds = float(value)
+    except ValueError:
+        seconds = math.nan
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise ValueError(f"{value!r} is not a positive, finite number of seconds")
+    return seconds
 
 
 class TimeControl:

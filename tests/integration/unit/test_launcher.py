@@ -64,7 +64,7 @@ def test_local_run_to_completion_returns_status_and_combined_output(tmp_path: Pa
 def test_require_program_names_the_build_command_when_missing(tmp_path: Path) -> None:
     with pytest.raises(RuntimeError) as missing:
         launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/rotstool")
-    assert str(missing.value) == "bin/rotstool is missing; build it first: make configure && cmake --build build --target ageland rotstool"
+    assert str(missing.value) == "bin/rotstool is missing; build it first: make configure && cmake --build build --target ageland ageland_harness rotstool"
 
 
 def test_docker_require_program_names_the_build_command_inside_the_container(tmp_path: Path) -> None:
@@ -72,7 +72,7 @@ def test_docker_require_program_names_the_build_command_inside_the_container(tmp
         launcher.DockerComposeLauncher(repo_root=tmp_path).require_program("bin/ageland")
     assert str(missing.value) == (
         "bin/ageland is missing; build it first: "
-        "docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'"
+        "docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'"
     )
 
 
@@ -891,3 +891,48 @@ def test_ready_needs_the_prompt_itself_not_just_some_text(tmp_path: Path, fake_s
     launcher.wait_for_login_prompt(launcher.LOOPBACK, port, 10.0, process, fake_servers.log_path)
 
     assert (tmp_path / "prompt-sent").exists()
+
+
+def test_local_launcher_builds_the_harness_binary_command_for_a_schedule(tmp_path: Path) -> None:
+    local = launcher.LocalProcessLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
+    lib_dir = tmp_path / "run" / "lib"
+    command = local.command(lib_dir=lib_dir, port=4321, seed=7, schedule="affect-hours")
+    assert command == [str(tmp_path / "bin" / "ageland_harness"), "--schedule", "affect-hours", "--random-seed", "7", "-d", str(lib_dir), "4321"]
+
+
+def test_docker_launcher_runs_the_harness_binary_for_a_schedule(tmp_path: Path) -> None:
+    run_dir = tmp_path / "build" / "integration" / "abc123"
+    docker = launcher.DockerComposeLauncher(repo_root=tmp_path, binary_relative="bin/ageland")
+    command = docker.server_command(run_dir=run_dir, lib_dir=run_dir / "lib", port=4321, container_name="rots-it-abc123", seed=7, schedule="affect-hours")
+    assert "-i" not in command
+    assert "exec /rots/bin/ageland_harness --schedule affect-hours --random-seed 7 -d /rots/build/integration/abc123/lib 4321" in command[-1]
+
+
+def test_the_build_command_builds_the_harness_binary() -> None:
+    assert "ageland_harness" in launcher.BUILD_COMMAND
+
+
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+def test_start_with_a_schedule_pipes_stdout_and_logs_stderr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launcher_class: type) -> None:
+    recorded_kwargs: list[dict] = []
+
+    class StopAfterRecording(Exception):
+        pass
+
+    def recording_popen(*args: object, **kwargs: object):
+        recorded_kwargs.append(kwargs)
+        raise StopAfterRecording()
+
+    harness_binary = tmp_path / launcher.HARNESS_BINARY_RELATIVE
+    harness_binary.parent.mkdir()
+    harness_binary.write_text("", encoding="utf-8")
+    monkeypatch.setattr(launcher.subprocess, "Popen", recording_popen)
+    monkeypatch.setattr(launcher.DockerComposeLauncher, "_stop_container", lambda self, name: True)
+    monkeypatch.setattr(launcher.DockerComposeLauncher, "_remove_container", lambda self, name: None)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    with pytest.raises(StopAfterRecording):
+        launcher_class(repo_root=tmp_path).start(run_dir, run_dir / "lib", port=4321, seed=1, schedule="affect-hours")
+    assert recorded_kwargs[0]["stdin"] == launcher.subprocess.PIPE
+    assert recorded_kwargs[0]["stdout"] == launcher.subprocess.PIPE
+    assert recorded_kwargs[0]["stderr"].name == str(run_dir / "game.log")

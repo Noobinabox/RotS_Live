@@ -13,11 +13,13 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Any, BinaryIO, Iterator, Optional
 
 LOOPBACK = "127.0.0.1"
 INTEGRATION_TMP_RELATIVE = "build/integration/tmp"
-BUILD_COMMAND = "make configure && cmake --build build --target ageland rotstool"
+BUILD_COMMAND = "make configure && cmake --build build --target ageland ageland_harness rotstool"
+# The test build of the server that a scenario with @pytest.mark.schedule(...) runs.
+HARNESS_BINARY_RELATIVE = "bin/ageland_harness"
 
 # Host variables the local launcher forwards to the server. Everything else is dropped so the
 # server sees a clean environment; sanitizer tuning (leak checks, signal handling, symbolizer
@@ -164,6 +166,13 @@ def _explaining_unexecutable(program_path: Path) -> Iterator[None]:
         raise
 
 
+def _output_streams(log_file: BinaryIO, schedule: Optional[str]) -> dict[str, Any]:
+    """Popen's stdout and stderr: a stdout pipe and stderr in log_file with a schedule, both in log_file without."""
+    if schedule is not None:
+        return {"stdout": subprocess.PIPE, "stderr": log_file}
+    return {"stdout": log_file, "stderr": subprocess.STDOUT}
+
+
 def close_standard_input(process: subprocess.Popen) -> None:
     """Closes the process's stdin pipe, if it has one; never raises."""
     if process.stdin is None:
@@ -204,11 +213,13 @@ class ServerLauncher:
     # The checkout whose bin/ holds the programs; set by each subclass's constructor.
     _repo_root: Path
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """Starts the server on lib_dir, logging to run_dir/game.log, and returns once it sends its login prompt.
 
-        Raises RuntimeError, after stopping whatever it started, when the server exits or the
-        prompt does not arrive within the launcher's startup timeout.
+        With a schedule it runs the harness binary with --schedule, with stdin and stdout as pipes
+        for TimeControl and stderr in game.log. Raises RuntimeError, after stopping whatever it
+        started, when the server exits or the prompt does not arrive within the launcher's
+        startup timeout.
         """
         raise NotImplementedError
 
@@ -252,8 +263,13 @@ class LocalProcessLauncher(ServerLauncher):
         # Seconds start waits for the server's login prompt.
         self._startup_timeout = startup_timeout
 
-    def command(self, lib_dir: Path, port: int, seed: int) -> list[str]:
-        """The server's argument vector for lib_dir, port and random seed."""
+    def command(self, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> list[str]:
+        """The server's argument vector for lib_dir, port and random seed; the harness binary's with a schedule."""
+        if schedule is not None:
+            return [
+                str(self._repo_root / HARNESS_BINARY_RELATIVE), "--schedule", schedule,
+                "--random-seed", str(seed), "-d", str(lib_dir), str(port),
+            ]
         return [str(self._repo_root / self._binary_relative), "--random-seed", str(seed), "-d", str(lib_dir), str(port)]
 
     def environment(self) -> dict[str, str]:
@@ -264,17 +280,18 @@ class LocalProcessLauncher(ServerLauncher):
                 server_environment[name] = os.environ[name]
         return server_environment
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """See ServerLauncher.start; also fails with the build command when the binary is missing.
 
         Raises RuntimeError naming the i386 runtime when this host cannot execute the binary.
         """
-        self.require_program(self._binary_relative)
+        program_relative = HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative
+        self.require_program(program_relative)
         log_path = run_dir / "game.log"
-        with log_path.open("wb") as log_file, _explaining_unexecutable(self._repo_root / self._binary_relative):
+        with log_path.open("wb") as log_file, _explaining_unexecutable(self._repo_root / program_relative):
             process = subprocess.Popen(
-                self.command(lib_dir, port, seed),
-                cwd=run_dir, env=self.environment(), stdin=subprocess.PIPE, stdout=log_file, stderr=subprocess.STDOUT,
+                self.command(lib_dir, port, seed, schedule),
+                cwd=run_dir, env=self.environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
             )
         try:
             handle = ServerHandle(LOOPBACK, port, log_path, process)
@@ -349,13 +366,21 @@ class DockerComposeLauncher(ServerLauncher):
             "-e", f"TMPDIR=/rots/{INTEGRATION_TMP_RELATIVE}",
         ]
 
-    def server_command(self, run_dir: Path, lib_dir: Path, port: int, container_name: str, seed: int) -> list[str]:
-        """The compose command that runs the server in run_dir and publishes port on a random loopback port."""
+    def server_command(
+        self, run_dir: Path, lib_dir: Path, port: int, container_name: str, seed: int, schedule: Optional[str] = None,
+    ) -> list[str]:
+        """The compose command that runs the server in run_dir and publishes port on a random loopback port.
+
+        With a schedule it runs the harness binary with --schedule.
+        """
         # ulimit -c 0 keeps a crashing i386 process under QEMU from hanging while it writes a core.
         working_dir = shlex.quote(self.container_path(run_dir))
-        binary = shlex.quote(f"/rots/{self._binary_relative}")
         lib = shlex.quote(self.container_path(lib_dir))
-        script = f"ulimit -c 0; cd {working_dir} && exec {binary} --random-seed {seed} -d {lib} {port}"
+        if schedule is not None:
+            program = f"{shlex.quote(f'/rots/{HARNESS_BINARY_RELATIVE}')} --schedule {shlex.quote(schedule)}"
+        else:
+            program = shlex.quote(f"/rots/{self._binary_relative}")
+        script = f"ulimit -c 0; cd {working_dir} && exec {program} --random-seed {seed} -d {lib} {port}"
         return [*self._run_prefix(container_name), "-p", f"{LOOPBACK}::{port}", self._service, "bash", "-lc", script]
 
     def tool_command(self, program_relative: str, arguments: list[str], working_dir: Path, container_name: str) -> list[str]:
@@ -392,10 +417,13 @@ class DockerComposeLauncher(ServerLauncher):
         except (subprocess.TimeoutExpired, OSError):
             pass
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
-        """See ServerLauncher.start; also fails with the build command when the binary is missing."""
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
+        """See ServerLauncher.start; also fails with the build command when the binary is missing.
+
+        With a schedule, compose's own output lands in game.log, since stdout carries the server's.
+        """
         (self._repo_root / INTEGRATION_TMP_RELATIVE).mkdir(parents=True, exist_ok=True)
-        self.require_program(self._binary_relative)
+        self.require_program(HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative)
         container_name = f"rots-it-{uuid.uuid4().hex[:12]}"
         process: Optional[subprocess.Popen] = None
         # One deadline covers both waits, so a slow port publication shortens the prompt wait.
@@ -404,8 +432,8 @@ class DockerComposeLauncher(ServerLauncher):
             log_path = run_dir / "game.log"
             with log_path.open("wb") as log_file:
                 process = subprocess.Popen(
-                    self.server_command(run_dir, lib_dir, port, container_name, seed),
-                    cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, stdout=log_file, stderr=subprocess.STDOUT,
+                    self.server_command(run_dir, lib_dir, port, container_name, seed, schedule),
+                    cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
                 )
             host_port = self._wait_for_published_port(container_name, port, process, log_path, deadline)
             handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)

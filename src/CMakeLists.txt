@@ -228,6 +228,7 @@ set(ROTS_TEST_SOURCES
     tests/harness_affect_hours_schedule_tests.cpp
     tests/harness_request_tests.cpp
     tests/harness_standard_stream_channel_tests.cpp
+    tests/harness_controlled_schedule_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp
@@ -301,6 +302,7 @@ find_package(Threads REQUIRED)
 # The harness binary's own code; also built into the unit tests.
 set(HARNESS_SOURCES
     harness/affect_hours_schedule.cpp
+    harness/harness_controlled_schedule.cpp
     harness/harness_request.cpp
     harness/standard_stream_channel.cpp
 )

@@ -143,6 +143,7 @@ set(ROTS_SERVER_SOURCES
     save_benchmark.cpp
     savebench.cpp
     script.cpp
+    server_startup.cpp
     shapemdl.cpp
     shapemob.cpp
     shapeobj.cpp

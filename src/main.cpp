@@ -1,10 +1,13 @@
 #include "comm.h"
+#include "real_time_tick_schedule.h"
 #include "server_startup.h"
 #include "utils.h"
 
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <utility>
 
 int main(int argc, char** argv)
 {
@@ -22,6 +25,7 @@ int main(int argc, char** argv)
     }
 
     prepare_server_process(startup_options);
-    run_the_game(startup_options.port);
+    std::shared_ptr<GameTickSchedule> tick_schedule = std::make_shared<RealTimeTickSchedule>();
+    run_the_game(startup_options.port, std::move(tick_schedule));
     return (0);
 }

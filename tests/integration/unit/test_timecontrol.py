@@ -132,6 +132,20 @@ def test_advance_hours_sends_the_request_and_returns_on_its_acknowledgement(fake
     assert requests_seen == ["advance-hours 3"]
 
 
+def test_advance_hours_recognises_an_acknowledgement_after_a_stray_carriage_return(fake_server_and_control) -> None:
+    server, control, _output_log = fake_server_and_control
+
+    def answer() -> None:
+        server.read_request()
+        # A legacy line ending in "\n\r" leaves its carriage return at the start of the next line.
+        server.send("\r" + REPLY_PREFIX + "done advance-hours 1 hours=1")
+
+    answerer = threading.Thread(target=answer, daemon=True)
+    answerer.start()
+    control.advance_hours(1, REPLY_TIMEOUT)
+    answerer.join(REPLY_TIMEOUT)
+
+
 def test_advance_hours_raises_with_the_servers_words_on_an_error_reply(fake_server_and_control) -> None:
     server, control, _output_log = fake_server_and_control
     answer_next_request(server, "error advance-hours 3: at most 1000 hours may be pending")

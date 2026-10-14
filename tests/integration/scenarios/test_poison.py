@@ -85,11 +85,9 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
     for hour in range(2, POISON_HOURS + 1):
         during_hour = text_after_an_hour(server, mortal, POISON_TICK_MARKER)
         assert during_hour.count(POISON_TICK_MARKER) == 1, f"hour {hour}:\n{during_hour}"
-        mortal.command("look")
 
     wearing_off = text_after_an_hour(server, mortal, POISON_WEARS_OFF_MARKER)
     assert POISON_TICK_MARKER not in wearing_off, wearing_off
-    mortal.command("look")
 
     after_poison = text_after_an_hour(server, mortal)
     assert POISON_TICK_MARKER not in after_poison, after_poison

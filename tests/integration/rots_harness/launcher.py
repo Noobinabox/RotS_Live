@@ -420,7 +420,8 @@ class DockerComposeLauncher(ServerLauncher):
     def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """See ServerLauncher.start; also fails with the build command when the binary is missing.
 
-        With a schedule, compose's own output lands in game.log, since stdout carries the server's.
+        In both modes compose's own stderr lands in game.log; with a schedule, stdout is a pipe
+        carrying only the server's.
         """
         (self._repo_root / INTEGRATION_TMP_RELATIVE).mkdir(parents=True, exist_ok=True)
         self.require_program(HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative)

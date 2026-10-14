@@ -913,7 +913,8 @@ def test_the_build_command_builds_the_harness_binary() -> None:
 
 
 @pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
-def test_start_with_a_schedule_pipes_stdout_and_logs_stderr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launcher_class: type) -> None:
+@pytest.mark.parametrize("schedule", ["affect-hours", None])
+def test_start_pipes_stdout_only_with_a_schedule_and_always_logs_stderr(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, launcher_class: type, schedule: Optional[str]) -> None:
     recorded_kwargs: list[dict] = []
 
     class StopAfterRecording(Exception):
@@ -926,13 +927,18 @@ def test_start_with_a_schedule_pipes_stdout_and_logs_stderr(tmp_path: Path, monk
     harness_binary = tmp_path / launcher.HARNESS_BINARY_RELATIVE
     harness_binary.parent.mkdir()
     harness_binary.write_text("", encoding="utf-8")
+    (tmp_path / "bin" / "ageland").write_text("", encoding="utf-8")
     monkeypatch.setattr(launcher.subprocess, "Popen", recording_popen)
     monkeypatch.setattr(launcher.DockerComposeLauncher, "_stop_container", lambda self, name: True)
     monkeypatch.setattr(launcher.DockerComposeLauncher, "_remove_container", lambda self, name: None)
     run_dir = tmp_path / "run"
     run_dir.mkdir()
     with pytest.raises(StopAfterRecording):
-        launcher_class(repo_root=tmp_path).start(run_dir, run_dir / "lib", port=4321, seed=1, schedule="affect-hours")
+        launcher_class(repo_root=tmp_path).start(run_dir, run_dir / "lib", port=4321, seed=1, schedule=schedule)
     assert recorded_kwargs[0]["stdin"] == launcher.subprocess.PIPE
-    assert recorded_kwargs[0]["stdout"] == launcher.subprocess.PIPE
-    assert recorded_kwargs[0]["stderr"].name == str(run_dir / "game.log")
+    if schedule is not None:
+        assert recorded_kwargs[0]["stdout"] == launcher.subprocess.PIPE
+        assert recorded_kwargs[0]["stderr"].name == str(run_dir / "game.log")
+    else:
+        assert recorded_kwargs[0]["stdout"].name == str(run_dir / "game.log")
+        assert recorded_kwargs[0]["stderr"] == launcher.subprocess.STDOUT

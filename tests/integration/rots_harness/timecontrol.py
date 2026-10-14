@@ -73,10 +73,16 @@ class TimeControl:
         self._reader.start()
 
     def _read_output(self, replies: BinaryIO, log_file: TextIO) -> None:
+        """The reader thread: queues each reply's text and logs other lines until replies ends.
+
+        Strips carriage returns and newlines from both ends of every line. Records a read or log
+        failure for _next_reply, always queues the end marker last and closes log_file; never
+        raises.
+        """
         try:
             with log_file:
                 for raw_line in iter(replies.readline, b""):
-                    line = raw_line.decode("latin-1").rstrip("\r\n")
+                    line = raw_line.decode("latin-1").strip("\r\n")
                     if line.startswith(REPLY_PREFIX):
                         self._replies.put(line[len(REPLY_PREFIX):])
                     else:
@@ -89,6 +95,11 @@ class TimeControl:
             self._replies.put(None)
 
     def _next_reply(self, timeout: float, awaited: str) -> str:
+        """The next reply's text without its prefix; awaited names it in error messages.
+
+        Raises SessionTimeout when no reply arrives within timeout seconds, and TimeControlError
+        when the server's output has ended or the reader failed before a reply.
+        """
         try:
             reply = self._replies.get(timeout=timeout)
         except queue.Empty:

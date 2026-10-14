@@ -227,6 +227,7 @@ set(ROTS_TEST_SOURCES
     tests/real_time_tick_schedule_tests.cpp
     tests/harness_affect_hours_schedule_tests.cpp
     tests/harness_request_tests.cpp
+    tests/harness_standard_stream_channel_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp
@@ -295,10 +296,13 @@ set_target_properties(rotstool PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${ROTS_BIN_DIR}"
 )
 
+find_package(Threads REQUIRED)
+
 # The harness binary's own code; also built into the unit tests.
 set(HARNESS_SOURCES
     harness/affect_hours_schedule.cpp
     harness/harness_request.cpp
+    harness/standard_stream_channel.cpp
 )
 
 if(BUILD_TESTING)
@@ -342,7 +346,7 @@ if(BUILD_TESTING)
             -Wextra
         )
     endif()
-    target_link_libraries(ageland_tests PRIVATE rots_codegen GTest::gtest crypt)
+    target_link_libraries(ageland_tests PRIVATE rots_codegen GTest::gtest crypt Threads::Threads)
     # Routes both number() overloads through the seeded test RNG in tests/test_random_utils.cpp.
     target_link_options(ageland_tests PRIVATE
         -Wl,--wrap=_Z6numberv

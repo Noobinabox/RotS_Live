@@ -16,7 +16,7 @@ std::string bad_hours_error(std::string_view line)
         + std::to_string(harness::MAX_REQUESTED_HOURS);
 }
 
-// The request line asking for hours game hours.
+// The request line asking for hours_text game hours.
 std::string advance_line(std::string_view hours_text)
 {
     return std::string(harness::ADVANCE_HOURS_REQUEST) + " " + std::string(hours_text);

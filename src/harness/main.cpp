@@ -13,6 +13,11 @@
 #include <string>
 #include <utility>
 
+namespace {
+// The program name the usage text shows when the command line does not supply one.
+constexpr const char* DEFAULT_PROGRAM_NAME = "ageland_harness";
+} // namespace
+
 int main(int argc, char** argv)
 {
     harness::HarnessOptions options;
@@ -21,7 +26,9 @@ int main(int argc, char** argv)
         if (!parse_error.empty()) {
             log(parse_error.c_str());
         }
-        std::cerr << "Usage: " << argv[0] << " " << harness::SCHEDULE_OPTION << " "
+        const bool has_program_name = argc > 0 && argv != nullptr && argv[0] != nullptr;
+        const char* const program_name = has_program_name ? argv[0] : DEFAULT_PROGRAM_NAME;
+        std::cerr << "Usage: " << program_name << " " << harness::SCHEDULE_OPTION << " "
                   << harness::AffectHoursSchedule::NAME
                   << " [-m] [-q] [-r] [-s] [-x] [-d pathname] [-p port #] [--random-seed n]"
                      " [ port # ]\n";

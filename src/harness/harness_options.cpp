@@ -27,6 +27,13 @@ bool parse_harness_options(
     std::optional<std::string> schedule_name;
     for (int argument_index = 1; argument_index < argc; ++argument_index) {
         const std::string_view argument = argv[argument_index];
+        const bool attaches_name = argument.size() > SCHEDULE_OPTION.size()
+            && argument.substr(0, SCHEDULE_OPTION.size()) == SCHEDULE_OPTION
+            && argument[SCHEDULE_OPTION.size()] == '=';
+        if (attaches_name) {
+            out_error = std::string(SCHEDULE_OPTION) + " takes its name as the next argument";
+            return false;
+        }
         if (argument != SCHEDULE_OPTION) {
             startup_arguments.push_back(argv[argument_index]);
             continue;

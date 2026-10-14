@@ -200,7 +200,8 @@ TEST(HarnessControlledSchedule, RepliesWithTheParsersErrorAndKeepsRunning)
 
     int unused_hours = 0;
     std::string parser_error;
-    ASSERT_FALSE(harness::parse_harness_request(bad_line, unused_hours, parser_error));
+    ASSERT_FALSE(harness::parse_harness_request(bad_line, unused_hours, parser_error))
+        << "Expected the parser to refuse: " << bad_line;
     ASSERT_EQ(under_test.channel_state->replies.size(), 2u) << "Expected ready and an error.";
     EXPECT_EQ(under_test.channel_state->replies.back(), "error " + parser_error)
         << "Expected the parser's refusal as the reply.";

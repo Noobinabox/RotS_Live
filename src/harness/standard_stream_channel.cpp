@@ -57,6 +57,7 @@ void StandardStreamChannel::read_lines(std::istream& input, std::shared_ptr<Rece
             break;
         }
 
+        // gcount() is never negative and at most LINE_BUFFER_SIZE - 1 here.
         std::size_t line_length = static_cast<std::size_t>(input.gcount());
         const bool reached_end = input.eof();
         if (reached_end && line_length == 0) {

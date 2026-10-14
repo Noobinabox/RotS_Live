@@ -28,8 +28,8 @@ public:
     // must stay valid until it ends, even after the channel is destroyed.
     StandardStreamChannel(std::istream& input, std::ostream& output);
 
-    // Waits for the reading thread when input has ended. Otherwise leaves it to finish when
-    // input ends.
+    // Joins the reading thread if input has already ended; otherwise, as at shutdown, leaves it
+    // to end with the process.
     ~StandardStreamChannel() override;
 
     // A copy would share the reading thread.
@@ -44,6 +44,7 @@ public:
     // once and writes nothing more.
     void write_reply(std::string_view text) override;
 
+    // See HarnessControlChannel.
     [[nodiscard]] bool input_closed() const override;
 
 private:

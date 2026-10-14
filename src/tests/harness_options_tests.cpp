@@ -25,6 +25,7 @@ public:
     // The argument count.
     [[nodiscard]] int count() const
     {
+        // pointers holds one entry per word of a test's short command line, so it fits an int.
         return static_cast<int>(pointers.size());
     }
 
@@ -104,6 +105,23 @@ TEST(HarnessOptions, RefusesARepeatedSchedule)
 TEST(HarnessOptions, RefusesAScheduleOptionWithNoName)
 {
     expect_refused({ "ageland_harness", "-d", "testlib", std::string(harness::SCHEDULE_OPTION) });
+}
+
+TEST(HarnessOptions, RefusesAScheduleNameAttachedWithEquals)
+{
+    const std::string attached = std::string(harness::SCHEDULE_OPTION) + "="
+        + std::string(harness::AffectHoursSchedule::NAME);
+    CommandLine command_line({ "ageland_harness", attached, "4321" });
+    harness::HarnessOptions options;
+    options.schedule_name = UNTOUCHED_SCHEDULE;
+    std::string error;
+
+    EXPECT_FALSE(harness::parse_harness_options(
+        command_line.count(), command_line.vector(), options, error))
+        << "Expected an attached schedule name to be refused.";
+    EXPECT_EQ(options.schedule_name, UNTOUCHED_SCHEDULE) << "Expected the options unchanged.";
+    EXPECT_NE(error.find("next argument"), std::string::npos)
+        << "Expected the refusal to say the name is the next argument; got: " << error;
 }
 
 TEST(HarnessOptions, RefusesAnUnknownScheduleNamingTheKnownOne)

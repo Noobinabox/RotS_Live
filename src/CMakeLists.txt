@@ -225,6 +225,7 @@ set(ROTS_TEST_SOURCES
     tests/player_finalize_tests.cpp
     tests/protocol_tests.cpp
     tests/real_time_tick_schedule_tests.cpp
+    tests/harness_affect_hours_schedule_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp
@@ -293,6 +294,11 @@ set_target_properties(rotstool PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${ROTS_BIN_DIR}"
 )
 
+# The harness binary's own code; also built into the unit tests.
+set(HARNESS_SOURCES
+    harness/affect_hours_schedule.cpp
+)
+
 if(BUILD_TESTING)
     # Built from source with the server's settings, so GoogleTest and the tests agree on -m32 and
     # char signedness; a system GoogleTest on a 64-bit host is 64-bit. To build offline, set
@@ -313,11 +319,12 @@ if(BUILD_TESTING)
     target_compile_options(gtest_main PRIVATE -w)
     include(GoogleTest)
 
-    add_executable(ageland_tests ${ROTS_SERVER_SOURCES} ${ROTSTOOL_COMMAND_SOURCES} ${ROTS_TEST_SOURCES})
+    add_executable(ageland_tests ${ROTS_SERVER_SOURCES} ${ROTSTOOL_COMMAND_SOURCES} ${HARNESS_SOURCES} ${ROTS_TEST_SOURCES})
     target_include_directories(ageland_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tests"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/rotstool"
+        "${CMAKE_CURRENT_SOURCE_DIR}/harness"
     )
     target_compile_definitions(ageland_tests PRIVATE TESTING)
     if(ROTS_SUPPRESS_TEST_WARNINGS)

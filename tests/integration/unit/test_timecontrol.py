@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import io
 import os
 import threading
+import time
 from pathlib import Path
 from typing import BinaryIO, Iterator, Tuple
 
@@ -65,6 +67,16 @@ def fake_server_and_control(tmp_path: Path) -> Iterator[Tuple[FakeServer, TimeCo
     control.close()
     for stream in (server.requests_in, server.requests_out, server.replies_in):
         stream.close()
+
+
+class FailingReplies(io.RawIOBase):
+    """A server stdout whose every read fails, as a broken pipe or closed descriptor would."""
+
+    def readable(self) -> bool:
+        return True
+
+    def readline(self, size: int = -1) -> bytes:
+        raise OSError("simulated read failure")
 
 
 def answer_next_request(server: FakeServer, reply_text: str) -> threading.Thread:
@@ -180,3 +192,18 @@ def test_schedule_name_from_marker_takes_one_non_empty_name() -> None:
     for bad_args in ((), ("",), ("a", "b"), (3,)):
         with pytest.raises(ValueError):
             schedule_name_from_marker(bad_args)
+
+
+def test_a_failing_read_raises_promptly_with_the_failure(tmp_path: Path) -> None:
+    control = TimeControl(io.BytesIO(), FailingReplies(), tmp_path / OUTPUT_LOG_NAME)
+    started = time.monotonic()
+    with pytest.raises(TimeControlError, match="simulated read failure"):
+        control.wait_ready("affect-hours", REPLY_TIMEOUT)
+    assert time.monotonic() - started < REPLY_TIMEOUT / 2, "the failure waited out the timeout"
+    control.close()
+
+
+def test_an_output_log_that_cannot_be_opened_raises_from_the_constructor(tmp_path: Path) -> None:
+    missing_directory_log = tmp_path / "missing" / OUTPUT_LOG_NAME
+    with pytest.raises(OSError):
+        TimeControl(io.BytesIO(), io.BytesIO(), missing_directory_log)

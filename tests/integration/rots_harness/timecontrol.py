@@ -6,7 +6,7 @@ import queue
 import re
 import threading
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, TextIO
 
 from rots_harness.session import SessionTimeout
 
@@ -32,29 +32,44 @@ class TimeControl:
 
     A reader thread takes every line the server writes to stdout: replies are queued for the
     waiting call, and every other line is appended to output_log. The thread keeps reading
-    whether or not a call is waiting, so the server never blocks on a full pipe.
+    whether or not a call is waiting, so the server never blocks on a full pipe. If reading or
+    logging fails, the thread stops and the waiting call raises TimeControlError naming the
+    failure.
     """
 
     def __init__(self, requests: BinaryIO, replies: BinaryIO, output_log: Path) -> None:
-        """Starts reading replies; requests is the server's stdin and replies its stdout."""
+        """Starts reading replies; requests is the server's stdin and replies its stdout.
+
+        Raises OSError when output_log cannot be opened for appending.
+        """
         # The server's stdin, where requests are written.
         self._requests = requests
         # Reply texts without the prefix, in arrival order; None once the server's output ends.
         self._replies: "queue.Queue[Optional[str]]" = queue.Queue()
-        # Reads the server's stdout until it ends.
-        self._reader = threading.Thread(target=self._read_output, args=(replies, output_log), daemon=True)
+        # What stopped the reader early; None while it reads or after a clean end of output.
+        self._read_failure: Optional[BaseException] = None
+        log_file = output_log.open("a", encoding="latin-1", newline="")
+        # Reads the server's stdout until it ends; owns and closes log_file.
+        self._reader = threading.Thread(
+            target=self._read_output, args=(replies, log_file), daemon=True
+        )
         self._reader.start()
 
-    def _read_output(self, replies: BinaryIO, output_log: Path) -> None:
-        with output_log.open("a", encoding="latin-1", newline="") as log_file:
-            for raw_line in iter(replies.readline, b""):
-                line = raw_line.decode("latin-1").rstrip("\r\n")
-                if line.startswith(REPLY_PREFIX):
-                    self._replies.put(line[len(REPLY_PREFIX):])
-                else:
-                    log_file.write(line + "\n")
-                    log_file.flush()
-        self._replies.put(None)
+    def _read_output(self, replies: BinaryIO, log_file: TextIO) -> None:
+        try:
+            with log_file:
+                for raw_line in iter(replies.readline, b""):
+                    line = raw_line.decode("latin-1").rstrip("\r\n")
+                    if line.startswith(REPLY_PREFIX):
+                        self._replies.put(line[len(REPLY_PREFIX):])
+                    else:
+                        log_file.write(line + "\n")
+                        log_file.flush()
+        except BaseException as failure:
+            # Recorded before the end marker is queued, so the call that takes the marker sees it.
+            self._read_failure = failure
+        finally:
+            self._replies.put(None)
 
     def _next_reply(self, timeout: float, awaited: str) -> str:
         try:
@@ -62,6 +77,11 @@ class TimeControl:
         except queue.Empty:
             raise SessionTimeout(f"no {awaited} from the server within {timeout}s") from None
         if reply is None:
+            failure = self._read_failure
+            if failure is not None:
+                raise TimeControlError(
+                    f"reading the server's output failed before {awaited}: {failure!r}"
+                ) from failure
             raise TimeControlError(f"the server's output ended before {awaited}")
         return reply
 

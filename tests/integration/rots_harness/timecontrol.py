@@ -1,0 +1,97 @@
+"""Drives a harness server's game time over its standard streams: one request line in, one prefixed reply line out."""
+
+from __future__ import annotations
+
+import queue
+import re
+import threading
+from pathlib import Path
+from typing import BinaryIO, Optional
+
+from rots_harness.session import SessionTimeout
+
+# The text that starts every reply line the harness binary writes; other stdout lines are ordinary output.
+REPLY_PREFIX = "harness: "
+# The run-directory file that receives the server's ordinary stdout lines.
+OUTPUT_LOG_NAME = "stdout.log"
+
+
+class TimeControlError(AssertionError):
+    """The server refused a time request, acknowledged a different one, or stopped writing; the message quotes what it sent."""
+
+
+def schedule_name_from_marker(args: tuple) -> str:
+    """The schedule name a @pytest.mark.schedule(...) marker gives; raises ValueError unless it is exactly one non-empty string."""
+    if len(args) != 1 or not isinstance(args[0], str) or not args[0]:
+        raise ValueError(f"@pytest.mark.schedule takes one schedule name, not {args!r}")
+    return args[0]
+
+
+class TimeControl:
+    """Sends time requests to a harness server and waits for its acknowledgements.
+
+    A reader thread takes every line the server writes to stdout: replies are queued for the
+    waiting call, and every other line is appended to output_log. The thread keeps reading
+    whether or not a call is waiting, so the server never blocks on a full pipe.
+    """
+
+    def __init__(self, requests: BinaryIO, replies: BinaryIO, output_log: Path) -> None:
+        """Starts reading replies; requests is the server's stdin and replies its stdout."""
+        # The server's stdin, where requests are written.
+        self._requests = requests
+        # Reply texts without the prefix, in arrival order; None once the server's output ends.
+        self._replies: "queue.Queue[Optional[str]]" = queue.Queue()
+        # Reads the server's stdout until it ends.
+        self._reader = threading.Thread(target=self._read_output, args=(replies, output_log), daemon=True)
+        self._reader.start()
+
+    def _read_output(self, replies: BinaryIO, output_log: Path) -> None:
+        with output_log.open("a", encoding="latin-1", newline="") as log_file:
+            for raw_line in iter(replies.readline, b""):
+                line = raw_line.decode("latin-1").rstrip("\r\n")
+                if line.startswith(REPLY_PREFIX):
+                    self._replies.put(line[len(REPLY_PREFIX):])
+                else:
+                    log_file.write(line + "\n")
+                    log_file.flush()
+        self._replies.put(None)
+
+    def _next_reply(self, timeout: float, awaited: str) -> str:
+        try:
+            reply = self._replies.get(timeout=timeout)
+        except queue.Empty:
+            raise SessionTimeout(f"no {awaited} from the server within {timeout}s") from None
+        if reply is None:
+            raise TimeControlError(f"the server's output ended before {awaited}")
+        return reply
+
+    def wait_ready(self, schedule_name: str, timeout: float) -> None:
+        """Waits for the server's ready line and checks it names schedule_name; raises TimeControlError or SessionTimeout."""
+        reply = self._next_reply(timeout, "ready line")
+        expected = f"ready schedule={schedule_name} hours=0"
+        if reply != expected:
+            raise TimeControlError(f"expected {expected!r}, the server sent {reply!r}")
+
+    def advance_hours(self, hours: int, timeout: float) -> None:
+        """Asks the server to run hours game hours and returns once it acknowledges them.
+
+        Raises ValueError for fewer than 1 hour, TimeControlError on a refusal, a different
+        acknowledgement or a closed pipe, and SessionTimeout when no reply arrives in time.
+        """
+        if hours < 1:
+            raise ValueError(f"hours must be at least 1, not {hours}")
+        request = f"advance-hours {hours}"
+        try:
+            self._requests.write((request + "\n").encode("ascii"))
+            self._requests.flush()
+        except (BrokenPipeError, ValueError) as closed:
+            raise TimeControlError(f"the server's input is closed; {request!r} was not sent") from closed
+        reply = self._next_reply(timeout, f"acknowledgement of {request!r}")
+        if reply.startswith("error "):
+            raise TimeControlError(f"the server refused {request!r}: {reply}")
+        if not re.fullmatch(rf"done {re.escape(request)} hours=\d+", reply):
+            raise TimeControlError(f"expected the acknowledgement of {request!r}, the server sent {reply!r}")
+
+    def close(self, timeout: float = 5.0) -> None:
+        """Waits up to timeout for the reader to finish, which it does once the server's stdout ends. Never raises."""
+        self._reader.join(timeout)

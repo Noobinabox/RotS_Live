@@ -311,12 +311,15 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed(), schedule=schedule)
         time_control = None
         if schedule is not None:
-            time_control = TimeControl(handle.process.stdin, handle.process.stdout, run_dir / OUTPUT_LOG_NAME)
+            # Any failure here stops the server, including the constructor's OSError for an
+            # output log it cannot open.
             try:
+                time_control = TimeControl(handle.process.stdin, handle.process.stdout, run_dir / OUTPUT_LOG_NAME)
                 time_control.wait_ready(schedule, READY_TIMEOUT_SECONDS)
             except BaseException:
                 harness_launcher.stop(handle)
-                time_control.close()
+                if time_control is not None:
+                    time_control.close()
                 raise
     except BaseException:
         # BaseException so an interrupted setup keeps its evidence too. keep_run_directory never

@@ -226,6 +226,7 @@ set(ROTS_TEST_SOURCES
     tests/protocol_tests.cpp
     tests/real_time_tick_schedule_tests.cpp
     tests/harness_affect_hours_schedule_tests.cpp
+    tests/harness_request_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp
@@ -297,6 +298,7 @@ set_target_properties(rotstool PROPERTIES
 # The harness binary's own code; also built into the unit tests.
 set(HARNESS_SOURCES
     harness/affect_hours_schedule.cpp
+    harness/harness_request.cpp
 )
 
 if(BUILD_TESTING)

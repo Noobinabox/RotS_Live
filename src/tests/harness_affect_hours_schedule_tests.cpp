@@ -65,9 +65,12 @@ TEST(AffectHoursSchedule, RunsNoWorldUpdateAtPhaseZeroUntilHoursAreGranted)
 
     for (int pass_number = 1; pass_number <= FAST_UPDATE_RATE; ++pass_number) {
         const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
-        EXPECT_FALSE(world_pass.run_fast_update) << "Expected no fast update on pass " << pass_number;
-        EXPECT_FALSE(world_pass.run_hourly_update) << "Expected no hourly update on pass " << pass_number;
-        EXPECT_FALSE(runs_other_updates(world_pass)) << "Expected no other update on pass " << pass_number;
+        EXPECT_FALSE(world_pass.run_fast_update)
+            << "Expected no fast update on pass " << pass_number;
+        EXPECT_FALSE(world_pass.run_hourly_update)
+            << "Expected no hourly update on pass " << pass_number;
+        EXPECT_FALSE(runs_other_updates(world_pass))
+            << "Expected no other update on pass " << pass_number;
         EXPECT_EQ(world_pass.time_phase, 0) << "Expected phase 0 on idle pass " << pass_number;
     }
     EXPECT_EQ(schedule.hours_completed(), 0) << "Expected no hour to have run.";
@@ -178,7 +181,8 @@ TEST(AffectHoursSchedule, RefusesAGrantThatWouldLeaveMoreThanTheMaximumHoursPend
 TEST(AffectHoursSchedule, OrdersAnHoursFastAndHourlyUpdatesAsRealTimeDoes)
 {
     RealTimeTickSchedule real_time;
-    const std::vector<FastPass> real_time_hour = fast_passes_of(real_time, REAL_TIME_PASSES_PER_HOUR);
+    const std::vector<FastPass> real_time_hour =
+        fast_passes_of(real_time, REAL_TIME_PASSES_PER_HOUR);
     ASSERT_EQ(real_time_hour.size(), static_cast<std::size_t>(FAST_UPDATE_RATE))
         << "Expected one real-time hour to hold FAST_UPDATE_RATE fast updates.";
 

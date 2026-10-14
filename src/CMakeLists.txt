@@ -319,7 +319,12 @@ if(BUILD_TESTING)
     target_compile_options(gtest_main PRIVATE -w)
     include(GoogleTest)
 
-    add_executable(ageland_tests ${ROTS_SERVER_SOURCES} ${ROTSTOOL_COMMAND_SOURCES} ${HARNESS_SOURCES} ${ROTS_TEST_SOURCES})
+    add_executable(ageland_tests
+        ${ROTS_SERVER_SOURCES}
+        ${ROTSTOOL_COMMAND_SOURCES}
+        ${HARNESS_SOURCES}
+        ${ROTS_TEST_SOURCES}
+    )
     target_include_directories(ageland_tests PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tests"

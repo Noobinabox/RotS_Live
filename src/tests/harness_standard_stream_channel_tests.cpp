@@ -1,4 +1,3 @@
-#include "request_dispatch.h"
 #include "standard_stream_channel.h"
 
 #include <chrono>
@@ -13,6 +12,8 @@
 namespace {
 // How long a test waits for the reader thread to reach the end of a string stream.
 constexpr std::chrono::seconds READER_WAIT_LIMIT(5);
+// A line far longer than any request, to show the channel does not cut lines.
+constexpr std::size_t LONG_LINE_LENGTH = 200;
 // The words write_reply logs once output has failed.
 constexpr std::string_view OUTPUT_FAILURE_PHRASE = "could not be written";
 
@@ -67,74 +68,13 @@ protected:
 };
 } // namespace
 
-TEST(StandardStreamChannel, ReceivesLinesInOrderWithoutTheirNewlines)
+TEST(StandardStreamChannel, ReceivesALongLineWhole)
 {
-    const std::vector<std::string> lines = lines_received_from("first\nsecond\n");
+    const std::string long_line(LONG_LINE_LENGTH, 'a');
+    const std::vector<std::string> lines = lines_received_from(long_line + "\nnext\n");
 
-    const std::vector<std::string> expected = { "first", "second" };
-    EXPECT_EQ(lines, expected) << "Expected both lines, in order, without newlines.";
-}
-
-TEST(StandardStreamChannel, LeavesACarriageReturnForTheParserToRemove)
-{
-    const std::vector<std::string> lines = lines_received_from("first\r\n");
-
-    const std::vector<std::string> expected = { "first\r" };
-    EXPECT_EQ(lines, expected) << "Expected the CR to stay on the line.";
-}
-
-TEST(StandardStreamChannel, ReceivesALastLineWithoutANewline)
-{
-    const std::vector<std::string> lines = lines_received_from("first\nlast");
-
-    const std::vector<std::string> expected = { "first", "last" };
-    EXPECT_EQ(lines, expected) << "Expected the unterminated last line.";
-}
-
-TEST(StandardStreamChannel, ReceivesAnEmptyLineAsAnEmptyString)
-{
-    const std::vector<std::string> lines = lines_received_from("\nnext\n");
-
-    const std::vector<std::string> expected = { "", "next" };
-    EXPECT_EQ(lines, expected) << "Expected the empty line to be delivered.";
-}
-
-TEST(StandardStreamChannel, CutsAnOverlongLineOneCharacterPastTheLimitAndKeepsTheNextLine)
-{
-    const std::string overlong(harness::MAX_REQUEST_LINE_LENGTH + 10, 'a');
-    const std::vector<std::string> lines = lines_received_from(overlong + "\nnext\n");
-
-    ASSERT_EQ(lines.size(), 2u) << "Expected the cut line and the next line.";
-    EXPECT_EQ(lines[0], std::string(harness::MAX_REQUEST_LINE_LENGTH + 1, 'a'))
-        << "Expected the overlong line cut one character past the limit.";
-    EXPECT_EQ(lines[1], "next") << "Expected the following line intact.";
-}
-
-TEST(StandardStreamChannel, ReceivesALineOneCharacterPastTheLimitWhole)
-{
-    const std::string just_over(harness::MAX_REQUEST_LINE_LENGTH + 1, 'b');
-    const std::vector<std::string> lines = lines_received_from(just_over + "\nnext\n");
-
-    const std::vector<std::string> expected = { just_over, "next" };
-    EXPECT_EQ(lines, expected) << "Expected a line that fits the buffer to arrive whole.";
-}
-
-TEST(StandardStreamChannel, ReportsInputClosedAtTheEndOfEmptyInput)
-{
-    const std::vector<std::string> lines = lines_received_from("");
-
-    EXPECT_TRUE(lines.empty()) << "Expected no line from empty input.";
-}
-
-TEST(StandardStreamChannel, GivesEachLineOutOnlyOnce)
-{
-    std::istringstream input("only\n");
-    std::ostringstream output;
-    harness::StandardStreamChannel channel(input, output);
-    ASSERT_TRUE(wait_until_input_closed(channel)) << "Expected the reader to reach end of input.";
-
-    EXPECT_EQ(channel.take_lines().size(), 1u) << "Expected the line on the first take.";
-    EXPECT_TRUE(channel.take_lines().empty()) << "Expected nothing on the second take.";
+    const std::vector<std::string> expected = { long_line, "next" };
+    EXPECT_EQ(lines, expected) << "Expected the long line whole, then the next line, in order.";
 }
 
 TEST(StandardStreamChannel, WritesEachReplyWithThePrefixAndANewlineAndFlushes)

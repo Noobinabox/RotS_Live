@@ -125,6 +125,16 @@ void untrack_specialized_mage(char_data* mage);
 int has_alias(char_data* host, char* keyword);
 int has_program(char_data* host, int num);
 
+/* Mob aggression and helping as the mob turn applies them (mobact.cpp),
+ * shared with the mob programs that run their own turn. */
+bool mob_race_aggressive_to(const char_data* mob, const char_data* victim);
+bool mob_flag_aggressive_to(const char_data* mob, const char_data* victim);
+bool mob_helper_assist(char_data* ch);
+/* Whether a moving mob opens the closed door that way on its own step
+ * (do_move): a door, closed, not locked, hidden or a lever door, and the
+ * mob not a shadow (do_open refuses those). */
+bool mob_opens_door_on_move(const char_data* ch, int dir);
+
 /* defines for fseek */
 #ifndef SEEK_SET
 #define SEEK_SET 0

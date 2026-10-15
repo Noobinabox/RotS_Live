@@ -11,6 +11,7 @@
 #include "interpre.h"
 #include "mob_options.h"
 #include "mob_progs/banker.h"
+#include "mob_progs/ranger_prog.h"
 #include "mob_progs/shopkeeper.h"
 #include "mob_walker.h"
 #include "protos.h"
@@ -2247,6 +2248,13 @@ int load_proto(struct char_data* ch, char* arg)
 /*****************----------------------------------******************/
 int append_proto(struct char_data* ch, char* arg);
 
+/* A mob whose program reads its own options and reports its own lines
+ * (shopkeeper, banker, ranger), so the walker check leaves unknown lines to it. */
+static bool has_options_program(const struct char_data* proto, int rnum)
+{
+    return is_vendor_candidate(proto, rnum) || is_banker_candidate(proto, rnum) || is_ranger_candidate(proto, rnum);
+}
+
 /* copy f1 to f2, replacing mob #num with new mob */
 int replace_proto(struct char_data* ch, char* arg)
 {
@@ -2357,10 +2365,10 @@ int replace_proto(struct char_data* ch, char* arg)
             vendor_config_check(SHAPE_PROTO(ch)->proto, num, ch);
         if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
             banker_config_check(SHAPE_PROTO(ch)->proto, num, ch);
+        if (is_ranger_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
+            ranger_config_check(SHAPE_PROTO(ch)->proto, num, ch);
         walker_config_check(SHAPE_PROTO(ch)->proto, num,
-            is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr)
-                || is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr),
-            ch);
+            has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr), ch);
         REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE);
     }
 
@@ -2476,10 +2484,10 @@ int append_proto(struct char_data* ch, char* arg)
         vendor_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
     if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
         banker_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
+    if (is_ranger_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
+        ranger_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
     walker_config_check(SHAPE_PROTO(ch)->proto, i1 + 1,
-        is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr)
-            || is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr),
-        ch);
+        has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr), ch);
     sprintf(str, "Mobile added to database as #%d.\n\r", i1 + 1);
     send_to_char(str, ch);
     SHAPE_PROTO(ch)
@@ -2589,10 +2597,11 @@ void implement_proto(struct char_data* ch, bool report_vendor = true, bool repor
     vendor_implement_check(number, ch);
     banker_config_rebuild(number, ch, report_vendor);
     banker_implement_check(number, ch);
+    ranger_config_rebuild(number, ch, report_vendor);
+    ranger_implement_check(number, ch);
     walker_config_rebuild(number);
     if (report_vendor && report_walker)
-        walker_config_check(mob_proto + number, mob_index[number].virt,
-            is_vendor_candidate(mob_proto + number, number) || is_banker_candidate(mob_proto + number, number), ch);
+        walker_config_check(mob_proto + number, mob_index[number].virt, has_options_program(mob_proto + number, number), ch);
 }
 ACMD(do_shape)
 {
@@ -3115,10 +3124,9 @@ void extra_coms_proto(struct char_data* ch, char* argument)
             = SHAPE_EDIT;
         break;
     case SHAPE_DONE: {
-        /* The save reports vendor or banker problems exactly when this is true (the
-         * same test replace_proto makes), so implement doesn't repeat them. */
-        bool save_reports = is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr)
-            || is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr);
+        /* The save reports vendor, banker or ranger problems exactly when this is
+         * true (the same test replace_proto makes), so implement doesn't repeat them. */
+        bool save_reports = has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr);
         /* A failed save must not throw the edits away. */
         if (replace_proto(ch, argument) < 0) {
             send_to_char("Not saved - still shaping. Fix the problem and /done again,\n\r"

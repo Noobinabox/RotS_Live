@@ -97,6 +97,13 @@ const walker_config* walker_config_for(int mob_rnum); /* null: not a walker */
  * (0..NUM_OF_DIRS-1) and whether that exit is usable. */
 walker_result walker_wander(struct char_data* ch, int door, bool usable);
 
+/* The shared mob step checks: an open exit into a room that is neither
+ * NO_MOB nor a death room, and the STAY_ZONE / STAY_TYPE limits. Used by the
+ * standard wander, the walkers and the ranger program (program 32). */
+bool room_takes_mobs(int room);
+bool exit_is_usable(struct char_data* ch, int door);
+bool stay_flags_allow(struct char_data* ch, int door);
+
 /* Removes the walkers whose path ended with path_complete_extract=yes and
  * sends their path_complete_message. Called where no loop holds a mob: after
  * the mob activity pass and after the affect update pass. */

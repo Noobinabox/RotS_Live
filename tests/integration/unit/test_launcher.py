@@ -942,3 +942,219 @@ def test_start_pipes_stdout_only_with_a_schedule_and_always_logs_stderr(tmp_path
     else:
         assert recorded_kwargs[0]["stdout"].name == str(run_dir / "game.log")
         assert recorded_kwargs[0]["stderr"] == launcher.subprocess.STDOUT
+
+
+class RecordingStandardInput(io.BytesIO):
+    """A stdin pipe that records its close in the shared event list."""
+
+    def __init__(self, events: list) -> None:
+        super().__init__()
+        # The ordered record of the stop's steps the test inspects.
+        self._events = events
+
+    def close(self) -> None:
+        if not self.closed:
+            self._events.append("close stdin")
+        super().close()
+
+
+class HarnessServerProcess:
+    """A harness server that records its stdin close and the signals a stop sends it."""
+
+    def __init__(self, events: list, exited: bool = False, has_stdin: bool = True) -> None:
+        # The ordered record of the stop's steps the test inspects.
+        self._events = events
+        # None while the server runs; set when it has exited or is stopped.
+        self.returncode: Optional[int] = 0 if exited else None
+        # The pipe close_control_channel closes; None for a server started without one.
+        self.stdin = RecordingStandardInput(events) if has_stdin else None
+        # Named in a stop's warning if the server survives its kill.
+        self.pid = 4242
+
+    def poll(self) -> Optional[int]:
+        return self.returncode
+
+    def terminate(self) -> None:
+        self._events.append("terminate")
+        self.returncode = -15
+
+    def kill(self) -> None:
+        self._events.append("kill")
+        self.returncode = -9
+
+    def wait(self, timeout: Optional[float] = None) -> int:
+        self._events.append("wait")
+        return self.returncode or 0
+
+
+class LoggingClock(FakeClock):
+    """A FakeClock that records each sleep and logs the input-closed line on the sleep numbered line_on_sleep."""
+
+    def __init__(self, events: list, log_path: Path, line_on_sleep: Optional[int] = None, interrupt_on_sleep: Optional[int] = None) -> None:
+        super().__init__(now=1000.0)
+        # The ordered record of the stop's steps the test inspects.
+        self._events = events
+        # The game.log the server writes its input-closed line to.
+        self._log_path = log_path
+        # The sleep after which the server logs the line; None when it never does.
+        self._line_on_sleep = line_on_sleep
+        # The sleep that raises KeyboardInterrupt, as a Ctrl-C during the wait does; None for none.
+        self._interrupt_on_sleep = interrupt_on_sleep
+        # How many times the wait has slept.
+        self.sleeps = 0
+
+    def sleep(self, seconds: float) -> None:
+        super().sleep(seconds)
+        self.sleeps += 1
+        self._events.append("sleep")
+        if self.sleeps == self._interrupt_on_sleep:
+            raise KeyboardInterrupt
+        if self.sleeps == self._line_on_sleep:
+            with self._log_path.open("ab") as log_file:
+                log_file.write(f"Tue Oct 13 12:00:00 2026 :: {launcher.INPUT_CLOSED_LOG_LINE}\n".encode("ascii"))
+
+
+def harness_handle(tmp_path: Path, process: HarnessServerProcess, container_name: Optional[str] = None) -> launcher.ServerHandle:
+    """A handle on process for a server started with a schedule, whose game.log already holds boot output."""
+    log_path = tmp_path / "game.log"
+    log_path.write_bytes(b"Booting the world.\n")
+    return launcher.ServerHandle(launcher.LOOPBACK, 4321, log_path, process, container_name, has_control_channel=True)  # type: ignore[arg-type]
+
+
+def test_close_control_channel_closes_stdin_then_waits_for_the_input_closed_line(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    log_path = tmp_path / "game.log"
+    log_path.write_bytes(b"Booting the world.\n")
+    clock = LoggingClock(events, log_path, line_on_sleep=3)
+    monkeypatch.setattr(launcher, "time", clock)
+
+    saw_line = launcher.close_control_channel(HarnessServerProcess(events), log_path)  # type: ignore[arg-type]
+
+    assert saw_line
+    assert events == ["close stdin", "sleep", "sleep", "sleep"]
+
+
+def test_local_stop_terminates_a_harness_server_once_it_logs_that_its_input_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    process = HarnessServerProcess(events)
+    handle = harness_handle(tmp_path, process)
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, handle.log_path, line_on_sleep=2))
+
+    launcher.LocalProcessLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events == ["close stdin", "sleep", "sleep", "terminate", "wait"]
+
+
+def test_docker_stop_stops_a_harness_container_once_it_logs_that_its_input_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    process = HarnessServerProcess(events)
+    handle = harness_handle(tmp_path, process, "rots-it-stop")
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, handle.log_path, line_on_sleep=2))
+    monkeypatch.setattr(launcher.subprocess, "run", recording_docker(events))
+
+    launcher.DockerComposeLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events[:4] == ["close stdin", "sleep", "sleep", ("run", ["docker", "stop", "-t", "5", "rots-it-stop"])]
+
+
+def test_a_stop_goes_ahead_after_the_timeout_when_the_line_never_arrives(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    process = HarnessServerProcess(events)
+    handle = harness_handle(tmp_path, process)
+    clock = LoggingClock(events, handle.log_path)
+    monkeypatch.setattr(launcher, "time", clock)
+
+    launcher.LocalProcessLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events[0] == "close stdin"
+    assert set(events[1:-2]) == {"sleep"}
+    assert events[-2:] == ["terminate", "wait"]
+    waited = clock.now - 1000.0
+    assert launcher.INPUT_CLOSED_WAIT_SECONDS <= waited < launcher.INPUT_CLOSED_WAIT_SECONDS + 2 * launcher.INPUT_CLOSED_POLL_SECONDS
+
+
+def test_close_control_channel_honours_a_shorter_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    log_path = tmp_path / "game.log"
+    clock = LoggingClock(events, log_path)
+    monkeypatch.setattr(launcher, "time", clock)
+
+    saw_line = launcher.close_control_channel(HarnessServerProcess(events), log_path, timeout_seconds=0.2)  # type: ignore[arg-type]
+
+    assert not saw_line
+    assert 0.2 <= clock.now - 1000.0 < 0.2 + 2 * launcher.INPUT_CLOSED_POLL_SECONDS
+
+
+def test_a_stop_does_not_wait_for_a_server_that_has_already_exited(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    process = HarnessServerProcess(events, exited=True)
+    handle = harness_handle(tmp_path, process)
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, handle.log_path))
+
+    launcher.LocalProcessLauncher(repo_root=tmp_path).stop(handle)
+
+    # terminate_process does not signal a process that has exited.
+    assert events == ["close stdin"]
+
+
+def test_close_control_channel_does_not_wait_without_a_stdin_pipe(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    log_path = tmp_path / "game.log"
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, log_path))
+
+    saw_line = launcher.close_control_channel(HarnessServerProcess(events, has_stdin=False), log_path)  # type: ignore[arg-type]
+
+    assert not saw_line
+    assert events == []
+
+
+def test_a_server_without_a_schedule_stops_without_waiting(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    process = HarnessServerProcess(events)
+    handle = launcher.ServerHandle(launcher.LOOPBACK, 4321, tmp_path / "game.log", process)  # type: ignore[arg-type]
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, handle.log_path))
+
+    launcher.LocalProcessLauncher(repo_root=tmp_path).stop(handle)
+
+    assert events == ["terminate", "wait", "close stdin"]
+
+
+def test_a_ctrl_c_during_the_wait_still_stops_the_server_and_a_second_stop_does_not_wait_again(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    events: list = []
+    process = HarnessServerProcess(events)
+    handle = harness_handle(tmp_path, process)
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, handle.log_path, interrupt_on_sleep=2))
+    local = launcher.LocalProcessLauncher(repo_root=tmp_path)
+
+    with pytest.raises(KeyboardInterrupt):
+        local.stop(handle)
+    local.stop(handle)
+
+    assert events == ["close stdin", "sleep", "sleep", "terminate", "wait"]
+
+
+# Reads stdin to its end, then logs the input-closed line on stderr and stays up until signalled.
+READS_STDIN_TO_THE_END_SERVER = """
+import sys
+import time
+sys.stdin.buffer.read()
+sys.stderr.write("Tue Oct 13 12:00:00 2026 :: " + sys.argv[1] + "\\n")
+sys.stderr.flush()
+time.sleep(30)
+"""
+
+
+def test_close_control_channel_sees_the_line_a_real_process_logs_at_end_of_input(tmp_path: Path) -> None:
+    log_path = tmp_path / "game.log"
+    with log_path.open("wb") as log_file:
+        process = subprocess.Popen(
+            [sys.executable, "-c", READS_STDIN_TO_THE_END_SERVER, launcher.INPUT_CLOSED_LOG_LINE],
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=log_file,
+        )
+    try:
+        assert launcher.close_control_channel(process, log_path)
+        assert process.poll() is None, "the line must arrive before the stop, not because the process exited"
+    finally:
+        launcher.terminate_process(process)

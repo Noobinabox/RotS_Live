@@ -34,6 +34,13 @@ LOGIN_EMAIL_PROMPT = "Account email:"
 # The pause between two readiness attempts, and the longest one read blocks before the readiness
 # wait checks the process again.
 READY_RETRY_SECONDS = 0.25
+# The line the harness binary logs once its stdin reaches end of input; its control channel's
+# reader thread has finished by then.
+INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no more time requests will arrive."
+# The longest a stop waits for INPUT_CLOSED_LOG_LINE before it stops the server anyway.
+INPUT_CLOSED_WAIT_SECONDS = 5.0
+# The pause between two reads of game.log while a stop waits for INPUT_CLOSED_LOG_LINE.
+INPUT_CLOSED_POLL_SECONDS = 0.05
 
 
 @dataclass
@@ -45,6 +52,9 @@ class ServerHandle:
     log_path: Path
     process: subprocess.Popen
     container_name: Optional[str] = None
+    # Whether the server is the harness binary, which reads time requests on its stdin pipe; a
+    # stop closes that pipe and lets the reader finish before signalling the server.
+    has_control_channel: bool = False
 
     def is_alive(self) -> bool:
         """Whether the server process (or the compose run wrapping it) is still running."""
@@ -184,6 +194,53 @@ def close_standard_input(process: subprocess.Popen) -> None:
         pass
 
 
+def close_control_channel(process: subprocess.Popen, log_path: Path, timeout_seconds: float = INPUT_CLOSED_WAIT_SECONDS) -> bool:
+    """Closes the harness server's stdin, then waits up to timeout_seconds for log_path to hold INPUT_CLOSED_LOG_LINE.
+
+    True once the line is logged. False when the timeout passes or the process exits first, and
+    False without waiting when there is no open stdin pipe to close. Never raises; a Ctrl-C during
+    the wait propagates, so the caller must still stop the server.
+    """
+    if process.stdin is None or process.stdin.closed:
+        # An already closed pipe means an earlier stop waited (or was interrupted waiting); not
+        # waiting again bounds an interrupted stop to a single wait.
+        return False
+    # Measured before the close, so a line logged at once after it is still read.
+    offset = _file_size(log_path)
+    close_standard_input(process)
+    line = INPUT_CLOSED_LOG_LINE.encode("ascii")
+    deadline = time.monotonic() + timeout_seconds
+    received = b""
+    while True:
+        chunk = _read_from(log_path, offset)
+        offset += len(chunk)
+        # Keeping one byte less than the line still finds a line split across two reads.
+        received = received[-(len(line) - 1):] + chunk
+        if line in received:
+            return True
+        if process.poll() is not None or time.monotonic() >= deadline:
+            return False
+        time.sleep(INPUT_CLOSED_POLL_SECONDS)
+
+
+def _file_size(path: Path) -> int:
+    """The file's size in bytes, or 0 when it cannot be read."""
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
+def _read_from(path: Path, offset: int) -> bytes:
+    """The file's bytes from offset to its current end, or none when it cannot be read."""
+    try:
+        with path.open("rb") as file:
+            file.seek(offset)
+            return file.read()
+    except OSError:
+        return b""
+
+
 def terminate_process(process: subprocess.Popen) -> None:
     """Terminates the process, escalating to a kill, and closes its stdin pipe.
 
@@ -226,7 +283,8 @@ class ServerLauncher:
     def stop(self, handle: ServerHandle) -> None:
         """Stops the server behind handle and closes its stdin pipe.
 
-        Does not signal a server that has already exited.
+        Does not signal a server that has already exited. A harness server first gets
+        close_control_channel, so its stop can come up to INPUT_CLOSED_WAIT_SECONDS later.
         """
         raise NotImplementedError
 
@@ -294,7 +352,7 @@ class LocalProcessLauncher(ServerLauncher):
                 cwd=run_dir, env=self.environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
             )
         try:
-            handle = ServerHandle(LOOPBACK, port, log_path, process)
+            handle = ServerHandle(LOOPBACK, port, log_path, process, has_control_channel=schedule is not None)
             wait_for_login_prompt(LOOPBACK, port, self._startup_timeout, process, log_path)
             return handle
         except BaseException:
@@ -305,7 +363,11 @@ class LocalProcessLauncher(ServerLauncher):
 
     def stop(self, handle: ServerHandle) -> None:
         """See ServerLauncher.stop."""
-        terminate_process(handle.process)
+        try:
+            if handle.has_control_channel:
+                close_control_channel(handle.process, handle.log_path)
+        finally:
+            terminate_process(handle.process)
 
     def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
         """See ServerLauncher.run_to_completion; also fails with the build command when the program is missing.
@@ -437,7 +499,7 @@ class DockerComposeLauncher(ServerLauncher):
                     cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
                 )
             host_port = self._wait_for_published_port(container_name, port, process, log_path, deadline)
-            handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)
+            handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name, has_control_channel=schedule is not None)
             time_allowed = f"within the {self._startup_timeout}s startup timeout, part of which the wait for the published port used"
             wait_for_login_prompt(LOOPBACK, host_port, max(0.0, deadline - time.monotonic()), process, log_path, time_allowed)
             return handle
@@ -470,6 +532,14 @@ class DockerComposeLauncher(ServerLauncher):
 
         Removes the container itself when docker stop fails or the compose run has to be killed.
         """
+        try:
+            if handle.has_control_channel:
+                close_control_channel(handle.process, handle.log_path)
+        finally:
+            self._stop_container_and_client(handle)
+
+    def _stop_container_and_client(self, handle: ServerHandle) -> None:
+        """Stops the container, waits for (or kills) the compose run, and closes its stdin pipe."""
         if handle.container_name and not self._stop_container(handle.container_name):
             self._remove_container(handle.container_name)
         if handle.is_alive():

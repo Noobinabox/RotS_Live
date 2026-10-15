@@ -64,6 +64,15 @@ harness::CommandLineParser make_colour_parser()
     return parser;
 }
 
+// A parser holding the required colour option and the optional shape option.
+harness::CommandLineParser make_colour_and_shape_parser()
+{
+    harness::CommandLineParser parser = make_colour_parser();
+    const bool registered = parser.register_option(make_plain_option(SHAPE_OPTION));
+    EXPECT_TRUE(registered) << "Expected the shape option to register.";
+    return parser;
+}
+
 // The unclaimed arguments as strings, for comparison.
 std::vector<std::string> unclaimed_words(const harness::CommandLineParseResult& result)
 {
@@ -149,6 +158,7 @@ TEST(CommandLineParser, ClaimsAnOptionWrittenAsAnotherOptionsValue)
     std::string error;
 
     ASSERT_TRUE(parser.parse(command_line.count(), command_line.vector(), result, error)) << error;
+    ASSERT_EQ(result.option_values.count(COLOUR_OPTION), 1u) << "Expected the colour claimed.";
     EXPECT_EQ(result.option_values.find(COLOUR_OPTION)->second, "green") << "Unexpected colour.";
     EXPECT_EQ(unclaimed_words(result), (std::vector<std::string> { "program", "-d" }))
         << "Expected the option claimed even after -d.";
@@ -213,6 +223,8 @@ TEST(CommandLineParser, ClaimsTwoOptions)
     std::string error;
 
     ASSERT_TRUE(parser.parse(command_line.count(), command_line.vector(), result, error)) << error;
+    ASSERT_EQ(result.option_values.count(COLOUR_OPTION), 1u) << "Expected the colour claimed.";
+    ASSERT_EQ(result.option_values.count(SHAPE_OPTION), 1u) << "Expected the shape claimed.";
     EXPECT_EQ(result.option_values.find(COLOUR_OPTION)->second, "red") << "Unexpected colour.";
     EXPECT_EQ(result.option_values.find(SHAPE_OPTION)->second, "round") << "Unexpected shape.";
     EXPECT_EQ(unclaimed_words(result), (std::vector<std::string> { "program", "-q" }))
@@ -260,6 +272,88 @@ TEST(CommandLineParser, RefusesAMissingValue)
         make_colour_parser(), { "program", "-d", "lib", std::string(COLOUR_OPTION) });
 
     EXPECT_EQ(error, "--colour needs a value (COLOUR)") << "Unexpected refusal.";
+}
+
+TEST(CommandLineParser, RefusesAnOptionFollowedByARegisteredName)
+{
+    const harness::CommandLineParser parser = make_colour_and_shape_parser();
+    const std::string colour(COLOUR_OPTION);
+    const std::string shape(SHAPE_OPTION);
+
+    EXPECT_EQ(expect_refused(parser, { "program", shape, colour, "red" }),
+        "--shape needs a value (VALUE)")
+        << "Expected a registered name after --shape to leave it without a value.";
+    EXPECT_EQ(expect_refused(parser, { "program", colour, shape, "round" }),
+        "--colour needs a value (COLOUR)")
+        << "Expected a registered name after --colour to leave it without a value.";
+}
+
+TEST(CommandLineParser, TakesAnUnregisteredDoubleDashArgumentAsTheValue)
+{
+    const harness::CommandLineParser parser = make_colour_and_shape_parser();
+    harness_tests::CommandLine command_line(
+        { "program", std::string(COLOUR_OPTION), "--random-seed", "7" });
+    harness::CommandLineParseResult result;
+    std::string error;
+
+    ASSERT_TRUE(parser.parse(command_line.count(), command_line.vector(), result, error)) << error;
+    ASSERT_EQ(result.option_values.count(COLOUR_OPTION), 1u) << "Expected the colour claimed.";
+    EXPECT_EQ(result.option_values.find(COLOUR_OPTION)->second, "--random-seed")
+        << "Expected the unregistered name taken as the value.";
+    EXPECT_EQ(unclaimed_words(result), (std::vector<std::string> { "program", "7" }))
+        << "Expected only the 7 unclaimed.";
+}
+
+TEST(CommandLineParser, PassesAnEmptyValueToTheValidator)
+{
+    harness::CommandLineParser parser;
+    harness::CommandLineOption option = make_plain_option(SHAPE_OPTION);
+    option.validate = [](std::string_view value) -> std::optional<std::string> {
+        if (value.empty()) {
+            return std::string("the shape is empty");
+        }
+        return std::nullopt;
+    };
+    ASSERT_TRUE(parser.register_option(std::move(option)))
+        << "Expected the shape option to register.";
+
+    const std::string error = expect_refused(parser, { "program", std::string(SHAPE_OPTION), "" });
+
+    EXPECT_EQ(error, "the shape is empty") << "Expected the validator to see the empty value.";
+}
+
+TEST(CommandLineParser, AcceptsAnEmptyValue)
+{
+    const harness::CommandLineParser parser = make_colour_parser();
+    harness_tests::CommandLine command_line({ "program", std::string(COLOUR_OPTION), "" });
+    harness::CommandLineParseResult result;
+    std::string error;
+
+    ASSERT_TRUE(parser.parse(command_line.count(), command_line.vector(), result, error)) << error;
+    ASSERT_EQ(result.option_values.count(COLOUR_OPTION), 1u) << "Expected the colour claimed.";
+    EXPECT_EQ(result.option_values.find(COLOUR_OPTION)->second, "") << "Expected an empty colour.";
+}
+
+TEST(CommandLineParser, RefusesARequiredOptionWithOnlyTheProgramName)
+{
+    const std::string error = expect_refused(make_colour_parser(), { "program" });
+
+    EXPECT_EQ(error, "--colour is required") << "Unexpected refusal.";
+}
+
+TEST(CommandLineParser, ReturnsOnlyTheProgramNameWhenItIsAllThereIs)
+{
+    harness::CommandLineParser parser;
+    ASSERT_TRUE(parser.register_option(make_colour_option(false)))
+        << "Expected the colour option to register.";
+    harness_tests::CommandLine command_line({ "program" });
+    harness::CommandLineParseResult result;
+    std::string error;
+
+    ASSERT_TRUE(parser.parse(command_line.count(), command_line.vector(), result, error)) << error;
+    EXPECT_TRUE(result.option_values.empty()) << "Expected no claimed values.";
+    EXPECT_EQ(unclaimed_words(result), (std::vector<std::string> { "program" }))
+        << "Expected the program name alone.";
 }
 
 TEST(CommandLineParser, RefusesAValueItsValidatorRefuses)

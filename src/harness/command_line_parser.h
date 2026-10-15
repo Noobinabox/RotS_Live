@@ -28,13 +28,15 @@ public:
 
     // Reads argv[0] to argv[argc - 1], each a non-null string, with argv[0] the program name.
     // A registered option is claimed wherever it appears after the program name, as the option's
-    // name followed by its value as the next argument. That includes where it stands as another
-    // option's value, such as ageland's "-d --schedule"; the harness launcher writes its options
-    // first, so this is not handled further. Returns true and fills out_result on success.
-    // Otherwise leaves out_result unchanged, sets out_error and returns false: when argc < 1 or
-    // argv is null, when a registered option is written as NAME=VALUE, is repeated, has no value
-    // or has a value its validator refuses, or when a required option is missing. NAME=VALUE is
-    // refused only for registered names; any other argument passes through unclaimed.
+    // name followed by its value as the next argument. That includes where it stands as an
+    // unregistered option's value, such as ageland's "-d --schedule"; the harness launcher writes
+    // its options first, so this is not handled further. An option followed by a registered
+    // option's name has no value; any other next argument, even one starting with "--", is its
+    // value. Returns true and fills out_result on success. Otherwise leaves out_result unchanged,
+    // sets out_error and returns false: when argc < 1 or argv is null, when a registered option
+    // is written as NAME=VALUE, is repeated, has no value or has a value its validator refuses,
+    // or when a required option is missing. NAME=VALUE is refused only for registered names; any
+    // other argument passes through unclaimed.
     [[nodiscard]] bool parse(int argc, char** argv, CommandLineParseResult& out_result,
         std::string& out_error) const;
 

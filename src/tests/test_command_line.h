@@ -12,6 +12,7 @@ namespace harness_tests {
 // Owns a command line's words and gives them out as the argv a main() receives.
 class CommandLine {
 public:
+    // Takes the words of a command line, the program name first.
     explicit CommandLine(std::vector<std::string> arguments)
         : words(std::move(arguments))
     {

@@ -39,9 +39,9 @@ struct HarnessOptions {
 bool parse_harness_options(int argc, char** argv, const ScheduleRegistry& schedules,
     HarnessOptions& out_options, std::string& out_error);
 
-// The harness binary's usage text for program_name: a synopsis, the harness options with their
-// help, each registered schedule's name and summary in registration order, and ageland's options.
-// It ends with a newline.
+// The harness binary's usage text for program_name: a synopsis with ageland's options, then the
+// harness options with their help, then each registered schedule's name and summary in
+// registration order. It ends with a newline.
 [[nodiscard]] std::string harness_usage(
     const ScheduleRegistry& schedules, std::string_view program_name);
 

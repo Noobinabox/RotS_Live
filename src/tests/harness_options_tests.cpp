@@ -2,6 +2,7 @@
 #include "harness_options.h"
 #include "schedule_definition.h"
 #include "schedule_registry.h"
+#include "schedule_setup.h"
 #include "test_command_line.h"
 
 #include <gtest/gtest.h>
@@ -12,6 +13,8 @@
 namespace {
 // A schedule name the options mark as unchanged, to show a refused parse left them alone.
 constexpr const char* UNTOUCHED_SCHEDULE = "untouched";
+// A test-only schedule registered after affect-hours, to show the order of the registered names.
+constexpr const char* SECOND_SCHEDULE = "second-test-schedule";
 
 // A registry holding the affect-hours schedule.
 harness::ScheduleRegistry make_registry()
@@ -132,6 +135,40 @@ TEST(HarnessOptions, RefusesAnUnknownScheduleListingTheRegisteredOnes)
         << "Expected the refusal to list the registered schedules.";
 }
 
+TEST(HarnessOptions, RefusesAnUnknownScheduleListingEveryRegisteredOneInOrder)
+{
+    harness::ScheduleRegistry registry = make_registry();
+    harness::ScheduleDefinition second;
+    second.name = SECOND_SCHEDULE;
+    second.summary = "a test-only schedule";
+    second.create_setup = []() -> harness::ScheduleSetup { return harness::ScheduleSetup {}; };
+    ASSERT_TRUE(registry.register_schedule(std::move(second)))
+        << "Expected the second schedule to register.";
+    harness_tests::CommandLine command_line(
+        { "ageland_harness", std::string(harness::SCHEDULE_OPTION), "fast" });
+    harness::HarnessOptions options;
+    options.schedule_name = UNTOUCHED_SCHEDULE;
+    std::string error;
+
+    EXPECT_FALSE(harness::parse_harness_options(
+        command_line.count(), command_line.vector(), registry, options, error))
+        << "Expected an unknown schedule to be refused.";
+    EXPECT_EQ(error,
+        "unknown schedule 'fast'; registered schedules: affect-hours, "
+            + std::string(SECOND_SCHEDULE))
+        << "Expected every registered schedule, in registration order.";
+    EXPECT_EQ(options.schedule_name, UNTOUCHED_SCHEDULE) << "Expected the options unchanged.";
+}
+
+TEST(HarnessOptions, RefusesAnEmptyScheduleName)
+{
+    const std::string error
+        = expect_refused({ "ageland_harness", std::string(harness::SCHEDULE_OPTION), "" });
+
+    EXPECT_EQ(error, "unknown schedule ''; registered schedules: affect-hours")
+        << "Expected an empty name to be an unknown schedule.";
+}
+
 TEST(HarnessOptions, RefusesAgelandOptionsThatDoNotParse)
 {
     expect_refused({ "ageland_harness", std::string(harness::SCHEDULE_OPTION),
@@ -171,6 +208,8 @@ TEST(HarnessOptions, UsageGivesTheOptionTheSchedulesAndAgelandsOptions)
         << "Expected the usage to start with the program name; got: " << usage;
     EXPECT_NE(usage.find("--schedule NAME"), std::string::npos)
         << "Expected the schedule option; got: " << usage;
+    EXPECT_NE(usage.find(harness::harness_option_parser(registry).usage()), std::string::npos)
+        << "Expected the option parser's whole usage block; got: " << usage;
     EXPECT_NE(usage.find(std::string(harness::AFFECT_HOURS_SCHEDULE_NAME) + "  "
                   + definition->summary),
         std::string::npos)

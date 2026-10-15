@@ -85,7 +85,9 @@ bool CommandLineParser::parse(
             out_error = option->name + " is given more than once";
             return false;
         }
-        if (argument_index + 1 >= argc) {
+        const bool has_value
+            = argument_index + 1 < argc && find(argv[argument_index + 1]) == nullptr;
+        if (!has_value) {
             out_error = option->name + " needs a value (" + option->value_name + ")";
             return false;
         }

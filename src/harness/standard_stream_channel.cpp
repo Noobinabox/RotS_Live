@@ -2,7 +2,7 @@
 
 #include "standard_stream_channel.h"
 
-#include "harness_request.h"
+#include "request_dispatch.h"
 #include "utils.h"
 
 #include <algorithm>

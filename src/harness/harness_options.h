@@ -15,7 +15,7 @@ inline constexpr std::string_view SCHEDULE_OPTION = "--schedule";
 
 // The harness binary's command line.
 struct HarnessOptions {
-    // The schedule the run uses, by name; AffectHoursSchedule::NAME is the only one.
+    // The schedule the run uses, by name; AFFECT_HOURS_SCHEDULE_NAME is the only one.
     std::string schedule_name;
     // The options the harness binary takes as ageland does.
     StartupOptions startup {};

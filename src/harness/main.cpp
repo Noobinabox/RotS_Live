@@ -1,8 +1,11 @@
-#include "affect_hours_schedule.h"
+#include "affect_hours_registration.h"
 #include "comm.h"
 #include "harness_control_channel.h"
 #include "harness_controlled_schedule.h"
 #include "harness_options.h"
+#include "schedule_definition.h"
+#include "schedule_registry.h"
+#include "schedule_setup.h"
 #include "server_startup.h"
 #include "standard_stream_channel.h"
 #include "utils.h"
@@ -20,6 +23,12 @@ constexpr const char* DEFAULT_PROGRAM_NAME = "ageland_harness";
 
 int main(int argc, char** argv)
 {
+    harness::ScheduleRegistry schedules;
+    const bool affect_hours_registered = harness::register_affect_hours_schedule(schedules);
+    if (!affect_hours_registered) {
+        return EXIT_FAILURE;
+    }
+
     harness::HarnessOptions options;
     std::string parse_error;
     if (!harness::parse_harness_options(argc, argv, options, parse_error)) {
@@ -29,7 +38,7 @@ int main(int argc, char** argv)
         const bool has_program_name = argc > 0 && argv != nullptr && argv[0] != nullptr;
         const char* const program_name = has_program_name ? argv[0] : DEFAULT_PROGRAM_NAME;
         std::cerr << "Usage: " << program_name << " " << harness::SCHEDULE_OPTION << " "
-                  << harness::AffectHoursSchedule::NAME
+                  << harness::AFFECT_HOURS_SCHEDULE_NAME
                   << " [-m] [-q] [-r] [-s] [-x] [-d pathname] [-p port #] [--random-seed n]"
                      " [ port # ]\n";
         return EXIT_FAILURE;
@@ -47,8 +56,25 @@ int main(int argc, char** argv)
     // The process's standard streams outlive the channel and its reading thread.
     std::unique_ptr<harness::HarnessControlChannel> channel
         = std::make_unique<harness::StandardStreamChannel>(std::cin, std::cout);
+
+    const harness::ScheduleDefinition* const definition = schedules.find(options.schedule_name);
+    if (definition == nullptr) {
+        const std::string message = std::string("SYSERR: ") + __func__ + ": the schedule '"
+            + options.schedule_name + "' is not registered.";
+        log(message.c_str());
+        return EXIT_FAILURE;
+    }
+    harness::ScheduleSetup setup = definition->create_setup();
+    if (setup.schedule == nullptr) {
+        const std::string message = std::string("SYSERR: ") + __func__ + ": the schedule '"
+            + definition->name + "' could not be built.";
+        log(message.c_str());
+        return EXIT_FAILURE;
+    }
+
     std::shared_ptr<GameTickSchedule> tick_schedule
-        = std::make_shared<harness::HarnessControlledSchedule>(std::move(channel));
+        = std::make_shared<harness::HarnessControlledSchedule>(
+            definition->name, std::move(setup), std::move(channel));
     run_the_game(options.startup.port, std::move(tick_schedule));
     return EXIT_SUCCESS;
 }

@@ -7,7 +7,6 @@
 
 #include <optional>
 #include <string>
-#include <string_view>
 
 namespace harness {
 
@@ -15,8 +14,6 @@ namespace harness {
 // It never runs zone updates, mobile activity, combat or skill-timer countdowns.
 class AffectHoursSchedule : public GameTickSchedule {
 public:
-    // The name the harness binary's --schedule option gives this schedule.
-    static constexpr std::string_view NAME = "affect-hours";
     // The most game hours that may be granted and not yet run.
     static constexpr int MAX_PENDING_HOURS = 1000;
 

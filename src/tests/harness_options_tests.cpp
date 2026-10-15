@@ -1,4 +1,4 @@
-#include "affect_hours_schedule.h"
+#include "affect_hours_registration.h"
 #include "harness_options.h"
 
 #include <gtest/gtest.h>
@@ -59,7 +59,7 @@ void expect_refused(std::vector<std::string> arguments)
 
 TEST(HarnessOptions, ReadsTheScheduleAndAgelandsOptions)
 {
-    const std::string schedule(harness::AffectHoursSchedule::NAME);
+    const std::string schedule(harness::AFFECT_HOURS_SCHEDULE_NAME);
     CommandLine command_line({ "ageland_harness", std::string(harness::SCHEDULE_OPTION), schedule,
         "--random-seed", "7", "-d", "testlib", "4321" });
     harness::HarnessOptions options;
@@ -77,7 +77,7 @@ TEST(HarnessOptions, ReadsTheScheduleAndAgelandsOptions)
 
 TEST(HarnessOptions, AcceptsTheScheduleAfterAgelandsOptions)
 {
-    const std::string schedule(harness::AffectHoursSchedule::NAME);
+    const std::string schedule(harness::AFFECT_HOURS_SCHEDULE_NAME);
     CommandLine command_line({ "ageland_harness", "-d", "testlib",
         std::string(harness::SCHEDULE_OPTION), schedule, "4321" });
     harness::HarnessOptions options;
@@ -98,7 +98,7 @@ TEST(HarnessOptions, RefusesAMissingSchedule)
 TEST(HarnessOptions, RefusesARepeatedSchedule)
 {
     const std::string option(harness::SCHEDULE_OPTION);
-    const std::string schedule(harness::AffectHoursSchedule::NAME);
+    const std::string schedule(harness::AFFECT_HOURS_SCHEDULE_NAME);
     expect_refused({ "ageland_harness", option, schedule, option, schedule, "4321" });
 }
 
@@ -110,7 +110,7 @@ TEST(HarnessOptions, RefusesAScheduleOptionWithNoName)
 TEST(HarnessOptions, RefusesAScheduleNameAttachedWithEquals)
 {
     const std::string attached = std::string(harness::SCHEDULE_OPTION) + "="
-        + std::string(harness::AffectHoursSchedule::NAME);
+        + std::string(harness::AFFECT_HOURS_SCHEDULE_NAME);
     CommandLine command_line({ "ageland_harness", attached, "4321" });
     harness::HarnessOptions options;
     options.schedule_name = UNTOUCHED_SCHEDULE;
@@ -134,12 +134,12 @@ TEST(HarnessOptions, RefusesAnUnknownScheduleNamingTheKnownOne)
     EXPECT_FALSE(harness::parse_harness_options(
         command_line.count(), command_line.vector(), options, error))
         << "Expected an unknown schedule to be refused.";
-    EXPECT_NE(error.find(std::string(harness::AffectHoursSchedule::NAME)), std::string::npos)
+    EXPECT_NE(error.find(std::string(harness::AFFECT_HOURS_SCHEDULE_NAME)), std::string::npos)
         << "Expected the refusal to name the known schedule; got: " << error;
 }
 
 TEST(HarnessOptions, RefusesAgelandOptionsThatDoNotParse)
 {
     expect_refused({ "ageland_harness", std::string(harness::SCHEDULE_OPTION),
-        std::string(harness::AffectHoursSchedule::NAME), "4321", "4322" });
+        std::string(harness::AFFECT_HOURS_SCHEDULE_NAME), "4321", "4322" });
 }

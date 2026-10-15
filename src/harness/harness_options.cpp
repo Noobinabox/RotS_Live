@@ -2,7 +2,7 @@
 
 #include "harness_options.h"
 
-#include "affect_hours_schedule.h"
+#include "affect_hours_registration.h"
 
 #include <cstddef>
 #include <optional>
@@ -55,9 +55,9 @@ bool parse_harness_options(
         out_error = std::string(SCHEDULE_OPTION) + " is required";
         return false;
     }
-    if (*schedule_name != AffectHoursSchedule::NAME) {
+    if (*schedule_name != AFFECT_HOURS_SCHEDULE_NAME) {
         out_error = "unknown schedule '" + *schedule_name + "'; the known schedule is "
-            + std::string(AffectHoursSchedule::NAME);
+            + std::string(AFFECT_HOURS_SCHEDULE_NAME);
         return false;
     }
 

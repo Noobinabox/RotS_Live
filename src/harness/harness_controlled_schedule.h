@@ -3,58 +3,71 @@
 #ifndef HARNESS_CONTROLLED_SCHEDULE_H
 #define HARNESS_CONTROLLED_SCHEDULE_H
 
-#include "affect_hours_schedule.h"
 #include "game_tick_schedule.h"
 #include "harness_control_channel.h"
+#include "request_outcome.h"
+#include "schedule_setup.h"
 
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <memory>
+#include <string>
 #include <string_view>
 
 namespace harness {
 
-// Runs an AffectHoursSchedule on the requests that arrive over a control channel, and
-// acknowledges each request once the passes it granted have run.
+// Hands each line received over a control channel to its request, sends the replies when they
+// fall due, and delegates each pass to the schedule the requests drive.
 class HarnessControlledSchedule : public GameTickSchedule {
 public:
-    // Takes ownership of channel. A null channel is logged once, and nothing is then granted.
-    explicit HarnessControlledSchedule(std::unique_ptr<HarnessControlChannel> channel);
+    // Takes ownership of setup and channel. schedule_name and setup.ready_state make up the ready
+    // reply. A null channel, or a setup with no schedule, is logged once; with no channel no
+    // request is read, and with no schedule every pass runs no world update.
+    HarnessControlledSchedule(std::string_view schedule_name, ScheduleSetup setup,
+        std::unique_ptr<HarnessControlChannel> channel);
 
-    // Answers the channel, then returns the AffectHoursSchedule's pass.
-    // - The first call replies "ready schedule=<AffectHoursSchedule::NAME> hours=0".
-    // - Each call replies "done advance-hours N hours=H" for every request whose last pass the
-    //   previous call returned, H counting all hours run so far.
-    // - Each line received is granted from the pass this call returns, or answered
-    //   "error <problem>".
-    // - Logs once when the channel's input closes; hours already granted still run.
+    // Answers the channel, then returns the schedule's pass.
+    // - The first call replies "ready schedule=<schedule_name> <ready_state>", without the space
+    //   when the ready state is empty.
+    // - Each call sends every deferred reply whose passes the previous calls have returned,
+    //   oldest first, building each body as it is sent. No deferred reply is sent before one
+    //   queued ahead of it.
+    // - Each line received is handed to dispatch_request_line before the schedule decides this
+    //   call's pass. An immediate reply is sent at once; a deferred one is queued.
+    // - Logs once when the channel's input closes; deferred replies are still sent.
     [[nodiscard]] WorldPass next_pass() override;
 
 private:
-    // A granted request waiting for its acknowledgement.
-    struct PendingAcknowledgement {
-        // The count of passes returned at which the request's last pass has been returned.
-        std::uint64_t last_pass = 0;
-        // The hours the request asked for.
-        int hours = 0;
+    // A deferred reply waiting for its passes to be returned.
+    struct QueuedReply {
+        // The count of passes returned at which the reply falls due.
+        std::uint64_t due_pass = 0;
+        // Builds the reply body when it is sent.
+        std::function<std::string()> build_body;
     };
 
-    // Replies "done" for every pending request whose last pass has been returned.
-    void acknowledge_finished_requests();
-    // Grants or refuses one received line.
-    void apply_request(std::string_view line);
+    // Sends, oldest first, every queued reply that has fallen due.
+    void send_due_replies();
+    // Answers one received line now, or queues its deferred reply.
+    void answer_line(std::string_view line);
+    // Queues deferred to fall due once its pass count has been returned, counting this call's.
+    void queue_reply(DeferredReply deferred);
     // Logs, once, that the channel's input has closed.
     void report_closed_input();
 
-    // Where requests come from and replies go; owned, and null only when constructed so.
+    // The first reply, sent on the first pass.
+    std::string ready_reply;
+    // Where request lines come from and replies go; owned, and null only when constructed so.
     std::unique_ptr<HarnessControlChannel> control_channel;
-    // Decides each pass from the hours granted.
-    AffectHoursSchedule hours_schedule;
-    // Granted requests not yet acknowledged, oldest first.
-    std::deque<PendingAcknowledgement> pending_acknowledgements;
+    // The schedule and the requests that drive it. Declared before queued_replies, so the replies
+    // that borrow its state are destroyed first.
+    ScheduleSetup schedule_setup;
+    // Deferred replies not yet sent, oldest first.
+    std::deque<QueuedReply> queued_replies;
     // Passes returned so far.
     std::uint64_t passes_returned = 0;
-    // True once "ready" has been sent.
+    // True once the ready reply has been sent.
     bool ready_sent = false;
     // True once the closed input has been logged.
     bool closed_input_reported = false;

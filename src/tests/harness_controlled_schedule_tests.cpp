@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <limits>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -28,6 +29,8 @@ constexpr std::string_view NO_SCHEDULE_PHRASE = "has no schedule";
 constexpr std::string_view NO_BODY_PHRASE = "cannot build its body";
 // The words the wrapper logs when a deferred reply waits for no pass.
 constexpr std::string_view NO_PASS_PHRASE = "waits for no pass";
+// The words the wrapper logs when a deferred reply's due pass cannot be counted.
+constexpr std::string_view UNCOUNTABLE_PHRASE = "more passes than can be counted";
 // The name the wrapper under test reports for its schedule.
 constexpr std::string_view FAKE_SCHEDULE_NAME = "fake-schedule";
 // The ready state the fake setup reports.
@@ -419,4 +422,25 @@ TEST(HarnessControlledSchedule, SendsADeferredReplyWaitingForNoPassAfterOnePassA
         << "Expected the reply on the second pass.";
     EXPECT_EQ(count_occurrences(logged, NO_PASS_PHRASE), 1)
         << "Expected the zero wait logged once; log was: " << logged;
+}
+
+TEST(HarnessControlledSchedule, DropsAndLogsAReplyWhoseDuePassCannotBeCountedAndSendsTheNext)
+{
+    WrapperUnderTest under_test;
+    static_cast<void>(under_test.wrapper.next_pass());
+    under_test.request_state->outcomes.push_back(
+        deferred_reply(std::numeric_limits<std::uint64_t>::max(), "done never"));
+    under_test.request_state->outcomes.push_back(deferred_reply(1, "done next"));
+    under_test.channel_state->lines_to_deliver
+        = { fake_request_line("never"), fake_request_line("next") };
+
+    testing::internal::CaptureStderr();
+    run_passes(under_test.wrapper, 2);
+    const std::string logged = testing::internal::GetCapturedStderr();
+
+    const std::vector<std::string> expected = { ready_reply(), "done next" };
+    EXPECT_EQ(under_test.channel_state->replies, expected)
+        << "Expected the uncountable reply dropped and the next one sent on the following pass.";
+    EXPECT_EQ(count_occurrences(logged, UNCOUNTABLE_PHRASE), 1)
+        << "Expected the dropped reply logged once; log was: " << logged;
 }

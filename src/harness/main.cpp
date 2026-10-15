@@ -50,13 +50,9 @@ int main(int argc, char** argv)
         + options.schedule_name + ").";
     log(mode.c_str());
 
-    // Untied, so the reading thread's reads never flush standard output while the game thread
-    // writes to it.
-    std::cin.tie(nullptr);
-    // The process's standard streams outlive the channel and its reading thread.
-    std::unique_ptr<harness::HarnessControlChannel> channel
-        = std::make_unique<harness::StandardStreamChannel>(std::cin, std::cout);
-
+    // The schedule is built after prepare_server_process, because a factory may rely on the data
+    // directory and the random seed it sets. It is built before the channel starts its reading
+    // thread, so no failure leaves that thread blocked on standard input as the process exits.
     const harness::ScheduleDefinition* const definition = schedules.find(options.schedule_name);
     if (definition == nullptr) {
         const std::string message = std::string("SYSERR: ") + __func__ + ": the schedule '"
@@ -72,6 +68,12 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    // Untied, so the reading thread's reads never flush standard output while the game thread
+    // writes to it.
+    std::cin.tie(nullptr);
+    // The process's standard streams outlive the channel and its reading thread.
+    std::unique_ptr<harness::HarnessControlChannel> channel
+        = std::make_unique<harness::StandardStreamChannel>(std::cin, std::cout);
     std::shared_ptr<GameTickSchedule> tick_schedule
         = std::make_shared<harness::HarnessControlledSchedule>(
             definition->name, std::move(setup), std::move(channel));

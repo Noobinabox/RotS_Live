@@ -16,7 +16,8 @@ class HarnessRequestRegistry {
 public:
     HarnessRequestRegistry() = default;
 
-    // A copy would share the requests it owns.
+    // Owns its requests, so it cannot be copied. Deleted explicitly because a vector of unique_ptr
+    // otherwise reports itself copyable.
     HarnessRequestRegistry(const HarnessRequestRegistry&) = delete;
     HarnessRequestRegistry& operator=(const HarnessRequestRegistry&) = delete;
     HarnessRequestRegistry(HarnessRequestRegistry&&) noexcept = default;

@@ -38,8 +38,9 @@ HarnessControlledSchedule::HarnessControlledSchedule(std::string_view schedule_n
         log(message.c_str());
     }
     if (schedule_setup.schedule == nullptr) {
-        const std::string message = std::string("SYSERR: ") + __func__ + ": the schedule '"
-            + std::string(schedule_name) + "' has no schedule; no world update will run.";
+        const std::string message = std::string("SYSERR: ") + __func__
+            + ": the setup for schedule '" + std::string(schedule_name)
+            + "' has no schedule; no world update will run.";
         log(message.c_str());
     }
 }
@@ -90,14 +91,7 @@ void HarnessControlledSchedule::answer_line(std::string_view line)
         return;
     }
 
-    DeferredReply* const deferred = std::get_if<DeferredReply>(&outcome);
-    if (deferred == nullptr) {
-        const std::string message = std::string("SYSERR: ") + __func__ + ": the request '"
-            + std::string(line) + "' produced no reply.";
-        log(message.c_str());
-        return;
-    }
-    queue_reply(std::move(*deferred));
+    queue_reply(std::get<DeferredReply>(std::move(outcome)));
 }
 
 //============================================================================

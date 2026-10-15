@@ -56,7 +56,8 @@ private:
     // Logs, once, that the channel's input has closed.
     void report_closed_input();
 
-    // The first reply, sent on the first pass.
+    // The first reply, sent on the first pass. Built from the setup before it is moved into
+    // schedule_setup, so it is declared first.
     std::string ready_reply;
     // Where request lines come from and replies go; owned, and null only when constructed so.
     std::unique_ptr<HarnessControlChannel> control_channel;

@@ -83,6 +83,8 @@ RequestOutcome AdvanceHoursRequest::handle(std::string_view line, std::string_vi
         log(message.c_str());
     }
 
+    // Borrow the schedule rather than this request, so the body depends only on the schedule the
+    // reply reports.
     AffectHoursSchedule& schedule = hours_schedule;
     acknowledgement.build_body = [&schedule, hours]() -> std::string {
         return "done " + std::string(NAME) + " " + std::to_string(hours)

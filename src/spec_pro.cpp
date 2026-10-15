@@ -28,6 +28,8 @@
 #include "utils.h"
 
 #include "char_utils.h"
+#include "mob_progs/ranger_prog.h"
+#include "mob_walker.h"
 
 /*   external vars  */
 extern int get_number(char** name);
@@ -2052,13 +2054,15 @@ SPECIAL(mob_ranger)
               // move again from continuing one_mobile_activity (also double delays)
 }
 
-/* Created for the new ranger prog */
+/* Program 32, the ranger program (mob_ranger_new). See docs/systems/ranger-program.md. */
+
+/* Created for the new ranger prog. Level 40+ mobs use their own, lower roll so
+ * that a high ranger keeps a small chance to stay hidden from them. */
 bool see_hidden(char_data* host, char_data* tmpch)
 {
-    int hide, vuln_st, my_hide, orig_hide, see_hide;
+    int hide, vuln_st, see_hide;
 
-    orig_hide = see_hiding(host);
-    see_hide = orig_hide;
+    see_hide = see_hiding(host);
     // COMMENT OUT 3 LINES BELOW to use ONLY THE STANDARD see_hiding() calc
     if (GET_LEVEL(host) >= 40) {
         see_hide = (GET_LEVEL(host) * 2) + number(-7, 20) + number(-7, 20) + number(-7, 20);
@@ -2067,18 +2071,53 @@ bool see_hidden(char_data* host, char_data* tmpch)
     if (vuln_st > 0) {
         see_hide = see_hide - (see_hide * .5);
     }
-    hide = 0;
     hide = GET_HIDING(tmpch);
-    my_hide = GET_HIDING(host);
-    return (!(hide > 0) || (hide > 0 && (see_hide > hide)));
+    return !(hide > 0) || see_hide > hide;
 }
 
-// note: we dont check if fighting here, because its also used for ambush
-// TODO: factor in god nohassle
-bool should_attack(char_data* host, char_data* tmpch)
+/* One hidden roll per character per turn: a later step of the same turn
+ * reuses the result instead of rolling again. Only hidden characters are
+ * kept, so the list stays empty in the common case. */
+struct hidden_rolls {
+    std::vector<std::pair<const char_data*, bool>> results;
+
+    bool sees(char_data* host, char_data* tmpch)
+    {
+        if (GET_HIDING(tmpch) <= 0)
+            return true;
+        for (const auto& result : results)
+            if (result.first == tmpch)
+                return result.second;
+        const bool seen = see_hidden(host, tmpch);
+        results.emplace_back(tmpch, seen);
+        return seen;
+    }
+};
+
+/* Whether host may take tmpch as a target: it sees them and they are not an
+ * immortal with nohassle. While fighting, anyone it sees will do (target
+ * switching); otherwise only someone it is aggressive to. */
+bool should_attack(char_data* host, char_data* tmpch, hidden_rolls& rolls)
 {
-    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
-    return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch) && see_hidden(host, tmpch) && !PRF_FLAGGED(tmpch, PRF_NOHASSLE) && (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch)) || host->specials.fighting && (GET_POS(host) > POSITION_SITTING)));
+    if (!tmpch || tmpch == host || !CAN_SEE(host, tmpch) || !rolls.sees(host, tmpch))
+        return false;
+    if (!IS_NPC(tmpch) && PRF_FLAGGED(tmpch, PRF_NOHASSLE))
+        return false;
+    if (host->specials.fighting && GET_POS(host) > POSITION_SITTING)
+        return true;
+    return mob_race_aggressive_to(host, tmpch) || mob_flag_aggressive_to(host, tmpch);
+}
+
+/* What do_hit would refuse before it says anything; checked first so the
+ * attack line is only shown for an attack that happens. Sanctuary is not
+ * here: against it the mob really tries, and each try wears it down. */
+bool ranger_can_start_attack(char_data* host, char_data* target)
+{
+    if ((IS_AFFECTED(host, AFF_CHARM) && host->master == target)
+        || (IS_AFFECTED(target, AFF_CHARM) && target->master == host))
+        return false;
+    return GET_POS(host) == POSITION_STANDING && !IS_SET(world[host->in_room].room_flags, PEACEROOM)
+        && !IS_MENTAL(host) && CAN_SEE(host, target);
 }
 
 void do_spec_ambush(char_data* host, char_data* tmpch)
@@ -2092,7 +2131,6 @@ void do_spec_ambush(char_data* host, char_data* tmpch)
     tmpwtl.targ1.ch_num = tmpch->abs_number;
     do_ambush(host, "", &tmpwtl, CMD_AMBUSH, 0);
     tmpwtl.targ1.cleanup();
-    host->spec_busy = false;
 }
 
 void do_spec_hit(char_data* host, char_data* tmpch)
@@ -2110,92 +2148,227 @@ void do_spec_hit(char_data* host, char_data* tmpch)
     tmpwtl.targ1.ch_num = tmpch->abs_number;
     tmpwtl.cmd = CMD_HIT;
     do_hit(host, buf, &tmpwtl, 0, 0);
-    host->spec_busy = false;
+    tmpwtl.targ1.cleanup();
 }
 
-bool prog_do_hunter(char_data* host, int is_wimpy)
+/* With ambush=yes a target not yet fighting is ambushed; if the ambush does
+ * not start (no weapon, too big a weapon, no skill...), it is hit instead. */
+void ranger_attack(char_data* host, char_data* target, const ranger_config& opts)
 {
-    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT))) && (GET_POS(host) == POSITION_STANDING) && !is_wimpy && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+    if (opts.ambush && !target->specials.fighting) {
+        do_spec_ambush(host, target);
+        /* delay.cmd stays CMD_AMBUSH after an earlier ambush has ended, so
+         * only a wind-up in progress means this one started. */
+        if (host->delay.cmd == CMD_AMBUSH && host->delay.wait_value > 0)
+            return;
+    }
+    do_spec_hit(host, target);
 }
 
-// Works with HUNTER and MEMORY flags, handled below
-// Opt: alias keyword "stab" makes it favor ambushing
-//    : alias keyword "hunt" makes it hunt tracks
+/* hide=yes: hides when it stands without cover and nothing is pending. A
+ * move made by this program does not unhide the mob, and sneaking in gives
+ * cover, so after a move this only acts if something else took its cover.
+ * True if a hide wind-up started. */
+bool ranger_rehide(char_data* host, const ranger_config& opts)
+{
+    if (!opts.hide || host->delay.wait_value != 0)
+        return false;
+    if (GET_POS(host) != POSITION_STANDING || GET_HIDING(host))
+        return false;
+    do_hide(host, "", 0, 0, 0);
+    return host->delay.wait_value > 0;
+}
+
+/* A closed door the mob opens on its way (the move code's own rule), into a
+ * room that takes mobs. */
+bool ranger_opens_door(char_data* host, int dir)
+{
+    return mob_opens_door_on_move(host, dir) && room_takes_mobs(EXIT(host, dir)->to_room);
+}
+
+enum ranger_step_result {
+    RANGER_MOVED,
+    RANGER_STAYED, /* the move refused the step (water, a script, move points...) */
+    RANGER_OPENED, /* refused, but it opened a door on the way: that was its action */
+    RANGER_GONE, /* the step removed the mob */
+};
+
+/* The exits a step was refused through this turn: each is tried once, so a
+ * refusal's scripts and costs (before-enter scripts, Power of Arda) happen at
+ * most once per turn. */
+struct refused_exits {
+    bool dir[NUM_OF_DIRS] = {};
+};
+
+/* One step that way, re-hiding after it if something took the mob's cover.
+ * Whether the step went through is read off the mob's room afterwards, so a
+ * refusal the checks above do not foresee still lets the turn go on. */
+ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_config& opts, refused_exits& refused)
+{
+    if (refused.dir[dir])
+        return RANGER_STAYED;
+    waiting_type wtl;
+    bzero((char*)&wtl, sizeof(waiting_type));
+    wtl.cmd = dir + 1;
+    const int from = host->in_room;
+    const int host_number = host->abs_number;
+    const room_direction_data* exit = EXIT(host, dir);
+    const bool was_closed = exit && IS_SET(exit->exit_info, EX_CLOSED);
+    do_move(host, "", &wtl, wtl.cmd, 0);
+    wtl.targ1.cleanup();
+    if (!char_exists(host_number))
+        return RANGER_GONE;
+    if (host->in_room == from) {
+        refused.dir[dir] = true;
+        return was_closed && !IS_SET(exit->exit_info, EX_CLOSED) ? RANGER_OPENED : RANGER_STAYED;
+    }
+    ranger_rehide(host, opts);
+    return RANGER_MOVED;
+}
+
+/* Whether a step that way would go through, by the shared mob step checks
+ * (mob_walker.h), so a track or hunt step that cannot be taken is not chosen
+ * over and over. A door the mob can open does not stop it. */
+bool ranger_can_step(char_data* host, int dir)
+{
+    return dir >= 0 && dir < NUM_OF_DIRS && (exit_is_usable(host, dir) || ranger_opens_door(host, dir))
+        && stay_flags_allow(host, dir);
+}
+
+/* track=yes: the direction of the freshest track, left by a player of a race
+ * the mob is aggressive to, that it can step along; -1 if none. */
+int ranger_track_direction(char_data* host)
+{
+    const room_data& room = world[host->in_room];
+    const bool is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
+    const long racial_aggr = host->specials2.pref;
+    if (IS_SET(host->specials2.act, MOB_MOUNT))
+        return -1;
+
+    int best_dir = -1, best_age = 999;
+    for (int tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
+        const room_track_data& track = room.room_track[tmp];
+        if (track.char_number >= 0)
+            continue; /* a mob's track, or none */
+        const int race = -track.char_number;
+        const bool hunted = is_aggressive || (race < 32 && (racial_aggr & (1L << race)));
+        const int dir = track.data & 7;
+        if (!hunted || !ranger_can_step(host, dir))
+            continue;
+        const int age = (24 + time_info.hours - track.data / 8) % 24;
+        if (age < best_age) {
+            best_age = age;
+            best_dir = dir;
+        }
+    }
+    return best_dir;
+}
+
+bool prog_do_hunter(char_data* host, bool low_health)
+{
+    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT))) && (GET_POS(host) == POSITION_STANDING) && !low_health && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+}
+
+/* A remembered enemy in the mob's room that it can see; nullptr if none. */
+char_data* ranger_remembered_here(char_data* host)
+{
+    for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+        if (names->enemy && char_exists(names->enemy_number) && names->enemy->in_room == host->in_room
+            && CAN_SEE(host, names->enemy))
+            return names->enemy;
+    return nullptr;
+}
+
+/* Runs on the mob's own turn only, and always ends that turn (returns 1), so
+ * the standard mob turn never acts a second time after it. Settings come from
+ * the mob options: hide, ambush, track, riposte (mob_progs/ranger_prog.h).
+ * Supported flags: AGGRESSIVE (+ _EVIL/_GOOD/_NEUTRAL), race aggression,
+ * HELPER, SWITCHING, MEMORY, HUNTER, SENTINEL, WIMPY; walker settings. */
 SPECIAL(mob_ranger_new)
 {
-    waiting_type tmpwtl;
     char_data* tmpch;
-    room_data* tmproom;
     struct memory_rec* names;
-    struct char_data* vict;
-    int tmp, tmp2, mintime, mintmp, dir;
-    int is_wimpy = 0;
+    int tmp;
 
-    long racial_aggr = host->specials2.pref;
-    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
-
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
-
-    if (host->in_room == NOWHERE)
-        return 0;
-    if ((callflag != SPECIAL_SELF) && (callflag != SPECIAL_ENTER))
+    if (callflag != SPECIAL_SELF || !host || host->in_room == NOWHERE)
         return 0;
 
-    // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
-    ch->spec_busy = true;
+    const ranger_config& opts = ranger_settings(host);
 
     if (GET_POS(host) < POSITION_FIGHTING) {
         update_pos(host);
     }
 
+    // Something pending (a script's wait, a wind-up, the delay after a bash
+    // or flee): nothing this turn. The standard turn acts on the last beat
+    // of a delay with no command waiting; this one waits it out, since a
+    // hide or ambush started then is refused ("double delay").
+    if (host->delay.wait_value)
+        return 1;
+
+    // A WIMPY mob at a fifth of its health or less starts nothing: no attack,
+    // no help, no switching, no hunting, no tracks. It still hides and wanders.
     const int wimpy_health_limit = GET_MAX_HIT(host) / 5;
-    if (GET_HIT(host) <= wimpy_health_limit) {
+    const bool low_health = IS_SET(host->specials2.act, MOB_WIMPY) && GET_HIT(host) <= wimpy_health_limit;
+    if (low_health) {
         sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), wimpy_health_limit);
         mudlog_debug_mob(buf, host);
-        is_wimpy = 1;
     }
 
-    tmpch = 0;
     const bool is_engaged = host->specials.fighting != nullptr;
     const bool is_not_engaged = !is_engaged;
+    hidden_rolls rolls;
+    refused_exits refused;
 
     if (is_not_engaged) {
-        // hide here for pop or after fighting and didnt move
-        if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-             IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-            host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-            do_hide(host, "", 0, 0, 0);
-        }
+        // Hide first; a hide that starts ends the turn, so targets are
+        // looked for from cover.
+        if (ranger_rehide(host, opts))
+            return 1;
 
-        if ((callflag == SPECIAL_ENTER) && ch && !is_wimpy && !PRF_FLAGGED(ch, PRF_NOHASSLE) && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
-            tmpch = ch;
-        } else if (callflag == SPECIAL_SELF && !is_wimpy) {
+        if (!low_health) {
+            // 1. A remembered enemy in the room, even one it is not otherwise aggressive to.
+            if (prog_do_hunter(host, false)) {
+                char_data* enemy = ranger_remembered_here(host);
+                if (enemy && host->master == enemy) {
+                    forget(host, enemy);
+                } else if (enemy && rolls.sees(host, enemy) && (IS_NPC(enemy) || !PRF_FLAGGED(enemy, PRF_NOHASSLE))
+                    && ranger_can_start_attack(host, enemy)) {
+                    ranger_attack(host, enemy, opts);
+                    return 1;
+                }
+            }
+
+            // 2. ambush=yes: someone new who is not fighting, before an ally's fight takes it in.
             // should this pick a random target, instead of first? or if MOB_SWITCHING??
+            if (opts.ambush) {
+                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                    if (!tmpch->specials.fighting && should_attack(host, tmpch, rolls) && ranger_can_start_attack(host, tmpch)) {
+                        ranger_attack(host, tmpch, opts);
+                        return 1;
+                    }
+                }
+            }
+
+            // 3. Help an ally in a fight.
+            if (mob_helper_assist(host))
+                return 1;
+
+            // 4. Hit someone new.
             for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                if (should_attack(host, tmpch)) {
-                    break;
+                if (should_attack(host, tmpch, rolls) && ranger_can_start_attack(host, tmpch)) {
+                    ranger_attack(host, tmpch, opts);
+                    return 1;
                 }
             }
         }
     }
 
-    /* Ambush */
-    if (tmpch && tmpch != host && has_alias(host, "p_stab") && is_not_engaged &&
-        !tmpch->specials.fighting && !is_wimpy) {
-        do_spec_ambush(host, tmpch);
-        return 1;
-    }
-    // else attack
-    if (tmpch && tmpch != host && is_not_engaged && !is_wimpy) {
-        do_spec_hit(host, tmpch);
-        return 1;
-    }
-
     // MOB_SWITCHING
-    if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !is_wimpy) {
-        for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+    if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !low_health) {
+        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
             // also tgt someone invis ??
-            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch) && tmpch != host->specials.fighting) {
+            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch, rolls) && tmpch != host->specials.fighting) {
                 host->specials.fighting = tmpch;
                 act("$n turns to fight $N!", TRUE, host, 0, tmpch, TO_ROOM);
                 break;
@@ -2203,111 +2376,54 @@ SPECIAL(mob_ranger_new)
         }
     }
 
-    // MEMORY / HUNTER
-    if (prog_do_hunter(host, is_wimpy)) {
-        vict = 0;
-        for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
-            if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room == ch->in_room) && CAN_SEE(ch, names->enemy)) {
-                vict = names->enemy;
-            }
-        }
-        if (vict) {
-            if (ch->master == vict) {
-                forget(ch, vict);
-                // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
-            } else {
-                if (should_attack(host, tmpch) && has_alias(host, "p_stab") &&
-                    is_not_engaged && !vict->specials.fighting) {
-                    do_spec_ambush(host, tmpch);
-                    return 1;
-                }
-                if (should_attack(host, tmpch) && is_not_engaged) {
-                    do_spec_hit(host, tmpch);
-                    return 1;
-                }
-            }
-        }
-        if (IS_SET(ch->specials2.act, MOB_HUNTER) || IS_AFFECTED(ch, AFF_HUNT)) {
+    // HUNTER: a step toward a remembered enemy who is not here (one who is was dealt with above)
+    if (prog_do_hunter(host, low_health) && !ranger_remembered_here(host) && !IS_RIDDEN(host)) {
+        if (IS_SET(host->specials2.act, MOB_HUNTER) || IS_AFFECTED(host, AFF_HUNT)) {
             int modifier = 0;
-            if (IS_AFFECTED(ch, AFF_CONFUSE)) {
-                modifier = get_confuse_modifier(ch);
+            if (IS_AFFECTED(host, AFF_CONFUSE)) {
+                modifier = get_confuse_modifier(host);
             }
 
-            for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
+            for (names = host->specials.memory; names; names = names->next_on_mob) {
                 if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room != NOWHERE) && (number(0, 100) > modifier)) {
-                    tmp = find_first_step(ch->in_room, names->enemy->in_room);
+                    tmp = find_first_step(host->in_room, names->enemy->in_room);
                 } else {
                     tmp = BFS_NO_PATH;
                 }
-                if (tmp >= 0) {
-                    do_move(ch, "", 0, tmp + 1, 0);
-                    if(has_alias(host, "p_hide")) {
-                        do_hide(host, "", 0, 0, 0);
-                    }
-                    host->spec_busy = false;
+                if (tmp >= 0 && ranger_can_step(host, tmp) && ranger_take_step(host, tmp, opts, refused) != RANGER_STAYED)
                     return 1;
-                }
             }
         }
     } /* mob memory/hunter */
 
-    tmproom = &world[host->in_room];
-    mintime = 999;
-    mintmp = NUM_OF_TRACKS;
-    if (ch->delay.wait_value == 0 && is_not_engaged) {
+    if (host->delay.wait_value == 0 && is_not_engaged) {
         // TRACKING
-        if (has_alias(host, "p_hunt") && !is_wimpy) {
-            for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
-                tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
-                dir = (tmproom->room_track[tmp].data & 7); // the direction
-                room_data exit_room;
-
-                if (CAN_GO(host, dir)) {
-                    exit_room = world[EXIT(host, dir)->to_room];
-                }
-
-                if ((tmproom->room_track[tmp].char_number < 0) && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number)) || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
-                    // NOTE: these get set on every true pass, so it would be the last matching
-                    // track, unless sorting was done on the random order of tracks
-                    mintime = tmp2;
-                    mintmp = tmp;
-                }
-            }
-
-            if (mintmp < NUM_OF_TRACKS) {
-                tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
-                tmpwtl.subcmd = 0;
-                do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-                    host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-                    do_hide(host, "", 0, 0, 0);
-                }
-                tmpwtl.targ1.cleanup();
-                ch->spec_busy = false;
+        if (opts.track && !low_health && !host->master && !IS_RIDDEN(host) && GET_POS(host) == POSITION_STANDING) {
+            const int dir = ranger_track_direction(host);
+            if (dir >= 0 && ranger_take_step(host, dir, opts, refused) != RANGER_STAYED)
                 return 1;
-            }
         }
 
-        // default: try move and hide again
-        if (!IS_SET(host->specials2.act, MOB_SENTINEL) && GET_POS(host) == POSITION_STANDING) {
-            tmpwtl.cmd = number(1, NUM_OF_DIRS);
-            tmpwtl.subcmd = 0;
-            if (CAN_GO(host, tmpwtl.cmd - 1)) {
-                do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-                    host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-                    do_hide(host, "", 0, 0, 0);
-                }
-                tmpwtl.targ1.cleanup();
+        // default: try move and hide again. A walker's rules take the roll first.
+        if (!IS_SET(host->specials2.act, MOB_SENTINEL) && GET_POS(host) == POSITION_STANDING && !host->master
+            && !IS_RIDDEN(host)) {
+            const int door = number(0, NUM_OF_DIRS - 1);
+            const bool usable = exit_is_usable(host, door);
+            const int host_number = host->abs_number;
+            const walker_result walked = walker_wander(host, door, usable);
+            if (walked == WALKER_GONE || !char_exists(host_number))
+                return 1; /* its ON_PATH_END script or its step removed the mob */
+            if (walked == WALKER_HANDLED) {
+                ranger_rehide(host, opts);
                 return 1;
             }
-            tmpwtl.targ1.cleanup();
+            if (usable) {
+                ranger_take_step(host, door, opts, refused);
+                return 1;
+            }
         }
     }
 
-    ch->spec_busy = false;
     return 1; //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a
               // consistant flow
 }

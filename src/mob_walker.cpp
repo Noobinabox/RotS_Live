@@ -254,22 +254,14 @@ extern struct char_data* mob_proto;
 extern int top_of_mobt;
 ACMD(do_move);
 
-namespace {
-
-std::map<int, walker_config> g_walker_configs; /* by mob rnum; only real walkers are stored */
+bool room_takes_mobs(int room)
+{
+    return !IS_SET(world[room].room_flags, NO_MOB) && !IS_SET(world[room].room_flags, DEATH);
+}
 
 bool exit_is_usable(struct char_data* ch, int door)
 {
-    return CAN_GO(ch, door) && !IS_SET(world[EXIT(ch, door)->to_room].room_flags, NO_MOB)
-        && !IS_SET(world[EXIT(ch, door)->to_room].room_flags, DEATH);
-}
-
-bool any_exit_is_usable(struct char_data* ch)
-{
-    for (int door = 0; door < NUM_OF_DIRS; ++door)
-        if (exit_is_usable(ch, door))
-            return true;
-    return false;
+    return CAN_GO(ch, door) && room_takes_mobs(EXIT(ch, door)->to_room);
 }
 
 /* The STAY flags refuse a walker's step exactly as they refuse a wanderer's. */
@@ -279,6 +271,18 @@ bool stay_flags_allow(struct char_data* ch, int door)
     return (!IS_SET(ch->specials2.act, MOB_STAY_ZONE) || world[to_room].zone == world[ch->in_room].zone)
         && (!IS_SET(ch->specials2.act, MOB_STAY_TYPE) || world[to_room].sector_type == world[ch->in_room].sector_type);
 }
+
+namespace {
+
+bool any_exit_is_usable(struct char_data* ch)
+{
+    for (int door = 0; door < NUM_OF_DIRS; ++door)
+        if (exit_is_usable(ch, door))
+            return true;
+    return false;
+}
+
+std::map<int, walker_config> g_walker_configs; /* by mob rnum; only real walkers are stored */
 
 /* Walkers waiting to be removed (path_complete_extract). A route ends inside
  * the mob's own turn, and the loops driving that turn (mobile_activity,

@@ -1438,7 +1438,8 @@ The input uses the standard editor.
   STAY-ZONE        6  Mob will stay in zone
   WIMPY            7  Flees if badly hurt; if AGGR, attacks only sleepers.
   STAY-TYPE        8  Stays in rooms of its sector type (water, forest...).
-  MOUNT            9  It can be ridden
+  MOUNT            9  It can be ridden; while ridden it never walks off
+                      on its own (no wandering or hunting)
   CAN_SWIM        10  Mob doesn't need a boat to swim
   MEMORY          11  Mob will remember attackers, and be agg to them.
   HELPER          12  Attacks characters fighting a PC in the room.
@@ -1452,8 +1453,8 @@ The input uses the standard editor.
                       (The per-mob /recalculate ignores it.)
   ACTIVE          20  Acts when someone enters the room.
   IS_PET          21  Not to be used - the flag means this mobile was tamed
-  HUNTER          22  Remembers attackers and hunts them down;
-                      this includes the effect of MEMORY
+  HUNTER          22  Hunts down the attackers it remembers; set
+                      MEMORY too, or it remembers none
   ORC_FRIEND      23  This mob can be recruited by common orcs.
   RACE_GUARD      24  Will not let players of a different race into the room.
   ASSISTANT       25  Assists its master in combat.
@@ -1698,7 +1699,8 @@ Special procedures:
     PLAYERTITLE seeks audience!".
     Important Note:  This spec_prog will NOT work with MEMORY flag (#11).
 29: postmaster          30: dragon
-31: caster/mage (spec)  32: ranger (new)
+31: caster/mage (spec)
+32: ranger. Hides, ambushes, follows tracks and hunts (MAN SHAPE RANGER).
 33: barter vendor. Sells items for other items (MAN SHAPE SHOPKEEPER).
 34: banker. Keeps the players' vaults (MAN SHAPE BANKER).
 
@@ -1810,12 +1812,13 @@ lines into one. Blank lines are removed when you save the text, and lines
 starting with // (comments) are ignored. A # is saved as + and a ~ as -;
 text can't start with $ or pass 4000 characters.
 
-Each program that reads options documents its own settings: program 33,
-see MAN SHAPE SHOPKEEPER; program 34, see MAN SHAPE BANKER.
+Each program that reads options documents its own settings: program 32,
+see MAN SHAPE RANGER; program 33, see MAN SHAPE SHOPKEEPER; program 34,
+see MAN SHAPE BANKER.
 
 General settings work on any mob, whatever its program. A program skips
-them; on a mob that is not a working shopkeeper or banker, a line that
-is not a general setting is reported when you /save or /implement. The
+them; on a mob that is not a working ranger, shopkeeper or banker, a line
+that is not a general setting is reported when you /save or /implement. The
 general settings are the walker settings, see MAN SHAPE WALKER.
 #
 "WALKER" "WALKERS" "WALKER_TYPE" "WALKER_ROOMS"
@@ -2320,4 +2323,70 @@ shopkeeper. Put only one banker in a room.
 A wand or staff comes out with the charges it went in with. If a stored
 object has been deleted since, the rest of that slot still comes out and
 the deleted object is logged.
+#
+"RANGER" "RANGERS" "PROGRAM 32"
+
+The ranger program (program 32) runs the mob's own turn: it hides,
+ambushes, follows tracks and hunts the ones it remembers. It does nothing
+when someone walks in; like any mob, it acts on its turn.
+
+Setting one up (extended mode, see MAN SHAPE MOB2 42):
+  /5  set flag SPEC (bit 0)
+  /29 program 32
+  /42 the settings, one per line, all optional (left out means no):
+  hide=yes      hides when standing and not fighting, and again after a
+                move if something took its cover; it waits for the hide
+                to finish before it looks for a target
+  ambush=yes    opens with an ambush instead of a hit when neither it nor
+                its target is fighting; without a small weapon it hits
+                instead
+  track=yes     follows the freshest track of a race it is aggressive
+                to; with AGGRESSIVE, the track of any player (tracks do
+                not show alignment, so AGGRESSIVE_EVIL and the like may
+                catch up with someone they will not attack). It opens
+                closed doors on the way, not locked, hidden or lever ones
+  riposte=yes   ripostes parried blows, at skill 75
+Example:
+  hide=yes
+  ambush=yes
+  track=yes
+
+Hiding and sneaking:
+  Without SNEAK  a hide=yes mob keeps its cover when it moves. Anyone
+                 whose see-hidden is below its cover does not see it
+                 leave or arrive; anyone else does.
+  With SNEAK     (set it with /6, see MAN SHAPE MOB 6) each step also
+                 rolls its sneak. On a success, even those who see
+                 through its cover miss it leaving and arriving, and it
+                 takes a fresh cover from its hide skill as it arrives,
+                 which can be higher or lower than before.
+  SNEAK alone, without hide=yes, does the same on each step; the mob
+  just does not hide on its own when it stands.
+
+The mob flags it acts on:
+  AGGRESSIVE    attacks players, only those of the alignments named if
+                AGGRESSIVE_EVIL, _GOOD or _NEUTRAL is set
+  HELPER        joins the fight of another mob in the room
+  SWITCHING     may turn to another of its attackers
+  MEMORY        attacks someone it remembers when it sees them
+  HUNTER        walks toward someone it remembers; needs MEMORY,
+                which is what makes a mob remember its attackers
+  SENTINEL      does not wander; still follows tracks and hunts
+  WIMPY         at a fifth of its health or less it starts nothing: no
+                attack, no help, no hunting, no tracks. It still hides
+                and wanders
+Race aggression works as on any mob.
+
+Each turn it does one thing, the first that applies: attack someone it
+remembers, ambush someone new (ambush=yes), help an ally, hit someone
+new, switch targets, walk toward someone it remembers, follow tracks,
+wander. It tries to wander on every turn it has nothing else to do.
+A mob that follows a leader, or is ridden, neither wanders nor follows
+tracks; a ridden one does not hunt either.
+Walker settings work (MAN SHAPE WALKER); lower walker_move_chance to
+slow it down along its route.
+
+SCAVENGER, BODYGUARD and ASSISTANT have no effect with program 32, and
+/implement warns about them. A bad setting is reported when you /save or
+/implement, and that line is ignored.
 #~

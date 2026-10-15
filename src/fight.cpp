@@ -32,6 +32,7 @@
 #include "big_brother.h"
 #include "char_utils.h"
 #include "char_utils_combat.h"
+#include "mob_progs/ranger_prog.h"
 
 #include <ctime>
 
@@ -2177,9 +2178,8 @@ int check_riposte(struct char_data* ch, struct char_data* victim)
         return 0;
     }
 
-    const int ranger_prog = 32;
     if (IS_NPC(victim)) {
-        if (has_alias(victim, "p_riposte") && has_program(victim, ranger_prog)) {
+        if (ranger_settings(victim).riposte) {
             can_riposte = 1;
             prob = 75;
         }

@@ -670,6 +670,15 @@ void msdp_room_update(char_data* ch)
     MSDPFlush(ch->desc, eMSDP_ROOM_VNUM);
 }
 
+bool mob_opens_door_on_move(const char_data* ch, int dir)
+{
+    const room_direction_data* exit = world[ch->in_room].dir_option[dir];
+    if (!exit || exit->to_room == NOWHERE || IS_SHADOW(ch))
+        return false;
+    return IS_SET(exit->exit_info, EX_ISDOOR) && IS_SET(exit->exit_info, EX_CLOSED)
+        && !IS_SET(exit->exit_info, EX_ISHIDDEN | EX_LOCKED | EX_LEVER);
+}
+
 ACMD(do_move)
 /* do_move is under construction to account for riding... !!!!  */
 {
@@ -739,7 +748,7 @@ ACMD(do_move)
         send_to_char("You cannot go that way.\n\r", ch);
         return;
     } else { /* Direction is possible */
-        if (IS_NPC(ch) && (subcmd == SCMD_MOVING) && IS_SET(EXIT(ch, cmd)->exit_info, EX_ISDOOR | EX_CLOSED) && !IS_SET(EXIT(ch, cmd)->exit_info, EX_ISHIDDEN | EX_LOCKED)) {
+        if (IS_NPC(ch) && (subcmd == SCMD_MOVING) && mob_opens_door_on_move(ch, cmd)) {
             tmpwtl.cmd = CMD_OPEN;
             tmpwtl.targ1.type = TARGET_DIR;
             tmpwtl.targ1.ch_num = cmd;
@@ -914,10 +923,8 @@ ACMD(do_move)
             /* Arriving can remove the mover (a special, a script, the death
              * room). The move still completes - its followers come after it
              * as always - but the mover itself is not used again. */
-            if (!ch->spec_busy) {
-                special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
-                mover_gone = !char_exists(mover_number);
-            }
+            special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
+            mover_gone = !char_exists(mover_number);
 
             if (!mover_gone) {
                 call_trigger(ON_ENTER, (void*)&world[ch->in_room], (void*)ch, 0);

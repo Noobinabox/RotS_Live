@@ -232,7 +232,7 @@ def _file_size(path: Path) -> int:
 
 
 def _read_from(path: Path, offset: int) -> bytes:
-    """The file's bytes from offset to its current end, or none when it cannot be read."""
+    """The file's bytes from offset to its current end, or no bytes when it cannot be read."""
     try:
         with path.open("rb") as file:
             file.seek(offset)
@@ -357,7 +357,8 @@ class LocalProcessLauncher(ServerLauncher):
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the wait also stops the server: the fixture never
-            # received the handle, so nothing else would.
+            # received the handle, so nothing else would. No close_control_channel first: a server
+            # that failed to start may never log its input closing.
             terminate_process(process)
             raise
 
@@ -505,7 +506,8 @@ class DockerComposeLauncher(ServerLauncher):
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the waits also stops the container: the fixture
-            # never received the handle, so nothing else would.
+            # never received the handle, so nothing else would. No close_control_channel first: a
+            # server that failed to start may never log its input closing.
             self._stop_container(container_name)
             self._remove_container(container_name)
             if process is not None:

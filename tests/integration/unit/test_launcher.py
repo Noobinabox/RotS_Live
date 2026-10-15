@@ -990,7 +990,10 @@ class HarnessServerProcess:
 class LoggingClock(FakeClock):
     """A FakeClock that records each sleep and logs the input-closed line on the sleep numbered line_on_sleep."""
 
-    def __init__(self, events: list, log_path: Path, line_on_sleep: Optional[int] = None, interrupt_on_sleep: Optional[int] = None) -> None:
+    def __init__(
+        self, events: list, log_path: Path, line_on_sleep: Optional[int] = None, interrupt_on_sleep: Optional[int] = None,
+        split_at: Optional[int] = None,
+    ) -> None:
         super().__init__(now=1000.0)
         # The ordered record of the stop's steps the test inspects.
         self._events = events
@@ -1000,6 +1003,9 @@ class LoggingClock(FakeClock):
         self._line_on_sleep = line_on_sleep
         # The sleep that raises KeyboardInterrupt, as a Ctrl-C during the wait does; None for none.
         self._interrupt_on_sleep = interrupt_on_sleep
+        # When set, the line is logged in two writes: its first split_at characters on sleep
+        # line_on_sleep and the rest on the next sleep.
+        self._split_at = split_at
         # How many times the wait has slept.
         self.sleeps = 0
 
@@ -1009,9 +1015,17 @@ class LoggingClock(FakeClock):
         self._events.append("sleep")
         if self.sleeps == self._interrupt_on_sleep:
             raise KeyboardInterrupt
-        if self.sleeps == self._line_on_sleep:
+        logged_line = f"Tue Oct 13 12:00:00 2026 :: {launcher.INPUT_CLOSED_LOG_LINE}\n"
+        if self._line_on_sleep is None:
+            return
+        if self._split_at is None:
+            parts = {self._line_on_sleep: logged_line}
+        else:
+            split_index = len(logged_line) - len(launcher.INPUT_CLOSED_LOG_LINE) - 1 + self._split_at
+            parts = {self._line_on_sleep: logged_line[:split_index], self._line_on_sleep + 1: logged_line[split_index:]}
+        if self.sleeps in parts:
             with self._log_path.open("ab") as log_file:
-                log_file.write(f"Tue Oct 13 12:00:00 2026 :: {launcher.INPUT_CLOSED_LOG_LINE}\n".encode("ascii"))
+                log_file.write(parts[self.sleeps].encode("ascii"))
 
 
 def harness_handle(tmp_path: Path, process: HarnessServerProcess, container_name: Optional[str] = None) -> launcher.ServerHandle:
@@ -1146,6 +1160,32 @@ time.sleep(30)
 """
 
 
+def test_close_control_channel_ignores_a_line_already_in_the_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    log_path = tmp_path / "game.log"
+    log_path.write_bytes(f"Tue Oct 13 11:00:00 2026 :: {launcher.INPUT_CLOSED_LOG_LINE}\n".encode("ascii"))
+    clock = LoggingClock(events, log_path)
+    monkeypatch.setattr(launcher, "time", clock)
+
+    saw_line = launcher.close_control_channel(HarnessServerProcess(events), log_path)  # type: ignore[arg-type]
+
+    assert not saw_line
+    assert clock.now - 1000.0 >= launcher.INPUT_CLOSED_WAIT_SECONDS
+
+
+def test_close_control_channel_finds_a_line_split_across_two_reads(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list = []
+    log_path = tmp_path / "game.log"
+    log_path.write_bytes(b"Booting the world.\n")
+    monkeypatch.setattr(launcher, "time", LoggingClock(events, log_path, line_on_sleep=1, split_at=20))
+
+    saw_line = launcher.close_control_channel(HarnessServerProcess(events), log_path)  # type: ignore[arg-type]
+
+    assert saw_line
+    assert events == ["close stdin", "sleep", "sleep"]
+    assert log_path.read_bytes().count(launcher.INPUT_CLOSED_LOG_LINE.encode("ascii")) == 1
+
+
 def test_close_control_channel_sees_the_line_a_real_process_logs_at_end_of_input(tmp_path: Path) -> None:
     log_path = tmp_path / "game.log"
     with log_path.open("wb") as log_file:
@@ -1154,7 +1194,9 @@ def test_close_control_channel_sees_the_line_a_real_process_logs_at_end_of_input
             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=log_file,
         )
     try:
-        assert launcher.close_control_channel(process, log_path)
+        # The one test on real time: a stated timeout, generous for a slow (emulated) host, keeps it
+        # independent of the production wait.
+        assert launcher.close_control_channel(process, log_path, timeout_seconds=10.0)
         assert process.poll() is None, "the line must arrive before the stop, not because the process exited"
     finally:
         launcher.terminate_process(process)

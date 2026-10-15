@@ -233,6 +233,7 @@ set(ROTS_TEST_SOURCES
     tests/harness_standard_stream_channel_tests.cpp
     tests/harness_controlled_schedule_tests.cpp
     tests/harness_affect_hours_transcript_tests.cpp
+    tests/harness_command_line_parser_tests.cpp
     tests/harness_options_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
@@ -309,6 +310,7 @@ set(HARNESS_SOURCES
     harness/advance_hours_request.cpp
     harness/affect_hours_registration.cpp
     harness/affect_hours_schedule.cpp
+    harness/command_line_parser.cpp
     harness/harness_controlled_schedule.cpp
     harness/harness_options.cpp
     harness/harness_request_registry.cpp

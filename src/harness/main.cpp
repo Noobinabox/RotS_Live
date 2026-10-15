@@ -31,16 +31,13 @@ int main(int argc, char** argv)
 
     harness::HarnessOptions options;
     std::string parse_error;
-    if (!harness::parse_harness_options(argc, argv, options, parse_error)) {
+    if (!harness::parse_harness_options(argc, argv, schedules, options, parse_error)) {
         if (!parse_error.empty()) {
             log(parse_error.c_str());
         }
         const bool has_program_name = argc > 0 && argv != nullptr && argv[0] != nullptr;
         const char* const program_name = has_program_name ? argv[0] : DEFAULT_PROGRAM_NAME;
-        std::cerr << "Usage: " << program_name << " " << harness::SCHEDULE_OPTION << " "
-                  << harness::AFFECT_HOURS_SCHEDULE_NAME
-                  << " [-m] [-q] [-r] [-s] [-x] [-d pathname] [-p port #] [--random-seed n]"
-                     " [ port # ]\n";
+        std::cerr << harness::harness_usage(schedules, program_name);
         return EXIT_FAILURE;
     }
 

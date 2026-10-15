@@ -17,8 +17,8 @@ namespace harness {
 // reader. Every member function runs on the owner's thread.
 class BackgroundLineReader {
 public:
-    // Starts reading input on the reader's thread. input must stay valid until it ends, even
-    // after the reader is destroyed.
+    // Starts reading input on the reader's thread. Nothing else may use input until it ends or
+    // fails, and it must stay valid until then, even after the reader is destroyed.
     explicit BackgroundLineReader(std::istream& input);
 
     // Joins the reading thread if input has already ended. Otherwise detaches it: a thread

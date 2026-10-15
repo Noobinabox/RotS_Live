@@ -1,43 +1,26 @@
+#include "reader_test_input.h"
 #include "standard_stream_channel.h"
 
-#include <chrono>
 #include <gtest/gtest.h>
 #include <ios>
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <thread>
 #include <vector>
 
 namespace {
-// How long a test waits for the reader thread to reach the end of a string stream.
-constexpr std::chrono::seconds READER_WAIT_LIMIT(5);
 // A line far longer than any request, to show the channel does not cut lines.
 constexpr std::size_t LONG_LINE_LENGTH = 200;
 // The words write_reply logs once output has failed.
 constexpr std::string_view OUTPUT_FAILURE_PHRASE = "could not be written";
 
-// Waits until channel reports its input closed; returns false after READER_WAIT_LIMIT.
-bool wait_until_input_closed(const harness::StandardStreamChannel& channel)
-{
-    const std::chrono::steady_clock::time_point deadline
-        = std::chrono::steady_clock::now() + READER_WAIT_LIMIT;
-    while (!channel.input_closed()) {
-        if (std::chrono::steady_clock::now() >= deadline) {
-            return false;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    return true;
-}
-
 // Reads all of input through a channel and returns the lines it received.
 std::vector<std::string> lines_received_from(const std::string& input_text)
 {
-    std::istringstream input(input_text);
+    harness_tests::ReaderTestInput input(input_text);
     std::ostringstream output;
-    harness::StandardStreamChannel channel(input, output);
-    EXPECT_TRUE(wait_until_input_closed(channel)) << "Expected the reader to reach end of input.";
+    harness::StandardStreamChannel channel(input.stream(), output);
+    EXPECT_TRUE(input.wait_until_closed(channel)) << "Expected the reader to reach end of input.";
     return channel.take_lines();
 }
 
@@ -79,11 +62,11 @@ TEST(StandardStreamChannel, ReceivesALongLineWhole)
 
 TEST(StandardStreamChannel, WritesEachReplyWithThePrefixAndANewlineAndFlushes)
 {
-    std::istringstream input("");
+    harness_tests::ReaderTestInput input("");
     CountingBuffer counting_buffer;
     std::ostream output(&counting_buffer);
-    harness::StandardStreamChannel channel(input, output);
-    ASSERT_TRUE(wait_until_input_closed(channel)) << "Expected the reader to reach end of input.";
+    harness::StandardStreamChannel channel(input.stream(), output);
+    ASSERT_TRUE(input.wait_until_closed(channel)) << "Expected the reader to reach end of input.";
 
     channel.write_reply("ready");
     channel.write_reply("done");
@@ -97,11 +80,11 @@ TEST(StandardStreamChannel, WritesEachReplyWithThePrefixAndANewlineAndFlushes)
 
 TEST(StandardStreamChannel, StopsWritingAndLogsOnceWhenOutputFails)
 {
-    std::istringstream input("");
+    harness_tests::ReaderTestInput input("");
     std::ostringstream output;
     output.setstate(std::ios::badbit);
-    harness::StandardStreamChannel channel(input, output);
-    ASSERT_TRUE(wait_until_input_closed(channel)) << "Expected the reader to reach end of input.";
+    harness::StandardStreamChannel channel(input.stream(), output);
+    ASSERT_TRUE(input.wait_until_closed(channel)) << "Expected the reader to reach end of input.";
 
     testing::internal::CaptureStderr();
     channel.write_reply("first");

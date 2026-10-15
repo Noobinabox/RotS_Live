@@ -1,41 +1,51 @@
 #include "background_line_reader.h"
+#include "reader_test_input.h"
 
-#include <chrono>
 #include <gtest/gtest.h>
-#include <sstream>
+#include <memory>
+#include <stdexcept>
+#include <streambuf>
 #include <string>
-#include <thread>
+#include <string_view>
 #include <vector>
 
 namespace {
-// How long a test waits for the reader thread to reach the end of a string stream.
-constexpr std::chrono::seconds READER_WAIT_LIMIT(5);
 // A line far longer than any request, to show the reader does not cut lines.
 constexpr std::size_t LONG_LINE_LENGTH = 200;
 
-// Waits until reader reports its input closed; returns false after READER_WAIT_LIMIT.
-bool wait_until_input_closed(const harness::BackgroundLineReader& reader)
-{
-    const std::chrono::steady_clock::time_point deadline
-        = std::chrono::steady_clock::now() + READER_WAIT_LIMIT;
-    while (!reader.input_closed()) {
-        if (std::chrono::steady_clock::now() >= deadline) {
-            return false;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
-    return true;
-}
-
-// Reads all of input_text through a reader and returns the lines it received. The stream is
-// declared before the reader, so it outlives the reader even when the wait times out.
+// Reads all of input_text through a reader and returns the lines it received.
 std::vector<std::string> lines_read_from(const std::string& input_text)
 {
-    std::istringstream input(input_text);
-    harness::BackgroundLineReader reader(input);
-    EXPECT_TRUE(wait_until_input_closed(reader)) << "Expected the reader to reach end of input.";
+    harness_tests::ReaderTestInput input(input_text);
+    harness::BackgroundLineReader reader(input.stream());
+    EXPECT_TRUE(input.wait_until_closed(reader)) << "Expected the reader to reach end of input.";
     return reader.take_lines();
 }
+
+// A buffer that serves one line, then fails by throwing, which the stream reports as badbit.
+class FailsAfterOneLineBuffer : public std::streambuf {
+public:
+    // The line served before the failure, newline included.
+    static constexpr std::string_view SERVED_TEXT = "first\n";
+
+protected:
+    int_type underflow() override
+    {
+        if (served) {
+            throw std::runtime_error("the test stream fails after its first line");
+        }
+
+        served = true;
+        setg(served_text.data(), served_text.data(), served_text.data() + served_text.size());
+        return traits_type::to_int_type(*gptr());
+    }
+
+private:
+    // The characters the get area points into.
+    std::string served_text { SERVED_TEXT };
+    // True once SERVED_TEXT has been handed to the stream.
+    bool served = false;
+};
 } // namespace
 
 TEST(BackgroundLineReader, ReadsLinesInOrderWithoutTheirNewlines)
@@ -89,27 +99,37 @@ TEST(BackgroundLineReader, DeliversALongLineWhole)
 
 TEST(BackgroundLineReader, ReportsInputClosedAtTheEndOfInput)
 {
-    std::istringstream input("only\n");
-    harness::BackgroundLineReader reader(input);
+    harness_tests::ReaderTestInput input("only\n");
+    harness::BackgroundLineReader reader(input.stream());
 
-    EXPECT_TRUE(wait_until_input_closed(reader)) << "Expected input closed after its end.";
+    EXPECT_TRUE(input.wait_until_closed(reader)) << "Expected input closed after its end.";
 }
 
 TEST(BackgroundLineReader, ReportsInputClosedAtTheEndOfEmptyInput)
 {
-    std::istringstream input("");
-    harness::BackgroundLineReader reader(input);
+    harness_tests::ReaderTestInput input("");
+    harness::BackgroundLineReader reader(input.stream());
 
-    ASSERT_TRUE(wait_until_input_closed(reader)) << "Expected input closed on empty input.";
+    ASSERT_TRUE(input.wait_until_closed(reader)) << "Expected input closed on empty input.";
     EXPECT_TRUE(reader.take_lines().empty()) << "Expected no line from empty input.";
 }
 
 TEST(BackgroundLineReader, TakingLinesEmptiesTheQueue)
 {
-    std::istringstream input("only\n");
-    harness::BackgroundLineReader reader(input);
-    ASSERT_TRUE(wait_until_input_closed(reader)) << "Expected the reader to reach end of input.";
+    harness_tests::ReaderTestInput input("only\n");
+    harness::BackgroundLineReader reader(input.stream());
+    ASSERT_TRUE(input.wait_until_closed(reader)) << "Expected the reader to reach end of input.";
 
     EXPECT_EQ(reader.take_lines().size(), 1u) << "Expected the line on the first take.";
     EXPECT_TRUE(reader.take_lines().empty()) << "Expected nothing on the second take.";
+}
+
+TEST(BackgroundLineReader, KeepsTheLinesReadAndReportsInputClosedWhenTheStreamFails)
+{
+    harness_tests::ReaderTestInput input(std::make_unique<FailsAfterOneLineBuffer>());
+    harness::BackgroundLineReader reader(input.stream());
+
+    ASSERT_TRUE(input.wait_until_closed(reader)) << "Expected input closed after the failure.";
+    const std::vector<std::string> expected = { "first" };
+    EXPECT_EQ(reader.take_lines(), expected) << "Expected the line read before the failure.";
 }

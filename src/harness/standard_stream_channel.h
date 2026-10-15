@@ -22,8 +22,9 @@ inline constexpr std::string_view REPLY_PREFIX = "harness: ";
 // on the caller's thread.
 class StandardStreamChannel : public HarnessControlChannel {
 public:
-    // Starts reading input on the reader's thread. output must outlive the channel. input must
-    // stay valid until it ends, even after the channel is destroyed.
+    // Starts reading input on the reader's thread. output must outlive the channel. Nothing else
+    // may use input until it ends or fails, and it must stay valid until then, even after the
+    // channel is destroyed.
     StandardStreamChannel(std::istream& input, std::ostream& output);
 
     // Destroys the reader, which joins its thread if input has ended and detaches it otherwise.

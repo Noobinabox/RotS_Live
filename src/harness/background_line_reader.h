@@ -3,7 +3,6 @@
 #ifndef BACKGROUND_LINE_READER_H
 #define BACKGROUND_LINE_READER_H
 
-#include <deque>
 #include <istream>
 #include <memory>
 #include <mutex>
@@ -22,7 +21,8 @@ public:
     explicit BackgroundLineReader(std::istream& input);
 
     // Joins the reading thread if input has already ended. Otherwise detaches it: a thread
-    // blocked reading a stream cannot be interrupted portably, so it finishes when input ends.
+    // blocked reading a stream cannot be interrupted portably, so it finishes when input ends or
+    // fails.
     ~BackgroundLineReader();
 
     // A copy would share the reading thread.
@@ -43,7 +43,7 @@ private:
         // Guards lines and closed.
         std::mutex guard;
         // Lines read and not yet taken, oldest first.
-        std::deque<std::string> lines;
+        std::vector<std::string> lines;
         // True once input has ended or failed.
         bool closed = false;
     };

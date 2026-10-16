@@ -2,9 +2,7 @@
 
 #include "background_line_reader.h"
 
-#include <algorithm>
 #include <functional>
-#include <iterator>
 #include <utility>
 
 namespace harness {
@@ -54,12 +52,7 @@ void BackgroundLineReader::read_lines(
 std::vector<std::string> BackgroundLineReader::take_lines()
 {
     std::scoped_lock lock(received_input->guard);
-    std::vector<std::string> taken;
-    taken.reserve(received_input->lines.size());
-    std::move(
-        received_input->lines.begin(), received_input->lines.end(), std::back_inserter(taken));
-    received_input->lines.clear();
-    return taken;
+    return std::exchange(received_input->lines, {});
 }
 
 //============================================================================

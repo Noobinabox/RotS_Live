@@ -57,3 +57,30 @@ jobs:
         # The step is skipped then; run `make smoke-account` by hand where a world is installed.
         if: hashFiles('lib/world/**') != ''
         run: make smoke-account
+
+  image-build-test:
+    name: Build and Unit Tests (Ubuntu 22.04 image)
+    # The repository's Dockerfile is the game server's Linux and compiler, so this job builds
+    # and tests the game in the same environment as the server and the local Docker workflow.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build the development image
+        run: docker build --tag rots-dev:ci .
+
+      - name: Configure build tree
+        # Running as the runner's user keeps the build tree writable by later steps.
+        run: >-
+          docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
+          rots-dev:ci make configure
+
+      - name: Run C++ unit tests
+        run: >-
+          docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
+          rots-dev:ci make test

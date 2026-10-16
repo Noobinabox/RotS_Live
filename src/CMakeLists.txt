@@ -1,5 +1,5 @@
-# 3.18 is the oldest CMake in use (the i386 Debian bullseye image) and 3.28 the newest
-# CI exercises; newer CMake applies policies only up to 3.28.
+# 3.18 is the oldest CMake supported (README) and 3.28 the newest CI exercises; newer CMake
+# applies policies only up to 3.28.
 cmake_minimum_required(VERSION 3.18...3.28)
 
 # The compiler is chosen by the caller (-DCMAKE_CXX_COMPILER=g++ in the root Makefile and

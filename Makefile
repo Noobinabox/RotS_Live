@@ -40,7 +40,7 @@ setup: $(CMAKE_CACHE)
 build: $(CMAKE_CACHE)
 	+$(CMAKE) --build $(BUILD_DIR) --target ageland --parallel $(JOBS)
 
-# ctest runs from inside the tree because --test-dir needs CMake 3.20 and the i386 image has 3.18.
+# ctest runs from inside the tree because --test-dir needs CMake 3.20 and the README supports 3.18.
 test: $(CMAKE_CACHE)
 	+$(CMAKE) --build $(BUILD_DIR) --target ageland ageland_tests --parallel $(JOBS)
 	cd $(BUILD_DIR) && $(CTEST) --output-on-failure $(CTEST_ARGS)

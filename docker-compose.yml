@@ -1,6 +1,6 @@
-# Dockerized 32-bit build/run for RotS. See docs/BUILD.md.
+# Dockerized build/run for RotS (the game is built 32-bit inside it). See docs/BUILD.md.
 #
-#   docker compose build                       # build the i386 toolchain image
+#   docker compose build                       # build the Ubuntu 22.04 toolchain image
 #   docker compose run --rm --service-ports rots   # interactive shell in the repo
 #
 # The repo is bind-mounted at /rots, so build artifacts (bin/ageland, *.o) and any
@@ -10,8 +10,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    platform: linux/386
-    image: rots-dev:bullseye-i386
+    platform: linux/amd64
+    image: rots-dev:jammy-amd64
     container_name: rots
     # Use the default docker0 bridge: `compose run --rm` never removes a project
     # network, so without this every worktree leaked a `<dir>_default` network

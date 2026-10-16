@@ -40,8 +40,9 @@ struct FakeRequestRegistry {
 
 // A registry holding an AdvanceHoursRequest, and the schedule it grants hours on.
 struct AdvanceHoursRegistry {
-    // The schedule the request grants hours on; declared first so it outlives the request.
-    harness::AffectHoursSchedule schedule;
+    // The schedule the request grants hours on.
+    std::shared_ptr<harness::AffectHoursSchedule> schedule
+        = std::make_shared<harness::AffectHoursSchedule>();
     // The registry the lines are dispatched to.
     harness::HarnessRequestRegistry requests;
 
@@ -139,7 +140,7 @@ TEST(RequestDispatch, GrantsAdvanceHoursFromACarriageReturnLine)
 
     EXPECT_NE(std::get_if<harness::DeferredReply>(&outcome), nullptr)
         << "Expected a CRLF line to be granted like an LF line.";
-    EXPECT_EQ(registry.schedule.pending_passes(), 2 * FAST_UPDATE_RATE)
+    EXPECT_EQ(registry.schedule->pending_passes(), 2 * FAST_UPDATE_RATE)
         << "Expected 2 hours granted.";
 }
 
@@ -154,7 +155,7 @@ TEST(RequestDispatch, RefusesAnUnknownRequestByItsWholeName)
         EXPECT_EQ(immediate_body(outcome), "error " + std::string(line) + ": unknown request")
             << "Unexpected refusal for: " << line;
     }
-    EXPECT_EQ(registry.schedule.pending_passes(), 0) << "Expected nothing granted.";
+    EXPECT_EQ(registry.schedule->pending_passes(), 0) << "Expected nothing granted.";
 }
 
 TEST(RequestDispatch, QuotesAnUnknownRequestWithoutItsCarriageReturn)

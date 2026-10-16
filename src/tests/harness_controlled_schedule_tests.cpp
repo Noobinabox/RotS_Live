@@ -75,7 +75,7 @@ harness::ScheduleSetup create_fake_setup(std::shared_ptr<FakeSchedule::State> sc
     std::string_view ready_state)
 {
     harness::ScheduleSetup setup;
-    setup.schedule = std::make_unique<FakeSchedule>(std::move(schedule_state));
+    setup.schedule = std::make_shared<FakeSchedule>(std::move(schedule_state));
     std::unique_ptr<harness::HarnessRequest> request
         = std::make_unique<harness_tests::FakeHarnessRequest>(
             std::string(FAKE_REQUEST_NAME), std::move(request_state));

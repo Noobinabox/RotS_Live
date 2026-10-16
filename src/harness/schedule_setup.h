@@ -16,11 +16,10 @@ namespace harness {
 // it, and the state its ready reply reports. It can be moved but not copied.
 struct ScheduleSetup {
     // The schedule each pass is delegated to; null only when the factory could not build it.
-    // Held behind a pointer so that moving the setup never moves the schedule the requests
-    // borrow.
-    std::unique_ptr<GameTickSchedule> schedule;
-    // The requests the schedule accepts. Declared after schedule, so they are destroyed before
-    // the schedule they may borrow.
+    // Shared so that the requests and their deferred replies can hold std::weak_ptr references
+    // to it; the setup is its only owner.
+    std::shared_ptr<GameTickSchedule> schedule;
+    // The requests the schedule accepts.
     HarnessRequestRegistry requests;
     // The text after the schedule's name in the ready reply, such as "hours=0"; may be empty.
     std::string ready_state;

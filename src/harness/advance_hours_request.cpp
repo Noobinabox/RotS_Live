@@ -6,8 +6,10 @@
 
 #include <charconv>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -39,11 +41,27 @@ std::optional<int> read_hour_count(std::string_view hours_text)
     }
     return hours;
 }
+
+// The reply refusing a request for hours game hours, for reason.
+std::string refuse_hours(int hours, std::string_view reason)
+{
+    return "error " + std::string(AdvanceHoursRequest::NAME) + " " + std::to_string(hours) + ": "
+        + std::string(reason);
+}
+
+// Logs that a request for hours game hours found its schedule destroyed, and returns its refusal.
+std::string refuse_for_missing_schedule(int hours)
+{
+    const std::string message = "SYSERR: " + std::string(AdvanceHoursRequest::NAME) + " "
+        + std::to_string(hours) + ": the schedule no longer exists.";
+    log(message.c_str());
+    return refuse_hours(hours, "the schedule no longer exists");
+}
 } // namespace
 
 //============================================================================
-AdvanceHoursRequest::AdvanceHoursRequest(AffectHoursSchedule& schedule)
-    : hours_schedule(schedule)
+AdvanceHoursRequest::AdvanceHoursRequest(std::weak_ptr<AffectHoursSchedule> schedule)
+    : hours_schedule(std::move(schedule))
 {
 }
 
@@ -64,16 +82,19 @@ RequestOutcome AdvanceHoursRequest::handle(std::string_view line, std::string_vi
     }
 
     const int hours = *requested_hours;
-    const std::optional<std::string> schedule_refusal = hours_schedule.grant_hours(hours);
+    const std::shared_ptr<AffectHoursSchedule> schedule = hours_schedule.lock();
+    if (schedule == nullptr) {
+        return ImmediateReply { refuse_for_missing_schedule(hours) };
+    }
+
+    const std::optional<std::string> schedule_refusal = schedule->grant_hours(hours);
     if (schedule_refusal.has_value()) {
-        std::string refusal = "error " + std::string(NAME) + " " + std::to_string(hours) + ": "
-            + *schedule_refusal;
-        return ImmediateReply { std::move(refusal) };
+        return ImmediateReply { refuse_hours(hours, *schedule_refusal) };
     }
 
     // The reply waits for the whole backlog, so a grant queued behind another is acknowledged
     // only once both have run.
-    const int backlog_passes = hours_schedule.pending_passes();
+    const int backlog_passes = schedule->pending_passes();
     DeferredReply acknowledgement;
     if (backlog_passes >= 1) {
         acknowledgement.pass_count = static_cast<std::uint64_t>(backlog_passes);
@@ -83,12 +104,15 @@ RequestOutcome AdvanceHoursRequest::handle(std::string_view line, std::string_vi
         log(message.c_str());
     }
 
-    // Borrow the schedule rather than this request, so the body depends only on the schedule the
-    // reply reports.
-    AffectHoursSchedule& schedule = hours_schedule;
-    acknowledgement.build_body = [&schedule, hours]() -> std::string {
+    // Copy the weak reference rather than capture this request, so the body depends only on the
+    // schedule the reply reports.
+    acknowledgement.build_body = [weak_schedule = hours_schedule, hours]() -> std::string {
+        const std::shared_ptr<const AffectHoursSchedule> reported = weak_schedule.lock();
+        if (reported == nullptr) {
+            return refuse_for_missing_schedule(hours);
+        }
         return "done " + std::string(NAME) + " " + std::to_string(hours)
-            + " hours=" + std::to_string(schedule.hours_completed());
+            + " hours=" + std::to_string(reported->hours_completed());
     };
     return acknowledgement;
 }

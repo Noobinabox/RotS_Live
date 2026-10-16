@@ -23,9 +23,9 @@ constexpr std::string_view AFFECT_HOURS_SUMMARY
 // setup with no schedule if the request cannot be registered; the registry logs why.
 [[nodiscard]] ScheduleSetup create_affect_hours_setup()
 {
-    std::unique_ptr<AffectHoursSchedule> hours_schedule = std::make_unique<AffectHoursSchedule>();
+    std::shared_ptr<AffectHoursSchedule> hours_schedule = std::make_shared<AffectHoursSchedule>();
     std::unique_ptr<HarnessRequest> advance_hours
-        = std::make_unique<AdvanceHoursRequest>(*hours_schedule);
+        = std::make_unique<AdvanceHoursRequest>(hours_schedule);
     ScheduleSetup setup;
     const bool request_registered = setup.requests.register_request(std::move(advance_hours));
     if (!request_registered) {

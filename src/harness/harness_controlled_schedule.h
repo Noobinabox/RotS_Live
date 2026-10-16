@@ -61,8 +61,7 @@ private:
     std::string ready_reply;
     // Where request lines come from and replies go; owned, and null only when constructed so.
     std::unique_ptr<HarnessControlChannel> control_channel;
-    // The schedule and the requests that drive it. Declared before queued_replies, so the replies
-    // that borrow its state are destroyed first.
+    // The schedule and the requests that drive it.
     ScheduleSetup schedule_setup;
     // Deferred replies not yet sent, oldest first.
     std::deque<QueuedReply> queued_replies;

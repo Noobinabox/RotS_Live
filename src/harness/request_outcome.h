@@ -21,8 +21,8 @@ struct DeferredReply {
     // How many passes, counting the one on which the request is handled, must be returned before
     // the reply is sent; at least 1.
     std::uint64_t pass_count = 1;
-    // Builds the whole reply body when it is sent. It may borrow only state that outlives the
-    // reply's wait, such as what the request's ScheduleSetup owns.
+    // Builds the whole reply body when it is sent. It refers to state it does not own, such as
+    // the request's schedule, through a std::weak_ptr, never a reference.
     std::function<std::string()> build_body;
 };
 

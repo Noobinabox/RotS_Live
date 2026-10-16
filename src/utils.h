@@ -46,6 +46,7 @@ struct char_data* find_playing_char(int);
 void snuck_out(struct char_data*);
 void snuck_in(struct char_data*);
 int hide_prof(struct char_data*);
+int hide_roll(int prof, bool well); /* the cover of a finished hide */
 int see_hiding(struct char_data*);
 char unaccent(char);
 char* str_dup(const char* source);

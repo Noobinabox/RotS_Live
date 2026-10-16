@@ -34,12 +34,44 @@ character, so without SNEAK a `hide=yes` mob keeps its cover as it moves: anyone
 `see_hiding` is below its cover does not see it leave or arrive (`CAN_SEE`), anyone else does.
 With the SNEAK affect (`/6`, bit 2) each step also rolls its sneak (`src/act_move.cpp:855`,
 `910`): on a success even those who see through its cover miss the leave and arrive lines, and
-`snuck_in` gives it a fresh cover from `hide_prof` on arrival, higher or lower than before. That
-cover means a sneaking mob does not hide again after each step. SNEAK alone, without
+`snuck_in` gives it a fresh cover from `hide_prof` on arrival, higher or lower than before.
+The program clears the mob's sneaked-in mark before each step, as a player's typed move does, so
+the sneak roll and that cover leave out sneak's own bonus, as a player's do:
+`get_real_stealth`'s NPC line reads `max(100, ...)`, always +100, and a mob's mark is never
+cleared by its own direct moves (a wanderer's or the program's), so the +100 would stick (stock
+sneaking mobs keep it). A follower's move goes through the command handler, which unhides it first
+(cover and mark, `interpre.cpp` 1400), so its sneak roll is a player's. With
+`hide=yes`, the mob then hides once more on its next free turn, as a player may type `hide`
+after sneaking in: the program rolls that hide itself (`hide_roll`, the plain-hide range) from
+`hide_prof` plus sneak's bonus at its meant size, `min(100, 10 * level / 30)`
+(`ranger_sneak_hide_prof`; no bonus once the SNEAK affect is gone) and clears the mark. As a
+player's hide, the cover comes when the hide-after-sneak wind-up ends (the wind-up calls the
+program back, `ranger_finish_hide`); until then the mob keeps the cover it snuck in with, and a
+broken wind-up gives no new cover. It skips that hide while chasing, or following a leader
+in its room (a delayed follower cannot follow, `act_move.cpp` 1059; one whose leader went on
+without it hides, as a wanderer), with no one in the room to go for
+(`ranger_chasing`: HUNTER with a remembered enemy in another room, or `track=yes` with a
+track here; `ranger_target_here`: a remembered enemy or someone it is aggressive to, by
+presence, no see roll), so a chaser or follower sneaks room to room and hides where it finds
+a target; a wanderer hides after each sneak-in. With `hide=no` the mark is cleared on arrival, and at
+the start of each turn for a move the program did not make (a follower moving with its
+leader), so a later ambush does not read the +100 either; the sneak-in cover stays. A
+`hide_prof` below 0 gives no cover: a sneak-in from it gets none (checked after the program's
+steps, and at the start of a turn for a follower's move), and `hide=yes` starts no
+hide while it lasts (the byte would wrap to a huge cover). For a follower's move both checks
+wait for its next turn (its next follow move clears the mark first anyway): turns come every `PULSE_MOBILE` (about 6 s), so the cover and mark
+live until then, and a tamed pet in its master's room never runs the program
+(`mobact.cpp` 187). Only the core `snuck_in` could close that. Apart from that one hide, a
+sneaking mob's cover means it does not hide again after each step. SNEAK alone, without
 `hide=yes`, does the same on each step; the mob just does not hide when it stands.
 
 Problems are reported in the house style on `/save` and `/implement` (and logged at boot):
 `unknown setting - line ignored`, `duplicate <key> - line ignored`, `bad <key> - line ignored`.
+A mob whose /29 is 32, 33 or 34 and whose program will not run gets one line saying why, then
+the program's own check as if it ran (`report_blocked_program`, `src/shapemob.cpp`). With SPEC
+off it is quiet when a mudlle program has that number, since /29 then means that one:
+`MOB ERROR: mobile #<vnum>: program 32 set but SPEC flag off`, or `... but vnum has its own
+special` when a special assigned to the vnum at boot takes the program's place.
 `/implement` also warns, to the builder only, about flags the program does not act on:
 `MOB WARNING: mobile #<vnum>: scavenger has no effect with program 32` (and bodyguard,
 assistant).

@@ -60,6 +60,8 @@ int find_first_step(int, int);
 
 ACMD(do_ambush);
 ACMD(do_hide);
+void stop_hiding(struct char_data* ch, char);
+void check_break_prep(struct char_data*);
 ACMD(do_say);
 ACMD(do_open);
 ACMD(do_close);
@@ -2165,15 +2167,115 @@ void ranger_attack(char_data* host, char_data* target, const ranger_config& opts
     do_spec_hit(host, target);
 }
 
+/* hide_prof without the sneak bonus: the mark off for the reading only. */
+int ranger_unmarked_hide_prof(char_data* host)
+{
+    const bool marked = IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    const int prof = hide_prof(host);
+    if (marked)
+        SET_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    return prof;
+}
+
+int ranger_sneak_hide_prof(char_data* host);
+int ranger_track_direction(char_data* host);
+
+/* WIMPY at a fifth of its health or less: the program starts nothing. */
+bool ranger_low_health(const char_data* host)
+{
+    return IS_SET(host->specials2.act, MOB_WIMPY) && GET_HIT(host) <= GET_MAX_HIT(host) / 5;
+}
+
+/* A step toward someone is coming: HUNTER with a remembered enemy elsewhere
+ * (where they are, not whether a path leads there), or track=yes with a
+ * track here to follow. As in the turn, a low-health WIMPY mob or a ridden
+ * one does neither. */
+bool ranger_chasing(char_data* host, const ranger_config& opts)
+{
+    if (ranger_low_health(host) || IS_RIDDEN(host))
+        return false;
+    if ((IS_SET(host->specials2.act, MOB_HUNTER) || IS_AFFECTED(host, AFF_HUNT)) && !MOB_FLAGGED(host, MOB_PET))
+        for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+            if (names->enemy && char_exists(names->enemy_number) && names->enemy->in_room != NOWHERE
+                && names->enemy->in_room != host->in_room)
+                return true;
+    return opts.track && !host->master && ranger_track_direction(host) >= 0;
+}
+
+/* Someone here the mob would go for: a remembered enemy, or someone it is
+ * aggressive to. Who is here only; nothing is rolled to see them. */
+bool ranger_target_here(char_data* host)
+{
+    for (char_data* tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+        if (tmpch == host || (!IS_NPC(tmpch) && PRF_FLAGGED(tmpch, PRF_NOHASSLE)))
+            continue;
+        if (mob_race_aggressive_to(host, tmpch) || mob_flag_aggressive_to(host, tmpch))
+            return true;
+        for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+            if (names->enemy == tmpch && char_exists(names->enemy_number))
+                return true;
+    }
+    return false;
+}
+
+/* The subcmd of a hide after sneaking in: its wind-up calls the program
+ * back with it when it ends (complete_delay; a broken one comes back -1). */
+const int RANGER_HIDE_WINDUP = 1;
+
+/* The end of a hide after sneaking in: the cover comes now, as a player's,
+ * from hide_prof with sneak's bonus as meant (ranger_sneak_hide_prof). As a
+ * player's, none if it now fights, is not standing, or rides. */
+void ranger_finish_hide(char_data* host)
+{
+    if (host->specials.fighting || GET_POS(host) != POSITION_STANDING || IS_RIDING(host))
+        return;
+    const int cover = std::max(0, hide_roll(ranger_sneak_hide_prof(host), false));
+    GET_HIDING(host) = cover;
+    if (cover > 0)
+        SET_BIT(host->specials.affected_by, AFF_HIDE);
+    else
+        REMOVE_BIT(host->specials.affected_by, AFF_HIDE);
+}
+
 /* hide=yes: hides when it stands without cover and nothing is pending. A
- * move made by this program does not unhide the mob, and sneaking in gives
- * cover, so after a move this only acts if something else took its cover.
+ * move made by this program does not unhide the mob, so after a move this
+ * only acts if something else took its cover.
+ * Just snuck in (the mark is set): hides once more, as a player may type
+ * hide after sneaking in. do_hide would read get_real_stealth's stuck +100
+ * there, so the program rolls that hide itself, with sneak's bonus as meant,
+ * after the wind-up of a hide after sneaking in (ranger_finish_hide). While
+ * chasing, or following a leader in the room, with no one here to go for,
+ * it does not stop to hide, and sneaks on: a delayed follower cannot follow.
  * True if a hide wind-up started. */
 bool ranger_rehide(char_data* host, const ranger_config& opts)
 {
     if (!opts.hide || host->delay.wait_value != 0)
         return false;
-    if (GET_POS(host) != POSITION_STANDING || GET_HIDING(host))
+    if (GET_POS(host) != POSITION_STANDING || IS_RIDING(host))
+        return false;
+    if (IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN)) {
+        REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN); /* once per sneak-in */
+        const bool with_leader = host->master && host->master->in_room == host->in_room;
+        if ((ranger_chasing(host, opts) || with_leader) && !ranger_target_here(host))
+            return false;
+        /* do_hide's own checks: a spell being prepared breaks, and with no
+         * hide skill (confused down to 0) there is no hide; it keeps the cover
+         * it snuck in with. */
+        check_break_prep(host);
+        if (GET_KNOWLEDGE(host, SKILL_HIDE) <= 0)
+            return false;
+        /* do_hide's wind-up; the cover comes when it ends, so until then the
+         * mob keeps the cover it snuck in with, and a broken one gives none. */
+        WAIT_STATE_BRIEF(host, skills[SKILL_HIDE].beats - 1, -1, RANGER_HIDE_WINDUP, 30,
+            AFF_WAITING | AFF_WAITWHEEL);
+        return host->delay.wait_value > 0;
+    }
+    if (GET_HIDING(host))
+        return false;
+    /* do_hide's cover from a hide prof below 0 wraps the byte to a huge
+     * cover: it stays out of cover instead. */
+    if (ranger_unmarked_hide_prof(host) < 0)
         return false;
     do_hide(host, "", 0, 0, 0);
     return host->delay.wait_value > 0;
@@ -2200,7 +2302,44 @@ struct refused_exits {
     bool dir[NUM_OF_DIRS] = {};
 };
 
+/* The hide prof of a hide after sneaking in, with sneak's bonus at the size
+ * it was meant: min(100, 10 * level / 30), while it still sneaks. get_real_stealth's NPC line gives
+ * max(100, ...), always +100, and nothing clears a mob's sneaked-in mark on
+ * its own moves, so that +100 would stick. Mark set: the mob just snuck in. */
+int ranger_sneak_hide_prof(char_data* host)
+{
+    const int bonus = IS_AFFECTED(host, AFF_SNEAK) ? std::min(100, 10 * GET_LEVEL(host) / 30) : 0;
+    return ranger_unmarked_hide_prof(host) + bonus;
+}
+
+/* After a step: snuck_in's cover from a hide prof below 0 wraps the byte to
+ * a huge cover, so no cover instead, and hide=yes hides as usual. */
+void ranger_check_sneak_cover(char_data* host)
+{
+    if (IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN) && ranger_unmarked_hide_prof(host) < 0)
+        stop_hiding(host, FALSE);
+}
+
+/* After a move: the sneak-in cover check, and with hide=no the mark goes
+ * now, so nothing later (an ambush) reads its stuck +100; the cover it snuck
+ * in with stays. */
+void ranger_sneak_cleanup(char_data* host, const ranger_config& opts)
+{
+    ranger_check_sneak_cover(host);
+    if (!opts.hide)
+        REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+}
+
+/* After a step: the sneak clean-up, then hide=yes hides. */
+void ranger_after_step(char_data* host, const ranger_config& opts)
+{
+    ranger_sneak_cleanup(host, opts);
+    ranger_rehide(host, opts);
+}
+
 /* One step that way, re-hiding after it if something took the mob's cover.
+ * The sneaked-in mark is cleared first, as a player's typed move clears it,
+ * so the sneak roll and snuck_in's cover have no sneak bonus, as a player's.
  * Whether the step went through is read off the mob's room afterwards, so a
  * refusal the checks above do not foresee still lets the turn go on. */
 ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_config& opts, refused_exits& refused)
@@ -2214,6 +2353,7 @@ ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_confi
     const int host_number = host->abs_number;
     const room_direction_data* exit = EXIT(host, dir);
     const bool was_closed = exit && IS_SET(exit->exit_info, EX_CLOSED);
+    REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
     do_move(host, "", &wtl, wtl.cmd, 0);
     wtl.targ1.cleanup();
     if (!char_exists(host_number))
@@ -2222,7 +2362,7 @@ ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_confi
         refused.dir[dir] = true;
         return was_closed && !IS_SET(exit->exit_info, EX_CLOSED) ? RANGER_OPENED : RANGER_STAYED;
     }
-    ranger_rehide(host, opts);
+    ranger_after_step(host, opts);
     return RANGER_MOVED;
 }
 
@@ -2290,6 +2430,13 @@ SPECIAL(mob_ranger_new)
     struct memory_rec* names;
     int tmp;
 
+    /* A hide after sneaking in ends (ranger_rehide's wind-up). */
+    if ((callflag == SPECIAL_NONE || callflag == SPECIAL_DELAY) && host && host->in_room != NOWHERE && wtl
+        && wtl->cmd == -1 && wtl->subcmd == RANGER_HIDE_WINDUP) {
+        ranger_finish_hide(host);
+        return 1;
+    }
+
     if (callflag != SPECIAL_SELF || !host || host->in_room == NOWHERE)
         return 0;
 
@@ -2306,12 +2453,16 @@ SPECIAL(mob_ranger_new)
     if (host->delay.wait_value)
         return 1;
 
+    // A move the program did not make (following a leader) gets the same
+    // clean-up as its own steps. It waits for this turn: a follower's turn
+    // comes only every PULSE_MOBILE, so the cover and mark live until then.
+    ranger_sneak_cleanup(host, opts);
+
     // A WIMPY mob at a fifth of its health or less starts nothing: no attack,
     // no help, no switching, no hunting, no tracks. It still hides and wanders.
-    const int wimpy_health_limit = GET_MAX_HIT(host) / 5;
-    const bool low_health = IS_SET(host->specials2.act, MOB_WIMPY) && GET_HIT(host) <= wimpy_health_limit;
+    const bool low_health = ranger_low_health(host);
     if (low_health) {
-        sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), wimpy_health_limit);
+        sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), GET_MAX_HIT(host) / 5);
         mudlog_debug_mob(buf, host);
     }
 
@@ -2410,11 +2561,13 @@ SPECIAL(mob_ranger_new)
             const int door = number(0, NUM_OF_DIRS - 1);
             const bool usable = exit_is_usable(host, door);
             const int host_number = host->abs_number;
+            /* A route step is a step too: the mark is cleared first (ranger_take_step). */
+            REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
             const walker_result walked = walker_wander(host, door, usable);
             if (walked == WALKER_GONE || !char_exists(host_number))
                 return 1; /* its ON_PATH_END script or its step removed the mob */
             if (walked == WALKER_HANDLED) {
-                ranger_rehide(host, opts);
+                ranger_after_step(host, opts);
                 return 1;
             }
             if (usable) {

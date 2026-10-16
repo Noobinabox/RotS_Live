@@ -722,11 +722,11 @@ ACMD(do_hide)
     hide_skill = hide_prof(ch);
     if (IS_SET(ch->specials2.hide_flags, HIDING_WELL)) {
         send_to_char("You carefully hide yourself.\r\n", ch);
-        hide_chance = number(hide_skill * 3 / 4, hide_skill);
+        hide_chance = hide_roll(hide_skill, true);
         REMOVE_BIT(ch->specials2.hide_flags, HIDING_WELL);
     } else {
         send_to_char("You hide yourself.\r\n", ch);
-        hide_chance = number(hide_skill / 2, hide_skill * 3 / 4);
+        hide_chance = hide_roll(hide_skill, false);
     }
     GET_HIDING(ch) = hide_chance;
 
@@ -1947,6 +1947,13 @@ void snuck_out(struct char_data* ch)
             break;
     if (t)
         send_to_char("You seem to have left without raising any alarm.\r\n", ch);
+}
+
+/* The cover a finished hide gives from hide prof `prof`: a hide well
+ * rolls [3/4, 1] of it, a plain hide [1/2, 3/4]. */
+int hide_roll(int prof, bool well)
+{
+    return well ? number(prof * 3 / 4, prof) : number(prof / 2, prof * 3 / 4);
 }
 
 /*

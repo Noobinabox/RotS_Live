@@ -469,6 +469,26 @@ std::vector<walker_problem> mob_options_unknown_lines(const char* text)
     return unknown;
 }
 
+std::string options_program_block_line(int mob_vnum, int program, options_program_block why)
+{
+    if (why == options_program_block::none || why == options_program_block::after_implement)
+        return "";
+    return "MOB ERROR: mobile #" + std::to_string(mob_vnum) + ": program " + std::to_string(program) + " set but "
+        + (why == options_program_block::spec_off ? "SPEC flag off" : "vnum has its own special");
+}
+
+options_program_block options_program_block_for(bool spec_on, bool mudlle_program_exists, bool runs,
+    bool freed_by_implement)
+{
+    if (!spec_on)
+        return mudlle_program_exists ? options_program_block::none : options_program_block::spec_off;
+    if (runs)
+        return options_program_block::none;
+    if (freed_by_implement)
+        return options_program_block::after_implement;
+    return options_program_block::vnum_special;
+}
+
 void walker_config_check(const struct char_data* proto, int mob_vnum, bool has_program, struct char_data* builder)
 {
     if (!proto || !builder || !proto->specials.mob_options)

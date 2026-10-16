@@ -2359,7 +2359,13 @@ Hiding and sneaking:
                  rolls its sneak. On a success, even those who see
                  through its cover miss it leaving and arriving, and it
                  takes a fresh cover from its hide skill as it arrives,
-                 which can be higher or lower than before.
+                 which can be higher or lower than before. With
+                 hide=yes it then hides once more, as a player can
+                 after sneaking in, with a small sneak bonus: level/3
+                 (10 at level 30). The cover comes when that hide
+                 finishes. While chasing (HUNTER, or track=yes on a
+                 track) or following a leader in the room, with no one
+                 here to go for, it skips that hide and sneaks on.
   SNEAK alone, without hide=yes, does the same on each step; the mob
   just does not hide on its own when it stands.
 

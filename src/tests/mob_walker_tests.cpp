@@ -546,3 +546,29 @@ TEST(MobOptionsUnknownLines, ReportsOnlyLinesNoFeatureKnows)
     EXPECT_EQ(unknown[1].line, 5); /* a vendor key on a mob that is not a vendor */
     EXPECT_TRUE(mob_options_unknown_lines(nullptr).empty());
 }
+
+TEST(OptionsProgramBlockLine, SaysWhyTheProgramWillNotRun)
+{
+    EXPECT_EQ(options_program_block_line(31009, 32, options_program_block::spec_off),
+        "MOB ERROR: mobile #31009: program 32 set but SPEC flag off");
+    EXPECT_EQ(options_program_block_line(16898, 32, options_program_block::vnum_special),
+        "MOB ERROR: mobile #16898: program 32 set but vnum has its own special");
+    EXPECT_EQ(options_program_block_line(1, 34, options_program_block::none), "");
+    EXPECT_EQ(options_program_block_line(1, 34, options_program_block::after_implement), "");
+}
+
+TEST(OptionsProgramBlockLine, FitsTheScreenForAnyVnum)
+{
+    EXPECT_LE(options_program_block_line(99999, 34, options_program_block::vnum_special).size(), 78u);
+}
+
+/* SPEC off: blocked unless a mudlle program has the number. SPEC on:
+ * blocked when it does not run, unless /implement frees its slot. */
+TEST(OptionsProgramBlockFor, SaysWhenTheProgramWillNotRun)
+{
+    EXPECT_EQ(options_program_block_for(false, false, false, false), options_program_block::spec_off);
+    EXPECT_EQ(options_program_block_for(false, true, false, false), options_program_block::none);
+    EXPECT_EQ(options_program_block_for(true, false, true, false), options_program_block::none);
+    EXPECT_EQ(options_program_block_for(true, false, false, false), options_program_block::vnum_special);
+    EXPECT_EQ(options_program_block_for(true, false, false, true), options_program_block::after_implement);
+}

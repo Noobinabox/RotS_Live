@@ -27,6 +27,7 @@ extern struct room_data world;
 extern struct char_data* character_list;
 extern struct char_data* mob_proto; /* prototypes for mobs    */
 extern struct index_data* mob_index;
+extern int no_specials;
 extern byte language_number;
 extern byte language_skills[];
 extern int top_of_mobt;
@@ -2255,6 +2256,70 @@ static bool has_options_program(const struct char_data* proto, int rnum)
     return is_vendor_candidate(proto, rnum) || is_banker_candidate(proto, rnum) || is_ranger_candidate(proto, rnum);
 }
 
+/* A spec proc slot that holds what the game copy's /29 put there: /implement
+ * frees it for the new /29 (implement_proto), so it is no special that wins. */
+static bool slot_freed_by_implement(int rnum)
+{
+    return rnum >= 0 && mob_index[rnum].func && IS_SET(mob_proto[rnum].specials2.act, MOB_SPEC)
+        && (void*)mob_index[rnum].func == virt_program_number(mob_proto[rnum].specials.store_prog_number);
+}
+
+/* Why the options program in /29 will not run (options_program_block).
+ * Takes the editor's copy: /29 there is still the number typed. */
+static options_program_block options_program_blocked(const struct char_data* proto, int rnum)
+{
+    const int prog = proto->specials.store_prog_number;
+    if (no_specials || (prog != PROG_BARTER_VENDOR && prog != PROG_BANKER && prog != PROG_RANGER))
+        return options_program_block::none;
+    const bool spec_on = IS_SET(proto->specials2.act, MOB_SPEC);
+    return options_program_block_for(spec_on, !spec_on && real_program(prog) > 0,
+        spec_on && has_options_program(proto, rnum), spec_on && slot_freed_by_implement(rnum));
+}
+
+/* The settings check of the options program in /29. */
+static void check_program_options(const struct char_data* proto, int mob_vnum, struct char_data* ch)
+{
+    switch (proto->specials.store_prog_number) {
+    case PROG_BARTER_VENDOR:
+        vendor_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_BANKER:
+        banker_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_RANGER:
+        ranger_config_check(proto, mob_vnum, ch);
+        break;
+    }
+}
+
+/* A program that will not run: says why, then checks its lines as if it
+ * did, so its own keys pass and typos are still named. One that runs after
+ * /implement gets its check alone. True if its lines were checked here. */
+static bool report_blocked_program(struct char_data* ch, const struct char_data* proto, int rnum, int mob_vnum)
+{
+    const options_program_block why = options_program_blocked(proto, rnum);
+    if (why == options_program_block::none)
+        return false;
+    const std::string line = options_program_block_line(mob_vnum, proto->specials.store_prog_number, why);
+    if (!line.empty()) {
+        send_to_char(line.c_str(), ch);
+        send_to_char("\n\r", ch);
+    }
+    check_program_options(proto, mob_vnum, ch);
+    return true;
+}
+
+/* After /save or /add writes the editor's mob as `vnum`: its options
+ * program's lines, a program that will not run, then the walker lines. */
+static void report_saved_options(struct char_data* ch, int vnum)
+{
+    struct char_data* proto = SHAPE_PROTO(ch)->proto;
+    if (has_options_program(proto, proto->nr))
+        check_program_options(proto, vnum, ch);
+    const bool blocked = report_blocked_program(ch, proto, proto->nr, vnum);
+    walker_config_check(proto, vnum, has_options_program(proto, proto->nr) || blocked, ch);
+}
+
 /* copy f1 to f2, replacing mob #num with new mob */
 int replace_proto(struct char_data* ch, char* arg)
 {
@@ -2361,14 +2426,7 @@ int replace_proto(struct char_data* ch, char* arg)
 
     if (!IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE)) {
         write_proto(f2, SHAPE_PROTO(ch)->proto, num);
-        if (is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-            vendor_config_check(SHAPE_PROTO(ch)->proto, num, ch);
-        if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-            banker_config_check(SHAPE_PROTO(ch)->proto, num, ch);
-        if (is_ranger_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-            ranger_config_check(SHAPE_PROTO(ch)->proto, num, ch);
-        walker_config_check(SHAPE_PROTO(ch)->proto, num,
-            has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr), ch);
+        report_saved_options(ch, num);
         REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE);
     }
 
@@ -2480,14 +2538,7 @@ int append_proto(struct char_data* ch, char* arg)
 
     fseek(f2, -1, SEEK_CUR);
     write_proto(f2, SHAPE_PROTO(ch)->proto, i1 + 1);
-    if (is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-        vendor_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
-    if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-        banker_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
-    if (is_ranger_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-        ranger_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
-    walker_config_check(SHAPE_PROTO(ch)->proto, i1 + 1,
-        has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr), ch);
+    report_saved_options(ch, i1 + 1);
     sprintf(str, "Mobile added to database as #%d.\n\r", i1 + 1);
     send_to_char(str, ch);
     SHAPE_PROTO(ch)
@@ -2551,8 +2602,7 @@ void implement_proto(struct char_data* ch, bool report_vendor = true, bool repor
     /* If the spec proc slot holds what the old /29 gave, implement put it
      * there: free it so the new flag and /29 can take its place.  A slot
      * filled at boot by vnum (guild, receptionist, shopkeeper...) is kept. */
-    if (IS_SET(proto->specials2.act, MOB_SPEC) && mob_index[number].func
-        && (void*)mob_index[number].func == virt_program_number(proto->specials.store_prog_number))
+    if (slot_freed_by_implement(number))
         mob_index[number].func = 0;
     memcpy(proto, SHAPE_PROTO(ch)->proto, sizeof(struct char_data));
     /*    if(proto->player.name) RELEASE(proto->player.name);
@@ -2600,8 +2650,12 @@ void implement_proto(struct char_data* ch, bool report_vendor = true, bool repor
     ranger_config_rebuild(number, ch, report_vendor);
     ranger_implement_check(number, ch);
     walker_config_rebuild(number);
-    if (report_vendor && report_walker)
-        walker_config_check(mob_proto + number, mob_index[number].virt, has_options_program(mob_proto + number, number), ch);
+    if (report_vendor && report_walker) {
+        /* The editor's copy, not mob_proto: with SPEC off, /29 in mob_proto is
+         * now a mudlle index (real_program above); the editor keeps the 32. */
+        const bool blocked = report_blocked_program(ch, SHAPE_PROTO(ch)->proto, number, mob_index[number].virt);
+        walker_config_check(mob_proto + number, mob_index[number].virt, has_options_program(mob_proto + number, number) || blocked, ch);
+    }
 }
 ACMD(do_shape)
 {
@@ -3125,8 +3179,10 @@ void extra_coms_proto(struct char_data* ch, char* argument)
         break;
     case SHAPE_DONE: {
         /* The save reports vendor, banker or ranger problems exactly when this is
-         * true (the same test replace_proto makes), so implement doesn't repeat them. */
-        bool save_reports = has_options_program(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr);
+         * true (the same tests replace_proto makes), so implement doesn't repeat them. */
+        struct char_data* proto = SHAPE_PROTO(ch)->proto;
+        bool save_reports = has_options_program(proto, proto->nr)
+            || options_program_blocked(proto, proto->nr) == options_program_block::after_implement;
         /* A failed save must not throw the edits away. */
         if (replace_proto(ch, argument) < 0) {
             send_to_char("Not saved - still shaping. Fix the problem and /done again,\n\r"

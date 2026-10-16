@@ -41,10 +41,6 @@ struct vendor_config {
     bool attacks = true; /* false: the mob AI never runs, so the vendor never starts a fight */
     bool usable() const { return store_ok && hours_ok; }
 };
-struct vendor_problem {
-    int line;
-    std::string text;
-}; /* line 0 = whole config */
 struct vendor_lookups {
     std::function<bool(int)> obj_exists;
     std::function<bool(int)> room_exists;
@@ -81,7 +77,6 @@ bool is_vendor_candidate(const struct char_data* proto, int rnum);
 void vendor_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder); /* report only */
 void vendor_implement_check(int mob_rnum, struct char_data* builder); /* /imp only: nobash reminder */
 const vendor_config* vendor_config_for(int mob_rnum); /* nullptr if none */
-std::string vendor_problem_line(int mob_vnum, const vendor_problem& problem); /* formatted warning */
 
 /* Shared with the other service programs (banker). */
 /* As the old shopkeepers: a refusal to serve is a `say`, any other reply a `tell`. */
@@ -119,7 +114,6 @@ void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder);
 void vendor_forget_target(struct waiting_type* wtl, struct obj_data* obj); /* before destroying obj in a command */
 bool vendor_serves_customer(struct char_data* vendor, struct char_data* ch); /* every refusal but hours */
 bool give_targets(struct char_data* vendor, struct char_data* ch, char* arg); /* would do_give pick this mob? */
-void vendor_send(const std::string& line, struct char_data* builder); /* warning to the builder log */
 
 struct vendor_list_cost {
     int qty;

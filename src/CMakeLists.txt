@@ -124,6 +124,7 @@ set(ROTS_SERVER_SOURCES
     mob_progs/shopkeeper.cpp
     mob_progs/banker.cpp
     mob_progs/ranger_prog.cpp
+    mob_progs/mage_prog.cpp
     game_boot_options.cpp
     mobact.cpp
     modify.cpp
@@ -169,6 +170,7 @@ set(ROTS_TEST_SOURCES
     tests/barter_vendor_tests.cpp
     tests/banker_tests.cpp
     tests/ranger_prog_tests.cpp
+    tests/mage_prog_tests.cpp
     tests/game_boot_options_tests.cpp
     tests/resistance_tests.cpp
     tests/resist_item_slot_tests.cpp

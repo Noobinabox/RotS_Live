@@ -41,6 +41,7 @@
 #include "mob_walker.h"
 #include "game_boot_options.h"
 #include "mob_progs/banker.h"
+#include "mob_progs/mage_prog.h"
 #include "mob_progs/ranger_prog.h"
 #include "mob_progs/shopkeeper.h"
 #include "player_file_finalize.h"
@@ -504,6 +505,9 @@ void boot_db(void)
 
     log("Checking ranger mobs.");
     ranger_config_boot();
+
+    log("Checking mage mobs.");
+    mage_config_boot();
 
     walker_config_boot();
 

@@ -28,6 +28,7 @@
 #include "utils.h"
 
 #include "char_utils.h"
+#include "mob_progs/mage_prog.h"
 #include "mob_progs/ranger_prog.h"
 #include "mob_walker.h"
 
@@ -1547,13 +1548,18 @@ char_data* choose_caster_target(char_data* caster)
     }
 
     // NPC casters will preferentially target characters that are fighting them or
-    // group members of those characters.
+    // group members of those characters.  Like a melee blow, a spell can always go to
+    // the one the caster is fighting; anyone else only if the caster can see them.
     int valid_count = 0;
     char_data* target = caster->specials.fighting; // default target is the character the caster is engaged with
     for (char_data* character = world[caster->in_room].people; character != nullptr;
          character = character->next_in_room) {
 
         if (!is_engaged_with_victim(character, caster)) {
+            continue;
+        }
+
+        if (character != caster->specials.fighting && !CAN_SEE(caster, character)) {
             continue;
         }
 
@@ -1635,6 +1641,9 @@ SPECIAL(mob_magic_user)
 }
 
 /*  New Mage Below  */
+/* Program 31.  Its settings are in the mob options (mob_progs/mage_prog.h,
+ * docs/systems/mage-program.md); the "debug" and "spells" keywords only turn
+ * on immortal log lines. */
 const int fire_mage = 0;
 const int lightning_mage = 1;
 const int cold_mage = 2;
@@ -1643,7 +1652,7 @@ const int lhuth_mage = 4;
 const int default_mage = 5;
 
 const int mage_types = 6;
-const char* mage_aliases[] = { "fmage", "lmage", "cmage", "dmage", "lumage", "defaultm" };
+static_assert(mage_type_count == mage_types, "mage_types_table (mage_prog.h) follows the type numbers");
 
 const double full_pct = 0.76;
 const double three_quarter_pct = 0.51;
@@ -1702,7 +1711,7 @@ int pick_a_spell(int* spell_list, char_data* host)
         int chance = number(1, spell_list[0]);
         return spell_list[chance];
     } else {
-        sprintf(buf, "--- NO MAGE KEYWORDS FOUND ---");
+        sprintf(buf, "--- NO MAGE TYPE SET ---");
         mudlog_aliased_mob(buf, host, "spells");
         return 0;
     }
@@ -1740,9 +1749,9 @@ void get_spells(int* spell_list, int mage_type, int health, char_data* host)
 
 // check if correct level and add spell
 void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cur_mage_type,
-    char* keyword, char_data* host, int min_level)
+    char_data* host, int min_level)
 {
-    if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type && has_alias(host, keyword)) {
+    if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type) {
         sprintf(buf, "MType: %d    (HL_SPELL)", mage_type);
         mudlog_aliased_mob(buf, host, "spells");
         add_spell_to_list(spell_list, spell, host);
@@ -1750,13 +1759,13 @@ void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cu
 }
 
 // lookup spells by mage type and hp thresholds
-void get_combat_spells(char_data* host, int* spell_list, double current_health_pct,
-    double current_mana_pct)
+void get_combat_spells(char_data* host, const mage_config& opts, int* spell_list,
+    double current_health_pct)
 {
     for (int mage_type = 0; mage_type < mage_types; mage_type++) {
-        char* keyword = (char*)mage_aliases[mage_type];
-        if (has_alias(host, keyword)) {
-            int current_tier = hp_brackets;
+        if (opts.*mage_types_table[mage_type].flag) {
+            // Below 0 hit points no band matches: that is the lowest band.
+            int current_tier = hp_brackets - 1;
             for (int i = 0; i < hp_brackets; i++) {
                 if (current_health_pct >= percents[i]) {
                     current_tier = i;
@@ -1766,28 +1775,23 @@ void get_combat_spells(char_data* host, int* spell_list, double current_health_p
             get_spells(spell_list, mage_type, current_tier, host);
 
             // restricted spells
-            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, keyword,
-                host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, keyword,
-                host, 30);
-            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type,
-                keyword, host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type,
-                keyword, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type, host,
+                40);
+            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type, host, 30);
             if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
                 add_leveled_spell_to_list(spell_list, SPELL_LIGHTNING_STRIKE, lightning_mage,
-                    mage_type, keyword, host, 35);
+                    mage_type, host, 35);
             }
             if (!SUN_PENALTY(host)) {
                 add_leveled_spell_to_list(spell_list, SPELL_SPEAR_OF_DARKNESS, lhuth_mage,
-                    mage_type, keyword, host, 40);
+                    mage_type, host, 40);
             }
         }
     }
 }
 
-// NOTE: firebolt (maybe a dark spell was too), is returning FALSE?
-//       - was seeing scenarios where casting when already casting, but no longer an issue?
 // note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec)
 {
@@ -1795,20 +1799,33 @@ SPECIAL(mob_magic_user_spec)
     // if (host->delay.wait_value && host->delay.subcmd) {
     const int bonus_to_cast = 20;
     int chance_to_cast = GET_LEVEL(host) + bonus_to_cast;
-    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE || (number(1 - 100) > chance_to_cast)) {
+    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE || (number(1, 100) > chance_to_cast)) {
         return FALSE;
     }
 
-    struct char_data *tmpch, *tmpch_next;
-    char_data* target;
+    // Still waiting (a wait with no command): do_cast would cast at once, with no casting
+    // time, so wait it out and cast on a later turn.
+    if (IS_AFFECTED(host, AFF_WAITING)) {
+        return FALSE;
+    }
+
+    // A stunned (or worse) mob cannot cast.
+    if (GET_POS(host) <= POSITION_STUNNED) {
+        return FALSE;
+    }
+
+    const mage_config& opts = mage_settings(host);
+    struct char_data* tmpch;
+    char_data* target = nullptr;
     int spell_list[20]; // the first index is the count of spells
     int tgt = 0;
     int spell_number = 0;
-    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
+    // A mob with no maximum (never /recalc'd) counts as at 0%: the lowest band.
+    double current_health_pct = GET_MAX_HIT(host) > 0 ? (double)GET_HIT(host) / (double)GET_MAX_HIT(host) : 0.0;
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
-    // conj: prioritize heal powers in non-combat
-    if (!host->specials.fighting && has_alias(host, "conj")) {
+    // conjurer: prioritize heal powers in non-combat
+    if (!host->specials.fighting && opts.conjurer) {
         // handle regen
         if (!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
             target = host;
@@ -1839,13 +1856,13 @@ SPECIAL(mob_magic_user_spec)
     // handle switch tactics (when mob is max interrupted)
     if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
         // shield tact: we use a "super flash" to have an attempt to cast shield
-        if (has_alias(host, "shield")) {
-            if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+        if (opts.shield) {
+            if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) >= USE_MANA(host, SPELL_SHIELD)) {
                 if (number(1, 100) > 50) {
                     for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
                         if (tmpch->specials.fighting == host) {
-                            // send_to_char("A blinding flash of light makes you dizzy.\n\r\n",
-                            // tmpch); no message?? futile if p has react trig?
+                            // No message, on purpose: a client trigger on it would make the
+                            // disengage pointless (issue #243).
                             stop_fighting(tmpch);
                         }
                     }
@@ -1858,8 +1875,8 @@ SPECIAL(mob_magic_user_spec)
         }
     }
 
-    // handle terror
-    if (has_alias(host, "terror") && host->specials.fighting && spell_number == 0 && (current_health_pct <= quarter_pct)) {
+    // handle terror: a chance in the lowest health band
+    if (opts.terror && host->specials.fighting && spell_number == 0 && (current_health_pct < half_pct)) {
         if (number(1, 100) > 80) {
             target = host;
             tgt = TARGET_OTHER;
@@ -1875,22 +1892,26 @@ SPECIAL(mob_magic_user_spec)
         if (target == nullptr) {
             return FALSE;
         }
-        if (host->specials.fighting && spell_number == 0) {
+        // At the interrupt limit the mob stops casting at its foes (issue #243).
+        if (host->specials.fighting && spell_number == 0 && host->interrupt_count < 3) {
             tgt = TARGET_OTHER;
-            if (has_alias(host, "conj")) {
+            if (opts.conjurer) {
                 if (number(1, 100) > 75) {
                     host->points.spirit = 100;
-                    if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
+                    // Confuse only lands on the one the mob fights (its target
+                    // rule), so that is the one to check.
+                    if (!utils::is_affected_by_spell(*host->specials.fighting, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
+                        target = host->specials.fighting;
                     }
-                    if (!has_alias(host, "lumage") && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
+                    if (!opts.lhuth && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
             }
             // Normal combat casting
-            if (spell_number == 0 && host->interrupt_count < 3) {
-                get_combat_spells(host, spell_list, current_health_pct, current_mana_pct);
+            if (spell_number == 0) {
+                get_combat_spells(host, opts, spell_list, current_health_pct);
                 spell_number = pick_a_spell(spell_list, host);
             }
         }
@@ -1900,7 +1921,7 @@ SPECIAL(mob_magic_user_spec)
         return FALSE;
     }
 
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d, Hit%: %.2f",
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d, Hit%%: %.2f",
         GET_NAME(target), spell_number, tgt, host->interrupt_count, current_health_pct);
     mudlog_debug_mob(buf, host);
 
@@ -1915,7 +1936,10 @@ SPECIAL(mob_magic_user_spec)
     wtl_base.targ2.choice = TAR_CHAR_ROOM;
     wtl_base.flg = 1;
     do_cast(host, "", &wtl_base, CMD_CAST, 0);
-    return TRUE;
+
+    // The turn is the cast's only if the cast started; one refused on the spot (no
+    // mana, a peace room, the wrong position) leaves the mob its normal turn.
+    return host->delay.cmd == CMD_CAST && IS_AFFECTED(host, AFF_WAITING);
 }
 
 int warrior_abilities[] = {

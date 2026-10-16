@@ -283,17 +283,6 @@ vendor_lookups game_lookups()
 
 } // namespace
 
-void vendor_send(const std::string& line, struct char_data* builder)
-{
-    char buf[512];
-    snprintf(buf, sizeof(buf), "%s", line.c_str());
-    mudlog(buf, NRM, LEVEL_AREAGOD, TRUE);
-    if (builder && !mudlog_reaches(builder, LEVEL_AREAGOD, NRM)) {
-        send_to_char(buf, builder);
-        send_to_char("\n\r", builder);
-    }
-}
-
 namespace {
 
 bool is_vendor_proto(int rnum)
@@ -318,16 +307,13 @@ void vendor_add_speech_problem(const char_data& proto, std::vector<vendor_proble
  * hard-coded procedure reads directly (guild's guildmasters[] index,
  * ferry_captain's route, etc. -- see spec_pro.cpp), and coincidentally
  * overlapping 33 doesn't make the mob a vendor. rnum < 0 (a mob not in the
- * table yet) has no function slot to own. */
+ * table yet) has no function slot to own. A function the old /29 put there
+ * does not own it (mob_program_candidate). -s boots leave every hard-coded
+ * func unassigned, so a guildmaster whose guild number is 33 would look like
+ * a vendor: then nothing is a candidate. Vendors are specials too. */
 bool is_vendor_candidate(const struct char_data* proto, int rnum)
 {
-    /* -s boots leave every hard-coded func unassigned, so a guildmaster whose
-     * guild number is 33 would look like a vendor. Vendors are specials too. */
-    if (no_specials)
-        return false;
-    if (!IS_SET(proto->specials2.act, MOB_SPEC) || proto->specials.store_prog_number != PROG_BARTER_VENDOR)
-        return false;
-    return rnum < 0 || !mob_index[rnum].func || mob_index[rnum].func == (special_func)barter_vendor;
+    return mob_program_candidate(proto, rnum, (special_func)barter_vendor, PROG_BARTER_VENDOR);
 }
 
 std::string format_vendor_list(const std::vector<vendor_list_row>& rows)
@@ -376,16 +362,6 @@ std::vector<vendor_shortfall> vendor_shortfalls(const std::vector<vendor_cost>& 
             short_of.push_back({ cost.obj_vnum, cost.qty, have });
     }
     return short_of;
-}
-
-std::string vendor_problem_line(int mob_vnum, const vendor_problem& problem)
-{
-    char buf[512];
-    if (problem.line > 0)
-        snprintf(buf, sizeof(buf), "MOB ERROR: mobile #%d, options line %d: %s", mob_vnum, problem.line, problem.text.c_str());
-    else
-        snprintf(buf, sizeof(buf), "MOB ERROR: mobile #%d: %s", mob_vnum, problem.text.c_str());
-    return buf;
 }
 
 std::string vendor_wrap(const std::string& text, const std::string& indent)

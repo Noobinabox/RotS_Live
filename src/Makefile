@@ -82,6 +82,7 @@ SOURCES := \
     mob_progs/shopkeeper.cpp \
     mob_progs/banker.cpp \
     mob_progs/ranger_prog.cpp \
+    mob_progs/mage_prog.cpp \
     game_boot_options.cpp \
     obj2html.cpp \
     object_utils.cpp \

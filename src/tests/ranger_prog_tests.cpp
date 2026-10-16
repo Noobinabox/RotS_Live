@@ -1,5 +1,5 @@
+#include "../mob_options.h"
 #include "../mob_progs/ranger_prog.h"
-#include "../mob_progs/shopkeeper.h"
 
 #include "../comm.h"
 #include "../db.h"
@@ -38,6 +38,8 @@ void abort_delay(struct char_data* wait_ch);
 void complete_delay(struct char_data* ch);
 void break_spell(struct char_data* ch);
 SPECIAL(mob_ranger_new);
+SPECIAL(mob_cleric);
+void* virt_program_number(int number);
 int ranger_track_direction(char_data* host);
 bool ranger_can_step(char_data* host, int dir);
 void one_mobile_activity(char_data* ch);
@@ -89,6 +91,14 @@ TEST(RangerOptions, BadDuplicateAndUnknownLinesAreReported)
     EXPECT_EQ(problem_texts(problems),
         (std::vector<std::string> { "1: bad hide - line ignored", "3: duplicate ambush - line ignored",
             "4: unknown setting - line ignored", "5: unknown setting - line ignored" }));
+}
+
+TEST(RangerOptions, ACorrectedLineAfterABadOneCounts)
+{
+    std::vector<vendor_problem> problems;
+    ranger_config config = parse_ranger_options("hide=yse\nhide=yes", &problems);
+    EXPECT_TRUE(config.hide);
+    EXPECT_EQ(problem_texts(problems), (std::vector<std::string> { "1: bad hide - line ignored" }));
 }
 
 TEST(RangerOptions, WalkerLinesArePassedOver)
@@ -252,6 +262,7 @@ protected:
         remove_char_exists(kAllySlot);
         remove_char_exists(kEnemySlot);
         m_mob_proto[0].specials.store_prog_number = 0;
+        m_mob_proto[0].specials.mob_options = nullptr;
         ranger_config_rebuild(0, nullptr, false); /* erases the registry entry */
         for (int room : { kRoomC, kRoomA, kRoomB }) {
             if (room == kRoomC && !m_room_c_made)
@@ -895,6 +906,57 @@ TEST_F(RangerProgTest, RememberedEnemyIsAmbushedWithTheOption)
     m_mob.equipment[WIELD] = nullptr;
     EXPECT_EQ(m_mob.delay.cmd, CMD_AMBUSH);
     abort_delay(&m_mob);
+}
+
+TEST_F(RangerProgTest, SettingsFollowTheProgramTheMobRuns)
+{
+    set_options("riposte=yes");
+    /* /implement switched the type to program 32; this copy kept its old number. */
+    m_mob.specials.store_prog_number = 15;
+    m_mob_index[0].func = mob_ranger_new;
+    EXPECT_TRUE(ranger_settings(&m_mob).riposte);
+    m_mob.specials.store_prog_number = PROG_RANGER;
+    m_mob_index[0].func = nullptr;
+    EXPECT_TRUE(ranger_settings(&m_mob).riposte);
+    m_mob.specials.store_prog_number = 15;
+    EXPECT_FALSE(ranger_settings(&m_mob).riposte);
+}
+
+TEST_F(RangerProgTest, SaveChecksTheNewProgramBeforeImplement)
+{
+    /* A builder's copy set to /29 32; the type still runs program 15, as the
+     * old /29 gave it, until /implement. */
+    char_data editing {};
+    clear_char(&editing, MOB_ISNPC);
+    editing.specials2.act = MOB_ISNPC | MOB_SPEC;
+    editing.specials.store_prog_number = PROG_RANGER;
+    m_mob_proto[0].specials.store_prog_number = 15;
+    m_mob_index[0].func = (special_func)virt_program_number(15);
+    EXPECT_TRUE(is_ranger_candidate(&editing, 0));
+    /* A function assigned by vnum (a guild, say) still wins. */
+    m_mob_index[0].func = mob_cleric;
+    EXPECT_FALSE(is_ranger_candidate(&editing, 0));
+    m_mob_index[0].func = nullptr;
+    m_mob_proto[0].specials.store_prog_number = PROG_RANGER;
+}
+
+TEST_F(RangerProgTest, CopiesLeftOnTheProgramKeepTheTypesSettings)
+{
+    set_options("riposte=yes");
+    /* /implement took the type off program 32; this copy still runs it. */
+    m_mob_proto[0].specials.store_prog_number = 0;
+    ranger_config_rebuild(0, nullptr, false);
+    EXPECT_TRUE(ranger_settings(&m_mob).riposte);
+    m_mob_proto[0].specials.store_prog_number = PROG_RANGER;
+}
+
+TEST_F(RangerProgTest, AMobRunningNoProgramGetsNoSettings)
+{
+    set_options("riposte=yes");
+    ASSERT_TRUE(ranger_settings(&m_mob).riposte);
+    REMOVE_BIT(m_mob.specials2.act, MOB_SPEC);
+    EXPECT_FALSE(ranger_settings(&m_mob).riposte) << "no spec flag";
+    SET_BIT(m_mob.specials2.act, MOB_SPEC);
 }
 
 TEST_F(RangerProgTest, RiposteSettingReachesTheRunningMob)

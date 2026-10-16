@@ -11,6 +11,7 @@
 #include "interpre.h"
 #include "mob_options.h"
 #include "mob_progs/banker.h"
+#include "mob_progs/mage_prog.h"
 #include "mob_progs/ranger_prog.h"
 #include "mob_progs/shopkeeper.h"
 #include "mob_walker.h"
@@ -2250,10 +2251,11 @@ int load_proto(struct char_data* ch, char* arg)
 int append_proto(struct char_data* ch, char* arg);
 
 /* A mob whose program reads its own options and reports its own lines
- * (shopkeeper, banker, ranger), so the walker check leaves unknown lines to it. */
+ * (shopkeeper, banker, ranger, mage), so the walker check leaves unknown lines to it. */
 static bool has_options_program(const struct char_data* proto, int rnum)
 {
-    return is_vendor_candidate(proto, rnum) || is_banker_candidate(proto, rnum) || is_ranger_candidate(proto, rnum);
+    return is_vendor_candidate(proto, rnum) || is_banker_candidate(proto, rnum) || is_ranger_candidate(proto, rnum)
+        || is_mage_candidate(proto, rnum);
 }
 
 /* A spec proc slot that holds what the game copy's /29 put there: /implement
@@ -2269,7 +2271,8 @@ static bool slot_freed_by_implement(int rnum)
 static options_program_block options_program_blocked(const struct char_data* proto, int rnum)
 {
     const int prog = proto->specials.store_prog_number;
-    if (no_specials || (prog != PROG_BARTER_VENDOR && prog != PROG_BANKER && prog != PROG_RANGER))
+    if (no_specials
+        || (prog != PROG_BARTER_VENDOR && prog != PROG_BANKER && prog != PROG_RANGER && prog != PROG_MAGE))
         return options_program_block::none;
     const bool spec_on = IS_SET(proto->specials2.act, MOB_SPEC);
     return options_program_block_for(spec_on, !spec_on && real_program(prog) > 0,
@@ -2288,6 +2291,9 @@ static void check_program_options(const struct char_data* proto, int mob_vnum, s
         break;
     case PROG_RANGER:
         ranger_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_MAGE:
+        mage_config_check(proto, mob_vnum, ch);
         break;
     }
 }
@@ -2649,6 +2655,8 @@ void implement_proto(struct char_data* ch, bool report_vendor = true, bool repor
     banker_implement_check(number, ch);
     ranger_config_rebuild(number, ch, report_vendor);
     ranger_implement_check(number, ch);
+    mage_config_rebuild(number, ch, report_vendor);
+    mage_implement_check(number, ch);
     walker_config_rebuild(number);
     if (report_vendor && report_walker) {
         /* The editor's copy, not mob_proto: with SPEC off, /29 in mob_proto is
@@ -3178,7 +3186,7 @@ void extra_coms_proto(struct char_data* ch, char* argument)
             = SHAPE_EDIT;
         break;
     case SHAPE_DONE: {
-        /* The save reports vendor, banker or ranger problems exactly when this is
+        /* The save reports vendor, banker, ranger or mage problems exactly when this is
          * true (the same tests replace_proto makes), so implement doesn't repeat them. */
         struct char_data* proto = SHAPE_PROTO(ch)->proto;
         bool save_reports = has_options_program(proto, proto->nr)

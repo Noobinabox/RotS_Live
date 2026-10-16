@@ -76,6 +76,26 @@ std::vector<std::string> walker_problem_lines(int mob_vnum, const std::vector<wa
  * options program, lines that nothing reads. */
 std::vector<walker_problem> mob_options_unknown_lines(const char* text);
 
+/* Why an options program set in /29 (32, 33, 34) will not run, so its lines
+ * are not unknown but unread: the SPEC flag is off, or a special assigned to
+ * the vnum at boot (guild, receptionist...) takes the program's place. */
+enum class options_program_block {
+    none,
+    spec_off,
+    vnum_special,
+    after_implement, /* it does not run yet, but /implement frees its slot */
+};
+
+/* "MOB ERROR: mobile #<vnum>: program <n> set but SPEC flag off" (or
+ * "... but vnum has its own special"); empty for none and after_implement. */
+std::string options_program_block_line(int mob_vnum, int program, options_program_block why);
+
+/* For a mob whose /29 is an options program: SPEC off blocks it unless a
+ * mudlle program has that number (then /29 means that one); SPEC on blocks
+ * it when it does not run and /implement does not free its slot. */
+options_program_block options_program_block_for(bool spec_on, bool mudlle_program_exists, bool runs,
+    bool freed_by_implement);
+
 /* ---- In the running game ---- */
 
 enum walker_result {

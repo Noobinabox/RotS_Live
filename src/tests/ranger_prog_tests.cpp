@@ -27,12 +27,16 @@ extern struct char_data* combat_list;
 extern struct zone_data* zone_table;
 extern struct time_info_data time_info;
 void remove_char_exists(int num);
+int ranger_sneak_hide_prof(char_data* host);
+int ranger_unmarked_hide_prof(char_data* host);
 void set_char_exists(int num);
 int char_exists(int num);
 void clear_char(struct char_data* ch, int mode);
 void clear_object(struct obj_data* obj);
 int in_waiting_list(struct char_data* ch);
 void abort_delay(struct char_data* wait_ch);
+void complete_delay(struct char_data* ch);
+void break_spell(struct char_data* ch);
 SPECIAL(mob_ranger_new);
 int ranger_track_direction(char_data* host);
 bool ranger_can_step(char_data* host, int dir);
@@ -980,6 +984,353 @@ TEST_F(RangerProgTest, ASneakingMobWithHideKeepsWandering)
     SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN); /* as snuck_in leaves it */
     GET_HIDING(&m_mob) = 50;
     EXPECT_TRUE(wanders_within(200));
+}
+
+/* A sneak-in's cover is snuck_in's, with no sneak bonus, as a player's:
+ * not the stuck +100 of get_real_stealth's NPC line. With hide=no the mark
+ * goes on arrival, so a later ambush does not read that +100 either. */
+TEST_F(RangerProgTest, ASneakInsCoverHasNoSneakBonus)
+{
+    GET_LEVEL(&m_mob) = 30;
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK);
+    int sneak_ins = 0;
+    for (int i = 0; i < 400; ++i) {
+        SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN); /* as an earlier sneak-in left it */
+        GET_HIDING(&m_mob) = 0;
+        REMOVE_BIT(m_mob.specials.affected_by, AFF_HIDE);
+        const int from = m_mob.in_room;
+        m_mob.delay.wait_value = 0;
+        turn();
+        if (m_mob.in_room == from)
+            continue;
+        EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN)) << "move " << i;
+        if (!GET_HIDING(&m_mob))
+            continue; /* the sneak failed */
+        ++sneak_ins;
+        const int prof = ranger_unmarked_hide_prof(&m_mob);
+        EXPECT_GE(GET_HIDING(&m_mob), prof / 3) << "move " << i;
+        EXPECT_LE(GET_HIDING(&m_mob), prof * 4 / 5) << "move " << i;
+    }
+    EXPECT_GT(sneak_ins, 20);
+}
+
+/* The after-sneak hide's bonus is sneak's: none once the mob stops sneaking. */
+TEST_F(RangerProgTest, TheAfterSneakBonusNeedsSneak)
+{
+    GET_LEVEL(&m_mob) = 30;
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    EXPECT_EQ(ranger_sneak_hide_prof(&m_mob), ranger_unmarked_hide_prof(&m_mob));
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK);
+    EXPECT_EQ(ranger_sneak_hide_prof(&m_mob), ranger_unmarked_hide_prof(&m_mob) + 10);
+}
+
+/* Chasing a remembered enemy elsewhere with no one here to go for: no hide
+ * after the sneak-in, so it does not stop; the cover it snuck in with stays. */
+TEST_F(RangerProgTest, AChaserDoesNotStopToHideAfterSneakingIn)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_MEMORY | MOB_HUNTER | MOB_SENTINEL;
+    make_room_c(); /* no way there, so no step either */
+    remember(&m_mob, &m_player);
+    place(&m_player, kRoomC);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    EXPECT_EQ(GET_HIDING(&m_mob), 20);
+    EXPECT_EQ(m_mob.delay.wait_value, 0);
+}
+
+/* Following a track with no one here: it steps on instead of hiding. */
+TEST_F(RangerProgTest, ATrackerDoesNotStopToHideAfterSneakingIn)
+{
+    set_options("hide=yes\ntrack=yes");
+    m_mob.specials2.act |= MOB_AGGRESSIVE | MOB_SENTINEL;
+    place(&m_player, kRoomB);
+    world[kRoomA].room_track[0].char_number = -RACE_HUMAN;
+    world[kRoomA].room_track[0].data = time_info.hours * 8 + NORTH;
+    SET_BIT(m_mob.specials.affected_by, AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    EXPECT_EQ(m_mob.in_room, kRoomB);
+}
+
+/* Chasing, but someone it would go for is here: it hides first. */
+TEST_F(RangerProgTest, AChaserHidesAfterSneakingInWhenATargetIsHere)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_MEMORY | MOB_HUNTER | MOB_SENTINEL;
+    m_mob.specials2.pref = 1 << RACE_ORC;
+    make_room_c();
+    remember(&m_mob, &m_player);
+    place(&m_player, kRoomC);
+    make_mob(&m_enemy, kEnemySlot, m_enemy_name);
+    m_enemy.specials.store_prog_number = 0;
+    m_enemy.specials2.act = MOB_ISNPC;
+    m_enemy.player.race = RACE_ORC;
+    place(&m_enemy, kRoomA);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    EXPECT_GT(m_mob.delay.wait_value, 0) << "the hide's wind-up";
+    EXPECT_EQ(m_mob.specials.fighting, nullptr);
+}
+
+/* hide=yes after a sneak-in: one hide, as a player may type it, with the
+ * sneak bonus as meant (+10 at level 30). As a player's, the cover comes when
+ * the wind-up ends; until then the mob keeps the cover it snuck in with. */
+TEST_F(RangerProgTest, AHideAfterSneakingInHasTheBonusAsMeant)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_SENTINEL;
+    GET_LEVEL(&m_mob) = 30;
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    for (int i = 0; i < 100; ++i) {
+        SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN); /* as snuck_in leaves it */
+        GET_HIDING(&m_mob) = 20;
+        abort_delay(&m_mob);
+        const int meant = ranger_unmarked_hide_prof(&m_mob) + 10;
+        EXPECT_EQ(ranger_sneak_hide_prof(&m_mob), meant);
+        turn();
+        EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN)) << "once per sneak-in";
+        EXPECT_GT(m_mob.delay.wait_value, 0) << "the wind-up";
+        EXPECT_EQ(GET_HIDING(&m_mob), 20) << "no new cover during the wind-up";
+        complete_delay(&m_mob);
+        EXPECT_GE(GET_HIDING(&m_mob), meant / 2);
+        EXPECT_LE(GET_HIDING(&m_mob), meant * 3 / 4);
+        EXPECT_TRUE(IS_AFFECTED(&m_mob, AFF_HIDE));
+    }
+    abort_delay(&m_mob);
+    const int cover = GET_HIDING(&m_mob);
+    turn();
+    EXPECT_EQ(GET_HIDING(&m_mob), cover) << "no second hide";
+    EXPECT_EQ(m_mob.delay.wait_value, 0);
+}
+
+/* A broken wind-up (an attack, say) gives no new cover, as a player's: the
+ * mob keeps the cover it snuck in with. */
+TEST_F(RangerProgTest, ABrokenHideAfterSneakingInGivesNoNewCover)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_SENTINEL;
+    GET_LEVEL(&m_mob) = 30;
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    ASSERT_GT(m_mob.delay.wait_value, 0) << "the wind-up";
+    break_spell(&m_mob);
+    complete_delay(&m_mob);
+    abort_delay(&m_mob);
+    EXPECT_EQ(GET_HIDING(&m_mob), 20);
+    EXPECT_TRUE(IS_AFFECTED(&m_mob, AFF_HIDE));
+}
+
+/* A fight that starts during the wind-up without breaking it (a miss): no
+ * new cover when it ends, as a player's hide is refused while fighting. */
+TEST_F(RangerProgTest, NoNewCoverWhenAFightStartsDuringTheWindUp)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_SENTINEL;
+    GET_LEVEL(&m_mob) = 30;
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    ASSERT_GT(m_mob.delay.wait_value, 0) << "the wind-up";
+    place(&m_player, kRoomA);
+    set_fighting(&m_mob, &m_player);
+    const int cover = GET_HIDING(&m_mob);
+    complete_delay(&m_mob);
+    abort_delay(&m_mob);
+    EXPECT_EQ(GET_HIDING(&m_mob), cover);
+    stop_fighting(&m_mob);
+}
+
+/* Following a leader with no one here to go for: no hide after the
+ * sneak-in, since a delayed follower cannot follow; the cover stays. */
+TEST_F(RangerProgTest, AFollowerDoesNotStopToHideAfterSneakingIn)
+{
+    set_options("hide=yes");
+    place(&m_player, kRoomB);
+    make_mob(&m_ally, kAllySlot, m_ally_name);
+    m_ally.specials.store_prog_number = 0;
+    m_ally.specials2.act = MOB_ISNPC;
+    place(&m_ally, kRoomA); /* its leader, here with it */
+    m_mob.master = &m_ally;
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    m_mob.master = nullptr;
+    EXPECT_EQ(m_mob.delay.wait_value, 0);
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    EXPECT_EQ(GET_HIDING(&m_mob), 20);
+}
+
+/* A follower whose leader is not in its room (it went on without it) has
+ * no one to keep up with: it hides after sneaking in, as a wanderer. */
+TEST_F(RangerProgTest, AFollowerLeftBehindHidesAfterSneakingIn)
+{
+    set_options("hide=yes");
+    place(&m_player, kRoomB);
+    m_mob.master = &m_player;
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    m_mob.master = nullptr;
+    EXPECT_GT(m_mob.delay.wait_value, 0) << "the wind-up";
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    abort_delay(&m_mob);
+}
+
+/* With no hide skill (do_hide would refuse) there is no hide after the
+ * sneak-in: the mob keeps the cover it snuck in with, and does not retry. */
+TEST_F(RangerProgTest, NoHideAfterSneakingInWithoutTheHideSkill)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_SENTINEL;
+    byte knowledge[MAX_SKILLS] = {};
+    m_mob.knowledge = knowledge; /* hide 0 */
+    GET_LEVEL(&m_mob) = 40; /* hide prof 10: a sneak-in cover, not a wrapped one */
+    place(&m_player, kRoomB);
+    ASSERT_GE(ranger_unmarked_hide_prof(&m_mob), 0);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    m_mob.knowledge = nullptr;
+    EXPECT_EQ(GET_HIDING(&m_mob), 20);
+    EXPECT_TRUE(IS_AFFECTED(&m_mob, AFF_HIDE));
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    EXPECT_EQ(m_mob.delay.wait_value, 0);
+}
+
+/* Item 1: snuck_in's cover from a hide prof below 0 would wrap the byte to
+ * a huge cover: the mob gets no cover, and no sneaked-in mark. */
+TEST_F(RangerProgTest, ASneakInWithAHideProfBelowZeroGivesNoCover)
+{
+    byte knowledge[MAX_SKILLS] = {};
+    knowledge[SKILL_SNEAK] = 100; /* hide and stealth 0 */
+    m_mob.knowledge = knowledge;
+    GET_LEVEL(&m_mob) = 1;
+    world[kRoomA].sector_type = world[kRoomB].sector_type = SECT_INSIDE;
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK);
+    ASSERT_LT(ranger_unmarked_hide_prof(&m_mob), 0);
+    int moves = 0;
+    for (int i = 0; i < 400; ++i) {
+        const int from = m_mob.in_room;
+        abort_delay(&m_mob);
+        turn();
+        if (m_mob.in_room == from)
+            continue;
+        ++moves;
+        EXPECT_EQ(GET_HIDING(&m_mob), 0) << "move " << i;
+        EXPECT_FALSE(IS_AFFECTED(&m_mob, AFF_HIDE));
+        EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    }
+    m_mob.knowledge = nullptr; /* the rooms are put back in TearDown */
+    EXPECT_GT(moves, 20);
+}
+
+/* With a hide prof below 0, a later turn's hide would roll a cover below 0
+ * that wraps the byte: hide=yes starts no hide then; it stays out of cover. */
+TEST_F(RangerProgTest, NoHideWithAHideProfBelowZero)
+{
+    set_options("hide=yes");
+    m_mob.specials2.act |= MOB_SENTINEL;
+    byte knowledge[MAX_SKILLS] = {};
+    knowledge[SKILL_HIDE] = 5;
+    m_mob.knowledge = knowledge;
+    GET_LEVEL(&m_mob) = 1;
+    world[kRoomA].sector_type = SECT_INSIDE;
+    place(&m_player, kRoomB);
+    ASSERT_GT(GET_KNOWLEDGE(&m_mob, SKILL_HIDE), 0);
+    ASSERT_LT(ranger_unmarked_hide_prof(&m_mob), 0);
+    turn();
+    m_mob.knowledge = nullptr; /* the rooms are put back in TearDown */
+    EXPECT_NE(m_mob.delay.cmd, CMD_HIDE);
+    EXPECT_EQ(m_mob.delay.wait_value, 0);
+    EXPECT_EQ(GET_HIDING(&m_mob), 0);
+}
+
+/* hide=no: a mark from a move the program did not make (a follower moving
+ * with its leader) goes at the start of its turn; the cover stays. */
+TEST_F(RangerProgTest, AFollowersMarkGoesWithHideNo)
+{
+    place(&m_player, kRoomB);
+    m_mob.master = &m_player;
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+    SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+    GET_HIDING(&m_mob) = 20;
+    turn();
+    m_mob.master = nullptr;
+    EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN));
+    EXPECT_EQ(GET_HIDING(&m_mob), 20);
+    EXPECT_TRUE(IS_AFFECTED(&m_mob, AFF_HIDE));
+}
+
+/* A follower's sneak-in (a move the program did not make) from a hide prof
+ * below 0: the wrapped cover goes at the start of its turn, either setting. */
+TEST_F(RangerProgTest, AFollowersSneakInWithAHideProfBelowZeroGivesNoCover)
+{
+    byte knowledge[MAX_SKILLS] = {};
+    knowledge[SKILL_SNEAK] = 100; /* hide and stealth 0 */
+    m_mob.knowledge = knowledge;
+    GET_LEVEL(&m_mob) = 1;
+    world[kRoomA].sector_type = SECT_INSIDE;
+    place(&m_player, kRoomB);
+    m_mob.master = &m_player;
+    ASSERT_LT(ranger_unmarked_hide_prof(&m_mob), 0);
+    for (const char* options : { "", "hide=yes" }) {
+        set_options(options);
+        SET_BIT(m_mob.specials.affected_by, AFF_SNEAK | AFF_HIDE);
+        SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+        GET_HIDING(&m_mob) = 246; /* snuck_in's cover from -10, wrapped */
+        abort_delay(&m_mob);
+        turn();
+        EXPECT_EQ(GET_HIDING(&m_mob), 0) << options;
+        EXPECT_FALSE(IS_AFFECTED(&m_mob, AFF_HIDE)) << options;
+        EXPECT_FALSE(IS_SET(m_mob.specials2.hide_flags, HIDING_SNUCK_IN)) << options;
+    }
+    m_mob.master = nullptr;
+    m_mob.knowledge = nullptr; /* the rooms are put back in TearDown */
+}
+
+/* The sneak roll has no bonus: the mark is cleared before the step, so in
+ * the fixture's rooms (stealth 0) some sneaks fail and give no cover. With
+ * the stuck +100 every sneak would pass. */
+TEST_F(RangerProgTest, TheSneakRollHasNoBonus)
+{
+    place(&m_player, kRoomB);
+    SET_BIT(m_mob.specials.affected_by, AFF_SNEAK);
+    int moves = 0, failed = 0;
+    for (int i = 0; i < 400; ++i) {
+        SET_BIT(m_mob.specials2.hide_flags, HIDING_SNUCK_IN);
+        GET_HIDING(&m_mob) = 0;
+        REMOVE_BIT(m_mob.specials.affected_by, AFF_HIDE);
+        const int from = m_mob.in_room;
+        m_mob.delay.wait_value = 0;
+        turn();
+        if (m_mob.in_room == from)
+            continue;
+        ++moves;
+        if (!GET_HIDING(&m_mob))
+            ++failed; /* a sneak-in gives cover, a failed sneak none */
+    }
+    EXPECT_GT(moves, 20);
+    EXPECT_GT(failed, 0);
+    EXPECT_LT(failed, moves);
 }
 
 TEST_F(RangerProgTest, NothingWhileSomethingIsPending)

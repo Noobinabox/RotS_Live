@@ -52,7 +52,8 @@ void BackgroundLineReader::read_lines(
 std::vector<std::string> BackgroundLineReader::take_lines()
 {
     std::scoped_lock lock(received_input->guard);
-    return std::exchange(received_input->lines, {});
+    std::vector<std::string> taken = std::exchange(received_input->lines, {});
+    return taken;
 }
 
 //============================================================================

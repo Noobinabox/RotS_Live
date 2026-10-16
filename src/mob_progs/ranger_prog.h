@@ -9,7 +9,7 @@
 #include <vector>
 
 struct char_data;
-struct vendor_problem; /* mob_progs/shopkeeper.h */
+struct vendor_problem; /* mob_options.h */
 
 constexpr int PROG_RANGER = 32;
 

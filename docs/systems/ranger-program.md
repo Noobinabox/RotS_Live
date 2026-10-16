@@ -19,7 +19,12 @@ one turn.
 
 One per line, `key=yes|no`, all optional, default no. Parsed once per prototype at boot and on
 `/implement`, and kept by mob rnum (`ranger_config_for`); running mobs pick up a change at
-`/implement` or the next boot. `/save` only checks the lines and reports problems. General settings
+`/implement` or the next boot (the settings follow the program a mob runs, its type's function
+else its own number, so loaded copies follow a switch to program 32; when `/implement` leaves the type with no program,
+`/29 0` or the spec flag cleared, copies already loaded keep running program 32 until they reset,
+and read the type's settings still; a mob without the spec flag gets none). `/save` only checks the
+lines and reports problems, also for a mob just switched to program 32 by `/29` before
+`/implement` (`mob_program_candidate`, `src/mob_options.cpp`). General settings
 (walkers) are passed over.
 
 | Setting | Effect |
@@ -66,8 +71,9 @@ sneaking mob's cover means it does not hide again after each step. SNEAK alone, 
 `hide=yes`, does the same on each step; the mob just does not hide when it stands.
 
 Problems are reported in the house style on `/save` and `/implement` (and logged at boot):
-`unknown setting - line ignored`, `duplicate <key> - line ignored`, `bad <key> - line ignored`.
-A mob whose /29 is 32, 33 or 34 and whose program will not run gets one line saying why, then
+`unknown setting - line ignored`, `duplicate <key> - line ignored` (the first good line stands),
+`bad <key> - line ignored` (a later line with a good value still counts).
+A mob whose /29 is 31, 32, 33 or 34 and whose program will not run gets one line saying why, then
 the program's own check as if it ran (`report_blocked_program`, `src/shapemob.cpp`). With SPEC
 off it is quiet when a mudlle program has that number, since /29 then means that one:
 `MOB ERROR: mobile #<vnum>: program 32 set but SPEC flag off`, or `... but vnum has its own

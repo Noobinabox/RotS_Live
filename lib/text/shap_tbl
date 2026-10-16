@@ -1699,7 +1699,7 @@ Special procedures:
     PLAYERTITLE seeks audience!".
     Important Note:  This spec_prog will NOT work with MEMORY flag (#11).
 29: postmaster          30: dragon
-31: caster/mage (spec)
+31: mage. Casts by its types and its health (MAN SHAPE MAGE).
 32: ranger. Hides, ambushes, follows tracks and hunts (MAN SHAPE RANGER).
 33: barter vendor. Sells items for other items (MAN SHAPE SHOPKEEPER).
 34: banker. Keeps the players' vaults (MAN SHAPE BANKER).
@@ -1812,14 +1812,15 @@ lines into one. Blank lines are removed when you save the text, and lines
 starting with // (comments) are ignored. A # is saved as + and a ~ as -;
 text can't start with $ or pass 4000 characters.
 
-Each program that reads options documents its own settings: program 32,
-see MAN SHAPE RANGER; program 33, see MAN SHAPE SHOPKEEPER; program 34,
-see MAN SHAPE BANKER.
+Each program that reads options documents its own settings: program 31,
+see MAN SHAPE MAGE; program 32, see MAN SHAPE RANGER; program 33, see
+MAN SHAPE SHOPKEEPER; program 34, see MAN SHAPE BANKER.
 
 General settings work on any mob, whatever its program. A program skips
-them; on a mob that is not a working ranger, shopkeeper or banker, a line
-that is not a general setting is reported when you /save or /implement. The
-general settings are the walker settings, see MAN SHAPE WALKER.
+them; on a mob that is not a working mage, ranger, shopkeeper or banker, a
+line that is not a general setting is reported when you /save or
+/implement. The general settings are the walker settings, see MAN SHAPE
+WALKER.
 #
 "WALKER" "WALKERS" "WALKER_TYPE" "WALKER_ROOMS"
 
@@ -2395,4 +2396,69 @@ slow it down along its route.
 SCAVENGER, BODYGUARD and ASSISTANT have no effect with program 32, and
 /implement warns about them. A bad setting is reported when you /save or
 /implement, and that line is ignored.
+#
+"MAGE" "MAGES" "PROGRAM 31"
+
+The mage program (program 31) casts spells on the mob's own turn. On each
+turn it casts with a chance of its level + 20 in 100 (always, from level
+80). In a fight it casts at its foes from the spell lists of its types,
+chosen by its health; out of a fight it heals itself.
+
+Setting one up (extended mode, see MAN SHAPE MOB2 42):
+  /5  set flag SPEC (bit 0)
+  /29 program 31
+  /42 the settings, one per line, all optional (left out means no):
+  fire=yes       firebolt; below 51% health also chill ray; below 26%
+                 chill ray and magic missile. Fireball from level 40
+  lightning=yes  lightning bolt; below 51% also chill ray; below 26%
+                 chill ray and magic missile. Lightning strike from
+                 level 35, outdoors in a lightning storm
+  cold=yes       chill ray; from 51% to 75% also lightning bolt; below
+                 26% also magic missile. Cone of cold from level 30
+  dark=yes       dark bolt; below 51% also chill ray; below 26% chill
+                 ray and magic missile. Searing darkness from level 40
+  lhuth=yes      word of agony and black arrow; below 51% dark bolt and
+                 black arrow; below 26% leach and dark bolt. Spear of
+                 darkness from level 40, when the sun does not hurt it.
+                 It never casts poison
+  mixed=yes      firebolt and lightning bolt; below 51% chill ray and
+                 lightning bolt; below 26% chill ray and magic missile.
+                 Earthquake from level 30
+  conjurer=yes   out of a fight: regeneration, then curing. In a fight,
+                 now and then confuse on the one it fights, or poison
+                 on a foe not yet poisoned
+  shield=yes     at the interrupt limit (below), may break off the fight
+                 to cast shield. It gives no message, on purpose
+  terror=yes     below 26% health, now and then casts terror
+Example:
+  dark=yes
+  conjurer=yes
+
+Set at least one type: without one the mob casts none of the type
+spells, only what conjurer, shield and terror give it; /implement warns
+about that. Several types add their spell lists together.
+
+A WRAITH mob (a spirit, flag bit 17) cannot cast these spells; do not
+give it program 31.
+
+On a turn it casts:
+  Out of a fight  conjurer heals first. Then, at 90% health or less, it
+                  casts cure self (with shield up, only while it has
+                  half its mana or more).
+  In a fight      it casts at the one it fights, or at anyone else in
+                  the fight or in their group whom it can see. Each
+                  interrupted cast counts; at 3 (the interrupt limit) it
+                  casts no spell from its lists and no confuse or poison,
+                  and fights with blows; terror and the shield break-off
+                  still apply. The count drops by one every 10 turns of
+                  the fight and is cleared once the fight is over.
+A cast that cannot start (no mana, a peace room, the wrong position) does
+not use up the turn. On a turn it does not cast, the mob acts as any mob
+does: its flags (AGGRESSIVE, HELPER and so on) work as usual.
+
+The keywords debug and spells in the mob's name list send its spell
+choices to the immortal log; they change nothing else.
+
+A bad setting is reported when you /save or /implement, and that line is
+ignored.
 #~

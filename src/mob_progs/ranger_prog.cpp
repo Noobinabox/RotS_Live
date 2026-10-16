@@ -1,5 +1,4 @@
 #include "ranger_prog.h"
-#include "shopkeeper.h"
 
 #include "../comm.h"
 #include "../db.h"
@@ -14,12 +13,8 @@
 extern struct char_data* mob_proto;
 extern struct index_data* mob_index;
 extern int top_of_mobt;
-extern int no_specials;
 
 SPECIAL(mob_ranger_new);
-
-using mob_options_detail::split_lines;
-using mob_options_detail::trim;
 
 namespace {
 
@@ -27,74 +22,24 @@ std::unordered_map<int, ranger_config> g_ranger_configs; /* by mob rnum */
 
 bool is_ranger_proto(int rnum) { return is_ranger_candidate(&mob_proto[rnum], rnum); }
 
-/* Every ranger setting: its key and where it lands in ranger_config. */
-struct ranger_key {
-    const char* key;
-    bool ranger_config::*setting;
-};
-constexpr ranger_key ranger_keys[] = {
-    { "hide", &ranger_config::hide },
-    { "ambush", &ranger_config::ambush },
-    { "track", &ranger_config::track },
-    { "riposte", &ranger_config::riposte },
-};
-constexpr int ranger_key_count = sizeof(ranger_keys) / sizeof(ranger_keys[0]);
-
-int find_ranger_key(const std::string& key)
-{
-    for (int i = 0; i < ranger_key_count; ++i)
-        if (key == ranger_keys[i].key)
-            return i;
-    return -1;
-}
-
 } // namespace
 
 ranger_config parse_ranger_options(const char* text, std::vector<vendor_problem>* problems)
 {
     ranger_config config;
-    bool seen[ranger_key_count] = {};
-    auto problem = [&](int line, const std::string& what) {
-        if (problems)
-            problems->push_back({ line, what });
+    const mob_yes_no_setting settings[] = {
+        { "hide", &config.hide },
+        { "ambush", &config.ambush },
+        { "track", &config.track },
+        { "riposte", &config.riposte },
     };
-
-    int line_no = 0;
-    for (const std::string& raw : split_lines(text ? text : "")) {
-        ++line_no;
-        std::string line = trim(raw);
-        if (line.empty() || line.compare(0, 2, "//") == 0)
-            continue;
-        size_t eq = line.find('=');
-        std::string key = trim(eq == std::string::npos ? line : line.substr(0, eq));
-        std::string value = eq == std::string::npos ? "" : trim(line.substr(eq + 1));
-        const int index = find_ranger_key(key);
-        if (index < 0 && mob_option_is_general(key))
-            continue; /* another feature's line (mob_general_options) */
-        if (index < 0 || eq == std::string::npos) {
-            problem(line_no, "unknown setting - line ignored");
-            continue;
-        }
-        if (seen[index]) {
-            problem(line_no, "duplicate " + key + " - line ignored");
-            continue;
-        }
-        seen[index] = true;
-        if (value == "yes" || value == "no")
-            config.*ranger_keys[index].setting = value == "yes";
-        else
-            problem(line_no, "bad " + key + " - line ignored");
-    }
+    parse_yes_no_options(text, settings, sizeof(settings) / sizeof(settings[0]), problems);
     return config;
 }
 
 bool is_ranger_candidate(const struct char_data* proto, int rnum)
 {
-    if (no_specials)
-        return false;
-    if (!IS_SET(proto->specials2.act, MOB_SPEC) || proto->specials.store_prog_number != PROG_RANGER)
-        return false;
-    return rnum < 0 || !mob_index[rnum].func || mob_index[rnum].func == (special_func)mob_ranger_new;
+    return mob_program_candidate(proto, rnum, (special_func)mob_ranger_new, PROG_RANGER);
 }
 
 void ranger_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
@@ -134,8 +79,18 @@ void ranger_implement_check(int mob_rnum, struct char_data* builder)
 
 void ranger_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
 {
-    if (mob_rnum < 0 || mob_rnum > top_of_mobt || !is_ranger_proto(mob_rnum)) {
+    if (mob_rnum < 0 || mob_rnum > top_of_mobt) {
         g_ranger_configs.erase(mob_rnum);
+        return;
+    }
+    if (!is_ranger_proto(mob_rnum)) {
+        /* When /implement leaves the type with no program (/29 0, or the spec
+         * flag cleared), copies already loaded keep running this one until they
+         * reset, and read the type's settings still. */
+        if (mob_proto[mob_rnum].specials.mob_options)
+            g_ranger_configs[mob_rnum] = parse_ranger_options(mob_proto[mob_rnum].specials.mob_options, nullptr);
+        else
+            g_ranger_configs.erase(mob_rnum);
         return;
     }
     std::vector<vendor_problem> problems;
@@ -155,7 +110,7 @@ const ranger_config* ranger_config_for(int mob_rnum)
 const ranger_config& ranger_settings(const struct char_data* mob)
 {
     static const ranger_config none;
-    if (!mob || !IS_NPC(mob) || mob->specials.store_prog_number != PROG_RANGER)
+    if (!mob_runs_program(mob, (special_func)mob_ranger_new, PROG_RANGER))
         return none;
     const ranger_config* config = ranger_config_for(mob->nr);
     return config ? *config : none;

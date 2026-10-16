@@ -797,6 +797,23 @@ TEST_F(BarterVendorTest, VendorCandidateRule)
     m_mob_proto[0].specials.store_prog_number = PROG_BARTER_VENDOR;
 }
 
+TEST_F(BarterVendorTest, SaveChecksTheNewProgramBeforeImplement)
+{
+    /* A builder's copy set to /29 33; the type still runs program 4, as the
+     * old /29 gave it, until /implement. */
+    char_data editing {};
+    clear_char(&editing, MOB_ISNPC);
+    editing.specials2.act = MOB_ISNPC | MOB_SPEC;
+    editing.specials.store_prog_number = PROG_BARTER_VENDOR;
+    m_mob_proto[0].specials.store_prog_number = 4;
+    m_mob_index[0].func = (special_func)virt_program_number(4);
+    EXPECT_TRUE(is_vendor_candidate(&editing, 0));
+    m_mob_index[0].func = +[](char_data*, char_data*, int, char*, int, waiting_type*) { return 0; };
+    EXPECT_FALSE(is_vendor_candidate(&editing, 0)) << "hard-coded function owns the slot";
+    m_mob_index[0].func = nullptr;
+    m_mob_proto[0].specials.store_prog_number = PROG_BARTER_VENDOR;
+}
+
 /* "buy hide" makes the command parser pick the buyer's own hide as the
  * command's target; the hide is then destroyed as payment, and the caller
  * still reads the target afterwards. */

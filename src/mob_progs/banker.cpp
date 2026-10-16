@@ -31,7 +31,6 @@ extern int top_of_mobt;
 extern struct obj_data* obj_proto;
 extern struct index_data* obj_index;
 extern struct time_info_data time_info;
-extern int no_specials;
 extern int generic_scalp;
 
 int get_number(char** name);
@@ -1119,11 +1118,7 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
 
 bool is_banker_candidate(const struct char_data* proto, int rnum)
 {
-    if (no_specials)
-        return false;
-    if (!IS_SET(proto->specials2.act, MOB_SPEC) || proto->specials.store_prog_number != PROG_BANKER)
-        return false;
-    return rnum < 0 || !mob_index[rnum].func || mob_index[rnum].func == (special_func)banker;
+    return mob_program_candidate(proto, rnum, (special_func)banker, PROG_BANKER);
 }
 
 void banker_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)

@@ -879,6 +879,23 @@ TEST_F(BankerTest, CandidateRule)
     EXPECT_FALSE(is_banker_candidate(&m_mob_proto[0], 0));
 }
 
+TEST_F(BankerTest, SaveChecksTheNewProgramBeforeImplement)
+{
+    /* A builder's copy set to /29 34; the type still runs program 4, as the
+     * old /29 gave it, until /implement. */
+    char_data editing {};
+    clear_char(&editing, MOB_ISNPC);
+    editing.specials2.act = MOB_ISNPC | MOB_SPEC;
+    editing.specials.store_prog_number = PROG_BANKER;
+    m_mob_proto[0].specials.store_prog_number = 4;
+    m_mob_index[0].func = (special_func)virt_program_number(4);
+    EXPECT_TRUE(is_banker_candidate(&editing, 0));
+    m_mob_index[0].func = +[](char_data*, char_data*, int, char*, int, waiting_type*) { return 0; };
+    EXPECT_FALSE(is_banker_candidate(&editing, 0)) << "hard-coded function owns the slot";
+    m_mob_index[0].func = nullptr;
+    m_mob_proto[0].specials.store_prog_number = PROG_BANKER;
+}
+
 TEST_F(BankerTest, ObjectRecordsRoundTripANestedContainer)
 {
     obj_data* pack = read_object(1, REAL);

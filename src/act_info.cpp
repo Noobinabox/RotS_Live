@@ -114,9 +114,9 @@ void report_mob_age(const struct char_data*, const struct char_data*);
 void report_char_mentals(const struct char_data*, char*, int);
 void report_affection(const struct affected_type*, char*);
 void report_perception(const struct char_data*, char*);
-int show_tracks(struct char_data*, char*, int);
+int show_tracks(const struct char_data*, const char*, int);
 static char* get_level_abbr(sh_int level, sh_int);
-int show_blood_trail(struct char_data*, char*, int);
+int show_blood_trail(const struct char_data*, const char*, int);
 
 namespace {
 /* Simple structure for handling inventory formatting data. */

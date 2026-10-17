@@ -48,7 +48,7 @@ extern int old_search_block(char*, int, unsigned int, const char**, int);
 extern int get_number(char** name);
 extern int get_real_stealth(struct char_data*);
 extern int rev_dir[];
-extern int show_tracks(struct char_data* ch, char* name, int mode);
+extern int show_tracks(const struct char_data* ch, const char* name, int mode);
 extern int top_of_world;
 extern char* dirs[];
 extern void appear(struct char_data* ch);

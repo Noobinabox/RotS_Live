@@ -62,7 +62,7 @@ int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
 void shape_prompt_hint(const struct char_data* ch);
 int get_text(FILE* f, char** line);
-int get_command(char* command);
+int get_command(const char* command);
 void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 
 // Local declarations
@@ -114,13 +114,13 @@ void free_script_list(script_data* root)
     }
 }
 
-void new_script(struct char_data* ch)
+void new_script(const struct char_data* ch)
 {
 
     // Should CREATE1 a script and initialise all variables
 }
 
-int load_script(struct char_data* ch, char* arg)
+int load_script(struct char_data* ch, const char* arg)
 {
     int number, index, i, tmp;
     char str[255], fname[80];
@@ -261,7 +261,7 @@ int load_script(struct char_data* ch, char* arg)
     return number;
 }
 
-void write_script(FILE* f, struct char_data* ch)
+void write_script(FILE* f, const struct char_data* ch)
 {
 
     script_data* tmpscript = 0;
@@ -580,7 +580,7 @@ void implement_script(struct char_data* ch)
 }
 
 /* Writes one command's listing line into the global buf. */
-static void format_command(script_data* script)
+static void format_command(const script_data* script)
 {
 
     switch (script->command_type) {
@@ -965,7 +965,7 @@ static void format_command(script_data* script)
     } // switch
 }
 
-void show_command(char_data* ch, script_data* script)
+void show_command(const char_data* ch, const script_data* script)
 {
     format_command(script);
     send_to_char(buf, ch);
@@ -973,7 +973,7 @@ void show_command(char_data* ch, script_data* script)
 
 // /50 - list the commands in a script, within the /52 list range
 
-void list_script(struct char_data* ch)
+void list_script(const struct char_data* ch)
 {
     script_data* tmpscript;
     char footer[80];
@@ -1007,7 +1007,7 @@ void list_script(struct char_data* ch)
 
 // NB Keeping much the same command structure as for shaping zones.
 
-void list_help_script(struct char_data* ch)
+void list_help_script(const struct char_data* ch)
 {
 
     send_to_char("possible fields are:\n\r", ch);
@@ -1050,7 +1050,7 @@ void renum_commands(struct script_data* script)
     }
 }
 
-void check_script_syntax(struct char_data* ch)
+void check_script_syntax(const struct char_data* ch)
 {
 
     // add checks for: unterminated scripts, untriggered sections, unconditional use of conditional commands
@@ -1471,7 +1471,7 @@ static bool script_message_percent_ok(const char* text)
 /* Parameter prompts.  kinds has one letter per value, stored from
  * param[first]: 'v' a variable (ch1, ob2, int1, ch1.room...), 's' a writable
  * text variable (str1-3, obN.name), 'n' a typed number (vnum, slot, pulses). */
-static void script_show_params(struct char_data* ch, const char* label, int first, const char* kinds)
+static void script_show_params(const struct char_data* ch, const char* label, int first, const char* kinds)
 {
     char buf[1200], *p;
     char* name;
@@ -1504,7 +1504,7 @@ static bool script_is_number_word(const char* w)
 
 /* Reads a parameter answer.  Returns 1 if the values were stored, 0 for a
  * blank answer (values kept), -1 if it was refused (values kept). */
-static int script_read_params(struct char_data* ch, char* arg, int first, const char* kinds)
+static int script_read_params(const struct char_data* ch, char* arg, int first, const char* kinds)
 {
     char word[50], lookup[50], buf[120];
     int vals[6], n, i, v, len;
@@ -2713,7 +2713,7 @@ void shape_center_script(struct char_data* ch, char* arg)
     return;
 }
 
-int get_command(char* command)
+int get_command(const char* command)
 {
 
     switch (*command) {

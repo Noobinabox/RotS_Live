@@ -100,7 +100,7 @@ void init_char(struct char_data*);
 void set_title(struct char_data*);
 void do_start(struct char_data*);
 int create_entry(char*);
-int find_action(char*);
+int find_action(const char*);
 int isbanned(char*);
 int echo_off(int);
 int echo_on(int);

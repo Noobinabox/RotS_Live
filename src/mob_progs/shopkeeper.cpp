@@ -401,7 +401,7 @@ bool mob_is_keeper(const struct char_data* mob)
 }
 
 bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, int callflag,
-    struct waiting_type* wtl, bool attacks, int* answer)
+    const struct waiting_type* wtl, bool attacks, int* answer)
 {
     switch (callflag) {
     case SPECIAL_SELF:
@@ -424,7 +424,7 @@ bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, in
     return false;
 }
 
-void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder)
+void vendor_fight_flag_warnings(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt)
         return;
@@ -441,7 +441,7 @@ void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder)
     }
 }
 
-void vendor_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
+void vendor_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder)
 {
     std::vector<vendor_problem> problems;
     parse_vendor_options(proto->specials.mob_options, game_lookups(), &problems);
@@ -453,7 +453,7 @@ void vendor_config_check(const struct char_data* proto, int mob_vnum, struct cha
 /* Soft checks, reminded on /imp only, to the builder alone: not at boot and
  * not in the imm log. Scripted mobs and shopkeepers carry NOBASH by
  * convention; a list= header past 78 columns still shows, but wraps. */
-void vendor_implement_check(int mob_rnum, struct char_data* builder)
+void vendor_implement_check(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt || !is_vendor_proto(mob_rnum))
         return;
@@ -472,7 +472,7 @@ void vendor_implement_check(int mob_rnum, struct char_data* builder)
     }
 }
 
-void vendor_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
+void vendor_config_rebuild(int mob_rnum, const struct char_data* builder, bool report)
 {
     g_vendor_unusable_logged.erase(mob_rnum);
     if (mob_rnum < 0 || mob_rnum > top_of_mobt || !is_vendor_proto(mob_rnum)) {
@@ -541,7 +541,7 @@ void vendor_tell(struct char_data* vendor, struct char_data* ch, const char* tex
 /* command_interpreter parses the command's targets first and, after the
  * program returns, still runs the SPECIAL_TARGET specials on them. An object
  * the program destroys, or anything inside it, must not be left in them. */
-void vendor_forget_target(struct waiting_type* wtl, struct obj_data* obj)
+void vendor_forget_target(struct waiting_type* wtl, const struct obj_data* obj)
 {
     if (!wtl)
         return;
@@ -597,7 +597,7 @@ struct stock_row {
     int count;
 };
 
-std::vector<stock_row> vendor_stock(struct char_data* ch, const vendor_config& config)
+std::vector<stock_row> vendor_stock(const struct char_data* ch, const vendor_config& config)
 {
     std::vector<stock_row> rows;
     int room = real_room(config.store_vnum);
@@ -628,7 +628,7 @@ const char* obj_vnum_short(int vnum)
 
 /* Loose, EMPTY copies only: a container with things in it is never taken
  * as payment, so its contents can't be destroyed. */
-std::vector<struct obj_data*> payable_copies(struct char_data* ch, int vnum)
+std::vector<struct obj_data*> payable_copies(const struct char_data* ch, int vnum)
 {
     std::vector<struct obj_data*> copies;
     int rnum = real_object(vnum);
@@ -770,7 +770,7 @@ void vendor_buy(struct char_data* vendor, struct char_data* ch, char* arg, const
  * from the whole argument; either way argument_interpreter takes the object
  * word, then the target word (skipping fill words like "to"), and
  * give_find_vict looks the target up with get_char_room_vis. */
-bool give_targets(struct char_data* vendor, struct char_data* ch, char* arg)
+bool give_targets(const struct char_data* vendor, struct char_data* ch, const char* arg)
 {
     char whole[MAX_INPUT_LENGTH], first[MAX_INPUT_LENGTH], rest[MAX_INPUT_LENGTH];
     char what[MAX_INPUT_LENGTH], target[MAX_INPUT_LENGTH];

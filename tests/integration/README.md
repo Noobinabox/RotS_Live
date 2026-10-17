@@ -63,6 +63,26 @@ lists the registered names, so a misspelt group never passes by selecting nothin
 Run one harness session per checkout at a time: every session in a checkout shares the template
 cache under `build/integration/libs/`.
 
+## Continuous integration
+
+The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull requests into
+`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. A pull
+request runs:
+
+- `boot`, always;
+- each group its description names as `@integration-test-<group>`, such as
+  `@integration-test-poison`, or every group for `@integration-test-all`;
+- the groups of each scenario file it changes;
+- every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
+  `requirements.txt`, the test world, a scenario file other than a `test_*.py`, `src/harness/`,
+  `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
+
+A change to the game's own code adds no group by itself, so name the groups whose behaviour it
+touches. A name `pytest.ini` does not register fails the job and lists the registered groups.
+Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the job,
+and the job summary lists the groups that ran and why. When a scenario fails, its kept run
+directories are uploaded as the `integration-runs` artifact.
+
 ## Launchers
 
 The harness runs the i386 programs in one of two ways:

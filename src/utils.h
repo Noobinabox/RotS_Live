@@ -73,8 +73,8 @@ int get_real_OB(struct char_data* ch);
 int get_real_dodge(struct char_data* ch);
 int get_real_parry(struct char_data* ch);
 int CHAR_WEARS_OBJ(struct char_data* ch, struct obj_data* obj);
-char get_colornum(char_data* ch, int col);
-void set_colornum(char_data* ch, int col, int value);
+char get_colornum(const char_data* ch, int col);
+void set_colornum(const char_data* ch, int col, int value);
 
 void string_add_init(struct descriptor_data*, char**);
 void string_add_finish(struct descriptor_data*);

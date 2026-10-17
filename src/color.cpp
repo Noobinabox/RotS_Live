@@ -114,7 +114,7 @@ namespace {
         return true;
     }
 
-    bool parse_rgb_triplet(char* arguments, int* red, int* green, int* blue)
+    bool parse_rgb_triplet(const char* arguments, int* red, int* green, int* blue)
     {
         if (arguments == nullptr || red == nullptr || green == nullptr || blue == nullptr)
             return false;
@@ -200,7 +200,7 @@ namespace {
             snprintf(buffer, buffer_size, "default");
     }
 
-    void show_extended_color_usage(struct char_data* ch)
+    void show_extended_color_usage(const struct char_data* ch)
     {
         send_to_char("Usage:\n\r", ch);
         send_to_char("  color <slot> <ansi colour>\n\r", ch);
@@ -245,7 +245,7 @@ static constexpr int kColorCommandOff = kNumConfigurableColorFields;
 static constexpr int kColorCommandOn = kNumConfigurableColorFields + 1;
 static constexpr int kColorCommandDefault = kNumConfigurableColorFields + 2;
 
-static void show_color_slot_summary(struct char_data* ch, int slot)
+static void show_color_slot_summary(const struct char_data* ch, int slot)
 {
     if (ch == nullptr || ch->profs == nullptr || slot < 0 || slot >= MAX_COLOR_FIELDS)
         return;
@@ -314,7 +314,7 @@ void convert_old_colormask(struct char_file_u* ch)
     }
 }
 
-char get_colornum(struct char_data* ch, int col)
+char get_colornum(const struct char_data* ch, int col)
 {
     if (!ch)
         return 0;
@@ -325,7 +325,7 @@ char get_colornum(struct char_data* ch, int col)
     return ch->profs->colors[col];
 }
 
-void set_colornum(struct char_data* ch, int col, int value)
+void set_colornum(const struct char_data* ch, int col, int value)
 {
     if (!ch || !ch->profs)
         return;
@@ -376,7 +376,7 @@ int nearest_ansi_color(int red, int green, int blue)
     return best_index;
 }
 
-void set_truecolor_foreground(struct char_data* ch, int col, int red, int green, int blue)
+void set_truecolor_foreground(const struct char_data* ch, int col, int red, int green, int blue)
 {
     if (!ch || !ch->profs || col < 0 || col >= MAX_COLOR_FIELDS)
         return;
@@ -390,7 +390,7 @@ void set_truecolor_foreground(struct char_data* ch, int col, int red, int green,
     ch->profs->colors[col] = static_cast<char>(slot.foreground.ansi);
 }
 
-void set_truecolor_background(struct char_data* ch, int col, int red, int green, int blue)
+void set_truecolor_background(const struct char_data* ch, int col, int red, int green, int blue)
 {
     if (!ch || !ch->profs || col < 0 || col >= MAX_COLOR_FIELDS)
         return;
@@ -405,7 +405,7 @@ void set_truecolor_background(struct char_data* ch, int col, int red, int green,
 
 /* At file scope, next to the other colour setters, rather than file-static: the colour-slot
    round-trip test drives every reachable slot state through these functions. */
-void set_ansi_background(struct char_data* ch, int col, int value)
+void set_ansi_background(const struct char_data* ch, int col, int value)
 {
     if (!ch || !ch->profs || col < 0 || col >= MAX_COLOR_FIELDS)
         return;
@@ -418,7 +418,7 @@ void set_ansi_background(struct char_data* ch, int col, int value)
     slot.background.blue = 0;
 }
 
-void clear_color_background(struct char_data* ch, int col)
+void clear_color_background(const struct char_data* ch, int col)
 {
     if (!ch || !ch->profs || col < 0 || col >= MAX_COLOR_FIELDS)
         return;
@@ -426,7 +426,7 @@ void clear_color_background(struct char_data* ch, int col)
     ch->profs->color_settings[col].background = color_value_data {};
 }
 
-void clear_color_foreground(struct char_data* ch, int col)
+void clear_color_foreground(const struct char_data* ch, int col)
 {
     if (!ch || !ch->profs || col < 0 || col >= MAX_COLOR_FIELDS)
         return;
@@ -439,7 +439,7 @@ void clear_color_foreground(struct char_data* ch, int col)
     ch->profs->colors[col] = CNRM;
 }
 
-const char* get_color_sequence(struct char_data* ch, int col)
+const char* get_color_sequence(const struct char_data* ch, int col)
 {
     static char render_buffers[kColorRenderBufferCount][kColorRenderBufferSize];
     static size_t next_render_buffer = 0;
@@ -513,12 +513,12 @@ void set_colors_default(struct char_data* ch)
  * Which colour slot renders 'target's name: mobiles use the 'mob'
  * slot, player characters keep the older 'character' slot.
  */
-int char_color_slot(struct char_data* target)
+int char_color_slot(const struct char_data* target)
 {
     return IS_NPC(target) ? COLOR_MOB : COLOR_CHAR;
 }
 
-static void do_color_impl(struct char_data* ch, char* argument, struct waiting_type* wtl, int cmd, int subcmd)
+static void do_color_impl(struct char_data* ch, const char* argument, const struct waiting_type* wtl, int cmd, int subcmd)
 {
     int tmp, num, col;
     char option[MAX_INPUT_LENGTH];

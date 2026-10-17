@@ -35,10 +35,10 @@ extern int generic_scalp;
 
 int get_number(char** name);
 
-int Crash_is_unrentable(struct obj_data* obj);
-struct obj_data* Crash_obj2char(struct char_data* ch, struct obj_file_elem* object, const struct obj_file_extra& extra, struct char_data* owner);
+int Crash_is_unrentable(const struct obj_data* obj);
+struct obj_data* Crash_obj2char(const struct char_data* ch, const struct obj_file_elem* object, const struct obj_file_extra& extra, const struct char_data* owner);
 bool Crash_refresh_object(struct obj_data* obj, long idnum);
-void Crash_tell_object_refresh(struct char_data* ch, const char* name);
+void Crash_tell_object_refresh(const struct char_data* ch, const char* name);
 
 using mob_options_detail::split_lines;
 using mob_options_detail::trim;

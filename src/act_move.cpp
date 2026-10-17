@@ -1545,7 +1545,7 @@ ACMD(do_leave)
 {
     int door;
 
-    extern long secs_to_unretire(struct char_data*);
+    extern long secs_to_unretire(const struct char_data*);
     extern int r_mortal_start_room[];
 
     /* retired characters can 'leave' the retirement home */

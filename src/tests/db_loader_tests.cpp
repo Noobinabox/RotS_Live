@@ -1860,7 +1860,7 @@ TEST(DbLoader, CrashLoadConsumesStagedAccountBackedObjectBytesAndEquipsWearableI
     EXPECT_EQ(character.carrying->obj_flags.weight, 4);
 }
 
-int Crash_obj2store(obj_data* obj, char_data* ch, int pos, FILE* fl);
+int Crash_obj2store(const obj_data* obj, const char_data* ch, int pos, FILE* fl);
 
 TEST(DbLoader, CrashLoadRefreshesOutdatedCopiesWornCarriedAndNested)
 {
@@ -2164,7 +2164,7 @@ void Crash_follower_load(char_data* ch, FILE* fp);
 bool Crash_refresh_object(obj_data* obj, long idnum);
 extern int generic_scalp;
 
-void Crash_tell_object_refresh(char_data* ch, const char* name);
+void Crash_tell_object_refresh(const char_data* ch, const char* name);
 
 // Short descriptions are builder text of any length; the message is cut to its buffer.
 TEST(DbLoader, TheUpdatedMessageIsCutToItsBufferForAnOverlongName)

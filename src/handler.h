@@ -143,16 +143,16 @@ inline constexpr int FIND_OBJ_EQUIP = 32;
 
 /* prototypes from crash save system */
 
-int Crash_get_filename(char* orig_name, char* filename);
-int Crash_delete_file(char* name);
-int Crash_delete_crashfile(struct char_data* ch);
-int Crash_clean_file(char* name);
-void Crash_listrent(struct char_data* ch, char* name);
+int Crash_get_filename(const char* orig_name, char* filename);
+int Crash_delete_file(const char* name);
+int Crash_delete_crashfile(const struct char_data* ch);
+int Crash_clean_file(const char* name);
+void Crash_listrent(const struct char_data* ch, const char* name);
 // int	Crash_load(struct char_data *ch);
 void Crash_crashsave(struct char_data* ch, int rent_code = RENT_CRASH);
-void Crash_idlesave(struct char_data* ch);
+void Crash_idlesave(const struct char_data* ch);
 void Crash_save_all(void);
-FILE* Crash_get_file_by_name(char* name, char* mode);
+FILE* Crash_get_file_by_name(const char* name, const char* mode);
 FILE* Crash_load(struct char_data* ch);
 void stage_account_backed_object_bytes_for_character(const struct char_data* ch, const char* bytes, size_t length);
 void clear_account_backed_object_bytes_for_character(const struct char_data* ch);

@@ -90,7 +90,7 @@ void one_mobile_activity(struct char_data*);
 int update_memory_list(struct char_data*);
 int load_char(char*, struct char_file_u*);
 void load_character(struct char_data* ch);
-void Crash_report_object_refreshes(struct char_data* ch);
+void Crash_report_object_refreshes(const struct char_data* ch);
 void msdp_room_update(const char_data* ch);
 void stop_hiding(struct char_data*, char);
 int valid_name(char*);
@@ -3074,7 +3074,7 @@ void nanny(struct descriptor_data* d, char* arg)
     int i, tmp;
     long s;
 
-    extern long secs_to_unretire(struct char_data*);
+    extern long secs_to_unretire(const struct char_data*);
     int load_char(char* name, struct char_file_u* char_element);
     void load_character(struct char_data * ch); // new function in objsave
 

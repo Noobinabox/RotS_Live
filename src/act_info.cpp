@@ -1648,7 +1648,7 @@ int get_percent_absorb(const char_data* character)
  */
 void add_move_report(int real_move, char* bf)
 {
-    int room_move_cost(struct char_data*, struct room_data*);
+    int room_move_cost(struct char_data*, const struct room_data*);
 
     if (real_move < 1)
         strcat(bf, "You barely notice the way as you move.\n\r");
@@ -1671,7 +1671,7 @@ ACMD(do_info)
     int tmp;
     char* bufpt;
     struct time_info_data playing_time;
-    int room_move_cost(struct char_data*, struct room_data*);
+    int room_move_cost(struct char_data*, const struct room_data*);
     struct time_info_data real_time_passed(time_t, time_t);
     extern const char* specialize_name[];
 

@@ -824,7 +824,7 @@ ASPELL(spell_summon)
         char_to_room(victim, caster->in_room);
         act("$N summons you!", FALSE, victim, 0, caster, TO_CHAR);
         do_look(victim, "", 0, 0, 0);
-        extern void msdp_room_update(char_data * ch);
+        extern void msdp_room_update(const char_data * ch);
 
         msdp_room_update(victim);
     } else
@@ -958,7 +958,7 @@ ASPELL(spell_blink)
         char_from_room(victim);
         char_to_room(victim, room);
         do_look(victim, "", 0, 15, 0);
-        extern void msdp_room_update(char_data * ch);
+        extern void msdp_room_update(const char_data * ch);
 
         msdp_room_update(victim);
         act("$n appeared in a flash of light.\n\r", TRUE, victim, 0, 0, TO_ROOM);
@@ -1145,7 +1145,7 @@ ASPELL(spell_relocate)
         send_to_char("Pain fills your body, and your vision blurs. "
                      "You now stand elsewhere.\n\r",
             caster);
-        extern void msdp_room_update(char_data * ch);
+        extern void msdp_room_update(const char_data * ch);
 
         msdp_room_update(caster);
 

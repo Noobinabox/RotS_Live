@@ -91,7 +91,7 @@ int update_memory_list(struct char_data*);
 int load_char(char*, struct char_file_u*);
 void load_character(struct char_data* ch);
 void Crash_report_object_refreshes(struct char_data* ch);
-void msdp_room_update(char_data* ch);
+void msdp_room_update(const char_data* ch);
 void stop_hiding(struct char_data*, char);
 int valid_name(char*);
 void report_mail(struct char_data*);
@@ -4431,7 +4431,7 @@ void nanny(struct descriptor_data* d, char* arg)
             if (!d->pProtocol)
                 d->pProtocol = ProtocolCreate();
             ProtocolNegotiate(d);
-            extern void msdp_room_update(char_data * ch);
+            extern void msdp_room_update(const char_data * ch);
             msdp_room_update(d->character);
 
             do_look(d->character, "", 0, 0, 0);

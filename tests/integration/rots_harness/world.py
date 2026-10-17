@@ -10,3 +10,5 @@ ROOM_ARENA_WEST = 1130
 ROOM_ARENA_CENTRE = 1131
 # Room 1133, the arena's one DARK room, north of the centre in zone 11.
 ROOM_DARK_CELL = 1133
+# Room 1201, the only room of zone 12, whose map square is (3, 4).
+ROOM_DISTANT_CELL = 1201

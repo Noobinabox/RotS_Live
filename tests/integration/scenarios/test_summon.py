@@ -1,4 +1,4 @@
-"""Summon's legacy pins: the dark-room block."""
+"""Summon's legacy pins: the dark-room block and the zone-distance arithmetic."""
 
 from __future__ import annotations
 
@@ -31,6 +31,15 @@ DARK_VICTIM = Character(
     sex="male",
     level=12,
     load_room=world.ROOM_DARK_CELL,
+    class_name="warrior",
+)
+# A level-12 human warrior who starts in zone 12, five map squares from the caster's zone.
+DISTANT_VICTIM = Character(
+    name="Testfar",
+    race="human",
+    sex="male",
+    level=12,
+    load_room=world.ROOM_DISTANT_CELL,
     class_name="warrior",
 )
 
@@ -225,6 +234,68 @@ def test_a_mage_cannot_summon_a_player_standing_in_a_dark_room(server) -> None:
 
     lit_reply = cast_summon(caster, DARK_VICTIM.name)
     assert ARRIVAL_MARKER_FORMAT.format(DARK_VICTIM.name) in lit_reply, lit_reply
+    summoned_marker = SUMMONED_MARKER_FORMAT.format(CASTER.name)
+    summoned = victim.expect([summoned_marker]) + victim.drain(SETTLE_SECONDS)
+    assert "Arena Centre" in summoned, summoned
+
+
+@pytest.mark.schedule("affect-hours")
+@pytest.mark.characters(IMPLEMENTOR, CASTER, DISTANT_VICTIM)
+def test_summon_reaches_a_zone_five_map_squares_away_as_if_it_were_nearer_than_the_casters_own(server) -> None:
+    """Legacy pin: summon's zone distance uses `^`, C's exclusive or, where a square was meant.
+
+    Records today's behaviour. spell_summon (mage.cpp) adds the zones' map distance to the
+    victim's save as `((ch_x - v_x) ^ 2) + ((ch_y - v_y) ^ 2)`. From zone 11 at (0, 0) to zone 12
+    at (3, 4), five squares apart, that is -3, below the +4 a victim in the caster's own zone
+    gets, so a weak victim there never saves; squared, it would always save.
+    The one draw left that can change the outcome is the concentration roll in do_cast, which
+    cast_summon repeats; the affect-hours schedule keeps everything else from drawing. When the
+    distance arithmetic changes, this test becomes a strict xfail.
+    """
+    implementor = server.login(IMPLEMENTOR.name)
+    caster = server.login(CASTER.name)
+    victim = server.login(DISTANT_VICTIM.name)
+
+    assert victim.command("look").room_name() == "Distant Cell"
+    caster_inputs, victim_inputs = setup_caster_and_victim(implementor, DISTANT_VICTIM)
+
+    # Distant case, caster in Arena Centre (zone 11), Testfar in the Distant Cell (zone 12):
+    #   dist       = ((ch_x - v_x) ^ 2) + ((ch_y - v_y) ^ 2)        (spell_summon, mage.cpp)
+    #              = ((0 - 3) ^ 2) + ((0 - 4) ^ 2)                  (zone 11 (0, 0), zone 12 (3, 4))
+    #              = (-3 ^ 2) + (-4 ^ 2) = -1 + -2 = -3
+    #                (^ is exclusive or: it flips bit 1 of each difference)
+    #   save_bonus = dist = -3               (the NPC level bonus does not apply to a player)
+    #   save_value = get_character_saving_throw(victim) + save_bonus    (spell_pa.cpp)
+    #              = Mag / 3 + (Int - 8) / 4 + 0 + save_bonus           (0: not a hobbit)
+    #              = 3 / 3   + (0 - 8) / 4   + 0 + -3                   (Mag:3, Int:[0/0/0])
+    #              = 1 + -2 + 0 + -3 = -4
+    #   casting_dc = 10 + Mag / 3 + (Int - 8) / 4 + Spell_Pen           (get_saving_throw_dc)
+    #              = 10 + 30 / 3  + (40 - 8) / 4  + 0
+    #                (Mag:30, Int:[40/40/40], Spell_Pen: 0)
+    #              = 10 + 10 + 8 + 0 = 28
+    #   saved      = roll + save_value > casting_dc, roll = number(1, 20)  (new_saves_spell)
+    #              = at most 20 + -4 = 16, never above 28: never saves; -3 is inside (-20, 20),
+    #                so new_saves_spell returns that result rather than a forced one.
+    # Squared, dist would be (-3) * (-3) + (-4) * (-4) = 9 + 16 = 25, at or above
+    # new_saves_spell's forced save at 20: the victim would always save.
+    # In the caster's own zone, dist is ((0 - 0) ^ 2) + ((0 - 0) ^ 2) = 2 + 2 = 4, above -3.
+    assert caster_inputs == (CASTER_MAGE_LEVEL, CASTER_INTELLIGENCE, 0), caster_inputs
+    assert victim_inputs == (3, VICTIM_INTELLIGENCE, 0), victim_inputs
+    caster_mage_level, caster_intelligence, caster_spell_pen = caster_inputs
+    victim_mage_level, victim_intelligence = victim_inputs[:2]
+    caster_x, caster_y = zone_map_square(11)
+    victim_x, victim_y = zone_map_square(12)
+    distance = ((caster_x - victim_x) ^ 2) + ((caster_y - victim_y) ^ 2)
+    same_zone_distance = ((caster_x - caster_x) ^ 2) + ((caster_y - caster_y) ^ 2)
+    save_value = c_divide(victim_mage_level, 3) + c_divide(victim_intelligence - 8, 4) + 0 + distance
+    casting_dc = 10 + c_divide(caster_mage_level, 3) + c_divide(caster_intelligence - 8, 4) + caster_spell_pen
+    assert ((caster_x, caster_y), (victim_x, victim_y)) == ((0, 0), (3, 4))
+    assert (distance, same_zone_distance, save_value, casting_dc) == (-3, 4, -4, 28)
+    assert distance < same_zone_distance
+    assert 20 + save_value <= casting_dc
+
+    reply = cast_summon(caster, DISTANT_VICTIM.name)
+    assert ARRIVAL_MARKER_FORMAT.format(DISTANT_VICTIM.name) in reply, reply
     summoned_marker = SUMMONED_MARKER_FORMAT.format(CASTER.name)
     summoned = victim.expect([summoned_marker]) + victim.drain(SETTLE_SECONDS)
     assert "Arena Centre" in summoned, summoned

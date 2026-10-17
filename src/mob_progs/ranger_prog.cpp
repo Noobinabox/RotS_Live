@@ -42,7 +42,7 @@ bool is_ranger_candidate(const struct char_data* proto, int rnum)
     return mob_program_candidate(proto, rnum, (special_func)mob_ranger_new, PROG_RANGER);
 }
 
-void ranger_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
+void ranger_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder)
 {
     std::vector<vendor_problem> problems;
     parse_ranger_options(proto->specials.mob_options, &problems);
@@ -67,7 +67,7 @@ std::vector<std::string> ranger_flag_warnings(const struct char_data* proto, int
 }
 
 /* Soft checks, on /imp only, to the builder alone (not at boot, not logged). */
-void ranger_implement_check(int mob_rnum, struct char_data* builder)
+void ranger_implement_check(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt || !is_ranger_proto(mob_rnum))
         return;
@@ -77,7 +77,7 @@ void ranger_implement_check(int mob_rnum, struct char_data* builder)
     }
 }
 
-void ranger_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
+void ranger_config_rebuild(int mob_rnum, const struct char_data* builder, bool report)
 {
     if (mob_rnum < 0 || mob_rnum > top_of_mobt) {
         g_ranger_configs.erase(mob_rnum);

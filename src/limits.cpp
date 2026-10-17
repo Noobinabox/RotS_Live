@@ -377,7 +377,7 @@ void set_title(char_data* character)
     *(GET_TITLE(character) + 4) = toupper(*(GET_TITLE(character) + 4));
 }
 
-void check_autowiz(struct char_data* ch)
+void check_autowiz(const struct char_data* ch)
 {
     char buf[100];
     extern int min_wizlist_lev;
@@ -1219,7 +1219,7 @@ void assign_pk_bonuses(struct char_data* ch, int coeff, int tier, bool mode)
     }
 }
 
-void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff)
+void remove_fame_war_bonuses(struct char_data* ch, const struct affected_type* pkaff)
 {
     int coeff = utils::get_highest_coeffs(*ch);
     affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);

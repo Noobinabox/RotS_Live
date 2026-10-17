@@ -21,81 +21,81 @@
 #include "structs.h" /* For MAX_NAME_LENGTH and MAX_STRING_LENGTH */
 
 /* arbitrary constants used by index_boot() (must be unique) */
-#define DB_BOOT_WLD 0
-#define DB_BOOT_MOB 1
-#define DB_BOOT_OBJ 2
-#define DB_BOOT_ZON 3
-#define DB_BOOT_SHP 4
-#define DB_BOOT_MDL 6
-#define DB_BOOT_SCR 7
+inline constexpr int DB_BOOT_WLD = 0;
+inline constexpr int DB_BOOT_MOB = 1;
+inline constexpr int DB_BOOT_OBJ = 2;
+inline constexpr int DB_BOOT_ZON = 3;
+inline constexpr int DB_BOOT_SHP = 4;
+inline constexpr int DB_BOOT_MDL = 6;
+inline constexpr int DB_BOOT_SCR = 7;
 
 /* names of various files and directories */
-#define INDEX_FILE "index" /* index of world files		*/
-#define MINDEX_FILE "index.min" /* ... and for mini-mud-mode	*/
-#define NEWINDEX_FILE "index.new"
-#define WLD_PREFIX "world/wld" /* room definitions		*/
-#define MOB_PREFIX "world/mob" /* monster prototypes		*/
-#define OBJ_PREFIX "world/obj" /* object prototypes		*/
-#define ZON_PREFIX "world/zon" /* zon defs & command tables	*/
-#define SHP_PREFIX "world/shp" /* shop definitions		*/
-#define MDL_PREFIX "world/mdl" /* mudlle(asima) programs     	*/
-#define SCR_PREFIX "world/scr" /* scripts */
+inline constexpr char INDEX_FILE[] = "index"; /* index of world files		*/
+inline constexpr char MINDEX_FILE[] = "index.min"; /* ... and for mini-mud-mode	*/
+inline constexpr char NEWINDEX_FILE[] = "index.new";
+inline constexpr char WLD_PREFIX[] = "world/wld"; /* room definitions		*/
+inline constexpr char MOB_PREFIX[] = "world/mob"; /* monster prototypes		*/
+inline constexpr char OBJ_PREFIX[] = "world/obj"; /* object prototypes		*/
+inline constexpr char ZON_PREFIX[] = "world/zon"; /* zon defs & command tables	*/
+inline constexpr char SHP_PREFIX[] = "world/shp"; /* shop definitions		*/
+inline constexpr char MDL_PREFIX[] = "world/mdl"; /* mudlle(asima) programs     	*/
+inline constexpr char SCR_PREFIX[] = "world/scr"; /* scripts */
 
-#define CREDITS_FILE "text/credits" /* for the 'credits' command	*/
-#define NEWS_FILE "text/news" /* for the 'news' command	*/
-#define MOTD_FILE "text/motd" /* messages of the day / mortal	*/
-#define IMOTD_FILE "text/imotd" /* messages of the day / immort	*/
-#define IDEA_FILE "text/ideas" /* for the 'idea'-command	*/
-#define TYPO_FILE "text/typos" /*         'typo'		*/
-#define BUG_FILE "text/bugs" /*         'bug'		*/
-#define HELP_KWRD_FILE "text/help_tbl" /* for HELP <keywrd>	       */
-#define HELP_PAGE_FILE "text/help" /* for HELP <CR>		*/
-#define INFO_FILE "text/info" /* for INFO			*/
-#define WIZLIST_FILE "text/wizlist" /* for WIZLIST			*/
-#define IMMLIST_FILE "text/immlist" /* for IMMLIST			*/
-#define BACKGROUND_FILE "text/backgr" /* for the background story	*/
-#define POLICIES_FILE "text/policies" /* player policies/rules	*/
-#define HANDBOOK_FILE "text/handbook" /* handbook for new immorts	*/
-#define SPELL_FILE "text/spel_tbl" /* for MAN SPELL		*/
-#define POWER_FILE "text/pray_tbl" /* for MAN POWER		*/
-#define ASIMA_FILE "text/mudl_tbl" /* for MAN ASIMA		*/
-#define SKILLS_FILE "text/skil_tbl" /* for MAN SKILL		*/
-#define SHAPE_FILE "text/shap_tbl" /* for MAN SHAPE		*/
-#define MSDP_FILE "text/msdp_tbl" /* for MAN MSDP */
+inline constexpr char CREDITS_FILE[] = "text/credits"; /* for the 'credits' command	*/
+inline constexpr char NEWS_FILE[] = "text/news"; /* for the 'news' command	*/
+inline constexpr char MOTD_FILE[] = "text/motd"; /* messages of the day / mortal	*/
+inline constexpr char IMOTD_FILE[] = "text/imotd"; /* messages of the day / immort	*/
+inline constexpr char IDEA_FILE[] = "text/ideas"; /* for the 'idea'-command	*/
+inline constexpr char TYPO_FILE[] = "text/typos"; /*         'typo'		*/
+inline constexpr char BUG_FILE[] = "text/bugs"; /*         'bug'		*/
+inline constexpr char HELP_KWRD_FILE[] = "text/help_tbl"; /* for HELP <keywrd>	       */
+inline constexpr char HELP_PAGE_FILE[] = "text/help"; /* for HELP <CR>		*/
+inline constexpr char INFO_FILE[] = "text/info"; /* for INFO			*/
+inline constexpr char WIZLIST_FILE[] = "text/wizlist"; /* for WIZLIST			*/
+inline constexpr char IMMLIST_FILE[] = "text/immlist"; /* for IMMLIST			*/
+inline constexpr char BACKGROUND_FILE[] = "text/backgr"; /* for the background story	*/
+inline constexpr char POLICIES_FILE[] = "text/policies"; /* player policies/rules	*/
+inline constexpr char HANDBOOK_FILE[] = "text/handbook"; /* handbook for new immorts	*/
+inline constexpr char SPELL_FILE[] = "text/spel_tbl"; /* for MAN SPELL		*/
+inline constexpr char POWER_FILE[] = "text/pray_tbl"; /* for MAN POWER		*/
+inline constexpr char ASIMA_FILE[] = "text/mudl_tbl"; /* for MAN ASIMA		*/
+inline constexpr char SKILLS_FILE[] = "text/skil_tbl"; /* for MAN SKILL		*/
+inline constexpr char SHAPE_FILE[] = "text/shap_tbl"; /* for MAN SHAPE		*/
+inline constexpr char MSDP_FILE[] = "text/msdp_tbl"; /* for MAN MSDP */
 
 // The largest text file file_to_string_alloc() loads; a larger one is refused with a SYSERR.
 constexpr std::size_t text_file_byte_limit = 128 * 1024;
 
-#define LASTDEATH_FILE "../log/lastdeath" /* the last words of the dead mud */
+inline constexpr char LASTDEATH_FILE[] = "../log/lastdeath"; /* the last words of the dead mud */
 
-#define PLAYER_FILE "misc/players" /* the player database		*/
-#define MESS_FILE "misc/messages" /* damage message		*/
-#define SOCMESS_FILE "misc/socials" /* messgs for social acts	*/
-#define MAIL_FILE "misc/plrmail" /* for the mudmail system	*/
-#define BAN_FILE "misc/badsites" /* for the siteban system	*/
-#define XNAME_FILE "misc/xnames" /* invalid name substrings	*/
-#define MUDLLE_FILE "misc/mudlle" /* mudlle programs              */
-#define MUDLLE_OLDFILE "misc/mudlle.old" /* backup from shaping        */
-#define PKILL_FILE "misc/pklist" /*the list of player killings   */
-#define CRIME_FILE "misc/crimelist" /*the list of player crimes	*/
+inline constexpr char PLAYER_FILE[] = "misc/players"; /* the player database		*/
+inline constexpr char MESS_FILE[] = "misc/messages"; /* damage message		*/
+inline constexpr char SOCMESS_FILE[] = "misc/socials"; /* messgs for social acts	*/
+inline constexpr char MAIL_FILE[] = "misc/plrmail"; /* for the mudmail system	*/
+inline constexpr char BAN_FILE[] = "misc/badsites"; /* for the siteban system	*/
+inline constexpr char XNAME_FILE[] = "misc/xnames"; /* invalid name substrings	*/
+inline constexpr char MUDLLE_FILE[] = "misc/mudlle"; /* mudlle programs              */
+inline constexpr char MUDLLE_OLDFILE[] = "misc/mudlle.old"; /* backup from shaping        */
+inline constexpr char PKILL_FILE[] = "misc/pklist"; /*the list of player killings   */
+inline constexpr char CRIME_FILE[] = "misc/crimelist"; /*the list of player crimes	*/
 
 // exploit types
-#define EXPLOIT_PK 1
-#define EXPLOIT_DEATH 2
-#define EXPLOIT_LEVEL 3
-#define EXPLOIT_BIRTH 4
-#define EXPLOIT_STAT 5
-#define EXPLOIT_MOBDEATH 6
-#define EXPLOIT_RETIRED 8
-#define EXPLOIT_ACHIEVEMENT 9
-#define EXPLOIT_NOTE 10
-#define EXPLOIT_POISON 11
-#define EXPLOIT_REGEN_DEATH 12
+inline constexpr int EXPLOIT_PK = 1;
+inline constexpr int EXPLOIT_DEATH = 2;
+inline constexpr int EXPLOIT_LEVEL = 3;
+inline constexpr int EXPLOIT_BIRTH = 4;
+inline constexpr int EXPLOIT_STAT = 5;
+inline constexpr int EXPLOIT_MOBDEATH = 6;
+inline constexpr int EXPLOIT_RETIRED = 8;
+inline constexpr int EXPLOIT_ACHIEVEMENT = 9;
+inline constexpr int EXPLOIT_NOTE = 10;
+inline constexpr int EXPLOIT_POISON = 11;
+inline constexpr int EXPLOIT_REGEN_DEATH = 12;
 
-#define SAVE_VERSION 1
+inline constexpr int SAVE_VERSION = 1;
 
 // Players who load in these rooms [x][...] will be moved to [...][y]
-#define MAX_MAZE_RENT_MAPPINGS 6
+inline constexpr int MAX_MAZE_RENT_MAPPINGS = 6;
 
 static const int mortal_maze_room[MAX_MAZE_RENT_MAPPINGS][2] = {
     { 23500, 10700 }, { 23600, 10700 }, { 23700, 10700 },
@@ -165,8 +165,8 @@ sh_int* get_encumb_table();
  * multipliers. */
 sh_int* get_leg_encumb_table();
 
-#define REAL 0
-#define VIRT 1
+inline constexpr int REAL = 0;
+inline constexpr int VIRT = 1;
 
 struct obj_data* read_object(int, int);
 struct char_data* read_mobile(int, int);
@@ -307,12 +307,12 @@ struct social_messg {
 };
 
 /* don't change these */
-#define BAN_NOT 0
-#define BAN_NEW 1
-#define BAN_SELECT 2
-#define BAN_ALL 3
+inline constexpr int BAN_NOT = 0;
+inline constexpr int BAN_NEW = 1;
+inline constexpr int BAN_SELECT = 2;
+inline constexpr int BAN_ALL = 3;
 
-#define BANNED_SITE_LENGTH 50
+inline constexpr int BANNED_SITE_LENGTH = 50;
 struct ban_list_element {
     char name[MAX_NAME_LENGTH + 1];
     char site[BANNED_SITE_LENGTH + 1];

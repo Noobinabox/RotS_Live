@@ -40,7 +40,7 @@ extern struct time_info_data time_info;
 extern struct skill_data skills[];
 extern int get_real_stealth(struct char_data* ch);
 
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 
 ACMD(do_look);
 ACMD(do_open);

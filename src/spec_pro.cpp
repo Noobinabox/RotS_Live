@@ -40,7 +40,7 @@ extern int num_of_ferries;
 extern int num_of_captains;
 extern char guildmaster_number;
 extern char* dirs[];
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 extern int mark_calculate_wait(const char_data* ch);
 extern int shoot_calculate_wait(const char_data* archer);
 extern byte language_number;

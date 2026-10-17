@@ -51,7 +51,7 @@ extern int r_mortal_start_room[];
 
 void recalc_skills(struct char_data* ch);
 
-extern void raw_kill(char_data *ch, char_data *killer, int attacktype);
+extern void raw_kill(char_data *ch, const char_data *killer, int attacktype);
 extern void die(char_data *dead_man, char_data *killer, int attack_type);
 void one_mobile_activity(char_data *ch);
 

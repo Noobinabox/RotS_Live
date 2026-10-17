@@ -18,7 +18,7 @@ extern int eff_mod;
 int cast_resist_magnitude(int caster_level);
 int clamp_resist_magnitude(int magnitude);
 int apply_resistance(int dam, int magnitude);
-int resist_magnitude_for(char_data* victim, int resist_type);
+int resist_magnitude_for(const char_data* victim, int resist_type);
 int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int hit_location);
 void affect_naked(char_data* ch);
 void do_resist_spell(int resist_type, int modifier, char_data* caster, char_data* victim,

@@ -41,12 +41,12 @@ ACMD(do_move);
 ACMD(do_mental);
 
 /* extern functions */
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 extern char_data* g_skip_next_before_enter_for;
 int get_real_stealth(struct char_data* ch);
 int find_door(const struct char_data* ch, const char* type, char* dir);
-void group_gain(struct char_data* ch, struct char_data* victim);
+void group_gain(struct char_data* ch, const struct char_data* victim);
 int get_number(char** name);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 void appear(struct char_data* ch);

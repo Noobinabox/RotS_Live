@@ -50,7 +50,7 @@ extern int top_of_script_table;
 int set_exit_state(const struct room_data* room, int dir, int newstate);
 extern int rev_dir[];
 extern struct char_data* waiting_list;
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 void perform_give(struct char_data* ch, struct char_data* vict, struct obj_data* obj);
 int perform_drop(struct char_data* ch, struct obj_data* obj, sh_int RDR);
 void perform_remove(struct char_data* ch, int pos);

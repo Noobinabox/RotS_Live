@@ -1442,7 +1442,7 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
     // Special case for poisoned objects.  The wearer should get poison damage
     // when wearing/removing something poisoned.
     if (was_poisoned == 0 && IS_AFFECTED(character, AFF_POISON)) {
-        extern void raw_kill(struct char_data * character, char_data * killer, int attacktype);
+        extern void raw_kill(struct char_data * character, const char_data * killer, int attacktype);
 
         damage(character, character, 5, SPELL_POISON, 0);
 
@@ -1517,7 +1517,7 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
     // Special case for poisoned objects.  The wearer should get poison damage
     // when wearing/removing something poisoned.
     if (was_poisoned != 0 && !IS_AFFECTED(ch, AFF_POISON)) {
-        extern void raw_kill(struct char_data * ch, char_data * killer, int attacktype);
+        extern void raw_kill(struct char_data * ch, const char_data * killer, int attacktype);
 
         damage(ch, ch, 5, SPELL_POISON, 0);
 
@@ -1964,7 +1964,7 @@ void update_char_objects(struct char_data* ch)
 /* Extract a ch completely from the world, and leave his stuff behind */
 
 ACMD(do_look);
-void stop_fighting_him(struct char_data* ch);
+void stop_fighting_him(const struct char_data* ch);
 
 void extract_char(struct char_data* ch)
 {

@@ -8,11 +8,11 @@
 namespace olog_hai {
 int get_prob_skill(char_data* attacker, char_data* victim, int skill);
 void apply_victim_delay(char_data* victim, int delay);
-bool is_skill_valid(char_data* ch, const int& skill_id);
-char_data* is_target_valid(char_data* attacker, waiting_type* target);
-char_data* is_smash_target_valid(char_data* attacker, waiting_type* target);
-bool is_target_in_room(char_data* attacker, char_data* victim);
-char_data* get_random_target(char_data* ch, char_data* original_victim);
+bool is_skill_valid(const char_data* ch, const int& skill_id);
+char_data* is_target_valid(char_data* attacker, const waiting_type* target);
+char_data* is_smash_target_valid(char_data* attacker, const waiting_type* target);
+bool is_target_in_room(const char_data* attacker, const char_data* victim);
+char_data* get_random_target(const char_data* ch, char_data* original_victim);
 int get_base_skill_damage(char_data& olog_hai, int prob);
 int calculate_overrun_damage(char_data& attacker, int prob);
 int calculate_smash_damage(char_data& attacker, int prob);
@@ -23,7 +23,7 @@ void room_target(char_data* ch, void (*skill_damage)(char_data* character, char_
 }
 
 int get_direction(std::string direction);
-bool is_direction_valid(char_data* ch, int cmd);
+bool is_direction_valid(const char_data* ch, int cmd);
 extern room_data world;
 extern char_data* waiting_list;
 

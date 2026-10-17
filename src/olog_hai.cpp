@@ -48,7 +48,7 @@ void apply_victim_delay(char_data* victim, int delay)
     WAIT_STATE_FULL(victim, delay, CMD_BASH, 2, 80, 0, 0, 0, AFF_WAITING | AFF_BASH, TARGET_IGNORE);
 }
 
-bool is_skill_valid(char_data* ch, const int& skill_id)
+bool is_skill_valid(const char_data* ch, const int& skill_id)
 {
     if (utils::get_race(*ch) != RACE_OLOGHAI) {
         send_to_char("Unrecognized command.\r\n", ch);
@@ -100,7 +100,7 @@ bool is_skill_valid(char_data* ch, const int& skill_id)
     return true;
 }
 
-char_data* is_target_valid(char_data* attacker, waiting_type* target)
+char_data* is_target_valid(char_data* attacker, const waiting_type* target)
 {
     char_data* victim = nullptr;
 
@@ -115,12 +115,12 @@ char_data* is_target_valid(char_data* attacker, waiting_type* target)
     return victim;
 }
 
-bool is_target_in_room(char_data* attacker, char_data* victim)
+bool is_target_in_room(const char_data* attacker, const char_data* victim)
 {
     return attacker->in_room == victim->in_room;
 }
 
-char_data* is_smash_target_valid(char_data* attacker, waiting_type* target)
+char_data* is_smash_target_valid(char_data* attacker, const waiting_type* target)
 {
     char_data* victim = is_target_valid(attacker, target);
 
@@ -160,7 +160,7 @@ void do_sanctuary_check(char_data* ch)
     }
 }
 
-char_data* get_random_target(char_data* ch, char_data* original_victim)
+char_data* get_random_target(const char_data* ch, char_data* original_victim)
 {
     char_data* t;
     int num = 0;
@@ -434,7 +434,7 @@ ACMD(do_smash)
     olog_hai::apply_smash_damage(ch, victim, prob);
 }
 
-bool is_direction_valid(char_data* ch, int cmd)
+bool is_direction_valid(const char_data* ch, int cmd)
 {
     if (!world[ch->in_room].dir_option[cmd]) {
         send_to_char("You cannot go that way.\n\r", ch);

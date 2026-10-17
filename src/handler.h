@@ -15,14 +15,14 @@
 #include "structs.h" /* For the RENT_CRASH macro */
 
 /* handling the affected-structures */
-#define AFFECT_TOTAL_UPDATE 3
-#define AFFECT_TOTAL_SET 1
-#define AFFECT_TOTAL_REMOVE 2
-#define AFFECT_TOTAL_TIME 4
+inline constexpr int AFFECT_TOTAL_UPDATE = 3;
+inline constexpr int AFFECT_TOTAL_SET = 1;
+inline constexpr int AFFECT_TOTAL_REMOVE = 2;
+inline constexpr int AFFECT_TOTAL_TIME = 4;
 
-#define AFFECT_MODIFY_SET 1
-#define AFFECT_MODIFY_REMOVE 0
-#define AFFECT_MODIFY_TIME 2
+inline constexpr int AFFECT_MODIFY_SET = 1;
+inline constexpr int AFFECT_MODIFY_REMOVE = 0;
+inline constexpr int AFFECT_MODIFY_TIME = 2;
 
 void affect_total_room(struct room_data* room, int mode = AFFECT_TOTAL_UPDATE);
 void affect_modify_room(struct room_data* room, byte loc, int mod, long bitv, char add);
@@ -116,30 +116,30 @@ void stop_follower(struct char_data* ch, int mode);
 char circle_follow(struct char_data* ch, struct char_data* victim, int mode);
 void die_follower(struct char_data* ch);
 
-#define FOLLOW_MOVE 1
-#define FOLLOW_GROUP 2
-#define FOLLOW_REFOL 3
+inline constexpr int FOLLOW_MOVE = 1;
+inline constexpr int FOLLOW_GROUP = 2;
+inline constexpr int FOLLOW_REFOL = 3;
 
 /* find all dots */
 
 int find_all_dots(char* arg);
 
-#define FIND_INDIV 0
-#define FIND_ALL 1
-#define FIND_ALLDOT 2
+inline constexpr int FIND_INDIV = 0;
+inline constexpr int FIND_ALL = 1;
+inline constexpr int FIND_ALLDOT = 2;
 
 /* Generic Find */
 
 int generic_find(char* arg, int bitvector, struct char_data* ch,
     struct char_data** tar_ch, struct obj_data** tar_obj);
 
-#define FIND_CHAR_ROOM 1
-#define FIND_CHAR_WORLD 2
-#define FIND_OBJ_INV 4
-#define FIND_OBJ_ROOM 8
-#define FIND_OBJ_WORLD 16
+inline constexpr int FIND_CHAR_ROOM = 1;
+inline constexpr int FIND_CHAR_WORLD = 2;
+inline constexpr int FIND_OBJ_INV = 4;
+inline constexpr int FIND_OBJ_ROOM = 8;
+inline constexpr int FIND_OBJ_WORLD = 16;
 
-#define FIND_OBJ_EQUIP 32
+inline constexpr int FIND_OBJ_EQUIP = 32;
 
 /* prototypes from crash save system */
 

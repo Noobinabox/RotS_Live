@@ -1975,7 +1975,7 @@ char* sky_look[6] = {
 ACMD(do_weather)
 {
     int get_season();
-    void weather_to_char(char_data * ch);
+    void weather_to_char(const char_data * ch);
 
     if (ch->in_room == NOWHERE)
         return;

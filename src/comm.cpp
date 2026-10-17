@@ -33,7 +33,6 @@
 #include "limits.h"
 #include "mob_progs/banker.h"
 #include "protocol.h"
-#include "real_time_tick_schedule.h"
 #include "script.h"
 #include "spells.h"
 #include "structs.h"
@@ -259,7 +258,6 @@ int finish_proxy_header_if_ready(descriptor_data* descriptor)
 
 /* functions in this file */
 int get_from_q(struct txt_q* queue, char* dest);
-void run_the_game(sh_int port);
 void game_loop(SocketType s, GameHeartbeat& heartbeat);
 SocketType init_socket(sh_int port);
 SocketType pnew_connection(SocketType s);
@@ -499,7 +497,7 @@ void sigsegv_handler(int sig)
 std::vector<char_data*> specialized_mages;
 
 /* Init sockets, run game, and cleanup sockets */
-void run_the_game(sh_int port)
+void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule)
 {
     int s;
 
@@ -520,10 +518,8 @@ void run_the_game(sh_int port)
     log("Entering game loop.");
 
     specialized_mages.clear();
-    // Owns the schedule for the life of the loop; the heartbeat only observes it.
-    const std::shared_ptr<GameTickSchedule> tick_schedule
-        = std::make_shared<RealTimeTickSchedule>();
-    GameHeartbeat heartbeat(tick_schedule);
+    // The heartbeat only observes the schedule; the parameter keeps it alive for the loop.
+    GameHeartbeat heartbeat(schedule);
     game_loop(s, heartbeat);
 
     close_sockets(s);

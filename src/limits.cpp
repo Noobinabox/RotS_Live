@@ -59,9 +59,9 @@ void one_mobile_activity(char_data *ch);
 #define MAX_RANK 10
 
 ACMD(do_flee);
-char saves_spell(struct char_data* ch, sh_int level, int bonus);
+char saves_spell(const struct char_data* ch, sh_int level, int bonus);
 void stop_riding(struct char_data* ch);
-char char_perception_check(struct char_data* ch);
+char char_perception_check(const struct char_data* ch);
 int get_sun_level(int room);
 
 /* When age < 15 return the value p0 */

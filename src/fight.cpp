@@ -1623,7 +1623,7 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     struct affected_type* aff;
     int i, tmp, tmp1;
     struct waiting_type tmpwtl;
-    extern void record_spell_damage(struct char_data*, struct char_data*,
+    extern void record_spell_damage(const struct char_data*, const struct char_data*,
         int, int);
 
     game_rules::big_brother& bb_instance = game_rules::big_brother::instance();

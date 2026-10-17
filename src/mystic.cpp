@@ -56,11 +56,11 @@ extern int eff_mod;
  *External functions
  */
 
-char saves_mystic(struct char_data*);
-char saves_poison(struct char_data*, struct char_data*);
-char saves_confuse(struct char_data*, char_data*);
-char saves_leadership(struct char_data*);
-char saves_insight(struct char_data*, struct char_data*);
+char saves_mystic(const struct char_data*);
+char saves_poison(const struct char_data*, const struct char_data*);
+char saves_confuse(const struct char_data*, const char_data*);
+char saves_leadership(const struct char_data*);
+char saves_insight(const struct char_data*, const struct char_data*);
 bool check_mind_block(char_data*, char_data*, int, int);
 void list_char_to_char(struct char_data* list, struct char_data* caster,
     int mode);

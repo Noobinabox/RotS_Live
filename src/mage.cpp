@@ -143,7 +143,7 @@ void stop_hiding(struct char_data* caster, char);
 ACMD(do_look);
 void do_identify_object(const struct char_data*, struct obj_data*);
 
-char saves_spell(char_data* victim, sh_int caster_level, int bonus);
+char saves_spell(const char_data* victim, sh_int caster_level, int bonus);
 bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus);
 
 /*

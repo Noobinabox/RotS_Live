@@ -9,7 +9,7 @@ import sys
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 import pytest
 
@@ -17,10 +17,19 @@ from rots_harness import groups, interrupts
 from rots_harness.characters import CharacterSet
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock, parse_wait_seconds
-from rots_harness.launcher import DockerComposeLauncher, LocalProcessLauncher, ServerHandle, ServerLauncher, allocate_free_port, check_repo_relative
+from rots_harness.launcher import (
+    HARNESS_BINARY_RELATIVE,
+    DockerComposeLauncher,
+    LocalProcessLauncher,
+    ServerHandle,
+    ServerLauncher,
+    allocate_free_port,
+    check_repo_relative,
+)
 from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
+from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
 
 # tests/integration: this file, pytest.ini and the test world.
 INTEGRATION_ROOT = Path(__file__).resolve().parent
@@ -39,6 +48,10 @@ DEFAULT_BINARY_RELATIVE = "bin/ageland"
 TEST_NAME_FILE = "test-id.txt"
 # Where pytest_configure keeps the function that puts back the signal handlers it replaced.
 RESTORE_SIGNAL_HANDLERS_KEY = pytest.StashKey[Callable[[], None]]()
+# Seconds added to every advance_hours wait for the reply to travel.
+HOUR_TIMEOUT_MARGIN_SECONDS = 10.0
+# Seconds the server fixture waits for a harness server's ready line once its login prompt has arrived.
+READY_TIMEOUT_SECONDS = 30.0
 
 
 # Where pytest_configure keeps the run's RunDirectoryReport.
@@ -84,6 +97,7 @@ def validate_environment() -> None:
     session_seed()
     lock_wait_seconds()
     binary_relative()
+    hour_timeout_seconds()
 
 
 def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
@@ -150,6 +164,15 @@ def binary_relative() -> str:
     return value
 
 
+def hour_timeout_seconds() -> float:
+    """Seconds advance_hours allows per game hour, from ROTS_IT_HOUR_TIMEOUT or the default; raises pytest.UsageError."""
+    value = os.environ.get("ROTS_IT_HOUR_TIMEOUT")
+    try:
+        return parse_hour_timeout(value)
+    except ValueError:
+        raise pytest.UsageError(f"ROTS_IT_HOUR_TIMEOUT must be a positive, finite number of seconds, not {value!r}") from None
+
+
 @dataclass
 class HarnessServer:
     """One test's running server, its lib and run directory, and the sessions logged in to it."""
@@ -171,6 +194,8 @@ class HarnessServer:
     # What the crash check found during an interrupted run, listed under the kept run directory
     # instead of failing the test.
     interrupted_problems: list[str] = field(default_factory=list)
+    # Drives game time on a server started with @pytest.mark.schedule(...); None otherwise.
+    time_control: Optional[TimeControl] = None
 
     def login(self, name: str) -> GameSession:
         """Logs the named character in and returns its session; the fixture quits it after the test."""
@@ -183,6 +208,15 @@ class HarnessServer:
             raise
         self.sessions.append(game_session)
         return game_session
+
+    def advance_hours(self, hours: int) -> None:
+        """Runs hours game hours on a harness server and returns once the server acknowledges them.
+
+        Fails the test when the test has no @pytest.mark.schedule(...), since a plain server's time cannot be driven.
+        """
+        if self.time_control is None:
+            pytest.fail("advance_hours needs @pytest.mark.schedule(...) on the test", pytrace=False)
+        self.time_control.advance_hours(hours, hours * hour_timeout_seconds() + HOUR_TIMEOUT_MARGIN_SECONDS)
 
 
 @pytest.fixture(scope="session")
@@ -239,6 +273,17 @@ def character_set_for(request: pytest.FixtureRequest) -> CharacterSet:
     return CharacterSet(tuple(marker.args))
 
 
+def schedule_for(request: pytest.FixtureRequest) -> Optional[str]:
+    """The schedule the test's @pytest.mark.schedule(...) names, or None without one; fails the test on a malformed marker."""
+    marker = request.node.get_closest_marker("schedule")
+    if marker is None:
+        return None
+    try:
+        return schedule_name_from_marker(marker.args)
+    except ValueError as malformed:
+        pytest.fail(f"{request.node.nodeid}: {malformed}", pytrace=False)
+
+
 @pytest.fixture
 def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib_provider: RunLibProvider):
     """A fresh server on a lib holding the test's declared characters, as a HarnessServer.
@@ -248,16 +293,33 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     listed under the kept run directory instead. The run directory, whose test-id.txt names the
     test, is deleted unless the lib or server failed to set up after the lib was copied, any
     test in the session has failed, this server's checks failed, the run was interrupted, or
-    ROTS_IT_KEEP=1. Kept directories are listed at the end of the run.
+    ROTS_IT_KEEP=1. Kept directories are listed at the end of the run. A test marked
+    @pytest.mark.schedule(name) gets the harness binary with that schedule, whose time
+    advance_hours drives.
     """
     report = request.config.stash[RUN_DIRECTORY_REPORT_KEY]
     character_set = character_set_for(request)
+    schedule = schedule_for(request)
+    if schedule is not None:
+        harness_launcher.require_program(HARNESS_BINARY_RELATIVE)
     run_dir = RUNS_ROOT / uuid.uuid4().hex[:12]
     run_dir.mkdir(parents=True)
     (run_dir / TEST_NAME_FILE).write_text(request.node.nodeid + "\n", encoding="utf-8")
     try:
         lib_dir = lib_provider.lib_for(character_set, run_dir)
-        handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed())
+        handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed(), schedule=schedule)
+        time_control = None
+        if schedule is not None:
+            # Any failure here stops the server, including the constructor's OSError for an
+            # output log it cannot open.
+            try:
+                time_control = TimeControl(handle.process.stdin, handle.process.stdout, run_dir / OUTPUT_LOG_NAME)
+                time_control.wait_ready(schedule, READY_TIMEOUT_SECONDS)
+            except BaseException:
+                harness_launcher.stop(handle)
+                if time_control is not None:
+                    time_control.close()
+                raise
     except BaseException:
         # BaseException so an interrupted setup keeps its evidence too. keep_run_directory never
         # sees this case: a run directory holding more than test-id.txt is always kept, because its
@@ -268,7 +330,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         else:
             shutil.rmtree(run_dir, ignore_errors=True)
         raise
-    harness_server = HarnessServer(handle, lib_dir, run_dir, character_set, CrashMonitor(handle))
+    harness_server = HarnessServer(handle, lib_dir, run_dir, character_set, CrashMonitor(handle), time_control=time_control)
     try:
         yield harness_server
     finally:
@@ -285,6 +347,8 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
             # directory is recorded.
             interruption = caught
             harness_launcher.stop(handle)
+        if harness_server.time_control is not None:
+            harness_server.time_control.close()
         problems = teardown_problems + harness_server.monitor.check_after_stop()
         interrupted = report.interrupted or interruption is not None
         keep = keep_run_directory(keep_requested(), request.session.testsfailed, harness_server.crash_detected or bool(problems), interrupted)

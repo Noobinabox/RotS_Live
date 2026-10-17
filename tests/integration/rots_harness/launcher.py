@@ -13,11 +13,13 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Any, BinaryIO, Iterator, Optional
 
 LOOPBACK = "127.0.0.1"
 INTEGRATION_TMP_RELATIVE = "build/integration/tmp"
-BUILD_COMMAND = "make configure && cmake --build build --target ageland rotstool"
+BUILD_COMMAND = "make configure && cmake --build build --target ageland ageland_harness rotstool"
+# The test build of the server that a scenario with @pytest.mark.schedule(...) runs.
+HARNESS_BINARY_RELATIVE = "bin/ageland_harness"
 
 # Host variables the local launcher forwards to the server. Everything else is dropped so the
 # server sees a clean environment; sanitizer tuning (leak checks, signal handling, symbolizer
@@ -32,6 +34,13 @@ LOGIN_EMAIL_PROMPT = "Account email:"
 # The pause between two readiness attempts, and the longest one read blocks before the readiness
 # wait checks the process again.
 READY_RETRY_SECONDS = 0.25
+# The line the harness binary logs once its stdin reaches end of input; its control channel's
+# reader thread has finished by then.
+INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no more time requests will arrive."
+# The longest a stop waits for INPUT_CLOSED_LOG_LINE before it stops the server anyway.
+INPUT_CLOSED_WAIT_SECONDS = 5.0
+# The pause between two reads of game.log while a stop waits for INPUT_CLOSED_LOG_LINE.
+INPUT_CLOSED_POLL_SECONDS = 0.05
 
 
 @dataclass
@@ -43,6 +52,9 @@ class ServerHandle:
     log_path: Path
     process: subprocess.Popen
     container_name: Optional[str] = None
+    # Whether the server is the harness binary, which reads time requests on its stdin pipe; a
+    # stop closes that pipe and lets the reader finish before signalling the server.
+    has_control_channel: bool = False
 
     def is_alive(self) -> bool:
         """Whether the server process (or the compose run wrapping it) is still running."""
@@ -164,6 +176,13 @@ def _explaining_unexecutable(program_path: Path) -> Iterator[None]:
         raise
 
 
+def _output_streams(log_file: BinaryIO, schedule: Optional[str]) -> dict[str, Any]:
+    """Popen's stdout and stderr: a stdout pipe and stderr in log_file with a schedule, both in log_file without."""
+    if schedule is not None:
+        return {"stdout": subprocess.PIPE, "stderr": log_file}
+    return {"stdout": log_file, "stderr": subprocess.STDOUT}
+
+
 def close_standard_input(process: subprocess.Popen) -> None:
     """Closes the process's stdin pipe, if it has one; never raises."""
     if process.stdin is None:
@@ -173,6 +192,53 @@ def close_standard_input(process: subprocess.Popen) -> None:
     except OSError:
         # Closing flushes buffered input; a process that has gone leaves a broken pipe.
         pass
+
+
+def close_control_channel(process: subprocess.Popen, log_path: Path, timeout_seconds: float = INPUT_CLOSED_WAIT_SECONDS) -> bool:
+    """Closes the harness server's stdin, then waits up to timeout_seconds for log_path to hold INPUT_CLOSED_LOG_LINE.
+
+    True once the line is logged. False when the timeout passes or the process exits first, and
+    False without waiting when there is no open stdin pipe to close. Never raises; a Ctrl-C during
+    the wait propagates, so the caller must still stop the server.
+    """
+    if process.stdin is None or process.stdin.closed:
+        # An already closed pipe means an earlier stop waited (or was interrupted waiting); not
+        # waiting again bounds an interrupted stop to a single wait.
+        return False
+    # Measured before the close, so a line logged at once after it is still read.
+    offset = _file_size(log_path)
+    close_standard_input(process)
+    line = INPUT_CLOSED_LOG_LINE.encode("ascii")
+    deadline = time.monotonic() + timeout_seconds
+    received = b""
+    while True:
+        chunk = _read_from(log_path, offset)
+        offset += len(chunk)
+        # Keeping one byte less than the line still finds a line split across two reads.
+        received = received[-(len(line) - 1):] + chunk
+        if line in received:
+            return True
+        if process.poll() is not None or time.monotonic() >= deadline:
+            return False
+        time.sleep(INPUT_CLOSED_POLL_SECONDS)
+
+
+def _file_size(path: Path) -> int:
+    """The file's size in bytes, or 0 when it cannot be read."""
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
+def _read_from(path: Path, offset: int) -> bytes:
+    """The file's bytes from offset to its current end, or no bytes when it cannot be read."""
+    try:
+        with path.open("rb") as file:
+            file.seek(offset)
+            return file.read()
+    except OSError:
+        return b""
 
 
 def terminate_process(process: subprocess.Popen) -> None:
@@ -204,18 +270,21 @@ class ServerLauncher:
     # The checkout whose bin/ holds the programs; set by each subclass's constructor.
     _repo_root: Path
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """Starts the server on lib_dir, logging to run_dir/game.log, and returns once it sends its login prompt.
 
-        Raises RuntimeError, after stopping whatever it started, when the server exits or the
-        prompt does not arrive within the launcher's startup timeout.
+        With a schedule it runs the harness binary with --schedule, with stdin and stdout as pipes
+        for TimeControl and stderr in game.log. Raises RuntimeError, after stopping whatever it
+        started, when the server exits or the prompt does not arrive within the launcher's
+        startup timeout.
         """
         raise NotImplementedError
 
     def stop(self, handle: ServerHandle) -> None:
         """Stops the server behind handle and closes its stdin pipe.
 
-        Does not signal a server that has already exited.
+        Does not signal a server that has already exited. A harness server first gets
+        close_control_channel, so its stop can come up to INPUT_CLOSED_WAIT_SECONDS later.
         """
         raise NotImplementedError
 
@@ -252,8 +321,13 @@ class LocalProcessLauncher(ServerLauncher):
         # Seconds start waits for the server's login prompt.
         self._startup_timeout = startup_timeout
 
-    def command(self, lib_dir: Path, port: int, seed: int) -> list[str]:
-        """The server's argument vector for lib_dir, port and random seed."""
+    def command(self, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> list[str]:
+        """The server's argument vector for lib_dir, port and random seed; the harness binary's with a schedule."""
+        if schedule is not None:
+            return [
+                str(self._repo_root / HARNESS_BINARY_RELATIVE), "--schedule", schedule,
+                "--random-seed", str(seed), "-d", str(lib_dir), str(port),
+            ]
         return [str(self._repo_root / self._binary_relative), "--random-seed", str(seed), "-d", str(lib_dir), str(port)]
 
     def environment(self) -> dict[str, str]:
@@ -264,31 +338,37 @@ class LocalProcessLauncher(ServerLauncher):
                 server_environment[name] = os.environ[name]
         return server_environment
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """See ServerLauncher.start; also fails with the build command when the binary is missing.
 
         Raises RuntimeError naming the i386 runtime when this host cannot execute the binary.
         """
-        self.require_program(self._binary_relative)
+        program_relative = HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative
+        self.require_program(program_relative)
         log_path = run_dir / "game.log"
-        with log_path.open("wb") as log_file, _explaining_unexecutable(self._repo_root / self._binary_relative):
+        with log_path.open("wb") as log_file, _explaining_unexecutable(self._repo_root / program_relative):
             process = subprocess.Popen(
-                self.command(lib_dir, port, seed),
-                cwd=run_dir, env=self.environment(), stdin=subprocess.PIPE, stdout=log_file, stderr=subprocess.STDOUT,
+                self.command(lib_dir, port, seed, schedule),
+                cwd=run_dir, env=self.environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
             )
         try:
-            handle = ServerHandle(LOOPBACK, port, log_path, process)
+            handle = ServerHandle(LOOPBACK, port, log_path, process, has_control_channel=schedule is not None)
             wait_for_login_prompt(LOOPBACK, port, self._startup_timeout, process, log_path)
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the wait also stops the server: the fixture never
-            # received the handle, so nothing else would.
+            # received the handle, so nothing else would. No close_control_channel first: a server
+            # that failed to start may never log its input closing.
             terminate_process(process)
             raise
 
     def stop(self, handle: ServerHandle) -> None:
         """See ServerLauncher.stop."""
-        terminate_process(handle.process)
+        try:
+            if handle.has_control_channel:
+                close_control_channel(handle.process, handle.log_path)
+        finally:
+            terminate_process(handle.process)
 
     def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
         """See ServerLauncher.run_to_completion; also fails with the build command when the program is missing.
@@ -349,13 +429,21 @@ class DockerComposeLauncher(ServerLauncher):
             "-e", f"TMPDIR=/rots/{INTEGRATION_TMP_RELATIVE}",
         ]
 
-    def server_command(self, run_dir: Path, lib_dir: Path, port: int, container_name: str, seed: int) -> list[str]:
-        """The compose command that runs the server in run_dir and publishes port on a random loopback port."""
+    def server_command(
+        self, run_dir: Path, lib_dir: Path, port: int, container_name: str, seed: int, schedule: Optional[str] = None,
+    ) -> list[str]:
+        """The compose command that runs the server in run_dir and publishes port on a random loopback port.
+
+        With a schedule it runs the harness binary with --schedule.
+        """
         # ulimit -c 0 keeps a crashing i386 process under QEMU from hanging while it writes a core.
         working_dir = shlex.quote(self.container_path(run_dir))
-        binary = shlex.quote(f"/rots/{self._binary_relative}")
         lib = shlex.quote(self.container_path(lib_dir))
-        script = f"ulimit -c 0; cd {working_dir} && exec {binary} --random-seed {seed} -d {lib} {port}"
+        if schedule is not None:
+            program = f"{shlex.quote(f'/rots/{HARNESS_BINARY_RELATIVE}')} --schedule {shlex.quote(schedule)}"
+        else:
+            program = shlex.quote(f"/rots/{self._binary_relative}")
+        script = f"ulimit -c 0; cd {working_dir} && exec {program} --random-seed {seed} -d {lib} {port}"
         return [*self._run_prefix(container_name), "-p", f"{LOOPBACK}::{port}", self._service, "bash", "-lc", script]
 
     def tool_command(self, program_relative: str, arguments: list[str], working_dir: Path, container_name: str) -> list[str]:
@@ -392,10 +480,14 @@ class DockerComposeLauncher(ServerLauncher):
         except (subprocess.TimeoutExpired, OSError):
             pass
 
-    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int) -> ServerHandle:
-        """See ServerLauncher.start; also fails with the build command when the binary is missing."""
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
+        """See ServerLauncher.start; also fails with the build command when the binary is missing.
+
+        In both modes compose's own stderr lands in game.log; with a schedule, stdout is a pipe
+        carrying only the server's.
+        """
         (self._repo_root / INTEGRATION_TMP_RELATIVE).mkdir(parents=True, exist_ok=True)
-        self.require_program(self._binary_relative)
+        self.require_program(HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative)
         container_name = f"rots-it-{uuid.uuid4().hex[:12]}"
         process: Optional[subprocess.Popen] = None
         # One deadline covers both waits, so a slow port publication shortens the prompt wait.
@@ -404,17 +496,18 @@ class DockerComposeLauncher(ServerLauncher):
             log_path = run_dir / "game.log"
             with log_path.open("wb") as log_file:
                 process = subprocess.Popen(
-                    self.server_command(run_dir, lib_dir, port, container_name, seed),
-                    cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, stdout=log_file, stderr=subprocess.STDOUT,
+                    self.server_command(run_dir, lib_dir, port, container_name, seed, schedule),
+                    cwd=self._repo_root, env=self._docker_environment(), stdin=subprocess.PIPE, **_output_streams(log_file, schedule),
                 )
             host_port = self._wait_for_published_port(container_name, port, process, log_path, deadline)
-            handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name)
+            handle = ServerHandle(LOOPBACK, host_port, log_path, process, container_name, has_control_channel=schedule is not None)
             time_allowed = f"within the {self._startup_timeout}s startup timeout, part of which the wait for the published port used"
             wait_for_login_prompt(LOOPBACK, host_port, max(0.0, deadline - time.monotonic()), process, log_path, time_allowed)
             return handle
         except BaseException:
             # BaseException so a Ctrl-C during the waits also stops the container: the fixture
-            # never received the handle, so nothing else would.
+            # never received the handle, so nothing else would. No close_control_channel first: a
+            # server that failed to start may never log its input closing.
             self._stop_container(container_name)
             self._remove_container(container_name)
             if process is not None:
@@ -441,6 +534,14 @@ class DockerComposeLauncher(ServerLauncher):
 
         Removes the container itself when docker stop fails or the compose run has to be killed.
         """
+        try:
+            if handle.has_control_channel:
+                close_control_channel(handle.process, handle.log_path)
+        finally:
+            self._stop_container_and_client(handle)
+
+    def _stop_container_and_client(self, handle: ServerHandle) -> None:
+        """Stops the container, waits for (or kills) the compose run, and closes its stdin pipe."""
         if handle.container_name and not self._stop_container(handle.container_name):
             self._remove_container(handle.container_name)
         if handle.is_alive():

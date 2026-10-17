@@ -23,24 +23,24 @@
 /* command numbers of the "mail", "check", and "receive" commands
    in your interpreter. */
 
-#define CMD_CHECK 153
-#define CMD_RECEIVE 154
-#define CMD_MAIL 155
+inline constexpr int CMD_CHECK = 153;
+inline constexpr int CMD_RECEIVE = 154;
+inline constexpr int CMD_MAIL = 155;
 
 /* minimum level a player must be to send mail	*/
-#define MIN_MAIL_LEVEL 10
+inline constexpr int MIN_MAIL_LEVEL = 10;
 
 /* # of gold coins required to send mail	*/
-#define STAMP_PRICE 200
+inline constexpr int STAMP_PRICE = 200;
 
 /* Maximum size of mail in bytes (arbitrary)	*/
-#define MAX_MAIL_SIZE 4000
+inline constexpr int MAX_MAIL_SIZE = 4000;
 
 /* Max size of player names			*/
-#define NAME_SIZE 15
+inline constexpr int NAME_SIZE = 15;
 
 /* size of mail file allocation blocks		*/
-#define BLOCK_SIZE 100
+inline constexpr int BLOCK_SIZE = 100;
 
 /* NOTE:  Make sure that your block size is big enough -- if not,
    HEADER_BLOCK_DATASIZE will end up negative.  This is a bad thing.
@@ -75,9 +75,9 @@ char* read_delete(char* recipient, char* recipient_formatted);
 /* note that an extra space is allowed in all string fields for the
    terminating null character.  */
 
-#define HEADER_BLOCK -1
-#define LAST_BLOCK -2
-#define DELETED_BLOCK -3
+inline constexpr int HEADER_BLOCK = -1;
+inline constexpr int LAST_BLOCK = -2;
+inline constexpr int DELETED_BLOCK = -3;
 
 /* note: next_block is part of header_blk in a data block; we can't combine
    them here because we have to be able to differentiate a data block from a

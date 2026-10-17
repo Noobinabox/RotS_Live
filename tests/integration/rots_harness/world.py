@@ -4,5 +4,9 @@ from __future__ import annotations
 
 # Room 1101, where implementors arrive.
 ROOM_IMMORTAL_START = 1101
+# Room 1130, the lit western end of the arena in zone 11.
+ROOM_ARENA_WEST = 1130
 # Room 1131, the middle of the arena in zone 11.
 ROOM_ARENA_CENTRE = 1131
+# Room 1133, the arena's one DARK room, north of the centre in zone 11.
+ROOM_DARK_CELL = 1133

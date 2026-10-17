@@ -11,6 +11,8 @@
 #ifndef MAIL_H
 #define MAIL_H
 
+#include <cstddef>
+
 /******* MUD MAIL SYSTEM HEADER FILE ****************************
  ***     written by Jeremy Elson (jelson@server.cs.jhu.edu)   ***
  ****   compliments of CircleMUD (circle.cs.jhu.edu 4000)    ****
@@ -62,14 +64,15 @@ int has_mail(char* recipient);
 void store_mail(char* to, char* from, char* message_pointer);
 char* read_delete(char* recipient, char* recipient_formatted);
 
-#define INT_SIZE sizeof(int)
-#define CHAR_SIZE sizeof(char)
-#define LONG_SIZE sizeof(long)
+inline constexpr std::size_t INT_SIZE = sizeof(int);
+inline constexpr std::size_t CHAR_SIZE = sizeof(char);
+inline constexpr std::size_t LONG_SIZE = sizeof(long);
 
-#define HEADER_BLOCK_DATASIZE (BLOCK_SIZE - 1 - ((CHAR_SIZE * (NAME_SIZE + 1) * 2) + (3 * LONG_SIZE)))
+inline constexpr std::size_t HEADER_BLOCK_DATASIZE =
+    (BLOCK_SIZE - 1 - ((CHAR_SIZE * (NAME_SIZE + 1) * 2) + (3 * LONG_SIZE)));
 /* size of the data part of a header block */
 
-#define DATA_BLOCK_DATASIZE (BLOCK_SIZE - LONG_SIZE - 1)
+inline constexpr std::size_t DATA_BLOCK_DATASIZE = (BLOCK_SIZE - LONG_SIZE - 1);
 /* size of the data part of a data block */
 
 /* note that an extra space is allowed in all string fields for the

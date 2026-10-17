@@ -9,11 +9,11 @@
 /* the following are the types of special_list entries */
 inline constexpr int SPECIAL_MARK = -2;
 inline constexpr int SPECIAL_VOID = -1;
-#define SPECIAL_NULL TARGET_NONE
-#define SPECIAL_CHAR TARGET_CHAR
-#define SPECIAL_OBJ TARGET_OBJ
-#define SPECIAL_ROOM TARGET_ROOM
-#define SPECIAL_TEXT TARGET_TEXT
+inline constexpr int SPECIAL_NULL = TARGET_NONE;
+inline constexpr int SPECIAL_CHAR = TARGET_CHAR;
+inline constexpr int SPECIAL_OBJ = TARGET_OBJ;
+inline constexpr int SPECIAL_ROOM = TARGET_ROOM;
+inline constexpr int SPECIAL_TEXT = TARGET_TEXT;
 inline constexpr int SPECIAL_FILE = 17; // naturally has no analog in mud targets
 
 inline constexpr int SPECIAL_CALLLIST = 10;

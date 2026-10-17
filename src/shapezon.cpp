@@ -25,7 +25,7 @@ extern struct char_data* character_list;
 int shape_standup(struct char_data* ch, int pos);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 int convert_exit_flag(int tmp, int mode); /* in shaperom.cpp */
 // void symbol_to_map(int x, int y, int symb);
 void draw_map();

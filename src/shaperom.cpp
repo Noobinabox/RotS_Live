@@ -22,10 +22,10 @@ extern char num_of_sector_types;
 
 int simple_edit(struct char_data* ch, char** str, char* arg);
 int shape_standup(struct char_data* ch, int pos);
-void shape_flag_value(struct char_data* ch, char* arg, int* value);
+void shape_flag_value(const struct char_data* ch, char* arg, int* value);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 struct affected_type* get_from_affected_type_pool();
 void put_to_affected_type_pool(struct affected_type*);
 
@@ -439,7 +439,7 @@ char* exit_convert(int i)
     }
 }
 void extra_coms_room(struct char_data* ch, char* arg);
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed);
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 
 void shape_center_room(struct char_data* ch, char* arg)
 {

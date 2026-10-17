@@ -60,10 +60,10 @@ extern struct char_data* character_list;
 int shape_standup(struct char_data* ch, int pos);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 int get_text(FILE* f, char** line);
 int get_command(char* command);
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed);
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 
 // Local declarations
 int replace_script(struct char_data* ch, char* arg);

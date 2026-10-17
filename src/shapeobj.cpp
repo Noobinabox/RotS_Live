@@ -28,10 +28,10 @@ int obj_chain[50] = {
 };
 int simple_edit(struct char_data* ch, char** str, char* arg); /* exist in objects.c */
 int shape_standup(struct char_data* ch, int pos);
-void shape_flag_value(struct char_data* ch, char* arg, int* value);
+void shape_flag_value(const struct char_data* ch, char* arg, int* value);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 
 void new_obj(struct char_data* ch)
 {
@@ -358,7 +358,7 @@ void implement_object(struct char_data* ch)
         = 0;
 
 void extra_coms_obj(struct char_data* ch, char* arg);
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed);
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 extern char* item_types[];
 
 /* What the five /12 values mean for each item type; '-' = not used. */

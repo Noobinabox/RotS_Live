@@ -4,17 +4,17 @@
 #define COLOR_H
 
 /* Number big enough to hold the fields below */
-#define MAX_COLOR_FIELDS 16
+inline constexpr int MAX_COLOR_FIELDS = 16;
 
-#define COLOR_NARR 0
-#define COLOR_CHAT 1
-#define COLOR_YELL 2
-#define COLOR_TELL 3
-#define COLOR_SAY 4
-#define COLOR_ROOM 5
-#define COLOR_HIT 6
-#define COLOR_DAMG 7
-#define COLOR_CHAR 8
+inline constexpr int COLOR_NARR = 0;
+inline constexpr int COLOR_CHAT = 1;
+inline constexpr int COLOR_YELL = 2;
+inline constexpr int COLOR_TELL = 3;
+inline constexpr int COLOR_SAY = 4;
+inline constexpr int COLOR_ROOM = 5;
+inline constexpr int COLOR_HIT = 6;
+inline constexpr int COLOR_DAMG = 7;
+inline constexpr int COLOR_CHAR = 8;
 #define COLOR_OBJ 9
 #define COLOR_ENMY 10
 #define COLOR_DESC 11
@@ -23,18 +23,18 @@
 #define COLOR_WEATHER 14
 #define COLOR_MOB 15
 
-#define CNRM 0
-#define CRED 1
-#define CGRN 2
-#define CYEL 3
-#define CBLU 4
-#define CMAG 5
-#define CCYN 6
-#define CWHT 7
-#define CBRED 8
-#define CBGRN 9
-#define CBYEL 10
-#define CBBLU 11
+inline constexpr int CNRM = 0;
+inline constexpr int CRED = 1;
+inline constexpr int CGRN = 2;
+inline constexpr int CYEL = 3;
+inline constexpr int CBLU = 4;
+inline constexpr int CMAG = 5;
+inline constexpr int CCYN = 6;
+inline constexpr int CWHT = 7;
+inline constexpr int CBRED = 8;
+inline constexpr int CBGRN = 9;
+inline constexpr int CBYEL = 10;
+inline constexpr int CBBLU = 11;
 #define CBMAG 12
 #define CBCYN 13
 #define CBWHT 14

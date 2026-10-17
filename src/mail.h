@@ -60,8 +60,8 @@ inline constexpr int BLOCK_SIZE = 100;
 **   DON'T TOUCH DEFINES BELOW  */
 
 int scan_file(void);
-int has_mail(char* recipient);
-void store_mail(char* to, char* from, char* message_pointer);
+int has_mail(const char* recipient);
+void store_mail(char* to, const char* from, char* message_pointer);
 char* read_delete(char* recipient, char* recipient_formatted);
 
 inline constexpr std::size_t INT_SIZE = sizeof(int);

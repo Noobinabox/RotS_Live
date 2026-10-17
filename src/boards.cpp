@@ -83,7 +83,7 @@ extern struct obj_data* obj_proto;
 extern struct descriptor_data* descriptor_list;
 extern struct player_index_element* player_table;
 int find_name(const char* name);
-int has_mail(char* recipient);
+int has_mail(const char* recipient);
 int _parse_name(const char* arg, char* name);
 
 /*

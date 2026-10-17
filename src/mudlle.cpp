@@ -35,21 +35,21 @@ extern char* dirs[];
 char* mudalloc(char* str);
 void muddealloc(char* str);
 void TO_STACK(struct char_data* host, long x);
-long STACK_VALUE(struct char_data* host);
+long STACK_VALUE(const struct char_data* host);
 long FROM_STACK(struct char_data* host);
-void DOWN_STACK(struct char_data* host);
-void UP_STACK(struct char_data* host);
-void int_itemtostring(char_data* host);
+void DOWN_STACK(const struct char_data* host);
+void UP_STACK(const struct char_data* host);
+void int_itemtostring(const char_data* host);
 
-void TO_LIST(struct char_data* host, target_data* newtarg);
-void TO_LIST(struct char_data* host, void* entr, int type);
+void TO_LIST(const struct char_data* host, const target_data* newtarg);
+void TO_LIST(const struct char_data* host, void* entr, int type);
 void REMOVE_LIST(struct char_data* host);
 void UP_LIST(struct char_data* host);
 void DOWN_LIST(struct char_data* host);
-int CHECK_LIST(char_data* host, char val);
+int CHECK_LIST(const char_data* host, char val);
 
 void TEXT_LIST(char_data* host, char* targ);
-int compare_list(char_data* host, target_data* it1, target_data* it2);
+int compare_list(const char_data* host, const target_data* it1, const target_data* it2);
 
 #define PRE_COMMAND             \
     tmp_mask = CALL_MASK(host); \

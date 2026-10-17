@@ -69,14 +69,14 @@ extern sh_int screen_width;
  *  modification of malloc'ed strings                                      *
  ************************************************************************ */
 
-int word_length(char* str)
+int word_length(const char* str)
 {
     int tmp = 0;
     while (str[tmp] && (str[tmp] > ' '))
         tmp++;
     return tmp;
 }
-int space_length(char* str)
+int space_length(const char* str)
 {
     int tmp = 0;
     while (str[tmp] && (str[tmp] <= ' '))
@@ -84,7 +84,7 @@ int space_length(char* str)
     return tmp;
 }
 
-char* format_string(char* str)
+char* format_string(const char* str)
 {
     /* the string should be without '\n\r' already */
     int len, strscan, bufscan, tmp, linecount;
@@ -127,7 +127,7 @@ char* format_string(char* str)
     return str_dup(buf);
 }
 
-int replace_pattern(descriptor_data* d, char* pattern, char* new_pattern)
+int replace_pattern(descriptor_data* d, const char* pattern, const char* new_pattern)
 {
     unsigned int len, pat_len, new_len, count, tmp, bufscan;
 
@@ -183,7 +183,7 @@ int show_help_entry(const struct char_data* ch, const char* chapter, const char*
  * text being edited.  A shaping field with a help entry gets "%h" as its
  * help, and mob options are not offered "%f".
  */
-static void string_add_commands(struct char_data* ch, char** str)
+static void string_add_commands(const struct char_data* ch, char** str)
 {
     const char* chapter;
     char key[40];

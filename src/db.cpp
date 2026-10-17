@@ -317,7 +317,7 @@ ACMD(do_reload)
 }
 
 /* body of the booting system */
-char* mudlle_converter(char*);
+char* mudlle_converter(const char*);
 void boot_db(void)
 {
     int i, tmp;

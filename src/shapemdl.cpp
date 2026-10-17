@@ -22,7 +22,7 @@ extern char** mobile_program;
 extern int* mobile_program_zone;
 extern int num_of_programs;
 
-char* mudlle_converter(char* source);
+char* mudlle_converter(const char* source);
 
 int load_mudlle(char_data* ch, char* arg)
 {

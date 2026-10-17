@@ -78,26 +78,21 @@ the optional `timing`. `<checkout>` is the checkout's folder name. The integrati
 ### The local launcher on a Mac
 
 The local launcher needs a Linux host that runs i386 binaries, so on a Mac it runs inside a
-throwaway container. Take a lock by hand first (above) and delete it afterwards. From the
+throwaway container of the compose service's image (Ubuntu 22.04, which has the 32-bit runtime
+and Python). Take a lock by hand first (above) and delete it afterwards. From the
 repository root, with `ROTS_UID` and `ROTS_GID` exported
 (`export ROTS_UID=$(id -u) ROTS_GID=$(id -g)`):
 
 ```bash
-docker compose -f docker-compose.yml run --rm -T -u 0 rots bash -lc '
+docker compose -f docker-compose.yml run --rm -T rots bash -lc '
   ulimit -c 0
-  sed -i "/bullseye-security/d" /etc/apt/sources.list
-  apt-get -o Acquire::Retries=3 update -qq && apt-get install -y -qq python3 python3-venv >/dev/null
-  python3 -m venv /tmp/harness-venv && /tmp/harness-venv/bin/pip install -q "pytest>=7.0"
-  cd /rots || exit 1
-  status=0
-  for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || { status=1; break; }; done
-  chown -R "$(stat -c %u:%g /rots/Makefile)" /rots/build/integration; exit $status'
+  python3 -m venv /tmp/harness-venv && /tmp/harness-venv/bin/pip install -q -r tests/integration/requirements.txt || exit 1
+  for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || exit 1; done'
 ```
 
-`-u 0` lets apt install Python; the final `chown` gives the run directories back to the host
-user, and runs whether or not a run failed. The command exits 1 at the first failing run.
-`ulimit -c 0` matters: a core dump of a crashing i386 process under emulation hangs the
-container.
+The container runs as the host user, so the run directories it writes stay the host user's.
+The command exits 1 at the first failing run. `ulimit -c 0` matters: a core dump of a crashing
+process under emulation can hang the container.
 
 ### Bite check
 

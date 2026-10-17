@@ -28,7 +28,7 @@ make integration-unit PYTHON=.venv/bin/python
 make integration PYTHON=.venv/bin/python   # every scenario, after any harness change
 ```
 
-`make test` builds and runs 32-bit Linux binaries, so on a Mac run it inside the i386 container
+`make test` builds and runs 32-bit Linux binaries, so on a Mac run it inside the Docker container
 (`docker compose run --rm -T rots bash -lc 'make test'`) under a lock taken by hand
 (harness-reference.md, "The shared Docker lock").
 

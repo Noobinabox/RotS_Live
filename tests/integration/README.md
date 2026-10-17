@@ -29,7 +29,8 @@ scenarios; `unit/` tests the harness itself without a server.
    make configure && cmake --build build --target ageland ageland_harness rotstool
    ```
 
-   The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container:
+   The binaries are 32-bit Linux programs. On a Mac, build them inside the Docker container
+   (Ubuntu 22.04, which builds them with `-m32`):
 
    ```bash
    docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'

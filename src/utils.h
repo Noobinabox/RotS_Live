@@ -121,7 +121,7 @@ int can_breathe(char_data* ch);
 struct time_info_data age(struct char_data* ch);
 
 void track_specialized_mage(char_data* mage);
-void untrack_specialized_mage(char_data* mage);
+void untrack_specialized_mage(const char_data* mage);
 
 int has_alias(char_data* host, char* keyword);
 int has_program(char_data* host, int num);

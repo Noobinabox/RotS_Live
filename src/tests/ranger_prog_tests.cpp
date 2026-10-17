@@ -33,7 +33,7 @@ void set_char_exists(int num);
 int char_exists(int num);
 void clear_char(struct char_data* ch, int mode);
 void clear_object(struct obj_data* obj);
-int in_waiting_list(struct char_data* ch);
+int in_waiting_list(const struct char_data* ch);
 void abort_delay(struct char_data* wait_ch);
 void complete_delay(struct char_data* ch);
 void break_spell(struct char_data* ch);

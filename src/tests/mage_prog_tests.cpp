@@ -33,7 +33,7 @@ extern struct zone_data* zone_table;
 void remove_char_exists(int num);
 void set_char_exists(int num);
 void clear_char(struct char_data* ch, int mode);
-int in_waiting_list(struct char_data* ch);
+int in_waiting_list(const struct char_data* ch);
 void abort_delay(struct char_data* wait_ch);
 SPECIAL(mob_magic_user_spec);
 SPECIAL(mob_magic_user);

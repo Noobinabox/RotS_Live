@@ -29,8 +29,8 @@ void shape_prompt_hint(const struct char_data* ch);
 struct affected_type* get_from_affected_type_pool();
 void put_to_affected_type_pool(struct affected_type*);
 
-void list_room(struct char_data* ch, struct room_data* mob); /* forward declaration */
-void list_help_room(struct char_data* ch);
+void list_room(const struct char_data* ch, const struct room_data* mob); /* forward declaration */
+void list_help_room(const struct char_data* ch);
 
 int convert_exit_flag(int tmp, int mode)
 {
@@ -114,7 +114,7 @@ int room_chain[50] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1
 };
 
-int new_room(struct char_data* ch, int number)
+int new_room(const struct char_data* ch, int number)
 {
     int i;
     if (!SHAPE_ROOM(ch)->room) {
@@ -159,7 +159,7 @@ int new_room(struct char_data* ch, int number)
         = 0;
     return number;
 }
-void write_room(FILE* f, struct room_data* m, int num)
+void write_room(FILE* f, const struct room_data* m, int num)
 {
     struct extra_descr_data* tmpdescr;
     struct affected_type* tmpaf;
@@ -221,7 +221,7 @@ void write_room(FILE* f, struct room_data* m, int num)
     CREATE(real->x, char, strlen(curr->x) + 1); \
     strcpy(real->x, curr->x);
 
-void implement_room(struct char_data* ch)
+void implement_room(const struct char_data* ch)
 {
     struct room_data *real, *curr;
     int rnum, i, tmp;
@@ -1081,7 +1081,7 @@ void shape_center_room(struct char_data* ch, char* arg)
     return;
 }
 
-void list_help_room(struct char_data* ch)
+void list_help_room(const struct char_data* ch)
 {
     send_to_char("possible fields are:\n\r1 - name;\n\r", ch);
     send_to_char("2 - description;\n\r", ch);
@@ -1107,7 +1107,7 @@ void list_help_room(struct char_data* ch)
     return;
 }
 /*********--------------------------------*********/
-void list_room(struct char_data* ch, struct room_data* mob)
+void list_room(const struct char_data* ch, const struct room_data* mob)
 {
     static char str[MAX_STRING_LENGTH]; // st2[50];
     int i, i2;
@@ -1191,7 +1191,7 @@ int get_text(FILE* f, char** line);
 /****************-------------------------------------****************/
 /*extern struct room_data *character_list;
  */
-int load_room(struct char_data* ch, char* arg)
+int load_room(struct char_data* ch, const char* arg)
 {
     char format;
     // int i;
@@ -1381,8 +1381,8 @@ int load_room(struct char_data* ch, char* arg)
     return number;
 }
 /*****************----------------------------------******************/
-int append_room(struct char_data* ch, char* arg);
-int create_room(struct char_data* ch, char* arg)
+int append_room(struct char_data* ch, const char* arg);
+int create_room(struct char_data* ch, const char* arg)
 {
     int number = 0, tmp; // tmp2,room_number;
     char str[255], fname[80];
@@ -1449,7 +1449,7 @@ int create_room(struct char_data* ch, char* arg)
 }
 /*****************----------------------------------******************/
 // #define min(a,b) (((a)<(b))? (a):(b))
-int replace_room(struct char_data* ch, char* arg)
+int replace_room(const struct char_data* ch, const char* arg)
 {
     /* copy f1 to f2, replacing mob #num with new mob */
     char str[255];
@@ -1566,7 +1566,7 @@ int replace_room(struct char_data* ch, char* arg)
     fclose(f2);
     return num;
 }
-int append_room(struct char_data* ch, char* arg)
+int append_room(struct char_data* ch, const char* arg)
 {
     /* copy f1 to f2, appending mob #next-in-file with new mob */
     char str[255], fname[80];

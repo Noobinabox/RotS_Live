@@ -189,13 +189,13 @@ field by prefix, takes the first match, clamps the value, and replies `<Name>'s 
 | --- | --- | --- |
 | Hunger, thirst | `wizset player <name> hunger 10` | 0 to 24, or `off` |
 | Gold | `wizset player <name> gold 100` | |
-| Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`) | 0 to 40; sets the constant ability, then recalculates |
+| Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`), then `restore <name>` | 0 to 40. Sets the constant, and the base follows; the current value, which formulas read, does not change until `restore`. See "Abilities" below |
 | Saving throw | `wizset player <name> saving_throw 5` | -100 to 100 |
-| Hit points | `wizset player <name> hit 50`; `maxhit` sets the constant behind the maximum | `restore <name>` refills to the maximum |
+| Hit points | `wizset player <name> hit 50`; `maxhit` sets the constant behind the maximum | `restore <name>` refills hit points, mana and moves to the maximum, so set them after any `restore` |
 | Items | `load obj <vnum>` (into the implementor's inventory), then `give <keyword> <name>` in the same room | `<name>` is matched as below, "Names, sides and lookups" |
 | Mobs | `load mob <vnum>` (into the implementor's room) | |
 | Position in the world | the character's `load_room`; `teleport <name> <vnum>`, `transfer <name>`, `goto <vnum>` | `load_room` works for every race; `teleport` and `transfer` match `<name>` as below |
-| Profession levels | none | `wizset ... level` sets only the overall level and `wizset ... prof` does nothing; choose `level` and `class_name` or `points` |
+| Profession levels | none | `wizset ... level` sets only the overall level and `wizset ... prof` does nothing; choose `level` and `class_name` or `points` (see "Profession levels" below) |
 | Affects, flags | cast the spell, or wear an object that sets it | |
 
 ### Reading a character in game
@@ -204,7 +204,7 @@ The implementor's `stat player <name>` (`do_stat` in `act_info.cpp`, then `do_wi
 `do_stat_character` in `act_wiz.cpp`) prints, among other lines:
 
 ```text
-Class levels: Mag:0 Cle:0 Ran:0 War:20,  mini-level: ...
+Class levels: Mag:6 Cle:8 Ran:10 War:20,  mini-level: ...
 Spec:(0) ..., Lev: [20], XP: [...], Align: [...]
 Str:[cur/base/const] Int:[...] Wil:[...] Dex:[...] Con: [...] Lea:[...]
 HP :[cur/max+gain(bonus)]  Stamina :[...]  Move :[...] ...
@@ -226,6 +226,72 @@ example, `re.search(r"Saving throws (-?\d+),", text)` and
 implementor can see it: for a character in a dark room, send `set holylight on` first (reply
 `Holylight mode is now on.`). `stat` with no argument shows the speaker's own abilities, and
 `stat mob <keyword>` shows a mob.
+
+### Abilities
+
+Each ability in `stat` is `Int:[current/base/constant]` (`do_stat_character`, `act_wiz.cpp`):
+
+| Number | Field | What sets it |
+| --- | --- | --- |
+| current | `tmpabilities` (`GET_INT`, `utils.h`) | follows base: it creeps toward base by about 1 a game hour (`point_update`, `limits.cpp`), or jumps to it on `restore` |
+| base | `abilities` (`GET_INT_BASE`) | the constant plus gear and affect modifiers, rebuilt by `affect_total` (`handler.cpp`) through `recalc_abilities` (`profs.cpp`) |
+| constant | `constabilities` | rolled when the character is made, saved as its permanent stats |
+
+- Formulas read the **current** value (`GET_INT`, `GET_WILL`, ...): saving throws in
+  `spell_pa.cpp`, spell power, mana regeneration and maximum mana among them.
+- `wizset player <name> int 40` sets the constant (0 to 40) and calls `affect_total`: the base
+  follows, the current value does not. `restore <name>` then sets current to base at once.
+  `restore` also refills hit points, mana and moves, so set those afterwards.
+- The scenario's order is therefore `wizset`, `restore`, then `stat player` to read the
+  current value the formula will use.
+- rotstool cannot set abilities. They are rolled from the seeded random stream when rotstool
+  makes each character, in the order the `characters` marker lists them (`profs.cpp`), so a
+  different `ROTS_IT_SEED`, or a reordered marker, gives different rolled abilities. Read them
+  with `stat`, or set them as above.
+
+### Profession levels
+
+A character's profession levels come from its class (or `points`) and its level alone, not
+from the seed (`creation_points.cpp`; `advance_mini_level` in `limits.cpp` calls
+`advance_level_prof`, `profs.cpp`; each profession is capped at `LEVEL_MAX`, 30). The professions besides the main one are not zero:
+
+| Character | Mag | Mys (`Cle`) | Ran | War |
+| --- | --- | --- | --- | --- |
+| warrior, level 20 | 6 | 8 | 10 | 20 |
+| mage, level 20 | 20 | 10 | 8 | 6 |
+
+Read them from `stat player <name>`'s `Class levels:` line rather than assuming them.
+
+### Margin checks
+
+A margin check asserts, from values read with `stat player`, that no roll can change a case's
+outcome. It is only as good as each term it uses, so **every case, the control included,
+carries a comment beside the call that evaluates the code's own expression for that case, term
+by term, as the code writes it (operators and integer division included), ending in the value
+passed.** Each term names where its value comes from: a `stat` line, or the function that
+computes it for this case. A term is 0 only when the code computes 0 for this case, and the
+comment says where. Writing the expression out is what catches a term assumed to be neutral.
+
+For an invented check, where the code reads
+`chance = 2 * GET_LEVEL(ch) + GET_DEX(ch) / 3 - armour_penalty(ch) * 5;` and the action fails
+when `number(1, 100) > chance`:
+
+```python
+# Control case, Testcontrol (level 45, wearing the leather cap):
+#   chance = 2 * GET_LEVEL(ch) + GET_DEX(ch) / 3 - armour_penalty(ch) * 5
+#          = 2 * 45            + 18 / 3          - 1 * 5
+#            (Lev: [45])         (Dex:[18/18/18])  (armour_penalty: 1 for the worn cap)
+#          = 90 + 6 - 5 = 91, and number(1, 100) can exceed 91: NOT roll-proof.
+# read_level_and_current_dexterity is the scenario's own helper over `stat player`.
+level, dexterity = read_level_and_current_dexterity(implementor, "testcontrol")
+assert (level, dexterity) == (45, 18)
+assert 2 * level + dexterity // 3 - 1 * 5 == 91
+```
+
+Here the comment shows the case is not roll-proof, so the scenario must change an input (for
+example a higher level) until the evaluated value reaches 100, and repeat the comment for the
+changed case. Assert the values read from `stat` that the comment relies on, so a changed
+input fails the test rather than silently moving the margin.
 
 ### Names, sides and lookups
 

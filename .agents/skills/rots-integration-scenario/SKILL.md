@@ -25,10 +25,8 @@ build, is a GoogleTest test in `src/tests/`.
 - List every random draw on that path: `number()`, `dice()` and whatever calls them. Check each
   roll's bounds: `number(0, 100) >= chance` still fails once in 101 at a chance of 100.
 - List every input the behaviour reads and how it is controlled (table below).
-- For every case, the control included, write down each input of the formula that decides the
-  outcome, where the code computes it for that case, and its value in game (`stat player
-  <name>`, reference "Reading a character in game"). Never assume a neutral or "obviously
-  zero" value: a margin built on an assumed input proves nothing.
+- Read the numbers the outcome rests on in game with `stat player <name>`, after `restore`
+  when `wizset` changed an ability (reference, "Abilities").
 
 An input the harness cannot control needs a harness extension first, with the owner's
 approval; never rely on luck.
@@ -55,8 +53,11 @@ approval; never rely on luck.
 
 ## 4. Make the outcome deterministic by construction
 
-- Choose levels, abilities and rooms so the outcome does not depend on a roll: drive a value to
-  a clamp, or put one side of a comparison out of reach. Confirm the numbers in game.
+- Choose levels, abilities and rooms so no roll decides the outcome: drive a value to a clamp,
+  or put one side of a comparison out of reach.
+- A margin check (asserting from `stat` values that no roll can change the outcome) REQUIRES,
+  for every case including the control, the comment the reference's "Margin checks" shows:
+  the code's expression evaluated term by term, ending in the value passed.
 - When a draw cannot be removed, mark the test `@pytest.mark.schedule("affect-hours")`. Then
   only the scenario's own commands and the hours it asks for draw, so the seed fixes the
   sequence. Name the remaining draw in the docstring.
@@ -128,7 +129,8 @@ amend them if a later run changes the result.
 | Working out a threshold or modifier from the formula | Read it with `stat player <name>` and assert the values the outcome rests on |
 | Reading only the feature's function, so a roll in shared code (casting, combat) goes unseen | Trace from the interpreter; list every `number()` and `dice()` on the path |
 | Passing on the default seed only | Run `ROTS_IT_SEED` at other values and both launchers |
-| A control case's margin worked out with an assumed input | Find where the code computes each input for that case, and read it in game |
+| A margin with a term taken as 0 or neutral ("this term is 0 here") | Write the "Margin checks" comment for every case; each term's value names where the code computes it |
+| `wizset ... int 40`, then reading the margin from the old current value | `restore <name>` after `wizset`, then `stat player` |
 | Skipping the local-launcher runs because the lock wait is long | Wait them out, with a higher `ROTS_IT_LOCK_WAIT` if needed |
 | Committing before the bite check and the runs | Commit last, with Tests lines for what actually ran |
 | Believing a pin tells two behaviours apart | Break each one and watch the pin fail |

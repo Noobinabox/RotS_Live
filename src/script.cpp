@@ -60,7 +60,7 @@ int find_action(const char* arg);
 extern struct index_data* obj_index;
 
 // Internal declarations
-int trigger_room_enter(room_data* room, char_data* ch);
+int trigger_room_enter(const room_data* room, const char_data* ch);
 int trigger_room_event(int trigger_type, room_data* room, char_data* ch);
 int trigger_char_enter(char_data* ch, char_data* vict, room_data* room);
 script_data* char_has_script(int* index, char_data* ch, int script_type);
@@ -119,8 +119,8 @@ static const char* script_cmd_name(int command)
     return "?";
 }
 
-static void report_script_vnum(int script_index, script_data* cmd, int kind, int vnum,
-    char_data* to)
+static void report_script_vnum(int script_index, const script_data* cmd, int kind, int vnum,
+    const char_data* to)
 {
     char errbuf[256];
     int script_no = (script_index >= 0 && script_index <= top_of_script_table)
@@ -140,7 +140,7 @@ static void report_script_vnum(int script_index, script_data* cmd, int kind, int
 
 /* A change exit to line whose room has no exit in that direction, or whose
  * direction is not 0-5.  Writing to it would crash, so the line is skipped. */
-static void report_script_bad_exit(int script_index, script_data* cmd, int room_vnum, int dir)
+static void report_script_bad_exit(int script_index, const script_data* cmd, int room_vnum, int dir)
 {
     char errbuf[256];
     int script_no = (script_index >= 0 && script_index <= top_of_script_table)
@@ -155,7 +155,7 @@ static void report_script_bad_exit(int script_index, script_data* cmd, int room_
 /* A line whose room parameter names no room (an unset room variable, or the
  * room of a character that is not set).  Using it would crash, so the line
  * is skipped. */
-static void report_script_no_room(int script_index, script_data* cmd)
+static void report_script_no_room(int script_index, const script_data* cmd)
 {
     char errbuf[256];
     int script_no = (script_index >= 0 && script_index <= top_of_script_table)
@@ -169,8 +169,8 @@ static void report_script_no_room(int script_index, script_data* cmd)
 
 /* A slot or direction typed into the line that is outside the range the
  * command indexes with (0 to limit - 1).  The line is skipped when it runs. */
-static void report_script_range(int script_index, script_data* cmd, const char* what, int value,
-    int limit, char_data* to)
+static void report_script_range(int script_index, const script_data* cmd, const char* what, int value,
+    int limit, const char_data* to)
 {
     char errbuf[256];
     int script_no = (script_index >= 0 && script_index <= top_of_script_table)
@@ -188,7 +188,7 @@ static void report_script_range(int script_index, script_data* cmd, const char* 
 
 /* The equipment slot or exit direction a line names, checked at boot and on
  * implement like the vnums below. */
-static void check_script_ranges(int script_index, script_data* cmd, char_data* to)
+static void check_script_ranges(int script_index, const script_data* cmd, const char_data* to)
 {
     int p, limit;
     const char* what;
@@ -451,7 +451,7 @@ void script_format_text(char* out, size_t outsz, const char* text, const char* a
 
 // Returns a pointer to a text field/parameter
 
-char* get_text_param(int param, info_script* info)
+char* get_text_param(int param, const info_script* info)
 {
     switch (param) {
 
@@ -620,7 +620,7 @@ void set_int_value(struct info_script* info, int param, int val)
             get_param_text(param));
 }
 
-void op_error(struct info_script* info, int command)
+void op_error(const struct info_script* info, int command)
 {
     vmudlog(BRF, "Unrecognized binary integer operation %d in script #%d",
         command, script_table[info->index].number);
@@ -632,7 +632,7 @@ void op_error(struct info_script* info, int command)
  * command on a and b.  I.e., if command is MULT, then
  * return a * b.
  */
-int int_binary_op(struct info_script* info, int command, int* a, int* b)
+int int_binary_op(const struct info_script* info, int command, const int* a, const int* b)
 {
     switch (command) {
     case SCRIPT_SET_INT_SUM:
@@ -658,7 +658,7 @@ int int_binary_op(struct info_script* info, int command, int* a, int* b)
     return 0;
 }
 
-int int_unary_op(struct info_script* info, int command, int* a)
+int int_unary_op(const struct info_script* info, int command, const int* a)
 {
     switch (command) {
     case SCRIPT_SET_INT_VALUE:
@@ -670,7 +670,7 @@ int int_unary_op(struct info_script* info, int command, int* a)
     return 0;
 }
 
-int int_0ary_op(struct info_script* info, int command)
+int int_0ary_op(const struct info_script* info, int command)
 {
     switch (command) {
     case SCRIPT_SET_INT_WAR_STATUS:
@@ -849,7 +849,7 @@ void assign_char_param(int param, info_script* info, char_data* ch)
     }
 }
 
-char_data* get_char_param(int param, info_script* info)
+char_data* get_char_param(int param, const info_script* info)
 {
     switch (param) {
     case SCRIPT_PARAM_CH1:
@@ -863,7 +863,7 @@ char_data* get_char_param(int param, info_script* info)
     }
 }
 
-room_data* get_room_param(int param, info_script* info)
+room_data* get_room_param(int param, const info_script* info)
 {
     switch (param) {
     case SCRIPT_PARAM_RM1:
@@ -893,7 +893,7 @@ room_data* get_room_param(int param, info_script* info)
     }
 }
 
-obj_data* get_obj_param(int param, info_script* info)
+obj_data* get_obj_param(int param, const info_script* info)
 {
     switch (param) {
     case SCRIPT_PARAM_OB1:
@@ -1060,7 +1060,7 @@ int trigger_room_event(int trigger_type, room_data* room, char_data* ch)
    Section rows are invisible to the scan: it steps over any that follow a
    nested block before taking the extra step, so a script skips the same rows
    with or without them. */
-script_data* get_next_command(script_data* curr)
+script_data* get_next_command(const script_data* curr)
 {
 
     curr = curr->next;
@@ -1997,7 +1997,7 @@ int run_script(struct info_script* info, struct script_data* position)
 
 // A room's reaction to a character's entry
 
-int trigger_room_enter(room_data* room, char_data* ch)
+int trigger_room_enter(const room_data* room, const char_data* ch)
 {
     return 1;
 }

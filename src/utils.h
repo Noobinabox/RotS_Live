@@ -139,35 +139,35 @@ bool mob_opens_door_on_move(const char_data* ch, int dir);
 /* defines for fseek */
 #ifndef SEEK_SET
 #define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
+inline constexpr int SEEK_CUR = 1;
+inline constexpr int SEEK_END = 2;
 #endif
 
 /* define for tacticss */
 
-#define TACTICS_DEFENSIVE 1
-#define TACTICS_CAREFUL 2
-#define TACTICS_NORMAL 3
-#define TACTICS_AGGRESSIVE 4
-#define TACTICS_BERSERK 5
+inline constexpr int TACTICS_DEFENSIVE = 1;
+inline constexpr int TACTICS_CAREFUL = 2;
+inline constexpr int TACTICS_NORMAL = 3;
+inline constexpr int TACTICS_AGGRESSIVE = 4;
+inline constexpr int TACTICS_BERSERK = 5;
 
 /* defines for shooting speeds*/
-#define SHOOTING_SLOW 1
-#define SHOOTING_NORMAL 2
-#define SHOOTING_FAST 3
+inline constexpr int SHOOTING_SLOW = 1;
+inline constexpr int SHOOTING_NORMAL = 2;
+inline constexpr int SHOOTING_FAST = 3;
 
 /* defines for casting speeds*/
-#define CASTING_SLOW 1
-#define CASTING_NORMAL 2
-#define CASTING_FAST 3
+inline constexpr int CASTING_SLOW = 1;
+inline constexpr int CASTING_NORMAL = 2;
+inline constexpr int CASTING_FAST = 3;
 
 /* defines for mudlog() */
 
-#define OFF 0
-#define BRF 1
-#define NRM 2
-#define SPL 3
-#define CMP 4
+inline constexpr int OFF = 0;
+inline constexpr int BRF = 1;
+inline constexpr int NRM = 2;
+inline constexpr int SPL = 3;
+inline constexpr int CMP = 4;
 
 #define TRUE 1
 

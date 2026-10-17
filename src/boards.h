@@ -14,17 +14,17 @@
 #include "platdef.h" /* For byte typedefs */
 #include <stdio.h> /* FILE, for write_board_message_html */
 
-#define NUM_OF_BOARDS 24
+inline constexpr int NUM_OF_BOARDS = 24;
 // #define NUM_OF_BOARDS      (board_info_type::num_of_boards)
-#define MAX_BOARD_MESSAGES 100 /* arbitrary */
-#define MAX_BIG_BOARD_MESSAGES 500 /* arbitrary */
-#define MAX_MAIL_MESSAGES 1000 /* arbitrary */
-#define MAX_MESSAGE_LENGTH 4096 /* arbitrary, obsolete  */
+inline constexpr int MAX_BOARD_MESSAGES = 100; /* arbitrary */
+inline constexpr int MAX_BIG_BOARD_MESSAGES = 500; /* arbitrary */
+inline constexpr int MAX_MAIL_MESSAGES = 1000; /* arbitrary */
+inline constexpr int MAX_MESSAGE_LENGTH = 4096; /* arbitrary, obsolete  */
 
-#define BOARD_DIR "boards"
-#define BOARD_HTML_DIR "boards"
+inline constexpr char BOARD_DIR[] = "boards";
+inline constexpr char BOARD_HTML_DIR[] = "boards";
 
-#define INDEX_SIZE (((NUM_OF_BOARDS - 2) * MAX_BOARD_MESSAGES) + (2 * MAX_BIG_BOARD_MESSAGES) + MAX_MAIL_MESSAGES + 5)
+inline constexpr int INDEX_SIZE = (((NUM_OF_BOARDS - 2) * MAX_BOARD_MESSAGES) + (2 * MAX_BIG_BOARD_MESSAGES) + MAX_MAIL_MESSAGES + 5);
 
 struct board_msginfo {
     int slot_num; /* pos of message in "master index" */

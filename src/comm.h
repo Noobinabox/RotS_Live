@@ -54,10 +54,10 @@ void vsend_to_char(struct char_data* ch, char* format, ...);
 void act(const char* str, int hide_invisible, struct char_data* ch,
     struct obj_data* obj, void* vict_obj, int type, char spam_only = FALSE);
 
-#define TO_ROOM 0
-#define TO_VICT 1
-#define TO_NOTVICT 2
-#define TO_CHAR 3
+inline constexpr int TO_ROOM = 0;
+inline constexpr int TO_VICT = 1;
+inline constexpr int TO_NOTVICT = 2;
+inline constexpr int TO_CHAR = 3;
 
 int write_to_descriptor(int desc, char* txt);
 void write_to_q(char* txt, struct txt_q* queue);

@@ -386,7 +386,7 @@ void __pkill_extend_tab(int n)
  * file.  Store them in the global variable pkill_tab and
  * return the number of pkills read from the file.
  */
-int pkill_read_file(char* file)
+int pkill_read_file(const char* file)
 {
     int i;
     int nread; /* Number of pkills read from the file */
@@ -419,7 +419,7 @@ int pkill_read_file(char* file)
     return MIN(i, nread);
 }
 
-void pkill_delete_file(char* file)
+void pkill_delete_file(const char* file)
 {
     FILE* f;
 
@@ -434,7 +434,7 @@ void pkill_delete_file(char* file)
  * Write out all pkills which haven't expired to the given
  * pkill file.
  */
-int pkill_update_file(char* file, PKILL pkills[], int n)
+int pkill_update_file(const char* file, PKILL pkills[], int n)
 {
     int i, nwritten;
     FILE* f;

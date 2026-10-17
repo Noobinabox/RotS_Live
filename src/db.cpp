@@ -1257,7 +1257,7 @@ int count_hash_records(FILE* fl)
 
 void index_boot(int mode)
 {
-    char *index_filename, *prefix = NULL;
+    const char *index_filename, *prefix = NULL;
     FILE *index, *db_file;
     int rec_count = 0;
 

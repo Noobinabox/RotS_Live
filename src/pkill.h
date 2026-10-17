@@ -27,8 +27,8 @@ void pkill_unref_character_by_index(int);
 
 int pkill_get_total();
 
-#define PKILL_STRING_KILLED 0
-#define PKILL_STRING_SLAIN 1
+inline constexpr int PKILL_STRING_KILLED = 0;
+inline constexpr int PKILL_STRING_SLAIN = 1;
 char* pkill_get_string(PKILL*, int);
 
 PKILL* pkill_get_new_kills(int*);
@@ -49,7 +49,7 @@ typedef struct {
     int invalid; /* Non-zero means this leader was invalid */
 } LEADER;
 
-#define PKILL_UNRANKED -1
+inline constexpr int PKILL_UNRANKED = -1;
 LEADER* pkill_get_leader_by_rank(int, int);
 void pkill_free_leader(LEADER*);
 

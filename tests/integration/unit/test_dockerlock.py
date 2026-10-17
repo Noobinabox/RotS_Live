@@ -45,8 +45,9 @@ def test_docker_lock_writes_a_uniquely_named_file_and_removes_it_on_release(tmp_
     body_lines = lock_path.read_text(encoding="utf-8").splitlines()
     assert "purpose: unit test" in body_lines
     assert f"repo: {tmp_path}" in body_lines
+    assert f"resources: build:{tmp_path.name}/build" in body_lines
     assert "service: rots" in body_lines
-    assert "duration: pytest session" in body_lines
+    assert "expected: pytest session" in body_lines
     lock.release()
     assert not lock_path.exists()
     assert lock.path is None
@@ -63,6 +64,88 @@ def test_second_docker_lock_refuses_while_the_first_is_held(tmp_path: Path) -> N
         second.acquire(purpose="second session")
     assert second.path is None
     first.release()
+
+
+def test_harness_sessions_in_different_checkouts_hold_the_lock_at_the_same_time(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    first = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    second = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-2", wait_seconds=0)
+    first.acquire(purpose="first session")
+    second.acquire(purpose="second session")
+    assert first.path is not None and first.path.exists()
+    assert second.path is not None and second.path.exists()
+    first.release()
+    second.release()
+
+
+@pytest.mark.parametrize(
+    "resources",
+    ["build:slot-4/build", "build:slot-1/build-jammy", "port:1024", "game:slot-1", "timing", "build:slot-4/build-jammy port:1024 game:slot-4"],
+)
+def test_a_lock_on_other_resources_does_not_make_acquire_wait(tmp_path: Path, resources: str) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / "other-job.lock").write_text(f"session: other\nrepo: {tmp_path / 'slot-1'}\nresources: {resources}\n", encoding="utf-8")
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    lock.acquire(purpose="unit test")
+    assert lock.path is not None and lock.path.exists()
+    lock.release()
+
+
+@pytest.mark.parametrize("resources", ["build:slot-1/build", "port:1024 build:slot-1/build game:slot-1"])
+def test_a_lock_naming_this_build_tree_makes_acquire_wait(tmp_path: Path, resources: str) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / "slot-1-build.lock").write_text(f"session: other\nresources: {resources}\n", encoding="utf-8")
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    with pytest.raises(dockerlock.DockerLockHeld, match="build:slot-1/build.*slot-1-build.lock"):
+        lock.acquire(purpose="unit test")
+    assert lock.path is None
+
+
+def test_an_old_style_lock_holds_only_its_own_checkout(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / "old-style.lock").write_text(f"session: other\nrepo: {tmp_path / 'slot-2'}\nresources:\n", encoding="utf-8")
+    elsewhere = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    elsewhere.acquire(purpose="another checkout")
+    assert elsewhere.path is not None
+    elsewhere.release()
+    same_checkout = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-2", wait_seconds=0)
+    with pytest.raises(dockerlock.DockerLockHeld, match="old-style.lock"):
+        same_checkout.acquire(purpose="same checkout")
+    assert same_checkout.path is None
+
+
+def test_an_unreadable_lock_makes_acquire_wait(tmp_path: Path) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    (lock_dir / "garbled.lock").write_bytes(b"resources: port:1024\n\xff\xfe\n")
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    with pytest.raises(dockerlock.DockerLockHeld, match="garbled.lock"):
+        lock.acquire(purpose="unit test")
+    assert lock.path is None
+
+
+def test_a_lock_removed_while_the_directory_is_read_does_not_make_acquire_wait(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    lock_dir = tmp_path / "locks"
+    lock_dir.mkdir()
+    vanishing = lock_dir / "finished-job.lock"
+    vanishing.write_text("session: other\n", encoding="utf-8")
+    original_read_text = Path.read_text
+
+    def remove_then_read(path: Path, *args: object, **kwargs: object) -> str:
+        # The other job ends between listing the directory and reading its file.
+        if path == vanishing:
+            path.unlink(missing_ok=True)
+        return original_read_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", remove_then_read)
+    lock = dockerlock.DockerLock(lock_dir, repo_root=tmp_path / "slot-1", wait_seconds=0)
+    lock.acquire(purpose="unit test")
+    assert lock.path is not None and lock.path.exists()
+    lock.release()
 
 
 def test_docker_lock_fails_when_the_directory_is_missing(tmp_path: Path) -> None:

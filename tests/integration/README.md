@@ -35,11 +35,10 @@ scenarios; `unit/` tests the harness itself without a server.
    docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'
    ```
 
-   That build is itself a Docker job, so take the shared Docker lock for it first, by hand as
-   the `README.txt` in `/tmp/rots-docker-lock` describes (see Shared Docker lock below), and
-   release it before running the scenarios. A run whose server binary, `ageland_harness` (for a
-   test with a schedule) or `rotstool` is missing stops at once with the build command for its
-   launcher.
+   That build is itself a Docker job writing this checkout's `build/` tree, so lock
+   `build:<checkout>/build` for it by hand first (see Shared Docker lock below) and remove the
+   lock when the build ends. A run whose server binary, `ageland_harness` (for a test with a
+   schedule) or `rotstool` is missing stops at once with the build command for its launcher.
 
 2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 
@@ -96,21 +95,50 @@ error naming the variable and its value.
 
 ## Shared Docker lock
 
-Docker jobs on one host share the lock directory `/tmp/rots-docker-lock`: a job runs only while
-no other job's `.lock` file is there. With the `docker` launcher the harness takes the lock
-itself as `harness-it-<pid>-<id>.lock`, holds it for the whole pytest session, and removes it
-at the end. While another job holds the lock it waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`),
-printing which lock files hold it, then fails.
+Docker jobs on one host share the lock directory `/tmp/rots-docker-lock` and run at the same
+time. Each job locks only the resources it uses, so a harness run in one checkout runs while
+another checkout builds, runs a game or runs its own scenarios.
+
+| Resource | Lock it when the job | Conflict it prevents |
+| --- | --- | --- |
+| `build:<checkout>/<tree>`, e.g. `build:slot-3/build` | builds into that tree, or runs programs from it | a build replacing programs another job is running, or two builds corrupting one tree |
+| `port:<n>`, e.g. `port:1024` | publishes that host port (`--service-ports`, `-p 1024:1024`, `docker compose up`) | two containers publishing one port; `up` also claims the service's fixed `rots` container name |
+| `game:<checkout>` | runs a game on the checkout's own `lib/` | two games writing the same accounts, player files and logs |
+| `timing` (optional) | is timing-sensitive | other jobs' builds starving it; builds wait for it or use `-j2` |
+
+`<checkout>` is the checkout's folder name. A job starts only when no other lock file names a
+resource it needs. Its lock file has a session-unique name, such as
+`<session>-<purpose>.lock`, holds these lines and is deleted when the job ends, however it ends:
+
+```text
+session: <who is running it>
+repo: <checkout path>
+resources: <space-separated resources, e.g. build:slot-3/build>
+image: <image>
+purpose: <what it is for>
+started: <ISO time>
+expected: <expected duration>
+```
+
+A lock file with no `resources:` line follows the old one-job-at-a-time convention: it holds
+its checkout's build trees and `port:1024`. One older than three hours is probably stale; ask
+whoever wrote it before removing it. If the directory does not exist, create it
+(`mkdir -p /tmp/rots-docker-lock`).
+
+With the `docker` launcher the harness takes its own lock, `harness-it-<pid>-<id>.lock` on
+`build:<checkout>/build`, holds it for the whole pytest session, and removes it at the end. It
+waits only while another lock file holds that tree: a build into it, another harness session in
+the same checkout, an old-style lock for the same checkout, or a lock file it cannot read. It
+waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`), printing which lock files hold the tree, then
+fails.
 
 Ctrl-C, SIGTERM and SIGHUP all end the run the same way: the harness stops the server it
 started and removes its lock file. A `harness-it-<pid>-<id>.lock` whose process is no longer
 running (a run that was killed outright) is removed automatically, and the removal is printed.
-The harness never removes any other lock file; judge a stale one by the convention in the lock
-directory's `README.txt`.
+The harness never removes any other lock file.
 
-Do not hold a lock of your own around `make integration`: the harness would wait for it and
-then fail. If the directory does not exist, create it (`mkdir -p /tmp/rots-docker-lock`). The
-`local` launcher takes no lock.
+Do not hold a lock on this checkout's `build/` tree around `make integration`: the harness would
+wait for it and then fail. The `local` launcher takes no lock.
 
 ## Run directories
 

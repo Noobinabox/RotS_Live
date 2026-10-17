@@ -1,4 +1,9 @@
-"""This pytest session's place in the lock directory shared by every Docker job on the host."""
+"""This pytest session's place in the lock directory shared by every Docker job on the host.
+
+Jobs lock the resources they use, so jobs using different resources run at the same time. A
+lock file lists its resources on a `resources:` line; one without that line holds its
+checkout's build trees and host port 1024.
+"""
 
 from __future__ import annotations
 
@@ -22,11 +27,40 @@ HARNESS_LOCK_NAME = re.compile(rf"{re.escape(LOCK_FILE_PREFIX)}-([0-9]+)-[0-9a-f
 
 
 class DockerLockHeld(RuntimeError):
-    """Another session's lock file is in the lock directory; the message names the holders."""
+    """Another session's lock file holds this session's resource; the message names the holders."""
 
 
 def _report_to_stderr(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
+
+
+def build_tree_resource(repo_root: Path) -> str:
+    """The lock resource for repo_root's build tree, where the harness reads its programs and keeps its runs."""
+    return f"build:{repo_root.name}/build"
+
+
+def lock_fields(text: str) -> dict[str, str]:
+    """The `key: value` lines of a lock file's text; a later line wins over an earlier one with the same key."""
+    fields: dict[str, str] = {}
+    for line in text.splitlines():
+        key, separator, value = line.partition(":")
+        if separator:
+            fields[key.strip()] = value.strip()
+    return fields
+
+
+def lock_holds(text: str, resource: str, checkout_name: str) -> bool:
+    """Whether a lock file with this text holds resource, a build tree of the checkout named checkout_name.
+
+    A lock without resources follows the old convention and holds its checkout's build trees, so
+    it holds resource when its repo is that checkout or it names no repo.
+    """
+    fields = lock_fields(text)
+    resources = fields.get("resources", "").split()
+    if resources:
+        return resource in resources
+    repo = fields.get("repo", "")
+    return not repo or Path(repo).name == checkout_name
 
 
 def parse_wait_seconds(text: str) -> float:
@@ -51,10 +85,12 @@ def process_is_running(pid: int) -> bool:
 
 
 class DockerLock:
-    """One uniquely named lock file per pytest session, held for the whole session.
+    """One uniquely named lock file per pytest session on this checkout's build tree, held for the whole session.
 
     Unique names let two harness sessions on one host see each other, and holding the file for
-    the session keeps another Docker job from running between two tests.
+    the session keeps a build into this tree from replacing the programs between two tests.
+    Jobs on other resources (another checkout's tree, a published port, a running game) never
+    make it wait.
     """
 
     def __init__(
@@ -73,6 +109,8 @@ class DockerLock:
         self._lock_dir = lock_dir
         # The checkout this session runs from, recorded in the lock file for whoever finds it.
         self._repo_root = repo_root
+        # The one resource this session locks: its checkout's build tree.
+        self._resource = build_tree_resource(repo_root)
         # How long acquire keeps retrying while another session holds the lock.
         self._wait_seconds = wait_seconds
         # The pause between two attempts while waiting.
@@ -96,7 +134,7 @@ class DockerLock:
         return self._lock_path
 
     def acquire(self, purpose: str) -> None:
-        """Takes the lock, waiting up to wait_seconds while another session holds it.
+        """Takes the lock, waiting up to wait_seconds while another session holds this checkout's build tree.
 
         Raises DockerLockHeld when the wait runs out, and RuntimeError at once when the lock
         directory is missing.
@@ -119,24 +157,25 @@ class DockerLock:
                 self._sleep(self._poll_seconds)
 
     def _try_acquire(self, purpose: str) -> None:
-        """Makes one attempt to take the lock; raises DockerLockHeld when another session holds it."""
+        """Makes one attempt to take the lock; raises DockerLockHeld when another session holds this session's resource."""
         assert self._lock_dir is not None
         if not self._lock_dir.is_dir():
             raise RuntimeError(f"Docker lock directory {self._lock_dir} is missing; create it (see tests/integration/README.md, Shared Docker lock)")
         self._remove_dead_harness_locks()
-        others = sorted(path.name for path in self._lock_dir.glob("*.lock"))
-        if others:
-            raise DockerLockHeld(f"another session holds the Docker lock ({', '.join(others)}); see tests/integration/README.md")
+        holders = self._holders()
+        if holders:
+            raise DockerLockHeld(f"another session holds {self._resource} ({', '.join(holders)}); see tests/integration/README.md")
         candidate = self._lock_dir / f"{LOCK_FILE_PREFIX}-{os.getpid()}-{uuid.uuid4().hex[:8]}.lock"
         started = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         body = (
             f"session: {LOCK_FILE_PREFIX}\n"
             f"pid: {os.getpid()}\n"
             f"repo: {self._repo_root}\n"
+            f"resources: {self._resource}\n"
             "service: rots\n"
             f"purpose: {purpose}\n"
-            f"start: {started}\n"
-            "duration: pytest session\n"
+            f"started: {started}\n"
+            "expected: pytest session\n"
         )
         try:
             # Exclusive creation never overwrites another session's file.
@@ -145,13 +184,35 @@ class DockerLock:
         except FileExistsError as collision:
             raise DockerLockHeld(f"lock name collision on {candidate.name}") from collision
         self._lock_path = candidate
-        # Two sessions starting together can both find the directory empty. Rechecking after
+        # Two sessions starting together can both find no holder. Rechecking after
         # this file exists means at least one of them sees the other and backs off, so both may
         # retry but they never both run.
-        others = sorted(path.name for path in self._lock_dir.glob("*.lock") if path != candidate)
-        if others:
+        holders = self._holders(excluding=candidate)
+        if holders:
             self.release()
-            raise DockerLockHeld(f"another session took the Docker lock at the same time ({', '.join(others)}); see tests/integration/README.md")
+            raise DockerLockHeld(f"another session took {self._resource} at the same time ({', '.join(holders)}); see tests/integration/README.md")
+
+    def _holders(self, excluding: Optional[Path] = None) -> list[str]:
+        """The sorted names of the lock files, other than excluding, that hold this session's resource.
+
+        A lock file that cannot be read or decoded counts as a holder; one removed while the
+        directory is read does not.
+        """
+        assert self._lock_dir is not None
+        holders = []
+        for lock_path in sorted(self._lock_dir.glob("*.lock")):
+            if lock_path == excluding:
+                continue
+            try:
+                text = lock_path.read_text(encoding="utf-8")
+            except FileNotFoundError:
+                continue
+            except (OSError, UnicodeDecodeError):
+                holders.append(lock_path.name)
+                continue
+            if lock_holds(text, self._resource, self._repo_root.name):
+                holders.append(lock_path.name)
+        return holders
 
     def _remove_dead_harness_locks(self) -> None:
         """Removes every harness lock file whose session's process is no longer running on this host.

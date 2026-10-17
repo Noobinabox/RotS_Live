@@ -44,30 +44,36 @@ cache under `build/integration/libs/`.
 
 | Launcher | Chosen by | How it runs the programs |
 | --- | --- | --- |
-| `docker` | default off Linux, or `ROTS_IT_LAUNCHER=docker` | `docker compose run --rm -T --name rots-it-<hex>` with this checkout's `rots` service, each server on a random loopback port. Takes the shared lock itself for the whole session (`rots_harness/dockerlock.py`) and waits while any other `*.lock` file is in the lock directory |
+| `docker` | default off Linux, or `ROTS_IT_LAUNCHER=docker` | `docker compose run --rm -T --name rots-it-<hex>` with this checkout's `rots` service, each server on a random loopback port. Locks this checkout's build tree itself for the whole session (`rots_harness/dockerlock.py`); runs alongside jobs on other resources |
 | `local` | default on Linux, or `ROTS_IT_LAUNCHER=local` | runs `bin/` directly; needs the i386 runtime (`libc6:i386`). Takes no lock |
 
 ### The shared Docker lock
 
 Docker jobs on one host share a lock directory, `/tmp/rots-docker-lock` by default
-(`ROTS_IT_DOCKER_LOCK_DIR`).
+(`ROTS_IT_DOCKER_LOCK_DIR`), and run at the same time. Each job locks only the resources it
+uses: `build:<checkout>/<tree>` (a build into that tree, or programs run from it),
+`port:<n>` (a published host port), `game:<checkout>` (a game on that checkout's own `lib/`) and
+the optional `timing`. `<checkout>` is the checkout's folder name. The integration README's
+"Shared Docker lock" section has the table and the lock-file format.
 
 - **The harness's own lock.** With the Docker launcher the harness takes
-  `harness-it-<pid>-<id>.lock` for the whole pytest session (`DockerLock`,
-  `rots_harness/dockerlock.py`). It waits while ANY other `*.lock` file is in the directory,
-  whatever job or resource that lock is for, so another session's build or game run makes it
-  wait too. Waits of tens of minutes are normal on a busy host.
+  `harness-it-<pid>-<id>.lock` on `build:<checkout>/build` for the whole pytest session
+  (`DockerLock`, `rots_harness/dockerlock.py`). Builds and games in other checkouts, and harness
+  runs in other checkouts, run alongside it. It waits only for a lock file that holds the same
+  tree: a build into it, another harness session in the same checkout, an old-style lock (no
+  `resources:` line) for the same checkout, or a lock file it cannot read.
 - **When the wait runs out**, the run stops with `DockerLockHeld` naming the lock files that
-  held it. That is not a test result: rerun with a longer wait, such as
+  held the tree. That is not a test result: rerun with a longer wait, such as
   `ROTS_IT_LOCK_WAIT=3600` (seconds; default 600). A required run is waited out, never skipped.
-- **Do not hold a lock of your own** around `make integration` with the Docker launcher: the
-  harness waits for it, then fails.
-- **A Docker job outside the harness** (a build in the container, or the local launcher in a
-  container below) takes a lock by hand. On a host whose lock directory has a `README.txt`,
-  follow it. Otherwise create the directory if it is missing (`mkdir -p /tmp/rots-docker-lock`),
-  wait until no other `*.lock` is there, create a uniquely named lock file (for example
-  `<your name>-<purpose>-<random hex>.lock`, holding who you are, the purpose and the start
-  time), run the job, and delete that file when the job ends, however it ends.
+- **Do not hold a lock on this checkout's `build/` tree** around `make integration` with the
+  Docker launcher: the harness waits for it, then fails.
+- **A Docker job outside the harness** (a build in the container, `make test`, or the local
+  launcher in a container below) takes a lock by hand on the resources it uses; each of these
+  uses `build:<checkout>/build`. Create the directory if it is missing
+  (`mkdir -p /tmp/rots-docker-lock`), wait until no other lock file names one of those
+  resources, create a lock file with a session-unique name (for example
+  `<your name>-<purpose>-<random hex>.lock`) in the README's format, run the job, and delete
+  that file when the job ends, however it ends.
 
 ### The local launcher on a Mac
 

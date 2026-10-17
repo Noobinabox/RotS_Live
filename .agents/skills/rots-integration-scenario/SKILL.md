@@ -145,5 +145,5 @@ Commit only after the bite checks and the required runs. The commit message's `T
 | An immortal as the target of a mortal-only effect | Use a mortal; immortals are spared some effects (food poison, for one) |
 | A gating roll left to the seed | Repeat the attempt on its message, bounded by what each attempt uses up |
 | A retry loop bounded by a count | Bound it by the mechanism's duration and fail with a message when the precondition is gone |
-| Holding your own lock around `make integration` with the Docker launcher | Take none; the harness takes its own and waits for any other |
+| Holding your own lock on the checkout's `build/` tree around `make integration` with the Docker launcher | Take none; the harness locks that tree itself and waits for any other lock on it |
 | Deleting kept run directories you did not create | Remove only the ones your run kept, by name; the rest are someone's evidence |

@@ -496,7 +496,7 @@ ASPELL(spell_resist_illusion);
 ASPELL(spell_resist_physical);
 ASPELL(spell_resist_dark);
 
-bool is_strong_enough_to_tame(struct char_data* tamer, struct char_data* animal, bool include_current_followers);
+bool is_strong_enough_to_tame(const struct char_data* tamer, const struct char_data* animal, bool include_current_followers);
 
 int get_mage_caster_level(const char_data* caster);
 int get_mystic_caster_level(const char_data* caster);

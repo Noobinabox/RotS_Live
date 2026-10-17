@@ -7,7 +7,7 @@ the code wins: fix this file in the same change.
 ## Running
 
 Build the three programs once (32-bit Linux binaries; on a Mac, inside the container, as a
-Docker job under the shared lock described in `/tmp/rots-docker-lock/README.txt`):
+Docker job under a lock you take by hand, as "The shared Docker lock" below describes):
 
 ```bash
 make configure && cmake --build build --target ageland ageland_harness rotstool
@@ -47,12 +47,33 @@ cache under `build/integration/libs/`.
 | `docker` | default off Linux, or `ROTS_IT_LAUNCHER=docker` | `docker compose run --rm -T --name rots-it-<hex>` with this checkout's `rots` service, each server on a random loopback port. Takes the shared lock itself for the whole session (`rots_harness/dockerlock.py`) and waits while any other `*.lock` file is in the lock directory |
 | `local` | default on Linux, or `ROTS_IT_LAUNCHER=local` | runs `bin/` directly; needs the i386 runtime (`libc6:i386`). Takes no lock |
 
-Do not hold a lock of your own around `make integration` with the Docker launcher: the harness
-waits for it, then fails.
+### The shared Docker lock
 
-**The local launcher on a Mac** runs inside a throwaway container. It is a Docker job outside
-the harness, so first take a lock by hand as `/tmp/rots-docker-lock/README.txt` describes, and
-remove it afterwards. From the repository root, with `ROTS_UID` and `ROTS_GID` exported
+Docker jobs on one host share a lock directory, `/tmp/rots-docker-lock` by default
+(`ROTS_IT_DOCKER_LOCK_DIR`).
+
+- **The harness's own lock.** With the Docker launcher the harness takes
+  `harness-it-<pid>-<id>.lock` for the whole pytest session (`DockerLock`,
+  `rots_harness/dockerlock.py`). It waits while ANY other `*.lock` file is in the directory,
+  whatever job or resource that lock is for, so another session's build or game run makes it
+  wait too. Waits of tens of minutes are normal on a busy host.
+- **When the wait runs out**, the run stops with `DockerLockHeld` naming the lock files that
+  held it. That is not a test result: rerun with a longer wait, such as
+  `ROTS_IT_LOCK_WAIT=3600` (seconds; default 600). A required run is waited out, never skipped.
+- **Do not hold a lock of your own** around `make integration` with the Docker launcher: the
+  harness waits for it, then fails.
+- **A Docker job outside the harness** (a build in the container, or the local launcher in a
+  container below) takes a lock by hand. On a host whose lock directory has a `README.txt`,
+  follow it. Otherwise create the directory if it is missing (`mkdir -p /tmp/rots-docker-lock`),
+  wait until no other `*.lock` is there, create a uniquely named lock file (for example
+  `<your name>-<purpose>-<random hex>.lock`, holding who you are, the purpose and the start
+  time), run the job, and delete that file when the job ends, however it ends.
+
+### The local launcher on a Mac
+
+The local launcher needs a Linux host that runs i386 binaries, so on a Mac it runs inside a
+throwaway container. Take a lock by hand first (above) and delete it afterwards. From the
+repository root, with `ROTS_UID` and `ROTS_GID` exported
 (`export ROTS_UID=$(id -u) ROTS_GID=$(id -g)`):
 
 ```bash
@@ -61,13 +82,28 @@ docker compose -f docker-compose.yml run --rm -T -u 0 rots bash -lc '
   sed -i "/bullseye-security/d" /etc/apt/sources.list
   apt-get -o Acquire::Retries=3 update -qq && apt-get install -y -qq python3 python3-venv >/dev/null
   python3 -m venv /tmp/harness-venv && /tmp/harness-venv/bin/pip install -q "pytest>=7.0"
-  cd /rots && for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || exit 1; done
-  status=$?; chown -R "$(stat -c %u:%g /rots/Makefile)" /rots/build/integration; exit $status'
+  cd /rots || exit 1
+  status=0
+  for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || { status=1; break; }; done
+  chown -R "$(stat -c %u:%g /rots/Makefile)" /rots/build/integration; exit $status'
 ```
 
 `-u 0` lets apt install Python; the final `chown` gives the run directories back to the host
-user. `ulimit -c 0` matters: a core dump of a crashing i386 process under emulation hangs the
+user, and runs whether or not a run failed. The command exits 1 at the first failing run.
+`ulimit -c 0` matters: a core dump of a crashing i386 process under emulation hangs the
 container.
+
+### Bite check
+
+1. Break the behaviour with an uncommitted edit to the file in `src/` that implements it.
+2. Rebuild `ageland` and `ageland_harness` (`cmake --build build --target ageland
+   ageland_harness`; on a Mac through `docker compose run --rm -T rots bash -lc '...'` under a
+   lock taken by hand).
+3. Run the pin's group once. It must fail on the pin's own assertion; a `SessionTimeout`, a
+   setup error or a crash means the break or the pin needs another look.
+4. Undo the edit with `git restore <files>`, rebuild, and run the group again: it must pass.
+5. Check `git status` shows no change in `src/` before you commit anything. Never commit the
+   break.
 
 ### Environment variables
 
@@ -104,6 +140,10 @@ session has failed, when the server's checks fail, when the run is interrupted, 
 failed after the lib was copied. Kept directories are listed at the end of the run under "kept
 run directories". Template libs live in `build/integration/libs/<key>/` and are deleted at the
 end of the session unless `ROTS_IT_KEEP=1`.
+
+Everything under `build/` is git-ignored build output (`.gitignore`), so kept directories never
+reach a commit. Remove only the directories your own run kept, by the names the run listed, or
+leave them; other kept directories are someone else's evidence.
 
 ### What fails a test besides its assertions
 

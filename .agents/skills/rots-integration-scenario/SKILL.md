@@ -5,10 +5,10 @@ description: Use when adding, changing or debugging a RotS integration scenario 
 
 # Writing a RotS integration scenario
 
-A scenario boots its own server on the test world and the characters it declares, logs them
-in over telnet and checks what they read. Work through the steps in order. Commands, formats
-and values are in [harness-reference.md](harness-reference.md); changing the harness itself
-is in [extending-the-harness.md](extending-the-harness.md).
+A scenario boots its own server on the test world and its declared characters, logs them in
+and checks what they read. Work through the steps in order. Commands, formats and values are in
+[harness-reference.md](harness-reference.md); changing the harness is in
+[extending-the-harness.md](extending-the-harness.md).
 
 ## 1. Is a scenario the right test?
 
@@ -18,20 +18,20 @@ build, is a GoogleTest test in `src/tests/`.
 
 ## 2. Read the behaviour in the code
 
-- Follow the command from the interpreter (`interpre.cpp`) to every outcome. Include the
-  shared code it passes through (casting in `do_cast`, skills, movement, combat), not only the
-  feature's own function.
+- Follow the command from the interpreter (`interpre.cpp`) to every outcome, through the
+  shared code on the way (casting in `do_cast`, skills, movement, combat).
 - Note the order of the checks, each message's exact text and who receives it (`act()`'s
   `TO_CHAR`, `TO_VICT`, `TO_ROOM`), and which character, room or zone each check reads.
 - List every random draw on that path: `number()`, `dice()` and whatever calls them. Check each
   roll's bounds: `number(0, 100) >= chance` still fails once in 101 at a chance of 100.
 - List every input the behaviour reads and how it is controlled (table below).
-- Read the numbers the outcome rests on in game, not from the formula: the implementor's
-  `stat player <name>` shows level, class levels, abilities, hit points and saving throw
-  (reference, "Reading a character in game").
+- For every case, the control included, write down each input of the formula that decides the
+  outcome, where the code computes it for that case, and its value in game (`stat player
+  <name>`, reference "Reading a character in game"). Never assume a neutral or "obviously
+  zero" value: a margin built on an assumed input proves nothing.
 
-An input the harness cannot control is a harness extension to make first, with the owner's
-approval, never a reason to rely on luck.
+An input the harness cannot control needs a harness extension first, with the owner's
+approval; never rely on luck.
 
 | Input | Where the code reads it | Controllable today |
 | --- | --- | --- |
@@ -44,9 +44,9 @@ approval, never a reason to rely on luck.
 
 ## 3. Decide the pin
 
-- A **legacy pin** records today's behaviour before a change. Write it first, against unchanged
-  code, and see it pass there. Its docstring says that it records today's behaviour and becomes
-  a strict xfail when the behaviour changes.
+- A **legacy pin** records today's behaviour before a change: written first, against unchanged
+  code, and passing there. Its docstring says it records today's behaviour and becomes a strict
+  xfail when the behaviour changes.
 - The commit that changes the behaviour marks it
   `@pytest.mark.xfail(strict=True, reason="<the new behaviour>")`, keeping it as the record of
   the old behaviour; strict makes it fail the run if it ever passes again.
@@ -60,35 +60,36 @@ approval, never a reason to rely on luck.
 - When a draw cannot be removed, mark the test `@pytest.mark.schedule("affect-hours")`. Then
   only the scenario's own commands and the hours it asks for draw, so the seed fixes the
   sequence. Name the remaining draw in the docstring.
-- The seed alone is never why a test passes. Step 9 runs other seeds to prove it.
+- The seed alone is never why a test passes; step 9 runs other seeds to prove it.
 
 ## 5. Declare the characters
 
-Use `@pytest.mark.characters(...)` (fields and limits in the reference). The implementor sets what rotstool cannot (hunger, gold, items, abilities, saving
-throw); assert each reply, such as `hunger set to 10.`. Declare `IMPLEMENTOR` whenever two
-characters are online. A command naming a player on the other side matches its race keyword,
-never its name (reference, "Names, sides and lookups"): place such characters with `load_room`
-and use `stat player` and `wizset player`.
+Use `@pytest.mark.characters(...)` (fields and limits in the reference). The implementor sets
+what rotstool cannot (hunger, gold, items, abilities, saving throw); assert each reply, such as
+`hunger set to 10.`. Declare `IMPLEMENTOR` whenever two characters are online. A command
+naming a player on the other side matches its race keyword, never its name (reference, "Names,
+sides and lookups"): place such characters with `load_room`, and use `stat player` and
+`wizset player`.
 
 ## 6. Change the world only when it lacks what you need
 
-Read the test world first, decoding each room's header line. Keep vnums ascending and list a
-new file in its `index`. Boot after every change: nothing else checks the world, and a bad file
-shows only as a `SYSERR` or a server that never reaches the login prompt. The world files, the
+Read the test world first (reference, "The test world"). Keep vnums ascending and list a new
+file in its `index`. Boot after every change: a bad file shows only as a `SYSERR` or a server
+that never reaches the login prompt. The world files, the
 room constants in `rots_harness/world.py` and the markers in `pytest.ini` are scenario
 territory; the rest of `tests/integration/` and `src/harness/` is the harness.
 
 ## 7. Assert what players see
 
-- Match each message's exact text as that observer receives it. An observer who cannot see the
-  actor reads `someone` (`PERS`), one on the other side reads a star name such as `*an Orc*`,
-  and `act()` with `hide_invisible` set sends nothing.
+- Match each message's exact text as that observer receives it (`PERS`): `someone` for an
+  actor it cannot see, a star name such as `*an Orc*` across sides, and nothing from `act()`
+  with `hide_invisible` set.
 - Give `expect` every outcome the code can produce at that step, then assert which arrived, so
   a changed behaviour fails at once with the transcript rather than as a `SessionTimeout`.
 - Check what the helpers return in odd states: in a dark room `look` prints
   `It is pitch black...` instead of the room name, and `room_name()` returns that line.
 - Keep each pin to one behaviour. A control case (the same command succeeding once one input
-  changes) is good, but it must avoid the scenario's other quirks, or one break fails two pins.
+  changes) must avoid the scenario's other quirks, or one break fails two pins.
 - Advance time only with `server.advance_hours(n)`; read each hour's text with `expect` and
   `drain` before the next `command()`, which discards unread text.
 
@@ -99,18 +100,26 @@ Add `<name>: <what the group pins>` under `markers =` in `tests/integration/pyte
 
 ## 9. Run it repeatedly
 
-- While writing, run one test (reference, "Running"). Run `make integration-unit
-  PYTHON=.venv/bin/python` whenever the harness changed.
+- While writing, run one test (reference, "Running"); run `make integration-unit` when the
+  harness changed.
 - `make integration PYTHON=.venv/bin/python GROUP=<name>` three times through the Docker
   launcher and three times through the local launcher (on a Mac, inside a container), then once
   each with `ROTS_IT_SEED=1` and `ROTS_IT_SEED=987654`. Every run must pass.
-- On a failure, read the kept run directory: transcripts, `game.log`, `stdout.log`.
+- Lock waits of many minutes are normal on a busy host: wait them out, never skip a required
+  run. `DockerLockHeld` is not a test result; raise `ROTS_IT_LOCK_WAIT` and rerun (reference,
+  "Launchers").
+- On a failure, read the kept run directory (transcripts, `game.log`, `stdout.log`). Kept
+  directories are git-ignored build output: remove only your run's, by name, or leave them.
 
 ## 10. Prove the pin bites
 
-For each pin, break the behaviour it pins in `src/` on a throwaway commit, rebuild, and run its
-group. The pin must fail on an assertion about that behaviour, not on a timeout or setup
-error. Then drop the commit, rebuild and see it pass. Never commit the break.
+For each pin, break the behaviour it pins with an uncommitted edit in `src/`, rebuild, and run
+its group. The pin must fail on an assertion about that behaviour, not on a timeout or setup
+error. Then undo the edit with `git restore <files>`, rebuild and see it pass. Never commit
+the break.
+
+Commit only after the bite checks and the required runs. The Tests lines list only what ran;
+amend them if a later run changes the result.
 
 ## Common mistakes
 
@@ -119,6 +128,9 @@ error. Then drop the commit, rebuild and see it pass. Never commit the break.
 | Working out a threshold or modifier from the formula | Read it with `stat player <name>` and assert the values the outcome rests on |
 | Reading only the feature's function, so a roll in shared code (casting, combat) goes unseen | Trace from the interpreter; list every `number()` and `dice()` on the path |
 | Passing on the default seed only | Run `ROTS_IT_SEED` at other values and both launchers |
+| A control case's margin worked out with an assumed input | Find where the code computes each input for that case, and read it in game |
+| Skipping the local-launcher runs because the lock wait is long | Wait them out, with a higher `ROTS_IT_LOCK_WAIT` if needed |
+| Committing before the bite check and the runs | Commit last, with Tests lines for what actually ran |
 | Believing a pin tells two behaviours apart | Break each one and watch the pin fail |
 | An `expect` list holding only the expected line | List every outcome; assert which arrived |
 | A control case that also crosses another pin's quirk | Change one input only; other inputs stay at values no break touches |
@@ -136,4 +148,4 @@ error. Then drop the commit, rebuild and see it pass. Never commit the break.
 | Two characters online without `IMPLEMENTOR` | Declare it; otherwise login fails with `You are already connected as` |
 | A retry loop bounded by a count | Bound it by the mechanism's duration and fail with a message when the precondition is gone |
 | Holding your own lock around `make integration` with the Docker launcher | Take none; the harness takes its own and waits for any other |
-| Deleting kept run directories you did not create | Delete only your own; the rest are someone's evidence |
+| Deleting kept run directories you did not create | Remove only the ones your run kept, by name; the rest are someone's evidence |

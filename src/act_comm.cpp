@@ -36,7 +36,7 @@ ACMD(do_petitio)
 
 void say_to_char(struct char_data* speaker, struct char_data* aud,
     const char* color, const char* action,
-    const char* end, char* text, int force_visible)
+    const char* end, const char* text, int force_visible)
 {
     char speech[600];
     int freq, l;

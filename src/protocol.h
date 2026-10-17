@@ -30,7 +30,7 @@ typedef struct descriptor_data descriptor_t;
 */
 
 /* Change this to 'false' if colour codes are off by default (see README.TXT) */
-#define COLOUR_ON_BY_DEFAULT true
+inline constexpr bool COLOUR_ON_BY_DEFAULT = true;
 
 /* Uncomment this if players can also use RGB colour codes such as "^[F135]" */
 /*

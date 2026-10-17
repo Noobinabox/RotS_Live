@@ -190,7 +190,7 @@ field by prefix, takes the first match, clamps the value, and replies `<Name>'s 
 | Hunger, thirst | `wizset player <name> hunger 10` | 0 to 24, or `off` |
 | Gold | `wizset player <name> gold 100` | |
 | Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`), then `restore <name>` | 0 to 40. Sets the constant, and the base follows; the current value, which formulas read, does not change until `restore`. See "Abilities" below |
-| Saving throw | `wizset player <name> saving_throw 5` | -100 to 100 |
+| The `saving_throw` field | `wizset player <name> saving_throw 5` | -100 to 100. Sets `specials2.saving_throw` (`GET_SAVE`, `utils.h`), the value gear and affects change. `saves_spell` (`spell_pa.cpp`) and spell damage reduction (`get_victim_saving_throw`, `mage.cpp`) read it, and MSDP reports it; `new_saves_spell` and `get_character_saving_throw` (`spell_pa.cpp`) do not, using the mage level and current intelligence instead. Check which save function the behaviour calls before relying on it |
 | Hit points | `wizset player <name> hit 50`; `maxhit` sets the constant behind the maximum | `restore <name>` refills hit points, mana and moves to the maximum, so set them after any `restore` |
 | Items | `load obj <vnum>` (into the implementor's inventory), then `give <keyword> <name>` in the same room | `<name>` is matched as below, "Names, sides and lookups" |
 | Mobs | `load mob <vnum>` (into the implementor's room) | |
@@ -216,11 +216,16 @@ RES: ... VUL: ...
 SPL: (  4hr) <affect name> ...
 ```
 
-`Cle` is the mystic level. The `SPL:` lines (one per affect) come last, after `VUL:`. Several
+`Cle` is the mystic level. `Saving throws n` is the same `specials2.saving_throw` field
+`wizset ... saving_throw` sets, not the result of every save calculation (see the wizset table).
+The `SPL:` lines (one per affect) come last, after `VUL:`. Several
 lines end in `]`, which `command()` takes for a prompt, so read the reply with
 `send_line(f"stat player {name}")`, then `expect(["VUL:"])` and `drain(1.0)`. Parse with, for
-example, `re.search(r"Saving throws (-?\d+),", text)` and
-`re.search(r"Class levels: Mag:(\d+) Cle:(\d+) Ran:(\d+) War:(\d+)", text)`.
+example, `re.search(r"Saving throws (-?\d+),", text)`,
+`re.search(r"Class levels: Mag:(\d+) Cle:(\d+) Ran:(\d+) War:(\d+)", text)`, and for an
+ability's current, base and constant `re.search(r"Int:\s*\[(-?\d+)/(-?\d+)/(-?\d+)\]", text)`
+(the same with `Str`, `Wil`, `Dex`, `Con`, `Lea`; `\s*` covers the space the format string puts
+after `Con:`).
 
 `stat player` finds the character by exact name whichever side it is on, but only if the
 implementor can see it: for a character in a dark room, send `set holylight on` first (reply

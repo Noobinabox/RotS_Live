@@ -262,7 +262,7 @@ static int zrequire_room(int v) { return zresolve(v, ZREF_ROOM, true); }
 
 /* One renum line: to the log and area gods, and to the builder who ran
  * implement unless mudlog already reached them. */
-static void zone_renum_send(char* errbuf, struct char_data* to)
+static void zone_renum_send(const char* errbuf, const struct char_data* to)
 {
     mudlog(errbuf, NRM, LEVEL_AREAGOD, TRUE);
     if (to && !mudlog_reaches(to, LEVEL_AREAGOD, NRM)) {
@@ -272,7 +272,7 @@ static void zone_renum_send(char* errbuf, struct char_data* to)
 }
 
 static void zone_renum_report(int zone, int comm, const char* what, int vnum,
-    bool disabled, struct char_data* to)
+    bool disabled, const struct char_data* to)
 {
     char errbuf[256];
 
@@ -282,7 +282,7 @@ static void zone_renum_report(int zone, int comm, const char* what, int vnum,
     zone_renum_send(errbuf, to);
 }
 
-void renum_zone_one(int zone, struct char_data* to)
+void renum_zone_one(int zone, const struct char_data* to)
 {
     int comm, a, b;
     zone_table[zone].cmds_disabled = 0;

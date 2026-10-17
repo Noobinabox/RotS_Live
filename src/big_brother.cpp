@@ -111,7 +111,7 @@ void big_brother::populate_skill_sets()
 //============================================================================
 // Returns true if the item can be looted from the corpse.
 //============================================================================
-bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* item)
+bool big_brother::on_loot_item(const char_data* looter, obj_data* corpse, const obj_data* item)
 {
 #if USE_BIG_BROTHER
     // Something's not right.  Go for it, we won't stop you.
@@ -198,7 +198,7 @@ bool big_brother::on_loot_item(char_data* looter, obj_data* corpse, obj_data* it
 }
 
 //============================================================================
-void big_brother::log_item_looted(const char_data* looter, corpse_map::iterator& corpse_iter, obj_data* item) const
+void big_brother::log_item_looted(const char_data* looter, corpse_map::iterator& corpse_iter, const obj_data* item) const
 {
 #if USE_BIG_BROTHER
     // This is the last item from the corpse.  Stop tracking the corpse.
@@ -263,7 +263,7 @@ bool big_brother::is_corpse_protected(const char_data* looter, obj_data* corpse)
 }
 
 //============================================================================
-bool big_brother::is_target_valid(char_data* attacker, const char_data* victim) const
+bool big_brother::is_target_valid(const char_data* attacker, const char_data* victim) const
 {
 #if USE_BIG_BROTHER
     // Not Big Brother's job to check these pointers.
@@ -322,7 +322,7 @@ bool big_brother::is_target_valid(char_data* attacker, const char_data* victim) 
 }
 
 //============================================================================
-bool big_brother::is_target_valid(char_data* attacker, const char_data* victim, int skill_id) const
+bool big_brother::is_target_valid(const char_data* attacker, const char_data* victim, int skill_id) const
 {
 #if USE_BIG_BROTHER
     // If the target isn't protected, just return true.
@@ -425,7 +425,7 @@ bool big_brother::is_same_side_race_war(int attacker_race, int victim_race) cons
 }
 
 //============================================================================
-char_data* big_brother::get_valid_target(char_data* attacker, const char_data* victim, const char* argument) const
+char_data* big_brother::get_valid_target(const char_data* attacker, const char_data* victim, const char* argument) const
 {
     // TODO(drelidan):  Implement logic here.
     return NULL;
@@ -437,7 +437,7 @@ char_data* big_brother::get_valid_target(char_data* attacker, const char_data* v
 //============================================================================
 
 //============================================================================
-void big_brother::on_character_died(char_data* character, char_data* killer, obj_data* corpse)
+void big_brother::on_character_died(const char_data* character, const char_data* killer, obj_data* corpse)
 {
 #if USE_BIG_BROTHER
     assert(character);
@@ -610,7 +610,7 @@ void big_brother::on_corpse_decayed(obj_data* corpse)
 // Private Data Structure implementation
 //============================================================================
 //============================================================================
-big_brother::player_corpse_data::player_corpse_data(char_data* dead_man)
+big_brother::player_corpse_data::player_corpse_data(const char_data* dead_man)
     : num_items_looted(0)
     , killer_id(-1)
     , is_killer_pc(false)
@@ -626,7 +626,7 @@ big_brother::player_corpse_data::player_corpse_data(char_data* dead_man)
 }
 
 //============================================================================
-big_brother::player_corpse_data::player_corpse_data(char_data* dead_man, char_data* killer)
+big_brother::player_corpse_data::player_corpse_data(const char_data* dead_man, const char_data* killer)
     : num_items_looted(0)
 {
     assert(dead_man);

@@ -74,7 +74,7 @@ ACMD(do_mental);
 /* local procedures */
 void hit(struct char_data* ch, struct char_data* victim, int type);
 void do_parry(struct char_data* ch, struct char_data* victim, int type);
-void forget(struct char_data* ch, struct char_data* victim);
+void forget(struct char_data* ch, const struct char_data* victim);
 void remember(struct char_data* ch, struct char_data* victim);
 void complete_delay(struct char_data* ch);
 void group_gain(struct char_data* ch, const struct char_data* victim);

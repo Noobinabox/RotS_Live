@@ -162,7 +162,7 @@ void set_fighting(struct char_data* ch, struct char_data* victim);
 void stop_fighting(struct char_data* ch);
 void stop_follower(struct char_data* ch);
 void hit(struct char_data* ch, struct char_data* victim, int type);
-void forget(struct char_data* ch, struct char_data* victim);
+void forget(struct char_data* ch, const struct char_data* victim);
 void remember(struct char_data* ch, struct char_data* victim);
 int damage(struct char_data* ch, struct char_data* victim, int dam, int attacktype, int hit_location);
 int check_sanctuary(char_data* ch, char_data* victim);

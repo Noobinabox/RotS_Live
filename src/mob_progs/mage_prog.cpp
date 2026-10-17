@@ -42,7 +42,7 @@ bool is_mage_candidate(const struct char_data* proto, int rnum)
     return mob_program_candidate(proto, rnum, (special_func)mob_magic_user_spec, PROG_MAGE);
 }
 
-void mage_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
+void mage_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder)
 {
     std::vector<vendor_problem> problems;
     parse_mage_options(proto->specials.mob_options, &problems);
@@ -62,7 +62,7 @@ std::vector<std::string> mage_setting_warnings(const char* options, int mob_vnum
 }
 
 /* Soft checks, on /imp only, to the builder alone (not at boot, not logged). */
-void mage_implement_check(int mob_rnum, struct char_data* builder)
+void mage_implement_check(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt || !is_mage_proto(mob_rnum))
         return;
@@ -73,7 +73,7 @@ void mage_implement_check(int mob_rnum, struct char_data* builder)
     }
 }
 
-void mage_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
+void mage_config_rebuild(int mob_rnum, const struct char_data* builder, bool report)
 {
     if (mob_rnum < 0 || mob_rnum > top_of_mobt) {
         g_mage_configs.erase(mob_rnum);

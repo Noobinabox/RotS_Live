@@ -52,7 +52,7 @@ extern int top_of_objt;
 void build_player_index(void);
 void clear_char(struct char_data* ch, int mode);
 void save_player(struct char_data* ch, int load_room, int index_pos);
-void store_to_char(struct char_file_u* st, struct char_data* ch);
+void store_to_char(const struct char_file_u* st, struct char_data* ch);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 int file_to_string_alloc(const char* name, char** buf);
 

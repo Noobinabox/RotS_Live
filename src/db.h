@@ -105,12 +105,12 @@ static const int mortal_maze_room[MAX_MAZE_RENT_MAPPINGS][2] = {
 /* public procedures in db.c */
 void boot_db(void);
 void char_to_store(struct char_data*, struct char_file_u*);
-void store_to_char(struct char_file_u*, struct char_data*);
+void store_to_char(const struct char_file_u*, struct char_data*);
 bool write_player_text(struct char_data* ch, int load_room, const char* scratch_path);
 int load_char(char*, struct char_file_u*);
 int load_char_from_text(char*, const char*, struct char_file_u*);
 void save_char(struct char_data*, int, int);
-int create_entry(char*);
+int create_entry(const char*);
 int ensure_player_index_entry(const char*);
 void update_player_index_entry_from_store(struct char_file_u*);
 bool update_player_index_entry_from_store(
@@ -123,14 +123,14 @@ void free_char(struct char_data*);
 void free_obj(struct obj_data*);
 int real_room(int);
 int real_program(int);
-char* fread_string(FILE*, char*);
+char* fread_string(FILE*, const char*);
 int real_object(int);
 int real_mobile(int);
-int vnum_mobile(char*, struct char_data*);
-int vnum_object(char*, struct char_data*);
-void record_crime(struct char_data*, struct char_data*, int, int);
+int vnum_mobile(const char*, const struct char_data*);
+int vnum_object(const char*, const struct char_data*);
+void record_crime(const struct char_data*, const struct char_data*, int, int);
 void add_crime(int, int, int, int, int);
-void forget_crimes(struct char_data*, int);
+void forget_crimes(const struct char_data*, int);
 // Adds `recordtype` exploit records to the front of the histories they belong in. EXPLOIT_PK
 // gives a trophy naming `victim` to every player fighting it (a fighting pet or orc-friend credits
 // its player master); EXPLOIT_DEATH gives `victim` one "killed by" entry per such player. Every
@@ -138,20 +138,20 @@ void forget_crimes(struct char_data*, int);
 // `victim` must not be null; `chParam` must not be null for EXPLOIT_STAT, EXPLOIT_MOBDEATH,
 // EXPLOIT_ACHIEVEMENT and EXPLOIT_NOTE and is ignored otherwise. Names and text longer than the
 // record's text field are truncated. NPC and immortal victims get nothing.
-void add_exploit_record(int recordtype, struct char_data* victim, int iIntParam, char* chParam);
+void add_exploit_record(int recordtype, struct char_data* victim, int iIntParam, const char* chParam);
 // Persists one finished exploit record into `recipient`'s history.
 using ExploitRecordWriterFn = void (*)(struct char_data& recipient, const struct exploit_record& record);
 // Test-only: routes every record add_exploit_record() finishes to `writer` instead of
 // write_exploits(), which touches disk. nullptr restores write_exploits().
 void set_exploit_record_writer_for_testing(ExploitRecordWriterFn writer);
-int delete_exploits_file(char*);
-void delete_character_file(struct char_data*);
+int delete_exploits_file(const char*);
+void delete_character_file(const struct char_data*);
 void move_char_deleted(int);
 // System deletion (boot-time idle sweep, immortal 'delete'). Unlinks account-linked characters
 // through the account layer so account.json stops listing them; returns false if it declined to
 // delete, in which case the character is left untouched.
 bool delete_player_character_by_index(int);
-int get_char_directory(char*, char*);
+int get_char_directory(const char*, char*);
 int load_player(char*, struct char_file_u*);
 int load_player_from_text(char*, const char*, struct char_file_u*);
 

@@ -47,7 +47,7 @@ ACMD(do_action);
 extern struct script_head* script_table;
 extern struct room_data world;
 extern int top_of_script_table;
-int set_exit_state(struct room_data* room, int dir, int newstate);
+int set_exit_state(const struct room_data* room, int dir, int newstate);
 extern int rev_dir[];
 extern struct char_data* waiting_list;
 extern void raw_kill(char_data* ch, char_data* killer, int attacktype);

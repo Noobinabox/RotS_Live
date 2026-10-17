@@ -29,7 +29,7 @@ extern struct char_data* character_list;
 extern int top_of_p_table;
 void clear_char(struct char_data* ch, int mode);
 void save_player(struct char_data* ch, int load_room, int index_pos);
-void store_to_char(struct char_file_u* st, struct char_data* ch);
+void store_to_char(const struct char_file_u* st, struct char_data* ch);
 extern char* command[];
 extern command_info cmd_info[];
 void assign_command_pointers(void);

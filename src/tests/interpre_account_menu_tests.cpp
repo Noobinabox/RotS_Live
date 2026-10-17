@@ -43,7 +43,7 @@ sh_int get_naked_perception(struct char_data* ch);
 int register_pc_char(struct char_data* ch);
 void introduce_char(struct descriptor_data* d);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
-int create_entry(char* name);
+int create_entry(const char* name);
 void save_player(struct char_data* ch, int load_room, int index_pos);
 int process_input(struct descriptor_data* t);
 int get_from_q(struct txt_q* queue, char* dest);

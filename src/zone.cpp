@@ -48,7 +48,7 @@ void load_zones(FILE* fl)
     int cmd_no;
     char buf[81], command;
     struct owner_list* owner;
-    extern char* fread_string(FILE*, char*);
+    extern char* fread_string(FILE*, const char*);
 
     bzero(&zone_table[zone], sizeof(struct zone_data));
     fscanf(fl, " #%d\n", &zone_table[zone].number);
@@ -687,7 +687,7 @@ void reset_zone(int zone)
     extern struct index_data* mob_index;
     extern struct index_data* obj_index;
     extern struct char_data* character_list;
-    int set_exit_state(struct room_data*, int, int);
+    int set_exit_state(const struct room_data*, int, int);
     void add_follower(struct char_data*, struct char_data*, int mode);
     void extract_char(struct char_data*);
     void extract_obj(struct obj_data*);

@@ -613,7 +613,7 @@ extern int LOOT_DECAY_TIME;
 void point_update(void)
 {
     int recalc_flag = 0, full_update, feeling, mytime, tmp;
-    void update_char_objects(struct char_data * ch); /* handler.c */
+    void update_char_objects(const struct char_data * ch); /* handler.c */
     void extract_obj(struct obj_data * obj); /* handler.c */
     struct char_data *i, *next_dude;
     struct obj_data *j, *next_thing, *jj, *next_thing2;

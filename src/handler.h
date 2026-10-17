@@ -24,15 +24,15 @@ inline constexpr int AFFECT_MODIFY_SET = 1;
 inline constexpr int AFFECT_MODIFY_REMOVE = 0;
 inline constexpr int AFFECT_MODIFY_TIME = 2;
 
-void affect_total_room(struct room_data* room, int mode = AFFECT_TOTAL_UPDATE);
+void affect_total_room(const struct room_data* room, int mode = AFFECT_TOTAL_UPDATE);
 void affect_modify_room(struct room_data* room, byte loc, int mod, long bitv, char add);
-void affect_to_room(struct room_data* room, struct affected_type* af);
+void affect_to_room(struct room_data* room, const struct affected_type* af);
 void affect_remove_room(struct room_data* room, struct affected_type* af);
 void affect_from_room(struct room_data* room, byte skill);
 
 void affect_total(struct char_data* ch, int mode = AFFECT_TOTAL_UPDATE);
 void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add, sh_int counter);
-void affect_to_char(struct char_data* ch, struct affected_type* af);
+void affect_to_char(struct char_data* ch, const struct affected_type* af);
 /* Bound-checked lookup into spell_wear_off_msg[]. That table is indexed by spell number but is
    far shorter than MAX_SKILLS, so an unchecked index reads past its end. Returns NULL when the
    spell number has no entry at all, otherwise the entry (which may be the empty string). */
@@ -46,7 +46,7 @@ void affect_from_char(struct char_data* ch, byte skill);
 #include <stddef.h>
 
 affected_type* affected_by_spell(const char_data* character, byte skill, affected_type* firstaf = 0);
-affected_type* removeable_spell_affection(const char_data* character, affected_type* aff, affected_type* start_affect);
+affected_type* removeable_spell_affection(const char_data* character, const affected_type* aff, affected_type* start_affect);
 affected_type* room_affected_by_spell(const room_data* room, int spell);
 
 void affect_join(struct char_data* ch, struct affected_type* af,
@@ -55,7 +55,7 @@ void affect_join(struct char_data* ch, struct affected_type* af,
 /* utility */
 struct obj_data* create_money(int amount);
 int isname(const char* str, const char* namelist, char full = 1);
-char* fname(char* namelist);
+char* fname(const char* namelist);
 
 /* ******** objects *********** */
 
@@ -65,7 +65,7 @@ void obj_from_char(struct obj_data* object);
 void equip_char(struct char_data* ch, struct obj_data* obj, int pos);
 struct obj_data* unequip_char(struct char_data* ch, int pos);
 
-struct obj_data* get_obj_in_list(char* name, struct obj_data* list);
+struct obj_data* get_obj_in_list(const char* name, struct obj_data* list);
 struct obj_data* get_obj_in_list_num(int num, struct obj_data* list);
 struct obj_data* get_obj_in_list_vnum(int vnum, struct obj_data* list);
 struct obj_data* get_obj_in_list_num_containers(int num, struct obj_data* list);
@@ -73,7 +73,7 @@ int count_obj_in_list(int num, struct obj_data* list);
 /* returns the number of objects with this virtual number.
     if num == 0, returns the total number of objects */
 
-struct obj_data* get_obj(char* name);
+struct obj_data* get_obj(const char* name);
 struct obj_data* get_obj_num(int nr);
 
 void obj_to_room(struct obj_data* object, int room);
@@ -88,32 +88,32 @@ void extract_obj(struct obj_data* obj);
 int other_side(const char_data* character, const char_data* other);
 int other_side_num(int ch_race, int i_race);
 
-struct char_data* get_char_room(char* name, int room);
+struct char_data* get_char_room(const char* name, int room);
 struct char_data* get_char_num(int nr);
-struct char_data* get_char(char* name);
+struct char_data* get_char(const char* name);
 
 void char_from_room(struct char_data* ch);
 void char_to_room(struct char_data* ch, int room);
 void extract_char(struct char_data* ch, int new_room = -1);
 
-int in_affected_list(struct char_data* ch);
+int in_affected_list(const struct char_data* ch);
 
 /* find if character can see */
-int keyword_matches_char(struct char_data*, struct char_data*, char*);
-struct char_data* get_char_room_vis(struct char_data* ch, char* name,
+int keyword_matches_char(const struct char_data*, const struct char_data*, const char*);
+struct char_data* get_char_room_vis(struct char_data* ch, const char* name,
     int dark_ok = 0);
-struct char_data* get_player_vis(struct char_data* ch, char* name);
-struct char_data* get_char_vis(struct char_data* ch, char* name,
+struct char_data* get_player_vis(struct char_data* ch, const char* name);
+struct char_data* get_char_vis(struct char_data* ch, const char* name,
     int dark_ok = 0);
-struct obj_data* get_obj_in_list_vis(struct char_data* ch, char* name,
+struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* name,
     struct obj_data* list, int num);
-struct obj_data* get_obj_vis(struct char_data* ch, char* name);
-struct obj_data* get_object_in_equip_vis(struct char_data* ch,
-    char* arg, struct obj_data* equipment[], int* j);
+struct obj_data* get_obj_vis(const struct char_data* ch, const char* name);
+struct obj_data* get_object_in_equip_vis(const struct char_data* ch,
+    const char* arg, struct obj_data* equipment[], int* j);
 
 void add_follower(struct char_data* ch, struct char_data* leader, int mode);
 void stop_follower(struct char_data* ch, int mode);
-char circle_follow(struct char_data* ch, struct char_data* victim, int mode);
+char circle_follow(const struct char_data* ch, struct char_data* victim, int mode);
 void die_follower(struct char_data* ch);
 
 inline constexpr int FOLLOW_MOVE = 1;
@@ -130,7 +130,7 @@ inline constexpr int FIND_ALLDOT = 2;
 
 /* Generic Find */
 
-int generic_find(char* arg, int bitvector, struct char_data* ch,
+int generic_find(const char* arg, int bitvector, struct char_data* ch,
     struct char_data** tar_ch, struct obj_data** tar_obj);
 
 inline constexpr int FIND_CHAR_ROOM = 1;
@@ -175,12 +175,12 @@ void remove_char_exists(int num);
 int register_npc_char(struct char_data*);
 int register_pc_char(struct char_data*);
 
-int can_swim(struct char_data* ch);
+int can_swim(const struct char_data* ch);
 
 void stop_riding(struct char_data* ch);
-void stop_riding_all(struct char_data* mount); /*emergency dismount */
+void stop_riding_all(const struct char_data* mount); /*emergency dismount */
 int char_power(int lev);
 void recalc_zone_power();
-int report_zone_power(char_data* ch);
+int report_zone_power(const char_data* ch);
 
 #endif /* HANDLER_H */

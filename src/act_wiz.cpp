@@ -116,7 +116,7 @@ void print_exploits(const char_data* sendto, const char* name);
 ACMD(do_look);
 ACMD(do_account);
 ACMD(do_whoacct);
-int Check_zone_authority(int zonenum, char_data* ch);
+int Check_zone_authority(int zonenum, const char_data* ch);
 
 ACMD(do_emote)
 {
@@ -557,7 +557,7 @@ void do_stat_room(struct char_data* ch)
     }
 }
 
-void do_stat_object(struct char_data* ch, struct obj_data* j)
+void do_stat_object(const struct char_data* ch, struct obj_data* j)
 {
     char found;
     int i, player_num;
@@ -761,7 +761,7 @@ void do_stat_object(struct char_data* ch, struct obj_data* j)
     send_to_char("\n\r", ch);
 }
 
-void do_stat_character(struct char_data* ch, struct char_data* k)
+void do_stat_character(const struct char_data* ch, struct char_data* k)
 {
     int i, i2, found = 0;
     struct obj_data* j;
@@ -1038,7 +1038,7 @@ void do_stat_character(struct char_data* ch, struct char_data* k)
     }
 }
 
-int Check_zone_authority(int zonenum, char_data* ch)
+int Check_zone_authority(int zonenum, const char_data* ch)
 {
     struct owner_list* tmpowner;
     int tmp;
@@ -1537,7 +1537,7 @@ ACMD(do_advance)
     int adv, newlevel = 0;
 
     void gain_exp(struct char_data*, int);
-    int advance_perm(struct char_data*, struct char_data*, int);
+    int advance_perm(const struct char_data*, const struct char_data*, int);
 
     if (IS_NPC(ch))
         return;
@@ -2723,7 +2723,7 @@ ACMD(do_wizset)
     char is_file = 0, is_mob = 0, is_player = 0;
     int player_i;
 
-    int advance_perm(struct char_data*, struct char_data*, int);
+    int advance_perm(const struct char_data*, const struct char_data*, int);
 
     half_chop(argument, name, buf);
     if (!strcmp(name, "file")) {
@@ -4082,7 +4082,7 @@ ACMD(do_rehash)
  * As a side note, if `ch' is an implementor, it will always be
  * granted permission to advance.
  */
-int advance_perm(struct char_data* ch, struct char_data* vict, int level)
+int advance_perm(const struct char_data* ch, const struct char_data* vict, int level)
 {
     if (GET_LEVEL(ch) == LEVEL_IMPL)
         return 1;

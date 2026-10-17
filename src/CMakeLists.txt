@@ -171,6 +171,7 @@ set(ROTS_TEST_SOURCES
     tests/banker_tests.cpp
     tests/ranger_prog_tests.cpp
     tests/mage_prog_tests.cpp
+    tests/guild_practice_tests.cpp
     tests/game_boot_options_tests.cpp
     tests/resistance_tests.cpp
     tests/resist_item_slot_tests.cpp

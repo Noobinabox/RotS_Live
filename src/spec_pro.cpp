@@ -9,13 +9,15 @@
  ************************************************************************ */
 
 #include "platdef.h"
+#include <algorithm>
 #include <ctype.h>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <vector>
-#include <iostream>
-#include <regex>
 
 #include "comm.h"
 #include "db.h"
@@ -210,37 +212,144 @@ void recalc_skills(struct char_data* ch)
     }
 }
 
-// split string on SEPERATOR_CHAR
-std::vector<std::string> split(const std::string str, const std::string regex_str) {
-    std::regex regexz(regex_str);
-    return {std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
-    std::sregex_token_iterator()};
+/* The first skill whose name starts with name, ignoring case, or MAX_SKILLS. */
+int find_practice_skill(const char* name)
+{
+    size_t len = strlen(name);
+    for (int request = 0; request < MAX_SKILLS; request++)
+        if (!strncasecmp(name, skills[request].name, len))
+            return request;
+    return MAX_SKILLS;
 }
 
-bool handle_pracs(char_data* host, char_data* ch, int request, int prog) {
+static bool is_all_word(const std::string& word)
+{
+    static const char all[] = "all";
+    return word.size() < sizeof(all) && !strncasecmp(word.c_str(), all, word.size());
+}
+
+/* Reads the words after "practice" at a guildmaster: a number is how many
+ * sessions to spend (above 200 counts as 200), "all" - or just "a" or "al" -
+ * spends up to 200, and the other words name the skill. When two counts are
+ * given, the later one is used.
+ *
+ * "a", "al" and "all" can also be part of a skill name ("fast a" for fast
+ * attack, "refresh all"). Such a word stays in the name while the name with
+ * it still matches a skill; otherwise, starting from the last one, it is
+ * taken as "all". */
+void parse_practice_args(const char* arg, int* times, std::string* skill)
+{
+    std::istringstream input(arg);
+    std::vector<std::string> words; /* the words that are not numbers */
+    std::vector<int> word_at; /* where each of them was typed */
+    std::vector<size_t> all_words; /* which of them could mean "all", in order */
+    std::string item;
+    int number = 0;
+    int number_at = -1; /* where the last number was typed */
+    int position = 0;
+
+    while (input >> item) {
+        if (std::all_of(item.begin(), item.end(), [](unsigned char c) { return isdigit(c); })) {
+            size_t digits = item.find_first_not_of('0');
+            if (digits == std::string::npos)
+                number = 0;
+            else if (item.size() - digits > 3)
+                number = 200;
+            else
+                number = std::min(200, atoi(item.c_str()));
+            number_at = position;
+        } else {
+            if (is_all_word(item))
+                all_words.push_back(words.size());
+            words.push_back(item);
+            word_at.push_back(position);
+        }
+        position++;
+    }
+
+    auto name_of = [&words](const std::vector<bool>& dropped) {
+        std::string name;
+        for (size_t i = 0; i < words.size(); i++) {
+            if (dropped[i])
+                continue;
+            if (!name.empty())
+                name.push_back(' ');
+            name.append(words[i]);
+        }
+        return name;
+    };
+
+    /* With no other word, "a", "al" and "all" can only mean "all". */
+    std::vector<bool> dropped(words.size(), false);
+    if (all_words.size() == words.size()) {
+        for (size_t i : all_words)
+            dropped[i] = true;
+    } else {
+        for (auto it = all_words.rbegin(); it != all_words.rend(); ++it) {
+            if (find_practice_skill(name_of(dropped).c_str()) != MAX_SKILLS)
+                break;
+            dropped[*it] = true;
+        }
+    }
+
+    /* The later of the last number and the last "all" wins. */
+    int all_at = -1;
+    for (size_t i : all_words)
+        if (dropped[i])
+            all_at = std::max(all_at, word_at[i]);
+    if (number_at > all_at)
+        *times = number;
+    else if (all_at >= 0)
+        *times = 200;
+
+    *skill = name_of(dropped);
+}
+
+/* Why another session in this skill would be wasted or is not possible, or
+ * nullptr. Checked before every session, so practicing several times stops
+ * where practicing once would. */
+static const char* practice_refusal(char_data* ch, int request, int prog)
+{
+    if (ch->knowledge[request] >= 100)
+        return guildmasters[prog].learned_message;
+    if (guildmasters[prog].knowledge[request] <= ch->knowledge[request])
+        return guildmasters[prog].limit_message;
+    if (ch->skills[request] > 50)
+        return "You studied this for too long. Enough for you.";
+    if (ch->specials2.spells_to_learn <= 0)
+        return "You have no practice sessions left now.";
+    return nullptr;
+}
+
+/* One session in the skill. Only the first session of a command is shown,
+ * so practicing many times at once does not repeat the lines. True when the
+ * session took the skill past what the guildmaster teaches, and it was cut
+ * back to that. */
+bool handle_pracs(char_data* host, char_data* ch, int request, int prog, bool show)
+{
     ch->skills[request]++;
     ch->specials2.spells_to_learn--;
     recalc_skills(ch);
     recalc_abilities(ch);
 
-    act(guildmasters[prog].practice_message, FALSE, host, 0, ch, TO_NOTVICT);
-    act(guildmasters[prog].practice_msg_to_char, FALSE, host, 0, ch, TO_VICT);
+    if (show) {
+        act(guildmasters[prog].practice_message, FALSE, host, 0, ch, TO_NOTVICT);
+        act(guildmasters[prog].practice_msg_to_char, FALSE, host, 0, ch, TO_VICT);
+    }
 
     if (ch->knowledge[request] > guildmasters[prog].knowledge[request]) {
         ch->knowledge[request] = guildmasters[prog].knowledge[request];
-        act(guildmasters[prog].limit_message, FALSE, host, 0, ch, TO_VICT);
-        return TRUE;
-    } else {
-        return FALSE;
+        return true;
     }
+    return false;
 }
 
-SPECIAL(guild) {
-    int tmp, prog, len, request, level;
+SPECIAL(guild)
+{
+    int tmp, prog, request, level;
     int times = 1;
-    bool res = false;
-    char str[255], str2[255]; 
-    char arg2[255] = "";
+    const char* refusal;
+    char str[255];
 
     if (IS_NPC(ch) || ((cmd != CMD_PRACTICE) && (cmd != CMD_PRACTISE)))
         return (FALSE);
@@ -292,30 +401,15 @@ SPECIAL(guild) {
             }
         }
     } else {
-        std::string regex_str = " ";
-        std::string input_str;
-        input_str.append(arg);
+        std::string skill_name;
+        parse_practice_args(arg, &times, &skill_name);
 
-        auto tokens = split(input_str, regex_str);
-        for (auto& item: tokens) {
-            memcpy(str2, item.c_str(), 255);
-            if(is_number(str2)) {
-                times = atoi(str2);
-            } else if(!strncmp(str2, "all",  strlen(str2)) ) {
-                times = 200;
-            } else {
-                sprintf(str, " %s", str2);
-                strcat(arg2, str);
-            }
+        if (skill_name.empty()) {
+            send_to_char("Practice which skill?\n\r", ch);
+            return TRUE;
         }
-        memmove(arg2, arg2 + 1, strlen(arg2)); // remove leading space
 
-        len = strlen(arg2);
-        for (request = 0; request < MAX_SKILLS; request++) {
-            if (!strncmp(arg2, skills[request].name, len)) {
-                break;
-            }
-        }
+        request = find_practice_skill(skill_name.c_str());
 
         if (request == MAX_SKILLS) {
             act("There is no such skill as you seek.", FALSE, host, 0, ch, TO_VICT);
@@ -326,20 +420,12 @@ SPECIAL(guild) {
             act("$n tells you 'I know nothing about it.'", FALSE, host, 0, ch, TO_VICT);
             return TRUE;
         }
-        if (ch->knowledge[request] >= 100) {
-            act(guildmasters[prog].learned_message, FALSE, host, 0, ch, TO_VICT);
+        if (times < 1) {
+            send_to_char("Practice how many times?\n\r", ch);
             return TRUE;
         }
-        if (guildmasters[prog].knowledge[request] <= ch->knowledge[request]) {
-            act(guildmasters[prog].limit_message, FALSE, host, 0, ch, TO_VICT);
-            return TRUE;
-        }
-        if (ch->skills[request] > 50) {
-            act("You studied this for too long. Enough for you.\n\r", FALSE, host, 0, ch, TO_VICT);
-            return TRUE;
-        }
-        if (ch->specials2.spells_to_learn <= 0) {
-            act("You have no practice sessions left now.\n\r", FALSE, host, 0, ch, TO_VICT);
+        if ((refusal = practice_refusal(ch, request, prog))) {
+            act(refusal, FALSE, host, 0, ch, TO_VICT);
             return TRUE;
         }
 
@@ -355,20 +441,22 @@ SPECIAL(guild) {
             return TRUE;
         }
 
-        for (tmp = 0; tmp < times; tmp++) {
-            if (ch->skills[request] > 50) {
-                act("You studied this for too long. Enough for you.\n\r", FALSE, host, 0, ch, TO_VICT);
-                return TRUE;
-            }
-            if (ch->specials2.spells_to_learn <= 0) {
-                act("You have no practice sessions left now.\n\r", FALSE, host, 0, ch, TO_VICT);
-                return TRUE;
-            }
-            res = handle_pracs(host, ch, request, prog);
-            if(res) {
-                return TRUE;
+        int spent = 0;
+        refusal = nullptr;
+        while (spent < times && !(refusal = practice_refusal(ch, request, prog))) {
+            bool cut_back = handle_pracs(host, ch, request, prog, spent == 0);
+            spent++;
+            if (cut_back) {
+                refusal = guildmasters[prog].limit_message;
+                break;
             }
         }
+        if (spent > 1) {
+            sprintf(str, "You spend %d sessions practicing %s.\n\r", spent, skills[request].name);
+            send_to_char(str, ch);
+        }
+        if (refusal)
+            act(refusal, FALSE, host, 0, ch, TO_VICT);
     }
     return TRUE;
 }

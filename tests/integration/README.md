@@ -23,18 +23,19 @@ scenarios; `unit/` tests the harness itself without a server.
 
 ## Setup
 
-1. Build the server and `rotstool`:
+1. Build the server, the harness build of the server (`ageland_harness`) and `rotstool`:
 
    ```bash
-   make configure && cmake --build build --target ageland rotstool
+   make configure && cmake --build build --target ageland ageland_harness rotstool
    ```
 
    The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container:
-   `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland rotstool'`.
+   `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'`.
    That build is itself a Docker job, so take the shared Docker lock for it first, by hand as
    the `README.txt` in `/tmp/rots-docker-lock` describes (see Shared Docker lock below), and
-   release it before running the scenarios. A run whose server binary or `rotstool` is missing
-   stops at once with the build command for its launcher.
+   release it before running the scenarios. A run whose server binary, `ageland_harness` (for a
+   test with a schedule) or `rotstool` is missing stops at once with the build command for its
+   launcher.
 
 2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 
@@ -50,7 +51,7 @@ make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 ```
 
-A group is a marker registered in `tests/integration/pytest.ini` (today `boot`). `GROUP` may be
+A group is a marker registered in `tests/integration/pytest.ini` (today `boot` and `poison`). `GROUP` may be
 an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
 name that neither `pytest.ini` nor pytest itself registers stops the run with a usage error that
 lists the registered names, so a misspelt group never passes by selecting nothing.
@@ -83,9 +84,10 @@ Environment variables:
 | `ROTS_IT_KEEP` | unset | `1` keeps every run directory and template |
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock, a finite number |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
+| `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
 
-A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT` or `ROTS_IT_BINARY` value the harness
-cannot use stops the run before any test with a usage error naming the variable and its value.
+A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` or
+`ROTS_IT_HOUR_TIMEOUT` value the harness cannot use stops the run before any test with a usage error naming the variable and its value.
 
 ## Shared Docker lock
 
@@ -111,7 +113,9 @@ Each test gets `build/integration/runs/<id>/` holding:
 
 - `test-id.txt`, the test's node id;
 - `lib/`, the test's own copy of the lib;
-- `game.log`, the server's output;
+- `game.log`, the server's output (its standard error only, for a test with a schedule);
+- `stdout.log`, for a test with a schedule only: the server's ordinary standard output, without
+  the `harness: ` replies to time requests;
 - one transcript per character (`testimm.txt` for `Testimm`), the text the character read.
 
 A passing test's directory is deleted. It is kept when the lib or server fails to set up after
@@ -158,3 +162,12 @@ online unless the account owns a character above level 91, so a test that logs i
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).
 
 A new group needs a line under `markers` in `pytest.ini`.
+
+A plain server's game time follows the wall clock. A test marked
+`@pytest.mark.schedule("affect-hours")` runs `bin/ageland_harness` instead, whose game time
+stands still until `server.advance_hours(n)` runs `n` whole game hours of the hourly and fast
+updates and returns once the server acknowledges them. Zone resets, mob activity, combat and
+skill timers do not run under that schedule. `advance_hours` fails a test without the marker.
+
+Before writing or changing a scenario, or the harness itself, read the
+`rots-integration-scenario` skill (`.agents/skills/rots-integration-scenario/SKILL.md`).

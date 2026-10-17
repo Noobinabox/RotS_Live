@@ -18,8 +18,6 @@ build, is a GoogleTest test in `src/tests/`.
 
 ## 2. Read the behaviour in the code
 
-Before writing any Python:
-
 - Follow the command from the interpreter (`interpre.cpp`) to every outcome. Include the
   shared code it passes through (casting in `do_cast`, skills, movement, combat), not only the
   feature's own function.
@@ -66,11 +64,11 @@ approval, never a reason to rely on luck.
 
 ## 5. Declare the characters
 
-Use `@pytest.mark.characters(...)` with `Character` objects (fields and limits in the
-reference). The implementor sets what rotstool cannot (hunger, gold, items, abilities, saving
+Use `@pytest.mark.characters(...)` (fields and limits in the reference). The implementor sets what rotstool cannot (hunger, gold, items, abilities, saving
 throw); assert each reply, such as `hunger set to 10.`. Declare `IMPLEMENTOR` whenever two
-characters are online. The implementor is human: name lookups
-across sides match the race keyword, so use the `player` forms of `stat` and `wizset`.
+characters are online. A command naming a player on the other side matches its race keyword,
+never its name (reference, "Names, sides and lookups"): place such characters with `load_room`
+and use `stat player` and `wizset player`.
 
 ## 6. Change the world only when it lacks what you need
 
@@ -132,7 +130,8 @@ error. Then drop the commit, rebuild and see it pass. Never commit the break.
 | Asserting exact hit points after several game hours | Regeneration runs in every hour: check once after the first hour, or assert a range |
 | Trusting another connection's command right after a `teleport` | Commands from different connections are not ordered; `expect` the moved character's `has teleported you!` |
 | `wizset <name> level` to change profession levels | It sets only the overall level, and `wizset ... prof` does nothing; declare the level and class |
-| `wizset <name> room <vnum>` | It matches `roomflag`; use `teleport <name> <vnum>` |
+| `wizset <name> room <vnum>` | It matches `roomflag`; set the room with `load_room`, or `teleport` a same-side character |
+| Naming an orc, uruk, olog or haradrim player in `give`, `teleport`, `goto` or any targeted command | Across sides a name never matches, and `orc` can pick a mob; use `load_room`, the `player` forms, or `N.<race>` with an asserted reply |
 | An immortal as the target of a mortal-only effect | Use a mortal; immortals are spared some effects (food poison, for one) |
 | Two characters online without `IMPLEMENTOR` | Declare it; otherwise login fails with `You are already connected as` |
 | A retry loop bounded by a count | Bound it by the mechanism's duration and fail with a message when the precondition is gone |

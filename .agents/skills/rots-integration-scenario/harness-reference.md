@@ -152,9 +152,9 @@ field by prefix, takes the first match, clamps the value, and replies `<Name>'s 
 | Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`) | 0 to 40; sets the constant ability, then recalculates |
 | Saving throw | `wizset player <name> saving_throw 5` | -100 to 100 |
 | Hit points | `wizset player <name> hit 50`; `maxhit` sets the constant behind the maximum | `restore <name>` refills to the maximum |
-| Items | `load obj <vnum>` (into the implementor's inventory), then `give <keyword> <name>` | |
+| Items | `load obj <vnum>` (into the implementor's inventory), then `give <keyword> <name>` in the same room | `<name>` is matched as below, "Names, sides and lookups" |
 | Mobs | `load mob <vnum>` (into the implementor's room) | |
-| Position in the world | `teleport <name> <vnum>`, `transfer <name>`, `goto <vnum>` | |
+| Position in the world | the character's `load_room`; `teleport <name> <vnum>`, `transfer <name>`, `goto <vnum>` | `load_room` works for every race; `teleport` and `transfer` match `<name>` as below |
 | Profession levels | none | `wizset ... level` sets only the overall level and `wizset ... prof` does nothing; choose `level` and `class_name` or `points` |
 | Affects, flags | cast the spell, or wear an object that sets it | |
 
@@ -189,11 +189,36 @@ implementor can see it: for a character in a dark room, send `set holylight on` 
 
 ### Names, sides and lookups
 
-`IMPLEMENTOR` is human. `get_char_vis` (`handler.cpp`), used by `goto <name>`, `teleport`,
-`transfer`, `stat <name>` and `wizset <name>`, matches a character on the other side
-(`other_side`) by its race keyword (`orc`, `uruk`, `olog`, ...) instead of its name, and only
-when the implementor can see it. The `player` forms (`stat player`, `wizset player`) go through
-`get_player_vis` and match the exact name. `restore <name>` matches the name anywhere.
+Most commands find a character by `keyword_matches_char` (`handler.cpp`), through
+`get_char_room_vis` (the speaker's room) or `get_char_vis` (the speaker's room first, then the
+whole world). Command targets parsed by the interpreter (`TAR_CHAR_ROOM`, `TAR_CHAR_WORLD` in
+`interpre.cpp`) go the same way, so the rule holds for every player's targeted commands, not
+only the implementor's:
+
+- When the speaker and the target are players on opposite sides (`other_side`), the target is
+  matched by its race keyword (`pc_race_keywords`, `consts.cpp`), never by its name.
+- `other_side` puts the free peoples (human, dwarf, wood elf, hobbit, beorning) against
+  uruk-hai, orc and olog-hai, and puts uruk-lhuth and haradrim against everyone else. A mob
+  (unless charmed) or a `RACE_GOD` character is never on the other side.
+- The race keywords of the offered races: `human`, `dwarf`, `elf` (wood elf), `hobbit`, `bear`
+  (beorning), `uruk` (uruk-hai and uruk-lhuth), `orc`, `olog` (olog-hai), `haradrim`.
+- A mob is always matched by its own keywords, so `orc` also matches the test world's orc mobs.
+- `N.<keyword>` picks the Nth match (`get_number`). `get_char_vis` first looks for it in the
+  speaker's room, then counts again from 1 over the whole world.
+
+`IMPLEMENTOR` is human, so for an uruk-hai, orc, olog-hai, uruk-lhuth or haradrim character
+`goto <name>`, `teleport <name>`, `transfer <name>`, `give <item> <name>`, `stat <name>` and
+`wizset <name>` all fail with the name, and `orc` may pick a mob. Instead:
+
+- put the character where the scenario needs it through its `load_room`;
+- hand it an object by `drop`ping the object in its room and having it `get` the object;
+- use the exact-name forms where they exist: `stat player <name>` and `wizset player <name>`
+  (`get_player_vis`), and `restore <name>` (`get_char`, which matches names and ignores sides);
+- otherwise use `N.<race keyword>` in a room where you know what else answers to it, and assert
+  the reply names the right character;
+- or declare a same-side character as the other actor.
+
+All of these lookups also need the speaker to see the target (`CAN_SEE`); `restore` does not.
 
 What an observer reads for a character is `PERS` (`utility.cpp`): the name, a star name such as
 `*an Orc*` across sides, or `someone` when the observer cannot see it. `act()` (`comm.cpp`) with
@@ -330,36 +355,50 @@ a category means editing `WORLD_CATEGORIES`.
 
 ### Rooms
 
-Every room is in its zone with sector 0 (`SECT_INSIDE`) and level 0. The table lists the rooms
-with no flags; read the header line of each room in `wld/11.wld` and `wld/12.wld` before
-relying on what a room is, since its flags and sector decide what the code reads.
+Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
+every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
+`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
+anyone changes the world.
 
-| Vnum | Name | Exits |
-| --- | --- | --- |
-| 1101 | Immortal Start (`world.ROOM_IMMORTAL_START`) | none |
-| 1102 | Immortal Idle | none |
-| 1110 | Frozen Room | none |
-| 1129 | Olog-hai Start | none |
-| 1130 | Arena West | east 1131, down 1136 |
-| 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | north, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | west 1131 |
-| 1134 | Corridor One | north 1131, south 1135 |
-| 1135 | Corridor Two | north 1134 |
-| 1136 | Crevice Floor | up 1130 |
-| 1151 | Retirement Home | none |
-| 1152 | Lost and Found | none; where a character with a bad load room arrives |
-| 1160 | Human Start | none |
-| 1170 | Wood-elf Start | none |
-| 1184 | Beorning Start | none |
-| 1190 | Uruk Idle | none |
-| 1191 | Orc Idle | none |
-| 1201 | Distant Cell (zone 12) | none |
+| Vnum | Name | Flags | Sector | Exits |
+| --- | --- | --- | --- | --- |
+| 1101 | Immortal Start (`world.ROOM_IMMORTAL_START`) | 0 (none) | 0 | none |
+| 1102 | Immortal Idle | 0 (none) | 0 | none |
+| 1110 | Frozen Room | 0 (none) | 0 | none |
+| 1129 | Olog-hai Start | 0 (none) | 0 | none |
+| 1130 | Arena West | 0 (none) | 0 | east 1131, down 1136 |
+| 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
+| 1132 | Arena East | 0 (none) | 0 | west 1131 |
+| 1133 | Dark Cell | 1 (`DARK`) | 0 | south 1131 |
+| 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
+| 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
+| 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
+| 1151 | Retirement Home | 0 (none) | 0 | none |
+| 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
+| 1160 | Human Start | 0 (none) | 0 | none |
+| 1170 | Wood-elf Start | 0 (none) | 0 | none |
+| 1184 | Beorning Start | 0 (none) | 0 | none |
+| 1190 | Uruk Idle | 0 (none) | 0 | none |
+| 1191 | Orc Idle | 0 (none) | 0 | none |
+| 1201 | Distant Cell (zone 12) | 0 (none) | 0 | none |
+
+1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
+so a character there sees only with infravision, holylight, or moonvision while the moon is up
+(1133 counts as outside, and moonlight follows the uncontrolled game hour).
 
 ### Mobs and objects
 
-`mob/11.mob` holds mobs 1130 to 1135: the target orc, the harness snake (its bite poisons; act
-flags `3` include `MOB_SPEC`), and a bystander, a brute, a pet and a hardy target orc for combat
-scenarios. `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
+| Mob | Keywords | What it is |
+| --- | --- | --- |
+| 1130 | `target orc` | a plain melee target; zone 11 resets one into 1132 |
+| 1131 | `snake harness` | its bite poisons; act flags `3` include `MOB_SPEC`; zone 11 resets one into 1134 |
+| 1132 | `bystander orc` | involved in nothing, there to be splashed |
+| 1133 | `brute orc` | hits very hard |
+| 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
+| 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+
+Four of these answer to the keyword `orc`, which matters for name lookups (below "Names, sides
+and lookups"). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
 4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
 
 | Object | Keyword | What it is |

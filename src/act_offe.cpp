@@ -149,7 +149,7 @@ ACMD(do_hit)
     }
 }
 
-bool should_assist_master(char_data* ch)
+bool should_assist_master(const char_data* ch)
 {
     auto master = ch->master;
 
@@ -1018,7 +1018,7 @@ ACMD(do_defend)
 }
 
 //============================================================================
-bool can_bear_skill(char_data* ch, int skill)
+bool can_bear_skill(const char_data* ch, int skill)
 {
     using namespace utils;
     if (GET_RACE(ch) != RACE_BEORNING) {
@@ -1058,7 +1058,7 @@ bool can_bear_skill(char_data* ch, int skill)
 }
 
 //============================================================================
-char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
+char_data* is_rend_targ_valid(char_data* render, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1149,7 +1149,7 @@ ACMD(do_rend)
 }
 
 //============================================================================
-char_data* is_bite_targ_valid(char_data* biter, waiting_type* target)
+char_data* is_bite_targ_valid(char_data* biter, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1235,7 +1235,7 @@ ACMD(do_bite)
 }
 
 //============================================================================
-char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
+char_data* is_maul_targ_valid(char_data* mauler, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1274,14 +1274,14 @@ char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
     return victim;
 }
 
-int maul_calculate_duration(char_data* mauler)
+int maul_calculate_duration(const char_data* mauler)
 {
     int maul_duration = utils::get_prof_level(PROF_WARRIOR, *mauler) - 10;
     maul_duration = maul_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return maul_duration;
 }
 
-void apply_maul_victim(char_data* victim, char_data* ch)
+void apply_maul_victim(char_data* victim, const char_data* ch)
 {
     affected_type af;
     af.type = SKILL_MAUL;

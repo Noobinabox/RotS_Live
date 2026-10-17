@@ -965,7 +965,7 @@ ASPELL(spell_blink)
     }
 }
 
-bool is_teleportation_room_valid(room_data* room)
+bool is_teleportation_room_valid(const room_data* room)
 {
     // Don't teleport the caster into a room with people
     if (room->people)
@@ -1348,7 +1348,7 @@ ASPELL(spell_magic_missile)
     apply_spell_damage(caster, victim, dam, SPELL_MAGIC_MISSILE, 0);
 }
 
-void apply_chilled_effect(char_data* caster, char_data* victim)
+void apply_chilled_effect(const char_data* caster, char_data* victim)
 {
     int energy_lost = victim->specials.ENERGY / 2 + utils::get_energy_regen(*victim) * 4;
     victim->specials.ENERGY -= energy_lost;

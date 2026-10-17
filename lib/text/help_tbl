@@ -1262,6 +1262,15 @@ follows:
 	Mastered
 
    You can then use practice <skill>, to practice the appropriate skill.
+Add a number to spend that many sessions at once, or the word all to keep
+practicing until you can learn no more of it here. Either way, you stop
+early once the skill is perfect, the guildmaster can teach you no better,
+you have spent 51 sessions on it, or you run out of sessions.
+
+   Examples:
+	practice kick 3
+	practice 3 kick
+	practice kick all
 
    At a guildmaster, the number beside each skill is how many practice
 sessions you have spent on it. You can spend at most 51 sessions on any one

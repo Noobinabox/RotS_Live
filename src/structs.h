@@ -1759,7 +1759,7 @@ public:
     std::string get_damage_report() const { return damage_report.get_damage_report(); }
 
     struct char_data* get_leader() const { return leader; }
-    bool is_member(struct char_data* character) const;
+    bool is_member(const struct char_data* character) const;
     bool is_leader(struct char_data* character) const { return character == leader; }
     int get_pc_count() const { return pc_count; }
 

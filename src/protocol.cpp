@@ -36,7 +36,7 @@
 
 #include "comm.h"
 
-static void Write(descriptor_t* apDescriptor, char* apData)
+static void Write(const descriptor_t* apDescriptor, const char* apData)
 {
     // wtf is fcommand?!
     //    if ( apDescriptor != nullptr && !apDescriptor->fcommand )
@@ -51,9 +51,9 @@ static void Write(descriptor_t* apDescriptor, char* apData)
     write_to_descriptor(apDescriptor->descriptor, apData);
 }
 
-static void ReportBug(char* apText) { vmudlog(NRM, apText); }
+static void ReportBug(const char* apText) { vmudlog(NRM, apText); }
 
-static void InfoMessage(descriptor_t* apDescriptor, char* apData)
+static void InfoMessage(const descriptor_t* apDescriptor, const char* apData)
 {
     Write(apDescriptor, "\t[F210][\toINFO\t[F210]]\tn ");
     Write(apDescriptor, apData);
@@ -219,23 +219,23 @@ static time_t s_Uptime = 0;
  Local function prototypes.
  ******************************************************************************/
 
-static void Negotiate(descriptor_t* apDescriptor);
-static void PerformHandshake(descriptor_t* apDescriptor, char aCmd, char aProtocol);
-static void PerformSubnegotiation(descriptor_t* apDescriptor, char aCmd, char* apData, int aSize);
-static void SendNegotiationSequence(descriptor_t* apDescriptor, char aCmd, char aProtocol);
-static bool ConfirmNegotiation(descriptor_t* apDescriptor, negotiated_t aProtocol, bool abWillDo,
+static void Negotiate(const descriptor_t* apDescriptor);
+static void PerformHandshake(const descriptor_t* apDescriptor, char aCmd, char aProtocol);
+static void PerformSubnegotiation(const descriptor_t* apDescriptor, char aCmd, const char* apData, int aSize);
+static void SendNegotiationSequence(const descriptor_t* apDescriptor, char aCmd, char aProtocol);
+static bool ConfirmNegotiation(const descriptor_t* apDescriptor, negotiated_t aProtocol, bool abWillDo,
     bool abSendReply);
 
-static void ParseMSDP(descriptor_t* apDescriptor, const char* apData);
-static void ExecuteMSDPPair(descriptor_t* apDescriptor, const char* apVariable,
+static void ParseMSDP(const descriptor_t* apDescriptor, const char* apData);
+static void ExecuteMSDPPair(const descriptor_t* apDescriptor, const char* apVariable,
     const char* apValue);
 
-static void ParseATCP(descriptor_t* apDescriptor, const char* apData);
+static void ParseATCP(const descriptor_t* apDescriptor, const char* apData);
 #ifdef MUDLET_PACKAGE
-static void SendATCP(descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
+static void SendATCP(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
 #endif /* MUDLET_PACKAGE */
 
-static void SendMSSP(descriptor_t* apDescriptor);
+static void SendMSSP(const descriptor_t* apDescriptor);
 
 static char* GetMxpTag(const char* apTag, const char* apText);
 
@@ -375,7 +375,7 @@ void ProtocolDestroy(protocol_t* apProtocol)
     free(apProtocol);
 }
 
-void ProtocolInput(descriptor_t* apDescriptor, char* apData, int aSize, char* apOut)
+void ProtocolInput(const descriptor_t* apDescriptor, const char* apData, int aSize, char* apOut)
 {
     static char CmdBuf[MAX_PROTOCOL_BUFFER + 1];
     int CmdIndex = 0;
@@ -567,7 +567,7 @@ void ProtocolInput(descriptor_t* apDescriptor, char* apData, int aSize, char* ap
     strcat(apOut, CmdBuf);
 }
 
-const char* ProtocolOutput(descriptor_t* apDescriptor, const char* apData, int* apLength)
+const char* ProtocolOutput(const descriptor_t* apDescriptor, const char* apData, int* apLength)
 {
     static char Result[MAX_OUTPUT_BUFFER + 1];
     const char Tab[] = "\t";
@@ -1024,13 +1024,13 @@ const char* ProtocolOutput(descriptor_t* apDescriptor, const char* apData, int* 
  * other protocols if the client responds with IAC WILL TTYPE or IAC WONT
  * TTYPE.  Thanks go to Donky on MudBytes for the suggestion.
  */
-void ProtocolNegotiate(descriptor_t* apDescriptor)
+void ProtocolNegotiate(const descriptor_t* apDescriptor)
 {
     ConfirmNegotiation(apDescriptor, eNEGOTIATED_TTYPE, true, true);
 }
 
 /* Tells the client to switch echo on or off. */
-void ProtocolNoEcho(descriptor_t* apDescriptor, bool abOn)
+void ProtocolNoEcho(const descriptor_t* apDescriptor, bool abOn)
 {
     ConfirmNegotiation(apDescriptor, eNEGOTIATED_ECHO, abOn, true);
 }
@@ -1039,7 +1039,7 @@ void ProtocolNoEcho(descriptor_t* apDescriptor, bool abOn)
  Copyover save/load functions.
  ******************************************************************************/
 
-const char* CopyoverGet(descriptor_t* apDescriptor)
+const char* CopyoverGet(const descriptor_t* apDescriptor)
 {
     static char Buffer[64];
     char* pBuffer = Buffer;
@@ -1081,7 +1081,7 @@ const char* CopyoverGet(descriptor_t* apDescriptor)
     return Buffer;
 }
 
-void CopyoverSet(descriptor_t* apDescriptor, const char* apData)
+void CopyoverSet(const descriptor_t* apDescriptor, const char* apData)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1165,7 +1165,7 @@ void CopyoverSet(descriptor_t* apDescriptor, const char* apData)
  MSDP global functions.
  ******************************************************************************/
 
-void MSDPUpdate(descriptor_t* apDescriptor)
+void MSDPUpdate(const descriptor_t* apDescriptor)
 {
     int i; /* Loop counter */
 
@@ -1181,7 +1181,7 @@ void MSDPUpdate(descriptor_t* apDescriptor)
     }
 }
 
-void MSDPFlush(descriptor_t* apDescriptor, variable_t aMSDP)
+void MSDPFlush(const descriptor_t* apDescriptor, variable_t aMSDP)
 {
     if (aMSDP > eMSDP_NONE && aMSDP < eMSDP_MAX) {
         protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
@@ -1195,7 +1195,7 @@ void MSDPFlush(descriptor_t* apDescriptor, variable_t aMSDP)
     }
 }
 
-void MSDPMarkAllReportedDirty(descriptor_t* apDescriptor)
+void MSDPMarkAllReportedDirty(const descriptor_t* apDescriptor)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
     if (pProtocol == NULL)
@@ -1207,7 +1207,7 @@ void MSDPMarkAllReportedDirty(descriptor_t* apDescriptor)
     }
 }
 
-bool MSDPSend(descriptor_t* apDescriptor, variable_t aMSDP)
+bool MSDPSend(const descriptor_t* apDescriptor, variable_t aMSDP)
 {
     char MSDPBuffer[MAX_VARIABLE_LENGTH + 1] = { '\0' };
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
@@ -1257,7 +1257,7 @@ bool MSDPSend(descriptor_t* apDescriptor, variable_t aMSDP)
     return false;
 }
 
-void MSDPSendPair(descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
+void MSDPSendPair(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
 {
     char MSDPBuffer[MAX_VARIABLE_LENGTH + 1] = { '\0' };
 
@@ -1301,7 +1301,7 @@ void MSDPSendPair(descriptor_t* apDescriptor, const char* apVariable, const char
     }
 }
 
-void MSDPSendList(descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
+void MSDPSendList(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
 {
     char MSDPBuffer[MAX_VARIABLE_LENGTH + 1] = { '\0' };
 
@@ -1353,7 +1353,7 @@ void MSDPSendList(descriptor_t* apDescriptor, const char* apVariable, const char
     }
 }
 
-void MSDPSetNumber(descriptor_t* apDescriptor, variable_t aMSDP, int aValue)
+void MSDPSetNumber(const descriptor_t* apDescriptor, variable_t aMSDP, int aValue)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1413,7 +1413,7 @@ std::string MSDPSanitizeValue(const char* apValue)
     return Result;
 }
 
-void MSDPSetString(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
+void MSDPSetString(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1430,7 +1430,7 @@ void MSDPSetString(descriptor_t* apDescriptor, variable_t aMSDP, const char* apV
     }
 }
 
-void MSDPSetTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
+void MSDPSetTable(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1460,7 +1460,7 @@ void MSDPSetTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apVa
     }
 }
 
-void MSDPSendTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
+void MSDPSendTable(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1495,7 +1495,7 @@ void MSDPSendTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apV
     }
 }
 
-void MSDPSetArray(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
+void MSDPSetArray(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1541,7 +1541,7 @@ void MSSPSetPlayers(int aPlayers)
  MXP global functions.
  ******************************************************************************/
 
-const char* MXPCreateTag(descriptor_t* apDescriptor, const char* apTag)
+const char* MXPCreateTag(const descriptor_t* apDescriptor, const char* apTag)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1555,7 +1555,7 @@ const char* MXPCreateTag(descriptor_t* apDescriptor, const char* apTag)
     }
 }
 
-void MXPSendTag(descriptor_t* apDescriptor, const char* apTag)
+void MXPSendTag(const descriptor_t* apDescriptor, const char* apTag)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1587,7 +1587,7 @@ void MXPSendTag(descriptor_t* apDescriptor, const char* apTag)
  Sound global functions.
  ******************************************************************************/
 
-void SoundSend(descriptor_t* apDescriptor, const char* apTrigger)
+void SoundSend(const descriptor_t* apDescriptor, const char* apTrigger)
 {
     const int MaxTriggerLength = 128; /* Used for the buffer size */
 
@@ -1612,7 +1612,7 @@ void SoundSend(descriptor_t* apDescriptor, const char* apTrigger)
  Colour global functions.
  ******************************************************************************/
 
-const char* ColourRGB(descriptor_t* apDescriptor, const char* apRGB)
+const char* ColourRGB(const descriptor_t* apDescriptor, const char* apRGB)
 {
     protocol_t* pProtocol = apDescriptor ? apDescriptor->pProtocol : NULL;
 
@@ -1675,7 +1675,7 @@ void UnicodeAdd(char** apString, int aValue)
  Local negotiation functions.
  ******************************************************************************/
 
-static void Negotiate(descriptor_t* apDescriptor)
+static void Negotiate(const descriptor_t* apDescriptor)
 {
     protocol_t* pProtocol = apDescriptor->pProtocol;
 
@@ -1698,7 +1698,7 @@ static void Negotiate(descriptor_t* apDescriptor)
     }
 }
 
-static void PerformHandshake(descriptor_t* apDescriptor, char aCmd, char aProtocol)
+static void PerformHandshake(const descriptor_t* apDescriptor, char aCmd, char aProtocol)
 {
     protocol_t* pProtocol = apDescriptor->pProtocol;
 
@@ -1978,7 +1978,7 @@ static void PerformHandshake(descriptor_t* apDescriptor, char aCmd, char aProtoc
     }
 }
 
-static void PerformSubnegotiation(descriptor_t* apDescriptor, char aCmd, char* apData, int aSize)
+static void PerformSubnegotiation(const descriptor_t* apDescriptor, char aCmd, const char* apData, int aSize)
 {
     protocol_t* pProtocol = apDescriptor->pProtocol;
 
@@ -2160,7 +2160,7 @@ static void PerformSubnegotiation(descriptor_t* apDescriptor, char aCmd, char* a
     }
 }
 
-static void SendNegotiationSequence(descriptor_t* apDescriptor, char aCmd, char aProtocol)
+static void SendNegotiationSequence(const descriptor_t* apDescriptor, char aCmd, char aProtocol)
 {
     char NegotiateSequence[4];
 
@@ -2172,7 +2172,7 @@ static void SendNegotiationSequence(descriptor_t* apDescriptor, char aCmd, char 
     Write(apDescriptor, NegotiateSequence);
 }
 
-static bool ConfirmNegotiation(descriptor_t* apDescriptor, negotiated_t aProtocol, bool abWillDo,
+static bool ConfirmNegotiation(const descriptor_t* apDescriptor, negotiated_t aProtocol, bool abWillDo,
     bool abSendReply)
 {
     bool bResult = false;
@@ -2237,7 +2237,7 @@ static bool ConfirmNegotiation(descriptor_t* apDescriptor, negotiated_t aProtoco
  Local MSDP functions.
  ******************************************************************************/
 
-static void ParseMSDP(descriptor_t* apDescriptor, const char* apData)
+static void ParseMSDP(const descriptor_t* apDescriptor, const char* apData)
 {
     char Variable[MSDP_VAL][MAX_MSDP_SIZE + 1] = { { '\0' }, { '\0' } };
     char *pPos = NULL, *pStart = NULL;
@@ -2263,7 +2263,7 @@ static void ParseMSDP(descriptor_t* apDescriptor, const char* apData)
     }
 }
 
-static void ExecuteMSDPPair(descriptor_t* apDescriptor, const char* apVariable,
+static void ExecuteMSDPPair(const descriptor_t* apDescriptor, const char* apVariable,
     const char* apValue)
 {
     if (apVariable[0] != '\0' && apValue[0] != '\0') {
@@ -2437,7 +2437,7 @@ static void ExecuteMSDPPair(descriptor_t* apDescriptor, const char* apVariable,
  Local ATCP functions.
  ******************************************************************************/
 
-static void ParseATCP(descriptor_t* apDescriptor, const char* apData)
+static void ParseATCP(const descriptor_t* apDescriptor, const char* apData)
 {
     char Variable[MSDP_VAL][MAX_MSDP_SIZE + 1] = { { '\0' }, { '\0' } };
     char *pPos = NULL, *pStart = NULL;
@@ -2468,7 +2468,7 @@ static void ParseATCP(descriptor_t* apDescriptor, const char* apData)
 }
 
 #ifdef MUDLET_PACKAGE
-static void SendATCP(descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
+static void SendATCP(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue)
 {
     char ATCPBuffer[MAX_VARIABLE_LENGTH + 1] = { '\0' };
 
@@ -2525,7 +2525,7 @@ static const char* GetMSSP_Uptime()
 /* Macro for readability, but you can remove it if you don't like it */
 #define FUNCTION_CALL(f) "", f
 
-static void SendMSSP(descriptor_t* apDescriptor)
+static void SendMSSP(const descriptor_t* apDescriptor)
 {
     char MSSPBuffer[MAX_MSSP_BUFFER];
     char MSSPPair[128];

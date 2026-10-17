@@ -2338,7 +2338,7 @@ TEST(DbLoader, AnEnchantedWeaponSavedByTheGameLoadsBackAndTheRentListingReadsPas
     EXPECT_EQ(loaded_pack->obj_flags.weight, obj_proto[1].obj_flags.weight);
 }
 
-void write_object(FILE* f, struct obj_data* obj, int num);
+void write_object(FILE* f, const struct obj_data* obj, int num);
 void load_objects(FILE* obj_f);
 
 // load_objects keeps its place in the prototype table between calls (boot reads one file after

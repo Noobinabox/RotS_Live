@@ -94,7 +94,7 @@ void Crash_report_object_refreshes(struct char_data* ch);
 void msdp_room_update(const char_data* ch);
 void stop_hiding(struct char_data*, char);
 int valid_name(char*);
-void report_mail(struct char_data*);
+void report_mail(const struct char_data*);
 void report_news(struct char_data*);
 void init_char(struct char_data*);
 void set_title(struct char_data*);

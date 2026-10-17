@@ -83,7 +83,7 @@ bool check_mind_block(char_data* character, char_data* attacker, int amount, int
 }
 
 ACMD(do_flee);
-void report_char_mentals(struct char_data*, char*, int);
+void report_char_mentals(const struct char_data*, char*, int);
 void appear(struct char_data*);
 combat_result_struct damage_stat(struct char_data*, struct char_data*, int, int);
 

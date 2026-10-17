@@ -754,7 +754,7 @@ void bzero(char*, int);
 #define CLEAR(x) bzero((char*)(x), sizeof(x))
 
 void show_char_to_char(struct char_data* i, struct char_data* ch, int mode,
-    char* pos_line = 0);
+    const char* pos_line = 0);
 
 #define IS_WATER(room) ((world[(room)].sector_type == SECT_WATER_SWIM) || (world[(room)].sector_type == SECT_WATER_NOSWIM) || (world[(room)].sector_type == SECT_UNDERWATER))
 

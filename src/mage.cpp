@@ -141,7 +141,7 @@ void list_char_to_char(struct char_data* list, struct char_data* caster, int mod
 // void do_stat_object(struct char_data *caster, struct obj_data *j);
 void stop_hiding(struct char_data* caster, char);
 ACMD(do_look);
-void do_identify_object(struct char_data*, struct obj_data*);
+void do_identify_object(const struct char_data*, struct obj_data*);
 
 char saves_spell(char_data* victim, sh_int caster_level, int bonus);
 bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus);

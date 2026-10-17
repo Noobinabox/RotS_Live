@@ -110,10 +110,10 @@ void stop_hiding(struct char_data* ch, char);
 int num_of_cmds;
 void list_obj_to_char(struct obj_data*, struct char_data*, int, bool);
 void calculate_small_map(int, int);
-void report_mob_age(struct char_data*, struct char_data*);
-void report_char_mentals(struct char_data*, char*, int);
-void report_affection(struct affected_type*, char*);
-void report_perception(struct char_data*, char*);
+void report_mob_age(const struct char_data*, const struct char_data*);
+void report_char_mentals(const struct char_data*, char*, int);
+void report_affection(const struct affected_type*, char*);
+void report_perception(const struct char_data*, char*);
 int show_tracks(struct char_data*, char*, int);
 static char* get_level_abbr(sh_int level, sh_int);
 int show_blood_trail(struct char_data*, char*, int);
@@ -145,7 +145,7 @@ struct inventory_data_sort_by_length {
     }
 };
 
-bool use_inventory_formatter(char_data* character)
+bool use_inventory_formatter(const char_data* character)
 {
     bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
     bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
@@ -153,7 +153,7 @@ bool use_inventory_formatter(char_data* character)
     return high_bit_set || low_bit_set;
 }
 
-bool use_alpha_sorting(char_data* character)
+bool use_alpha_sorting(const char_data* character)
 {
     bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
     bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
@@ -161,7 +161,7 @@ bool use_alpha_sorting(char_data* character)
     return high_bit_set && !low_bit_set;
 }
 
-bool use_length_sorting(char_data* character)
+bool use_length_sorting(const char_data* character)
 {
     bool high_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT2);
     bool low_bit_set = utils::is_preference_flagged(*character, PRF_INV_SORT1);
@@ -217,7 +217,7 @@ public:
     }
 
 private:
-    void add_item_to_list(obj_data* object)
+    void add_item_to_list(const obj_data* object)
     {
         get_item_description(object, m_working_data);
 
@@ -235,7 +235,7 @@ private:
         m_seen_items.push_back(new_item);
     }
 
-    void get_item_description(obj_data* object, std::string& working_data)
+    void get_item_description(const obj_data* object, std::string& working_data)
     {
         // reset the state of working data - this shouldn't force a reallocation.
         working_data.clear();
@@ -284,7 +284,7 @@ private:
 } // namespace
 
 /* Procedures related to 'look' */
-void argument_split_2(char* argument, char* first_arg, char* second_arg)
+void argument_split_2(const char* argument, char* first_arg, char* second_arg)
 {
     int look_at, found, begin;
     found = begin = 0;
@@ -312,7 +312,7 @@ void argument_split_2(char* argument, char* first_arg, char* second_arg)
     begin += look_at;
 }
 
-char* find_ex_description(char* word, struct extra_descr_data* list)
+char* find_ex_description(const char* word, struct extra_descr_data* list)
 {
     struct extra_descr_data* i;
 
@@ -440,7 +440,7 @@ void list_obj_to_char(obj_data* list, char_data* ch, int mode, bool show)
     }
 }
 
-void show_equipment_to_char(struct char_data* from, struct char_data* to)
+void show_equipment_to_char(const struct char_data* from, struct char_data* to)
 {
     int j;
     char found;
@@ -545,7 +545,7 @@ void diag_char_to_char(char_data* looked_at, char_data* viewer)
  *
  * NOTE: WILL CLOBBER COLOR.
  */
-void get_char_position_line(struct char_data* ch, struct char_data* i, char* str)
+void get_char_position_line(struct char_data* ch, const struct char_data* i, char* str)
 {
     str[0] = 0;
 
@@ -598,7 +598,7 @@ void get_char_position_line(struct char_data* ch, struct char_data* i, char* str
     }
 }
 
-void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_message)
+void get_char_flag_line(const char_data* viewer, char_data* viewed, char* character_message)
 {
     if (IS_AFFECTED(viewer, AFF_DETECT_INVISIBLE)) {
         if (IS_EVIL(viewed)) {
@@ -669,7 +669,7 @@ void get_char_flag_line(char_data* viewer, char_data* viewed, char* character_me
  *
  * If 'color' is true, then we color this message.
  */
-void show_mount_to_char(struct char_data* i, struct char_data* ch, char* line1, char* line2,
+void show_mount_to_char(struct char_data* i, struct char_data* ch, const char* line1, const char* line2,
     int color)
 {
     int vis_count, tmpnum, you_are_riding, riderno;
@@ -860,7 +860,7 @@ extern char* spec_pro_message[];
  * Note that `i' should NEVER be a mount.  Use show_mount_to_char
  * for that.
  */
-void show_char_to_char(struct char_data* i, struct char_data* ch, int mode, char* pos_line)
+void show_char_to_char(struct char_data* i, struct char_data* ch, int mode, const char* pos_line)
 {
     int found;
     struct obj_data* tmp_obj;
@@ -990,7 +990,7 @@ const char* room_spell_message_for(int location)
  * mortal - a `mode' of 1 means we're displaying an affection to
  * an immortal who has used `stat room'.
  */
-void show_room_affection(char* str, struct affected_type* aff, int mode)
+void show_room_affection(char* str, const struct affected_type* aff, int mode)
 {
     int tmp;
 
@@ -1046,7 +1046,7 @@ void show_room_affection(char* str, struct affected_type* aff, int mode)
 /*
  * Put a message describing the weather in `ch's room in `str'
  */
-void show_room_weather(char* str, struct char_data* ch)
+void show_room_weather(char* str, const struct char_data* ch)
 {
     /* Is it snowy? */
     if (weather_info.snow[world[ch->in_room].sector_type])
@@ -1616,7 +1616,7 @@ ACMD(do_exits)
         send_to_char(" None.\n\r", ch);
 }
 
-int get_percent_absorb(char_data* character)
+int get_percent_absorb(const char_data* character)
 {
     int absorb, hit_location, tmp, dam; /* up to max. of 10000 */
 
@@ -2150,7 +2150,7 @@ int help_entry_exists(const char* chapter, const char* keyword)
  * keyword line is left out and the entry ends with one blank line.
  * Returns 0 if the chapter or the entry is not there.
  */
-int show_help_entry(struct char_data* ch, const char* chapter, const char* keyword)
+int show_help_entry(const struct char_data* ch, const char* chapter, const char* keyword)
 {
     extern struct help_index_summary help_content[];
     char line[100];
@@ -2578,7 +2578,7 @@ ACMD(do_gen_ps)
     }
 }
 
-void perform_mortal_where(struct char_data* ch, char* arg)
+void perform_mortal_where(struct char_data* ch, const char* arg)
 {
     int tmploc;
     register struct char_data* i;
@@ -2613,7 +2613,7 @@ void perform_mortal_where(struct char_data* ch, char* arg)
     }
 }
 
-void perform_immort_where(struct char_data* ch, char* arg)
+void perform_immort_where(struct char_data* ch, const char* arg)
 {
     int num = 0, found = 0, tmp;
     register struct char_data* i;
@@ -2750,7 +2750,7 @@ void report_mob_align(struct char_data* ch, struct char_data* victim)
 
 /* The "has been here for ..." line shown by look, consider and diagnose, without the
    trailing line break. Empty for players and orc-friend pets, which show no age. */
-std::string mob_age_message(struct char_data* victim)
+std::string mob_age_message(const struct char_data* victim)
 {
     int age;
     char str[255];
@@ -2778,7 +2778,7 @@ std::string mob_age_message(struct char_data* victim)
     return str;
 }
 
-void report_mob_age(struct char_data* ch, struct char_data* victim)
+void report_mob_age(const struct char_data* ch, const struct char_data* victim)
 {
     std::string message = mob_age_message(victim);
 
@@ -3066,7 +3066,7 @@ extern struct prompt_type prompt_mana[];
 extern struct prompt_type prompt_move[];
 extern struct prompt_type prompt_mount[];
 
-void add_prompt(char* prompt, struct char_data* ch, long flag)
+void add_prompt(char* prompt, const struct char_data* ch, long flag)
 {
     int tmp;
     char str[250];
@@ -3480,7 +3480,7 @@ ACMD(do_orc_delay)
     }
 }
 
-void report_perception(char_data* ch, char* str)
+void report_perception(const char_data* ch, char* str)
 {
 
     if (GET_PERCEPTION(ch) == 0) {
@@ -3499,7 +3499,7 @@ void report_perception(char_data* ch, char* str)
     str[0] = UPPER(str[0]);
 }
 
-void report_affection(affected_type* aff, char* str)
+void report_affection(const affected_type* aff, char* str)
 {
     static const char* durations[] = { "permanent", "short", "medium", "long", "fast-acting" };
 
@@ -3620,7 +3620,7 @@ ACMD(do_affections)
 
 #define MAX_LEADER_STRING 40
 
-void do_fame_leader_string(LEADER* ldr, char* buffer)
+void do_fame_leader_string(const LEADER* ldr, char* buffer)
 {
     int i, n;
     size_t bufpt;
@@ -3910,7 +3910,7 @@ static char* stat_defects[] = {
 static char* stat_attrs[] = { "horribly", "strongly", "strongly", "seriously", "seriously", "quite",
     "somewhat", "somewhat", "slightly", "barely", "not at all" };
 
-void report_char_mentals(char_data* ch, char* str, int brief_mode)
+void report_char_mentals(const char_data* ch, char* str, int brief_mode)
 {
     // puts the line about ch's condition into str.
 
@@ -4022,7 +4022,7 @@ ACMD(do_stat)
     do_wizstat(ch, argument, wtl, cmd, subcmd);
 }
 
-void print_exploits(struct char_data* sendto, char* name)
+void print_exploits(const struct char_data* sendto, const char* name)
 {
     char str2[255];
     char str3[255];
@@ -4564,7 +4564,7 @@ int get_value_ranges(int range, int value1, int value2, int value3, int value4, 
  * messages and Food messages).
  */
 
-void do_food_display(struct char_data* ch, struct obj_data* j)
+void do_food_display(const struct char_data* ch, const struct obj_data* j)
 {
 
     int make_full, message_num;
@@ -4582,7 +4582,7 @@ void do_food_display(struct char_data* ch, struct obj_data* j)
     send_to_char(buf, ch);
 }
 
-void do_light_display(struct char_data* ch, struct obj_data* j)
+void do_light_display(const struct char_data* ch, const struct obj_data* j)
 {
 
     int duration_range, message_num;
@@ -4597,7 +4597,7 @@ void do_light_display(struct char_data* ch, struct obj_data* j)
  * One identify stat row. Labels are padded with spaces (not tabs) so every
  * number starts in the same column; a minus sign sits one column left.
  */
-void send_identify_stat(struct char_data* ch, const char* label, int value, const char* suffix = "")
+void send_identify_stat(const struct char_data* ch, const char* label, int value, const char* suffix = "")
 {
     std::string name(label);
     while (!name.empty() && name.back() == ' ')
@@ -4609,7 +4609,7 @@ void send_identify_stat(struct char_data* ch, const char* label, int value, cons
     send_to_char(line, ch);
 }
 
-void do_flag_values_display(struct char_data* ch, struct obj_data* j)
+void do_flag_values_display(const struct char_data* ch, struct obj_data* j)
 {
 
     int i;
@@ -4635,7 +4635,7 @@ void do_flag_values_display(struct char_data* ch, struct obj_data* j)
             send_identify_stat(ch, value_array[GET_ITEM_TYPE(j)][i], j->obj_flags.value[i]);
 }
 
-void do_weapon_display(struct char_data* ch, struct obj_data* j)
+void do_weapon_display(const struct char_data* ch, const struct obj_data* j)
 {
 
     // A weapon type past the end of weapon_types (live obj 5034 has 22) reads
@@ -4673,7 +4673,7 @@ void do_weapon_display(struct char_data* ch, struct obj_data* j)
  *   - weapon_type.
  */
 
-void do_identify_object(struct char_data* ch, struct obj_data* j)
+void do_identify_object(const struct char_data* ch, struct obj_data* j)
 {
 
     char found;

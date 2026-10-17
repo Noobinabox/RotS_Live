@@ -176,7 +176,7 @@ int replace_pattern(descriptor_data* d, char* pattern, char* new_pattern)
 }
 
 int shape_text_field(struct char_data* ch, char** str, const char** chapter, char* key, int* no_format);
-int show_help_entry(struct char_data* ch, const char* chapter, const char* keyword);
+int show_help_entry(const struct char_data* ch, const char* chapter, const char* keyword);
 
 /*
  * The opening lines of the text editor: every command it takes.  str is the

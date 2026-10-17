@@ -30,7 +30,7 @@ void clear_char(struct char_data* ch, int mode);
 void msdp_update();
 void msdp_room_update(char_data* ch);
 void another_hour(int mode);
-int get_percent_absorb(char_data* character);
+int get_percent_absorb(const char_data* character);
 
 namespace {
 

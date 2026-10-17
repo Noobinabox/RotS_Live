@@ -633,7 +633,7 @@ int shape_help_asked(const char* arg)
     return 1;
 }
 
-int show_help_entry(struct char_data* ch, const char* chapter, const char* keyword);
+int show_help_entry(const struct char_data* ch, const char* chapter, const char* keyword);
 
 /*
  * "%h" at a prompt: prints the field's help entry.  The caller then drops

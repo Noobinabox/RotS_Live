@@ -79,7 +79,7 @@ extern unsigned long stat_whitie_counter;
 extern unsigned long stat_darkie_counter;
 extern unsigned long stat_whitie_legend_counter;
 extern unsigned long stat_darkie_legend_counter;
-extern int get_percent_absorb(char_data* character);
+extern int get_percent_absorb(const char_data* character);
 
 /* local globals */
 struct descriptor_data *descriptor_list = 0, *next_to_process = 0;
@@ -563,7 +563,7 @@ void untrack_specialized_mage(char_data* mage)
     }
 }
 
-void add_prompt(char* prompt, struct char_data* ch, long flag);
+void add_prompt(char* prompt, const struct char_data* ch, long flag);
 
 static int get_stat_percent(int current, int maximum)
 {

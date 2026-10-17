@@ -5,15 +5,20 @@ control (a known game hour, the weather), a kind of game time `affect-hours` doe
 (combat, mob activity, zone resets), a new request over the control channel, or a new
 `ageland_harness` option.
 
-**The owner approves a harness extension before it is built.** Describe what the scenario
-needs, why the test world and in-game commands cannot provide it, and which checklist below it
-falls under. Then build it with its tests, separately from the scenario that uses it.
+**Whoever owns the harness (the project's maintainers) approves a harness extension before it
+is built.** Describe what the scenario needs, why the test world and in-game commands cannot
+provide it, and which checklist below it falls under. Then build it with its tests, separately
+from the scenario that uses it.
 
 **New C++ code is portable standard C++.** Use the standard library, not POSIX- or Linux-only
 APIs: `std::filesystem` with the non-throwing `std::error_code` overloads, `std::chrono` for
 time, `<fstream>` for files, `std::thread` for threads. The same applies to new tests and
 every helper they use. The harness lives in namespace `harness` under `src/harness/`, and its
-production seam is the schedule: game code is not changed to suit a test.
+production seam is the schedule. Game code changes for a test only through a seam that is also
+a legitimate design improvement, called out explicitly (AGENTS.md, "Testing Guidelines").
+
+**Some game sources use CRLF line endings** (`comm.h`, `utils.h` and `handler.cpp` among them):
+keep each file's endings when you edit it, or the commit shows a whole-file diff.
 
 Build and run the checks with:
 
@@ -22,6 +27,10 @@ make test                                  # ageland_tests, which compiles HARNE
 make integration-unit PYTHON=.venv/bin/python
 make integration PYTHON=.venv/bin/python   # every scenario, after any harness change
 ```
+
+`make test` builds and runs 32-bit Linux binaries, so on a Mac run it inside the i386 container
+(`docker compose run --rm -T rots bash -lc 'make test'`) under a lock taken by hand
+(harness-reference.md, "The shared Docker lock").
 
 ## A new schedule
 
@@ -60,7 +69,10 @@ A schedule decides which world updates each game-loop pass runs (`GameTickSchedu
 ## A new control request
 
 A request is a line on the harness binary's stdin; its reply is one line on stdout starting
-`harness: `. Requests belong to a schedule, not to the binary.
+`harness: `. Requests belong to a schedule, not to the binary. They are answered on the game
+thread, inside `HarnessControlledSchedule::next_pass`
+(`src/harness/harness_controlled_schedule.cpp`) before the pass's world updates, so a request
+may change game state without locking.
 
 1. `src/harness/<name>_request.{h,cpp}`: a class deriving `HarnessRequest`
    (`src/harness/harness_request.h`) with `name()` and `handle(line, arguments)`. `handle`
@@ -90,9 +102,16 @@ A request is a line on the harness binary's stdin; its reply is one line on stdo
 The harness binary claims its own options and passes every other argument, in order, to the
 server's `parse_startup_options` (`src/comm.cpp`).
 
+Parsing a value is not using it. `main` in `src/harness/main.cpp` builds the `ScheduleSetup`
+before `run_the_game`, and `boot_db` then sets the game clock and weather from the wall clock
+(`reset_time`, `db.cpp`). An option that changes world state, such as a starting hour, needs a
+seam that acts after boot, for example on the first pass in `HarnessControlledSchedule`.
+
 - **An option only the harness reads** (`--name value`):
-  1. In `harness_option_parser` (`src/harness/harness_options.cpp`), build a `CommandLineOption`
-     like the `--schedule` option and register it.
+  1. In `harness_option_parser` (`src/harness/harness_options.cpp`), build and register a
+     `CommandLineOption` with its own `required` flag and `validate` function. `--schedule` is
+     the model for the shape only: it is required, and its validator accepts only registered
+     schedule names.
   2. Add its field to `HarnessOptions` (`src/harness/harness_options.h`) and fill it in
      `parse_harness_options`. Usage text follows from the registration (`harness_usage`).
   3. Names start with `--`, may not repeat, and may not be one of `RESERVED_OPTION_NAMES`
@@ -105,8 +124,10 @@ server's `parse_startup_options` (`src/comm.cpp`).
   Keep the usage strings in `src/main.cpp` and `AGELAND_OPTIONS_SUMMARY`
   (`src/harness/harness_options.cpp`) in step.
 - Python: pass the argument in `LocalProcessLauncher.command` and
-  `DockerComposeLauncher.server_command` (`tests/integration/rots_harness/launcher.py`) and,
-  when a test chooses it, through `ServerLauncher.start` and the `server` fixture.
+  `DockerComposeLauncher.server_command` (`tests/integration/rots_harness/launcher.py`). When a
+  test chooses it, add the parameter to `ServerLauncher.start` (abstract) and to both concrete
+  `LocalProcessLauncher.start` and `DockerComposeLauncher.start`, and pass it from the
+  `harness_launcher.start(...)` call in the `server` fixture (`tests/integration/conftest.py`).
 - Tests: `src/tests/harness_options_tests.cpp`, `src/tests/harness_command_line_parser_tests.cpp`,
   `src/tests/startup_options_tests.cpp` for a server option, and the launcher command tests in
   `tests/integration/unit/test_launcher.py`

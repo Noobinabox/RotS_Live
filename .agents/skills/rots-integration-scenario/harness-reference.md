@@ -33,7 +33,7 @@ tests/integration/requirements.txt`.
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
 (<GROUP>)"`. Run directly, pytest finds the same `tests/integration/pytest.ini` and rootdir and
 reads the same `ROTS_IT_*` variables, so the direct commands behave like `make integration`.
-`-k` is not checked: a name that matches nothing prints `no tests collected (N deselected)`.
+`-k` is not checked: a name that matches nothing runs nothing and prints only `N deselected`.
 `-m` is checked: an unregistered name in it is a usage error listing the registered names
 (`pytest_configure` in `conftest.py`, `rots_harness/groups.py`).
 
@@ -107,8 +107,10 @@ container.
 
 ### Environment variables
 
-`validate_environment()` in `conftest.py` checks them all before any test; a bad value is a
-usage error naming the variable.
+`validate_environment()` in `conftest.py` checks `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`,
+`ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` and `ROTS_IT_HOUR_TIMEOUT` before any test; a bad value is
+a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
+`ROTS_IT_DOCKER_LOCK_DIR` are not checked.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -177,7 +179,7 @@ Shared definitions: `IMPLEMENTOR` (`Testimm`, human male warrior, level 100, sta
 `custom_mage()` (`Testmage`, human female, level 30, points 70/40/20/20, starts in 1131). A
 test's characters all share one account, in marker order. The game allows one character online
 per account unless the account owns one above level 91, so a test with two characters online
-declares `IMPLEMENTOR`.
+declares `IMPLEMENTOR`; without it the second login fails with `You are already connected as`.
 
 ### What rotstool cannot set, and the in-game command that does
 
@@ -238,7 +240,7 @@ Each ability in `stat` is `Int:[current/base/constant]` (`do_stat_character`, `a
 
 | Number | Field | What sets it |
 | --- | --- | --- |
-| current | `tmpabilities` (`GET_INT`, `utils.h`) | follows base: it creeps toward base by about 1 a game hour (`point_update`, `limits.cpp`), or jumps to it on `restore` |
+| current | `tmpabilities` (`GET_INT`, `utils.h`) | follows base: each game hour it rises by `number(1, tmp)`, never past base, with `tmp` 1 awake and 2 asleep (`point_update`, `limits.cpp`), or it jumps to base on `restore` |
 | base | `abilities` (`GET_INT_BASE`) | the constant plus gear and affect modifiers, rebuilt by `affect_total` (`handler.cpp`) through `recalc_abilities` (`profs.cpp`) |
 | constant | `constabilities` | rolled when the character is made, saved as its permanent stats |
 
@@ -258,7 +260,8 @@ Each ability in `stat` is `Int:[current/base/constant]` (`do_stat_character`, `a
 
 A character's profession levels come from its class (or `points`) and its level alone, not
 from the seed (`creation_points.cpp`; `advance_mini_level` in `limits.cpp` calls
-`advance_level_prof`, `profs.cpp`; each profession is capped at `LEVEL_MAX`, 30). The professions besides the main one are not zero:
+`advance_level_prof`, `profs.cpp`; each profession is capped at `LEVEL_MAX`, 30). The
+professions besides the main one are not zero:
 
 | Character | Mag | Mys (`Cle`) | Ran | War |
 | --- | --- | --- | --- | --- |
@@ -400,11 +403,18 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
 - Text can arrive between commands: affect messages each hour, and in any room without
   `INDOORS` or `DARK` (most test-world rooms) the sun and moon lines `send_to_outdoor` sends
   (`weather.cpp`): `The day has now begun.`, `Night falls over the land.`,
-  `The <phase> moon shows in the sky.`, `The <phase> moon goes off the sky.`. Read it with
-  `expect`/`drain` before the next `command()`.
+  `The <phase> moon shows in the sky.`, `The <phase> moon goes off the sky.`. In an outdoor room
+  of any sector but inside (sector 0, which every test-world room has today), the weather
+  lines `weather_change` sends each hour arrive too (`send_to_sector`, `comm.cpp`). Read it
+  all with `expect`/`drain` before the next `command()`.
 - A command with a delay (`WAIT_STATE_FULL` or `WAIT_STATE_BRIEF`, `utils.h`; casting and
-  `search` use them) sets `AFF_WAITING`: the game takes no further command from that character until the delay ends,
-  and the outcome can arrive after the reply `command()` returns. `expect` the outcome.
+  `search` use them) sets `AFF_WAITING`: the game takes no further command from that
+  character until the delay ends, and the outcome can arrive after the reply `command()`
+  returns. `expect` the outcome.
+- When the delay ends, `command_interpreter` (`interpre.cpp`) checks the command's target again
+  (`target_check`, `target_check_one`), so a target test such as `CAN_SEE` can gate a
+  behaviour twice: once when the command is typed and once when it completes. A bite check or
+  a fix must open both.
 - After `advance_hours` returns, the server has run the passes; `drain(1.0)` (or `expect` on
   the hour's marker, then `drain`) collects text already sent.
 - Regeneration (`fast_update`) runs inside every advanced hour, and the hourly update runs
@@ -419,7 +429,7 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
 | `scenario` | boots its own server through the `server` fixture; `make integration` always selects it |
 | `characters(*characters)` | the test's characters; a test using `server` without it fails |
 | `schedule(name)` | runs `bin/ageland_harness --schedule <name>`; game time advances only through `advance_hours` |
-| `boot`, `poison` | groups, with no behaviour of their own |
+| every other line under `markers =` | a group, with no behaviour of its own |
 
 A new group is one line `<name>: <description>` under `markers =` (the name must start the
 line), plus `pytest.mark.<name>` in the scenario's `pytestmark`. `rots_harness/groups.py` and
@@ -477,10 +487,10 @@ anyone changes the world.
 | 1102 | Immortal Idle | 0 (none) | 0 | none |
 | 1110 | Frozen Room | 0 (none) | 0 | none |
 | 1129 | Olog-hai Start | 0 (none) | 0 | none |
-| 1130 | Arena West | 0 (none) | 0 | east 1131, down 1136 |
+| 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
 | 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
 | 1132 | Arena East | 0 (none) | 0 | west 1131 |
-| 1133 | Dark Cell | 1 (`DARK`) | 0 | south 1131 |
+| 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
 | 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
 | 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
 | 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
@@ -491,7 +501,7 @@ anyone changes the world.
 | 1184 | Beorning Start | 0 (none) | 0 | none |
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
-| 1201 | Distant Cell (zone 12) | 0 (none) | 0 | none |
+| 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 
 1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
 so a character there sees only with infravision, holylight, or moonvision while the moon is up
@@ -508,8 +518,9 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
 
-Four of these answer to the keyword `orc`, which matters for name lookups (below "Names, sides
-and lookups"). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
+Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
+32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
+above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
 4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
 
 | Object | Keyword | What it is |
@@ -543,8 +554,8 @@ S
 ```
 
 - The header line is `<zone> <flags> <sector> <level>`. Flags are bits from `structs.h`,
-  among them `DARK` 1, `DEATH` 2, `NO_MOB` 4, `INDOORS` 8, `NORIDE` 16, `SHADOWY` 64, `NO_MAGIC` 128,
-  `TUNNEL` 256, `PRIVATE` 512, `GODROOM` 1024, `PEACEROOM` 32768, `NO_TELEPORT` 65536. Sectors:
+  among them `DARK` 1, `DEATH` 2, `NO_MOB` 4, `INDOORS` 8, `NORIDE` 16, `SHADOWY` 64,
+  `NO_MAGIC` 128, `TUNNEL` 256, `PRIVATE` 512, `GODROOM` 1024, `PEACEROOM` 32768, `NO_TELEPORT` 65536. Sectors:
   0 inside, 1 city, 2 field, 3 forest, 4 hills, 5 mountain, 6 water (swim), 7 water (no swim),
   8 underwater, 9 road, 10 crack, 11 dense forest, 12 swamp.
 - An exit is `D<direction>` (0 north, 1 east, 2 south, 3 west, 4 up, 5 down), its description

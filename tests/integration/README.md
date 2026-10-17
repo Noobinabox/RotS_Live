@@ -30,7 +30,11 @@ scenarios; `unit/` tests the harness itself without a server.
    ```
 
    The binaries are 32-bit Linux programs. On a Mac, build them inside the i386 container:
-   `docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'`.
+
+   ```bash
+   docker compose run --rm -T rots bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool'
+   ```
+
    That build is itself a Docker job, so take the shared Docker lock for it first, by hand as
    the `README.txt` in `/tmp/rots-docker-lock` describes (see Shared Docker lock below), and
    release it before running the scenarios. A run whose server binary, `ageland_harness` (for a
@@ -51,8 +55,8 @@ make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 ```
 
-A group is a marker registered in `tests/integration/pytest.ini` (today `boot` and `poison`). `GROUP` may be
-an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
+A group is a marker registered in `tests/integration/pytest.ini`, such as `boot`. `GROUP` may
+be an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
 name that neither `pytest.ini` nor pytest itself registers stops the run with a usage error that
 lists the registered names, so a misspelt group never passes by selecting nothing.
 
@@ -79,7 +83,7 @@ Environment variables:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `ROTS_IT_LAUNCHER` | `local` on Linux, `docker` elsewhere | `local` or `docker`; empty means the default |
-| `ROTS_IT_BINARY` | `bin/ageland` | the server binary file, relative to the repository root |
+| `ROTS_IT_BINARY` | `bin/ageland` | the server binary for tests without a schedule (a test with one runs `bin/ageland_harness`), relative to the repository root |
 | `ROTS_IT_SEED` | `20261011` | the random seed for `rotstool` and every server |
 | `ROTS_IT_KEEP` | unset | `1` keeps every run directory and template |
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock, a finite number |
@@ -87,7 +91,8 @@ Environment variables:
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
 
 A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` or
-`ROTS_IT_HOUR_TIMEOUT` value the harness cannot use stops the run before any test with a usage error naming the variable and its value.
+`ROTS_IT_HOUR_TIMEOUT` value the harness cannot use stops the run before any test with a usage
+error naming the variable and its value.
 
 ## Shared Docker lock
 

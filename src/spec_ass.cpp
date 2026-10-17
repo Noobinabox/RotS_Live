@@ -483,7 +483,7 @@ void* virt_obj_program_number(int number)
     }
 }
 
-void virt_assignmob(struct char_data* mob)
+void virt_assignmob(const struct char_data* mob)
 {
     void* tmpptr;
     SPECIAL(*tmpfunc);
@@ -498,7 +498,7 @@ void virt_assignmob(struct char_data* mob)
     }
 }
 
-void virt_assignobj(struct obj_data* obj)
+void virt_assignobj(const struct obj_data* obj)
 {
     void* tmpptr;
     SPECIAL(*tmpfunc);

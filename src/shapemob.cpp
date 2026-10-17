@@ -38,7 +38,7 @@ extern int object_master_idnum;
 void free_proto(struct char_data* ch);
 ACMD(do_shutdown);
 
-void virt_assignmob(struct char_data* mob);
+void virt_assignmob(const struct char_data* mob);
 void* virt_program_number(int number);
 
 /* A command turned off because it did harm; says exactly what was typed so

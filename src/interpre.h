@@ -93,8 +93,8 @@ void nanny(struct descriptor_data* d, char* arg);
 int is_abbrev(const char* arg1, const char* arg2);
 int is_number(const char* str);
 
-void virt_assignmob(struct char_data*);
-void virt_assignobj(struct obj_data* obj);
+void virt_assignmob(const struct char_data*);
+void virt_assignobj(const struct obj_data* obj);
 bool grant_account_character_selection_unlock(
     const account::AccountData& account_data, std::string* error_message);
 bool account_has_restricting_active_linked_session(const account::AccountData& account_data);

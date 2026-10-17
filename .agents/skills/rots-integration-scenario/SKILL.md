@@ -100,6 +100,9 @@ that never reaches the login prompt. The world files, the room constants in
 
 Add `<name>: <what the group pins>` under `markers =` in `tests/integration/pytest.ini`, and set
 `pytestmark = [pytest.mark.scenario, pytest.mark.<name>]`. `GROUP=<name>` then selects it.
+In CI, a pull request runs `boot` and the groups of the scenario files it changes; a change to
+the game's code runs a group only when the description names it as `@integration-test-<name>`
+(integration README, "Continuous integration").
 
 ## 9. Run it repeatedly
 

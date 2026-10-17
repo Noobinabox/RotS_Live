@@ -16,7 +16,7 @@
  Set your MUD_NAME, and change descriptor_t if necessary.
  ******************************************************************************/
 
-#define MUD_NAME "Return of the Shadow"
+inline constexpr char MUD_NAME[] = "Return of the Shadow";
 
 typedef struct descriptor_data descriptor_t;
 
@@ -62,39 +62,39 @@ typedef struct descriptor_data descriptor_t;
  Symbolic constants.
  ******************************************************************************/
 
-#define SNIPPET_VERSION 8 /* Helpful for debugging */
+inline constexpr int SNIPPET_VERSION = 8; /* Helpful for debugging */
 
-#define MAX_PROTOCOL_BUFFER 2048
-#define MAX_VARIABLE_LENGTH 4096
-#define MAX_OUTPUT_BUFFER 8192
-#define MAX_MSSP_BUFFER 4096
+inline constexpr int MAX_PROTOCOL_BUFFER = 2048;
+inline constexpr int MAX_VARIABLE_LENGTH = 4096;
+inline constexpr int MAX_OUTPUT_BUFFER = 8192;
+inline constexpr int MAX_MSSP_BUFFER = 4096;
 
-#define SEND 1
-#define ACCEPTED 2
-#define REJECTED 3
+inline constexpr int SEND = 1;
+inline constexpr int ACCEPTED = 2;
+inline constexpr int REJECTED = 3;
 
-#define TELOPT_CHARSET 42
-#define TELOPT_MSDP 69
-#define TELOPT_MSSP 70
-#define TELOPT_MCCP 86 /* This is MCCP version 2 */
-#define TELOPT_MSP 90
-#define TELOPT_MXP 91
-#define TELOPT_ATCP 200
+inline constexpr int TELOPT_CHARSET = 42;
+inline constexpr int TELOPT_MSDP = 69;
+inline constexpr int TELOPT_MSSP = 70;
+inline constexpr int TELOPT_MCCP = 86; /* This is MCCP version 2 */
+inline constexpr int TELOPT_MSP = 90;
+inline constexpr int TELOPT_MXP = 91;
+inline constexpr int TELOPT_ATCP = 200;
 
-#define MSDP_VAR 1
-#define MSDP_VAL 2
-#define MSDP_TABLE_OPEN 3
-#define MSDP_TABLE_CLOSE 4
-#define MSDP_ARRAY_OPEN 5
-#define MSDP_ARRAY_CLOSE 6
-#define MAX_MSDP_SIZE 100
+inline constexpr int MSDP_VAR = 1;
+inline constexpr int MSDP_VAL = 2;
+inline constexpr int MSDP_TABLE_OPEN = 3;
+inline constexpr int MSDP_TABLE_CLOSE = 4;
+inline constexpr int MSDP_ARRAY_OPEN = 5;
+inline constexpr int MSDP_ARRAY_CLOSE = 6;
+inline constexpr int MAX_MSDP_SIZE = 100;
 
-#define MSSP_VAR 1
-#define MSSP_VAL 2
+inline constexpr int MSSP_VAR = 1;
+inline constexpr int MSSP_VAL = 2;
 
-#define UNICODE_MALE 9794
-#define UNICODE_FEMALE 9792
-#define UNICODE_NEUTER 9791
+inline constexpr int UNICODE_MALE = 9794;
+inline constexpr int UNICODE_FEMALE = 9792;
+inline constexpr int UNICODE_NEUTER = 9791;
 
 /******************************************************************************
  Types.

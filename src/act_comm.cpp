@@ -36,7 +36,7 @@ ACMD(do_petitio)
 
 void say_to_char(struct char_data* speaker, struct char_data* aud,
     const char* color, const char* action,
-    const char* end, char* text, int force_visible)
+    const char* end, const char* text, int force_visible)
 {
     char speech[600];
     int freq, l;
@@ -117,7 +117,7 @@ ACMD(do_say)
 }
 
 void convert_string(const char* str, int hide_invisible, struct char_data* ch,
-    struct obj_data* obj, void* vict_obj,
+    const struct obj_data* obj, void* vict_obj,
     struct char_data* to, const char* buf);
 extern char act_buffer[MAX_STRING_LENGTH];
 

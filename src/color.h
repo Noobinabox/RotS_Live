@@ -72,14 +72,14 @@ extern const char* color_color[];
 extern const char* color_fields[];
 extern char* color_sequence[];
 
-const char* get_color_sequence(struct char_data*, int);
-void set_truecolor_foreground(struct char_data*, int, int, int, int);
-void set_truecolor_background(struct char_data*, int, int, int, int);
-void set_ansi_background(struct char_data*, int, int);
-void clear_color_background(struct char_data*, int);
-void clear_color_foreground(struct char_data*, int);
+const char* get_color_sequence(const struct char_data*, int);
+void set_truecolor_foreground(const struct char_data*, int, int, int, int);
+void set_truecolor_background(const struct char_data*, int, int, int, int);
+void set_ansi_background(const struct char_data*, int, int);
+void clear_color_background(const struct char_data*, int);
+void clear_color_foreground(const struct char_data*, int);
 int nearest_ansi_color(int red, int green, int blue);
 void set_colors_default(struct char_data*);
-int char_color_slot(struct char_data*);
+int char_color_slot(const struct char_data*);
 
 #endif /* COLOR_H */

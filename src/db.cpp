@@ -172,7 +172,7 @@ bool report_script_negative_room(void);
 void draw_map();
 void initialiaze_small_map();
 void reset_small_map();
-void boot_the_shops(FILE* shop_f, char* filename);
+void boot_the_shops(FILE* shop_f, const char* filename);
 void assign_mobiles(void);
 void assign_objects(void);
 void assign_rooms(void);
@@ -317,7 +317,7 @@ ACMD(do_reload)
 }
 
 /* body of the booting system */
-char* mudlle_converter(char*);
+char* mudlle_converter(const char*);
 void boot_db(void)
 {
     int i, tmp;
@@ -868,7 +868,7 @@ namespace {
 } // namespace
 
 
-int load_player_from_account_json_path(char* name, const char* player_path, struct char_file_u* char_element)
+int load_player_from_account_json_path(const char* name, const char* player_path, struct char_file_u* char_element)
 {
     if (player_path == nullptr || *player_path == '\0') {
         sprintf(buf, "Couldn't find account-native character file path for %s\n", name);
@@ -994,7 +994,7 @@ void build_account_native_player_index(void)
 
 //  Reads a field from the player filename format (using FAT as index)
 
-int read_filename_field(int pos, char* field, char* fname)
+int read_filename_field(int pos, char* field, const char* fname)
 {
     int field_pos;
 
@@ -1010,7 +1010,7 @@ int read_filename_field(int pos, char* field, char* fname)
 }
 
 /* New index build for the new player files */
-void build_directory(char* TheDir)
+void build_directory(const char* TheDir)
 {
     DIR* dp;
     struct dirent* dentry;
@@ -1752,7 +1752,7 @@ void load_scripts(FILE* fl)
  *  procedures for resetting, both play-time and boot-time	 	 *
  *********************************************************************** */
 
-int vnum_mobile(char* searchname, struct char_data* ch)
+int vnum_mobile(const char* searchname, const struct char_data* ch)
 {
     int nr, found = 0;
 
@@ -1767,7 +1767,7 @@ int vnum_mobile(char* searchname, struct char_data* ch)
     return (found);
 }
 
-int vnum_object(char* searchname, struct char_data* ch)
+int vnum_object(const char* searchname, const struct char_data* ch)
 {
     int nr, found = 0;
 
@@ -2267,7 +2267,7 @@ void load_objects(FILE* obj_f)
 
 /* execute the reset command table of a given zone */
 //************************************************************************
-int set_exit_state(struct room_data* room, int dir, int newstate)
+int set_exit_state(const struct room_data* room, int dir, int newstate)
 {
     const int door_mask = (EX_CLOSED | EX_LOCKED);
     int tmp, tmp2;
@@ -2786,7 +2786,7 @@ int load_player(char* name, struct char_file_u* char_element)
     return result;
 }
 
-int find_name(char* name);
+int find_name(const char* name);
 
 /* Load a char, TRUE if loaded, FALSE if not */
 int load_char(char* name, struct char_file_u* char_element)
@@ -2822,7 +2822,7 @@ int load_char_from_text(char* name, const char* player_text, struct char_file_u*
 }
 
 /* copy data from the file structure to a char struct */
-void store_to_char(struct char_file_u* st, struct char_data* ch)
+void store_to_char(const struct char_file_u* st, struct char_data* ch)
 {
     int i;
 
@@ -3044,7 +3044,7 @@ void char_to_store(struct char_data* ch, struct char_file_u* st)
     affect_total(ch, AFFECT_TOTAL_SET);
 } /* Char to store */
 
-int create_entry(char* name)
+int create_entry(const char* name)
 {
     int i;
 
@@ -3131,7 +3131,7 @@ bool update_player_index_entry_from_store(
 }
 
 /* create a new entry in the in-memory index table for the player file */
-int old_create_entry(char* name)
+int old_create_entry(const char* name)
 {
     int i, num;
     struct player_index_element* tmpel;
@@ -3206,7 +3206,7 @@ void move_char_deleted(int index)
     player_table[index].idnum = 0;
 }
 
-void delete_character_file(struct char_data* ch)
+void delete_character_file(const struct char_data* ch)
 {
     int tmp;
 
@@ -3572,7 +3572,7 @@ void save_char(struct char_data* ch, int load_room, int notify_char)
  ********************************************************************** */
 
 /* read and allocate space for a '~'-terminated string from a given file */
-char* fread_string(FILE* fl, char* error)
+char* fread_string(FILE* fl, const char* error)
 {
     char buf[MAX_STRING_LENGTH], tmp[MAX_STRING_LENGTH];
     char* rslt;
@@ -3922,7 +3922,7 @@ int file_to_string_alloc(const char* name, char** buf)
     return 0;
 }
 
-int get_char_directory(char* orig_name, char* filename)
+int get_char_directory(const char* orig_name, char* filename)
 {
     char *ptr, name[30];
 
@@ -4266,7 +4266,7 @@ void read_crime_file();
 
 void boot_crimes() { read_crime_file(); }
 
-void record_crime(char_data* criminal, char_data* victim, int crime,
+void record_crime(const char_data* criminal, const char_data* victim, int crime,
     int wit_type)
 {
     struct char_data* tmpchar;
@@ -4368,7 +4368,7 @@ int know_of_crime(int criminal, int victim, int witness)
     return 0;
 }
 
-void forget_crimes(char_data* ch, int criminal)
+void forget_crimes(const char_data* ch, int criminal)
 {
     crime_record_type* tmprecord;
     int tmp, count, not_write;
@@ -4744,7 +4744,7 @@ room_data& room_data::operator[](int i)
     return *(BASE_WORLD + i);
 }
 
-void write_exploits(char_data* ch, exploit_record* record)
+void write_exploits(char_data* ch, const exploit_record* record)
 {
     if (ch != nullptr && ch->desc != nullptr && *ch->desc->account_name != '\0') {
         account::AccountData account_data;
@@ -5135,7 +5135,7 @@ void set_exploit_record_writer_for_testing(ExploitRecordWriterFn writer)
 }
 
 void add_exploit_record(int recordtype, char_data* victim, int iIntParam,
-    char* chParam)
+    const char* chParam)
 {
     struct char_data* killer;
     struct exploit_record exploitrec {};
@@ -5278,7 +5278,7 @@ void add_exploit_record(int recordtype, char_data* victim, int iIntParam,
     return;
 }
 
-int delete_exploits_file(char* name)
+int delete_exploits_file(const char* name)
 {
     char filename[70];
     char tname[60];
@@ -5371,7 +5371,7 @@ static void set_rename_error(std::string* error_message, const std::string& mess
 // Returns false only when the rename should be ABANDONED. A character that is not account-native is
 // not this function's business and reports success with plan->applies left false. Nothing on disk
 // has moved when this returns, either way.
-static bool plan_account_native_rename(struct char_data* ch, int player_i, const char* newname,
+static bool plan_account_native_rename(const struct char_data* ch, int player_i, const char* newname,
     account_native_rename* plan, std::string* error_message)
 {
     *plan = account_native_rename();

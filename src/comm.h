@@ -29,14 +29,14 @@ struct StartupOptions {
 
 /* comm.c */
 void send_to_all(const char* messg);
-void send_to_char(const char* messg, struct char_data* ch);
+void send_to_char(const char* messg, const struct char_data* ch);
 void send_to_char(const char* message, int character_id);
 const char* get_char_name(int character_id);
 struct char_data* get_character(int character_id);
-void send_to_except(const char* messg, struct char_data* ch);
+void send_to_except(const char* messg, const struct char_data* ch);
 void send_to_room(const char* messg, int room);
-void send_to_room_except(const char* messg, int room, struct char_data* ch);
-void send_to_room_except_two(const char* messg, int room, struct char_data* ch1, struct char_data* ch2);
+void send_to_room_except(const char* messg, int room, const struct char_data* ch);
+void send_to_room_except_two(const char* messg, int room, const struct char_data* ch1, const struct char_data* ch2);
 void send_to_outdoor(const char* messg, int mode);
 void send_to_sector(const char* messg, int sector_type);
 void perform_to_all(char* messg, struct char_data* ch);
@@ -45,24 +45,24 @@ void check_state_deadlines(time_t now);
 void break_spell(struct char_data* ch);
 void abort_delay(char_data* wait_ch);
 void complete_delay(struct char_data* ch);
-std::string mob_age_message(struct char_data* victim);
-struct txt_block* get_from_txt_block_pool(char* line = 0);
+std::string mob_age_message(const struct char_data* victim);
+struct txt_block* get_from_txt_block_pool(const char* line = 0);
 void put_to_txt_block_pool(struct txt_block*);
 
-void vsend_to_char(struct char_data* ch, char* format, ...);
+void vsend_to_char(const struct char_data* ch, const char* format, ...);
 
 void act(const char* str, int hide_invisible, struct char_data* ch,
-    struct obj_data* obj, void* vict_obj, int type, char spam_only = FALSE);
+    const struct obj_data* obj, void* vict_obj, int type, char spam_only = FALSE);
 
 inline constexpr int TO_ROOM = 0;
 inline constexpr int TO_VICT = 1;
 inline constexpr int TO_NOTVICT = 2;
 inline constexpr int TO_CHAR = 3;
 
-int write_to_descriptor(int desc, char* txt);
+int write_to_descriptor(int desc, const char* txt);
 void write_to_q(char* txt, struct txt_q* queue);
 void write_to_output(const char* txt, struct descriptor_data* d);
-int output_space_left(struct descriptor_data* d);
+int output_space_left(const struct descriptor_data* d);
 void output_mark_overflow(struct descriptor_data* d);
 int wrap_added_length(const char* text);
 void page_string(struct descriptor_data* d, char* str, int keep_internal);

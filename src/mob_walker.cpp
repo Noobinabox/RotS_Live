@@ -259,13 +259,13 @@ bool room_takes_mobs(int room)
     return !IS_SET(world[room].room_flags, NO_MOB) && !IS_SET(world[room].room_flags, DEATH);
 }
 
-bool exit_is_usable(struct char_data* ch, int door)
+bool exit_is_usable(const struct char_data* ch, int door)
 {
     return CAN_GO(ch, door) && room_takes_mobs(EXIT(ch, door)->to_room);
 }
 
 /* The STAY flags refuse a walker's step exactly as they refuse a wanderer's. */
-bool stay_flags_allow(struct char_data* ch, int door)
+bool stay_flags_allow(const struct char_data* ch, int door)
 {
     int to_room = EXIT(ch, door)->to_room;
     return (!IS_SET(ch->specials2.act, MOB_STAY_ZONE) || world[to_room].zone == world[ch->in_room].zone)
@@ -274,7 +274,7 @@ bool stay_flags_allow(struct char_data* ch, int door)
 
 namespace {
 
-bool any_exit_is_usable(struct char_data* ch)
+bool any_exit_is_usable(const struct char_data* ch)
 {
     for (int door = 0; door < NUM_OF_DIRS; ++door)
         if (exit_is_usable(ch, door))
@@ -489,7 +489,7 @@ options_program_block options_program_block_for(bool spec_on, bool mudlle_progra
     return options_program_block::vnum_special;
 }
 
-void walker_config_check(const struct char_data* proto, int mob_vnum, bool has_program, struct char_data* builder)
+void walker_config_check(const struct char_data* proto, int mob_vnum, bool has_program, const struct char_data* builder)
 {
     if (!proto || !builder || !proto->specials.mob_options)
         return;

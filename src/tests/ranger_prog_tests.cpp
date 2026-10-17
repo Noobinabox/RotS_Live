@@ -33,15 +33,15 @@ void set_char_exists(int num);
 int char_exists(int num);
 void clear_char(struct char_data* ch, int mode);
 void clear_object(struct obj_data* obj);
-int in_waiting_list(struct char_data* ch);
+int in_waiting_list(const struct char_data* ch);
 void abort_delay(struct char_data* wait_ch);
 void complete_delay(struct char_data* ch);
 void break_spell(struct char_data* ch);
 SPECIAL(mob_ranger_new);
 SPECIAL(mob_cleric);
 void* virt_program_number(int number);
-int ranger_track_direction(char_data* host);
-bool ranger_can_step(char_data* host, int dir);
+int ranger_track_direction(const char_data* host);
+bool ranger_can_step(const char_data* host, int dir);
 void one_mobile_activity(char_data* ch);
 
 namespace {

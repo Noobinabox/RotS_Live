@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
-int exp_with_modifiers(char_data* character, char_data* dead_man, int base_exp);
+int exp_with_modifiers(const char_data* character, const char_data* dead_man, int base_exp);
 
 extern int average_mob_life;
 

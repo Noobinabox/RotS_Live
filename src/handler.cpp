@@ -110,7 +110,7 @@ struct follow_type* get_from_follow_type_pool();
 void put_to_follow_type_pool(struct follow_type*);
 
 char fname_nameholder[100];
-char* fname(char* namelist)
+char* fname(const char* namelist)
 {
     //   char	holder[30];
     register char* point;
@@ -521,7 +521,7 @@ void affect_modify(struct char_data* ch, byte loc, int mod, long bitv, char add,
 /* This updates a character by subtracting everything he is affected by */
 /* restoring original abilities, and then affecting all again     ?????      */
 
-void affect_total_room(struct room_data* room, int mode)
+void affect_total_room(const struct room_data* room, int mode)
 {
 }
 
@@ -669,7 +669,7 @@ void put_to_affected_type_pool(struct affected_type* oldaf)
    4.  Adds it to the ch->affected list
    5.  Calls affect_modify and affect_total to update the characters stats/abilities  */
 
-void affect_to_char(struct char_data* ch, struct affected_type* af)
+void affect_to_char(struct char_data* ch, const struct affected_type* af)
 {
     struct affected_type* affected_alloc;
     universal_list* tmplist;
@@ -710,7 +710,7 @@ void affect_to_char(struct char_data* ch, struct affected_type* af)
    the list of affected rooms if necessary, and its values are updated.  Similar to
    affect_to_char */
 
-void affect_to_room(struct room_data* room, struct affected_type* af)
+void affect_to_room(struct room_data* room, const struct affected_type* af)
 {
     struct affected_type* affected_alloc;
     struct affected_type* tmpaf;
@@ -865,7 +865,7 @@ void affect_remove_room(struct room_data* room, struct affected_type* af)
 
 /* Returns 1 if a character is found in the affected_list.  0 if not */
 
-int in_affected_list(struct char_data* ch)
+int in_affected_list(const struct char_data* ch)
 {
     universal_list* tmplist;
     int found;
@@ -928,7 +928,7 @@ affected_type* affected_by_spell(const char_data* ch, byte skill, affected_type*
 /* Returns aff's counterpart on ch only when it is the sole affect of that type, i.e. when
    removing it cannot strip a slot something else still depends on. Unused: slot ownership
    is settled in do_resist_spell (strongest worn item holds it). Kept for reference. */
-affected_type* removeable_spell_affection(const char_data* ch, affected_type* aff, affected_type* start_affect)
+affected_type* removeable_spell_affection(const char_data* ch, const affected_type* aff, affected_type* start_affect)
 {
     int match_count = 0;
     int count = 0;
@@ -1145,7 +1145,7 @@ void stop_follower(struct char_data* ch, int mode)
 
 /* Check if making CH follow VICTIM will create an illegal */
 /* Follow "Loop/circle"                                    */
-char circle_follow(struct char_data* ch, struct char_data* victim, int mode)
+char circle_follow(const struct char_data* ch, struct char_data* victim, int mode)
 {
     for (char_data* character = victim; character; character = character->master) {
         if (character == ch) {
@@ -1442,7 +1442,7 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
     // Special case for poisoned objects.  The wearer should get poison damage
     // when wearing/removing something poisoned.
     if (was_poisoned == 0 && IS_AFFECTED(character, AFF_POISON)) {
-        extern void raw_kill(struct char_data * character, char_data * killer, int attacktype);
+        extern void raw_kill(struct char_data * character, const char_data * killer, int attacktype);
 
         damage(character, character, 5, SPELL_POISON, 0);
 
@@ -1517,7 +1517,7 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
     // Special case for poisoned objects.  The wearer should get poison damage
     // when wearing/removing something poisoned.
     if (was_poisoned != 0 && !IS_AFFECTED(ch, AFF_POISON)) {
-        extern void raw_kill(struct char_data * ch, char_data * killer, int attacktype);
+        extern void raw_kill(struct char_data * ch, const char_data * killer, int attacktype);
 
         damage(ch, ch, 5, SPELL_POISON, 0);
 
@@ -1556,7 +1556,7 @@ int get_number(char** name)
 }
 
 /* Search a given list for an object, and return a pointer to that object */
-struct obj_data* get_obj_in_list(char* name, struct obj_data* list)
+struct obj_data* get_obj_in_list(const char* name, struct obj_data* list)
 {
     struct obj_data* i;
     int j, number;
@@ -1635,7 +1635,7 @@ int count_obj_in_list(int num, struct obj_data* list)
 }
 
 /*search the entire world for an object, and return a pointer  */
-struct obj_data* get_obj(char* name)
+struct obj_data* get_obj(const char* name)
 {
     struct obj_data* i;
     int j, number;
@@ -1670,7 +1670,7 @@ struct obj_data* get_obj_num(int nr)
 }
 
 /* search a room for a char, and return a pointer if found..  */
-struct char_data* get_char_room(char* name, int room)
+struct char_data* get_char_room(const char* name, int room)
 {
     struct char_data* i;
     int j, number;
@@ -1693,7 +1693,7 @@ struct char_data* get_char_room(char* name, int room)
 }
 
 /* search all over the world for a char, and return a pointer if found */
-struct char_data* get_char(char* name)
+struct char_data* get_char(const char* name)
 {
     struct char_data* i;
     int j, number;
@@ -1934,7 +1934,7 @@ void update_object(struct obj_data* obj, int use)
         update_object(obj->next_content, use);
 }
 
-void update_char_objects(struct char_data* ch)
+void update_char_objects(const struct char_data* ch)
 {
 
     int i;
@@ -1964,7 +1964,7 @@ void update_char_objects(struct char_data* ch)
 /* Extract a ch completely from the world, and leave his stuff behind */
 
 ACMD(do_look);
-void stop_fighting_him(struct char_data* ch);
+void stop_fighting_him(const struct char_data* ch);
 
 void extract_char(struct char_data* ch)
 {
@@ -2147,7 +2147,7 @@ void extract_char(struct char_data* ch, int new_room)
    which incorporate the actual player-data.
    *********************************************************************** */
 
-int keyword_matches_char(struct char_data* ch, struct char_data* vict, char* keyword)
+int keyword_matches_char(const struct char_data* ch, const struct char_data* vict, const char* keyword)
 {
     int check;
 
@@ -2159,7 +2159,7 @@ int keyword_matches_char(struct char_data* ch, struct char_data* vict, char* key
     return check;
 }
 
-struct char_data* get_char_room_vis(struct char_data* ch, char* name, int dark_ok)
+struct char_data* get_char_room_vis(struct char_data* ch, const char* name, int dark_ok)
 {
     struct char_data* i;
     int j, number, check;
@@ -2185,7 +2185,7 @@ struct char_data* get_char_room_vis(struct char_data* ch, char* name, int dark_o
     return (0);
 }
 
-struct char_data* get_player_vis(struct char_data* ch, char* name)
+struct char_data* get_player_vis(struct char_data* ch, const char* name)
 {
     struct char_data* i;
 
@@ -2196,7 +2196,7 @@ struct char_data* get_player_vis(struct char_data* ch, char* name)
     return 0;
 }
 
-struct char_data* get_char_vis(struct char_data* ch, char* name, int dark_ok)
+struct char_data* get_char_vis(struct char_data* ch, const char* name, int dark_ok)
 {
     struct char_data* i;
     int j, number, check;
@@ -2229,7 +2229,7 @@ struct char_data* get_char_vis(struct char_data* ch, char* name, int dark_ok)
     return (0);
 }
 
-struct obj_data* get_obj_in_list_vis(struct char_data* ch, char* name,
+struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* name,
     struct obj_data* list, int num)
 {
     struct obj_data* i;
@@ -2259,7 +2259,7 @@ struct obj_data* get_obj_in_list_vis(struct char_data* ch, char* name,
 }
 
 /*search the entire world for an object, and return a pointer  */
-struct obj_data* get_obj_vis(struct char_data* ch, char* name)
+struct obj_data* get_obj_vis(const struct char_data* ch, const char* name)
 {
     struct obj_data* i;
     int j, number;
@@ -2290,8 +2290,8 @@ struct obj_data* get_obj_vis(struct char_data* ch, char* name)
     return (0);
 }
 
-struct obj_data* get_object_in_equip_vis(struct char_data* ch,
-    char* arg, struct obj_data* equipment[], int* j)
+struct obj_data* get_object_in_equip_vis(const struct char_data* ch,
+    const char* arg, struct obj_data* equipment[], int* j)
 {
 
     for ((*j) = 0; (*j) < MAX_WEAR; (*j)++)
@@ -2390,7 +2390,7 @@ struct obj_data* create_money(int amount)
 /* The routine returns a pointer to the next word in *arg (just like the  */
 /* one_argument routine).                                                 */
 
-int generic_find(char* arg, int bitvector, struct char_data* ch,
+int generic_find(const char* arg, int bitvector, struct char_data* ch,
     struct char_data** tar_ch, struct obj_data** tar_obj)
 {
     char* ignore[] = {
@@ -2587,7 +2587,7 @@ int register_pc_char(struct char_data* ch)
     return register_npc_char(ch);
 }
 
-int can_swim(struct char_data* ch)
+int can_swim(const struct char_data* ch)
 {
 
     struct obj_data* tmpobj;
@@ -2662,7 +2662,7 @@ void stop_riding(struct char_data* ch)
     return;
 }
 
-void stop_riding_all(char_data* mount)
+void stop_riding_all(const char_data* mount)
 {
     char_data* tmpch;
 
@@ -2700,7 +2700,7 @@ void recalc_zone_power()
  * over this zone; returns -1 for dominating evil, 1 for domi-
  * nating good, 0 for neither.
  */
-int report_zone_power(struct char_data* ch)
+int report_zone_power(const struct char_data* ch)
 {
     struct zone_data* z;
 

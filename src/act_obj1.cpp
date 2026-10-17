@@ -147,7 +147,7 @@ ACMD(do_put)
     }
 }
 
-int can_take_obj(char_data* character, obj_data* item)
+int can_take_obj(const char_data* character, const obj_data* item)
 {
     if (IS_CARRYING_N(character) >= CAN_CARRY_N(character)) {
         sprintf(buf, "%s: You can't carry that many items.\n\r", OBJS(item, character));
@@ -180,7 +180,7 @@ void get_check_money(struct char_data* ch, struct obj_data* obj)
     }
 }
 
-bool is_corpse(obj_data* container)
+bool is_corpse(const obj_data* container)
 {
     return container && container->obj_flags.type_flag == ITEM_CONTAINER && container->obj_flags.value[3] == 1;
 }
@@ -223,7 +223,7 @@ void perform_get_from_container(char_data* character, obj_data* item, obj_data* 
     }
 }
 
-void get_from_container(struct char_data* ch, struct obj_data* cont, char* arg, int mode)
+void get_from_container(struct char_data* ch, struct obj_data* cont, const char* arg, int mode)
 {
     struct obj_data *obj, *next_obj;
     int obj_dotmode, found = 0;

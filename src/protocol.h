@@ -321,13 +321,13 @@ void ProtocolDestroy(protocol_t* apProtocol);
  * either immediately after the user has connected, or just after they have
  * entered the game.
  */
-void ProtocolNegotiate(descriptor_t* apDescriptor);
+void ProtocolNegotiate(const descriptor_t* apDescriptor);
 
 /* Function: ProtocolNoEcho
  *
  * Tells the client to switch echo on or off.
  */
-void ProtocolNoEcho(descriptor_t* apDescriptor, bool abOn);
+void ProtocolNoEcho(const descriptor_t* apDescriptor, bool abOn);
 
 /* Function: ProtocolInput
  *
@@ -335,7 +335,7 @@ void ProtocolNoEcho(descriptor_t* apDescriptor, bool abOn);
  * whatever is left for the mud to parse normally.  Call this after data has
  * been read into the input buffer, before it is used for anything else.
  */
-void ProtocolInput(descriptor_t* apDescriptor, char* apData, int aSize, char* apOut);
+void ProtocolInput(const descriptor_t* apDescriptor, const char* apData, int aSize, char* apOut);
 
 /* Function: ProtocolOutput
  *
@@ -404,7 +404,7 @@ void ProtocolInput(descriptor_t* apDescriptor, char* apData, int aSize, char* ap
  * Note that the MXP tags will automatically be removed if the user doesn't
  * support MXP, but it's very important you remember to close the tags.
  */
-const char* ProtocolOutput(descriptor_t* apDescriptor, const char* apData, int* apLength);
+const char* ProtocolOutput(const descriptor_t* apDescriptor, const char* apData, int* apLength);
 
 /******************************************************************************
  Copyover save/load functions.
@@ -416,7 +416,7 @@ const char* ProtocolOutput(descriptor_t* apDescriptor, const char* apData, int* 
  * copyover, you should call this for each player and insert it after their
  * name in the temporary text file.
  */
-const char* CopyoverGet(descriptor_t* apDescriptor);
+const char* CopyoverGet(const descriptor_t* apDescriptor);
 
 /* Function: CopyoverSet
  *
@@ -432,7 +432,7 @@ const char* CopyoverGet(descriptor_t* apDescriptor);
  * Client name and version are not saved.  It is recommended you save these in
  * the player file, as then you can grep to collect client usage stats.
  */
-void CopyoverSet(descriptor_t* apDescriptor, const char* apData);
+void CopyoverSet(const descriptor_t* apDescriptor, const char* apData);
 
 /******************************************************************************
  MSDP functions.
@@ -444,7 +444,7 @@ void CopyoverSet(descriptor_t* apDescriptor, const char* apData);
  * dirty MSDP variable that has been requested by the client via REPORT.  This
  * will automatically use ATCP instead if MSDP is not supported by the client.
  */
-void MSDPUpdate(descriptor_t* apDescriptor);
+void MSDPUpdate(const descriptor_t* apDescriptor);
 
 /* Function: MSDPFlush
  *
@@ -454,7 +454,7 @@ void MSDPUpdate(descriptor_t* apDescriptor);
  * Call this function after setting a variable if you want it to be reported
  * immediately, instead of on the next update.
  */
-void MSDPFlush(descriptor_t* apDescriptor, variable_t aMSDP);
+void MSDPFlush(const descriptor_t* apDescriptor, variable_t aMSDP);
 
 /* Function: MSDPMarkAllReportedDirty
  *
@@ -462,7 +462,7 @@ void MSDPFlush(descriptor_t* apDescriptor, variable_t aMSDP);
  * snapshot. Call when a client's MSDP channel becomes newly deliverable (e.g. the
  * player enables MSDP after login) so it receives values that never change again.
  */
-void MSDPMarkAllReportedDirty(descriptor_t* apDescriptor);
+void MSDPMarkAllReportedDirty(const descriptor_t* apDescriptor);
 
 /* Function: MSDPSend
  *
@@ -470,14 +470,14 @@ void MSDPMarkAllReportedDirty(descriptor_t* apDescriptor);
  * need to do this manually, except perhaps when debugging something.  This
  * will automatically use ATCP instead if MSDP is not supported by the client.
  */
-bool MSDPSend(descriptor_t* apDescriptor, variable_t aMSDP);
+bool MSDPSend(const descriptor_t* apDescriptor, variable_t aMSDP);
 
 /* Function: MSDPSendPair
  *
  * Send the specified strings to the user as an MSDP variable/value pair.  This
  * will automatically use ATCP instead if MSDP is not supported by the client.
  */
-void MSDPSendPair(descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
+void MSDPSendPair(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
 
 /* Function: MSDPSendList
  *
@@ -485,7 +485,7 @@ void MSDPSendPair(descriptor_t* apDescriptor, const char* apVariable, const char
  *
  * apValue should be a list of values separated by spaces.
  */
-void MSDPSendList(descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
+void MSDPSendList(const descriptor_t* apDescriptor, const char* apVariable, const char* apValue);
 
 /* Function: MSDPSetNumber
  *
@@ -496,7 +496,7 @@ void MSDPSendList(descriptor_t* apDescriptor, const char* apVariable, const char
  *
  * You can also this function for bools, chars, enums, short ints, etc.
  */
-void MSDPSetNumber(descriptor_t* apDescriptor, variable_t aMSDP, int aValue);
+void MSDPSetNumber(const descriptor_t* apDescriptor, variable_t aMSDP, int aValue);
 
 /* Function: MSDPSetString
  *
@@ -508,7 +508,7 @@ void MSDPSetNumber(descriptor_t* apDescriptor, variable_t aMSDP, int aValue);
  * The value is passed through MSDPSanitizeValue() first, so it stays a
  * valid JSON string for clients that convert MSDP into JSON.
  */
-void MSDPSetString(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
+void MSDPSetString(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
 
 /* Function: MSDPSanitizeValue
  *
@@ -530,7 +530,7 @@ std::string MSDPSanitizeValue(const char* apValue);
  * sprintf( Buffer, "%c%s%c%s", (char)MSDP_VAR, Name, (char)MSDP_VAL, Value );
  * MSDPSetTable( d, eMSDP_TEST, Buffer );
  */
-void MSDPSetTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
+void MSDPSetTable(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
 
 /* Function: MSDPSendTable
  *
@@ -538,7 +538,7 @@ void MSDPSetTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apVa
  * automappers, comm channels, etc.
  */
 
-void MSDPSendTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
+void MSDPSendTable(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
 
 /* Function: MSDPSetArray
  *
@@ -549,7 +549,7 @@ void MSDPSendTable(descriptor_t* apDescriptor, variable_t aMSDP, const char* apV
  * sprintf( Buffer, "%c%s%c%s", (char)MSDP_VAL, Val1, (char)MSDP_VAL, Val2 );
  * MSDPSetArray( d, eMSDP_TEST, Buffer );
  */
-void MSDPSetArray(descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
+void MSDPSetArray(const descriptor_t* apDescriptor, variable_t aMSDP, const char* apValue);
 
 bool MSDPIsValidVariable(variable_t aMSDP);
 
@@ -576,14 +576,14 @@ void MSSPSetPlayers(int aPlayers);
  * provide a different sequence for other users, or better yet just embed MXP
  * tags for the ProtocolOutput() function.
  */
-const char* MXPCreateTag(descriptor_t* apDescriptor, const char* apTag);
+const char* MXPCreateTag(const descriptor_t* apDescriptor, const char* apTag);
 
 /* Function: MXPSendTag
  *
  * This works like MXPCreateTag, but instead of returning the string it sends
  * it directly to the user.  This is mainly useful for the <VERSION> tag.
  */
-void MXPSendTag(descriptor_t* apDescriptor, const char* apTag);
+void MXPSendTag(const descriptor_t* apDescriptor, const char* apTag);
 
 /******************************************************************************
  Sound functions.
@@ -595,7 +595,7 @@ void MXPSendTag(descriptor_t* apDescriptor, const char* apTag);
  * supported, MSP if not.  The trigger string itself is a relative path and
  * filename, eg: SoundSend( pDesc, "monster/growl.wav" );
  */
-void SoundSend(descriptor_t* apDescriptor, const char* apTrigger);
+void SoundSend(const descriptor_t* apDescriptor, const char* apTrigger);
 
 /******************************************************************************
  Colour functions.
@@ -616,7 +616,7 @@ void SoundSend(descriptor_t* apDescriptor, const char* apTrigger);
  *
  * If you wish to embed colours in strings, use ProtocolOutput().
  */
-const char* ColourRGB(descriptor_t* apDescriptor, const char* apRGB);
+const char* ColourRGB(const descriptor_t* apDescriptor, const char* apRGB);
 
 /******************************************************************************
  Unicode (UTF-8 conversion) functions.

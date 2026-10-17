@@ -79,7 +79,7 @@ extern unsigned long stat_whitie_counter;
 extern unsigned long stat_darkie_counter;
 extern unsigned long stat_whitie_legend_counter;
 extern unsigned long stat_darkie_legend_counter;
-extern int get_percent_absorb(char_data* character);
+extern int get_percent_absorb(const char_data* character);
 
 /* local globals */
 struct descriptor_data *descriptor_list = 0, *next_to_process = 0;
@@ -337,7 +337,7 @@ void check_reboot(void);
 int isbanned(char* hostname);
 void* virt_program_number(int number);
 void* virt_obj_program_number(int number);
-void replace_aliases(char_data* ch, char* line);
+void replace_aliases(const char_data* ch, char* line);
 
 // int gethostname(char *, int);
 
@@ -552,7 +552,7 @@ void track_specialized_mage(char_data* mage)
 }
 
 /* Implementation from for function defined in utils.h */
-void untrack_specialized_mage(char_data* mage)
+void untrack_specialized_mage(const char_data* mage)
 {
     if (!mage)
         return;
@@ -563,7 +563,7 @@ void untrack_specialized_mage(char_data* mage)
     }
 }
 
-void add_prompt(char* prompt, struct char_data* ch, long flag);
+void add_prompt(char* prompt, const struct char_data* ch, long flag);
 
 static int get_stat_percent(int current, int maximum)
 {
@@ -577,7 +577,7 @@ static int get_stat_percent(int current, int maximum)
     return static_cast<int>(percent);
 }
 
-int get_health_percent(char_data* character)
+int get_health_percent(const char_data* character)
 {
     return get_stat_percent(GET_HIT(character), GET_MAX_HIT(character));
 }
@@ -1286,7 +1286,7 @@ void write_to_output(const char* txt, struct descriptor_data* t)
 
 /* How many more characters write_to_output will take this pulse before it
    switches to the overflow state. */
-int output_space_left(struct descriptor_data* t)
+int output_space_left(const struct descriptor_data* t)
 {
     if (t->bufptr < 0)
         return 0;
@@ -1305,7 +1305,7 @@ void output_mark_overflow(struct descriptor_data* t)
     buf_overflows++;
 }
 
-struct txt_block* get_from_txt_block_pool(char* line)
+struct txt_block* get_from_txt_block_pool(const char* line)
 {
     struct txt_block* pnew;
     int tmp;
@@ -1620,7 +1620,7 @@ extern sh_int screen_width; /* config.cpp */
 
 /* Copies source to target, breaking lines longer than screen_width. Writes at most `space` bytes,
    the terminating NUL included, and returns false if all of source did not fit. */
-bool append_lines(char* target, char* source, int* len, size_t space)
+bool append_lines(char* target, const char* source, int* len, size_t space)
 {
     register sh_int i, tmp;
     int sourcelen;
@@ -1766,7 +1766,7 @@ int process_output(struct descriptor_data* t)
 // New version (similar to circle ver 3) April 2001 - Fingolfin
 // Not windows compatible (not finished and not working...), but c'est la vie...
 
-int write_to_descriptor_new(int desc, char* txt)
+int write_to_descriptor_new(int desc, const char* txt)
 {
     int result, length;
 
@@ -1801,7 +1801,7 @@ int write_to_descriptor_new(int desc, char* txt)
 
 // old version replaced with above April 2001 - Fingolfin
 
-int write_to_descriptor(int desc, char* txt)
+int write_to_descriptor(int desc, const char* txt)
 {
     int sofar, thisround, total;
 
@@ -2188,7 +2188,7 @@ void nonblock(SocketType s)
 /* ****************************************************************
  *	Public routines for system-to-player-communication	  *
  *******************************************************************/
-void send_to_char(const char* message, char_data* character)
+void send_to_char(const char* message, const char_data* character)
 {
     // Early out if we have no message or character.
     if (message == nullptr || message[0] == 0 || character == nullptr) {
@@ -2238,7 +2238,7 @@ char_data* get_character(int character_id)
     return NULL;
 }
 
-void vsend_to_char(char_data* character, char* format, ...)
+void vsend_to_char(const char_data* character, const char* format, ...)
 {
 #define BUFSIZE 2048
     char buf[BUFSIZE];
@@ -2288,7 +2288,7 @@ void send_to_sector(const char* messg, int sector_type)
                     SEND_TO_Q(messg, i);
 }
 
-void send_to_except(const char* messg, struct char_data* ch)
+void send_to_except(const char* messg, const struct char_data* ch)
 {
     struct descriptor_data* i;
 
@@ -2308,7 +2308,7 @@ void send_to_room(const char* messg, int room)
                 SEND_TO_Q(messg, i->desc);
 }
 
-void send_to_room_except(const char* messg, int room, struct char_data* ch)
+void send_to_room_except(const char* messg, int room, const struct char_data* ch)
 {
     struct char_data* i;
 
@@ -2318,8 +2318,8 @@ void send_to_room_except(const char* messg, int room, struct char_data* ch)
                 SEND_TO_Q(messg, i->desc);
 }
 
-void send_to_room_except_two(const char* messg, int room, struct char_data* ch1,
-    struct char_data* ch2)
+void send_to_room_except_two(const char* messg, int room, const struct char_data* ch1,
+    const struct char_data* ch2)
 {
     struct char_data* i;
 
@@ -2343,7 +2343,7 @@ void send_to_room_except_two(const char* messg, int room, struct char_data* ch1,
  * But we don't want to have:
  *   <NORM>You wield <OBJ>a shadowy blade<NORM><NORM>.<NORM>
  */
-void convert_string(const char* str, int hide_invisible, struct char_data* ch, struct obj_data* obj,
+void convert_string(const char* str, int hide_invisible, struct char_data* ch, const struct obj_data* obj,
     void* vict_obj, struct char_data* to, const char* buf)
 {
     int clobbered_color;
@@ -2500,7 +2500,7 @@ void convert_string(const char* str, int hide_invisible, struct char_data* ch, s
 }
 
 char act_buffer[MAX_STRING_LENGTH];
-void act(const char* str, int hide_invisible, struct char_data* ch, struct obj_data* obj,
+void act(const char* str, int hide_invisible, struct char_data* ch, const struct obj_data* obj,
     void* vict_obj, int type, char spam_only)
 {
     struct char_data* to;
@@ -2564,7 +2564,7 @@ void complete_delay(struct char_data* ch)
         command_interpreter(ch, "", &(ch->delay));
 }
 
-int in_waiting_list(char_data* ch)
+int in_waiting_list(const char_data* ch)
 {
     if (waiting_list == NULL || ch == NULL)
         return 0;

@@ -72,7 +72,7 @@ struct board_info_type {
     // see mail_info_type for explanation
 
     board_info_type(int objnum, int l_read, int l_write, int l_rem,
-        int max_msg, char* file, char* titlename);
+        int max_msg, const char* file, const char* titlename);
     board_info_type();
 };
 
@@ -84,7 +84,7 @@ struct mail_info_type : board_info_type {
     // num is taken as the shown number of the previous message,
     // returned as the number to show with msg.
     mail_info_type(int objnum, int l_read, int l_write, int l_rem,
-        int max_msg, char* file, char* titlename);
+        int max_msg, const char* file, const char* titlename);
 };
 #define VNUM (vnum)
 #define READ_LVL (read_lvl)

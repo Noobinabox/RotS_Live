@@ -45,7 +45,7 @@ struct zone_data {
 void zone_update(void);
 void load_zones(FILE*);
 void renum_zone_table(void);
-void renum_zone_one(int, struct char_data* to = 0);
+void renum_zone_one(int, const struct char_data* to = 0);
 void reset_zone(int);
 
 /*

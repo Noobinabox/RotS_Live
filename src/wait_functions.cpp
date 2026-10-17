@@ -221,7 +221,7 @@ void wait_list::update()
 }
 
 //============================================================================
-bool wait_list::in_waiting_list(char_data* character)
+bool wait_list::in_waiting_list(const char_data* character)
 {
     return std::find(m_waitingList.begin(), m_waitingList.end(), character) != m_waitingList.end();
 }

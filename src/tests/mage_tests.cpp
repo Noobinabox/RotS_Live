@@ -11,11 +11,11 @@ double get_spell_pen_value(const char_data *caster);
 double get_victim_saving_throw(const char_data *caster, const char_data *victim);
 bool different_zone(int was_in, int to_room);
 int random_exit(int room);
-bool is_teleportation_room_valid(room_data *room);
+bool is_teleportation_room_valid(const room_data *room);
 int get_save_bonus(const char_data &caster, const char_data &victim,
                    game_types::player_specs primary_spec, game_types::player_specs opposing_spec);
 bool is_friendly_taget(const char_data *caster, const char_data *victim);
-void apply_chilled_effect(char_data *caster, char_data *victim);
+void apply_chilled_effect(const char_data *caster, char_data *victim);
 
 struct loclife_coord {
     int number;

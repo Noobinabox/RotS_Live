@@ -45,7 +45,7 @@ public:
     void update();
 
 private:
-    bool in_waiting_list(char_data* ch);
+    bool in_waiting_list(const char_data* ch);
 
 private:
     // TODO(dgurley):  Use a more efficient data structure once you

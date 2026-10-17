@@ -133,7 +133,7 @@ void mob_options_tidy(char* text)
     *out = '\0';
 }
 
-char* read_mob_options(FILE* f, char* context)
+char* read_mob_options(FILE* f, const char* context)
 {
     int c;
     do {
@@ -213,7 +213,7 @@ std::string vendor_problem_line(int mob_vnum, const vendor_problem& problem)
     return buf;
 }
 
-void vendor_send(const std::string& line, struct char_data* builder)
+void vendor_send(const std::string& line, const struct char_data* builder)
 {
     char buf[512];
     snprintf(buf, sizeof(buf), "%s", line.c_str());

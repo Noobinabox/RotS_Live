@@ -154,7 +154,7 @@ const char* weather_messages[8][13] = {
 void weather_and_time(int mode);
 void another_hour(int mode);
 void weather_change(void);
-void weather_to_char(char_data* ch);
+void weather_to_char(const char_data* ch);
 
 extern char* moon_phase[];
 
@@ -309,7 +309,7 @@ int sector_age_value(int sector_type)
     }
 }
 
-void weather_to_char(char_data* ch)
+void weather_to_char(const char_data* ch)
 {
     int sector_type, weather_type;
 

@@ -13,7 +13,7 @@ ACMD(do_color);
 extern char* command[];
 extern command_info cmd_info[];
 void assign_command_pointers(void);
-int old_search_block(char* argument, int begin, unsigned int length, const char** list, int mode);
+int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
 
 namespace {
 

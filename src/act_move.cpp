@@ -38,9 +38,9 @@ extern char* refer_dirs[];
 extern int movement_loss[];
 extern struct time_info_data time_info;
 extern struct skill_data skills[];
-extern int get_real_stealth(struct char_data* ch);
+extern int get_real_stealth(const struct char_data* ch);
 
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 
 ACMD(do_look);
 ACMD(do_open);
@@ -90,7 +90,7 @@ int get_room_move_penalty(const char_data* character, int room_sector)
     return room_move_penalty;
 }
 
-int room_move_cost(char_data* character, room_data* new_room)
+int room_move_cost(char_data* character, const room_data* new_room)
 {
     assert(character);
     assert(new_room);
@@ -297,7 +297,7 @@ int check_simple_move(struct char_data* ch, int cmd, int* mv_cost, int mode)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 8, 2017 - Created
 ==================================================================================*/
-void set_blood_trail(struct char_data* ch, int dir)
+void set_blood_trail(const struct char_data* ch, int dir)
 {
     int tmp;
     if ((utils::is_npc(*ch) || (utils::get_race(*ch) != RACE_GOD))) {
@@ -327,7 +327,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     int was_in, new_room, num2, is_death, move_cost, tmp, should_show;
     char buff[1000];
     char buff2[1000];
-    void show_mount_to_char(struct char_data*, struct char_data*, char*, char*, int);
+    void show_mount_to_char(struct char_data*, struct char_data*, const char*, const char*, int);
 
     if (!EXIT(ch, dir) || !ch->mount_data.rider)
         return 0;
@@ -471,7 +471,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     return 1;
 }
 
-void parse_container_for_stay_zone(char_data* ch, obj_data* container, const int room)
+void parse_container_for_stay_zone(char_data* ch, const obj_data* container, const int room)
 {
     obj_data* next_item = nullptr;
     for (obj_data* item = container->contains; item; item = next_item) {
@@ -592,7 +592,7 @@ bool is_exit_valid(const room_direction_data room_direction)
     return true;
 }
 
-void msdp_room_update(char_data* ch)
+void msdp_room_update(const char_data* ch)
 {
     if (utils::is_npc(*ch)) {
         return;
@@ -1083,7 +1083,7 @@ ACMD(do_move)
     }
 }
 
-int find_door(struct char_data* ch, char* type, char* dir)
+int find_door(const struct char_data* ch, const char* type, char* dir)
 {
     int door;
     char* dirs[] = { "north", "east", "south", "west", "up", "down", "\n" };
@@ -1341,11 +1341,11 @@ ACMD(do_close)
     }
 }
 
-bool is_key(obj_data* item) { return item->obj_flags.type_flag == ITEM_KEY; }
+bool is_key(const obj_data* item) { return item->obj_flags.type_flag == ITEM_KEY; }
 
 /* returns NULL if the character does not have the key (or it is broken),
                    a pointer to the key if the character does have the key  */
-obj_data* has_key(char_data* character, int key)
+obj_data* has_key(const char_data* character, int key)
 {
     for (obj_data* item = character->carrying; item; item = item->next_content)
         if (obj_index[item->item_number].virt == key)
@@ -1545,7 +1545,7 @@ ACMD(do_leave)
 {
     int door;
 
-    extern long secs_to_unretire(struct char_data*);
+    extern long secs_to_unretire(const struct char_data*);
     extern int r_mortal_start_room[];
 
     /* retired characters can 'leave' the retirement home */

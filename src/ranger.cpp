@@ -42,13 +42,13 @@ extern struct char_data* character_list;
 extern struct char_data* waiting_list;
 extern struct room_data world;
 extern struct skill_data skills[];
-extern int find_door(struct char_data* ch, char* type, char* dir);
-extern int get_followers_level(struct char_data*);
-extern int old_search_block(char*, int, unsigned int, const char**, int);
+extern int find_door(const struct char_data* ch, const char* type, char* dir);
+extern int get_followers_level(const struct char_data*);
+extern int old_search_block(const char*, int, unsigned int, const char**, int);
 extern int get_number(char** name);
-extern int get_real_stealth(struct char_data*);
+extern int get_real_stealth(const struct char_data*);
 extern int rev_dir[];
-extern int show_tracks(struct char_data* ch, char* name, int mode);
+extern int show_tracks(const struct char_data* ch, const char* name, int mode);
 extern int top_of_world;
 extern char* dirs[];
 extern void appear(struct char_data* ch);
@@ -297,7 +297,7 @@ int sector_variables[] = {
  * This function checks the conditions needed to gather
  * with success.
  */
-int check_gather_conditions(struct char_data* ch, int percent, int gather_type)
+int check_gather_conditions(const struct char_data* ch, int percent, int gather_type)
 {
 
     /*
@@ -755,7 +755,7 @@ ACMD(do_sneak)
  * the intended victim is not a VALID victim, then we return
  * NULL.
  */
-struct char_data* ambush_get_valid_victim(struct char_data* ch, struct waiting_type* target)
+struct char_data* ambush_get_valid_victim(struct char_data* ch, const struct waiting_type* target)
 {
     struct char_data* victim;
 
@@ -805,7 +805,7 @@ struct char_data* ambush_get_valid_victim(struct char_data* ch, struct waiting_t
  * the return value denotes how WELL the ambush succeeded.
  * Higher return values denote more successful ambushes.
  */
-int ambush_calculate_success(struct char_data* ch, struct char_data* victim)
+int ambush_calculate_success(const struct char_data* ch, const struct char_data* victim)
 {
     int percent;
 
@@ -844,7 +844,7 @@ int calculate_ambush_damage_cap(const char_data* attacker)
  * against an opponent with no awareness, the modifier should be
  * on the order of 60.
  */
-int ambush_calculate_damage(char_data* attacker, char_data* victim, int modifier)
+int ambush_calculate_damage(const char_data* attacker, const char_data* victim, int modifier)
 {
     if (modifier <= 0)
         return 0;
@@ -1035,7 +1035,7 @@ ACMD(do_ambush)
  * optional trap target keyword, which is stored in
  * target->targ1.ptr.text->text.
  */
-struct char_data* trap_get_valid_victim(struct char_data* ch, struct waiting_type* target)
+struct char_data* trap_get_valid_victim(struct char_data* ch, const struct waiting_type* target)
 {
     char* keyword;
     struct char_data* victim;
@@ -1439,7 +1439,7 @@ ACMD(do_calm)
     }
 }
 
-bool is_strong_enough_to_tame(char_data* tamer, char_data* animal, bool include_current_followers)
+bool is_strong_enough_to_tame(const char_data* tamer, const char_data* animal, bool include_current_followers)
 {
     int tame_skill = GET_SKILL(tamer, SKILL_TAME) + GET_RAW_SKILL(tamer, SKILL_ANIMALS) / 2;
 
@@ -1974,10 +1974,10 @@ int hide_roll(int prof, bool well)
  * performing a normal hide; the high end assumes the hider is
  * performing a hide well.
  */
-int hide_prof(struct char_data* hider)
+int hide_prof(const struct char_data* hider)
 {
     int hide_value;
-    int get_real_stealth(struct char_data*);
+    int get_real_stealth(const struct char_data*);
 
     hide_value = GET_SKILL(hider, SKILL_HIDE) + get_real_stealth(hider) + GET_PROF_LEVEL(PROF_RANGER, hider) - 30;
 
@@ -1993,7 +1993,7 @@ int hide_prof(struct char_data* hider)
  *  - the specialization of `seeker' (stealth spec gets a bonus)
  *  - the race of `seeker' (elves get a bonus)
  */
-int see_hiding(struct char_data* seeker)
+int see_hiding(const struct char_data* seeker)
 {
     int can_see, awareness;
 
@@ -2387,7 +2387,7 @@ bool can_ch_shoot(char_data* archer)
  * --------------------------- Change Log --------------------------------
  * slyon: Jan 25, 2017 - Created function
  */
-char_data* is_target_valid(char_data* archer, waiting_type* target)
+char_data* is_target_valid(char_data* archer, const waiting_type* target)
 {
     char_data* victim = nullptr;
 
@@ -2462,7 +2462,7 @@ void on_arrow_hit(char_data* archer, char_data* victim, obj_data* arrow)
 // Handles the arrow hitting another target.  Currently only considers characters
 // in combat with the victim as potential targets.
 //============================================================================
-void change_arrow_target(char_data* archer, char_data* victim, obj_data* arrow)
+void change_arrow_target(char_data* archer, const char_data* victim, obj_data* arrow)
 {
     const room_data& room = world[archer->in_room];
 
@@ -2938,7 +2938,7 @@ void do_scan(char_data* character, char* argument, waiting_type* wait_list, int 
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_duration(char_data* marker)
+int mark_calculate_duration(const char_data* marker)
 {
     int mark_duration = utils::get_prof_level(PROF_RANGER, *marker) - 10;
     mark_duration = mark_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
@@ -2952,7 +2952,7 @@ int mark_calculate_duration(char_data* marker)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 5, 2017 - Created
 ==================================================================================*/
-int mark_calculate_damage(char_data* marker, char_data* victim)
+int mark_calculate_damage(const char_data* marker, const char_data* victim)
 {
     int ranger_level = utils::get_prof_level(PROF_RANGER, *marker);
     int str_factor = marker->tmpabilities.str / 5;
@@ -3029,7 +3029,7 @@ int mark_calculate_success(char_data* marker, char_data* victim)
    slyon: Sept 6, 2017 - Created
    slyon: June 12, 2018 - Redesigned check
 ==================================================================================*/
-bool can_ch_mark(char_data* ch)
+bool can_ch_mark(const char_data* ch)
 {
     using namespace utils;
     // Check to see if archer is a player haradrim
@@ -3068,7 +3068,7 @@ bool can_ch_mark(char_data* ch)
    ------------------------------Change Log---------------------------------------
    slyon: June 12, 2018 - Created
 ==================================================================================*/
-char_data* is_targ_valid_mark(char_data* marker, waiting_type* target)
+char_data* is_targ_valid_mark(char_data* marker, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -3281,7 +3281,7 @@ bool can_ch_blind(char_data* ch, int mana_cost)
     return true;
 }
 
-char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
+char_data* is_targ_blind_valid(char_data* ch, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -3320,7 +3320,7 @@ char_data* is_targ_blind_valid(char_data* ch, waiting_type* target)
     return victim;
 }
 
-int harad_skill_calculate_save(char_data* ch, char_data* victim, int skill_check)
+int harad_skill_calculate_save(const char_data* ch, const char_data* victim, int skill_check)
 {
     int random_roll = number(0, 99);
 
@@ -3528,7 +3528,7 @@ bool can_harad_use_skill(char_data* ch, int mana_cost, int move_cost, int skill)
     return true;
 }
 
-bool check_skill_success(char_data* ch, int skill)
+bool check_skill_success(const char_data* ch, int skill)
 {
     int skill_percent = utils::get_skill(*ch, skill);
     int roll = number(1, 99);

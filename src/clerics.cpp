@@ -35,9 +35,9 @@ extern int mortal_start_room[];
 extern int r_mortal_start_room[];
 extern int r_immort_start_room;
 extern struct index_data* mob_index;
-extern int armor_absorb(struct obj_data* obj);
+extern int armor_absorb(const struct obj_data* obj);
 
-void group_gain(struct char_data*, struct char_data*);
+void group_gain(struct char_data*, const struct char_data*);
 char saves_power(const char_data*, sh_int power, sh_int bonus);
 int check_hallucinate(struct char_data*, struct char_data*);
 
@@ -83,7 +83,7 @@ bool check_mind_block(char_data* character, char_data* attacker, int amount, int
 }
 
 ACMD(do_flee);
-void report_char_mentals(struct char_data*, char*, int);
+void report_char_mentals(const struct char_data*, char*, int);
 void appear(struct char_data*);
 combat_result_struct damage_stat(struct char_data*, struct char_data*, int, int);
 

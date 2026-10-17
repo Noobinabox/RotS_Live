@@ -52,7 +52,7 @@ extern int top_of_objt;
 void build_player_index(void);
 void clear_char(struct char_data* ch, int mode);
 void save_player(struct char_data* ch, int load_room, int index_pos);
-void store_to_char(struct char_file_u* st, struct char_data* ch);
+void store_to_char(const struct char_file_u* st, struct char_data* ch);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 int file_to_string_alloc(const char* name, char** buf);
 
@@ -1860,7 +1860,7 @@ TEST(DbLoader, CrashLoadConsumesStagedAccountBackedObjectBytesAndEquipsWearableI
     EXPECT_EQ(character.carrying->obj_flags.weight, 4);
 }
 
-int Crash_obj2store(obj_data* obj, char_data* ch, int pos, FILE* fl);
+int Crash_obj2store(const obj_data* obj, const char_data* ch, int pos, FILE* fl);
 
 TEST(DbLoader, CrashLoadRefreshesOutdatedCopiesWornCarriedAndNested)
 {
@@ -2164,7 +2164,7 @@ void Crash_follower_load(char_data* ch, FILE* fp);
 bool Crash_refresh_object(obj_data* obj, long idnum);
 extern int generic_scalp;
 
-void Crash_tell_object_refresh(char_data* ch, const char* name);
+void Crash_tell_object_refresh(const char_data* ch, const char* name);
 
 // Short descriptions are builder text of any length; the message is cut to its buffer.
 TEST(DbLoader, TheUpdatedMessageIsCutToItsBufferForAnOverlongName)
@@ -2338,7 +2338,7 @@ TEST(DbLoader, AnEnchantedWeaponSavedByTheGameLoadsBackAndTheRentListingReadsPas
     EXPECT_EQ(loaded_pack->obj_flags.weight, obj_proto[1].obj_flags.weight);
 }
 
-void write_object(FILE* f, struct obj_data* obj, int num);
+void write_object(FILE* f, const struct obj_data* obj, int num);
 void load_objects(FILE* obj_f);
 
 // load_objects keeps its place in the prototype table between calls (boot reads one file after

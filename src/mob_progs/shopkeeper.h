@@ -71,11 +71,11 @@ struct waiting_type;
 int barter_vendor(struct char_data* host, struct char_data* ch, int cmd, char* arg, int callflag, struct waiting_type* wtl);
 void vendor_config_boot(); /* all program-33 prototypes */
 /* parse + store (and report problems unless !report), or erase */
-void vendor_config_rebuild(int mob_rnum, struct char_data* builder, bool report = true);
+void vendor_config_rebuild(int mob_rnum, const struct char_data* builder, bool report = true);
 /* program 33 with MOB_SPEC, and no hard-coded function owns rnum (rnum < 0: none yet) */
 bool is_vendor_candidate(const struct char_data* proto, int rnum);
-void vendor_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder); /* report only */
-void vendor_implement_check(int mob_rnum, struct char_data* builder); /* /imp only: nobash reminder */
+void vendor_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder); /* report only */
+void vendor_implement_check(int mob_rnum, const struct char_data* builder); /* /imp only: nobash reminder */
 const vendor_config* vendor_config_for(int mob_rnum); /* nullptr if none */
 
 /* Shared with the other service programs (banker). */
@@ -101,7 +101,7 @@ bool mob_is_keeper(const struct char_data* mob);
  *   SPECIAL_TARGET - blinding dust is refused: it blinds even when its damage
  *                    is cancelled, and a blind keeper serves nobody. */
 bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, int callflag,
-    struct waiting_type* wtl, bool attacks, int* answer);
+    const struct waiting_type* wtl, bool attacks, int* answer);
 /* "attacks=no": the answer a keeper program gives the mob AI on its own turn
  * (SPECIAL_SELF). TRUE ends the turn there, so the keeper never attacks,
  * assists, hunts, wanders or picks things up; a mob that never starts a
@@ -110,10 +110,10 @@ bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, in
 int vendor_takes_no_turn(bool attacks);
 /* /imp only, for a keeper with attacks=no: mob flags that can do nothing
  * (fighting, helping a master, picking things up). */
-void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder);
-void vendor_forget_target(struct waiting_type* wtl, struct obj_data* obj); /* before destroying obj in a command */
+void vendor_fight_flag_warnings(int mob_rnum, const struct char_data* builder);
+void vendor_forget_target(struct waiting_type* wtl, const struct obj_data* obj); /* before destroying obj in a command */
 bool vendor_serves_customer(struct char_data* vendor, struct char_data* ch); /* every refusal but hours */
-bool give_targets(struct char_data* vendor, struct char_data* ch, char* arg); /* would do_give pick this mob? */
+bool give_targets(const struct char_data* vendor, struct char_data* ch, const char* arg); /* would do_give pick this mob? */
 
 struct vendor_list_cost {
     int qty;

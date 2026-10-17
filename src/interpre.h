@@ -78,9 +78,9 @@ inline constexpr int SPECIAL_DEATH = 64;
 
 void command_interpreter(struct char_data* ch, char* arg_chr, struct waiting_type* arg_wtl = 0);
 int search_block(char* arg, char** list, char exact);
-int old_search_block(char* argument, int begin, unsigned int length, const char** list, int mode);
+int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
 char lower(char c);
-void argument_interpreter(char* argument, char* first_arg, char* second_arg);
+void argument_interpreter(const char* argument, char* first_arg, char* second_arg);
 int special(struct char_data* ch, int cmd, char* arg, int callflag, waiting_type* wtl,
     int in_room = NOWHERE);
 int activate_char_special(char_data* k, char_data* ch, int cmd, char* arg, int callflag,
@@ -88,13 +88,13 @@ int activate_char_special(char_data* k, char_data* ch, int cmd, char* arg, int c
 
 char* one_argument(char* argument, char* first_arg);
 int fill_word(char* argument);
-void half_chop(char* string, char* arg1, char* arg2);
+void half_chop(const char* string, char* arg1, char* arg2);
 void nanny(struct descriptor_data* d, char* arg);
-int is_abbrev(char* arg1, char* arg2);
-int is_number(char* str);
+int is_abbrev(const char* arg1, const char* arg2);
+int is_number(const char* str);
 
-void virt_assignmob(struct char_data*);
-void virt_assignobj(struct obj_data* obj);
+void virt_assignmob(const struct char_data*);
+void virt_assignobj(const struct obj_data* obj);
 bool grant_account_character_selection_unlock(
     const account::AccountData& account_data, std::string* error_message);
 bool account_has_restricting_active_linked_session(const account::AccountData& account_data);

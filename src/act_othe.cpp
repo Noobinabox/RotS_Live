@@ -50,10 +50,10 @@ extern int rev_dir[];
 extern char* dirs[];
 
 /* extern procedures */
-extern int old_search_block(char*, int, unsigned int, const char**, int);
+extern int old_search_block(const char*, int, unsigned int, const char**, int);
 extern int echo_off(int);
-extern int get_followers_level(struct char_data*);
-extern int get_real_stealth(struct char_data*);
+extern int get_followers_level(const struct char_data*);
+extern int get_real_stealth(const struct char_data*);
 extern void check_break_prep(struct char_data*);
 SPECIAL(shop_keeper);
 ACMD(do_gen_com);
@@ -294,7 +294,7 @@ ACMD(do_title)
     }
 }
 
-void roll_for_character(char_data* character, char_data* roll_initiator)
+void roll_for_character(const char_data* character, char_data* roll_initiator)
 {
     if (utils::is_pc(*character)) {
         int roll = number(1, 100);
@@ -653,7 +653,7 @@ ACMD(do_report)
     }
 }
 
-int calculate_gold_amount(char* text, char* argument, char_data* character)
+int calculate_gold_amount(char* text, char* argument, const char_data* character)
 {
     char* current_argument = one_argument(argument, text);
 
@@ -689,7 +689,7 @@ int calculate_gold_amount(char* text, char* argument, char_data* character)
     return amount;
 }
 
-void give_share(char_data* sender, char_data* receiver, int share_amount)
+void give_share(const char_data* sender, char_data* receiver, int share_amount)
 {
     GET_GOLD(receiver) += share_amount;
     sprintf(buf, "%s splits some money among the group; you receive %s.\r\n", GET_NAME(sender),
@@ -1302,7 +1302,7 @@ void set_sort_value(int sort_index, char_data* character)
     }
 }
 
-void report_sort_choices_to(char_data* character)
+void report_sort_choices_to(const char_data* character)
 {
     std::ostringstream message_writer;
     message_writer << "Possible sort choices are:" << std::endl;
@@ -1314,7 +1314,7 @@ void report_sort_choices_to(char_data* character)
     send_to_char(message_writer.str().c_str(), character);
 }
 
-void report_inventory_sorting_to(char_data* character, const char* intro_string)
+void report_inventory_sorting_to(const char_data* character, const char* intro_string)
 {
     bool high_bit_set = PRF_FLAGGED(character, PRF_INV_SORT2) != 0;
     bool low_bit_set = PRF_FLAGGED(character, PRF_INV_SORT1) != 0;

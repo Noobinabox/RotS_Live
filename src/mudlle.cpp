@@ -35,29 +35,29 @@ extern char* dirs[];
 char* mudalloc(char* str);
 void muddealloc(char* str);
 void TO_STACK(struct char_data* host, long x);
-long STACK_VALUE(struct char_data* host);
+long STACK_VALUE(const struct char_data* host);
 long FROM_STACK(struct char_data* host);
-void DOWN_STACK(struct char_data* host);
-void UP_STACK(struct char_data* host);
-void int_itemtostring(char_data* host);
+void DOWN_STACK(const struct char_data* host);
+void UP_STACK(const struct char_data* host);
+void int_itemtostring(const char_data* host);
 
-void TO_LIST(struct char_data* host, target_data* newtarg);
-void TO_LIST(struct char_data* host, void* entr, int type);
+void TO_LIST(const struct char_data* host, const target_data* newtarg);
+void TO_LIST(const struct char_data* host, void* entr, int type);
 void REMOVE_LIST(struct char_data* host);
 void UP_LIST(struct char_data* host);
 void DOWN_LIST(struct char_data* host);
-int CHECK_LIST(char_data* host, char val);
+int CHECK_LIST(const char_data* host, char val);
 
 void TEXT_LIST(char_data* host, char* targ);
-int compare_list(char_data* host, target_data* it1, target_data* it2);
+int compare_list(const char_data* host, const target_data* it1, const target_data* it2);
 
 #define PRE_COMMAND             \
     tmp_mask = CALL_MASK(host); \
     CALL_MASK(host) = 0;
 #define POST_COMMAND CALL_MASK(host) = tmp_mask;
 
-void service_commands(struct char_data* host, char* arg, int cmd,
-    int callflag, struct waiting_type* wtl)
+void service_commands(struct char_data* host, const char* arg, int cmd,
+    int callflag, const struct waiting_type* wtl)
 {
     int tmp, tmp2, value;
     char tmp_mask;
@@ -191,8 +191,8 @@ void service_commands(struct char_data* host, char* arg, int cmd,
     }
 }
 
-void int_tostack(struct char_data* host, char* arg, int cmd,
-    int callflag, struct waiting_type* wtl)
+void int_tostack(struct char_data* host, const char* arg, int cmd,
+    int callflag, const struct waiting_type* wtl)
 {
     int value, tmp, tmp2;
     char_data* tmpch;
@@ -340,8 +340,8 @@ void int_tostack(struct char_data* host, char* arg, int cmd,
     TO_STACK(host, value);
 }
 
-void int_tolist(struct char_data* host, struct char_data* ch, char* cmdline,
-    char* arg, int cmd, int callflag, struct waiting_type* wtl)
+void int_tolist(struct char_data* host, struct char_data* ch, const char* cmdline,
+    const char* arg, int cmd, int callflag, const struct waiting_type* wtl)
 {
     struct char_data* tmpch;
     int tmpvar, tmp;
@@ -502,8 +502,8 @@ void int_tolist(struct char_data* host, struct char_data* ch, char* cmdline,
     //     else printf("got to list:0.\n");
 }
 
-void service_get_old(struct char_data* host, struct char_data* ch, char* cmdline,
-    char* arg, int cmd, int callflag, struct waiting_type* wtl)
+void service_get_old(struct char_data* host, struct char_data* ch, const char* cmdline,
+    const char* arg, int cmd, int callflag, const struct waiting_type* wtl)
 {
     switch (*arg) {
     case 'I': /* sets call mask */
@@ -527,8 +527,8 @@ void service_get_old(struct char_data* host, struct char_data* ch, char* cmdline
     }
 }
 
-void service_set_old(struct char_data* host, struct char_data* ch, char* cmdline,
-    char* arg, int cmd, int callflag, struct waiting_type* wtl)
+void service_set_old(struct char_data* host, const struct char_data* ch, const char* cmdline,
+    const char* arg, int cmd, int callflag, const struct waiting_type* wtl)
 {
     int tmpvar;
 
@@ -614,8 +614,8 @@ static const int MAX_MUDLLE_HIT_VALUE = 1000000;
  * Sets parameters of the item in list, taking
  * them from the stack.
  */
-void int_fromstack(struct char_data* host, char* arg, int cmd,
-    int callflag, struct waiting_type* wtl)
+void int_fromstack(struct char_data* host, const char* arg, int cmd,
+    int callflag, const struct waiting_type* wtl)
 {
     int val;
 
@@ -1231,7 +1231,7 @@ SPECIAL(intelligent)
  * Returns a pointer to the new "converted"
  * line, whatever that means.
  */
-char* mudlle_converter(char* source)
+char* mudlle_converter(const char* source)
 {
     int i, tmp, tmp2, len, len2, markn, intext;
     char* newl;

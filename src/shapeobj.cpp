@@ -28,12 +28,12 @@ int obj_chain[50] = {
 };
 int simple_edit(struct char_data* ch, char** str, char* arg); /* exist in objects.c */
 int shape_standup(struct char_data* ch, int pos);
-void shape_flag_value(struct char_data* ch, char* arg, int* value);
+void shape_flag_value(const struct char_data* ch, char* arg, int* value);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 
-void new_obj(struct char_data* ch)
+void new_obj(const struct char_data* ch)
 {
     int i;
     //    SHAPE_OBJECT(ch)->object=(struct obj_data *)calloc(1,sizeof(struct obj_data));
@@ -115,11 +115,11 @@ void new_obj(struct char_data* ch)
         = ch->in_room;
 }
 
-void list_object(struct char_data* ch, struct obj_data* obj); /* forward declaration */
+void list_object(const struct char_data* ch, const struct obj_data* obj); /* forward declaration */
 
-void list_help_obj(struct char_data* ch);
+void list_help_obj(const struct char_data* ch);
 
-void write_object(FILE* f, struct obj_data* obj, int num)
+void write_object(FILE* f, const struct obj_data* obj, int num)
 {
 
     struct extra_descr_data* tmpdesc;
@@ -189,7 +189,7 @@ void write_object(FILE* f, struct obj_data* obj, int num)
     CREATE(real->x, char, strlen(curr->x) + 1); \
     strcpy(real->x, curr->x);
 
-void implement_object(struct char_data* ch)
+void implement_object(const struct char_data* ch)
 {
     struct obj_data *real, *curr;
     int rnum, i;
@@ -358,7 +358,7 @@ void implement_object(struct char_data* ch)
         = 0;
 
 void extra_coms_obj(struct char_data* ch, char* arg);
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed);
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 extern char* item_types[];
 
 /* What the five /12 values mean for each item type; '-' = not used. */
@@ -1069,7 +1069,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
 }
 
 #undef LINECHANGE
-void list_help_obj(struct char_data* ch)
+void list_help_obj(const struct char_data* ch)
 {
 
     send_to_char("possible fields are:\n\r1 - alias(es);\n\r", ch);
@@ -1115,7 +1115,7 @@ void list_help_obj(struct char_data* ch)
 
 /*********--------------------------------*********/
 
-void list_object(struct char_data* ch, struct obj_data* obj)
+void list_object(const struct char_data* ch, const struct obj_data* obj)
 {
 
     static char str[MAX_STRING_LENGTH]; // str1[100];
@@ -1259,7 +1259,7 @@ int get_text(FILE* f, char** line); /* exist in protos.c */
 
 extern struct room_data world;
 
-int load_object(struct char_data* ch, char* arg)
+int load_object(struct char_data* ch, const char* arg)
 {
     // char c;
     // char format;

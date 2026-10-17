@@ -222,15 +222,15 @@ void split_exp(const group_data& group, int exp);
 
 int get_energy_regen(const char_data& character);
 
-int get_spirits(char_data* character);
+int get_spirits(const char_data* character);
 
 void add_spirits(char_data* character, int spirits);
 
 void set_spirits(char_data* character, int spirits);
 
-int get_current_moves(char_data* character);
+int get_current_moves(const char_data* character);
 
-int get_max_moves(char_data* character);
+int get_max_moves(const char_data* character);
 
 // Gets current hit points of a mobile
 int get_current_hit(const char_data& character);

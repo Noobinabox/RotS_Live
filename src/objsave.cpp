@@ -48,7 +48,7 @@
 #define MIN_RANK 1
 #define MAX_RANK 10
 
-int cost_per_day(struct obj_data* obj);
+int cost_per_day(const struct obj_data* obj);
 
 extern struct room_data world;
 extern struct index_data* mob_index;
@@ -69,10 +69,10 @@ SPECIAL(cryogenicist);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 void Crash_follower_load(struct char_data* ch, FILE* fp);
 int calc_load_room(struct char_data* ch, int load_result);
-int Crash_get_filename(char* orig_name, char* filename);
+int Crash_get_filename(const char* orig_name, char* filename);
 
 FILE* fd;
-int Crash_is_unrentable(struct obj_data* obj);
+int Crash_is_unrentable(const struct obj_data* obj);
 
 namespace {
 
@@ -274,7 +274,7 @@ void clear_account_backed_object_bytes_for_character(const struct char_data* ch)
     g_staged_account_backed_object_bytes.erase(stage_key);
 }
 
-int Crash_get_filename(char* orig_name, char* filename)
+int Crash_get_filename(const char* orig_name, char* filename)
 {
 
     char *ptr, name[30];
@@ -329,7 +329,7 @@ int Crash_get_filename(char* orig_name, char* filename)
     return 1;
 }
 
-FILE* Crash_get_file_by_name(char* name, char* mode)
+FILE* Crash_get_file_by_name(const char* name, const char* mode)
 {
     FILE* fp;
 
@@ -347,7 +347,7 @@ FILE* Crash_get_file_by_name(char* name, char* mode)
     return fp;
 }
 
-int Crash_delete_file(char* name)
+int Crash_delete_file(const char* name)
 {
 
     char filename[50];
@@ -374,7 +374,7 @@ int Crash_delete_file(char* name)
     return (1);
 }
 
-int Crash_delete_crashfile(struct char_data* ch)
+int Crash_delete_crashfile(const struct char_data* ch)
 {
 
     char fname[MAX_INPUT_LENGTH];
@@ -399,7 +399,7 @@ int Crash_delete_crashfile(struct char_data* ch)
     return 1;
 }
 
-int Crash_clean_file(char* name)
+int Crash_clean_file(const char* name)
 {
 
     char fname[MAX_STRING_LENGTH];
@@ -470,7 +470,7 @@ bool Crash_refresh_object(struct obj_data* obj, long idnum)
  * object) the copy is not refreshed here, and the caller does that when it hands the object over. */
 struct obj_data*
 
-Crash_obj2char(struct char_data* ch, struct obj_file_elem* object, const struct obj_file_extra& extra, struct char_data* owner)
+Crash_obj2char(const struct char_data* ch, const struct obj_file_elem* object, const struct obj_file_extra& extra, const struct char_data* owner)
 {
     /*
      * this function loads an object with a virtual number of
@@ -528,7 +528,7 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object, const struct 
 const char* overflow_str = "The buffer was overflowed, aborting.\r\n";
 const size_t overflow_len = strlen(overflow_str) + 1;
 
-void Crash_listrent(struct char_data* ch, char* name)
+void Crash_listrent(const struct char_data* ch, const char* name)
 {
     FILE* fl;
     char buf[MAX_STRING_LENGTH];
@@ -596,7 +596,7 @@ void Crash_listrent(struct char_data* ch, char* name)
     fclose(fl);
 }
 
-int Crash_write_rentcode(struct char_data* ch, FILE* fl, struct rent_info* rent)
+int Crash_write_rentcode(const struct char_data* ch, FILE* fl, const struct rent_info* rent)
 {
     if (fwrite(rent, sizeof(struct rent_info), 1, fl) < 1) {
         perror("Writing rent code.");
@@ -834,13 +834,13 @@ FILE* Crash_load(char_data* character)
     return fl;
 }
 
-void Crash_tell_object_refresh(struct char_data* ch, const char* name)
+void Crash_tell_object_refresh(const struct char_data* ch, const char* name)
 {
     snprintf(buf1, sizeof(buf1), "Your item, %s, has been updated.\n\r", name);
     send_to_char(buf1, ch);
 }
 
-void Crash_report_object_refreshes(struct char_data* ch)
+void Crash_report_object_refreshes(const struct char_data* ch)
 {
     auto it = g_refreshed_object_names.find(ch);
     if (it == g_refreshed_object_names.end())
@@ -940,7 +940,7 @@ int calc_load_room(struct char_data* ch, int load_result)
     return load_room;
 }
 
-int Crash_obj2store(obj_data* obj, char_data* ch,
+int Crash_obj2store(const obj_data* obj, const char_data* ch,
     int pos, FILE* fl)
 {
     obj_file_elem object;
@@ -1001,9 +1001,9 @@ int Crash_obj2store(obj_data* obj, char_data* ch,
     return 1;
 }
 
-int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp);
+int Crash_save(const struct obj_data* obj, const struct char_data* ch, int pos, FILE* fp);
 
-void Crash_follower_save(struct char_data* ch, FILE* fp)
+void Crash_follower_save(const struct char_data* ch, FILE* fp)
 {
     extern struct index_data* mob_index;
     struct follow_type *k, *next_fol;
@@ -1204,7 +1204,7 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
     } while (1);
 }
 
-void extract_followers(struct char_data* ch)
+void extract_followers(const struct char_data* ch)
 {
     struct obj_data* obj;
     struct follow_type *k, *next_fol;
@@ -1281,7 +1281,7 @@ int Crash_alias_load(struct char_data* ch, FILE* fp)
     } while (1);
 }
 
-int Crash_alias_save(struct char_data* ch, FILE* fp)
+int Crash_alias_save(const struct char_data* ch, FILE* fp)
 {
     static struct obj_data dummy_obj;
     struct alias_list* list;
@@ -1328,7 +1328,7 @@ int Crash_alias_save(struct char_data* ch, FILE* fp)
     return TRUE;
 }
 
-int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp)
+int Crash_save(const struct obj_data* obj, const struct char_data* ch, int pos, FILE* fp)
 {
     struct obj_data* tmp;
     int result, tmpos;
@@ -1354,7 +1354,7 @@ int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp)
     return TRUE;
 }
 
-void Crash_restore_weight(struct obj_data* obj)
+void Crash_restore_weight(const struct obj_data* obj)
 {
     if (obj) {
         Crash_restore_weight(obj->contains);
@@ -1373,7 +1373,7 @@ void Crash_extract_objs(struct obj_data* obj)
     }
 }
 
-int Crash_is_unrentable(struct obj_data* obj)
+int Crash_is_unrentable(const struct obj_data* obj)
 {
     if (!obj)
         return 0;
@@ -1405,7 +1405,7 @@ void Crash_extract_expensive(struct obj_data* obj)
     extract_obj(max);
 }
 
-void Crash_calculate_rent(struct obj_data* obj, int* cost)
+void Crash_calculate_rent(const struct obj_data* obj, int* cost)
 {
     if (obj) {
         *cost += MAX(0, cost_per_day(obj) >> 4);
@@ -1463,7 +1463,7 @@ void Crash_crashsave(struct char_data* ch, int rent_code)
     REMOVE_BIT(PLR_FLAGS(ch), PLR_CRASH);
 }
 
-void Crash_idlesave(struct char_data* ch)
+void Crash_idlesave(const struct char_data* ch)
 {
     char buf[MAX_INPUT_LENGTH];
     struct rent_info rent;
@@ -1569,7 +1569,7 @@ void Crash_rentsave(struct char_data* ch, int cost)
  ************************************************************************* */
 
 int Crash_report_unrentables(struct char_data* ch, struct char_data* recep,
-    struct obj_data* obj)
+    const struct obj_data* obj)
 {
     char buf[128];
     int has_norents = 0;
@@ -1587,8 +1587,8 @@ int Crash_report_unrentables(struct char_data* ch, struct char_data* recep,
     return has_norents;
 }
 
-void Crash_report_rent(struct char_data* ch, struct char_data* recep,
-    struct obj_data* obj, long* cost, long* nitems, int factor)
+void Crash_report_rent(const struct char_data* ch, const struct char_data* recep,
+    const struct obj_data* obj, long* cost, long* nitems, int factor)
 {
     if (obj) {
         if (!Crash_is_unrentable(obj)) {
@@ -1699,7 +1699,7 @@ int Crash_offer_rent(struct char_data* ch, struct char_data* receptionist,
     return totalcost;
 }
 
-int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
+int gen_receptionist(struct char_data* ch, int cmd, const char* arg, int mode)
 {
     int cost = 0;
     static char newname[MAX_NAME_LENGTH + 1];
@@ -1712,7 +1712,7 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
     long rent_deadline;
 
     extern int valid_name(char*);
-    extern int _parse_name(char*, char*);
+    extern int _parse_name(const char*, char*);
     extern int number(int, int);
     extern int r_retirement_home_room;
 
@@ -2037,13 +2037,13 @@ void Emergency_save(void)
     }
 }
 
-int cost_per_day(struct obj_data* obj)
+int cost_per_day(const struct obj_data* obj)
 {
     return (((obj->obj_flags.cost_per_day == -1) ? obj->obj_flags.cost / 100 : obj->obj_flags.cost_per_day) / ((obj->obj_flags.level <= 5) ? 8 : 4));
 }
 
 #define RENT_TIME 2592000 /* number of seconds one must remain retired */
-long secs_to_unretire(struct char_data* ch)
+long secs_to_unretire(const struct char_data* ch)
 /* returns the time, in seconds, until one may unretire */
 {
     if (!IS_SET(PLR_FLAGS(ch), PLR_RETIRED))

@@ -121,8 +121,8 @@ walker_result walker_wander(struct char_data* ch, int door, bool usable);
  * NO_MOB nor a death room, and the STAY_ZONE / STAY_TYPE limits. Used by the
  * standard wander, the walkers and the ranger program (program 32). */
 bool room_takes_mobs(int room);
-bool exit_is_usable(struct char_data* ch, int door);
-bool stay_flags_allow(struct char_data* ch, int door);
+bool exit_is_usable(const struct char_data* ch, int door);
+bool stay_flags_allow(const struct char_data* ch, int door);
 
 /* Removes the walkers whose path ended with path_complete_extract=yes and
  * sends their path_complete_message. Called where no loop holds a mob: after
@@ -132,6 +132,6 @@ void walker_remove_finished();
 /* Mob editor, /save and /implement: sends the walker problems in `proto`'s
  * options to the builder alone. When the mob has no options program
  * (has_program false), lines that no feature knows are reported too. */
-void walker_config_check(const struct char_data* proto, int mob_vnum, bool has_program, struct char_data* builder);
+void walker_config_check(const struct char_data* proto, int mob_vnum, bool has_program, const struct char_data* builder);
 
 #endif

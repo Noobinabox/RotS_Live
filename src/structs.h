@@ -1759,8 +1759,8 @@ public:
     std::string get_damage_report() const { return damage_report.get_damage_report(); }
 
     struct char_data* get_leader() const { return leader; }
-    bool is_member(struct char_data* character) const;
-    bool is_leader(struct char_data* character) const { return character == leader; }
+    bool is_member(const struct char_data* character) const;
+    bool is_leader(const struct char_data* character) const { return character == leader; }
     int get_pc_count() const { return pc_count; }
 
     void get_pcs_in_room(char_vector& pc_vec, int room_number) const;
@@ -2219,7 +2219,7 @@ public:
     char* character_name;
     int roll;
 
-    group_roll(char_data* character_name, int roll)
+    group_roll(const char_data* character_name, int roll)
         : character_name(character_name->player.name)
         , roll(roll)
     {

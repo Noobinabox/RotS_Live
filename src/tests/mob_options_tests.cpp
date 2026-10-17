@@ -213,7 +213,7 @@ TEST(CleanRecordName, DropsLeadingDollarsAndCleansTheRest)
     clean_record_name(nullptr);
 }
 
-void write_proto(FILE* f, struct char_data* m, int num);
+void write_proto(FILE* f, const struct char_data* m, int num);
 void load_mobiles(FILE* mob_f);
 void clear_char(struct char_data* ch, int mode);
 extern struct char_data* mob_proto;

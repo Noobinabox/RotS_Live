@@ -30,7 +30,7 @@ void mob_options_tidy(char* text);
 /* Reads the optional options string that may follow a mob record. Returns
  * nullptr, leaving the stream at the next token, if that token starts the
  * next record ('#' or '$') or the file ends, or if the text is empty. */
-char* read_mob_options(FILE* f, char* context);
+char* read_mob_options(FILE* f, const char* context);
 
 /* Writes the options string; writes nothing for null/empty text. */
 void write_mob_options(FILE* f, const char* options);
@@ -54,7 +54,7 @@ struct vendor_problem {
 std::string vendor_problem_line(int mob_vnum, const vendor_problem& problem); /* formatted warning */
 struct char_data;
 struct waiting_type;
-void vendor_send(const std::string& line, struct char_data* builder); /* warning to the builder log */
+void vendor_send(const std::string& line, const struct char_data* builder); /* warning to the builder log */
 
 /* Which program a mob runs, for the programs that keep settings by mob rnum
  * (prog = its number, func = its function).

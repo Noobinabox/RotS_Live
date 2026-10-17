@@ -36,13 +36,13 @@ extern char* dirs[];
 
 char* target_from_word(struct char_data*, char*, int, struct target_data*);
 int check_hallucinate(struct char_data*, struct char_data*);
-void report_wrong_target(struct char_data*, int, char);
+void report_wrong_target(const struct char_data*, int, char);
 void affect_update_person(struct char_data*, int);
-char saves_spell(struct char_data*, sh_int, int);
+char saves_spell(const struct char_data*, sh_int, int);
 bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus);
 void one_mobile_activity(struct char_data*);
-void do_sense_magic(struct char_data*, int);
-char saves_mystic(struct char_data*);
+void do_sense_magic(const struct char_data*, int);
+char saves_mystic(const struct char_data*);
 void appear(struct char_data*);
 void affect_update();
 void fast_update();
@@ -108,7 +108,7 @@ void say_spell(char_data* caster, int spell_index)
  * zone (though not the same room) by an opposite race, we send
  * them a 'sensing' message.
  */
-void do_sense_magic(char_data* caster, int spell_number)
+void do_sense_magic(const char_data* caster, int spell_number)
 {
     const int MIN_MAGE_LEVEL_TO_SENSE = 12;
 
@@ -187,7 +187,7 @@ unsigned char spllog_saves; /* 1: character saved, 0: character failed */
 short spllog_mage_level; /* the effective level of the caster */
 short spllog_save; /* the effective save computed in saves_spell */
 
-char saves_spell(struct char_data* ch, sh_int level, int bonus)
+char saves_spell(const struct char_data* ch, sh_int level, int bonus)
 {
     int save;
 
@@ -272,7 +272,7 @@ bool new_saves_spell(const char_data* caster, const char_data* victim, int save_
     return saved;
 }
 
-void record_spell_damage(struct char_data* caster, struct char_data* victim, int at, int dam)
+void record_spell_damage(const struct char_data* caster, const struct char_data* victim, int at, int dam)
 {
     if (at == SPELL_CHILL_RAY || at == SPELL_LIGHTNING_BOLT || at == SPELL_DARK_BOLT || at == SPELL_CONE_OF_COLD || at == SPELL_FIREBOLT || at == SPELL_LIGHTNING_STRIKE || at == SPELL_FIREBALL || at == SPELL_WORD_OF_PAIN || at == SPELL_WORD_OF_AGONY || at == SPELL_SHOUT_OF_PAIN || at == SPELL_SPEAR_OF_DARKNESS || at == SPELL_LEACH || at == SPELL_BLACK_ARROW || at == SPELL_MAGIC_MISSILE || at == SPELL_EARTHQUAKE || at == SPELL_BLAZE || at == SPELL_SEARING_DARKNESS) {
         vmudlog(SPL, "spell=%s, damage=%d, from %s(%d) to %s(%d) %s", skills[at].name, dam,
@@ -282,7 +282,7 @@ void record_spell_damage(struct char_data* caster, struct char_data* victim, int
     }
 }
 
-char char_perception_check(struct char_data* ch)
+char char_perception_check(const struct char_data* ch)
 {
     int offense, defense;
 
@@ -311,7 +311,7 @@ void check_break_prep(struct char_data* ch)
  * A pretty general save function that takes into consideration
  * perception.  Higher percep makes better save.
  */
-char saves_mystic(struct char_data* ch)
+char saves_mystic(const struct char_data* ch)
 {
     int offense, defense;
 
@@ -328,7 +328,7 @@ char saves_mystic(struct char_data* ch)
  * since they were very resilient to disease, but are represented
  * in rots by such low constitution.
  */
-char saves_poison(struct char_data* victim, struct char_data* caster)
+char saves_poison(const struct char_data* victim, const struct char_data* caster)
 {
     int offence, defense;
     int perception = GET_PERCEPTION(caster);
@@ -344,7 +344,7 @@ char saves_poison(struct char_data* victim, struct char_data* caster)
  * and the victim.  This should probably depend on some other
  * thing as well..
  */
-char saves_confuse(struct char_data* victim, struct char_data* caster)
+char saves_confuse(const struct char_data* victim, const struct char_data* caster)
 {
     int offence, defense;
 
@@ -361,7 +361,7 @@ char saves_confuse(struct char_data* victim, struct char_data* caster)
  * victims have terrible chances to save, as well.  This should
  * (like saves_confuse) one day take more things into account.
  */
-char saves_insight(struct char_data* victim, struct char_data* caster)
+char saves_insight(const struct char_data* victim, const struct char_data* caster)
 {
     int offense, defense;
 
@@ -378,7 +378,7 @@ char saves_insight(struct char_data* victim, struct char_data* caster)
  * common orcs) for following characters and players, and
  * ride skill for mounts.
  */
-char saves_leadership(struct char_data* victim)
+char saves_leadership(const struct char_data* victim)
 {
     int save;
 

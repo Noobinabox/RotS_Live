@@ -561,7 +561,7 @@ void remember(struct char_data* ch, struct char_data* victim)
 }
 
 /* make ch forget victim */
-void forget(struct char_data* ch, struct char_data* victim)
+void forget(struct char_data* ch, const struct char_data* victim)
 {
     struct memory_rec *curr, *prev = NULL;
 

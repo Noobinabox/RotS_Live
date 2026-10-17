@@ -230,10 +230,10 @@ void shape_center_proto(struct char_data* ch, char* argument);
 void shape_center_obj(struct char_data* ch, char* argument);
 void shape_center_room(struct char_data* ch, char* argument);
 void shape_center_zone(struct char_data* ch, char* argument);
-void shape_center_mudlle(struct char_data* ch, char* argument);
+void shape_center_mudlle(struct char_data* ch, const char* argument);
 void shape_center_script(struct char_data* ch, char* argument);
 void shape_center(struct char_data* ch, char* argument);
-int get_permission(int zonnum, struct char_data* ch, int mode = 0);
+int get_permission(int zonnum, const struct char_data* ch, int mode = 0);
 /* mode != 0 denies permission to "unlocked" zones */
 void clean_text(char*); /* ~ everywhere, # at the start of a line (zone, mudlle) */
 void clean_record_text(char*); /* ~ and # everywhere (mob, obj, room, script) */
@@ -242,13 +242,13 @@ void clean_record_name(char*); /* clean_record_text, then drop a leading $ */
 ACMD(do_shape);
 
 /* /52 list range, shared by the zone and script editors (shapemob.cpp). */
-void shape_range_prompt(struct char_data* ch, int start, int end);
-void shape_range_set(struct char_data* ch, const char* arg, int* start, int* end);
+void shape_range_prompt(const struct char_data* ch, int start, int end);
+void shape_range_set(const struct char_data* ch, const char* arg, int* start, int* end);
 bool shape_range_includes(int start, int end, int number);
 void shape_range_footer(int start, int end, char* out);
-int shape_list_begin(struct char_data* ch);
-bool shape_list_fits(struct char_data* ch, const char* line, const char* footer, int* wrapped);
-void shape_list_finish(struct char_data* ch, const char* footer, bool cut);
+int shape_list_begin(const struct char_data* ch);
+bool shape_list_fits(const struct char_data* ch, const char* line, const char* footer, int* wrapped);
+void shape_list_finish(const struct char_data* ch, const char* footer, bool cut);
 
 /*
  * Section rows, shared by the zone and script editors (shapemob.cpp).  A

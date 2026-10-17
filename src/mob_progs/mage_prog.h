@@ -63,9 +63,9 @@ mage_config parse_mage_options(const char* text, std::vector<vendor_problem>* pr
  * implements the mob, and kept by mob rnum; /save only checks them. */
 bool is_mage_candidate(const struct char_data* proto, int rnum);
 void mage_config_boot(); /* all program-31 prototypes */
-void mage_config_rebuild(int mob_rnum, struct char_data* builder, bool report = true);
-void mage_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder); /* report only */
-void mage_implement_check(int mob_rnum, struct char_data* builder); /* /imp only: soft reminders */
+void mage_config_rebuild(int mob_rnum, const struct char_data* builder, bool report = true);
+void mage_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder); /* report only */
+void mage_implement_check(int mob_rnum, const struct char_data* builder); /* /imp only: soft reminders */
 const mage_config* mage_config_for(int mob_rnum); /* nullptr if none */
 
 /* The settings of a running mob: all off for anything that is not a

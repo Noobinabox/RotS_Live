@@ -40,8 +40,8 @@ void break_spell(struct char_data* ch);
 SPECIAL(mob_ranger_new);
 SPECIAL(mob_cleric);
 void* virt_program_number(int number);
-int ranger_track_direction(char_data* host);
-bool ranger_can_step(char_data* host, int dir);
+int ranger_track_direction(const char_data* host);
+bool ranger_can_step(const char_data* host, int dir);
 void one_mobile_activity(char_data* ch);
 
 namespace {

@@ -39,7 +39,7 @@ SPECIAL(mob_magic_user_spec);
 SPECIAL(mob_magic_user);
 SPECIAL(mob_cleric);
 void* virt_program_number(int number);
-void get_combat_spells(char_data* host, const mage_config& opts, int* spell_list, double current_health_pct);
+void get_combat_spells(const char_data* host, const mage_config& opts, int* spell_list, double current_health_pct);
 
 namespace {
 

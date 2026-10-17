@@ -308,7 +308,7 @@ void parse_practice_args(const char* arg, int* times, std::string* skill)
 /* Why another session in this skill would be wasted or is not possible, or
  * nullptr. Checked before every session, so practicing several times stops
  * where practicing once would. */
-static const char* practice_refusal(char_data* ch, int request, int prog)
+static const char* practice_refusal(const char_data* ch, int request, int prog)
 {
     if (ch->knowledge[request] >= 100)
         return guildmasters[prog].learned_message;
@@ -1279,7 +1279,7 @@ void boot_ferries()
     }
 }
 
-void _recursive_move(struct char_data* ch, struct obj_data* hostobj)
+void _recursive_move(struct char_data* ch, const struct obj_data* hostobj)
 {
     struct follow_type* tmpfol;
     int num, tmp, was_in;
@@ -1505,7 +1505,7 @@ int spell_list[][4] = {
 };
 
 namespace {
-int choose_mystic_spell(char_data* caster, char_data* target)
+int choose_mystic_spell(const char_data* caster, const char_data* target)
 {
     if (caster == target) {
         /*
@@ -1785,7 +1785,7 @@ int new_spell_list[mage_types][hp_brackets][indvidual_spells_length] = {
         { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE } }
 };
 
-int pick_a_spell(int* spell_list, char_data* host)
+int pick_a_spell(const int* spell_list, const char_data* host)
 {
     if (spell_list[0] > 0) {
         if (has_alias(host, "spells")) {
@@ -1806,7 +1806,7 @@ int pick_a_spell(int* spell_list, char_data* host)
 }
 
 // add spell and avoid dupes
-void add_spell_to_list(int* spell_list, int spell, char_data* host)
+void add_spell_to_list(int* spell_list, int spell, const char_data* host)
 {
     int found = 0;
     for (int i = 1; i <= spell_list[0]; i++) {
@@ -1824,7 +1824,7 @@ void add_spell_to_list(int* spell_list, int spell, char_data* host)
 }
 
 // fetch spells from hp bracket
-void get_spells(int* spell_list, int mage_type, int health, char_data* host)
+void get_spells(int* spell_list, int mage_type, int health, const char_data* host)
 {
     sprintf(buf, "MType: %d,    Spell_Tier: %d, Pct: %.2f", mage_type, health, percents[health]);
     mudlog_aliased_mob(buf, host, "spells");
@@ -1837,7 +1837,7 @@ void get_spells(int* spell_list, int mage_type, int health, char_data* host)
 
 // check if correct level and add spell
 void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cur_mage_type,
-    char_data* host, int min_level)
+    const char_data* host, int min_level)
 {
     if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type) {
         sprintf(buf, "MType: %d    (HL_SPELL)", mage_type);
@@ -1847,7 +1847,7 @@ void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cu
 }
 
 // lookup spells by mage type and hp thresholds
-void get_combat_spells(char_data* host, const mage_config& opts, int* spell_list,
+void get_combat_spells(const char_data* host, const mage_config& opts, int* spell_list,
     double current_health_pct)
 {
     for (int mage_type = 0; mage_type < mage_types; mage_type++) {
@@ -2172,7 +2172,7 @@ SPECIAL(mob_ranger)
 
 /* Created for the new ranger prog. Level 40+ mobs use their own, lower roll so
  * that a high ranger keeps a small chance to stay hidden from them. */
-bool see_hidden(char_data* host, char_data* tmpch)
+bool see_hidden(const char_data* host, const char_data* tmpch)
 {
     int hide, vuln_st, see_hide;
 
@@ -2195,7 +2195,7 @@ bool see_hidden(char_data* host, char_data* tmpch)
 struct hidden_rolls {
     std::vector<std::pair<const char_data*, bool>> results;
 
-    bool sees(char_data* host, char_data* tmpch)
+    bool sees(const char_data* host, const char_data* tmpch)
     {
         if (GET_HIDING(tmpch) <= 0)
             return true;
@@ -2291,7 +2291,7 @@ int ranger_unmarked_hide_prof(char_data* host)
 }
 
 int ranger_sneak_hide_prof(char_data* host);
-int ranger_track_direction(char_data* host);
+int ranger_track_direction(const char_data* host);
 
 /* WIMPY at a fifth of its health or less: the program starts nothing. */
 bool ranger_low_health(const char_data* host)
@@ -2303,7 +2303,7 @@ bool ranger_low_health(const char_data* host)
  * (where they are, not whether a path leads there), or track=yes with a
  * track here to follow. As in the turn, a low-health WIMPY mob or a ridden
  * one does neither. */
-bool ranger_chasing(char_data* host, const ranger_config& opts)
+bool ranger_chasing(const char_data* host, const ranger_config& opts)
 {
     if (ranger_low_health(host) || IS_RIDDEN(host))
         return false;
@@ -2317,7 +2317,7 @@ bool ranger_chasing(char_data* host, const ranger_config& opts)
 
 /* Someone here the mob would go for: a remembered enemy, or someone it is
  * aggressive to. Who is here only; nothing is rolled to see them. */
-bool ranger_target_here(char_data* host)
+bool ranger_target_here(const char_data* host)
 {
     for (char_data* tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
         if (tmpch == host || (!IS_NPC(tmpch) && PRF_FLAGGED(tmpch, PRF_NOHASSLE)))
@@ -2395,7 +2395,7 @@ bool ranger_rehide(char_data* host, const ranger_config& opts)
 
 /* A closed door the mob opens on its way (the move code's own rule), into a
  * room that takes mobs. */
-bool ranger_opens_door(char_data* host, int dir)
+bool ranger_opens_door(const char_data* host, int dir)
 {
     return mob_opens_door_on_move(host, dir) && room_takes_mobs(EXIT(host, dir)->to_room);
 }
@@ -2481,7 +2481,7 @@ ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_confi
 /* Whether a step that way would go through, by the shared mob step checks
  * (mob_walker.h), so a track or hunt step that cannot be taken is not chosen
  * over and over. A door the mob can open does not stop it. */
-bool ranger_can_step(char_data* host, int dir)
+bool ranger_can_step(const char_data* host, int dir)
 {
     return dir >= 0 && dir < NUM_OF_DIRS && (exit_is_usable(host, dir) || ranger_opens_door(host, dir))
         && stay_flags_allow(host, dir);
@@ -2489,7 +2489,7 @@ bool ranger_can_step(char_data* host, int dir)
 
 /* track=yes: the direction of the freshest track, left by a player of a race
  * the mob is aggressive to, that it can step along; -1 if none. */
-int ranger_track_direction(char_data* host)
+int ranger_track_direction(const char_data* host)
 {
     const room_data& room = world[host->in_room];
     const bool is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
@@ -2516,7 +2516,7 @@ int ranger_track_direction(char_data* host)
     return best_dir;
 }
 
-bool prog_do_hunter(char_data* host, bool low_health)
+bool prog_do_hunter(const char_data* host, bool low_health)
 {
     return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT))) && (GET_POS(host) == POSITION_STANDING) && !low_health && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
 }

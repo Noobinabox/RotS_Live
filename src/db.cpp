@@ -172,7 +172,7 @@ bool report_script_negative_room(void);
 void draw_map();
 void initialiaze_small_map();
 void reset_small_map();
-void boot_the_shops(FILE* shop_f, char* filename);
+void boot_the_shops(FILE* shop_f, const char* filename);
 void assign_mobiles(void);
 void assign_objects(void);
 void assign_rooms(void);

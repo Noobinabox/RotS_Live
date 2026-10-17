@@ -180,7 +180,7 @@ int is_ok(struct char_data* keeper, struct char_data* ch, int shop_nr)
    }; */
 }
 
-int trade_with(struct obj_data* item, int shop_nr)
+int trade_with(const struct obj_data* item, int shop_nr)
 {
     int counter;
 
@@ -196,7 +196,7 @@ int trade_with(struct obj_data* item, int shop_nr)
     return (FALSE);
 }
 
-int shop_producing(struct obj_data* item, int shop_nr)
+int shop_producing(const struct obj_data* item, int shop_nr)
 {
     int counter;
 
@@ -209,7 +209,7 @@ int shop_producing(struct obj_data* item, int shop_nr)
     return (FALSE);
 }
 
-int has_already(struct obj_data* item, int shop_nr)
+int has_already(const struct obj_data* item, int shop_nr)
 {
     int temp;
     struct obj_data* tobj;
@@ -423,7 +423,7 @@ void shopping_value(char* arg, struct char_data* ch,
     return;
 }
 
-void shopping_list(char* arg, struct char_data* ch,
+void shopping_list(const char* arg, struct char_data* ch,
     struct char_data* keeper, int shop_nr)
 {
     char buf[MAX_STRING_LENGTH], buf2[100], buf3[100];
@@ -469,7 +469,7 @@ void shopping_list(char* arg, struct char_data* ch,
     return;
 }
 
-void shopping_kill(char* arg, struct char_data* ch,
+void shopping_kill(const char* arg, const struct char_data* ch,
     struct char_data* keeper, int shop_nr)
 {
     char buf[100];
@@ -582,7 +582,7 @@ SPECIAL(shop_keeper)
     return (FALSE);
 }
 
-void boot_the_shops(FILE* shop_f, char* filename)
+void boot_the_shops(FILE* shop_f, const char* filename)
 {
     char *buf, buf2[150];
     char* tmpbuf;

@@ -23,6 +23,8 @@
 #include "utils.h"
 
 #include <assert.h>
+#include <utility>
+#include <vector>
 
 typedef char* string;
 
@@ -36,9 +38,9 @@ extern char* refer_dirs[];
 extern int movement_loss[];
 extern struct time_info_data time_info;
 extern struct skill_data skills[];
-extern int get_real_stealth(struct char_data* ch);
+extern int get_real_stealth(const struct char_data* ch);
 
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 
 ACMD(do_look);
 ACMD(do_open);
@@ -88,7 +90,7 @@ int get_room_move_penalty(const char_data* character, int room_sector)
     return room_move_penalty;
 }
 
-int room_move_cost(char_data* character, room_data* new_room)
+int room_move_cost(char_data* character, const room_data* new_room)
 {
     assert(character);
     assert(new_room);
@@ -295,7 +297,7 @@ int check_simple_move(struct char_data* ch, int cmd, int* mv_cost, int mode)
    ------------------------------Change Log---------------------------------------
    slyon: Sept 8, 2017 - Created
 ==================================================================================*/
-void set_blood_trail(struct char_data* ch, int dir)
+void set_blood_trail(const struct char_data* ch, int dir)
 {
     int tmp;
     if ((utils::is_npc(*ch) || (utils::get_race(*ch) != RACE_GOD))) {
@@ -325,7 +327,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     int was_in, new_room, num2, is_death, move_cost, tmp, should_show;
     char buff[1000];
     char buff2[1000];
-    void show_mount_to_char(struct char_data*, struct char_data*, char*, char*, int);
+    void show_mount_to_char(struct char_data*, struct char_data*, const char*, const char*, int);
 
     if (!EXIT(ch, dir) || !ch->mount_data.rider)
         return 0;
@@ -469,7 +471,7 @@ int perform_move_mount(struct char_data* ch, int dir)
     return 1;
 }
 
-void parse_container_for_stay_zone(char_data* ch, obj_data* container, const int room)
+void parse_container_for_stay_zone(char_data* ch, const obj_data* container, const int room)
 {
     obj_data* next_item = nullptr;
     for (obj_data* item = container->contains; item; item = next_item) {
@@ -590,7 +592,7 @@ bool is_exit_valid(const room_direction_data room_direction)
     return true;
 }
 
-void msdp_room_update(char_data* ch)
+void msdp_room_update(const char_data* ch)
 {
     if (utils::is_npc(*ch)) {
         return;
@@ -668,16 +670,29 @@ void msdp_room_update(char_data* ch)
     MSDPFlush(ch->desc, eMSDP_ROOM_VNUM);
 }
 
+bool mob_opens_door_on_move(const char_data* ch, int dir)
+{
+    const room_direction_data* exit = world[ch->in_room].dir_option[dir];
+    if (!exit || exit->to_room == NOWHERE || IS_SHADOW(ch))
+        return false;
+    return IS_SET(exit->exit_info, EX_ISDOOR) && IS_SET(exit->exit_info, EX_CLOSED)
+        && !IS_SET(exit->exit_info, EX_ISHIDDEN | EX_LOCKED | EX_LEVER);
+}
+
 ACMD(do_move)
 /* do_move is under construction to account for riding... !!!!  */
 {
     int was_in, res_flag, to_room, tmp, need_move, tmp_move;
-    char is_death, is_fol;
-    struct follow_type *k, *next_dude;
+    char is_death;
     struct char_data* tmpvict;
-    follow_type fol_people;
+    /* The followers as they stand before the move, each with its number:
+     * anything run during the move can remove one of them, or the mover and
+     * with it the whole follower list. */
+    std::vector<std::pair<char_data*, int>> fol_people;
     waiting_type tmpwtl;
     int mounts;
+    bool mover_gone = false;
+    int mover_number = ch->abs_number;
 
     /* Consume the caller's skip-trigger request (if any) once, unconditionally,
        before anything else -- including the AFF_HAZE re-roll below -- so it can
@@ -713,8 +728,8 @@ ACMD(do_move)
         abort_delay(ch);
     }
 
-    if ((is_fol = (ch->followers != 0)))
-        fol_people = *ch->followers;
+    for (follow_type* fol = ch->followers; fol; fol = fol->next)
+        fol_people.push_back({ fol->follower, fol->follower->abs_number });
 
     if (IS_RIDDEN(ch)) {
         /* This branch never reaches check_simple_move(ch, ...) below (only
@@ -733,7 +748,7 @@ ACMD(do_move)
         send_to_char("You cannot go that way.\n\r", ch);
         return;
     } else { /* Direction is possible */
-        if (IS_NPC(ch) && (subcmd == SCMD_MOVING) && IS_SET(EXIT(ch, cmd)->exit_info, EX_ISDOOR | EX_CLOSED) && !IS_SET(EXIT(ch, cmd)->exit_info, EX_ISHIDDEN | EX_LOCKED)) {
+        if (IS_NPC(ch) && (subcmd == SCMD_MOVING) && mob_opens_door_on_move(ch, cmd)) {
             tmpwtl.cmd = CMD_OPEN;
             tmpwtl.targ1.type = TARGET_DIR;
             tmpwtl.targ1.ch_num = cmd;
@@ -781,7 +796,9 @@ ACMD(do_move)
             }
             res_flag = check_simple_move(ch, cmd, &need_move, subcmd);
 
-            if (subcmd == SCMD_FOLLOW) {
+            /* The one followed may be gone by now (removed where it arrived);
+             * the follower still moves, there is just nobody to name. */
+            if (subcmd == SCMD_FOLLOW && ch->master) {
                 if (res_flag != 0) {
                     act("ACK! $n could not follow, you lost $m!", FALSE, ch, 0, ch->master,
                         TO_VICT);
@@ -822,16 +839,16 @@ ACMD(do_move)
             // At this point, check for common orc "followers" to move before their
             // master does, just for group randomness.
 
-            if (is_fol) {
-                for (k = &fol_people; k; k = next_dude) {
-                    next_dude = k->next;
-                    if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
-                        // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
-                        tmpwtl.cmd = cmd + 1;
-                        tmpwtl.subcmd = SCMD_FOLLOW;
-                        command_interpreter(k->follower, argument, &tmpwtl);
-                    }
+            for (const auto& fol : fol_people) {
+                char_data* follower = fol.first;
+                if (!char_exists(fol.second))
+                    continue;
+                if ((was_in == follower->in_room) && (GET_POS(follower) >= POSITION_STANDING) && (IS_NPC(follower) && MOB_FLAGGED(follower, MOB_ORC_FRIEND) && MOB_FLAGGED(follower, MOB_PET)) && (number(1, 100) > 50)) {
+                    // act("$n moves ahead of you.", FALSE, follower, 0, ch, TO_VICT);
+                    bzero((char*)&tmpwtl, sizeof(waiting_type));
+                    tmpwtl.cmd = cmd + 1;
+                    tmpwtl.subcmd = SCMD_FOLLOW;
+                    command_interpreter(follower, argument, &tmpwtl);
                 }
             }
 
@@ -903,14 +920,21 @@ ACMD(do_move)
             } else if (IS_AFFECTED(ch, AFF_SNEAK))
                 snuck_in(ch);
 
-            if (!ch->spec_busy) {
-                special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
+            /* Arriving can remove the mover (a special, a script, the death
+             * room). The move still completes - its followers come after it
+             * as always - but the mover itself is not used again. */
+            special(ch, rev_dir[cmd] + 1, "", SPECIAL_ENTER, 0);
+            mover_gone = !char_exists(mover_number);
+
+            if (!mover_gone) {
+                call_trigger(ON_ENTER, (void*)&world[ch->in_room], (void*)ch, 0);
+                mover_gone = !char_exists(mover_number);
             }
 
-            call_trigger(ON_ENTER, (void*)&world[ch->in_room], (void*)ch, 0);
-
-            if (is_death)
+            if (is_death && !mover_gone) {
                 raw_kill(ch, NULL, 0);
+                mover_gone = !char_exists(mover_number);
+            }
         } else { // riding...
             if ((ch->mount_data.mount)->mount_data.rider != ch) {
                 send_to_char("You do not control your mount.\n\r", ch);
@@ -921,7 +945,7 @@ ACMD(do_move)
             }
             res_flag = check_simple_move(ch, cmd, &need_move, subcmd);
 
-            if (subcmd == SCMD_FOLLOW) {
+            if (subcmd == SCMD_FOLLOW && ch->master) {
                 if (res_flag != 0) {
                     act("ACK! $n could not follow, you lost $m!", TRUE, ch, 0, ch->master, TO_VICT);
                     act("ACK! You could not follow $M!", TRUE, ch, 0, ch->master, TO_CHAR);
@@ -958,7 +982,7 @@ ACMD(do_move)
             // GET_MOVE(ch) -= need_move;       // This belongs below.
             res_flag = check_simple_move(ch->mount_data.mount, cmd, &tmp_move, SCMD_MOUNT);
 
-            if (subcmd == SCMD_FOLLOW) {
+            if (subcmd == SCMD_FOLLOW && ch->master) {
                 if (res_flag != 0) {
                     act("ACK! $n could not follow riding, you lost $m!", TRUE, ch, 0, ch->master,
                         TO_VICT);
@@ -996,16 +1020,16 @@ ACMD(do_move)
             // At this point, check for common orc "followers" to move before their
             // master does, just for group randomness.
 
-            if (is_fol) {
-                for (k = &fol_people; k; k = next_dude) {
-                    next_dude = k->next;
-                    if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING) && (IS_NPC(k->follower) && MOB_FLAGGED(k->follower, MOB_ORC_FRIEND) && MOB_FLAGGED(k->follower, MOB_PET)) && (number(1, 100) > 50)) {
-                        // act("$n moves ahead of you.", FALSE, k->follower, 0, ch, TO_VICT);
-                        bzero((char*)&tmpwtl, sizeof(waiting_type));
-                        tmpwtl.cmd = cmd + 1;
-                        tmpwtl.subcmd = SCMD_FOLLOW;
-                        command_interpreter(k->follower, argument, &tmpwtl);
-                    }
+            for (const auto& fol : fol_people) {
+                char_data* follower = fol.first;
+                if (!char_exists(fol.second))
+                    continue;
+                if ((was_in == follower->in_room) && (GET_POS(follower) >= POSITION_STANDING) && (IS_NPC(follower) && MOB_FLAGGED(follower, MOB_ORC_FRIEND) && MOB_FLAGGED(follower, MOB_PET)) && (number(1, 100) > 50)) {
+                    // act("$n moves ahead of you.", FALSE, follower, 0, ch, TO_VICT);
+                    bzero((char*)&tmpwtl, sizeof(waiting_type));
+                    tmpwtl.cmd = cmd + 1;
+                    tmpwtl.subcmd = SCMD_FOLLOW;
+                    command_interpreter(follower, argument, &tmpwtl);
                 }
             }
 
@@ -1017,37 +1041,49 @@ ACMD(do_move)
             res_flag = perform_move_mount(ch->mount_data.mount, cmd);
         }
 
-        msdp_room_update(ch);
+        if (!mover_gone)
+            msdp_room_update(ch);
 
         mounts = 0;
-        if (IS_RIDING(ch))
+        if (!mover_gone && IS_RIDING(ch))
             mounts++;
-        if (is_fol) { /* If success move followers */
-            for (k = &fol_people; k; k = next_dude) {
-                next_dude = k->next;
-                if ((was_in == k->follower->in_room) && (GET_POS(k->follower) >= POSITION_STANDING)) {
-                    //	  act("You follow $N.\n\r", FALSE, k->follower, 0, ch, TO_CHAR);
-
-                    bzero((char*)&tmpwtl, sizeof(waiting_type));
-                    tmpwtl.cmd = cmd + 1;
-                    tmpwtl.subcmd = SCMD_FOLLOW;
-                    //	  do_move(k->follower, argument, &tmpwtl, cmd + 1, SCMD_FOLLOW);
-                    // Can not lead too many mounts:
-                    if (IS_NPC(k->follower) && (MOB_FLAGGED(k->follower, MOB_MOUNT))) {
-                        mounts++;
-                        if (mounts <= 2 || number(1, 20) != 20)
-                            command_interpreter(k->follower, argument, &tmpwtl);
-                        else
-                            send_to_char("One of your mounts has fallen behind!\r\n", ch);
-                    } else
-                        command_interpreter(k->follower, argument, &tmpwtl);
+        /* If success move followers */
+        for (const auto& fol : fol_people) {
+            char_data* follower = fol.first;
+            if (!char_exists(fol.second))
+                continue;
+            if (was_in != follower->in_room)
+                continue;
+            /* Not standing or still delayed: the follower never gets to try
+               the move, so tell both sides here. */
+            if ((GET_POS(follower) < POSITION_STANDING) || (follower->delay.wait_value > 0)) {
+                if (char_exists(mover_number)) {
+                    /* A player follower the leader cannot see stays unannounced. */
+                    act("ACK! $n could not follow, you lost $m!", !IS_NPC(follower), follower, 0, ch, TO_VICT);
+                    act("ACK! You could not follow $M!", FALSE, follower, 0, ch, TO_CHAR);
                 }
+            } else {
+                //	  act("You follow $N.\n\r", FALSE, follower, 0, ch, TO_CHAR);
+
+                bzero((char*)&tmpwtl, sizeof(waiting_type));
+                tmpwtl.cmd = cmd + 1;
+                tmpwtl.subcmd = SCMD_FOLLOW;
+                //	  do_move(follower, argument, &tmpwtl, cmd + 1, SCMD_FOLLOW);
+                // Can not lead too many mounts:
+                if (IS_NPC(follower) && (MOB_FLAGGED(follower, MOB_MOUNT))) {
+                    mounts++;
+                    if (mounts <= 2 || number(1, 20) != 20)
+                        command_interpreter(follower, argument, &tmpwtl);
+                    else if (char_exists(mover_number))
+                        send_to_char("One of your mounts has fallen behind!\r\n", ch);
+                } else
+                    command_interpreter(follower, argument, &tmpwtl);
             }
         }
     }
 }
 
-int find_door(struct char_data* ch, char* type, char* dir)
+int find_door(const struct char_data* ch, const char* type, char* dir)
 {
     int door;
     char* dirs[] = { "north", "east", "south", "west", "up", "down", "\n" };
@@ -1305,11 +1341,11 @@ ACMD(do_close)
     }
 }
 
-bool is_key(obj_data* item) { return item->obj_flags.type_flag == ITEM_KEY; }
+bool is_key(const obj_data* item) { return item->obj_flags.type_flag == ITEM_KEY; }
 
 /* returns NULL if the character does not have the key (or it is broken),
                    a pointer to the key if the character does have the key  */
-obj_data* has_key(char_data* character, int key)
+obj_data* has_key(const char_data* character, int key)
 {
     for (obj_data* item = character->carrying; item; item = item->next_content)
         if (obj_index[item->item_number].virt == key)
@@ -1509,7 +1545,7 @@ ACMD(do_leave)
 {
     int door;
 
-    extern long secs_to_unretire(struct char_data*);
+    extern long secs_to_unretire(const struct char_data*);
     extern int r_mortal_start_room[];
 
     /* retired characters can 'leave' the retirement home */

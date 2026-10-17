@@ -39,6 +39,66 @@ namespace {
         bytes->append(reinterpret_cast<const char*>(&value), sizeof(T));
     }
 
+    // One object record, plus what follows a VERSIONED_ID_VALUE or ENCHANTED_ID_VALUE record. The
+    // marker is normalised back to DEPRECATED_ID_VALUE so callers see an ordinary new-format record.
+    bool read_object_record_bytes(const std::string& bytes, size_t* offset, obj_file_elem* raw_object, obj_file_extra* extra, std::string* error_message, const char* label)
+    {
+        *extra = obj_file_extra {};
+        if (!read_pod(bytes, offset, raw_object, error_message, label))
+            return false;
+        if (raw_object->item_number_deprecated == VERSIONED_ID_VALUE) {
+            if (!read_pod(bytes, offset, &extra->version, error_message, label))
+                return false;
+            raw_object->item_number_deprecated = DEPRECATED_ID_VALUE;
+        } else if (raw_object->item_number_deprecated == ENCHANTED_ID_VALUE) {
+            if (!read_pod(bytes, offset, extra, error_message, label))
+                return false;
+            raw_object->item_number_deprecated = DEPRECATED_ID_VALUE;
+        }
+        return true;
+    }
+
+    struct EnchantName {
+        int code;
+        const char* name;
+    };
+
+    const EnchantName kEnchantTypeNames[] = { { ENCHANT_OB, "ob" } };
+    const EnchantName kEnchantAlignNames[] = {
+        { ENCHANT_ALIGN_NEUTRAL, "neutral" }, { ENCHANT_ALIGN_GOOD, "good" }, { ENCHANT_ALIGN_EVIL, "evil" }
+    };
+
+    template <size_t Count>
+    const char* enchant_name(const EnchantName (&names)[Count], int code)
+    {
+        for (const EnchantName& entry : names)
+            if (entry.code == code)
+                return entry.name;
+        return nullptr;
+    }
+
+    template <size_t Count>
+    bool enchant_code(const EnchantName (&names)[Count], const std::string& name, int* code)
+    {
+        for (const EnchantName& entry : names)
+            if (name == entry.name) {
+                *code = entry.code;
+                return true;
+            }
+        return false;
+    }
+
+    // The used enchant slots of a binary record. A slot this build has no name for is left out:
+    // it could not be written to the JSON.
+    void append_record_enchants(const obj_file_extra& extra, ObjectRecord* record)
+    {
+        for (const obj_enchant_type& enchant : extra.enchants) {
+            if (!enchant_is_known(enchant.type, enchant.align))
+                continue;
+            record->enchants.push_back({ enchant.type, enchant.align, enchant.amount });
+        }
+    }
+
     template <typename TargetType>
     bool validate_narrowed_range(long long value, const char* field_name, std::string* error_message)
     {
@@ -104,6 +164,41 @@ namespace {
         return true;
     }
 
+    bool parse_object_enchant(json_utils::JsonReader* reader, ObjectEnchantData* enchant, std::string* error_message)
+    {
+        ObjectEnchantData parsed_enchant;
+        bool saw_type = false;
+        bool saw_amount = false;
+        bool saw_align = false;
+        if (!reader->parse_object([&parsed_enchant, &saw_type, &saw_amount, &saw_align](const std::string& key, json_utils::JsonReader* nested_reader, std::string* nested_error_message) {
+                if (key == "type" || key == "align") {
+                    std::string name;
+                    if (!nested_reader->parse_string(&name, nested_error_message))
+                        return false;
+                    const bool known = key == "type"
+                        ? (saw_type = true, enchant_code(kEnchantTypeNames, name, &parsed_enchant.type))
+                        : (saw_align = true, enchant_code(kEnchantAlignNames, name, &parsed_enchant.align));
+                    if (!known)
+                        set_error(nested_error_message, "Object enchant " + key + " '" + name + "' is not known.");
+                    return known;
+                }
+                if (key == "amount")
+                    return saw_amount = true, nested_reader->parse_integer(&parsed_enchant.amount, nested_error_message);
+                return nested_reader->skip_value(nested_error_message);
+            }, error_message)) {
+            return false;
+        }
+
+        if (!saw_type || !saw_amount || !saw_align) {
+            set_error(error_message, "Object enchant record was missing one or more required fields.");
+            return false;
+        }
+
+        *enchant = parsed_enchant;
+        set_error(error_message, "");
+        return true;
+    }
+
     bool parse_object_record(json_utils::JsonReader* reader, ObjectRecord* record, std::string* error_message)
     {
         if (record == nullptr) {
@@ -145,6 +240,17 @@ namespace {
                     return saw_wear_pos = true, nested_reader->parse_integer(&parsed_record.wear_pos, nested_error_message);
                 if (key == "loaded_by")
                     return saw_loaded_by = true, nested_reader->parse_integer(&parsed_record.loaded_by, nested_error_message);
+                if (key == "version")
+                    return nested_reader->parse_integer(&parsed_record.version, nested_error_message);
+                if (key == "enchants") {
+                    return nested_reader->parse_array([&parsed_record](json_utils::JsonReader* enchant_reader, std::string* enchant_error_message) {
+                        ObjectEnchantData enchant;
+                        if (!parse_object_enchant(enchant_reader, &enchant, enchant_error_message))
+                            return false;
+                        parsed_record.enchants.push_back(enchant);
+                        return true;
+                    }, nested_error_message);
+                }
                 if (key == "affects") {
                     saw_affects = true;
                     std::vector<ObjectAffectData> affects;
@@ -288,6 +394,24 @@ namespace {
         output << indent << "  \"bitvector\": " << record.bitvector << ",\n";
         output << indent << "  \"wear_pos\": " << record.wear_pos << ",\n";
         output << indent << "  \"loaded_by\": " << record.loaded_by << ",\n";
+        // Optional: absent means 0, so saves without versioned objects keep their old shape.
+        if (record.version != 0)
+            output << indent << "  \"version\": " << record.version << ",\n";
+        // Optional too: only an object someone has enchanted carries the list.
+        if (!record.enchants.empty()) {
+            output << indent << "  \"enchants\": [\n";
+            for (size_t index = 0; index < record.enchants.size(); ++index) {
+                const ObjectEnchantData& enchant = record.enchants[index];
+                const char* type_name = enchant_name(kEnchantTypeNames, enchant.type);
+                const char* align_name = enchant_name(kEnchantAlignNames, enchant.align);
+                output << indent << "    {\"type\": \"" << (type_name ? type_name : "") << "\", \"amount\": " << enchant.amount
+                       << ", \"align\": \"" << (align_name ? align_name : "") << "\"}";
+                if (index + 1 < record.enchants.size())
+                    output << ",";
+                output << "\n";
+            }
+            output << indent << "  ],\n";
+        }
         output << indent << "  \"affects\": [\n";
         for (size_t index = 0; index < record.affects.size(); ++index) {
             const ObjectAffectData& affect = record.affects[index];
@@ -334,7 +458,8 @@ bool object_save_data_from_binary_impl(
 
     while (true) {
         obj_file_elem raw_object {};
-        if (!read_pod(bytes, &offset, &raw_object, error_message, "top-level object record"))
+        obj_file_extra object_extra {};
+        if (!read_object_record_bytes(bytes, &offset, &raw_object, &object_extra, error_message, "top-level object record"))
             return false;
 
         if (raw_object.item_number_deprecated != DEPRECATED_ID_VALUE) {
@@ -359,6 +484,8 @@ bool object_save_data_from_binary_impl(
         }
         record.wear_pos = raw_object.wear_pos;
         record.loaded_by = raw_object.loaded_by;
+        record.version = object_extra.version;
+        append_record_enchants(object_extra, &record);
         parsed_data.objects.push_back(record);
     }
 
@@ -424,7 +551,8 @@ bool object_save_data_from_binary_impl(
 
         while (true) {
             obj_file_elem raw_object {};
-            if (!read_pod(bytes, &offset, &raw_object, error_message, "follower object record"))
+            obj_file_extra object_extra {};
+            if (!read_object_record_bytes(bytes, &offset, &raw_object, &object_extra, error_message, "follower object record"))
                 return false;
 
             if (raw_object.item_number_deprecated != DEPRECATED_ID_VALUE) {
@@ -449,6 +577,8 @@ bool object_save_data_from_binary_impl(
             }
             record.wear_pos = raw_object.wear_pos;
             record.loaded_by = raw_object.loaded_by;
+            record.version = object_extra.version;
+            append_record_enchants(object_extra, &record);
             follower.objects.push_back(record);
         }
 
@@ -466,6 +596,11 @@ bool object_save_data_from_binary_impl(
 }
 
 } // namespace
+
+bool enchant_is_known(int type, int align)
+{
+    return enchant_name(kEnchantTypeNames, type) != nullptr && enchant_name(kEnchantAlignNames, align) != nullptr;
+}
 
 void write_object_record_json(std::ostringstream& output, const ObjectRecord& record, const char* indent)
 {
@@ -520,7 +655,23 @@ bool object_save_data_to_binary(const ObjectSaveData& data, std::string* bytes, 
 
     auto append_object_record = [&serialized_bytes, error_message](const ObjectRecord& record) {
         obj_file_elem raw_object {};
-        raw_object.item_number_deprecated = DEPRECATED_ID_VALUE;
+        obj_file_extra extra {};
+        extra.version = record.version;
+        if (record.enchants.size() > MAX_OBJ_ENCHANT) {
+            set_error(error_message, "Object carries more enchants than MAX_OBJ_ENCHANT.");
+            return false;
+        }
+        for (size_t index = 0; index < record.enchants.size(); ++index) {
+            if (!validate_narrowed_range<sh_int>(record.enchants[index].amount, "object.enchants.amount", error_message))
+                return false;
+            extra.enchants[index].type = static_cast<byte>(record.enchants[index].type);
+            extra.enchants[index].align = static_cast<byte>(record.enchants[index].align);
+            extra.enchants[index].amount = static_cast<sh_int>(record.enchants[index].amount);
+        }
+        if (!record.enchants.empty())
+            raw_object.item_number_deprecated = ENCHANTED_ID_VALUE;
+        else
+            raw_object.item_number_deprecated = record.version != 0 ? VERSIONED_ID_VALUE : DEPRECATED_ID_VALUE;
         raw_object.item_number = record.item_number;
         for (size_t index = 0; index < record.values.size(); ++index) {
             if (!validate_narrowed_range<sh_int>(record.values[index], "object.value", error_message))
@@ -542,6 +693,10 @@ bool object_save_data_to_binary(const ObjectSaveData& data, std::string* bytes, 
         raw_object.wear_pos = static_cast<sh_int>(record.wear_pos);
         raw_object.loaded_by = record.loaded_by;
         append_pod(&serialized_bytes, raw_object);
+        if (!record.enchants.empty())
+            append_pod(&serialized_bytes, extra);
+        else if (record.version != 0)
+            append_pod(&serialized_bytes, record.version);
         return true;
     };
 
@@ -790,7 +945,7 @@ bool deserialize_objects_from_json(const std::string& json, ObjectSaveData* data
         return false;
     }
 
-    if (parsed_data.version != OBJECTS_SCHEMA_VERSION) {
+    if (parsed_data.version != OBJECTS_SCHEMA_VERSION && parsed_data.version != OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS) {
         set_error(error_message, "Unsupported objects JSON schema version.");
         return false;
     }
@@ -839,6 +994,19 @@ namespace {
             return path + ".wear_pos";
         if (a.loaded_by != b.loaded_by)
             return path + ".loaded_by";
+        if (a.version != b.version)
+            return path + ".version";
+        if (a.enchants.size() != b.enchants.size())
+            return path + ".enchants.size";
+        for (size_t index = 0; index < a.enchants.size(); ++index) {
+            const std::string enchant_path = indexed_path(path + ".enchants", index);
+            if (a.enchants[index].type != b.enchants[index].type)
+                return enchant_path + ".type";
+            if (a.enchants[index].amount != b.enchants[index].amount)
+                return enchant_path + ".amount";
+            if (a.enchants[index].align != b.enchants[index].align)
+                return enchant_path + ".align";
+        }
         return std::string();
     }
 

@@ -107,17 +107,17 @@ void set_spirits(char_data* character, int spirits)
     }
 }
 
-int get_spirits(char_data* character)
+int get_spirits(const char_data* character)
 {
     return character->points.spirit;
 }
 
-int get_current_moves(char_data* character)
+int get_current_moves(const char_data* character)
 {
     return character->tmpabilities.move;
 }
 
-int get_max_moves(char_data* character)
+int get_max_moves(const char_data* character)
 {
     return character->abilities.move;
 }
@@ -1858,7 +1858,7 @@ bool group_data::remove_member(char_data* member)
 }
 
 //============================================================================
-bool group_data::is_member(struct char_data* character) const
+bool group_data::is_member(const struct char_data* character) const
 {
     return std::find(members.begin(), members.end(), character) != members.end();
 }

@@ -1,5 +1,5 @@
-# 3.18 is the oldest CMake in use (the i386 Debian bullseye image) and 3.28 the newest
-# CI exercises; newer CMake applies policies only up to 3.28.
+# 3.18 is the oldest CMake supported (README) and 3.28 the newest CI exercises; newer CMake
+# applies policies only up to 3.28.
 cmake_minimum_required(VERSION 3.18...3.28)
 
 # The compiler is chosen by the caller (-DCMAKE_CXX_COMPILER=g++ in the root Makefile and
@@ -121,8 +121,11 @@ set(ROTS_SERVER_SOURCES
     mail.cpp
     mob_csv_extract.cpp
     mob_options.cpp
+    mob_walker.cpp
     mob_progs/shopkeeper.cpp
     mob_progs/banker.cpp
+    mob_progs/ranger_prog.cpp
+    mob_progs/mage_prog.cpp
     game_boot_options.cpp
     mobact.cpp
     modify.cpp
@@ -168,6 +171,9 @@ set(ROTS_SERVER_SOURCES
 set(ROTS_TEST_SOURCES
     tests/barter_vendor_tests.cpp
     tests/banker_tests.cpp
+    tests/ranger_prog_tests.cpp
+    tests/mage_prog_tests.cpp
+    tests/guild_practice_tests.cpp
     tests/game_boot_options_tests.cpp
     tests/resistance_tests.cpp
     tests/resist_item_slot_tests.cpp
@@ -199,6 +205,8 @@ set(ROTS_TEST_SOURCES
     tests/exploit_record_tests.cpp
     tests/exploits_json_tests.cpp
     tests/interpre_account_menu_tests.cpp
+    tests/intrusive_list_tests.cpp
+    tests/room_lists_tests.cpp
     tests/fight_proc_tests.cpp
     tests/game_heartbeat_tests.cpp
     tests/game_time_text_tests.cpp
@@ -208,7 +216,9 @@ set(ROTS_TEST_SOURCES
     tests/kill_experience_tests.cpp
     tests/lap_timer_tests.cpp
     tests/limits_tests.cpp
+    tests/room_light_tests.cpp
     tests/mob_options_tests.cpp
+    tests/mob_walker_tests.cpp
     tests/sprintbit_tests.cpp
     tests/script_flow_tests.cpp
     tests/script_command_tests.cpp
@@ -429,6 +439,7 @@ if(CLANG_FORMAT_EXECUTABLE)
     file(GLOB ROTS_FORMAT_FILES CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/intrusive/*.h"
     )
     add_custom_target(format
         COMMAND "${CLANG_FORMAT_EXECUTABLE}" -i -style=WebKit ${ROTS_FORMAT_FILES}

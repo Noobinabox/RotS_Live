@@ -399,7 +399,12 @@ namespace {
             log(log_buffer);
         }
 
-        if (!write_account_object_json_file(root_directory, account_name, character_name, object_data, error_message))
+        // A legacy save predates recorded enchants, so the file says so, and the first login records
+        // them (record_old_object_enchants). The schema version is the file's alone: it does not
+        // pass through the binary form, so `converted_source` keeps the one a read-back will have.
+        objects_json::ObjectSaveData unrecorded_data = object_data;
+        unrecorded_data.version = objects_json::OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS;
+        if (!write_account_object_json_file(root_directory, account_name, character_name, unrecorded_data, error_message))
             return false;
 
         if (converted_source != nullptr)

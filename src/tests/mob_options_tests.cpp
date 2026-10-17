@@ -213,7 +213,7 @@ TEST(CleanRecordName, DropsLeadingDollarsAndCleansTheRest)
     clean_record_name(nullptr);
 }
 
-void write_proto(FILE* f, struct char_data* m, int num);
+void write_proto(FILE* f, const struct char_data* m, int num);
 void load_mobiles(FILE* mob_f);
 void clear_char(struct char_data* ch, int mode);
 extern struct char_data* mob_proto;
@@ -331,4 +331,28 @@ TEST(BoardHtml, LongPostExpandsLineBreaksWithoutABuffer)
     ASSERT_EQ(fread(head, 1, 10, f), 10u);
     EXPECT_STREQ(head, "x<br>x<br>");
     fclose(f);
+}
+
+TEST(MobGeneralOptions, ListsEveryWalkerKey)
+{
+    for (const char* key : { "walker_type", "walker_rooms", "walker_move_chance", "path_complete_extract",
+             "path_complete_message", "continue_wandering" })
+        EXPECT_TRUE(mob_option_is_general(key)) << key;
+}
+
+TEST(MobGeneralOptions, ProgramKeysAndTyposAreNotGeneral)
+{
+    EXPECT_FALSE(mob_option_is_general("store"));
+    EXPECT_FALSE(mob_option_is_general("fee"));
+    EXPECT_FALSE(mob_option_is_general("walker_typ"));
+    EXPECT_FALSE(mob_option_is_general(""));
+}
+
+TEST(MobGeneralOptions, EveryKeyHasHelpOfAtMostSixtyColumns)
+{
+    for (const mob_general_option& option : mob_general_options()) {
+        ASSERT_NE(option.help, nullptr) << option.key;
+        EXPECT_GT(strlen(option.help), 0u) << option.key;
+        EXPECT_LE(strlen(option.help), 60u) << option.key;
+    }
 }

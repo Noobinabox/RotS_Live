@@ -48,7 +48,7 @@
 #define MIN_RANK 1
 #define MAX_RANK 10
 
-int cost_per_day(struct obj_data* obj);
+int cost_per_day(const struct obj_data* obj);
 
 extern struct room_data world;
 extern struct index_data* mob_index;
@@ -69,10 +69,10 @@ SPECIAL(cryogenicist);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 void Crash_follower_load(struct char_data* ch, FILE* fp);
 int calc_load_room(struct char_data* ch, int load_result);
-int Crash_get_filename(char* orig_name, char* filename);
+int Crash_get_filename(const char* orig_name, char* filename);
 
 FILE* fd;
-int Crash_is_unrentable(struct obj_data* obj);
+int Crash_is_unrentable(const struct obj_data* obj);
 
 namespace {
 
@@ -126,6 +126,28 @@ bool read_crashsave_record(FILE* file, void* buffer, size_t size, size_t count, 
 
     return false;
 }
+
+// Reads one object record and what follows a VERSIONED_ID_VALUE or ENCHANTED_ID_VALUE record.
+bool read_crashsave_object(FILE* file, obj_file_elem* object, obj_file_extra* extra, const char* context)
+{
+    *extra = obj_file_extra {};
+    if (!read_crashsave_record(file, object, sizeof(obj_file_elem), 1, context))
+        return false;
+    if (object->item_number_deprecated == VERSIONED_ID_VALUE) {
+        if (!read_crashsave_record(file, &extra->version, sizeof(int), 1, context))
+            return false;
+        object->item_number_deprecated = DEPRECATED_ID_VALUE;
+    } else if (object->item_number_deprecated == ENCHANTED_ID_VALUE) {
+        if (!read_crashsave_record(file, extra, sizeof(obj_file_extra), 1, context))
+            return false;
+        object->item_number_deprecated = DEPRECATED_ID_VALUE;
+    }
+    return true;
+}
+
+// Names of items refreshed to a newer prototype version while a character loaded; shown to the
+// player after the room on entering the game (Crash_report_object_refreshes).
+std::unordered_map<const char_data*, std::vector<std::string>> g_refreshed_object_names;
 
 bool take_staged_account_backed_object_bytes_for_character(const char_data* character, std::string* bytes)
 {
@@ -252,7 +274,7 @@ void clear_account_backed_object_bytes_for_character(const struct char_data* ch)
     g_staged_account_backed_object_bytes.erase(stage_key);
 }
 
-int Crash_get_filename(char* orig_name, char* filename)
+int Crash_get_filename(const char* orig_name, char* filename)
 {
 
     char *ptr, name[30];
@@ -307,7 +329,7 @@ int Crash_get_filename(char* orig_name, char* filename)
     return 1;
 }
 
-FILE* Crash_get_file_by_name(char* name, char* mode)
+FILE* Crash_get_file_by_name(const char* name, const char* mode)
 {
     FILE* fp;
 
@@ -325,7 +347,7 @@ FILE* Crash_get_file_by_name(char* name, char* mode)
     return fp;
 }
 
-int Crash_delete_file(char* name)
+int Crash_delete_file(const char* name)
 {
 
     char filename[50];
@@ -352,7 +374,7 @@ int Crash_delete_file(char* name)
     return (1);
 }
 
-int Crash_delete_crashfile(struct char_data* ch)
+int Crash_delete_crashfile(const struct char_data* ch)
 {
 
     char fname[MAX_INPUT_LENGTH];
@@ -377,7 +399,7 @@ int Crash_delete_crashfile(struct char_data* ch)
     return 1;
 }
 
-int Crash_clean_file(char* name)
+int Crash_clean_file(const char* name)
 {
 
     char fname[MAX_STRING_LENGTH];
@@ -419,9 +441,36 @@ extern int generic_scalp;
 
 obj_data* load_scalp(int number);
 
+/*
+ * Brings a copy just built from a save up to its prototype's version when that is due, and says
+ * so in the server log. `idnum` is the player the copy belongs to. Scalps never refresh.
+ */
+bool Crash_refresh_object(struct obj_data* obj, long idnum)
+{
+    extern struct obj_data* obj_proto;
+
+    if (obj->item_number < 0 || obj_index[obj->item_number].virt == generic_scalp)
+        return false;
+
+    const int old_version = obj->obj_flags.version;
+    const int enchants_before = count_object_enchants(obj);
+    if (!refresh_object_to_prototype_version(obj, &obj_proto[obj->item_number]))
+        return false;
+
+    const char* enchant_note = "";
+    if (enchants_before > 0)
+        enchant_note = count_object_enchants(obj) == enchants_before ? ", enchant kept" : ", enchant dropped";
+    sprintf(buf1, "Object version refresh: obj %d, %d -> %d, player idnum %ld%s",
+        obj_index[obj->item_number].virt, old_version, obj->obj_flags.version, idnum, enchant_note);
+    log(buf1);
+    return true;
+}
+
+/* `owner` is the player the object is loading for; with none (the bank vault rebuilding a stored
+ * object) the copy is not refreshed here, and the caller does that when it hands the object over. */
 struct obj_data*
 
-Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
+Crash_obj2char(const struct char_data* ch, const struct obj_file_elem* object, const struct obj_file_extra& extra, const struct char_data* owner)
 {
     /*
      * this function loads an object with a virtual number of
@@ -464,6 +513,12 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
 
             for (j = 0; j < MAX_OBJ_AFFECT; j++)
                 obj->affected[j] = object->affected[j];
+
+            obj->obj_flags.version = extra.version;
+            for (j = 0; j < MAX_OBJ_ENCHANT; j++)
+                obj->enchants[j] = extra.enchants[j];
+            if (owner && Crash_refresh_object(obj, (long)GET_IDNUM(owner)))
+                g_refreshed_object_names[owner].push_back(obj->short_description);
         }
         return obj;
     }
@@ -473,7 +528,7 @@ Crash_obj2char(struct char_data* ch, struct obj_file_elem* object)
 const char* overflow_str = "The buffer was overflowed, aborting.\r\n";
 const size_t overflow_len = strlen(overflow_str) + 1;
 
-void Crash_listrent(struct char_data* ch, char* name)
+void Crash_listrent(const struct char_data* ch, const char* name)
 {
     FILE* fl;
     char buf[MAX_STRING_LENGTH];
@@ -502,6 +557,15 @@ void Crash_listrent(struct char_data* ch, char* name)
         if (ferror(fl)) {
             fclose(fl);
             return;
+        }
+        if (!feof(fl) && object.item_number_deprecated == VERSIONED_ID_VALUE) {
+            int version;
+            fread(&version, sizeof(version), 1, fl);
+            object.item_number_deprecated = DEPRECATED_ID_VALUE;
+        } else if (!feof(fl) && object.item_number_deprecated == ENCHANTED_ID_VALUE) {
+            struct obj_file_extra extra;
+            fread(&extra, sizeof(extra), 1, fl);
+            object.item_number_deprecated = DEPRECATED_ID_VALUE;
         }
         if (!feof(fl))
 
@@ -532,7 +596,7 @@ void Crash_listrent(struct char_data* ch, char* name)
     fclose(fl);
 }
 
-int Crash_write_rentcode(struct char_data* ch, FILE* fl, struct rent_info* rent)
+int Crash_write_rentcode(const struct char_data* ch, FILE* fl, const struct rent_info* rent)
 {
     if (fwrite(rent, sizeof(struct rent_info), 1, fl) < 1) {
         perror("Writing rent code.");
@@ -676,7 +740,8 @@ FILE* Crash_load(char_data* character)
 
     equip_counter = 1;
     while (true) {
-        if (!read_crashsave_record(fl, &object, sizeof(struct obj_file_elem), 1, "reading crash object data in Crash_load")) {
+        obj_file_extra object_extra;
+        if (!read_crashsave_object(fl, &object, &object_extra, "reading crash object data in Crash_load")) {
             std::fclose(fl);
             return fail_closed();
         }
@@ -693,7 +758,7 @@ FILE* Crash_load(char_data* character)
             if (object.item_number < 0)
                 obj = &dummy_sack;
             else
-                obj = Crash_obj2char(character, &object);
+                obj = Crash_obj2char(character, &object, object_extra, character);
 
             if (!obj) {
                 sprintf(buf, "LOAD ERROR, equipment lost for %s.", GET_NAME(character));
@@ -769,10 +834,29 @@ FILE* Crash_load(char_data* character)
     return fl;
 }
 
+void Crash_tell_object_refresh(const struct char_data* ch, const char* name)
+{
+    snprintf(buf1, sizeof(buf1), "Your item, %s, has been updated.\n\r", name);
+    send_to_char(buf1, ch);
+}
+
+void Crash_report_object_refreshes(const struct char_data* ch)
+{
+    auto it = g_refreshed_object_names.find(ch);
+    if (it == g_refreshed_object_names.end())
+        return;
+
+    for (const std::string& name : it->second)
+        Crash_tell_object_refresh(ch, name.c_str());
+    g_refreshed_object_names.erase(it);
+}
+
 void load_character(struct char_data* ch)
 {
     extern struct char_data* character_list;
     FILE* fp;
+
+    g_refreshed_object_names.erase(ch);
 
     if (ch->in_room == NOWHERE)
         ch->in_room = ch->specials2.load_room;
@@ -856,7 +940,7 @@ int calc_load_room(struct char_data* ch, int load_result)
     return load_room;
 }
 
-int Crash_obj2store(obj_data* obj, char_data* ch,
+int Crash_obj2store(const obj_data* obj, const char_data* ch,
     int pos, FILE* fl)
 {
     obj_file_elem object;
@@ -891,7 +975,25 @@ int Crash_obj2store(obj_data* obj, char_data* ch,
         object.extra_flags = obj->obj_flags.value[4];
     }
 
+    obj_file_extra extra {};
+    extra.version = obj->obj_flags.version;
+    for (int index = 0; index < MAX_OBJ_ENCHANT; index++)
+        extra.enchants[index] = obj->enchants[index];
+    const bool enchanted = count_object_enchants(obj) > 0;
+    if (enchanted)
+        object.item_number_deprecated = ENCHANTED_ID_VALUE;
+    else if (extra.version != 0)
+        object.item_number_deprecated = VERSIONED_ID_VALUE;
+
     if (fwrite(&object, sizeof(obj_file_elem), 1, fl) < 1) {
+        perror("Writing crash data Crash_obj2store");
+        return 0;
+    }
+    if (enchanted && fwrite(&extra, sizeof(extra), 1, fl) < 1) {
+        perror("Writing crash data Crash_obj2store");
+        return 0;
+    }
+    if (!enchanted && extra.version != 0 && fwrite(&extra.version, sizeof(extra.version), 1, fl) < 1) {
         perror("Writing crash data Crash_obj2store");
         return 0;
     }
@@ -899,9 +1001,9 @@ int Crash_obj2store(obj_data* obj, char_data* ch,
     return 1;
 }
 
-int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp);
+int Crash_save(const struct obj_data* obj, const struct char_data* ch, int pos, FILE* fp);
 
-void Crash_follower_save(struct char_data* ch, FILE* fp)
+void Crash_follower_save(const struct char_data* ch, FILE* fp)
 {
     extern struct index_data* mob_index;
     struct follow_type *k, *next_fol;
@@ -987,10 +1089,9 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
     int tmp;
 
     do {
-        if (!read_crashsave_record(fp, &fol_elem, sizeof(struct follower_file_elem), 1, "reading follower data in Crash_follower_load")) {
-            fclose(fp);
+        /* fp stays open on every way out: the caller closes it. */
+        if (!read_crashsave_record(fp, &fol_elem, sizeof(struct follower_file_elem), 1, "reading follower data in Crash_follower_load"))
             return;
-        }
         if (fol_elem.fol_vnum == -17)
             break;
         if ((tmp = real_mobile(fol_elem.fol_vnum)) < 0)
@@ -999,10 +1100,9 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
         char_to_room(mob, ch->in_room);
 
         while (true) {
-            if (!read_crashsave_record(fp, &object, sizeof(struct obj_file_elem), 1, "reading follower object data in Crash_follower_load")) {
-                fclose(fp);
+            obj_file_extra object_extra;
+            if (!read_crashsave_object(fp, &object, &object_extra, "reading follower object data in Crash_follower_load"))
                 return;
-            }
 
             if (object.item_number_deprecated != DEPRECATED_ID_VALUE) {
                 object.item_number = object.item_number_deprecated;
@@ -1015,7 +1115,7 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
             if (object.wear_pos > MAX_WEAR || object.wear_pos < 0)
                 continue;
 
-            obj = Crash_obj2char(mob, &object);
+            obj = Crash_obj2char(mob, &object, object_extra, ch);
             if (!obj) {
                 sprintf(buf, "LOAD ERROR, equipment lost for follower of %s.", GET_NAME(ch));
                 log(buf);
@@ -1104,7 +1204,7 @@ void Crash_follower_load(struct char_data* ch, FILE* fp)
     } while (1);
 }
 
-void extract_followers(struct char_data* ch)
+void extract_followers(const struct char_data* ch)
 {
     struct obj_data* obj;
     struct follow_type *k, *next_fol;
@@ -1181,7 +1281,7 @@ int Crash_alias_load(struct char_data* ch, FILE* fp)
     } while (1);
 }
 
-int Crash_alias_save(struct char_data* ch, FILE* fp)
+int Crash_alias_save(const struct char_data* ch, FILE* fp)
 {
     static struct obj_data dummy_obj;
     struct alias_list* list;
@@ -1228,7 +1328,7 @@ int Crash_alias_save(struct char_data* ch, FILE* fp)
     return TRUE;
 }
 
-int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp)
+int Crash_save(const struct obj_data* obj, const struct char_data* ch, int pos, FILE* fp)
 {
     struct obj_data* tmp;
     int result, tmpos;
@@ -1254,7 +1354,7 @@ int Crash_save(struct obj_data* obj, struct char_data* ch, int pos, FILE* fp)
     return TRUE;
 }
 
-void Crash_restore_weight(struct obj_data* obj)
+void Crash_restore_weight(const struct obj_data* obj)
 {
     if (obj) {
         Crash_restore_weight(obj->contains);
@@ -1273,7 +1373,7 @@ void Crash_extract_objs(struct obj_data* obj)
     }
 }
 
-int Crash_is_unrentable(struct obj_data* obj)
+int Crash_is_unrentable(const struct obj_data* obj)
 {
     if (!obj)
         return 0;
@@ -1305,7 +1405,7 @@ void Crash_extract_expensive(struct obj_data* obj)
     extract_obj(max);
 }
 
-void Crash_calculate_rent(struct obj_data* obj, int* cost)
+void Crash_calculate_rent(const struct obj_data* obj, int* cost)
 {
     if (obj) {
         *cost += MAX(0, cost_per_day(obj) >> 4);
@@ -1363,7 +1463,7 @@ void Crash_crashsave(struct char_data* ch, int rent_code)
     REMOVE_BIT(PLR_FLAGS(ch), PLR_CRASH);
 }
 
-void Crash_idlesave(struct char_data* ch)
+void Crash_idlesave(const struct char_data* ch)
 {
     char buf[MAX_INPUT_LENGTH];
     struct rent_info rent;
@@ -1469,7 +1569,7 @@ void Crash_rentsave(struct char_data* ch, int cost)
  ************************************************************************* */
 
 int Crash_report_unrentables(struct char_data* ch, struct char_data* recep,
-    struct obj_data* obj)
+    const struct obj_data* obj)
 {
     char buf[128];
     int has_norents = 0;
@@ -1487,8 +1587,8 @@ int Crash_report_unrentables(struct char_data* ch, struct char_data* recep,
     return has_norents;
 }
 
-void Crash_report_rent(struct char_data* ch, struct char_data* recep,
-    struct obj_data* obj, long* cost, long* nitems, int factor)
+void Crash_report_rent(const struct char_data* ch, const struct char_data* recep,
+    const struct obj_data* obj, long* cost, long* nitems, int factor)
 {
     if (obj) {
         if (!Crash_is_unrentable(obj)) {
@@ -1599,7 +1699,7 @@ int Crash_offer_rent(struct char_data* ch, struct char_data* receptionist,
     return totalcost;
 }
 
-int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
+int gen_receptionist(struct char_data* ch, int cmd, const char* arg, int mode)
 {
     int cost = 0;
     static char newname[MAX_NAME_LENGTH + 1];
@@ -1612,7 +1712,7 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
     long rent_deadline;
 
     extern int valid_name(char*);
-    extern int _parse_name(char*, char*);
+    extern int _parse_name(const char*, char*);
     extern int number(int, int);
     extern int r_retirement_home_room;
 
@@ -1937,13 +2037,13 @@ void Emergency_save(void)
     }
 }
 
-int cost_per_day(struct obj_data* obj)
+int cost_per_day(const struct obj_data* obj)
 {
     return (((obj->obj_flags.cost_per_day == -1) ? obj->obj_flags.cost / 100 : obj->obj_flags.cost_per_day) / ((obj->obj_flags.level <= 5) ? 8 : 4));
 }
 
 #define RENT_TIME 2592000 /* number of seconds one must remain retired */
-long secs_to_unretire(struct char_data* ch)
+long secs_to_unretire(const struct char_data* ch)
 /* returns the time, in seconds, until one may unretire */
 {
     if (!IS_SET(PLR_FLAGS(ch), PLR_RETIRED))

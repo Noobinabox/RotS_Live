@@ -18,7 +18,8 @@ that staff change with `gameoptions`.
   above the vault on `balance`), and `ok` (false = does no business).
 - `bank_slot`: one stored item: `deposited` (real time) and `objects`, the item followed by its
   contents. Each entry is an `objects_json::ObjectRecord`, the same record the character object
-  save uses, with `wear_pos` reused as nesting depth (0 = the item itself).
+  save uses, with `wear_pos` reused as nesting depth (0 = the item itself). It carries the
+  item's object version and its recorded enchants, as the character save does.
 - `bank_vault`: `coins` (copper), `slots`, and `readable` (false when the file on disk could not
   be read).
 - Sides (`bank_side_for_race`, `banker.cpp:152`): 1 light = races 1-6; 2 dark = Uruk 11, Orc 13,
@@ -285,8 +286,9 @@ save can't replace the account's good copy.
 - No stock CircleMUD bank code is involved. `balance` / `deposit` / `withdraw` were already
   commands 138-140 bound to `do_not_here`; program 34 catches them.
 - Stored items are frozen like rented ones and do not count toward zone load limits.
-- Object version refresh on withdraw (PR #343) is not wired yet; the call site is marked in
-  `bank_obj_from_records` (`banker.cpp:607`).
+- A withdrawal, and an immortal's `vault take`, bring an outdated item up to its prototype's
+  object version as it is handed over (`refresh_withdrawn`, `banker.cpp`), the same refresh a
+  login gives. The player is told once the handover has held.
 
 ## Open questions
 

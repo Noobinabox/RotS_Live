@@ -14,45 +14,45 @@
 #include "db.h" /* For the reset_com structure */
 #include "platdef.h" /* For sh_int, ush_int, byte, etc. */
 
-#define SHAPE_PROTOS 1
-#define SHAPE_OBJECTS 2
-#define SHAPE_ROOMS 3
-#define SHAPE_ZONES 4
-#define SHAPE_MUDLLES 5
-#define SHAPE_RECALC_ALL 6
-#define SHAPE_MASTER_MOBILE 7
-#define SHAPE_MASTER_OBJECT 8
-#define SHAPE_SCRIPTS 9
+inline constexpr int SHAPE_PROTOS = 1;
+inline constexpr int SHAPE_OBJECTS = 2;
+inline constexpr int SHAPE_ROOMS = 3;
+inline constexpr int SHAPE_ZONES = 4;
+inline constexpr int SHAPE_MUDLLES = 5;
+inline constexpr int SHAPE_RECALC_ALL = 6;
+inline constexpr int SHAPE_MASTER_MOBILE = 7;
+inline constexpr int SHAPE_MASTER_OBJECT = 8;
+inline constexpr int SHAPE_SCRIPTS = 9;
 
-#define SHAPE_NONE 0
-#define SHAPE_CREATE 1
-#define SHAPE_EDIT 2
-#define SHAPE_LOAD 3
-#define SHAPE_SAVE 4
-#define SHAPE_ADD 5
-#define SHAPE_STOP 6
-#define SHAPE_FREE 7
-#define SHAPE_DELETE 8
-#define SHAPE_SIMPLE_EDIT 9
-#define SHAPE_IMPLEMENT 10
-#define SHAPE_MODE 11
-#define SHAPE_RECALCULATE 12
-#define SHAPE_DONE 13
-#define SHAPE_CURRENT 14
+inline constexpr int SHAPE_NONE = 0;
+inline constexpr int SHAPE_CREATE = 1;
+inline constexpr int SHAPE_EDIT = 2;
+inline constexpr int SHAPE_LOAD = 3;
+inline constexpr int SHAPE_SAVE = 4;
+inline constexpr int SHAPE_ADD = 5;
+inline constexpr int SHAPE_STOP = 6;
+inline constexpr int SHAPE_FREE = 7;
+inline constexpr int SHAPE_DELETE = 8;
+inline constexpr int SHAPE_SIMPLE_EDIT = 9;
+inline constexpr int SHAPE_IMPLEMENT = 10;
+inline constexpr int SHAPE_MODE = 11;
+inline constexpr int SHAPE_RECALCULATE = 12;
+inline constexpr int SHAPE_DONE = 13;
+inline constexpr int SHAPE_CURRENT = 14;
 
-#define SHAPE_PROTO_LOADED 1
-#define SHAPE_OBJECT_LOADED 1
-#define SHAPE_ROOM_LOADED 1
-#define SHAPE_ZONE_LOADED 1
-#define SHAPE_MUDLLE_LOADED 1
-#define SHAPE_SCRIPT_LOADED 1
-#define SHAPE_SIMPLE_ACTIVE 2
-#define SHAPE_DIGIT_ACTIVE 4
-#define SHAPE_DELETE_ACTIVE 8
-#define SHAPE_FILENAME 16
-#define SHAPE_SIMPLEMODE 32
-#define SHAPE_CHAIN 64
-#define SHAPE_CURRFLAG 128
+inline constexpr int SHAPE_PROTO_LOADED = 1;
+inline constexpr int SHAPE_OBJECT_LOADED = 1;
+inline constexpr int SHAPE_ROOM_LOADED = 1;
+inline constexpr int SHAPE_ZONE_LOADED = 1;
+inline constexpr int SHAPE_MUDLLE_LOADED = 1;
+inline constexpr int SHAPE_SCRIPT_LOADED = 1;
+inline constexpr int SHAPE_SIMPLE_ACTIVE = 2;
+inline constexpr int SHAPE_DIGIT_ACTIVE = 4;
+inline constexpr int SHAPE_DELETE_ACTIVE = 8;
+inline constexpr int SHAPE_FILENAME = 16;
+inline constexpr int SHAPE_SIMPLEMODE = 32;
+inline constexpr int SHAPE_CHAIN = 64;
+inline constexpr int SHAPE_CURRFLAG = 128;
 
 #define SHAPE_PROTO(ch) ((struct shape_proto*)((ch)->temp))
 #define SHAPE_OBJECT(ch) ((struct shape_object*)((ch)->temp))
@@ -61,23 +61,23 @@
 #define SHAPE_MUDLLE(ch) ((struct shape_mudlle*)((ch)->temp))
 #define SHAPE_SCRIPT(ch) ((struct shape_script*)((ch)->temp))
 
-#define SHAPE_MOB_DIR "world/mob/%s.mob"
-#define SHAPE_MOB_BACKDIR "world/mob/oldmobs/%s.mob"
+inline constexpr char SHAPE_MOB_DIR[] = "world/mob/%s.mob";
+inline constexpr char SHAPE_MOB_BACKDIR[] = "world/mob/oldmobs/%s.mob";
 
-#define SHAPE_OBJ_DIR "world/obj/%s.obj"
-#define SHAPE_OBJ_BACKDIR "world/obj/oldobjs/%s.obj"
+inline constexpr char SHAPE_OBJ_DIR[] = "world/obj/%s.obj";
+inline constexpr char SHAPE_OBJ_BACKDIR[] = "world/obj/oldobjs/%s.obj";
 
-#define SHAPE_ROM_DIR "world/wld/%s.wld"
-#define SHAPE_ROM_BACKDIR "world/wld/oldroms/%s.wld"
+inline constexpr char SHAPE_ROM_DIR[] = "world/wld/%s.wld";
+inline constexpr char SHAPE_ROM_BACKDIR[] = "world/wld/oldroms/%s.wld";
 
-#define SHAPE_ZON_DIR "world/zon/%s.zon"
-#define SHAPE_ZON_BACKDIR "world/zon/oldzons/%s.zon"
+inline constexpr char SHAPE_ZON_DIR[] = "world/zon/%s.zon";
+inline constexpr char SHAPE_ZON_BACKDIR[] = "world/zon/oldzons/%s.zon";
 
-#define SHAPE_MDL_DIR "world/mdl/%s.mdl"
-#define SHAPE_MDL_BACKDIR "world/mdl/oldmdls/%s.mdl"
+inline constexpr char SHAPE_MDL_DIR[] = "world/mdl/%s.mdl";
+inline constexpr char SHAPE_MDL_BACKDIR[] = "world/mdl/oldmdls/%s.mdl";
 
-#define SHAPE_SCRIPT_DIR "world/scr/%s.scr"
-#define SHAPE_SCRIPT_BACKDIR "world/scr/oldscrs/%s.scr"
+inline constexpr char SHAPE_SCRIPT_DIR[] = "world/scr/%s.scr";
+inline constexpr char SHAPE_SCRIPT_BACKDIR[] = "world/scr/oldscrs/%s.scr";
 
 struct script_data; //  Declaration.  Definition follows below.
 
@@ -230,10 +230,10 @@ void shape_center_proto(struct char_data* ch, char* argument);
 void shape_center_obj(struct char_data* ch, char* argument);
 void shape_center_room(struct char_data* ch, char* argument);
 void shape_center_zone(struct char_data* ch, char* argument);
-void shape_center_mudlle(struct char_data* ch, char* argument);
+void shape_center_mudlle(struct char_data* ch, const char* argument);
 void shape_center_script(struct char_data* ch, char* argument);
 void shape_center(struct char_data* ch, char* argument);
-int get_permission(int zonnum, struct char_data* ch, int mode = 0);
+int get_permission(int zonnum, const struct char_data* ch, int mode = 0);
 /* mode != 0 denies permission to "unlocked" zones */
 void clean_text(char*); /* ~ everywhere, # at the start of a line (zone, mudlle) */
 void clean_record_text(char*); /* ~ and # everywhere (mob, obj, room, script) */
@@ -242,13 +242,13 @@ void clean_record_name(char*); /* clean_record_text, then drop a leading $ */
 ACMD(do_shape);
 
 /* /52 list range, shared by the zone and script editors (shapemob.cpp). */
-void shape_range_prompt(struct char_data* ch, int start, int end);
-void shape_range_set(struct char_data* ch, const char* arg, int* start, int* end);
+void shape_range_prompt(const struct char_data* ch, int start, int end);
+void shape_range_set(const struct char_data* ch, const char* arg, int* start, int* end);
 bool shape_range_includes(int start, int end, int number);
 void shape_range_footer(int start, int end, char* out);
-int shape_list_begin(struct char_data* ch);
-bool shape_list_fits(struct char_data* ch, const char* line, const char* footer, int* wrapped);
-void shape_list_finish(struct char_data* ch, const char* footer, bool cut);
+int shape_list_begin(const struct char_data* ch);
+bool shape_list_fits(const struct char_data* ch, const char* line, const char* footer, int* wrapped);
+void shape_list_finish(const struct char_data* ch, const char* footer, bool cut);
 
 /*
  * Section rows, shared by the zone and script editors (shapemob.cpp).  A
@@ -256,10 +256,10 @@ void shape_list_finish(struct char_data* ch, const char* footer, bool cut);
  * title for the list, with an optional comment, kept in the row's one text
  * field as "title | comment".
  */
-#define SHAPE_LIST_WIDTH 78 /* a list line, under the 79-column screen */
-#define SHAPE_SECTION_TITLE_MAX 66 /* fits every list row up to number 999 */
-#define SHAPE_SECTION_TITLE 0
-#define SHAPE_SECTION_COMMENT 1
+inline constexpr int SHAPE_LIST_WIDTH = 78; /* a list line, under the 79-column screen */
+inline constexpr int SHAPE_SECTION_TITLE_MAX = 66; /* fits every list row up to number 999 */
+inline constexpr int SHAPE_SECTION_TITLE = 0;
+inline constexpr int SHAPE_SECTION_COMMENT = 1;
 std::string shape_section_title(const char* text);
 std::string shape_section_comment(const char* text);
 std::string shape_section_banner(const char* title, int width);

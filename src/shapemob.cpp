@@ -11,7 +11,10 @@
 #include "interpre.h"
 #include "mob_options.h"
 #include "mob_progs/banker.h"
+#include "mob_progs/mage_prog.h"
+#include "mob_progs/ranger_prog.h"
 #include "mob_progs/shopkeeper.h"
+#include "mob_walker.h"
 #include "protos.h"
 #include "script.h"
 #include "structs.h"
@@ -25,6 +28,7 @@ extern struct room_data world;
 extern struct char_data* character_list;
 extern struct char_data* mob_proto; /* prototypes for mobs    */
 extern struct index_data* mob_index;
+extern int no_specials;
 extern byte language_number;
 extern byte language_skills[];
 extern int top_of_mobt;
@@ -34,12 +38,12 @@ extern int object_master_idnum;
 void free_proto(struct char_data* ch);
 ACMD(do_shutdown);
 
-void virt_assignmob(struct char_data* mob);
+void virt_assignmob(const struct char_data* mob);
 void* virt_program_number(int number);
 
 /* A command turned off because it did harm; says exactly what was typed so
  * it is clear which one, and easy to find if it is ever turned back on. */
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed)
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed)
 {
     char buf[300];
     int len;
@@ -65,7 +69,7 @@ static void shape_range_text(int start, int end, char* out)
         sprintf(out, "%d-%d", start, end);
 }
 
-void shape_range_prompt(struct char_data* ch, int start, int end)
+void shape_range_prompt(const struct char_data* ch, int start, int end)
 {
     char range[40], line[120];
 
@@ -76,7 +80,7 @@ void shape_range_prompt(struct char_data* ch, int start, int end)
 
 /* Reads "start [end]" typed at the /52 prompt. Blank keeps the range, 0 alone
  * clears it; anything else wrong leaves it as it was. */
-void shape_range_set(struct char_data* ch, const char* arg, int* start, int* end)
+void shape_range_set(const struct char_data* ch, const char* arg, int* start, int* end)
 {
     const long INT_LIMIT = std::numeric_limits<int>::max();
     long num[2];
@@ -320,7 +324,7 @@ void shape_section_show(char* out, size_t outsz, const char* label, const char* 
 
 /* What line wrap will add to the output already waiting to be sent: the
  * starting value of the running total that shape_list_fits keeps. */
-int shape_list_begin(struct char_data* ch)
+int shape_list_begin(const struct char_data* ch)
 {
     if (!ch->desc || ch->desc->bufptr < 0 || !ch->desc->character
         || !PRF_FLAGGED(ch->desc->character, PRF_WRAP))
@@ -333,7 +337,7 @@ int shape_list_begin(struct char_data* ch)
  * the output was already full before the list began.
  * wrapped carries, from line to line, what line wrap adds to the output already
  * queued; start it with shape_list_begin(). */
-bool shape_list_fits(struct char_data* ch, const char* line, const char* footer, int* wrapped)
+bool shape_list_fits(const struct char_data* ch, const char* line, const char* footer, int* wrapped)
 {
     struct char_data* reader;
     int line_added = 0, footer_added = 0;
@@ -354,7 +358,7 @@ bool shape_list_fits(struct char_data* ch, const char* line, const char* footer,
 
 /* Ends a /50 list with the footer. cut = the list stopped early for lack of
  * room: the output then overflows as it would have, showing "**OVERFLOW**". */
-void shape_list_finish(struct char_data* ch, const char* footer, bool cut)
+void shape_list_finish(const struct char_data* ch, const char* footer, bool cut)
 {
     send_to_char(footer, ch);
     if (cut && ch->desc)
@@ -369,7 +373,7 @@ int proto_chain[51] = {
     0, 0, 0, 0, 0, 0, 0, 0, 23, 1, 48
 };
 
-void recalculate_mob(struct char_data* ch)
+void recalculate_mob(const struct char_data* ch)
 {
     struct char_data* mob;
     int level;
@@ -539,7 +543,7 @@ void clean_record_name(char* str)
     if (rest != s)
         memmove(s, rest, strlen(rest) + 1);
 }
-int get_permission(int zonnum, struct char_data* ch, int mode)
+int get_permission(int zonnum, const struct char_data* ch, int mode)
 {
     int num, perm;
     struct owner_list* tmpowner;
@@ -601,7 +605,7 @@ int shape_standup(struct char_data* ch, int pos)
 }
 
 /* A flag prompt answer, "p4 m2 p7" or one number; says where a list stopped. */
-void shape_flag_value(struct char_data* ch, char* arg, int* value)
+void shape_flag_value(const struct char_data* ch, char* arg, int* value)
 {
     char buf[80];
     char* stopped;
@@ -629,7 +633,7 @@ int shape_help_asked(const char* arg)
     return 1;
 }
 
-int show_help_entry(struct char_data* ch, const char* chapter, const char* keyword);
+int show_help_entry(const struct char_data* ch, const char* chapter, const char* keyword);
 
 /*
  * "%h" at a prompt: prints the field's help entry.  The caller then drops
@@ -654,7 +658,7 @@ const char* script_type_name(int type);
  * ones the "%h" hooks in the editors look up.  key is "" when the field has
  * no keyword.
  */
-static const char* shape_field_help_key(struct char_data* ch, char* key)
+static const char* shape_field_help_key(const struct char_data* ch, char* key)
 {
     int field;
 
@@ -696,7 +700,7 @@ static const char* shape_field_help_key(struct char_data* ch, char* key)
 }
 
 /* Ends a line or number prompt: says "%h" is there when the field has help. */
-void shape_prompt_hint(struct char_data* ch)
+void shape_prompt_hint(const struct char_data* ch)
 {
     char key[40];
     const char* chapter;
@@ -713,7 +717,7 @@ void shape_prompt_hint(struct char_data* ch)
  * editing.  Gives the field's help entry (key "" when it has none) and
  * whether formatting must be refused: mob options are one setting per line.
  */
-int shape_text_field(struct char_data* ch, char** str, const char** chapter, char* key, int* no_format)
+int shape_text_field(const struct char_data* ch, char** str, const char** chapter, char* key, int* no_format)
 {
     char** field = 0;
 
@@ -748,12 +752,12 @@ int shape_text_field(struct char_data* ch, char** str, const char** chapter, cha
     return 1;
 }
 
-void list_proto(struct char_data* ch, struct char_data* mob); /* forward declaration */
-void list_help(struct char_data* ch);
-void list_simple_proto(struct char_data* ch, struct char_data* mob); /* forward declaration */
-void list_simple_help(struct char_data* ch);
+void list_proto(const struct char_data* ch, const struct char_data* mob); /* forward declaration */
+void list_help(const struct char_data* ch);
+void list_simple_proto(const struct char_data* ch, const struct char_data* mob); /* forward declaration */
+void list_simple_help(const struct char_data* ch);
 
-void new_mob(struct char_data* ch)
+void new_mob(const struct char_data* ch)
 {
     CREATE1(SHAPE_PROTO(ch)->proto, char_data);
     SHAPE_PROTO(ch)
@@ -832,7 +836,7 @@ void new_mob(struct char_data* ch)
 /*
  * NOTE: mob is always written in 'M' mode.
  */
-void write_proto(FILE* f, struct char_data* m, int num)
+void write_proto(FILE* f, const struct char_data* m, int num)
 {
     clean_record_text(m->player.name);
     clean_record_text(m->player.short_descr);
@@ -1710,7 +1714,7 @@ void shape_center_proto(struct char_data* ch, char* arg)
     return;
 }
 #undef LINECHANGE
-void list_simple_help(struct char_data* ch)
+void list_simple_help(const struct char_data* ch)
 {
     send_to_char("Simple mode editing commands:\n\r", ch);
     send_to_char("possible fields are:\n\r1 - alias(es);\n\r", ch);
@@ -1727,7 +1731,7 @@ void list_simple_help(struct char_data* ch)
     return;
 }
 
-void list_help(struct char_data* ch)
+void list_help(const struct char_data* ch)
 {
     send_to_char("Extended mode editing commands:\n\r", ch);
     send_to_char("possible fields are:\n\r1 - alias(es);\n\r", ch);
@@ -1771,7 +1775,7 @@ void list_help(struct char_data* ch)
     return;
 }
 /*********--------------------------------*********/
-void list_simple_proto(struct char_data* ch, struct char_data* mob)
+void list_simple_proto(const struct char_data* ch, const struct char_data* mob)
 {
     char str[255];
 
@@ -1811,7 +1815,7 @@ void list_simple_proto(struct char_data* ch, struct char_data* mob)
     send_to_char(str, ch);
 }
 
-void list_proto(struct char_data* ch, struct char_data* mob)
+void list_proto(const struct char_data* ch, const struct char_data* mob)
 {
     static char str[MAX_STRING_LENGTH];
     send_to_char("Full editing mode.\n\r", ch);
@@ -1941,7 +1945,7 @@ int get_text(FILE* f, char** line)
 }
 
 /****************-------------------------------------****************/
-int load_proto(struct char_data* ch, char* arg)
+int load_proto(struct char_data* ch, const char* arg)
 {
     char format;
     // int i;
@@ -2246,6 +2250,82 @@ int load_proto(struct char_data* ch, char* arg)
 /*****************----------------------------------******************/
 int append_proto(struct char_data* ch, char* arg);
 
+/* A mob whose program reads its own options and reports its own lines
+ * (shopkeeper, banker, ranger, mage), so the walker check leaves unknown lines to it. */
+static bool has_options_program(const struct char_data* proto, int rnum)
+{
+    return is_vendor_candidate(proto, rnum) || is_banker_candidate(proto, rnum) || is_ranger_candidate(proto, rnum)
+        || is_mage_candidate(proto, rnum);
+}
+
+/* A spec proc slot that holds what the game copy's /29 put there: /implement
+ * frees it for the new /29 (implement_proto), so it is no special that wins. */
+static bool slot_freed_by_implement(int rnum)
+{
+    return rnum >= 0 && mob_index[rnum].func && IS_SET(mob_proto[rnum].specials2.act, MOB_SPEC)
+        && (void*)mob_index[rnum].func == virt_program_number(mob_proto[rnum].specials.store_prog_number);
+}
+
+/* Why the options program in /29 will not run (options_program_block).
+ * Takes the editor's copy: /29 there is still the number typed. */
+static options_program_block options_program_blocked(const struct char_data* proto, int rnum)
+{
+    const int prog = proto->specials.store_prog_number;
+    if (no_specials
+        || (prog != PROG_BARTER_VENDOR && prog != PROG_BANKER && prog != PROG_RANGER && prog != PROG_MAGE))
+        return options_program_block::none;
+    const bool spec_on = IS_SET(proto->specials2.act, MOB_SPEC);
+    return options_program_block_for(spec_on, !spec_on && real_program(prog) > 0,
+        spec_on && has_options_program(proto, rnum), spec_on && slot_freed_by_implement(rnum));
+}
+
+/* The settings check of the options program in /29. */
+static void check_program_options(const struct char_data* proto, int mob_vnum, const struct char_data* ch)
+{
+    switch (proto->specials.store_prog_number) {
+    case PROG_BARTER_VENDOR:
+        vendor_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_BANKER:
+        banker_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_RANGER:
+        ranger_config_check(proto, mob_vnum, ch);
+        break;
+    case PROG_MAGE:
+        mage_config_check(proto, mob_vnum, ch);
+        break;
+    }
+}
+
+/* A program that will not run: says why, then checks its lines as if it
+ * did, so its own keys pass and typos are still named. One that runs after
+ * /implement gets its check alone. True if its lines were checked here. */
+static bool report_blocked_program(const struct char_data* ch, const struct char_data* proto, int rnum, int mob_vnum)
+{
+    const options_program_block why = options_program_blocked(proto, rnum);
+    if (why == options_program_block::none)
+        return false;
+    const std::string line = options_program_block_line(mob_vnum, proto->specials.store_prog_number, why);
+    if (!line.empty()) {
+        send_to_char(line.c_str(), ch);
+        send_to_char("\n\r", ch);
+    }
+    check_program_options(proto, mob_vnum, ch);
+    return true;
+}
+
+/* After /save or /add writes the editor's mob as `vnum`: its options
+ * program's lines, a program that will not run, then the walker lines. */
+static void report_saved_options(const struct char_data* ch, int vnum)
+{
+    struct char_data* proto = SHAPE_PROTO(ch)->proto;
+    if (has_options_program(proto, proto->nr))
+        check_program_options(proto, vnum, ch);
+    const bool blocked = report_blocked_program(ch, proto, proto->nr, vnum);
+    walker_config_check(proto, vnum, has_options_program(proto, proto->nr) || blocked, ch);
+}
+
 /* copy f1 to f2, replacing mob #num with new mob */
 int replace_proto(struct char_data* ch, char* arg)
 {
@@ -2352,10 +2432,7 @@ int replace_proto(struct char_data* ch, char* arg)
 
     if (!IS_SET(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE)) {
         write_proto(f2, SHAPE_PROTO(ch)->proto, num);
-        if (is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-            vendor_config_check(SHAPE_PROTO(ch)->proto, num, ch);
-        if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-            banker_config_check(SHAPE_PROTO(ch)->proto, num, ch);
+        report_saved_options(ch, num);
         REMOVE_BIT(SHAPE_PROTO(ch)->flags, SHAPE_DELETE_ACTIVE);
     }
 
@@ -2467,10 +2544,7 @@ int append_proto(struct char_data* ch, char* arg)
 
     fseek(f2, -1, SEEK_CUR);
     write_proto(f2, SHAPE_PROTO(ch)->proto, i1 + 1);
-    if (is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-        vendor_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
-    if (is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr))
-        banker_config_check(SHAPE_PROTO(ch)->proto, i1 + 1, ch);
+    report_saved_options(ch, i1 + 1);
     sprintf(str, "Mobile added to database as #%d.\n\r", i1 + 1);
     send_to_char(str, ch);
     SHAPE_PROTO(ch)
@@ -2506,7 +2580,7 @@ int append_proto(struct char_data* ch, char* arg)
 
 /* report_vendor false: the caller already reported the vendor's problems
  * (the /save half of /done), so the registry is rebuilt silently. */
-void implement_proto(struct char_data* ch, bool report_vendor = true)
+void implement_proto(const struct char_data* ch, bool report_vendor = true, bool report_walker = true)
 {
     int number;
     struct char_data* proto;
@@ -2534,8 +2608,7 @@ void implement_proto(struct char_data* ch, bool report_vendor = true)
     /* If the spec proc slot holds what the old /29 gave, implement put it
      * there: free it so the new flag and /29 can take its place.  A slot
      * filled at boot by vnum (guild, receptionist, shopkeeper...) is kept. */
-    if (IS_SET(proto->specials2.act, MOB_SPEC) && mob_index[number].func
-        && (void*)mob_index[number].func == virt_program_number(proto->specials.store_prog_number))
+    if (slot_freed_by_implement(number))
         mob_index[number].func = 0;
     memcpy(proto, SHAPE_PROTO(ch)->proto, sizeof(struct char_data));
     /*    if(proto->player.name) RELEASE(proto->player.name);
@@ -2580,6 +2653,17 @@ void implement_proto(struct char_data* ch, bool report_vendor = true)
     vendor_implement_check(number, ch);
     banker_config_rebuild(number, ch, report_vendor);
     banker_implement_check(number, ch);
+    ranger_config_rebuild(number, ch, report_vendor);
+    ranger_implement_check(number, ch);
+    mage_config_rebuild(number, ch, report_vendor);
+    mage_implement_check(number, ch);
+    walker_config_rebuild(number);
+    if (report_vendor && report_walker) {
+        /* The editor's copy, not mob_proto: with SPEC off, /29 in mob_proto is
+         * now a mudlle index (real_program above); the editor keeps the 32. */
+        const bool blocked = report_blocked_program(ch, SHAPE_PROTO(ch)->proto, number, mob_index[number].virt);
+        walker_config_check(mob_proto + number, mob_index[number].virt, has_options_program(mob_proto + number, number) || blocked, ch);
+    }
 }
 ACMD(do_shape)
 {
@@ -3102,10 +3186,11 @@ void extra_coms_proto(struct char_data* ch, char* argument)
             = SHAPE_EDIT;
         break;
     case SHAPE_DONE: {
-        /* The save reports vendor or banker problems exactly when this is true (the
-         * same test replace_proto makes), so implement doesn't repeat them. */
-        bool save_reports = is_vendor_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr)
-            || is_banker_candidate(SHAPE_PROTO(ch)->proto, SHAPE_PROTO(ch)->proto->nr);
+        /* The save reports vendor, banker, ranger or mage problems exactly when this is
+         * true (the same tests replace_proto makes), so implement doesn't repeat them. */
+        struct char_data* proto = SHAPE_PROTO(ch)->proto;
+        bool save_reports = has_options_program(proto, proto->nr)
+            || options_program_blocked(proto, proto->nr) == options_program_block::after_implement;
         /* A failed save must not throw the edits away. */
         if (replace_proto(ch, argument) < 0) {
             send_to_char("Not saved - still shaping. Fix the problem and /done again,\n\r"
@@ -3113,7 +3198,8 @@ void extra_coms_proto(struct char_data* ch, char* argument)
                 ch);
             break;
         }
-        implement_proto(ch, !save_reports);
+        /* The save always reports walker problems, so implement never repeats those. */
+        implement_proto(ch, !save_reports, false);
         extra_coms_proto(ch, "free");
     } break;
     }

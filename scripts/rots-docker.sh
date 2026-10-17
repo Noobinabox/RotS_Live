@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Helper for building and running RotS in the 32-bit Linux container.
+# Helper for building and running RotS (built 32-bit) in the Linux container.
 #
 # Usage:
-#   scripts/rots-docker.sh build      Build the i386 toolchain image.
+#   scripts/rots-docker.sh build      Build the Ubuntu 22.04 toolchain image.
 #   scripts/rots-docker.sh compile    Run `make setup` + `make all` in the container.
 #   scripts/rots-docker.sh test       Run the CMake build + gtest suite (`make test`).
 #   scripts/rots-docker.sh boot       Compile (if needed) and start the server on :1024.
@@ -25,7 +25,7 @@ case "$cmd" in
   build)
     # A rebuild moves the rots-dev tag to the new image and leaves the old one behind
     # untagged; remove it. Never fatal: it may still be in use by a running container.
-    image="rots-dev:bullseye-i386"
+    image="rots-dev:jammy-amd64"
     old_id="$(docker image inspect -f '{{.Id}}' "$image" 2>/dev/null || true)"
     docker compose build
     new_id="$(docker image inspect -f '{{.Id}}' "$image" 2>/dev/null || true)"

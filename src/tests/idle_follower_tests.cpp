@@ -37,6 +37,14 @@ extern struct char_data* waiting_list;
 void clear_char(struct char_data* ch, int mode);
 int register_npc_char(struct char_data* mob);
 void remove_char_exists(int num);
+extern struct char_data* mob_proto;
+extern int top_of_mobt;
+extern struct index_data* obj_index;
+extern struct obj_data* obj_proto;
+extern int top_of_objt;
+extern struct obj_data* object_list;
+void Crash_follower_load(struct char_data* ch, FILE* fp);
+bool Crash_alias_load(struct char_data* ch, FILE* fp);
 
 namespace {
 
@@ -391,6 +399,91 @@ TEST_F(IdleFollowersTest, TheIdleDisconnectExtractsThePlayer)
         for (char_data* occupant = world[room].people; occupant; occupant = occupant->next_in_room)
             EXPECT_NE(occupant, m_extracted_player) << "the extracted player is still listed in room " << room;
     }
+}
+
+// What a follower wears is saved with its owner and comes back at login. An object bumped in the
+// meantime is brought up to its prototype's version there, as the owner's own are.
+TEST_F(IdleFollowersTest, AFollowersOutdatedEquipmentIsRefreshedWhenTheOwnerLoads)
+{
+    // Tables for the load: real_mobile and read_object search them, read_mobile copies from them.
+    char_data mob_prototypes[4] {};
+    const int sorted_vnums[4] = { 4507, 4508, 6601, 11102 };
+    for (int i = 0; i < 4; ++i) {
+        clear_char(&mob_prototypes[i], MOB_ISNPC);
+        SET_BIT(MOB_FLAGS(&mob_prototypes[i]), MOB_ISNPC);
+        mob_prototypes[i].nr = i;
+        m_mob_index[i].virt = sorted_vnums[i];
+    }
+    char_data* const saved_mob_proto = mob_proto;
+    const int saved_top_of_mobt = top_of_mobt;
+    index_data* const saved_obj_index = obj_index;
+    obj_data* const saved_obj_proto = obj_proto;
+    const int saved_top_of_objt = top_of_objt;
+    obj_data* const saved_object_list = object_list;
+    mob_proto = mob_prototypes;
+    top_of_mobt = 3;
+
+    index_data helm_index[1] {};
+    obj_data helm_proto[1] {};
+    char helm_name[] = "helm";
+    char helm_short[] = "a steel helm";
+    clear_object(&helm_proto[0]);
+    helm_index[0].virt = 1001;
+    helm_proto[0].item_number = 0;
+    helm_proto[0].name = helm_name;
+    helm_proto[0].short_description = helm_short;
+    helm_proto[0].description = helm_short;
+    helm_proto[0].obj_flags.type_flag = ITEM_ARMOR;
+    helm_proto[0].obj_flags.wear_flags = ITEM_WEAR_HEAD;
+    obj_index = helm_index;
+    obj_proto = helm_proto;
+    top_of_objt = 0;
+    object_list = nullptr;
+
+    equip_char(cub, read_object(0, REAL), WEAR_HEAD);
+    Crash_crashsave(player);
+
+    // The builder gives the helm an affect and bumps it.
+    helm_proto[0].obj_flags.version = 2;
+    helm_proto[0].affected[0] = { APPLY_OB, 4 };
+
+    char_data returning {};
+    clear_char(&returning, MOB_VOID);
+    char returning_name[] = "Idleranger";
+    returning.player.name = returning_name;
+    returning.player.race = RACE_HUMAN;
+    returning.player.level = 40;
+    returning.in_room = kPlayRoom;
+    FILE* fp = Crash_load(&returning);
+    ASSERT_NE(fp, nullptr);
+    ASSERT_TRUE(Crash_alias_load(&returning, fp));
+    Crash_follower_load(&returning, fp);
+    EXPECT_EQ(std::fclose(fp), 0);
+
+    int wearing = 0;
+    for (follow_type* k = returning.followers; k != nullptr; k = k->next) {
+        const obj_data* loaded_helm = k->follower->equipment[WEAR_HEAD];
+        if (loaded_helm != nullptr) {
+            ++wearing;
+            EXPECT_EQ(k->follower->nr, cub->nr) << "on the follower that wore it";
+            EXPECT_EQ(loaded_helm->obj_flags.version, 2);
+            EXPECT_EQ(loaded_helm->affected[0].location, APPLY_OB);
+            EXPECT_EQ(loaded_helm->affected[0].modifier, 4);
+        }
+        char_from_room(k->follower);
+        remove_char_exists(k->follower->abs_number);
+    }
+    EXPECT_EQ(wearing, 1);
+    if (returning.mount_data.mount != nullptr) {
+        char_from_room(returning.mount_data.mount);
+        remove_char_exists(returning.mount_data.mount->abs_number);
+    }
+    obj_index = saved_obj_index;
+    obj_proto = saved_obj_proto;
+    top_of_objt = saved_top_of_objt;
+    object_list = saved_object_list;
+    mob_proto = saved_mob_proto;
+    top_of_mobt = saved_top_of_mobt;
 }
 
 TEST_F(IdleFollowersTest, TheIdleSaveHasNoFollowerSectionSoNothingIsRestored)

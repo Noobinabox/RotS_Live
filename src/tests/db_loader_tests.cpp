@@ -9,6 +9,7 @@
 #include "../handler.h"
 #include "../mob_progs/banker.h"
 #include "../objects_json.h"
+#include "../protos.h" /* shape_object, for the object editor's version field */
 #include "../spells.h" /* SPELL_RESIST_* for the affect-persistence tests */
 #include "../utils.h"
 #include "AccountRecordOnDiskBuilder.h"
@@ -51,7 +52,7 @@ extern int top_of_objt;
 void build_player_index(void);
 void clear_char(struct char_data* ch, int mode);
 void save_player(struct char_data* ch, int load_room, int index_pos);
-void store_to_char(struct char_file_u* st, struct char_data* ch);
+void store_to_char(const struct char_file_u* st, struct char_data* ch);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 int file_to_string_alloc(const char* name, char** buf);
 
@@ -1857,6 +1858,583 @@ TEST(DbLoader, CrashLoadConsumesStagedAccountBackedObjectBytesAndEquipsWearableI
     ASSERT_NE(character.carrying, nullptr);
     EXPECT_EQ(obj_index[character.carrying->item_number].virt, 1002);
     EXPECT_EQ(character.carrying->obj_flags.weight, 4);
+}
+
+int Crash_obj2store(const obj_data* obj, const char_data* ch, int pos, FILE* fl);
+
+TEST(DbLoader, CrashLoadRefreshesOutdatedCopiesWornCarriedAndNested)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    ensure_test_world_room(3001);
+
+    // The helm's prototype is at version 3 and now gives OB +2.
+    obj_proto[0].obj_flags.version = 3;
+    obj_proto[0].affected[0].location = APPLY_OB;
+    obj_proto[0].affected[0].modifier = 2;
+
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    char_file_u stored_character {};
+    std::snprintf(stored_character.name, sizeof(stored_character.name), "%s", "aragorn");
+    std::snprintf(stored_character.title, sizeof(stored_character.title), "%s", "the Ranger");
+    std::snprintf(stored_character.description, sizeof(stored_character.description), "%s", "A ranger.");
+    stored_character.sex = SEX_MALE;
+    stored_character.race = RACE_HUMAN;
+    stored_character.bodytype = 1;
+    stored_character.level = 10;
+    stored_character.language = LANG_HUMAN;
+    stored_character.specials2.load_room = 3001;
+    stored_character.weight = 210;
+    stored_character.height = 72;
+    store_to_char(&stored_character, &character);
+
+    auto helm = [](int wear_pos, int version) {
+        objects_json::ObjectRecord record {};
+        record.item_number = 1001;
+        record.wear_pos = wear_pos;
+        record.version = version;
+        record.affects[0].location = APPLY_OB;
+        record.affects[0].modifier = 8; // what the old copies were saved with
+        return record;
+    };
+    objects_json::ObjectSaveData object_data;
+    object_data.rent.rentcode = RENT_CRASH;
+    object_data.objects.push_back(helm(WEAR_HEAD, 0)); // worn, never versioned
+    objects_json::ObjectRecord pack {};
+    pack.item_number = 1002;
+    pack.wear_pos = MAX_WEAR;
+    object_data.objects.push_back(pack); // carried pack...
+    object_data.objects.push_back(helm(MAX_WEAR + 1, 2)); // ...holding an older-version helm
+    object_data.objects.push_back(helm(MAX_WEAR, 3)); // carried, already current
+
+    std::string object_bytes;
+    std::string error_message;
+    ASSERT_TRUE(objects_json::object_save_data_to_binary(object_data, &object_bytes, &error_message)) << error_message;
+
+    stage_account_backed_object_bytes_for_character(&character, object_bytes.data(), object_bytes.size());
+    FILE* fp = Crash_load(&character);
+    ASSERT_NE(fp, nullptr);
+    ASSERT_EQ(std::fclose(fp), 0);
+
+    obj_data* worn = character.equipment[WEAR_HEAD];
+    ASSERT_NE(worn, nullptr);
+    EXPECT_EQ(worn->affected[0].modifier, 2);
+    EXPECT_EQ(worn->obj_flags.version, 3);
+
+    obj_data* current = nullptr;
+    obj_data* carried_pack = nullptr;
+    for (obj_data* obj = character.carrying; obj; obj = obj->next_content) {
+        if (obj_index[obj->item_number].virt == 1001)
+            current = obj;
+        else
+            carried_pack = obj;
+    }
+    ASSERT_NE(current, nullptr);
+    EXPECT_EQ(current->affected[0].modifier, 8) << "a copy already at the prototype's version is left alone";
+    EXPECT_EQ(current->obj_flags.version, 3);
+
+    ASSERT_NE(carried_pack, nullptr);
+    ASSERT_NE(carried_pack->contains, nullptr);
+    EXPECT_EQ(carried_pack->contains->affected[0].modifier, 2);
+    EXPECT_EQ(carried_pack->contains->obj_flags.version, 3);
+}
+
+TEST(DbLoader, CrashObj2StoreWritesTheVersionOnlyForVersionedObjects)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+
+    for (int version : { 0, 4 }) {
+        obj_data* obj = read_object(0, REAL);
+        ASSERT_NE(obj, nullptr);
+        obj->obj_flags.version = version;
+
+        FILE* file = tmpfile();
+        ASSERT_NE(file, nullptr);
+        ASSERT_EQ(Crash_obj2store(obj, &character, WEAR_HEAD, file), 1);
+        const long size = std::ftell(file);
+        std::rewind(file);
+        obj_file_elem record {};
+        ASSERT_EQ(std::fread(&record, sizeof(record), 1, file), 1u);
+        if (version == 0) {
+            EXPECT_EQ(size, (long)sizeof(obj_file_elem));
+            EXPECT_EQ(record.item_number_deprecated, DEPRECATED_ID_VALUE);
+        } else {
+            EXPECT_EQ(size, (long)(sizeof(obj_file_elem) + sizeof(int)));
+            EXPECT_EQ(record.item_number_deprecated, VERSIONED_ID_VALUE);
+            int stored = 0;
+            ASSERT_EQ(std::fread(&stored, sizeof(stored), 1, file), 1u);
+            EXPECT_EQ(stored, 4);
+        }
+        EXPECT_EQ(record.item_number, 1001);
+        std::fclose(file);
+    }
+}
+
+namespace {
+
+// What enchant weapon left on a weapon before enchants were recorded: the flags and the affect.
+objects_json::ObjectRecord cast_on_before_records(int vnum, int caster_flags)
+{
+    objects_json::ObjectRecord record {};
+    record.item_number = vnum;
+    record.wear_pos = MAX_WEAR;
+    record.extra_flags = ITEM_MAGIC | caster_flags;
+    record.affects[0].location = APPLY_OB;
+    record.affects[0].modifier = 6;
+    return record;
+}
+
+} // namespace
+
+TEST(DbLoader, RecordsOldEnchantsOnlyOnWeaponsThatWereCastOn)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON; // 1001, a plain weapon
+    obj_index[1].virt = 5410; // built +6 OB and magic
+    obj_proto[1].obj_flags.type_flag = ITEM_WEAPON;
+
+    objects_json::ObjectSaveData data;
+    data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_EVIL)); // 0: a good caster
+    data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_GOOD)); // 1: an evil one
+    data.objects.push_back(cast_on_before_records(1001, 0)); // 2: a neutral one
+    data.objects.push_back(cast_on_before_records(5410, 0)); // 3: built that way
+    data.objects.push_back(cast_on_before_records(9999, 0)); // 4: no such object any more
+    data.objects.push_back(cast_on_before_records(1001, 0)); // 5: +5, not the spell's +6
+    data.objects[5].affects[0].modifier = 5;
+    data.objects.push_back(cast_on_before_records(1001, 0)); // 6: a second affect
+    data.objects[6].affects[1].location = APPLY_STR;
+    data.objects[6].affects[1].modifier = 1;
+    data.objects.push_back(cast_on_before_records(1001, 0)); // 7: not magic
+    data.objects[7].extra_flags = 0;
+    data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_EVIL)); // 8: already recorded
+    data.objects[8].enchants.push_back({ ENCHANT_OB, ENCHANT_ALIGN_EVIL, 6 });
+    objects_json::FollowerData follower;
+    follower.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_GOOD));
+    data.followers.push_back(follower);
+
+    EXPECT_EQ(record_old_object_enchants(&data), 4);
+
+    const int expected_align[] = { ENCHANT_ALIGN_GOOD, ENCHANT_ALIGN_EVIL, ENCHANT_ALIGN_NEUTRAL };
+    for (int index = 0; index < 3; ++index) {
+        ASSERT_EQ(data.objects[index].enchants.size(), 1u) << index;
+        EXPECT_EQ(data.objects[index].enchants[0].type, ENCHANT_OB);
+        EXPECT_EQ(data.objects[index].enchants[0].amount, 6);
+        EXPECT_EQ(data.objects[index].enchants[0].align, expected_align[index]) << index;
+    }
+    for (int index = 3; index < 8; ++index)
+        EXPECT_TRUE(data.objects[index].enchants.empty()) << index;
+    ASSERT_EQ(data.objects[8].enchants.size(), 1u);
+    EXPECT_EQ(data.objects[8].enchants[0].align, ENCHANT_ALIGN_EVIL) << "a record already there is not second-guessed";
+    ASSERT_EQ(data.followers[0].objects[0].enchants.size(), 1u) << "a pet's gear is in the same file";
+    EXPECT_EQ(data.followers[0].objects[0].enchants[0].align, ENCHANT_ALIGN_EVIL);
+
+    EXPECT_EQ(record_old_object_enchants(&data), 0) << "what it recorded is not recorded twice";
+
+    // The same saved copy on something that is not a weapon is that object's own +6.
+    obj_proto[0].obj_flags.type_flag = ITEM_ARMOR;
+    objects_json::ObjectSaveData armor;
+    armor.objects.push_back(cast_on_before_records(1001, 0));
+    EXPECT_EQ(record_old_object_enchants(&armor), 0);
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON;
+
+    // A copy carrying both flags got one of them from its prototype; the other is the caster's.
+    obj_proto[0].obj_flags.extra_flags = ITEM_ANTI_GOOD;
+    objects_json::ObjectSaveData both;
+    both.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_GOOD | ITEM_ANTI_EVIL));
+    EXPECT_EQ(record_old_object_enchants(&both), 1);
+    EXPECT_EQ(both.objects[0].enchants[0].align, ENCHANT_ALIGN_GOOD);
+}
+
+TEST(DbLoader, LoginRecordsOldEnchantsFromAFileOfTheOlderSchemaAndNeverFromACurrentOne)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON;
+
+    TemporaryDirectory temp_directory;
+    ASSERT_EQ(mkdir((temp_directory.path() + "/accounts").c_str(), 0700), 0);
+    ASSERT_EQ(mkdir((temp_directory.path() + "/accounts/A-E").c_str(), 0700), 0);
+
+    std::string error_message;
+    ASSERT_TRUE(account::create_account(temp_directory.path(), "alpha-admin", "player@example.com", "ValidPass1", 1700010101, nullptr, &error_message)) << error_message;
+    ASSERT_TRUE(account::admin_link_character(temp_directory.path(), "alpha-admin", "aragorn", 1700010102, nullptr, &error_message)) << error_message;
+
+    // A weapon built +6 OB and magic after enchants were recorded sits in a current file looking
+    // exactly like an old cast. It must stay unrecorded.
+    objects_json::ObjectSaveData object_data;
+    object_data.rent.rentcode = RENT_CRASH;
+    object_data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_EVIL));
+    std::string saved_bytes;
+    ASSERT_TRUE(objects_json::object_save_data_to_binary(object_data, &saved_bytes, &error_message)) << error_message;
+    ASSERT_TRUE(account::write_account_object_file(temp_directory.path(), "alpha-admin", "aragorn", saved_bytes, &error_message)) << error_message;
+
+    const std::string object_path = account::account_character_object_path(temp_directory.path(), "alpha-admin", "aragorn");
+    const std::string current_json = read_file_contents(object_path);
+    const std::string current_version = "\"version\": " + std::to_string(objects_json::OBJECTS_SCHEMA_VERSION) + ",";
+    ASSERT_EQ(current_json.find(current_version), current_json.find("\"version\"")) << "a save is written at the current schema";
+
+    std::string loaded_bytes;
+    ASSERT_TRUE(load_object_save_bytes_for_character(temp_directory.path(), "aragorn", &loaded_bytes, &error_message)) << error_message;
+    EXPECT_EQ(loaded_bytes, saved_bytes);
+
+    // The same file as the server before this one wrote it.
+    std::string older_json = current_json;
+    older_json.replace(older_json.find(current_version), current_version.size(),
+        "\"version\": " + std::to_string(objects_json::OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS) + ",");
+    write_file(object_path, older_json);
+
+    ASSERT_TRUE(load_object_save_bytes_for_character(temp_directory.path(), "aragorn", &loaded_bytes, &error_message)) << error_message;
+    objects_json::ObjectSaveData loaded;
+    ASSERT_TRUE(objects_json::object_save_data_from_binary(loaded_bytes, &loaded, &error_message)) << error_message;
+    ASSERT_EQ(loaded.objects.size(), 1u);
+    ASSERT_EQ(loaded.objects[0].enchants.size(), 1u);
+    EXPECT_EQ(loaded.objects[0].enchants[0].align, ENCHANT_ALIGN_GOOD);
+
+    // Saved again, the file is current and carries the record, so the next login guesses nothing.
+    ASSERT_TRUE(account::write_linked_character_object_file(temp_directory.path(), "aragorn", loaded_bytes, &error_message)) << error_message;
+    const std::string resaved_json = read_file_contents(object_path);
+    EXPECT_EQ(resaved_json.find(current_version), resaved_json.find("\"version\"")) << resaved_json;
+    EXPECT_NE(resaved_json.find("\"enchants\""), std::string::npos) << resaved_json;
+    std::string reloaded_bytes;
+    ASSERT_TRUE(load_object_save_bytes_for_character(temp_directory.path(), "aragorn", &reloaded_bytes, &error_message)) << error_message;
+    EXPECT_EQ(reloaded_bytes, loaded_bytes);
+}
+
+TEST(DbLoader, AnEnchantIsSavedLoadedAndKeptAcrossAVersionBump)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    ensure_test_world_room(3001);
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON;
+
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    char_file_u stored_character = make_stored_character("aragorn");
+    stored_character.specials2.load_room = 3001;
+    store_to_char(&stored_character, &character);
+
+    // Saved the way the game saves it: the marker, then the version and the enchants.
+    obj_data* sword = read_object(0, REAL);
+    ASSERT_NE(sword, nullptr);
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_GOOD, 6 };
+    ASSERT_TRUE(object_takes_enchant(sword, enchant));
+    apply_object_enchant(sword, enchant);
+    ASSERT_TRUE(record_object_enchant(sword, enchant));
+
+    FILE* file = tmpfile();
+    ASSERT_NE(file, nullptr);
+    ASSERT_EQ(Crash_obj2store(sword, &character, MAX_WEAR, file), 1);
+    EXPECT_EQ(std::ftell(file), (long)(sizeof(obj_file_elem) + sizeof(obj_file_extra)));
+    std::rewind(file);
+    obj_file_elem stored_record {};
+    ASSERT_EQ(std::fread(&stored_record, sizeof(stored_record), 1, file), 1u);
+    EXPECT_EQ(stored_record.item_number_deprecated, ENCHANTED_ID_VALUE);
+    obj_file_extra stored_extra {};
+    ASSERT_EQ(std::fread(&stored_extra, sizeof(stored_extra), 1, file), 1u);
+    EXPECT_EQ(stored_extra.enchants[0].type, ENCHANT_OB);
+    EXPECT_EQ(stored_extra.enchants[0].align, ENCHANT_ALIGN_GOOD);
+    std::fclose(file);
+
+    // The builder then makes the weapon glow and bumps it.
+    obj_proto[0].obj_flags.version = 2;
+    obj_proto[0].obj_flags.extra_flags = ITEM_GLOW;
+
+    objects_json::ObjectSaveData object_data;
+    object_data.rent.rentcode = RENT_CRASH;
+    object_data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_EVIL));
+    object_data.objects[0].enchants.push_back({ ENCHANT_OB, ENCHANT_ALIGN_GOOD, 6 });
+    std::string object_bytes;
+    std::string error_message;
+    ASSERT_TRUE(objects_json::object_save_data_to_binary(object_data, &object_bytes, &error_message)) << error_message;
+    stage_account_backed_object_bytes_for_character(&character, object_bytes.data(), object_bytes.size());
+    FILE* fp = Crash_load(&character);
+    ASSERT_NE(fp, nullptr);
+    ASSERT_EQ(std::fclose(fp), 0);
+
+    obj_data* loaded = character.carrying;
+    ASSERT_NE(loaded, nullptr);
+    EXPECT_EQ(loaded->obj_flags.version, 2);
+    EXPECT_EQ(loaded->obj_flags.extra_flags, ITEM_GLOW | ITEM_MAGIC | ITEM_ANTI_EVIL);
+    EXPECT_EQ(loaded->affected[0].location, APPLY_OB);
+    EXPECT_EQ(loaded->affected[0].modifier, 6);
+    EXPECT_EQ(count_object_enchants(loaded), 1);
+}
+
+void Crash_follower_load(char_data* ch, FILE* fp);
+bool Crash_refresh_object(obj_data* obj, long idnum);
+extern int generic_scalp;
+
+void Crash_tell_object_refresh(const char_data* ch, const char* name);
+
+// Short descriptions are builder text of any length; the message is cut to its buffer.
+TEST(DbLoader, TheUpdatedMessageIsCutToItsBufferForAnOverlongName)
+{
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    const std::string name(MAX_STRING_LENGTH * 2, 'x');
+    buf2[0] = '!';
+
+    Crash_tell_object_refresh(&character, name.c_str());
+    EXPECT_EQ(std::strlen(buf1), (size_t)MAX_STRING_LENGTH - 1);
+    EXPECT_EQ(buf2[0], '!') << "the buffer after it is untouched";
+}
+
+// A scalp keeps the head it was cut from in its values and flags; a bump never rebuilds one.
+TEST(DbLoader, AScalpIsNeverRefreshed)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    for (int rnum : { 0, 1 }) {
+        obj_proto[rnum].obj_flags.version = 3;
+        obj_proto[rnum].affected[0] = { APPLY_OB, 4 };
+    }
+    obj_data* scalp = read_object(0, REAL);
+    obj_data* pack = read_object(1, REAL);
+    for (obj_data* copy : { scalp, pack }) {
+        copy->obj_flags.version = 0;
+        copy->affected[0] = { APPLY_NONE, 0 };
+    }
+    obj_index[0].virt = generic_scalp;
+
+    EXPECT_FALSE(Crash_refresh_object(scalp, 4242));
+    EXPECT_EQ(scalp->obj_flags.version, 0);
+    EXPECT_EQ(scalp->affected[0].location, APPLY_NONE);
+
+    EXPECT_TRUE(Crash_refresh_object(pack, 4242)) << "anything else at that version is";
+    EXPECT_EQ(pack->obj_flags.version, 3);
+    EXPECT_EQ(pack->affected[0].modifier, 4);
+}
+
+// A file cut off inside an enchanted weapon's record is refused whole: nothing is loaded from it.
+TEST(DbLoader, AFileCutOffInsideAnEnchantedRecordLoadsNothing)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    ensure_test_world_room(3001);
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON;
+
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    char_file_u stored_character = make_stored_character("aragorn");
+    stored_character.specials2.load_room = 3001;
+    store_to_char(&stored_character, &character);
+
+    objects_json::ObjectSaveData object_data;
+    object_data.rent.rentcode = RENT_CRASH;
+    object_data.objects.push_back(cast_on_before_records(1001, ITEM_ANTI_EVIL));
+    object_data.objects[0].enchants.push_back({ ENCHANT_OB, ENCHANT_ALIGN_GOOD, 6 });
+    std::string object_bytes;
+    std::string error_message;
+    ASSERT_TRUE(objects_json::object_save_data_to_binary(object_data, &object_bytes, &error_message)) << error_message;
+    object_bytes.resize(sizeof(rent_info) + sizeof(obj_file_elem) + sizeof(obj_file_extra) - 2);
+
+    stage_account_backed_object_bytes_for_character(&character, object_bytes.data(), object_bytes.size());
+    EXPECT_EQ(Crash_load(&character), nullptr);
+    EXPECT_EQ(character.carrying, nullptr);
+}
+
+// The idle-out save writes no follower section. The file is still the caller's to close, once.
+TEST(DbLoader, AFileThatEndsBeforeItsFollowersIsLeftOpenForTheCaller)
+{
+    ScopedObjectPrototypeTable object_prototypes;
+    ensure_test_world_room(3001);
+
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    char_file_u stored_character = make_stored_character("aragorn");
+    stored_character.specials2.load_room = 3001;
+    store_to_char(&stored_character, &character);
+
+    objects_json::ObjectSaveData object_data;
+    object_data.rent.rentcode = RENT_CRASH;
+    std::string object_bytes;
+    std::string error_message;
+    ASSERT_TRUE(objects_json::object_save_data_to_binary(object_data, &object_bytes, &error_message)) << error_message;
+    object_bytes.resize(object_bytes.size() - sizeof(follower_file_elem));
+
+    stage_account_backed_object_bytes_for_character(&character, object_bytes.data(), object_bytes.size());
+    FILE* fp = Crash_load(&character);
+    ASSERT_NE(fp, nullptr);
+    ASSERT_TRUE(Crash_alias_load(&character, fp));
+    Crash_follower_load(&character, fp);
+    EXPECT_EQ(std::ftell(fp), (long)object_bytes.size()) << "still open";
+    EXPECT_EQ(std::fclose(fp), 0);
+}
+
+// The file the game itself writes, read back by the game: the enchanted weapon's longer record
+// must not put the load, or the rent listing, out of step for the object after it.
+TEST(DbLoader, AnEnchantedWeaponSavedByTheGameLoadsBackAndTheRentListingReadsPastIt)
+{
+    TemporaryDirectory temp_directory;
+    ScopedWorkingDirectory working_directory(temp_directory.path());
+    ScopedPlayerTableEntry player_table_entry("aragorn");
+    ScopedObjectPrototypeTable object_prototypes;
+    ensure_test_world_room(3001);
+    obj_proto[0].obj_flags.type_flag = ITEM_WEAPON;
+
+    for (const char* directory : { "accounts", "accounts/A-E", "players", "players/A-E", "plrobjs", "plrobjs/A-E" })
+        ASSERT_EQ(mkdir(directory, 0700), 0) << directory;
+
+    std::string error_message;
+    ASSERT_TRUE(account::create_account(".", "alpha-admin", "player@example.com", "ValidPass1", 1700010101, nullptr, &error_message)) << error_message;
+    ASSERT_TRUE(account::admin_link_character(".", "alpha-admin", "aragorn", 1700010102, nullptr, &error_message)) << error_message;
+
+    char_file_u stored_character = make_stored_character("aragorn");
+    stored_character.specials2.load_room = 3001;
+    ASSERT_TRUE(account::write_account_character_file(".", "alpha-admin", stored_character, &error_message)) << error_message;
+
+    char_data character {};
+    clear_char(&character, MOB_VOID);
+    store_to_char(&stored_character, &character);
+
+    // Carried newest first, so the sword is written before the pack.
+    obj_to_char(read_object(1, REAL), &character);
+    obj_data* sword = read_object(0, REAL);
+    const obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_EVIL, 6 };
+    apply_object_enchant(sword, enchant);
+    ASSERT_TRUE(record_object_enchant(sword, enchant));
+    obj_to_char(sword, &character);
+
+    Crash_crashsave(&character);
+    ASSERT_TRUE(character.specials.saved_object_file);
+
+    char_data imm {};
+    clear_char(&imm, MOB_VOID);
+    descriptor_data imm_descriptor {};
+    imm_descriptor.output = imm_descriptor.small_outbuf;
+    imm_descriptor.bufspace = SMALL_BUFSIZE - 1;
+    imm_descriptor.character = &imm;
+    imm.desc = &imm_descriptor;
+    char listed_name[] = "aragorn";
+    Crash_listrent(&imm, listed_name);
+    EXPECT_EQ(std::string(imm_descriptor.output), "aragorn rents with:\n\ra steel helm\n\ra travel pack\n\r");
+
+    std::string object_bytes;
+    ASSERT_TRUE(load_object_save_bytes_for_character(".", "aragorn", &object_bytes, &error_message)) << error_message;
+    char_data returning {};
+    clear_char(&returning, MOB_VOID);
+    store_to_char(&stored_character, &returning);
+    stage_account_backed_object_bytes_for_character(&returning, object_bytes.data(), object_bytes.size());
+    FILE* fp = Crash_load(&returning);
+    ASSERT_NE(fp, nullptr);
+    ASSERT_EQ(std::fclose(fp), 0);
+
+    int carried = 0;
+    const obj_data* loaded_sword = nullptr;
+    const obj_data* loaded_pack = nullptr;
+    for (const obj_data* obj = returning.carrying; obj != nullptr; obj = obj->next_content, ++carried) {
+        if (obj->item_number == 0)
+            loaded_sword = obj;
+        else if (obj->item_number == 1)
+            loaded_pack = obj;
+    }
+    EXPECT_EQ(carried, 2);
+    ASSERT_NE(loaded_sword, nullptr);
+    ASSERT_NE(loaded_pack, nullptr);
+    EXPECT_EQ(loaded_sword->obj_flags.extra_flags, ITEM_MAGIC | ITEM_ANTI_GOOD);
+    EXPECT_EQ(loaded_sword->affected[0].location, APPLY_OB);
+    EXPECT_EQ(loaded_sword->affected[0].modifier, 6);
+    ASSERT_EQ(count_object_enchants(loaded_sword), 1);
+    EXPECT_EQ(loaded_sword->enchants[0].align, ENCHANT_ALIGN_EVIL);
+    EXPECT_EQ(count_object_enchants(loaded_pack), 0);
+    EXPECT_EQ(loaded_pack->obj_flags.weight, obj_proto[1].obj_flags.weight);
+}
+
+void write_object(FILE* f, const struct obj_data* obj, int num);
+void load_objects(FILE* obj_f);
+
+// load_objects keeps its place in the prototype table between calls (boot reads one file after
+// another), so this is the one test that may call it.
+TEST(DbLoader, WorldObjectVersionSurvivesWriteAndLoadAndAShortLevelLineReadsAsNone)
+{
+    index_data* const previous_obj_index = obj_index;
+    obj_data* const previous_obj_proto = obj_proto;
+    const int previous_top_of_objt = top_of_objt;
+    obj_index = new index_data[3] {};
+    obj_proto = new obj_data[3] {};
+
+    char name[] = "sword";
+    char short_description[] = "a sword";
+    char description[] = "A sword lies here.";
+    char action_description[] = "";
+    obj_data written {};
+    written.name = name;
+    written.short_description = short_description;
+    written.description = description;
+    written.action_description = action_description;
+    written.obj_flags.type_flag = ITEM_WEAPON;
+    written.obj_flags.value[4] = 9;
+    written.obj_flags.level = 12;
+    written.obj_flags.script_number = 7;
+
+    FILE* file = tmpfile();
+    ASSERT_NE(file, nullptr);
+    written.obj_flags.version = 4;
+    write_object(file, &written, 2001); // on
+    written.obj_flags.version = -4;
+    write_object(file, &written, 2002); // off, number kept
+    // A line from before the fifth number existed. Its value[4] above it is 9: what the version
+    // used to be left holding when the line ran short.
+    std::fputs("#2003\nsword~\na sword~\nA sword lies here.~\n~\n5 0 0\n0 0 0 0 9\n1 1 1\n12 0 0 7\n", file);
+    std::fputs("#99999\n$~\n", file);
+    std::rewind(file);
+
+    load_objects(file);
+    std::fclose(file);
+
+    EXPECT_EQ(top_of_objt, 2);
+    EXPECT_EQ(obj_index[0].virt, 2001);
+    EXPECT_EQ(obj_proto[0].obj_flags.version, 4);
+    EXPECT_EQ(obj_proto[0].obj_flags.script_number, 7);
+    EXPECT_EQ(obj_proto[1].obj_flags.version, -4);
+    EXPECT_EQ(obj_index[2].virt, 2003);
+    EXPECT_EQ(obj_proto[2].obj_flags.level, 12);
+    EXPECT_EQ(obj_proto[2].obj_flags.script_number, 7);
+    EXPECT_EQ(obj_proto[2].obj_flags.value[4], 9);
+    EXPECT_EQ(obj_proto[2].obj_flags.version, 0);
+
+    delete[] obj_proto;
+    delete[] obj_index;
+    obj_proto = previous_obj_proto;
+    obj_index = previous_obj_index;
+    top_of_objt = previous_top_of_objt;
+}
+
+void shape_center_obj(struct char_data* ch, char* arg);
+
+TEST(DbLoader, ObjectEditorVersionFieldTakesExactlyBOrO)
+{
+    obj_data object {};
+    shape_object shape {};
+    shape.object = &object;
+    shape.procedure = SHAPE_EDIT;
+    shape.flags = SHAPE_OBJECT_LOADED;
+
+    char_data builder {};
+    clear_char(&builder, MOB_VOID);
+    builder.temp = &shape;
+
+    // Field 22: the first call shows the prompt, the second takes the answer.
+    auto answer = [&](const char* typed) {
+        char prompt[] = "";
+        shape.editflag = 22;
+        shape_center_obj(&builder, prompt);
+        char reply[32];
+        std::snprintf(reply, sizeof(reply), "%s", typed);
+        shape_center_obj(&builder, reply);
+        return object.obj_flags.version;
+    };
+
+    EXPECT_EQ(answer("o"), 0) << "nothing to turn off yet";
+    EXPECT_EQ(answer("b"), 1);
+    EXPECT_EQ(answer("on"), 1) << "\"on\" is not o";
+    EXPECT_EQ(answer("back"), 1) << "\"back\" is not b";
+    EXPECT_EQ(answer("3"), 1) << "no typed numbers";
+    EXPECT_EQ(answer(""), 1) << "blank keeps it";
+    EXPECT_EQ(answer(" B "), 2);
+    EXPECT_EQ(answer("o"), -2) << "off keeps the number";
+    EXPECT_EQ(answer("o"), -2) << "already off";
+    EXPECT_EQ(answer("b"), 3) << "the next bump counts on from the kept number";
+
+    builder.temp = nullptr;
 }
 
 TEST(DbLoader, AccountNativeCharacterAndObjectsJsonSupportEquippedLoginWithoutMigration)

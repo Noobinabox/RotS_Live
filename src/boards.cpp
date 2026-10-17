@@ -82,9 +82,9 @@ extern struct room_data world;
 extern struct obj_data* obj_proto;
 extern struct descriptor_data* descriptor_list;
 extern struct player_index_element* player_table;
-int find_name(char* name);
-int has_mail(char* recipient);
-int _parse_name(char* arg, char* name);
+int find_name(const char* name);
+int has_mail(const char* recipient);
+int _parse_name(const char* arg, char* name);
 
 /*
  * format: lnum, vnum, read lvl, write lvl, remove lvl, filename, 0 at end
@@ -114,7 +114,7 @@ int find_slot(void)
 }
 
 /* search the room ch is standING(in to find which board he's looking at */
-board_info_type* find_board(struct char_data* ch)
+board_info_type* find_board(const struct char_data* ch)
 {
     struct obj_data* obj;
     int i;
@@ -907,7 +907,7 @@ void board_info_type::reset_board()
     unlink(FILENAME);
 }
 board_info_type::board_info_type(int objnum, int l_read, int l_write, int l_rem,
-    int max_msg, char* file, char* titlename)
+    int max_msg, const char* file, const char* titlename)
 {
     /** This stuff is copied lower to the mail_info_type constructor -
         be careful and considerate. **/
@@ -952,7 +952,7 @@ board_info_type::board_info_type()
     filename[0] = 0;
 }
 mail_info_type::mail_info_type(int objnum, int l_read, int l_write, int l_rem,
-    int max_msg, char* file, char* titlename) /*:
+    int max_msg, const char* file, const char* titlename) /*:
   /  board_info_type::board_info_type/(objnum, l_read, l_write, l_rem, max_msg, file)*/
 {
     vnum = objnum;
@@ -1101,7 +1101,7 @@ void report_news(struct char_data* ch)
  *  The old report_mail function has been replaced with has_mail from the new mail system
  *  Rather than rewrite all instances of report_mail, i just made report_mail use has_mail
  */
-void report_mail(struct char_data* ch)
+void report_mail(const struct char_data* ch)
 {
     char recipient[100];
 

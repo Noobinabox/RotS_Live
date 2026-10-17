@@ -80,8 +80,11 @@ SOURCES := \
     mudlle2.cpp \
     mob_csv_extract.cpp \
     mob_options.cpp \
+    mob_walker.cpp \
     mob_progs/shopkeeper.cpp \
     mob_progs/banker.cpp \
+    mob_progs/ranger_prog.cpp \
+    mob_progs/mage_prog.cpp \
     game_boot_options.cpp \
     obj2html.cpp \
     object_utils.cpp \
@@ -148,7 +151,7 @@ clean:
 
 # See the warning above the root Makefile's format target before running this.
 format:
-	clang-format -i -style=WebKit *.cpp *.h
+	clang-format -i -style=WebKit *.cpp *.h intrusive/*.h
 
 # The unit tests are built by CMake only.
 test:

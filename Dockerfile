@@ -1,30 +1,39 @@
-# 32-bit Linux build/run environment for RotS.
-#
-# The game's Makefile forces a 32-bit build (-m32), which cannot run natively on
-# Apple Silicon / modern macOS. This image provides an i386 Linux toolchain so the
-# code compiles and runs UNCHANGED. On arm64 hosts Docker runs it via QEMU emulation.
+# Build/run environment for RotS: amd64 Ubuntu 22.04, the game server's Linux and compiler
+# (g++ 11.4), with the multilib toolchain that builds the game 32-bit (-m32), as the server
+# does. On arm64 hosts Docker emulates the image.
 #
 # Build/run with docker compose (see docker-compose.yml) or scripts/rots-docker.sh.
 #
-# The base image and the apt snapshot below are pinned as a pair: the image's libc6 comes
-# from bullseye-security, libc6-dev must match it exactly, and the mirrors prune superseded
-# security packages. The snapshot also freezes the toolchain versions. To move to a newer
-# image, update the digest and set the snapshot timestamp to that image's creation date.
-FROM --platform=linux/386 i386/debian:bullseye@sha256:014be3f6cfb9ca874136360a8365b4d2849e8f6269733ee1e2cf1ad9f1b5bd00
+# The base image and the apt snapshot below are pinned as a pair: libc6-dev and
+# libc6-dev-i386 must match the image's libc6 exactly, so a snapshot newer than the image
+# makes apt replace the image's libc6. The snapshot also freezes the toolchain versions.
+# To move to a newer image, update the digest and set the snapshot timestamp to that
+# image's org.opencontainers.image.created date.
+FROM --platform=linux/amd64 ubuntu:22.04@sha256:5ec03bb3441e8b0bf3b4f9cd4629a1ae763010dc3035bb8da3ae6cf026486401
 
-# check-valid-until=no: a snapshot's Release files are past their expiry date.
 RUN printf '%s\n' \
-        'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20260623T000000Z bullseye main' \
-        'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian-security/20260623T000000Z bullseye-security main' \
-        'deb [check-valid-until=no] http://snapshot.debian.org/archive/debian/20260623T000000Z bullseye-updates main' \
+        'deb https://snapshot.ubuntu.com/ubuntu/20260924T000000Z jammy main universe' \
+        'deb https://snapshot.ubuntu.com/ubuntu/20260924T000000Z jammy-updates main universe' \
+        'deb https://snapshot.ubuntu.com/ubuntu/20260924T000000Z jammy-security main universe' \
         > /etc/apt/sources.list
 
-# g++ 10 (supports -std=c++1z/c++17) + make. The CMake build (src/CMakeLists.txt) also
-# needs cmake and libcrypt-dev for the crypt() link. pkg-config is a CMake convenience.
-# telnet/procps are dev conveniences. The retries cover transient snapshot.debian.org
-# fetch failures.
-RUN apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 install -y --no-install-recommends \
-        g++ make cmake libcrypt-dev pkg-config telnet procps ca-certificates \
+# The snapshot service is https-only and the base image has no CA certificates, so
+# ca-certificates itself is fetched without TLS peer verification. That does not weaken
+# integrity: apt checks each InRelease signature against the image's ubuntu-keyring and
+# each package against the signed hashes. Everything after it is fetched with verification.
+#
+# The 32-bit build needs gcc-multilib, g++-multilib, libc6-dev-i386 and libcrypt-dev:i386
+# (crypt() is linked 32-bit). cmake drives the CMake build (src/CMakeLists.txt) and
+# pkg-config is a CMake convenience. python3 and python3-venv run the integration harness.
+# telnet and procps are dev conveniences. The retries cover transient snapshot fetch failures.
+RUN apt-get -o Acquire::Retries=3 -o Acquire::https::Verify-Peer=false update \
+    && apt-get -o Acquire::Retries=3 -o Acquire::https::Verify-Peer=false install -y --no-install-recommends \
+        ca-certificates \
+    && dpkg --add-architecture i386 \
+    && apt-get -o Acquire::Retries=3 update \
+    && apt-get -o Acquire::Retries=3 install -y --no-install-recommends \
+        g++ gcc-multilib g++-multilib libc6-dev-i386 libcrypt-dev libcrypt-dev:i386 \
+        make cmake pkg-config python3 python3-venv telnet procps ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /rots

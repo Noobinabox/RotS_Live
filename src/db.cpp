@@ -38,8 +38,11 @@
 #include "character_json.h"
 #include "exploits_json.h"
 #include "mob_options.h"
+#include "mob_walker.h"
 #include "game_boot_options.h"
 #include "mob_progs/banker.h"
+#include "mob_progs/mage_prog.h"
+#include "mob_progs/ranger_prog.h"
 #include "mob_progs/shopkeeper.h"
 #include "player_file_finalize.h"
 #include "roster_cache.h"
@@ -169,7 +172,7 @@ bool report_script_negative_room(void);
 void draw_map();
 void initialiaze_small_map();
 void reset_small_map();
-void boot_the_shops(FILE* shop_f, char* filename);
+void boot_the_shops(FILE* shop_f, const char* filename);
 void assign_mobiles(void);
 void assign_objects(void);
 void assign_rooms(void);
@@ -314,7 +317,7 @@ ACMD(do_reload)
 }
 
 /* body of the booting system */
-char* mudlle_converter(char*);
+char* mudlle_converter(const char*);
 void boot_db(void)
 {
     int i, tmp;
@@ -499,6 +502,14 @@ void boot_db(void)
 
     log("Checking bankers.");
     banker_config_boot();
+
+    log("Checking ranger mobs.");
+    ranger_config_boot();
+
+    log("Checking mage mobs.");
+    mage_config_boot();
+
+    walker_config_boot();
 
     boot_time = time(0);
 
@@ -857,7 +868,7 @@ namespace {
 } // namespace
 
 
-int load_player_from_account_json_path(char* name, const char* player_path, struct char_file_u* char_element)
+int load_player_from_account_json_path(const char* name, const char* player_path, struct char_file_u* char_element)
 {
     if (player_path == nullptr || *player_path == '\0') {
         sprintf(buf, "Couldn't find account-native character file path for %s\n", name);
@@ -983,7 +994,7 @@ void build_account_native_player_index(void)
 
 //  Reads a field from the player filename format (using FAT as index)
 
-int read_filename_field(int pos, char* field, char* fname)
+int read_filename_field(int pos, char* field, const char* fname)
 {
     int field_pos;
 
@@ -999,7 +1010,7 @@ int read_filename_field(int pos, char* field, char* fname)
 }
 
 /* New index build for the new player files */
-void build_directory(char* TheDir)
+void build_directory(const char* TheDir)
 {
     DIR* dp;
     struct dirent* dentry;
@@ -1246,7 +1257,7 @@ int count_hash_records(FILE* fl)
 
 void index_boot(int mode)
 {
-    char *index_filename, *prefix = NULL;
+    const char *index_filename, *prefix = NULL;
     FILE *index, *db_file;
     int rec_count = 0;
 
@@ -1741,7 +1752,7 @@ void load_scripts(FILE* fl)
  *  procedures for resetting, both play-time and boot-time	 	 *
  *********************************************************************** */
 
-int vnum_mobile(char* searchname, struct char_data* ch)
+int vnum_mobile(const char* searchname, const struct char_data* ch)
 {
     int nr, found = 0;
 
@@ -1756,7 +1767,7 @@ int vnum_mobile(char* searchname, struct char_data* ch)
     return (found);
 }
 
-int vnum_object(char* searchname, struct char_data* ch)
+int vnum_object(const char* searchname, const struct char_data* ch)
 {
     int nr, found = 0;
 
@@ -2194,11 +2205,14 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.cost = tmp2;
             obj_proto[i].obj_flags.cost_per_day = tmp3;
 
-            fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5);
+            /* An older line has four numbers: no version, not whatever tmp5 last held. */
+            if (fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5) < 5)
+                tmp5 = 0;
             obj_proto[i].obj_flags.level = tmp;
             obj_proto[i].obj_flags.rarity = tmp2;
             obj_proto[i].obj_flags.material = tmp3;
             obj_proto[i].obj_flags.script_number = tmp4;
+            obj_proto[i].obj_flags.version = tmp5;
             /*fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
             obj_proto[i].obj_flags.poisoned = tmp;
             obj_proto[i].obj_flags.poisondata[0] = tmp2;
@@ -2253,7 +2267,7 @@ void load_objects(FILE* obj_f)
 
 /* execute the reset command table of a given zone */
 //************************************************************************
-int set_exit_state(struct room_data* room, int dir, int newstate)
+int set_exit_state(const struct room_data* room, int dir, int newstate)
 {
     const int door_mask = (EX_CLOSED | EX_LOCKED);
     int tmp, tmp2;
@@ -2772,7 +2786,7 @@ int load_player(char* name, struct char_file_u* char_element)
     return result;
 }
 
-int find_name(char* name);
+int find_name(const char* name);
 
 /* Load a char, TRUE if loaded, FALSE if not */
 int load_char(char* name, struct char_file_u* char_element)
@@ -2808,7 +2822,7 @@ int load_char_from_text(char* name, const char* player_text, struct char_file_u*
 }
 
 /* copy data from the file structure to a char struct */
-void store_to_char(struct char_file_u* st, struct char_data* ch)
+void store_to_char(const struct char_file_u* st, struct char_data* ch)
 {
     int i;
 
@@ -3030,7 +3044,7 @@ void char_to_store(struct char_data* ch, struct char_file_u* st)
     affect_total(ch, AFFECT_TOTAL_SET);
 } /* Char to store */
 
-int create_entry(char* name)
+int create_entry(const char* name)
 {
     int i;
 
@@ -3117,7 +3131,7 @@ bool update_player_index_entry_from_store(
 }
 
 /* create a new entry in the in-memory index table for the player file */
-int old_create_entry(char* name)
+int old_create_entry(const char* name)
 {
     int i, num;
     struct player_index_element* tmpel;
@@ -3192,7 +3206,7 @@ void move_char_deleted(int index)
     player_table[index].idnum = 0;
 }
 
-void delete_character_file(struct char_data* ch)
+void delete_character_file(const struct char_data* ch)
 {
     int tmp;
 
@@ -3558,7 +3572,7 @@ void save_char(struct char_data* ch, int load_room, int notify_char)
  ********************************************************************** */
 
 /* read and allocate space for a '~'-terminated string from a given file */
-char* fread_string(FILE* fl, char* error)
+char* fread_string(FILE* fl, const char* error)
 {
     char buf[MAX_STRING_LENGTH], tmp[MAX_STRING_LENGTH];
     char* rslt;
@@ -3908,7 +3922,7 @@ int file_to_string_alloc(const char* name, char** buf)
     return 0;
 }
 
-int get_char_directory(char* orig_name, char* filename)
+int get_char_directory(const char* orig_name, char* filename)
 {
     char *ptr, name[30];
 
@@ -4252,7 +4266,7 @@ void read_crime_file();
 
 void boot_crimes() { read_crime_file(); }
 
-void record_crime(char_data* criminal, char_data* victim, int crime,
+void record_crime(const char_data* criminal, const char_data* victim, int crime,
     int wit_type)
 {
     struct char_data* tmpchar;
@@ -4354,7 +4368,7 @@ int know_of_crime(int criminal, int victim, int witness)
     return 0;
 }
 
-void forget_crimes(char_data* ch, int criminal)
+void forget_crimes(const char_data* ch, int criminal)
 {
     crime_record_type* tmprecord;
     int tmp, count, not_write;
@@ -4730,7 +4744,7 @@ room_data& room_data::operator[](int i)
     return *(BASE_WORLD + i);
 }
 
-void write_exploits(char_data* ch, exploit_record* record)
+void write_exploits(char_data* ch, const exploit_record* record)
 {
     if (ch != nullptr && ch->desc != nullptr && *ch->desc->account_name != '\0') {
         account::AccountData account_data;
@@ -4961,6 +4975,85 @@ bool write_exploit_record_for_character(const std::string& root_directory, const
     return true;
 }
 
+namespace {
+
+// Weapons built +6 OB and magic. A saved copy of one is, field for field, a plain weapon someone
+// cast enchant weapon on, so the two are told apart by number.
+const int kWeaponsBuiltWithSixOb[] = { 5039, 5410, 5614 };
+
+bool is_unrecorded_enchant(const objects_json::ObjectRecord& record)
+{
+    if (!record.enchants.empty() || !IS_SET(record.extra_flags, ITEM_MAGIC))
+        return false;
+    if (record.affects[0].location != APPLY_OB || record.affects[0].modifier != 6)
+        return false;
+    for (size_t index = 1; index < record.affects.size(); ++index)
+        if (record.affects[index].location != APPLY_NONE)
+            return false;
+    for (int vnum : kWeaponsBuiltWithSixOb)
+        if (record.item_number == vnum)
+            return false;
+    const int rnum = real_object(record.item_number);
+    return rnum >= 0 && obj_proto[rnum].obj_flags.type_flag == ITEM_WEAPON;
+}
+
+// The spell leaves ITEM_ANTI_EVIL for a good caster and ITEM_ANTI_GOOD for an evil one. A copy
+// carrying both got one of them from its prototype; that one is not the caster's.
+int unrecorded_enchant_align(const objects_json::ObjectRecord& record)
+{
+    int flags = record.extra_flags & (ITEM_ANTI_GOOD | ITEM_ANTI_EVIL);
+    if (flags == (ITEM_ANTI_GOOD | ITEM_ANTI_EVIL))
+        flags &= ~obj_proto[real_object(record.item_number)].obj_flags.extra_flags;
+    if (flags == ITEM_ANTI_EVIL)
+        return ENCHANT_ALIGN_GOOD;
+    if (flags == ITEM_ANTI_GOOD)
+        return ENCHANT_ALIGN_EVIL;
+    return ENCHANT_ALIGN_NEUTRAL;
+}
+
+int record_old_enchants_in(std::vector<objects_json::ObjectRecord>* records)
+{
+    int recorded = 0;
+    for (objects_json::ObjectRecord& record : *records)
+        if (is_unrecorded_enchant(record)) {
+            record.enchants.push_back({ ENCHANT_OB, unrecorded_enchant_align(record), 6 });
+            recorded++;
+        }
+    return recorded;
+}
+
+// The same for a save still in its binary form; bytes with nothing to record are left as they
+// are. The tolerant read: an idle-out save has no follower section (see
+// write_linked_character_object_file).
+bool record_old_enchants_in_object_bytes(std::string* bytes, std::string* error_message)
+{
+    objects_json::ObjectSaveData data;
+    if (!objects_json::legacy_object_save_data_from_binary(*bytes, &data, nullptr, error_message))
+        return false;
+    if (record_old_object_enchants(&data) == 0)
+        return true;
+    return objects_json::object_save_data_to_binary(data, bytes, error_message);
+}
+
+} // namespace
+
+/*
+ * Before enchants were recorded on objects (obj_data::enchants), an enchant weapon cast was only
+ * what it left on the weapon: ITEM_MAGIC and +6 OB as the one affect. This gives each such weapon
+ * in a save from that time its record, once: load_object_save_bytes_for_character calls it for an
+ * object file still at OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS, and every save from then on is
+ * written at OBJECTS_SCHEMA_VERSION, where nothing is guessed. It reads only the saved copy and
+ * that its number is a weapon, so it gives the same answer whenever the character first returns.
+ * Returns how many it recorded.
+ */
+int record_old_object_enchants(objects_json::ObjectSaveData* data)
+{
+    int recorded = record_old_enchants_in(&data->objects);
+    for (objects_json::FollowerData& follower : data->followers)
+        recorded += record_old_enchants_in(&follower.objects);
+    return recorded;
+}
+
 bool load_object_save_bytes_for_character(const std::string& root_directory, const std::string& character_name, std::string* bytes, std::string* error_message)
 {
     if (bytes == nullptr) {
@@ -4973,8 +5066,12 @@ bool load_object_save_bytes_for_character(const std::string& root_directory, con
         return false;
 
     if (!owner_account_name.empty()) {
-        if (account::read_account_object_file(root_directory, owner_account_name, character_name, bytes, error_message))
+        int schema_version = objects_json::OBJECTS_SCHEMA_VERSION;
+        if (account::read_account_object_file(root_directory, owner_account_name, character_name, bytes, error_message, &schema_version)) {
+            if (schema_version == objects_json::OBJECTS_SCHEMA_VERSION_UNRECORDED_ENCHANTS)
+                return record_old_enchants_in_object_bytes(bytes, error_message);
             return true;
+        }
 
         const std::string read_error = error_message ? *error_message : "";
         bool account_object_exists = false;
@@ -4993,7 +5090,14 @@ bool load_object_save_bytes_for_character(const std::string& root_directory, con
     FILE* runtime_file = std::fopen(runtime_path.c_str(), "rb");
     if (runtime_file != nullptr) {
         std::fclose(runtime_file);
-        return read_binary_file_contents(runtime_path, bytes, error_message);
+        if (!read_binary_file_contents(runtime_path, bytes, error_message))
+            return false;
+        // A bare .obj says nothing of when it was written, and the next save is written as
+        // recorded. One that will not parse is handed on as it is, for Crash_load to judge.
+        std::string recorded_bytes = *bytes;
+        if (record_old_enchants_in_object_bytes(&recorded_bytes, nullptr))
+            *bytes = std::move(recorded_bytes);
+        return true;
     }
 
     if (errno != ENOENT) {
@@ -5031,7 +5135,7 @@ void set_exploit_record_writer_for_testing(ExploitRecordWriterFn writer)
 }
 
 void add_exploit_record(int recordtype, char_data* victim, int iIntParam,
-    char* chParam)
+    const char* chParam)
 {
     struct char_data* killer;
     struct exploit_record exploitrec {};
@@ -5174,7 +5278,7 @@ void add_exploit_record(int recordtype, char_data* victim, int iIntParam,
     return;
 }
 
-int delete_exploits_file(char* name)
+int delete_exploits_file(const char* name)
 {
     char filename[70];
     char tname[60];
@@ -5267,7 +5371,7 @@ static void set_rename_error(std::string* error_message, const std::string& mess
 // Returns false only when the rename should be ABANDONED. A character that is not account-native is
 // not this function's business and reports success with plan->applies left false. Nothing on disk
 // has moved when this returns, either way.
-static bool plan_account_native_rename(struct char_data* ch, int player_i, const char* newname,
+static bool plan_account_native_rename(const struct char_data* ch, int player_i, const char* newname,
     account_native_rename* plan, std::string* error_message)
 {
     *plan = account_native_rename();

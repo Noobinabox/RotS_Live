@@ -224,6 +224,8 @@ vendor_config parse_vendor_options(
                 config.attacks = value == "yes";
             else
                 problem(line_no, "bad attacks - line ignored");
+        } else if (mob_option_is_general(key)) {
+            continue; /* another feature's line (mob_general_options) */
         } else {
             problem(line_no, "unknown setting - line ignored");
         }
@@ -281,17 +283,6 @@ vendor_lookups game_lookups()
 
 } // namespace
 
-void vendor_send(const std::string& line, struct char_data* builder)
-{
-    char buf[512];
-    snprintf(buf, sizeof(buf), "%s", line.c_str());
-    mudlog(buf, NRM, LEVEL_AREAGOD, TRUE);
-    if (builder && !mudlog_reaches(builder, LEVEL_AREAGOD, NRM)) {
-        send_to_char(buf, builder);
-        send_to_char("\n\r", builder);
-    }
-}
-
 namespace {
 
 bool is_vendor_proto(int rnum)
@@ -316,16 +307,13 @@ void vendor_add_speech_problem(const char_data& proto, std::vector<vendor_proble
  * hard-coded procedure reads directly (guild's guildmasters[] index,
  * ferry_captain's route, etc. -- see spec_pro.cpp), and coincidentally
  * overlapping 33 doesn't make the mob a vendor. rnum < 0 (a mob not in the
- * table yet) has no function slot to own. */
+ * table yet) has no function slot to own. A function the old /29 put there
+ * does not own it (mob_program_candidate). -s boots leave every hard-coded
+ * func unassigned, so a guildmaster whose guild number is 33 would look like
+ * a vendor: then nothing is a candidate. Vendors are specials too. */
 bool is_vendor_candidate(const struct char_data* proto, int rnum)
 {
-    /* -s boots leave every hard-coded func unassigned, so a guildmaster whose
-     * guild number is 33 would look like a vendor. Vendors are specials too. */
-    if (no_specials)
-        return false;
-    if (!IS_SET(proto->specials2.act, MOB_SPEC) || proto->specials.store_prog_number != PROG_BARTER_VENDOR)
-        return false;
-    return rnum < 0 || !mob_index[rnum].func || mob_index[rnum].func == (special_func)barter_vendor;
+    return mob_program_candidate(proto, rnum, (special_func)barter_vendor, PROG_BARTER_VENDOR);
 }
 
 std::string format_vendor_list(const std::vector<vendor_list_row>& rows)
@@ -376,16 +364,6 @@ std::vector<vendor_shortfall> vendor_shortfalls(const std::vector<vendor_cost>& 
     return short_of;
 }
 
-std::string vendor_problem_line(int mob_vnum, const vendor_problem& problem)
-{
-    char buf[512];
-    if (problem.line > 0)
-        snprintf(buf, sizeof(buf), "MOB ERROR: mobile #%d, options line %d: %s", mob_vnum, problem.line, problem.text.c_str());
-    else
-        snprintf(buf, sizeof(buf), "MOB ERROR: mobile #%d: %s", mob_vnum, problem.text.c_str());
-    return buf;
-}
-
 std::string vendor_wrap(const std::string& text, const std::string& indent)
 {
     std::string out, rest = text;
@@ -423,7 +401,7 @@ bool mob_is_keeper(const struct char_data* mob)
 }
 
 bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, int callflag,
-    struct waiting_type* wtl, bool attacks, int* answer)
+    const struct waiting_type* wtl, bool attacks, int* answer)
 {
     switch (callflag) {
     case SPECIAL_SELF:
@@ -446,7 +424,7 @@ bool keeper_protection(struct char_data* host, struct char_data* ch, int cmd, in
     return false;
 }
 
-void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder)
+void vendor_fight_flag_warnings(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt)
         return;
@@ -463,7 +441,7 @@ void vendor_fight_flag_warnings(int mob_rnum, struct char_data* builder)
     }
 }
 
-void vendor_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
+void vendor_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder)
 {
     std::vector<vendor_problem> problems;
     parse_vendor_options(proto->specials.mob_options, game_lookups(), &problems);
@@ -475,7 +453,7 @@ void vendor_config_check(const struct char_data* proto, int mob_vnum, struct cha
 /* Soft checks, reminded on /imp only, to the builder alone: not at boot and
  * not in the imm log. Scripted mobs and shopkeepers carry NOBASH by
  * convention; a list= header past 78 columns still shows, but wraps. */
-void vendor_implement_check(int mob_rnum, struct char_data* builder)
+void vendor_implement_check(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt || !is_vendor_proto(mob_rnum))
         return;
@@ -494,7 +472,7 @@ void vendor_implement_check(int mob_rnum, struct char_data* builder)
     }
 }
 
-void vendor_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
+void vendor_config_rebuild(int mob_rnum, const struct char_data* builder, bool report)
 {
     g_vendor_unusable_logged.erase(mob_rnum);
     if (mob_rnum < 0 || mob_rnum > top_of_mobt || !is_vendor_proto(mob_rnum)) {
@@ -563,7 +541,7 @@ void vendor_tell(struct char_data* vendor, struct char_data* ch, const char* tex
 /* command_interpreter parses the command's targets first and, after the
  * program returns, still runs the SPECIAL_TARGET specials on them. An object
  * the program destroys, or anything inside it, must not be left in them. */
-void vendor_forget_target(struct waiting_type* wtl, struct obj_data* obj)
+void vendor_forget_target(struct waiting_type* wtl, const struct obj_data* obj)
 {
     if (!wtl)
         return;
@@ -619,7 +597,7 @@ struct stock_row {
     int count;
 };
 
-std::vector<stock_row> vendor_stock(struct char_data* ch, const vendor_config& config)
+std::vector<stock_row> vendor_stock(const struct char_data* ch, const vendor_config& config)
 {
     std::vector<stock_row> rows;
     int room = real_room(config.store_vnum);
@@ -650,7 +628,7 @@ const char* obj_vnum_short(int vnum)
 
 /* Loose, EMPTY copies only: a container with things in it is never taken
  * as payment, so its contents can't be destroyed. */
-std::vector<struct obj_data*> payable_copies(struct char_data* ch, int vnum)
+std::vector<struct obj_data*> payable_copies(const struct char_data* ch, int vnum)
 {
     std::vector<struct obj_data*> copies;
     int rnum = real_object(vnum);
@@ -792,7 +770,7 @@ void vendor_buy(struct char_data* vendor, struct char_data* ch, char* arg, const
  * from the whole argument; either way argument_interpreter takes the object
  * word, then the target word (skipping fill words like "to"), and
  * give_find_vict looks the target up with get_char_room_vis. */
-bool give_targets(struct char_data* vendor, struct char_data* ch, char* arg)
+bool give_targets(const struct char_data* vendor, struct char_data* ch, const char* arg)
 {
     char whole[MAX_INPUT_LENGTH], first[MAX_INPUT_LENGTH], rest[MAX_INPUT_LENGTH];
     char what[MAX_INPUT_LENGTH], target[MAX_INPUT_LENGTH];

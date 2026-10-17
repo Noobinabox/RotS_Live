@@ -259,6 +259,7 @@ Command /0 lists possible fields.
 19 - affections;
 20 - program (not saved);
 21 - script number;
+22 - version (refreshes players' copies at login);
 49 - object creation sequence;
 50 - list;
 
@@ -755,6 +756,40 @@ The program number is not saved and has no effect. Leave it alone.
 0 means none. Object triggers: ON_DAMAGE, ON_EAT, ON_ENTER,
 ON_EXAMINE_OBJECT, ON_DRINK, ON_PULL, ON_WEAR. The number is not checked.
 See MAN SHAPE SCRIPT.
+#
+"OBJ 22"
+
+/22 sets the object's version. When a player logs in holding a saved
+copy whose version differs from this one, or takes one out of a bank
+vault, the copy is refreshed: its affects, extra flags and bitvector are
+taken from this object. A broken flag, drink and light contents,
+container contents and the timer are kept. Scalps never refresh.
+The player sees "Your item, <name>, has been updated."
+
+An enchant on a weapon stays if the weapon can still be enchanted as you
+have now made it: not magic, and no affects of its own. If it cannot,
+the enchant is lost.
+
+It takes no typed number, only the one letter:
+  b      bump: the highest number used so far + 1
+  o      turn off: no refreshes; the number is kept for the next bump
+         (only offered while the version is on)
+  blank  leave it as it is
+Shown as "none" (never bumped), "3 (on)" or "3 (off)". An object that
+was never bumped behaves exactly as before. Copies made after the
+change (on the floor, in shops, on mobs) are made from the new object
+and need no refresh. Players pick up a bump at their next login after
+the world files go live.
+
+Every change players should get needs its own bump. Change the object
+again without bumping and copies already refreshed keep what they have.
+
+The next bump counts up from the number in the world file. If a world
+file is replaced by an older copy (a backup, or a stale copy from
+another port), its numbers go back. Players' copies holding a higher
+number are then refreshed back to the older object, and copies already
+stamped with a number are skipped until a bump passes it. Bump again to
+get past it.
 #
 "OBJ 49"
 
@@ -1403,7 +1438,8 @@ The input uses the standard editor.
   STAY-ZONE        6  Mob will stay in zone
   WIMPY            7  Flees if badly hurt; if AGGR, attacks only sleepers.
   STAY-TYPE        8  Stays in rooms of its sector type (water, forest...).
-  MOUNT            9  It can be ridden
+  MOUNT            9  It can be ridden; while ridden it never walks off
+                      on its own (no wandering or hunting)
   CAN_SWIM        10  Mob doesn't need a boat to swim
   MEMORY          11  Mob will remember attackers, and be agg to them.
   HELPER          12  Attacks characters fighting a PC in the room.
@@ -1417,8 +1453,8 @@ The input uses the standard editor.
                       (The per-mob /recalculate ignores it.)
   ACTIVE          20  Acts when someone enters the room.
   IS_PET          21  Not to be used - the flag means this mobile was tamed
-  HUNTER          22  Remembers attackers and hunts them down;
-                      this includes the effect of MEMORY
+  HUNTER          22  Hunts down the attackers it remembers; set
+                      MEMORY too, or it remembers none
   ORC_FRIEND      23  This mob can be recruited by common orcs.
   RACE_GUARD      24  Will not let players of a different race into the room.
   ASSISTANT       25  Assists its master in combat.
@@ -1663,7 +1699,8 @@ Special procedures:
     PLAYERTITLE seeks audience!".
     Important Note:  This spec_prog will NOT work with MEMORY flag (#11).
 29: postmaster          30: dragon
-31: caster/mage (spec)  32: ranger (new)
+31: mage. Casts by its types and its health (MAN SHAPE MAGE).
+32: ranger. Hides, ambushes, follows tracks and hunts (MAN SHAPE RANGER).
 33: barter vendor. Sells items for other items (MAN SHAPE SHOPKEEPER).
 34: banker. Keeps the players' vaults (MAN SHAPE BANKER).
 
@@ -1775,8 +1812,67 @@ lines into one. Blank lines are removed when you save the text, and lines
 starting with // (comments) are ignored. A # is saved as + and a ~ as -;
 text can't start with $ or pass 4000 characters.
 
-Each program that reads options documents its own settings: program 33,
-see MAN SHAPE SHOPKEEPER; program 34, see MAN SHAPE BANKER.
+Each program that reads options documents its own settings: program 31,
+see MAN SHAPE MAGE; program 32, see MAN SHAPE RANGER; program 33, see
+MAN SHAPE SHOPKEEPER; program 34, see MAN SHAPE BANKER.
+
+General settings work on any mob, whatever its program. A program skips
+them; on a mob that is not a working mage, ranger, shopkeeper or banker, a
+line that is not a general setting is reported when you /save or
+/implement. The general settings are the walker settings, see MAN SHAPE
+WALKER.
+#
+"WALKER" "WALKERS" "WALKER_TYPE" "WALKER_ROOMS"
+
+A walker is a mob that follows a listed route or stays inside a listed
+area. It needs no program: put the settings in /42 (see MAN SHAPE MOB2
+42) on any mob that is not SENTINEL.
+
+  walker_type=path|loop|bounded   how walker_rooms is used
+  walker_rooms=1101-1150,1162     room vnums in order; lines join
+  walker_move_chance=1-100        chance a route step succeeds
+  path_complete_extract=yes       remove the mob at the end of a path
+  path_complete_message=<text>    shown to the room at the end
+  continue_wandering=yes          wander freely after a path ends
+
+path     Walks the rooms in order, once. In the last room, its first
+         successful attempt to leave ends the path: the ON_PATH_END
+         part of its script runs, then the mob is removed if
+         path_complete_extract=yes (what it wears and carries is
+         destroyed with it), then path_complete_message is shown to
+         the room. A mob that is not removed becomes SENTINEL with
+         no moves, or wanders if continue_wandering=yes.
+loop     As path, but from the last room it only steps into the
+         first. ON_PATH_END and the message run each lap, once it
+         has arrived; the message is shown in the last room.
+bounded  Wanders as usual but never steps into a room that is not
+         listed.
+
+- A room may be listed once. Ranges count up or down: 1105-1101.
+  A line holds 255 characters; use several walker_rooms lines for a
+  long route. At most 2000 rooms.
+- The mob moves when its normal wander roll picks the way to its next
+  room. walker_move_chance slows it further. ACTIVE makes it much
+  faster.
+- Like any wandering mob it needs movement points: a mob with none
+  never takes a step.
+- Off its list (it fled, was summoned) it wanders until it steps onto
+  a listed room, then carries on from there.
+- STAY-ZONE and STAY-TYPE still stop a step. HUNTER lets a player lead
+  it off its route.
+- /save and /implement report bad settings and route rooms that are
+  not joined by an exit. Nothing is checked at boot.
+- A shopkeeper or banker with attacks=no never moves, so it never
+  walks.
+
+Example:
+  walker_type=path
+  walker_rooms=1101-1150,1162
+  walker_move_chance=40
+  path_complete_extract=yes
+  path_complete_message=The caravan has dispersed.
+
+SEE ALSO: MAN SHAPE MOB2 42, MAN SCRIPT ON_PATH_END
 #
 "SHOPKEEPER" "SHOPKEEPERS" "BARTER" "VENDOR"
 
@@ -2228,4 +2324,141 @@ shopkeeper. Put only one banker in a room.
 A wand or staff comes out with the charges it went in with. If a stored
 object has been deleted since, the rest of that slot still comes out and
 the deleted object is logged.
+#
+"RANGER" "RANGERS" "PROGRAM 32"
+
+The ranger program (program 32) runs the mob's own turn: it hides,
+ambushes, follows tracks and hunts the ones it remembers. It does nothing
+when someone walks in; like any mob, it acts on its turn.
+
+Setting one up (extended mode, see MAN SHAPE MOB2 42):
+  /5  set flag SPEC (bit 0)
+  /29 program 32
+  /42 the settings, one per line, all optional (left out means no):
+  hide=yes      hides when standing and not fighting, and again after a
+                move if something took its cover; it waits for the hide
+                to finish before it looks for a target
+  ambush=yes    opens with an ambush instead of a hit when neither it nor
+                its target is fighting; without a small weapon it hits
+                instead
+  track=yes     follows the freshest track of a race it is aggressive
+                to; with AGGRESSIVE, the track of any player (tracks do
+                not show alignment, so AGGRESSIVE_EVIL and the like may
+                catch up with someone they will not attack). It opens
+                closed doors on the way, not locked, hidden or lever ones
+  riposte=yes   ripostes parried blows, at skill 75
+Example:
+  hide=yes
+  ambush=yes
+  track=yes
+
+Hiding and sneaking:
+  Without SNEAK  a hide=yes mob keeps its cover when it moves. Anyone
+                 whose see-hidden is below its cover does not see it
+                 leave or arrive; anyone else does.
+  With SNEAK     (set it with /6, see MAN SHAPE MOB 6) each step also
+                 rolls its sneak. On a success, even those who see
+                 through its cover miss it leaving and arriving, and it
+                 takes a fresh cover from its hide skill as it arrives,
+                 which can be higher or lower than before. With
+                 hide=yes it then hides once more, as a player can
+                 after sneaking in, with a small sneak bonus: level/3
+                 (10 at level 30). The cover comes when that hide
+                 finishes. While chasing (HUNTER, or track=yes on a
+                 track) or following a leader in the room, with no one
+                 here to go for, it skips that hide and sneaks on.
+  SNEAK alone, without hide=yes, does the same on each step; the mob
+  just does not hide on its own when it stands.
+
+The mob flags it acts on:
+  AGGRESSIVE    attacks players, only those of the alignments named if
+                AGGRESSIVE_EVIL, _GOOD or _NEUTRAL is set
+  HELPER        joins the fight of another mob in the room
+  SWITCHING     may turn to another of its attackers
+  MEMORY        attacks someone it remembers when it sees them
+  HUNTER        walks toward someone it remembers; needs MEMORY,
+                which is what makes a mob remember its attackers
+  SENTINEL      does not wander; still follows tracks and hunts
+  WIMPY         at a fifth of its health or less it starts nothing: no
+                attack, no help, no hunting, no tracks. It still hides
+                and wanders
+Race aggression works as on any mob.
+
+Each turn it does one thing, the first that applies: attack someone it
+remembers, ambush someone new (ambush=yes), help an ally, hit someone
+new, switch targets, walk toward someone it remembers, follow tracks,
+wander. It tries to wander on every turn it has nothing else to do.
+A mob that follows a leader, or is ridden, neither wanders nor follows
+tracks; a ridden one does not hunt either.
+Walker settings work (MAN SHAPE WALKER); lower walker_move_chance to
+slow it down along its route.
+
+SCAVENGER, BODYGUARD and ASSISTANT have no effect with program 32, and
+/implement warns about them. A bad setting is reported when you /save or
+/implement, and that line is ignored.
+#
+"MAGE" "MAGES" "PROGRAM 31"
+
+The mage program (program 31) casts spells on the mob's own turn. On each
+turn it casts with a chance of its level + 20 in 100 (always, from level
+80). In a fight it casts at its foes from the spell lists of its types,
+chosen by its health; out of a fight it heals itself.
+
+Setting one up (extended mode, see MAN SHAPE MOB2 42):
+  /5  set flag SPEC (bit 0)
+  /29 program 31
+  /42 the settings, one per line, all optional (left out means no):
+  fire=yes       firebolt; below 51% health also chill ray; below 26%
+                 chill ray and magic missile. Fireball from level 40
+  lightning=yes  lightning bolt; below 51% also chill ray; below 26%
+                 chill ray and magic missile. Lightning strike from
+                 level 35, outdoors in a lightning storm
+  cold=yes       chill ray; from 51% to 75% also lightning bolt; below
+                 26% also magic missile. Cone of cold from level 30
+  dark=yes       dark bolt; below 51% also chill ray; below 26% chill
+                 ray and magic missile. Searing darkness from level 40
+  lhuth=yes      word of agony and black arrow; below 51% dark bolt and
+                 black arrow; below 26% leach and dark bolt. Spear of
+                 darkness from level 40, when the sun does not hurt it.
+                 It never casts poison
+  mixed=yes      firebolt and lightning bolt; below 51% chill ray and
+                 lightning bolt; below 26% chill ray and magic missile.
+                 Earthquake from level 30
+  conjurer=yes   out of a fight: regeneration, then curing. In a fight,
+                 now and then confuse on the one it fights, or poison
+                 on a foe not yet poisoned
+  shield=yes     at the interrupt limit (below), may break off the fight
+                 to cast shield. It gives no message, on purpose
+  terror=yes     below 26% health, now and then casts terror
+Example:
+  dark=yes
+  conjurer=yes
+
+Set at least one type: without one the mob casts none of the type
+spells, only what conjurer, shield and terror give it; /implement warns
+about that. Several types add their spell lists together.
+
+A WRAITH mob (a spirit, flag bit 17) cannot cast these spells; do not
+give it program 31.
+
+On a turn it casts:
+  Out of a fight  conjurer heals first. Then, at 90% health or less, it
+                  casts cure self (with shield up, only while it has
+                  half its mana or more).
+  In a fight      it casts at the one it fights, or at anyone else in
+                  the fight or in their group whom it can see. Each
+                  interrupted cast counts; at 3 (the interrupt limit) it
+                  casts no spell from its lists and no confuse or poison,
+                  and fights with blows; terror and the shield break-off
+                  still apply. The count drops by one every 10 turns of
+                  the fight and is cleared once the fight is over.
+A cast that cannot start (no mana, a peace room, the wrong position) does
+not use up the turn. On a turn it does not cast, the mob acts as any mob
+does: its flags (AGGRESSIVE, HELPER and so on) work as usual.
+
+The keywords debug and spells in the mob's name list send its spell
+choices to the immortal log; they change nothing else.
+
+A bad setting is reported when you /save or /implement, and that line is
+ignored.
 #~

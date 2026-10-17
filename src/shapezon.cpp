@@ -25,14 +25,14 @@ extern struct char_data* character_list;
 int shape_standup(struct char_data* ch, int pos);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 int convert_exit_flag(int tmp, int mode); /* in shaperom.cpp */
 // void symbol_to_map(int x, int y, int symb);
 void draw_map();
 
 int shapezone_lastroom;
 
-int command_room(struct reset_com* com)
+int command_room(const struct reset_com* com)
 {
     // returns the number of a room the command is performed in.
     int rom;
@@ -277,9 +277,9 @@ void show_command(char* str, struct zone_tree* zon, int lead = 0)
     }
 }
 
-void list_zone(struct char_data* ch); /* forward declaration */
+void list_zone(const struct char_data* ch); /* forward declaration */
 
-void list_help_zone(struct char_data* ch);
+void list_help_zone(const struct char_data* ch);
 
 void write_command(FILE* f, struct zone_tree* zon)
 {
@@ -330,7 +330,7 @@ void write_command(FILE* f, struct zone_tree* zon)
     fprintf(f, "\n");
 }
 
-void write_zone(FILE* f, struct char_data* ch)
+void write_zone(FILE* f, const struct char_data* ch)
 {
 
     struct zone_tree* tmpcomm;
@@ -445,7 +445,7 @@ void reattach_loaded_mobs(int zone)
     }
 }
 
-void implement_zone(struct char_data* ch)
+void implement_zone(const struct char_data* ch)
 {
 
     int adr, count;
@@ -765,7 +765,7 @@ static void zone_prompt_add(char* buf, int size, int* len, const char* fmt, ...)
     va_end(ap);
 }
 
-static const char* zone_param_prompt(struct reset_com* c, int show_current)
+static const char* zone_param_prompt(const struct reset_com* c, int show_current)
 {
     static char buf[2048];
     const char* head;
@@ -914,7 +914,7 @@ static const char* zone_param_prompt(struct reset_com* c, int show_current)
     return buf;
 }
 
-void extra_coms_zone(struct char_data* ch, char* argument);
+void extra_coms_zone(struct char_data* ch, const char* argument);
 
 void shape_center_zone(struct char_data* ch, char* arg)
 {
@@ -1883,7 +1883,7 @@ void shape_center_zone(struct char_data* ch, char* arg)
 #undef LINECHANGE
 #undef DIGITCHANGE
 
-void list_help_zone(struct char_data* ch)
+void list_help_zone(const struct char_data* ch)
 {
 
     send_to_char("possible fields are:\n\r", ch);
@@ -1927,7 +1927,7 @@ void list_help_zone(struct char_data* ch)
 
 /*********--------------------------------*********/
 
-void list_zone(struct char_data* ch)
+void list_zone(const struct char_data* ch)
 {
 
     static char str[MAX_STRING_LENGTH];
@@ -2079,7 +2079,7 @@ static std::string read_line_rest(FILE* f)
     return line;
 }
 
-int load_zone(struct char_data* ch, char* arg)
+int load_zone(struct char_data* ch, const char* arg)
 {
 
     int tmp, num, number, comm_num;
@@ -2292,7 +2292,7 @@ int load_zone(struct char_data* ch, char* arg)
 
 /*****************----------------------------------******************/
 
-int replace_zone(struct char_data* ch, char* arg)
+int replace_zone(const struct char_data* ch, const char* arg)
 {
 
     /* this procedure is used for deleting objects, too */
@@ -2485,7 +2485,7 @@ void free_zone(struct char_data* ch)
 
 /****************************** main() ********************************/
 
-void extra_coms_zone(struct char_data* ch, char* argument)
+void extra_coms_zone(struct char_data* ch, const char* argument)
 {
 
     //  extern struct room_data world;

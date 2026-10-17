@@ -115,14 +115,14 @@ void bank_vault_forget_all_for_tests();
  * boot and when a builder saves the mob, and kept by mob rnum. */
 int banker(struct char_data* host, struct char_data* ch, int cmd, char* arg, int callflag, struct waiting_type* wtl);
 void banker_config_boot(); /* all program-34 prototypes */
-void banker_config_rebuild(int mob_rnum, struct char_data* builder, bool report = true);
+void banker_config_rebuild(int mob_rnum, const struct char_data* builder, bool report = true);
 bool is_banker_candidate(const struct char_data* proto, int rnum);
-void banker_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder); /* report only */
-void banker_implement_check(int mob_rnum, struct char_data* builder); /* /imp only: soft reminders */
+void banker_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder); /* report only */
+void banker_implement_check(int mob_rnum, const struct char_data* builder); /* /imp only: soft reminders */
 const banker_config* banker_config_for(int mob_rnum); /* nullptr if none */
 
 /* Stored objects. Records mirror the rent save's, with depth in wear_pos. */
-void bank_records_from_obj(struct obj_data* obj, std::vector<objects_json::ObjectRecord>* out);
+void bank_records_from_obj(const struct obj_data* obj, std::vector<objects_json::ObjectRecord>* out);
 /* A slot rebuilt the way the rent load does it: what still exists is built,
  * what is gone is skipped and named in `missing`. Normally one object in
  * `tops` (the item with its contents); when a container is gone its contents
@@ -137,7 +137,7 @@ struct bank_rebuild {
 bank_rebuild bank_rebuild_records(const std::vector<objects_json::ObjectRecord>& records);
 /* The whole item or nothing: nullptr (and nothing left behind) if anything is missing. */
 struct obj_data* bank_obj_from_records(const std::vector<objects_json::ObjectRecord>& records);
-bool bank_obj_storable(struct obj_data* obj); /* false if it, or anything inside it, can't be rented */
+bool bank_obj_storable(const struct obj_data* obj); /* false if it, or anything inside it, can't be rented */
 const char* bank_slot_name(const bank_slot& slot); /* short description of the stored item */
 
 struct bank_balance_row {

@@ -28,12 +28,12 @@ int obj_chain[50] = {
 };
 int simple_edit(struct char_data* ch, char** str, char* arg); /* exist in objects.c */
 int shape_standup(struct char_data* ch, int pos);
-void shape_flag_value(struct char_data* ch, char* arg, int* value);
+void shape_flag_value(const struct char_data* ch, char* arg, int* value);
 int shape_help_asked(const char* arg);
 void shape_prompt_help(struct char_data* ch, const char* chapter, const char* keyword, int position);
-void shape_prompt_hint(struct char_data* ch);
+void shape_prompt_hint(const struct char_data* ch);
 
-void new_obj(struct char_data* ch)
+void new_obj(const struct char_data* ch)
 {
     int i;
     //    SHAPE_OBJECT(ch)->object=(struct obj_data *)calloc(1,sizeof(struct obj_data));
@@ -115,11 +115,11 @@ void new_obj(struct char_data* ch)
         = ch->in_room;
 }
 
-void list_object(struct char_data* ch, struct obj_data* obj); /* forward declaration */
+void list_object(const struct char_data* ch, const struct obj_data* obj); /* forward declaration */
 
-void list_help_obj(struct char_data* ch);
+void list_help_obj(const struct char_data* ch);
 
-void write_object(FILE* f, struct obj_data* obj, int num)
+void write_object(FILE* f, const struct obj_data* obj, int num)
 {
 
     struct extra_descr_data* tmpdesc;
@@ -167,7 +167,7 @@ void write_object(FILE* f, struct obj_data* obj, int num)
         obj->obj_flags.cost_per_day);
 
     fprintf(f, "%d %d %d %d %d\n\r", obj->obj_flags.level,
-        obj->obj_flags.rarity, obj->obj_flags.material, obj->obj_flags.script_number, 0);
+        obj->obj_flags.rarity, obj->obj_flags.material, obj->obj_flags.script_number, obj->obj_flags.version);
 
     for (tmpdesc = obj->ex_description; tmpdesc; tmpdesc = tmpdesc->next) {
 
@@ -189,7 +189,7 @@ void write_object(FILE* f, struct obj_data* obj, int num)
     CREATE(real->x, char, strlen(curr->x) + 1); \
     strcpy(real->x, curr->x);
 
-void implement_object(struct char_data* ch)
+void implement_object(const struct char_data* ch)
 {
     struct obj_data *real, *curr;
     int rnum, i;
@@ -231,6 +231,7 @@ void implement_object(struct char_data* ch)
     real->obj_flags.rarity = curr->obj_flags.rarity;
     real->obj_flags.material = curr->obj_flags.material;
     real->obj_flags.script_number = curr->obj_flags.script_number;
+    real->obj_flags.version = curr->obj_flags.version;
     /*  for(tmpdescr=real->ex_description ; tmpdescr ; tmpdescr=tmp2descr){
     tmp2descr=tmpdescr->next;
     RELEASE(tmpdescr->keyword);
@@ -357,7 +358,7 @@ void implement_object(struct char_data* ch)
         = 0;
 
 void extra_coms_obj(struct char_data* ch, char* arg);
-void shape_disabled(struct char_data* ch, const char* prefix, const char* typed);
+void shape_disabled(const struct char_data* ch, const char* prefix, const char* typed);
 extern char* item_types[];
 
 /* What the five /12 values mean for each item type; '-' = not used. */
@@ -981,6 +982,58 @@ void shape_center_obj(struct char_data* ch, char* arg)
                     = 0;
             break;
 
+        case 22: {
+            /* No typed numbers: a bump goes one past the number in the world file, so it cannot
+             * land on a number this file has handed out. (A world file replaced by an older copy
+             * takes the count back with it: see the OBJ 22 help.) Off keeps the number, negated. */
+            const int current = obj->obj_flags.version;
+            const int last = current < 0 ? -current : current;
+            if (!IS_SET(SHAPE_OBJECT(ch)->flags, SHAPE_DIGIT_ACTIVE)) {
+                sprintf(tmpstr, "   b   bump to %d (players' copies refresh at their next login)\n\r", last + 1);
+                send_to_char(tmpstr, ch);
+                if (current > 0) {
+                    sprintf(tmpstr, "   o   turn off (keeps %d for the next bump)\n\r", last);
+                    send_to_char(tmpstr, ch);
+                }
+                sprintf(tmpstr, "\n\rEnter VERSION: %s, blank keeps it [%s]:\n\r", current > 0 ? "b or o" : "b",
+                    object_version_text(current).c_str());
+                send_to_char(tmpstr, ch);
+                SHAPE_OBJECT(ch)->position = shape_standup(ch, POSITION_SHAPING);
+                ch->specials.prompt_number = 3;
+                SET_BIT(SHAPE_OBJECT(ch)->flags, SHAPE_DIGIT_ACTIVE);
+                shape_prompt_hint(ch);
+                return;
+            }
+            /* Exactly "b" or "o": "on" must not read as o and turn it off. */
+            char* answer = arg;
+            while (*answer && isspace(*answer))
+                answer++;
+            char* answer_end = answer + strlen(answer);
+            while (answer_end > answer && isspace(answer_end[-1]))
+                answer_end--;
+            const char choice = answer_end - answer == 1 ? LOWER(*answer) : '\0';
+            if (choice == 'b') {
+                obj->obj_flags.version = last + 1;
+                sprintf(tmpstr, "Version is now %s.\n\r", object_version_text(obj->obj_flags.version).c_str());
+                send_to_char(tmpstr, ch);
+            } else if (choice == 'o' && current > 0) {
+                obj->obj_flags.version = -current;
+                sprintf(tmpstr, "Version is now %s.\n\r", object_version_text(obj->obj_flags.version).c_str());
+                send_to_char(tmpstr, ch);
+            } else if (*answer) {
+                send_to_char("Version unchanged.\n\r", ch);
+            }
+            shape_standup(ch, SHAPE_OBJECT(ch)->position);
+            ch->specials.prompt_number = 6;
+            REMOVE_BIT(SHAPE_OBJECT(ch)->flags, SHAPE_DIGIT_ACTIVE);
+
+            if (IS_SET(SHAPE_OBJECT(ch)->flags, SHAPE_CHAIN))
+                SHAPE_OBJECT(ch)->editflag = obj_chain[22];
+            else
+                SHAPE_OBJECT(ch)->editflag = 0;
+            break;
+        }
+
 #undef DIGITCHANGE
 
         case 49:
@@ -1016,7 +1069,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
 }
 
 #undef LINECHANGE
-void list_help_obj(struct char_data* ch)
+void list_help_obj(const struct char_data* ch)
 {
 
     send_to_char("possible fields are:\n\r1 - alias(es);\n\r", ch);
@@ -1051,6 +1104,8 @@ void list_help_obj(struct char_data* ch)
 
     send_to_char("21 - script number (for special cases only);\n\r", ch);
 
+    send_to_char("22 - version (refreshes players' copies at login);\n\r", ch);
+
     send_to_char("49 - object creation sequence;\n\r", ch);
 
     send_to_char("50 - list;\n\r", ch);
@@ -1060,7 +1115,7 @@ void list_help_obj(struct char_data* ch)
 
 /*********--------------------------------*********/
 
-void list_object(struct char_data* ch, struct obj_data* obj)
+void list_object(const struct char_data* ch, const struct obj_data* obj)
 {
 
     static char str[MAX_STRING_LENGTH]; // str1[100];
@@ -1168,6 +1223,10 @@ void list_object(struct char_data* ch, struct obj_data* obj)
     sprintf(str, "(21) script        :%d\n\r", obj->obj_flags.script_number);
 
     send_to_char(str, ch);
+
+    sprintf(str, "(22) version       :%s\n\r", object_version_text(obj->obj_flags.version).c_str());
+
+    send_to_char(str, ch);
 }
 
 /*********--------------------------------*********/
@@ -1200,7 +1259,7 @@ int get_text(FILE* f, char** line); /* exist in protos.c */
 
 extern struct room_data world;
 
-int load_object(struct char_data* ch, char* arg)
+int load_object(struct char_data* ch, const char* arg)
 {
     // char c;
     // char format;
@@ -1370,8 +1429,10 @@ int load_object(struct char_data* ch, char* arg)
             ->object->obj_flags.cost_per_day
             = tmp;
 
-        if (5 != fscanf(f, "%d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5))
+        if (5 != fscanf(f, "%d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5)) {
             printf("Error reading12\n\r");
+            tmp5 = 0; /* an older line has four numbers: no version, not a leftover value */
+        }
         SHAPE_OBJECT(ch)
             ->object->obj_flags.level
             = tmp;
@@ -1384,6 +1445,9 @@ int load_object(struct char_data* ch, char* arg)
         SHAPE_OBJECT(ch)
             ->object->obj_flags.script_number
             = tmp4;
+        SHAPE_OBJECT(ch)
+            ->object->obj_flags.version
+            = tmp5;
 
         SHAPE_OBJECT(ch)
             ->object->ex_description

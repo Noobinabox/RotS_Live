@@ -37,7 +37,7 @@ extern struct obj_data* object_list;
 
 namespace {
 
-bool should_defer_account_backed_birth_persistence(char_data* character)
+bool should_defer_account_backed_birth_persistence(const char_data* character)
 {
     if (character == nullptr || character->desc == nullptr || *character->desc->account_name == '\0')
         return false;
@@ -166,7 +166,7 @@ void draw_line(char* buf, int length)
     strcat(buf, buff);
 }
 
-void draw_coofs(char* buf, struct char_data* ch)
+void draw_coofs(char* buf, const struct char_data* ch)
 {
     char buf2[80];
 
@@ -375,7 +375,7 @@ void check_stat_increase(char_data* character)
 }
 } // end anonymous helper namespace
 
-void check_for_special_levels(char_data* character)
+void check_for_special_levels(const char_data* character)
 {
     switch (GET_LEVEL(character)) {
     case 6:

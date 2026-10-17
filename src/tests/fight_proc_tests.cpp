@@ -6,8 +6,8 @@
 bool is_victim_around(const char_data* character);
 bool can_double_hit(const char_data* character);
 bool does_double_hit_proc(const char_data* character);
-bool can_beorning_swipe(char_data* character);
-bool does_beorning_swipe_proc(char_data* character);
+bool can_beorning_swipe(const char_data* character);
+bool does_beorning_swipe_proc(const char_data* character);
 
 namespace {
 

@@ -56,11 +56,11 @@ extern int eff_mod;
  *External functions
  */
 
-char saves_mystic(struct char_data*);
-char saves_poison(struct char_data*, struct char_data*);
-char saves_confuse(struct char_data*, char_data*);
-char saves_leadership(struct char_data*);
-char saves_insight(struct char_data*, struct char_data*);
+char saves_mystic(const struct char_data*);
+char saves_poison(const struct char_data*, const struct char_data*);
+char saves_confuse(const struct char_data*, const char_data*);
+char saves_leadership(const struct char_data*);
+char saves_insight(const struct char_data*, const struct char_data*);
 bool check_mind_block(char_data*, char_data*, int, int);
 void list_char_to_char(struct char_data* list, struct char_data* caster,
     int mode);
@@ -1379,7 +1379,7 @@ ASPELL(spell_sanctuary)
 
 ASPELL(spell_enchant_weapon)
 {
-    int i, bonus = 0;
+    int i;
 
     if (!caster || !obj)
         return;
@@ -1396,18 +1396,20 @@ ASPELL(spell_enchant_weapon)
             }
         }
 
-        SET_BIT(obj->obj_flags.extra_flags, ITEM_MAGIC);
-        bonus = 6;
-        obj->affected[0].location = APPLY_OB;
-        obj->affected[0].modifier = bonus;
+        /* Recorded on the object as well, so a version refresh can put it back. */
+        obj_enchant_type enchant = { ENCHANT_OB, ENCHANT_ALIGN_NEUTRAL, 6 };
+        if (IS_GOOD(caster))
+            enchant.align = ENCHANT_ALIGN_GOOD;
+        else if (IS_EVIL(caster))
+            enchant.align = ENCHANT_ALIGN_EVIL;
+        apply_object_enchant(obj, enchant);
+        record_object_enchant(obj, enchant);
 
-        if (IS_GOOD(caster)) {
-            SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_EVIL);
+        if (IS_GOOD(caster))
             act("$p glows blue.", FALSE, caster, obj, 0, TO_CHAR);
-        } else if (IS_EVIL(caster)) {
-            SET_BIT(obj->obj_flags.extra_flags, ITEM_ANTI_GOOD);
+        else if (IS_EVIL(caster))
             act("$p glows red.", FALSE, caster, obj, 0, TO_CHAR);
-        } else
+        else
             act("$p glows yellow.", FALSE, caster, obj, 0, TO_CHAR);
     }
 }

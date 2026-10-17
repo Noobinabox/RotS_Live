@@ -9,6 +9,7 @@
  ************************************************************************ */
 
 #include "limits.h"
+#include "mob_walker.h"
 #include "game_boot_options.h"
 #include "comm.h"
 #include "db.h"
@@ -50,7 +51,7 @@ extern int r_mortal_start_room[];
 
 void recalc_skills(struct char_data* ch);
 
-extern void raw_kill(char_data *ch, char_data *killer, int attacktype);
+extern void raw_kill(char_data *ch, const char_data *killer, int attacktype);
 extern void die(char_data *dead_man, char_data *killer, int attack_type);
 void one_mobile_activity(char_data *ch);
 
@@ -58,9 +59,9 @@ void one_mobile_activity(char_data *ch);
 #define MAX_RANK 10
 
 ACMD(do_flee);
-char saves_spell(struct char_data* ch, sh_int level, int bonus);
+char saves_spell(const struct char_data* ch, sh_int level, int bonus);
 void stop_riding(struct char_data* ch);
-char char_perception_check(struct char_data* ch);
+char char_perception_check(const struct char_data* ch);
 int get_sun_level(int room);
 
 /* When age < 15 return the value p0 */
@@ -376,7 +377,7 @@ void set_title(char_data* character)
     *(GET_TITLE(character) + 4) = toupper(*(GET_TITLE(character) + 4));
 }
 
-void check_autowiz(struct char_data* ch)
+void check_autowiz(const struct char_data* ch)
 {
     char buf[100];
     extern int min_wizlist_lev;
@@ -612,7 +613,7 @@ extern int LOOT_DECAY_TIME;
 void point_update(void)
 {
     int recalc_flag = 0, full_update, feeling, mytime, tmp;
-    void update_char_objects(struct char_data * ch); /* handler.c */
+    void update_char_objects(const struct char_data * ch); /* handler.c */
     void extract_obj(struct obj_data * obj); /* handler.c */
     struct char_data *i, *next_dude;
     struct obj_data *j, *next_thing, *jj, *next_thing2;
@@ -1218,7 +1219,7 @@ void assign_pk_bonuses(struct char_data* ch, int coeff, int tier, bool mode)
     }
 }
 
-void remove_fame_war_bonuses(struct char_data* ch, struct affected_type* pkaff)
+void remove_fame_war_bonuses(struct char_data* ch, const struct affected_type* pkaff)
 {
     int coeff = utils::get_highest_coeffs(*ch);
     affected_type* aff = affected_by_spell(ch, SPELL_FAME_WAR);
@@ -1376,8 +1377,14 @@ void affect_update_person(struct char_data* i, int mode)
                     // handled by hit_gain now.
                     break;
                 case SPELL_ACTIVITY:
-                    if (IS_NPC(i))
+                    if (IS_NPC(i)) {
+                        /* The mob's turn can remove the mob (its script, a death):
+                         * nothing of it, its affects included, is left to update. */
+                        int abs_number = i->abs_number;
                         one_mobile_activity(i);
+                        if (!char_exists(abs_number))
+                            return;
+                    }
                 case SPELL_CONFUSE:
                     if (IS_AFFECTED(i, AFF_CONCENTRATION) && (af->duration >= 10))
                         af->duration -= 3;
@@ -1562,6 +1569,7 @@ void affect_update()
         }
         tmplist3 = tmplist; /* prev item */
     }
+    walker_remove_finished(); /* walkers whose route ended during this pass */
 }
 
 void fast_update()

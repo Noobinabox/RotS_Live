@@ -31,13 +31,14 @@ extern int top_of_mobt;
 extern struct obj_data* obj_proto;
 extern struct index_data* obj_index;
 extern struct time_info_data time_info;
-extern int no_specials;
 extern int generic_scalp;
 
 int get_number(char** name);
 
-int Crash_is_unrentable(struct obj_data* obj);
-struct obj_data* Crash_obj2char(struct char_data* ch, struct obj_file_elem* object);
+int Crash_is_unrentable(const struct obj_data* obj);
+struct obj_data* Crash_obj2char(const struct char_data* ch, const struct obj_file_elem* object, const struct obj_file_extra& extra, const struct char_data* owner);
+bool Crash_refresh_object(struct obj_data* obj, long idnum);
+void Crash_tell_object_refresh(const struct char_data* ch, const char* name);
 
 using mob_options_detail::split_lines;
 using mob_options_detail::trim;
@@ -96,6 +97,8 @@ banker_config parse_banker_options(const char* text, std::vector<vendor_problem>
             : key == "greeting_other"                           ? &saw_greeting_other
             : key == "attacks"                                  ? &saw_attacks
                                                                 : nullptr;
+        if (!seen && mob_option_is_general(key))
+            continue; /* another feature's line (mob_general_options) */
         if (!seen || eq == std::string::npos) {
             problem(line_no, "unknown setting - line ignored");
             continue;
@@ -516,7 +519,7 @@ std::string format_bank_balance(const std::string& coins, int coin_limit_gold, i
     return out;
 }
 
-bool bank_obj_storable(struct obj_data* obj)
+bool bank_obj_storable(const struct obj_data* obj)
 {
     if (Crash_is_unrentable(obj))
         return false;
@@ -529,7 +532,7 @@ bool bank_obj_storable(struct obj_data* obj)
 namespace {
 
 /* Mirrors Crash_obj2store (objsave.cpp), with nesting depth in wear_pos. */
-void append_record(struct obj_data* obj, int depth, std::vector<objects_json::ObjectRecord>* out)
+void append_record(const struct obj_data* obj, int depth, std::vector<objects_json::ObjectRecord>* out)
 {
     objects_json::ObjectRecord record;
     record.item_number = obj->item_number >= 0 ? obj_index[obj->item_number].virt : obj->item_number;
@@ -547,6 +550,10 @@ void append_record(struct obj_data* obj, int depth, std::vector<objects_json::Ob
     for (int i = 0; i < MAX_OBJ_AFFECT; ++i)
         record.affects[i] = { obj->affected[i].location, obj->affected[i].modifier };
     record.wear_pos = depth;
+    record.version = obj->obj_flags.version;
+    for (int i = 0; i < MAX_OBJ_ENCHANT; ++i) /* the slots the rent save keeps */
+        if (objects_json::enchant_is_known(obj->enchants[i].type, obj->enchants[i].align))
+            record.enchants.push_back({ obj->enchants[i].type, obj->enchants[i].align, obj->enchants[i].amount });
     if (record.item_number == generic_scalp) /* same stash Crash_obj2store uses */
         record.extra_flags = obj->obj_flags.value[4];
     out->push_back(record);
@@ -556,7 +563,7 @@ void append_record(struct obj_data* obj, int depth, std::vector<objects_json::Ob
 
 } // namespace
 
-void bank_records_from_obj(struct obj_data* obj, std::vector<objects_json::ObjectRecord>* out)
+void bank_records_from_obj(const struct obj_data* obj, std::vector<objects_json::ObjectRecord>* out)
 {
     append_record(obj, 0, out);
 }
@@ -587,7 +594,15 @@ bank_rebuild bank_rebuild_records(const std::vector<objects_json::ObjectRecord>&
             elem.affected[i].location = record.affects[i].location;
             elem.affected[i].modifier = record.affects[i].modifier;
         }
-        struct obj_data* obj = Crash_obj2char(nullptr, &elem);
+        struct obj_file_extra extra { };
+        extra.version = record.version;
+        for (size_t i = 0; i < record.enchants.size() && i < MAX_OBJ_ENCHANT; ++i)
+            extra.enchants[i] = { (byte)record.enchants[i].type, (byte)record.enchants[i].align,
+                (sh_int)record.enchants[i].amount };
+        /* No owner: built as stored. A withdrawal refreshes what it hands over
+         * (refresh_withdrawn); if its save then fails, that object is thrown
+         * away and the vault still holds the item as stored. */
+        struct obj_data* obj = Crash_obj2char(nullptr, &elem, extra, nullptr);
         at_depth.resize(depth);
         at_depth.push_back(obj);
         if (!obj) { /* the prototype is gone: skipped, as the rent load skips it */
@@ -600,8 +615,6 @@ bank_rebuild bank_rebuild_records(const std::vector<objects_json::ObjectRecord>&
          * vault the charges left are kept, never more than a new one has. */
         if (GET_ITEM_TYPE(obj) == ITEM_WAND || GET_ITEM_TYPE(obj) == ITEM_STAFF)
             obj->obj_flags.value[2] = std::max(0, std::min<int>(obj->obj_flags.value[2], record.values[2]));
-        /* PR #343: once object versions are merged, refresh `obj` here, the
-         * same call Crash_load makes after Crash_obj2char. */
         struct obj_data* holder = nullptr;
         for (int d = depth - 1; d >= 0 && !holder; --d)
             holder = at_depth[d];
@@ -684,7 +697,7 @@ bool banker_admits(struct char_data* host, struct char_data* ch, const banker_co
     return true;
 }
 
-long long slot_fee(const banker_config& config, const bank_slot& slot, struct char_data* host, struct char_data* ch)
+long long slot_fee(const banker_config& config, const bank_slot& slot, const struct char_data* host, const struct char_data* ch)
 {
     int days = bank_days_stored(slot.deposited, bank_now(), boot_option(BOOT_DAILY_REBOOT_HOUR_UTC));
     /* Only what a withdrawal hands back is charged for: a stored object whose
@@ -696,7 +709,7 @@ long long slot_fee(const banker_config& config, const bank_slot& slot, struct ch
     return bank_fee(config, days, items, GET_RACE(ch) != GET_RACE(host));
 }
 
-void banker_balance(struct char_data* host, struct char_data* ch, const banker_config& config, const bank_customer& customer)
+void banker_balance(const struct char_data* host, const struct char_data* ch, const banker_config& config, const bank_customer& customer)
 {
     std::vector<bank_balance_row> rows;
     for (const bank_slot& slot : customer.vault->slots) {
@@ -720,7 +733,7 @@ void banker_balance(struct char_data* host, struct char_data* ch, const banker_c
         ch);
 }
 
-bool has_nodrop(struct obj_data* obj)
+bool has_nodrop(const struct obj_data* obj)
 {
     if (IS_OBJ_STAT(obj, ITEM_NODROP))
         return true;
@@ -752,7 +765,7 @@ void bank_vault_file_extra(const std::string& account, int side, const std::stri
     mudlog(buf, NRM, LEVEL_AREAGOD, TRUE); /* mudlog's floor; online staff see it from area god up */
 }
 
-std::string bank_log_tail(struct char_data* host, const bank_customer& customer)
+std::string bank_log_tail(const struct char_data* host, const bank_customer& customer)
 {
     return " at mobile #" + std::to_string(host->nr >= 0 ? mob_index[host->nr].virt : -1) + ", account "
         + account::normalize_account_name(customer.account) + ", side " + std::to_string(customer.side);
@@ -762,6 +775,17 @@ void extract_all(const std::vector<struct obj_data*>& objects)
 {
     for (struct obj_data* obj : objects)
         extract_obj(obj); /* takes its contents with it */
+}
+
+/* What a vault hands over is brought up to its prototype's version, as a login
+ * does for what a character carries. `names` gets what was refreshed, for the
+ * caller to tell `ch` once the handover has held. */
+void refresh_withdrawn(struct obj_data* obj, const struct char_data* ch, std::vector<std::string>* names)
+{
+    if (Crash_refresh_object(obj, (long)GET_IDNUM(ch)))
+        names->push_back(obj->short_description);
+    for (struct obj_data* inside = obj->contains; inside; inside = inside->next_content)
+        refresh_withdrawn(inside, ch, names);
 }
 
 /* One line per stored object that could not be rebuilt, so staff can see what
@@ -1029,8 +1053,11 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
     int vnum = slots[pick].objects[0].item_number;
 
     GET_GOLD(ch) -= from_purse;
-    for (struct obj_data* obj : built.tops)
+    std::vector<std::string> refreshed;
+    for (struct obj_data* obj : built.tops) {
+        refresh_withdrawn(obj, ch, &refreshed);
         obj_to_char(obj, ch);
+    }
     bool character_written = false;
     if (!bank_save_character(ch, true, &character_written)) { /* character first; unsaved, it all stays in the vault */
         for (struct obj_data* obj : built.tops)
@@ -1063,6 +1090,8 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
 
     for (struct obj_data* obj : built.tops)
         send_to_char(vendor_wrap(std::string("You are handed ") + obj->short_description + ".").c_str(), ch);
+    for (const std::string& name : refreshed)
+        Crash_tell_object_refresh(ch, name.c_str());
     if (built.tops.empty())
         vendor_tell(host, ch, "That no longer exists. I have cleared it out.");
     else if (!built.missing.empty())
@@ -1089,14 +1118,10 @@ void bank_withdraw(struct char_data* host, struct char_data* ch, char* arg, cons
 
 bool is_banker_candidate(const struct char_data* proto, int rnum)
 {
-    if (no_specials)
-        return false;
-    if (!IS_SET(proto->specials2.act, MOB_SPEC) || proto->specials.store_prog_number != PROG_BANKER)
-        return false;
-    return rnum < 0 || !mob_index[rnum].func || mob_index[rnum].func == (special_func)banker;
+    return mob_program_candidate(proto, rnum, (special_func)banker, PROG_BANKER);
 }
 
-void banker_config_check(const struct char_data* proto, int mob_vnum, struct char_data* builder)
+void banker_config_check(const struct char_data* proto, int mob_vnum, const struct char_data* builder)
 {
     std::vector<vendor_problem> problems;
     parse_banker_options(proto->specials.mob_options, &problems);
@@ -1106,7 +1131,7 @@ void banker_config_check(const struct char_data* proto, int mob_vnum, struct cha
 }
 
 /* Soft checks, on /imp only, to the builder alone (not at boot, not logged). */
-void banker_implement_check(int mob_rnum, struct char_data* builder)
+void banker_implement_check(int mob_rnum, const struct char_data* builder)
 {
     if (!builder || mob_rnum < 0 || mob_rnum > top_of_mobt || !is_banker_proto(mob_rnum))
         return;
@@ -1134,7 +1159,7 @@ void banker_implement_check(int mob_rnum, struct char_data* builder)
     }
 }
 
-void banker_config_rebuild(int mob_rnum, struct char_data* builder, bool report)
+void banker_config_rebuild(int mob_rnum, const struct char_data* builder, bool report)
 {
     g_banker_disabled_logged.erase(mob_rnum);
     if (mob_rnum < 0 || mob_rnum > top_of_mobt || !is_banker_proto(mob_rnum)) {
@@ -1308,7 +1333,7 @@ bool lookup_character(const std::string& text, bank_account_ref* out, int* race)
     return g_lookup_character ? g_lookup_character(name, out, race) : game_lookup_character(name, out, race);
 }
 
-void vault_usage(struct char_data* ch)
+void vault_usage(const struct char_data* ch)
 {
     send_to_char("Usage: vault <character | email | account> [1|2|3]\n\r"
                  "       vault take <account> <1|2|3> <slot>\n\r"
@@ -1338,7 +1363,7 @@ std::string vault_side_text(const bank_account_ref& account, const std::string& 
     return line;
 }
 
-void vault_view(struct char_data* ch, const char* identifier, const char* side_text)
+void vault_view(const struct char_data* ch, const char* identifier, const char* side_text)
 {
     int side = BANK_SIDE_NONE;
     if (*side_text && (side = vault_side_number(side_text)) == BANK_SIDE_NONE) {
@@ -1395,7 +1420,7 @@ bool vault_parse_coins(const char* text, long long* copper)
     return parse_coins(amount.c_str(), &is_coins, copper);
 }
 
-void vault_change(struct char_data* ch, bool take, char* text)
+void vault_change(struct char_data* ch, bool take, const char* text)
 {
     char account_word[MAX_INPUT_LENGTH], side_word[MAX_INPUT_LENGTH], rest[MAX_INPUT_LENGTH], what[MAX_INPUT_LENGTH];
     char first[MAX_INPUT_LENGTH], amount[MAX_INPUT_LENGTH], buf[MAX_STRING_LENGTH];
@@ -1530,8 +1555,11 @@ void vault_change(struct char_data* ch, bool take, char* text)
             return;
         }
         const int vnum = vault->slots[n - 1].objects[0].item_number;
-        for (struct obj_data* obj : built.tops)
+        std::vector<std::string> refreshed;
+        for (struct obj_data* obj : built.tops) {
+            refresh_withdrawn(obj, ch, &refreshed);
             obj_to_char(obj, ch);
+        }
         if (!bank_save_character(ch)) { /* the immortal first */
             for (struct obj_data* obj : built.tops)
                 obj_from_char(obj);
@@ -1546,6 +1574,8 @@ void vault_change(struct char_data* ch, bool take, char* text)
                 error);
         for (struct obj_data* obj : built.tops)
             send_to_char(vendor_wrap(std::string("You take ") + obj->short_description + " from the vault.").c_str(), ch);
+        for (const std::string& name : refreshed)
+            Crash_tell_object_refresh(ch, name.c_str());
         if (built.tops.empty())
             send_to_char("That slot held only deleted objects. It is now empty.\n\r", ch);
         for (int gone : built.missing) {

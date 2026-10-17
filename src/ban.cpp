@@ -80,7 +80,7 @@ int isbanned(char* hostname)
     return i;
 }
 
-void _write_one_node(FILE* fp, struct ban_list_element* node)
+void _write_one_node(FILE* fp, const struct ban_list_element* node)
 {
     if (node) {
         _write_one_node(fp, node->next);

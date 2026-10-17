@@ -41,12 +41,12 @@ ACMD(do_move);
 ACMD(do_mental);
 
 /* extern functions */
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 extern char_data* g_skip_next_before_enter_for;
-int get_real_stealth(struct char_data* ch);
-int find_door(struct char_data* ch, char* type, char* dir);
-void group_gain(struct char_data* ch, struct char_data* victim);
+int get_real_stealth(const struct char_data* ch);
+int find_door(const struct char_data* ch, const char* type, char* dir);
+void group_gain(struct char_data* ch, const struct char_data* victim);
 int get_number(char** name);
 int check_hallucinate(struct char_data* ch, struct char_data* victim);
 void appear(struct char_data* ch);
@@ -149,7 +149,7 @@ ACMD(do_hit)
     }
 }
 
-bool should_assist_master(char_data* ch)
+bool should_assist_master(const char_data* ch)
 {
     auto master = ch->master;
 
@@ -1018,7 +1018,7 @@ ACMD(do_defend)
 }
 
 //============================================================================
-bool can_bear_skill(char_data* ch, int skill)
+bool can_bear_skill(const char_data* ch, int skill)
 {
     using namespace utils;
     if (GET_RACE(ch) != RACE_BEORNING) {
@@ -1058,7 +1058,7 @@ bool can_bear_skill(char_data* ch, int skill)
 }
 
 //============================================================================
-char_data* is_rend_targ_valid(char_data* render, waiting_type* target)
+char_data* is_rend_targ_valid(char_data* render, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1149,7 +1149,7 @@ ACMD(do_rend)
 }
 
 //============================================================================
-char_data* is_bite_targ_valid(char_data* biter, waiting_type* target)
+char_data* is_bite_targ_valid(char_data* biter, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1235,7 +1235,7 @@ ACMD(do_bite)
 }
 
 //============================================================================
-char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
+char_data* is_maul_targ_valid(char_data* mauler, const waiting_type* target)
 {
     char_data* victim = NULL;
 
@@ -1274,14 +1274,14 @@ char_data* is_maul_targ_valid(char_data* mauler, waiting_type* target)
     return victim;
 }
 
-int maul_calculate_duration(char_data* mauler)
+int maul_calculate_duration(const char_data* mauler)
 {
     int maul_duration = utils::get_prof_level(PROF_WARRIOR, *mauler) - 10;
     maul_duration = maul_duration / 2 * (SECS_PER_MUD_HOUR * 4) / PULSE_FAST_UPDATE;
     return maul_duration;
 }
 
-void apply_maul_victim(char_data* victim, char_data* ch)
+void apply_maul_victim(char_data* victim, const char_data* ch)
 {
     affected_type af;
     af.type = SKILL_MAUL;

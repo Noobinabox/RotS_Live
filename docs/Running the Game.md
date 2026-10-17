@@ -54,6 +54,10 @@ Each directory follows the structure created by `make setup`:
 
 > [!TIP] Daily backups are retained for 30 days.
 
+> [!WARNING] `lib/accounts` is not in these backups. It holds each account's characters, their
+> item files (`<name>.objects.json`) and bank vaults. Copy it by hand before a deploy that
+> changes how those files are written.
+
 1. Choose the correct archive:
    - `exploits/` for exploit logs
    - `players/` for player files

@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-script_data* get_next_command(script_data* curr);
+script_data* get_next_command(const script_data* curr);
 
 namespace {
 

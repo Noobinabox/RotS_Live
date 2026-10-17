@@ -9,13 +9,15 @@
  ************************************************************************ */
 
 #include "platdef.h"
+#include <algorithm>
 #include <ctype.h>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <vector>
-#include <iostream>
-#include <regex>
 
 #include "comm.h"
 #include "db.h"
@@ -28,6 +30,9 @@
 #include "utils.h"
 
 #include "char_utils.h"
+#include "mob_progs/mage_prog.h"
+#include "mob_progs/ranger_prog.h"
+#include "mob_walker.h"
 
 /*   external vars  */
 extern int get_number(char** name);
@@ -35,7 +40,7 @@ extern int num_of_ferries;
 extern int num_of_captains;
 extern char guildmaster_number;
 extern char* dirs[];
-extern void raw_kill(char_data* ch, char_data* killer, int attacktype);
+extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 extern int mark_calculate_wait(const char_data* ch);
 extern int shoot_calculate_wait(const char_data* archer);
 extern byte language_number;
@@ -58,6 +63,8 @@ int find_first_step(int, int);
 
 ACMD(do_ambush);
 ACMD(do_hide);
+void stop_hiding(struct char_data* ch, char);
+void check_break_prep(struct char_data*);
 ACMD(do_say);
 ACMD(do_open);
 ACMD(do_close);
@@ -205,37 +212,144 @@ void recalc_skills(struct char_data* ch)
     }
 }
 
-// split string on SEPERATOR_CHAR
-std::vector<std::string> split(const std::string str, const std::string regex_str) {
-    std::regex regexz(regex_str);
-    return {std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
-    std::sregex_token_iterator()};
+/* The first skill whose name starts with name, ignoring case, or MAX_SKILLS. */
+int find_practice_skill(const char* name)
+{
+    size_t len = strlen(name);
+    for (int request = 0; request < MAX_SKILLS; request++)
+        if (!strncasecmp(name, skills[request].name, len))
+            return request;
+    return MAX_SKILLS;
 }
 
-bool handle_pracs(char_data* host, char_data* ch, int request, int prog) {
+static bool is_all_word(const std::string& word)
+{
+    static const char all[] = "all";
+    return word.size() < sizeof(all) && !strncasecmp(word.c_str(), all, word.size());
+}
+
+/* Reads the words after "practice" at a guildmaster: a number is how many
+ * sessions to spend (above 200 counts as 200), "all" - or just "a" or "al" -
+ * spends up to 200, and the other words name the skill. When two counts are
+ * given, the later one is used.
+ *
+ * "a", "al" and "all" can also be part of a skill name ("fast a" for fast
+ * attack, "refresh all"). Such a word stays in the name while the name with
+ * it still matches a skill; otherwise, starting from the last one, it is
+ * taken as "all". */
+void parse_practice_args(const char* arg, int* times, std::string* skill)
+{
+    std::istringstream input(arg);
+    std::vector<std::string> words; /* the words that are not numbers */
+    std::vector<int> word_at; /* where each of them was typed */
+    std::vector<size_t> all_words; /* which of them could mean "all", in order */
+    std::string item;
+    int number = 0;
+    int number_at = -1; /* where the last number was typed */
+    int position = 0;
+
+    while (input >> item) {
+        if (std::all_of(item.begin(), item.end(), [](unsigned char c) { return isdigit(c); })) {
+            size_t digits = item.find_first_not_of('0');
+            if (digits == std::string::npos)
+                number = 0;
+            else if (item.size() - digits > 3)
+                number = 200;
+            else
+                number = std::min(200, atoi(item.c_str()));
+            number_at = position;
+        } else {
+            if (is_all_word(item))
+                all_words.push_back(words.size());
+            words.push_back(item);
+            word_at.push_back(position);
+        }
+        position++;
+    }
+
+    auto name_of = [&words](const std::vector<bool>& dropped) {
+        std::string name;
+        for (size_t i = 0; i < words.size(); i++) {
+            if (dropped[i])
+                continue;
+            if (!name.empty())
+                name.push_back(' ');
+            name.append(words[i]);
+        }
+        return name;
+    };
+
+    /* With no other word, "a", "al" and "all" can only mean "all". */
+    std::vector<bool> dropped(words.size(), false);
+    if (all_words.size() == words.size()) {
+        for (size_t i : all_words)
+            dropped[i] = true;
+    } else {
+        for (auto it = all_words.rbegin(); it != all_words.rend(); ++it) {
+            if (find_practice_skill(name_of(dropped).c_str()) != MAX_SKILLS)
+                break;
+            dropped[*it] = true;
+        }
+    }
+
+    /* The later of the last number and the last "all" wins. */
+    int all_at = -1;
+    for (size_t i : all_words)
+        if (dropped[i])
+            all_at = std::max(all_at, word_at[i]);
+    if (number_at > all_at)
+        *times = number;
+    else if (all_at >= 0)
+        *times = 200;
+
+    *skill = name_of(dropped);
+}
+
+/* Why another session in this skill would be wasted or is not possible, or
+ * nullptr. Checked before every session, so practicing several times stops
+ * where practicing once would. */
+static const char* practice_refusal(const char_data* ch, int request, int prog)
+{
+    if (ch->knowledge[request] >= 100)
+        return guildmasters[prog].learned_message;
+    if (guildmasters[prog].knowledge[request] <= ch->knowledge[request])
+        return guildmasters[prog].limit_message;
+    if (ch->skills[request] > 50)
+        return "You studied this for too long. Enough for you.";
+    if (ch->specials2.spells_to_learn <= 0)
+        return "You have no practice sessions left now.";
+    return nullptr;
+}
+
+/* One session in the skill. Only the first session of a command is shown,
+ * so practicing many times at once does not repeat the lines. True when the
+ * session took the skill past what the guildmaster teaches, and it was cut
+ * back to that. */
+bool handle_pracs(char_data* host, char_data* ch, int request, int prog, bool show)
+{
     ch->skills[request]++;
     ch->specials2.spells_to_learn--;
     recalc_skills(ch);
     recalc_abilities(ch);
 
-    act(guildmasters[prog].practice_message, FALSE, host, 0, ch, TO_NOTVICT);
-    act(guildmasters[prog].practice_msg_to_char, FALSE, host, 0, ch, TO_VICT);
+    if (show) {
+        act(guildmasters[prog].practice_message, FALSE, host, 0, ch, TO_NOTVICT);
+        act(guildmasters[prog].practice_msg_to_char, FALSE, host, 0, ch, TO_VICT);
+    }
 
     if (ch->knowledge[request] > guildmasters[prog].knowledge[request]) {
         ch->knowledge[request] = guildmasters[prog].knowledge[request];
-        act(guildmasters[prog].limit_message, FALSE, host, 0, ch, TO_VICT);
-        return TRUE;
-    } else {
-        return FALSE;
+        return true;
     }
+    return false;
 }
 
-SPECIAL(guild) {
-    int tmp, prog, len, request, level;
+SPECIAL(guild)
+{
+    int tmp, prog, request, level;
     int times = 1;
-    bool res = false;
-    char str[255], str2[255]; 
-    char arg2[255] = "";
+    const char* refusal;
+    char str[255];
 
     if (IS_NPC(ch) || ((cmd != CMD_PRACTICE) && (cmd != CMD_PRACTISE)))
         return (FALSE);
@@ -287,30 +401,15 @@ SPECIAL(guild) {
             }
         }
     } else {
-        std::string regex_str = " ";
-        std::string input_str;
-        input_str.append(arg);
+        std::string skill_name;
+        parse_practice_args(arg, &times, &skill_name);
 
-        auto tokens = split(input_str, regex_str);
-        for (auto& item: tokens) {
-            memcpy(str2, item.c_str(), 255);
-            if(is_number(str2)) {
-                times = atoi(str2);
-            } else if(!strncmp(str2, "all",  strlen(str2)) ) {
-                times = 200;
-            } else {
-                sprintf(str, " %s", str2);
-                strcat(arg2, str);
-            }
+        if (skill_name.empty()) {
+            send_to_char("Practice which skill?\n\r", ch);
+            return TRUE;
         }
-        memmove(arg2, arg2 + 1, strlen(arg2)); // remove leading space
 
-        len = strlen(arg2);
-        for (request = 0; request < MAX_SKILLS; request++) {
-            if (!strncmp(arg2, skills[request].name, len)) {
-                break;
-            }
-        }
+        request = find_practice_skill(skill_name.c_str());
 
         if (request == MAX_SKILLS) {
             act("There is no such skill as you seek.", FALSE, host, 0, ch, TO_VICT);
@@ -321,20 +420,12 @@ SPECIAL(guild) {
             act("$n tells you 'I know nothing about it.'", FALSE, host, 0, ch, TO_VICT);
             return TRUE;
         }
-        if (ch->knowledge[request] >= 100) {
-            act(guildmasters[prog].learned_message, FALSE, host, 0, ch, TO_VICT);
+        if (times < 1) {
+            send_to_char("Practice how many times?\n\r", ch);
             return TRUE;
         }
-        if (guildmasters[prog].knowledge[request] <= ch->knowledge[request]) {
-            act(guildmasters[prog].limit_message, FALSE, host, 0, ch, TO_VICT);
-            return TRUE;
-        }
-        if (ch->skills[request] > 50) {
-            act("You studied this for too long. Enough for you.\n\r", FALSE, host, 0, ch, TO_VICT);
-            return TRUE;
-        }
-        if (ch->specials2.spells_to_learn <= 0) {
-            act("You have no practice sessions left now.\n\r", FALSE, host, 0, ch, TO_VICT);
+        if ((refusal = practice_refusal(ch, request, prog))) {
+            act(refusal, FALSE, host, 0, ch, TO_VICT);
             return TRUE;
         }
 
@@ -350,20 +441,22 @@ SPECIAL(guild) {
             return TRUE;
         }
 
-        for (tmp = 0; tmp < times; tmp++) {
-            if (ch->skills[request] > 50) {
-                act("You studied this for too long. Enough for you.\n\r", FALSE, host, 0, ch, TO_VICT);
-                return TRUE;
-            }
-            if (ch->specials2.spells_to_learn <= 0) {
-                act("You have no practice sessions left now.\n\r", FALSE, host, 0, ch, TO_VICT);
-                return TRUE;
-            }
-            res = handle_pracs(host, ch, request, prog);
-            if(res) {
-                return TRUE;
+        int spent = 0;
+        refusal = nullptr;
+        while (spent < times && !(refusal = practice_refusal(ch, request, prog))) {
+            bool cut_back = handle_pracs(host, ch, request, prog, spent == 0);
+            spent++;
+            if (cut_back) {
+                refusal = guildmasters[prog].limit_message;
+                break;
             }
         }
+        if (spent > 1) {
+            sprintf(str, "You spend %d sessions practicing %s.\n\r", spent, skills[request].name);
+            send_to_char(str, ch);
+        }
+        if (refusal)
+            act(refusal, FALSE, host, 0, ch, TO_VICT);
     }
     return TRUE;
 }
@@ -1186,7 +1279,7 @@ void boot_ferries()
     }
 }
 
-void _recursive_move(struct char_data* ch, struct obj_data* hostobj)
+void _recursive_move(struct char_data* ch, const struct obj_data* hostobj)
 {
     struct follow_type* tmpfol;
     int num, tmp, was_in;
@@ -1412,7 +1505,7 @@ int spell_list[][4] = {
 };
 
 namespace {
-int choose_mystic_spell(char_data* caster, char_data* target)
+int choose_mystic_spell(const char_data* caster, const char_data* target)
 {
     if (caster == target) {
         /*
@@ -1543,13 +1636,18 @@ char_data* choose_caster_target(char_data* caster)
     }
 
     // NPC casters will preferentially target characters that are fighting them or
-    // group members of those characters.
+    // group members of those characters.  Like a melee blow, a spell can always go to
+    // the one the caster is fighting; anyone else only if the caster can see them.
     int valid_count = 0;
     char_data* target = caster->specials.fighting; // default target is the character the caster is engaged with
     for (char_data* character = world[caster->in_room].people; character != nullptr;
          character = character->next_in_room) {
 
         if (!is_engaged_with_victim(character, caster)) {
+            continue;
+        }
+
+        if (character != caster->specials.fighting && !CAN_SEE(caster, character)) {
             continue;
         }
 
@@ -1631,6 +1729,9 @@ SPECIAL(mob_magic_user)
 }
 
 /*  New Mage Below  */
+/* Program 31.  Its settings are in the mob options (mob_progs/mage_prog.h,
+ * docs/systems/mage-program.md); the "debug" and "spells" keywords only turn
+ * on immortal log lines. */
 const int fire_mage = 0;
 const int lightning_mage = 1;
 const int cold_mage = 2;
@@ -1639,7 +1740,7 @@ const int lhuth_mage = 4;
 const int default_mage = 5;
 
 const int mage_types = 6;
-const char* mage_aliases[] = { "fmage", "lmage", "cmage", "dmage", "lumage", "defaultm" };
+static_assert(mage_type_count == mage_types, "mage_types_table (mage_prog.h) follows the type numbers");
 
 const double full_pct = 0.76;
 const double three_quarter_pct = 0.51;
@@ -1684,7 +1785,7 @@ int new_spell_list[mage_types][hp_brackets][indvidual_spells_length] = {
         { SPELL_CHILL_RAY, SPELL_MAGIC_MISSILE } }
 };
 
-int pick_a_spell(int* spell_list, char_data* host)
+int pick_a_spell(const int* spell_list, const char_data* host)
 {
     if (spell_list[0] > 0) {
         if (has_alias(host, "spells")) {
@@ -1698,14 +1799,14 @@ int pick_a_spell(int* spell_list, char_data* host)
         int chance = number(1, spell_list[0]);
         return spell_list[chance];
     } else {
-        sprintf(buf, "--- NO MAGE KEYWORDS FOUND ---");
+        sprintf(buf, "--- NO MAGE TYPE SET ---");
         mudlog_aliased_mob(buf, host, "spells");
         return 0;
     }
 }
 
 // add spell and avoid dupes
-void add_spell_to_list(int* spell_list, int spell, char_data* host)
+void add_spell_to_list(int* spell_list, int spell, const char_data* host)
 {
     int found = 0;
     for (int i = 1; i <= spell_list[0]; i++) {
@@ -1723,7 +1824,7 @@ void add_spell_to_list(int* spell_list, int spell, char_data* host)
 }
 
 // fetch spells from hp bracket
-void get_spells(int* spell_list, int mage_type, int health, char_data* host)
+void get_spells(int* spell_list, int mage_type, int health, const char_data* host)
 {
     sprintf(buf, "MType: %d,    Spell_Tier: %d, Pct: %.2f", mage_type, health, percents[health]);
     mudlog_aliased_mob(buf, host, "spells");
@@ -1736,9 +1837,9 @@ void get_spells(int* spell_list, int mage_type, int health, char_data* host)
 
 // check if correct level and add spell
 void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cur_mage_type,
-    char* keyword, char_data* host, int min_level)
+    const char_data* host, int min_level)
 {
-    if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type && has_alias(host, keyword)) {
+    if (GET_LEVEL(host) >= min_level && mage_type == cur_mage_type) {
         sprintf(buf, "MType: %d    (HL_SPELL)", mage_type);
         mudlog_aliased_mob(buf, host, "spells");
         add_spell_to_list(spell_list, spell, host);
@@ -1746,13 +1847,13 @@ void add_leveled_spell_to_list(int* spell_list, int spell, int mage_type, int cu
 }
 
 // lookup spells by mage type and hp thresholds
-void get_combat_spells(char_data* host, int* spell_list, double current_health_pct,
-    double current_mana_pct)
+void get_combat_spells(const char_data* host, const mage_config& opts, int* spell_list,
+    double current_health_pct)
 {
     for (int mage_type = 0; mage_type < mage_types; mage_type++) {
-        char* keyword = (char*)mage_aliases[mage_type];
-        if (has_alias(host, keyword)) {
-            int current_tier = hp_brackets;
+        if (opts.*mage_types_table[mage_type].flag) {
+            // Below 0 hit points no band matches: that is the lowest band.
+            int current_tier = hp_brackets - 1;
             for (int i = 0; i < hp_brackets; i++) {
                 if (current_health_pct >= percents[i]) {
                     current_tier = i;
@@ -1762,28 +1863,23 @@ void get_combat_spells(char_data* host, int* spell_list, double current_health_p
             get_spells(spell_list, mage_type, current_tier, host);
 
             // restricted spells
-            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, keyword,
-                host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, keyword,
-                host, 30);
-            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type,
-                keyword, host, 40);
-            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type,
-                keyword, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_FIREBALL, fire_mage, mage_type, host, 40);
+            add_leveled_spell_to_list(spell_list, SPELL_CONE_OF_COLD, cold_mage, mage_type, host, 30);
+            add_leveled_spell_to_list(spell_list, SPELL_SEARING_DARKNESS, dark_mage, mage_type, host,
+                40);
+            add_leveled_spell_to_list(spell_list, SPELL_EARTHQUAKE, default_mage, mage_type, host, 30);
             if (OUTSIDE(host) && weather_info.sky[world[host->in_room].sector_type] == SKY_LIGHTNING) {
                 add_leveled_spell_to_list(spell_list, SPELL_LIGHTNING_STRIKE, lightning_mage,
-                    mage_type, keyword, host, 35);
+                    mage_type, host, 35);
             }
             if (!SUN_PENALTY(host)) {
                 add_leveled_spell_to_list(spell_list, SPELL_SPEAR_OF_DARKNESS, lhuth_mage,
-                    mage_type, keyword, host, 40);
+                    mage_type, host, 40);
             }
         }
     }
 }
 
-// NOTE: firebolt (maybe a dark spell was too), is returning FALSE?
-//       - was seeing scenarios where casting when already casting, but no longer an issue?
 // note: also see spec_pro_message
 SPECIAL(mob_magic_user_spec)
 {
@@ -1791,20 +1887,33 @@ SPECIAL(mob_magic_user_spec)
     // if (host->delay.wait_value && host->delay.subcmd) {
     const int bonus_to_cast = 20;
     int chance_to_cast = GET_LEVEL(host) + bonus_to_cast;
-    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE || (number(1 - 100) > chance_to_cast)) {
+    if ((host->delay.wait_value && host->delay.cmd) || callflag != SPECIAL_SELF || host->in_room == NOWHERE || (number(1, 100) > chance_to_cast)) {
         return FALSE;
     }
 
-    struct char_data *tmpch, *tmpch_next;
-    char_data* target;
+    // Still waiting (a wait with no command): do_cast would cast at once, with no casting
+    // time, so wait it out and cast on a later turn.
+    if (IS_AFFECTED(host, AFF_WAITING)) {
+        return FALSE;
+    }
+
+    // A stunned (or worse) mob cannot cast.
+    if (GET_POS(host) <= POSITION_STUNNED) {
+        return FALSE;
+    }
+
+    const mage_config& opts = mage_settings(host);
+    struct char_data* tmpch;
+    char_data* target = nullptr;
     int spell_list[20]; // the first index is the count of spells
     int tgt = 0;
     int spell_number = 0;
-    double current_health_pct = (double)GET_HIT(host) / (double)GET_MAX_HIT(host);
+    // A mob with no maximum (never /recalc'd) counts as at 0%: the lowest band.
+    double current_health_pct = GET_MAX_HIT(host) > 0 ? (double)GET_HIT(host) / (double)GET_MAX_HIT(host) : 0.0;
     double current_mana_pct = (double)GET_MANA(host) / (double)GET_MAX_MANA(host);
 
-    // conj: prioritize heal powers in non-combat
-    if (!host->specials.fighting && has_alias(host, "conj")) {
+    // conjurer: prioritize heal powers in non-combat
+    if (!host->specials.fighting && opts.conjurer) {
         // handle regen
         if (!utils::is_affected_by_spell(*host, SPELL_REGENERATION)) {
             target = host;
@@ -1835,13 +1944,13 @@ SPECIAL(mob_magic_user_spec)
     // handle switch tactics (when mob is max interrupted)
     if (host->specials.fighting && host->interrupt_count == 3 && spell_number == 0) {
         // shield tact: we use a "super flash" to have an attempt to cast shield
-        if (has_alias(host, "shield")) {
-            if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) > 12) {
+        if (opts.shield) {
+            if (!utils::is_affected_by_spell(*host, SPELL_SHIELD) && GET_MANA(host) >= USE_MANA(host, SPELL_SHIELD)) {
                 if (number(1, 100) > 50) {
                     for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
                         if (tmpch->specials.fighting == host) {
-                            // send_to_char("A blinding flash of light makes you dizzy.\n\r\n",
-                            // tmpch); no message?? futile if p has react trig?
+                            // No message, on purpose: a client trigger on it would make the
+                            // disengage pointless (issue #243).
                             stop_fighting(tmpch);
                         }
                     }
@@ -1854,8 +1963,8 @@ SPECIAL(mob_magic_user_spec)
         }
     }
 
-    // handle terror
-    if (has_alias(host, "terror") && host->specials.fighting && spell_number == 0 && (current_health_pct <= quarter_pct)) {
+    // handle terror: a chance in the lowest health band
+    if (opts.terror && host->specials.fighting && spell_number == 0 && (current_health_pct < half_pct)) {
         if (number(1, 100) > 80) {
             target = host;
             tgt = TARGET_OTHER;
@@ -1871,22 +1980,26 @@ SPECIAL(mob_magic_user_spec)
         if (target == nullptr) {
             return FALSE;
         }
-        if (host->specials.fighting && spell_number == 0) {
+        // At the interrupt limit the mob stops casting at its foes (issue #243).
+        if (host->specials.fighting && spell_number == 0 && host->interrupt_count < 3) {
             tgt = TARGET_OTHER;
-            if (has_alias(host, "conj")) {
+            if (opts.conjurer) {
                 if (number(1, 100) > 75) {
                     host->points.spirit = 100;
-                    if (!utils::is_affected_by_spell(*target, SPELL_CONFUSE)) {
+                    // Confuse only lands on the one the mob fights (its target
+                    // rule), so that is the one to check.
+                    if (!utils::is_affected_by_spell(*host->specials.fighting, SPELL_CONFUSE)) {
                         spell_number = SPELL_CONFUSE;
+                        target = host->specials.fighting;
                     }
-                    if (!has_alias(host, "lumage") && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
+                    if (!opts.lhuth && !utils::is_affected_by_spell(*target, SPELL_POISON) && spell_number == 0) {
                         spell_number = SPELL_POISON;
                     }
                 }
             }
             // Normal combat casting
-            if (spell_number == 0 && host->interrupt_count < 3) {
-                get_combat_spells(host, spell_list, current_health_pct, current_mana_pct);
+            if (spell_number == 0) {
+                get_combat_spells(host, opts, spell_list, current_health_pct);
                 spell_number = pick_a_spell(spell_list, host);
             }
         }
@@ -1896,7 +2009,7 @@ SPECIAL(mob_magic_user_spec)
         return FALSE;
     }
 
-    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d, Hit%: %.2f",
+    sprintf(buf, "PROG::MAGE    -> Tgt: %s, Spell: %d, TgtType: %d, InterruptCnt: %d, Hit%%: %.2f",
         GET_NAME(target), spell_number, tgt, host->interrupt_count, current_health_pct);
     mudlog_debug_mob(buf, host);
 
@@ -1911,7 +2024,10 @@ SPECIAL(mob_magic_user_spec)
     wtl_base.targ2.choice = TAR_CHAR_ROOM;
     wtl_base.flg = 1;
     do_cast(host, "", &wtl_base, CMD_CAST, 0);
-    return TRUE;
+
+    // The turn is the cast's only if the cast started; one refused on the spot (no
+    // mana, a peace room, the wrong position) leaves the mob its normal turn.
+    return host->delay.cmd == CMD_CAST && IS_AFFECTED(host, AFF_WAITING);
 }
 
 int warrior_abilities[] = {
@@ -2052,13 +2168,15 @@ SPECIAL(mob_ranger)
               // move again from continuing one_mobile_activity (also double delays)
 }
 
-/* Created for the new ranger prog */
-bool see_hidden(char_data* host, char_data* tmpch)
-{
-    int hide, vuln_st, my_hide, orig_hide, see_hide;
+/* Program 32, the ranger program (mob_ranger_new). See docs/systems/ranger-program.md. */
 
-    orig_hide = see_hiding(host);
-    see_hide = orig_hide;
+/* Created for the new ranger prog. Level 40+ mobs use their own, lower roll so
+ * that a high ranger keeps a small chance to stay hidden from them. */
+bool see_hidden(const char_data* host, const char_data* tmpch)
+{
+    int hide, vuln_st, see_hide;
+
+    see_hide = see_hiding(host);
     // COMMENT OUT 3 LINES BELOW to use ONLY THE STANDARD see_hiding() calc
     if (GET_LEVEL(host) >= 40) {
         see_hide = (GET_LEVEL(host) * 2) + number(-7, 20) + number(-7, 20) + number(-7, 20);
@@ -2067,18 +2185,53 @@ bool see_hidden(char_data* host, char_data* tmpch)
     if (vuln_st > 0) {
         see_hide = see_hide - (see_hide * .5);
     }
-    hide = 0;
     hide = GET_HIDING(tmpch);
-    my_hide = GET_HIDING(host);
-    return (!(hide > 0) || (hide > 0 && (see_hide > hide)));
+    return !(hide > 0) || see_hide > hide;
 }
 
-// note: we dont check if fighting here, because its also used for ambush
-// TODO: factor in god nohassle
-bool should_attack(char_data* host, char_data* tmpch)
+/* One hidden roll per character per turn: a later step of the same turn
+ * reuses the result instead of rolling again. Only hidden characters are
+ * kept, so the list stays empty in the common case. */
+struct hidden_rolls {
+    std::vector<std::pair<const char_data*, bool>> results;
+
+    bool sees(const char_data* host, const char_data* tmpch)
+    {
+        if (GET_HIDING(tmpch) <= 0)
+            return true;
+        for (const auto& result : results)
+            if (result.first == tmpch)
+                return result.second;
+        const bool seen = see_hidden(host, tmpch);
+        results.emplace_back(tmpch, seen);
+        return seen;
+    }
+};
+
+/* Whether host may take tmpch as a target: it sees them and they are not an
+ * immortal with nohassle. While fighting, anyone it sees will do (target
+ * switching); otherwise only someone it is aggressive to. */
+bool should_attack(char_data* host, char_data* tmpch, hidden_rolls& rolls)
 {
-    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
-    return (tmpch && tmpch != host && CAN_SEE(host, tmpch) && see_hidden(host, tmpch) && see_hidden(host, tmpch) && !PRF_FLAGGED(tmpch, PRF_NOHASSLE) && (IS_AGGR_TO(host, tmpch) || (is_aggressive && !IS_NPC(tmpch)) || host->specials.fighting && (GET_POS(host) > POSITION_SITTING)));
+    if (!tmpch || tmpch == host || !CAN_SEE(host, tmpch) || !rolls.sees(host, tmpch))
+        return false;
+    if (!IS_NPC(tmpch) && PRF_FLAGGED(tmpch, PRF_NOHASSLE))
+        return false;
+    if (host->specials.fighting && GET_POS(host) > POSITION_SITTING)
+        return true;
+    return mob_race_aggressive_to(host, tmpch) || mob_flag_aggressive_to(host, tmpch);
+}
+
+/* What do_hit would refuse before it says anything; checked first so the
+ * attack line is only shown for an attack that happens. Sanctuary is not
+ * here: against it the mob really tries, and each try wears it down. */
+bool ranger_can_start_attack(char_data* host, char_data* target)
+{
+    if ((IS_AFFECTED(host, AFF_CHARM) && host->master == target)
+        || (IS_AFFECTED(target, AFF_CHARM) && target->master == host))
+        return false;
+    return GET_POS(host) == POSITION_STANDING && !IS_SET(world[host->in_room].room_flags, PEACEROOM)
+        && !IS_MENTAL(host) && CAN_SEE(host, target);
 }
 
 void do_spec_ambush(char_data* host, char_data* tmpch)
@@ -2092,7 +2245,6 @@ void do_spec_ambush(char_data* host, char_data* tmpch)
     tmpwtl.targ1.ch_num = tmpch->abs_number;
     do_ambush(host, "", &tmpwtl, CMD_AMBUSH, 0);
     tmpwtl.targ1.cleanup();
-    host->spec_busy = false;
 }
 
 void do_spec_hit(char_data* host, char_data* tmpch)
@@ -2110,92 +2262,376 @@ void do_spec_hit(char_data* host, char_data* tmpch)
     tmpwtl.targ1.ch_num = tmpch->abs_number;
     tmpwtl.cmd = CMD_HIT;
     do_hit(host, buf, &tmpwtl, 0, 0);
-    host->spec_busy = false;
+    tmpwtl.targ1.cleanup();
 }
 
-bool prog_do_hunter(char_data* host, int is_wimpy)
+/* With ambush=yes a target not yet fighting is ambushed; if the ambush does
+ * not start (no weapon, too big a weapon, no skill...), it is hit instead. */
+void ranger_attack(char_data* host, char_data* target, const ranger_config& opts)
 {
-    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT))) && (GET_POS(host) == POSITION_STANDING) && !is_wimpy && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+    if (opts.ambush && !target->specials.fighting) {
+        do_spec_ambush(host, target);
+        /* delay.cmd stays CMD_AMBUSH after an earlier ambush has ended, so
+         * only a wind-up in progress means this one started. */
+        if (host->delay.cmd == CMD_AMBUSH && host->delay.wait_value > 0)
+            return;
+    }
+    do_spec_hit(host, target);
 }
 
-// Works with HUNTER and MEMORY flags, handled below
-// Opt: alias keyword "stab" makes it favor ambushing
-//    : alias keyword "hunt" makes it hunt tracks
+/* hide_prof without the sneak bonus: the mark off for the reading only. */
+int ranger_unmarked_hide_prof(char_data* host)
+{
+    const bool marked = IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    const int prof = hide_prof(host);
+    if (marked)
+        SET_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    return prof;
+}
+
+int ranger_sneak_hide_prof(char_data* host);
+int ranger_track_direction(const char_data* host);
+
+/* WIMPY at a fifth of its health or less: the program starts nothing. */
+bool ranger_low_health(const char_data* host)
+{
+    return IS_SET(host->specials2.act, MOB_WIMPY) && GET_HIT(host) <= GET_MAX_HIT(host) / 5;
+}
+
+/* A step toward someone is coming: HUNTER with a remembered enemy elsewhere
+ * (where they are, not whether a path leads there), or track=yes with a
+ * track here to follow. As in the turn, a low-health WIMPY mob or a ridden
+ * one does neither. */
+bool ranger_chasing(const char_data* host, const ranger_config& opts)
+{
+    if (ranger_low_health(host) || IS_RIDDEN(host))
+        return false;
+    if ((IS_SET(host->specials2.act, MOB_HUNTER) || IS_AFFECTED(host, AFF_HUNT)) && !MOB_FLAGGED(host, MOB_PET))
+        for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+            if (names->enemy && char_exists(names->enemy_number) && names->enemy->in_room != NOWHERE
+                && names->enemy->in_room != host->in_room)
+                return true;
+    return opts.track && !host->master && ranger_track_direction(host) >= 0;
+}
+
+/* Someone here the mob would go for: a remembered enemy, or someone it is
+ * aggressive to. Who is here only; nothing is rolled to see them. */
+bool ranger_target_here(const char_data* host)
+{
+    for (char_data* tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+        if (tmpch == host || (!IS_NPC(tmpch) && PRF_FLAGGED(tmpch, PRF_NOHASSLE)))
+            continue;
+        if (mob_race_aggressive_to(host, tmpch) || mob_flag_aggressive_to(host, tmpch))
+            return true;
+        for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+            if (names->enemy == tmpch && char_exists(names->enemy_number))
+                return true;
+    }
+    return false;
+}
+
+/* The subcmd of a hide after sneaking in: its wind-up calls the program
+ * back with it when it ends (complete_delay; a broken one comes back -1). */
+const int RANGER_HIDE_WINDUP = 1;
+
+/* The end of a hide after sneaking in: the cover comes now, as a player's,
+ * from hide_prof with sneak's bonus as meant (ranger_sneak_hide_prof). As a
+ * player's, none if it now fights, is not standing, or rides. */
+void ranger_finish_hide(char_data* host)
+{
+    if (host->specials.fighting || GET_POS(host) != POSITION_STANDING || IS_RIDING(host))
+        return;
+    const int cover = std::max(0, hide_roll(ranger_sneak_hide_prof(host), false));
+    GET_HIDING(host) = cover;
+    if (cover > 0)
+        SET_BIT(host->specials.affected_by, AFF_HIDE);
+    else
+        REMOVE_BIT(host->specials.affected_by, AFF_HIDE);
+}
+
+/* hide=yes: hides when it stands without cover and nothing is pending. A
+ * move made by this program does not unhide the mob, so after a move this
+ * only acts if something else took its cover.
+ * Just snuck in (the mark is set): hides once more, as a player may type
+ * hide after sneaking in. do_hide would read get_real_stealth's stuck +100
+ * there, so the program rolls that hide itself, with sneak's bonus as meant,
+ * after the wind-up of a hide after sneaking in (ranger_finish_hide). While
+ * chasing, or following a leader in the room, with no one here to go for,
+ * it does not stop to hide, and sneaks on: a delayed follower cannot follow.
+ * True if a hide wind-up started. */
+bool ranger_rehide(char_data* host, const ranger_config& opts)
+{
+    if (!opts.hide || host->delay.wait_value != 0)
+        return false;
+    if (GET_POS(host) != POSITION_STANDING || IS_RIDING(host))
+        return false;
+    if (IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN)) {
+        REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN); /* once per sneak-in */
+        const bool with_leader = host->master && host->master->in_room == host->in_room;
+        if ((ranger_chasing(host, opts) || with_leader) && !ranger_target_here(host))
+            return false;
+        /* do_hide's own checks: a spell being prepared breaks, and with no
+         * hide skill (confused down to 0) there is no hide; it keeps the cover
+         * it snuck in with. */
+        check_break_prep(host);
+        if (GET_KNOWLEDGE(host, SKILL_HIDE) <= 0)
+            return false;
+        /* do_hide's wind-up; the cover comes when it ends, so until then the
+         * mob keeps the cover it snuck in with, and a broken one gives none. */
+        WAIT_STATE_BRIEF(host, skills[SKILL_HIDE].beats - 1, -1, RANGER_HIDE_WINDUP, 30,
+            AFF_WAITING | AFF_WAITWHEEL);
+        return host->delay.wait_value > 0;
+    }
+    if (GET_HIDING(host))
+        return false;
+    /* do_hide's cover from a hide prof below 0 wraps the byte to a huge
+     * cover: it stays out of cover instead. */
+    if (ranger_unmarked_hide_prof(host) < 0)
+        return false;
+    do_hide(host, "", 0, 0, 0);
+    return host->delay.wait_value > 0;
+}
+
+/* A closed door the mob opens on its way (the move code's own rule), into a
+ * room that takes mobs. */
+bool ranger_opens_door(const char_data* host, int dir)
+{
+    return mob_opens_door_on_move(host, dir) && room_takes_mobs(EXIT(host, dir)->to_room);
+}
+
+enum ranger_step_result {
+    RANGER_MOVED,
+    RANGER_STAYED, /* the move refused the step (water, a script, move points...) */
+    RANGER_OPENED, /* refused, but it opened a door on the way: that was its action */
+    RANGER_GONE, /* the step removed the mob */
+};
+
+/* The exits a step was refused through this turn: each is tried once, so a
+ * refusal's scripts and costs (before-enter scripts, Power of Arda) happen at
+ * most once per turn. */
+struct refused_exits {
+    bool dir[NUM_OF_DIRS] = {};
+};
+
+/* The hide prof of a hide after sneaking in, with sneak's bonus at the size
+ * it was meant: min(100, 10 * level / 30), while it still sneaks. get_real_stealth's NPC line gives
+ * max(100, ...), always +100, and nothing clears a mob's sneaked-in mark on
+ * its own moves, so that +100 would stick. Mark set: the mob just snuck in. */
+int ranger_sneak_hide_prof(char_data* host)
+{
+    const int bonus = IS_AFFECTED(host, AFF_SNEAK) ? std::min(100, 10 * GET_LEVEL(host) / 30) : 0;
+    return ranger_unmarked_hide_prof(host) + bonus;
+}
+
+/* After a step: snuck_in's cover from a hide prof below 0 wraps the byte to
+ * a huge cover, so no cover instead, and hide=yes hides as usual. */
+void ranger_check_sneak_cover(char_data* host)
+{
+    if (IS_SET(host->specials2.hide_flags, HIDING_SNUCK_IN) && ranger_unmarked_hide_prof(host) < 0)
+        stop_hiding(host, FALSE);
+}
+
+/* After a move: the sneak-in cover check, and with hide=no the mark goes
+ * now, so nothing later (an ambush) reads its stuck +100; the cover it snuck
+ * in with stays. */
+void ranger_sneak_cleanup(char_data* host, const ranger_config& opts)
+{
+    ranger_check_sneak_cover(host);
+    if (!opts.hide)
+        REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+}
+
+/* After a step: the sneak clean-up, then hide=yes hides. */
+void ranger_after_step(char_data* host, const ranger_config& opts)
+{
+    ranger_sneak_cleanup(host, opts);
+    ranger_rehide(host, opts);
+}
+
+/* One step that way, re-hiding after it if something took the mob's cover.
+ * The sneaked-in mark is cleared first, as a player's typed move clears it,
+ * so the sneak roll and snuck_in's cover have no sneak bonus, as a player's.
+ * Whether the step went through is read off the mob's room afterwards, so a
+ * refusal the checks above do not foresee still lets the turn go on. */
+ranger_step_result ranger_take_step(char_data* host, int dir, const ranger_config& opts, refused_exits& refused)
+{
+    if (refused.dir[dir])
+        return RANGER_STAYED;
+    waiting_type wtl;
+    bzero((char*)&wtl, sizeof(waiting_type));
+    wtl.cmd = dir + 1;
+    const int from = host->in_room;
+    const int host_number = host->abs_number;
+    const room_direction_data* exit = EXIT(host, dir);
+    const bool was_closed = exit && IS_SET(exit->exit_info, EX_CLOSED);
+    REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+    do_move(host, "", &wtl, wtl.cmd, 0);
+    wtl.targ1.cleanup();
+    if (!char_exists(host_number))
+        return RANGER_GONE;
+    if (host->in_room == from) {
+        refused.dir[dir] = true;
+        return was_closed && !IS_SET(exit->exit_info, EX_CLOSED) ? RANGER_OPENED : RANGER_STAYED;
+    }
+    ranger_after_step(host, opts);
+    return RANGER_MOVED;
+}
+
+/* Whether a step that way would go through, by the shared mob step checks
+ * (mob_walker.h), so a track or hunt step that cannot be taken is not chosen
+ * over and over. A door the mob can open does not stop it. */
+bool ranger_can_step(const char_data* host, int dir)
+{
+    return dir >= 0 && dir < NUM_OF_DIRS && (exit_is_usable(host, dir) || ranger_opens_door(host, dir))
+        && stay_flags_allow(host, dir);
+}
+
+/* track=yes: the direction of the freshest track, left by a player of a race
+ * the mob is aggressive to, that it can step along; -1 if none. */
+int ranger_track_direction(const char_data* host)
+{
+    const room_data& room = world[host->in_room];
+    const bool is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
+    const long racial_aggr = host->specials2.pref;
+    if (IS_SET(host->specials2.act, MOB_MOUNT))
+        return -1;
+
+    int best_dir = -1, best_age = 999;
+    for (int tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
+        const room_track_data& track = room.room_track[tmp];
+        if (track.char_number >= 0)
+            continue; /* a mob's track, or none */
+        const int race = -track.char_number;
+        const bool hunted = is_aggressive || (race < 32 && (racial_aggr & (1L << race)));
+        const int dir = track.data & 7;
+        if (!hunted || !ranger_can_step(host, dir))
+            continue;
+        const int age = (24 + time_info.hours - track.data / 8) % 24;
+        if (age < best_age) {
+            best_age = age;
+            best_dir = dir;
+        }
+    }
+    return best_dir;
+}
+
+bool prog_do_hunter(const char_data* host, bool low_health)
+{
+    return ((IS_SET(host->specials2.act, MOB_MEMORY) || IS_SET(host->specials2.act, MOB_HUNTER) || (IS_AFFECTED(host, AFF_HUNT))) && (GET_POS(host) == POSITION_STANDING) && !low_health && !(MOB_FLAGGED(host, MOB_PET)) && host->specials.memory && !host->specials.fighting);
+}
+
+/* A remembered enemy in the mob's room that it can see; nullptr if none. */
+char_data* ranger_remembered_here(char_data* host)
+{
+    for (struct memory_rec* names = host->specials.memory; names; names = names->next_on_mob)
+        if (names->enemy && char_exists(names->enemy_number) && names->enemy->in_room == host->in_room
+            && CAN_SEE(host, names->enemy))
+            return names->enemy;
+    return nullptr;
+}
+
+/* Runs on the mob's own turn only, and always ends that turn (returns 1), so
+ * the standard mob turn never acts a second time after it. Settings come from
+ * the mob options: hide, ambush, track, riposte (mob_progs/ranger_prog.h).
+ * Supported flags: AGGRESSIVE (+ _EVIL/_GOOD/_NEUTRAL), race aggression,
+ * HELPER, SWITCHING, MEMORY, HUNTER, SENTINEL, WIMPY; walker settings. */
 SPECIAL(mob_ranger_new)
 {
-    waiting_type tmpwtl;
     char_data* tmpch;
-    room_data* tmproom;
     struct memory_rec* names;
-    struct char_data* vict;
-    int tmp, tmp2, mintime, mintmp, dir;
-    int is_wimpy = 0;
+    int tmp;
 
-    long racial_aggr = host->specials2.pref;
-    int is_aggressive = IS_SET(host->specials2.act, MOB_AGGRESSIVE);
+    /* A hide after sneaking in ends (ranger_rehide's wind-up). */
+    if ((callflag == SPECIAL_NONE || callflag == SPECIAL_DELAY) && host && host->in_room != NOWHERE && wtl
+        && wtl->cmd == -1 && wtl->subcmd == RANGER_HIDE_WINDUP) {
+        ranger_finish_hide(host);
+        return 1;
+    }
 
-    bzero((char*)&tmpwtl, sizeof(waiting_type));
-
-    if (host->in_room == NOWHERE)
-        return 0;
-    if ((callflag != SPECIAL_SELF) && (callflag != SPECIAL_ENTER))
+    if (callflag != SPECIAL_SELF || !host || host->in_room == NOWHERE)
         return 0;
 
-    // this allows do_move, by blocking do_move()'s internal call to SPECIAL PROG again
-    ch->spec_busy = true;
+    const ranger_config& opts = ranger_settings(host);
 
     if (GET_POS(host) < POSITION_FIGHTING) {
         update_pos(host);
     }
 
-    const int wimpy_health_limit = GET_MAX_HIT(host) / 5;
-    if (GET_HIT(host) <= wimpy_health_limit) {
-        sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), wimpy_health_limit);
+    // Something pending (a script's wait, a wind-up, the delay after a bash
+    // or flee): nothing this turn. The standard turn acts on the last beat
+    // of a delay with no command waiting; this one waits it out, since a
+    // hide or ambush started then is refused ("double delay").
+    if (host->delay.wait_value)
+        return 1;
+
+    // A move the program did not make (following a leader) gets the same
+    // clean-up as its own steps. It waits for this turn: a follower's turn
+    // comes only every PULSE_MOBILE, so the cover and mark live until then.
+    ranger_sneak_cleanup(host, opts);
+
+    // A WIMPY mob at a fifth of its health or less starts nothing: no attack,
+    // no help, no switching, no hunting, no tracks. It still hides and wanders.
+    const bool low_health = ranger_low_health(host);
+    if (low_health) {
+        sprintf(buf, "WIMPY --> health: %d, wimpy: %d", GET_HIT(host), GET_MAX_HIT(host) / 5);
         mudlog_debug_mob(buf, host);
-        is_wimpy = 1;
     }
 
-    tmpch = 0;
     const bool is_engaged = host->specials.fighting != nullptr;
     const bool is_not_engaged = !is_engaged;
+    hidden_rolls rolls;
+    refused_exits refused;
 
     if (is_not_engaged) {
-        // hide here for pop or after fighting and didnt move
-        if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-             IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-            host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-            do_hide(host, "", 0, 0, 0);
-        }
+        // Hide first; a hide that starts ends the turn, so targets are
+        // looked for from cover.
+        if (ranger_rehide(host, opts))
+            return 1;
 
-        if ((callflag == SPECIAL_ENTER) && ch && !is_wimpy && !PRF_FLAGGED(ch, PRF_NOHASSLE) && (IS_AGGR_TO(host, ch) || IS_SET(ch->specials2.act, MOB_AGGRESSIVE))) {
-            tmpch = ch;
-        } else if (callflag == SPECIAL_SELF && !is_wimpy) {
+        if (!low_health) {
+            // 1. A remembered enemy in the room, even one it is not otherwise aggressive to.
+            if (prog_do_hunter(host, false)) {
+                char_data* enemy = ranger_remembered_here(host);
+                if (enemy && host->master == enemy) {
+                    forget(host, enemy);
+                } else if (enemy && rolls.sees(host, enemy) && (IS_NPC(enemy) || !PRF_FLAGGED(enemy, PRF_NOHASSLE))
+                    && ranger_can_start_attack(host, enemy)) {
+                    ranger_attack(host, enemy, opts);
+                    return 1;
+                }
+            }
+
+            // 2. ambush=yes: someone new who is not fighting, before an ally's fight takes it in.
             // should this pick a random target, instead of first? or if MOB_SWITCHING??
+            if (opts.ambush) {
+                for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+                    if (!tmpch->specials.fighting && should_attack(host, tmpch, rolls) && ranger_can_start_attack(host, tmpch)) {
+                        ranger_attack(host, tmpch, opts);
+                        return 1;
+                    }
+                }
+            }
+
+            // 3. Help an ally in a fight.
+            if (mob_helper_assist(host))
+                return 1;
+
+            // 4. Hit someone new.
             for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
-                if (should_attack(host, tmpch)) {
-                    break;
+                if (should_attack(host, tmpch, rolls) && ranger_can_start_attack(host, tmpch)) {
+                    ranger_attack(host, tmpch, opts);
+                    return 1;
                 }
             }
         }
     }
 
-    /* Ambush */
-    if (tmpch && tmpch != host && has_alias(host, "p_stab") && is_not_engaged &&
-        !tmpch->specials.fighting && !is_wimpy) {
-        do_spec_ambush(host, tmpch);
-        return 1;
-    }
-    // else attack
-    if (tmpch && tmpch != host && is_not_engaged && !is_wimpy) {
-        do_spec_hit(host, tmpch);
-        return 1;
-    }
-
     // MOB_SWITCHING
-    if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !is_wimpy) {
-        for (tmpch = world[ch->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
+    if (IS_SET(host->specials2.act, MOB_SWITCHING) && host->specials.fighting && !low_health) {
+        for (tmpch = world[host->in_room].people; tmpch; tmpch = tmpch->next_in_room) {
             // also tgt someone invis ??
-            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch) && tmpch != host->specials.fighting) {
+            if (tmpch->specials.fighting == host && !number(0, 3) && should_attack(host, tmpch, rolls) && tmpch != host->specials.fighting) {
                 host->specials.fighting = tmpch;
                 act("$n turns to fight $N!", TRUE, host, 0, tmpch, TO_ROOM);
                 break;
@@ -2203,111 +2639,56 @@ SPECIAL(mob_ranger_new)
         }
     }
 
-    // MEMORY / HUNTER
-    if (prog_do_hunter(host, is_wimpy)) {
-        vict = 0;
-        for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
-            if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room == ch->in_room) && CAN_SEE(ch, names->enemy)) {
-                vict = names->enemy;
-            }
-        }
-        if (vict) {
-            if (ch->master == vict) {
-                forget(ch, vict);
-                // below needed: these attacks only occurr if mob_memory and not otherwise aggr to
-            } else {
-                if (should_attack(host, tmpch) && has_alias(host, "p_stab") &&
-                    is_not_engaged && !vict->specials.fighting) {
-                    do_spec_ambush(host, tmpch);
-                    return 1;
-                }
-                if (should_attack(host, tmpch) && is_not_engaged) {
-                    do_spec_hit(host, tmpch);
-                    return 1;
-                }
-            }
-        }
-        if (IS_SET(ch->specials2.act, MOB_HUNTER) || IS_AFFECTED(ch, AFF_HUNT)) {
+    // HUNTER: a step toward a remembered enemy who is not here (one who is was dealt with above)
+    if (prog_do_hunter(host, low_health) && !ranger_remembered_here(host) && !IS_RIDDEN(host)) {
+        if (IS_SET(host->specials2.act, MOB_HUNTER) || IS_AFFECTED(host, AFF_HUNT)) {
             int modifier = 0;
-            if (IS_AFFECTED(ch, AFF_CONFUSE)) {
-                modifier = get_confuse_modifier(ch);
+            if (IS_AFFECTED(host, AFF_CONFUSE)) {
+                modifier = get_confuse_modifier(host);
             }
 
-            for (names = ch->specials.memory; names && !vict; names = names->next_on_mob) {
+            for (names = host->specials.memory; names; names = names->next_on_mob) {
                 if (names->enemy && char_exists(names->enemy_number) && (names->enemy->in_room != NOWHERE) && (number(0, 100) > modifier)) {
-                    tmp = find_first_step(ch->in_room, names->enemy->in_room);
+                    tmp = find_first_step(host->in_room, names->enemy->in_room);
                 } else {
                     tmp = BFS_NO_PATH;
                 }
-                if (tmp >= 0) {
-                    do_move(ch, "", 0, tmp + 1, 0);
-                    if(has_alias(host, "p_hide")) {
-                        do_hide(host, "", 0, 0, 0);
-                    }
-                    host->spec_busy = false;
+                if (tmp >= 0 && ranger_can_step(host, tmp) && ranger_take_step(host, tmp, opts, refused) != RANGER_STAYED)
                     return 1;
-                }
             }
         }
     } /* mob memory/hunter */
 
-    tmproom = &world[host->in_room];
-    mintime = 999;
-    mintmp = NUM_OF_TRACKS;
-    if (ch->delay.wait_value == 0 && is_not_engaged) {
+    if (host->delay.wait_value == 0 && is_not_engaged) {
         // TRACKING
-        if (has_alias(host, "p_hunt") && !is_wimpy) {
-            for (tmp = 0; tmp < NUM_OF_TRACKS; tmp++) {
-                tmp2 = (24 + time_info.hours - tmproom->room_track[tmp].data / 8) % 24;
-                dir = (tmproom->room_track[tmp].data & 7); // the direction
-                room_data exit_room;
-
-                if (CAN_GO(host, dir)) {
-                    exit_room = world[EXIT(host, dir)->to_room];
-                }
-
-                if ((tmproom->room_track[tmp].char_number < 0) && ((racial_aggr & (1 << -tmproom->room_track[tmp].char_number)) || (is_aggressive && (1 << -tmproom->room_track[tmp].char_number) <= PLAYER_RACE_MAX)) && tmp2 < mintime && !IS_SET(exit_room.room_flags, NO_MOB)) {
-                    // NOTE: these get set on every true pass, so it would be the last matching
-                    // track, unless sorting was done on the random order of tracks
-                    mintime = tmp2;
-                    mintmp = tmp;
-                }
-            }
-
-            if (mintmp < NUM_OF_TRACKS) {
-                tmpwtl.cmd = (tmproom->room_track[mintmp].data & 7) + 1;
-                tmpwtl.subcmd = 0;
-                do_move(host, "", &tmpwtl, tmpwtl.cmd, 0);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-                    host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-                    do_hide(host, "", 0, 0, 0);
-                }
-                tmpwtl.targ1.cleanup();
-                ch->spec_busy = false;
+        if (opts.track && !low_health && !host->master && !IS_RIDDEN(host) && GET_POS(host) == POSITION_STANDING) {
+            const int dir = ranger_track_direction(host);
+            if (dir >= 0 && ranger_take_step(host, dir, opts, refused) != RANGER_STAYED)
                 return 1;
-            }
         }
 
-        // default: try move and hide again
-        if (!IS_SET(host->specials2.act, MOB_SENTINEL) && GET_POS(host) == POSITION_STANDING) {
-            tmpwtl.cmd = number(1, NUM_OF_DIRS);
-            tmpwtl.subcmd = 0;
-            if (CAN_GO(host, tmpwtl.cmd - 1)) {
-                do_move(host, "", &tmpwtl, tmpwtl.cmd, tmpwtl.subcmd);
-                if (((GET_POS(host) == POSITION_STANDING) && !GET_HIDING(host) ||
-                     IS_SET(ch->specials2.hide_flags, HIDING_SNUCK_IN)) &&
-                    host->delay.wait_value == 0 && has_alias(host, "p_hide")) {
-                    do_hide(host, "", 0, 0, 0);
-                }
-                tmpwtl.targ1.cleanup();
+        // default: try move and hide again. A walker's rules take the roll first.
+        if (!IS_SET(host->specials2.act, MOB_SENTINEL) && GET_POS(host) == POSITION_STANDING && !host->master
+            && !IS_RIDDEN(host)) {
+            const int door = number(0, NUM_OF_DIRS - 1);
+            const bool usable = exit_is_usable(host, door);
+            const int host_number = host->abs_number;
+            /* A route step is a step too: the mark is cleared first (ranger_take_step). */
+            REMOVE_BIT(host->specials2.hide_flags, HIDING_SNUCK_IN);
+            const walker_result walked = walker_wander(host, door, usable);
+            if (walked == WALKER_GONE || !char_exists(host_number))
+                return 1; /* its ON_PATH_END script or its step removed the mob */
+            if (walked == WALKER_HANDLED) {
+                ranger_after_step(host, opts);
                 return 1;
             }
-            tmpwtl.targ1.cleanup();
+            if (usable) {
+                ranger_take_step(host, door, opts, refused);
+                return 1;
+            }
         }
     }
 
-    ch->spec_busy = false;
     return 1; //-- we are cutting off the rest of one_mobile_activity to ensure that the prog has a
               // consistant flow
 }
@@ -2364,7 +2745,7 @@ SPECIAL(mob_jig)
     return FALSE;
 }
 
-int get_exit_width(room_data* room, int exit);
+int get_exit_width(const room_data* room, int exit);
 
 /*
  * Well in answer to Vakaurs' prayers i've removed
@@ -2789,7 +3170,7 @@ SPECIAL(react_trap)
 {
     struct waiting_type w;
     ACMD(do_trap);
-    int target_check(struct char_data*, int, struct target_data*, struct target_data*);
+    int target_check(struct char_data*, int, const struct target_data*, const struct target_data*);
 
     if (callflag != SPECIAL_COMMAND && callflag != SPECIAL_ENTER)
         return FALSE;

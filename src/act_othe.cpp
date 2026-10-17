@@ -52,8 +52,8 @@ extern char* dirs[];
 /* extern procedures */
 extern int old_search_block(const char*, int, unsigned int, const char**, int);
 extern int echo_off(int);
-extern int get_followers_level(struct char_data*);
-extern int get_real_stealth(struct char_data*);
+extern int get_followers_level(const struct char_data*);
+extern int get_real_stealth(const struct char_data*);
 extern void check_break_prep(struct char_data*);
 SPECIAL(shop_keeper);
 ACMD(do_gen_com);

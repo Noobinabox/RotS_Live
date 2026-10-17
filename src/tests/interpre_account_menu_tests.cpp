@@ -39,7 +39,7 @@ extern int top_of_p_table;
 extern int top_of_world;
 extern char* motd;
 void clear_char(struct char_data* ch, int mode);
-sh_int get_naked_perception(struct char_data* ch);
+sh_int get_naked_perception(const struct char_data* ch);
 int register_pc_char(struct char_data* ch);
 void introduce_char(struct descriptor_data* d);
 int Crash_alias_load(struct char_data* ch, FILE* fp);

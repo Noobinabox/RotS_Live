@@ -35,7 +35,7 @@ extern int mortal_start_room[];
 extern int r_mortal_start_room[];
 extern int r_immort_start_room;
 extern struct index_data* mob_index;
-extern int armor_absorb(struct obj_data* obj);
+extern int armor_absorb(const struct obj_data* obj);
 
 void group_gain(struct char_data*, const struct char_data*);
 char saves_power(const char_data*, sh_int power, sh_int bonus);

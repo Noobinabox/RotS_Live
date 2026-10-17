@@ -43,10 +43,10 @@ extern struct char_data* waiting_list;
 extern struct room_data world;
 extern struct skill_data skills[];
 extern int find_door(const struct char_data* ch, const char* type, char* dir);
-extern int get_followers_level(struct char_data*);
+extern int get_followers_level(const struct char_data*);
 extern int old_search_block(const char*, int, unsigned int, const char**, int);
 extern int get_number(char** name);
-extern int get_real_stealth(struct char_data*);
+extern int get_real_stealth(const struct char_data*);
 extern int rev_dir[];
 extern int show_tracks(const struct char_data* ch, const char* name, int mode);
 extern int top_of_world;
@@ -1977,7 +1977,7 @@ int hide_roll(int prof, bool well)
 int hide_prof(const struct char_data* hider)
 {
     int hide_value;
-    int get_real_stealth(struct char_data*);
+    int get_real_stealth(const struct char_data*);
 
     hide_value = GET_SKILL(hider, SKILL_HIDE) + get_real_stealth(hider) + GET_PROF_LEVEL(PROF_RANGER, hider) - 30;
 

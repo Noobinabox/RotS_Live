@@ -62,9 +62,9 @@ extern struct char_data* character_list;
 extern struct char_data* mob_proto;
 extern int max_race_str[];
 extern struct char_data* waiting_list;
-int get_power_of_arda(char_data* ch);
+int get_power_of_arda(const char_data* ch);
 
-static void check_container_proto(struct obj_data* obj, struct char_data* ch);
+static void check_container_proto(const struct obj_data* obj, struct char_data* ch);
 
 /*
  * Adds data to the char_data structure specifying that
@@ -200,7 +200,7 @@ int default_exit_width[] = {
     0
 };
 
-int get_race_weight(struct char_data* ch)
+int get_race_weight(const struct char_data* ch)
 {
     int gender_mod;
 
@@ -265,7 +265,7 @@ int get_race_weight(struct char_data* ch)
     return 0;
 }
 
-int get_race_height(struct char_data* ch)
+int get_race_height(const struct char_data* ch)
 {
     int gender_mod;
 
@@ -331,7 +331,7 @@ int get_race_height(struct char_data* ch)
 }
 
 sh_int
-get_race_perception(struct char_data* ch)
+get_race_perception(const struct char_data* ch)
 {
     switch (GET_RACE(ch)) {
     case RACE_GOD:
@@ -373,7 +373,7 @@ get_race_perception(struct char_data* ch)
 }
 
 sh_int
-get_naked_perception(struct char_data* ch)
+get_naked_perception(const struct char_data* ch)
 {
     int tmp;
 
@@ -391,12 +391,12 @@ get_naked_perception(struct char_data* ch)
 }
 
 sh_int
-get_naked_willpower(struct char_data* ch)
+get_naked_willpower(const struct char_data* ch)
 {
     return GET_PROF_LEVEL(PROF_CLERIC, ch) + GET_WILL(ch) - (get_confuse_modifier(ch) / 10);
 }
 
-int get_exit_width(struct room_data* room, int dir)
+int get_exit_width(const struct room_data* room, int dir)
 {
     if (!room || (dir < 0) || (dir >= NUM_OF_DIRS))
         return -1;
@@ -465,7 +465,7 @@ int string_to_new_value(char* arg, int* value, char** stopped)
  * "-N" sets -N, where string_to_new_value would subtract N.  Returns 1 if it
  * set the value, 0 if the input was anything else.
  */
-int string_to_negative_value(char* arg, int* value)
+int string_to_negative_value(const char* arg, int* value)
 {
     while (*arg && (*arg <= ' '))
         arg++;
@@ -593,7 +593,7 @@ int get_weapon_damage(struct obj_data* obj)
     return dam_coef; /* returning damage * 10 */
 }
 
-int weight_coof(struct obj_data* obj)
+int weight_coof(const struct obj_data* obj)
 {
     if (CAN_WEAR(obj, ITEM_WEAR_BODY))
         return 3;
@@ -605,7 +605,7 @@ int weight_coof(struct obj_data* obj)
     return 1;
 }
 
-int armor_absorb(struct obj_data* obj)
+int armor_absorb(const struct obj_data* obj)
 {
     int absorb, points, encumb_points;
 
@@ -639,7 +639,7 @@ int armor_absorb(struct obj_data* obj)
  * into account specialization and sneak in addition to
  * stealth skill, race, sector type and encumbrance.
  */
-int get_real_stealth(struct char_data* ch)
+int get_real_stealth(const struct char_data* ch)
 {
     int percent;
 
@@ -925,7 +925,7 @@ int get_real_parry(struct char_data* ch)
     return tmpparry;
 }
 
-int get_real_dodge(struct char_data* ch)
+int get_real_dodge(const struct char_data* ch)
 {
     int sun_mod = 0;
 
@@ -977,7 +977,7 @@ int get_real_dodge(struct char_data* ch)
     };
 }
 
-int get_followers_level(char_data* ch) /* summ of levels of mobs/players charmed by ch */
+int get_followers_level(const char_data* ch) /* summ of levels of mobs/players charmed by ch */
 {
     int levels = 0;
 
@@ -1076,7 +1076,7 @@ char* str_dup(const char* source)
 
 /* returns: 0 if equal, 1 if arg1 > arg2, -1 if arg1 < arg2  */
 /* scan 'till found different or end of both                 */
-int str_cmp(char* arg1, char* arg2)
+int str_cmp(const char* arg1, const char* arg2)
 {
     int chk, i;
 
@@ -1091,7 +1091,7 @@ int str_cmp(char* arg1, char* arg2)
 
 /* returns: 0 if equal, 1 if arg1 > arg2, -1 if arg1 < arg2  */
 /* scan 'till found different, end of both, or n reached     */
-int strn_cmp(char* arg1, char* arg2, int n)
+int strn_cmp(const char* arg1, const char* arg2, int n)
 {
     int chk, i;
 
@@ -1106,7 +1106,7 @@ int strn_cmp(char* arg1, char* arg2, int n)
 }
 
 /* log a death trap hit */
-void log_death_trap(struct char_data* ch)
+void log_death_trap(const struct char_data* ch)
 {
     char buf[150];
     //   extern struct room_data world;
@@ -1133,7 +1133,7 @@ void log(const char* str)
     fprintf(stderr, "%-19.19s :: %s\n", tmstr, str);
 }
 
-void mudlog(char* str, char type, sh_int level, byte file)
+void mudlog(const char* str, char type, sh_int level, byte file)
 {
     char buf[8000];
     extern struct descriptor_data* descriptor_list;
@@ -1173,7 +1173,7 @@ void mudlog(char* str, char type, sh_int level, byte file)
 /* Whether mudlog(..., type, level, ...) would show a message to ch.  Mirrors
  * mudlog's own test, so a caller that also tells a builder directly does not
  * tell them the same thing twice. */
-bool mudlog_reaches(struct char_data* ch, int level, int type)
+bool mudlog_reaches(const struct char_data* ch, int level, int type)
 {
     if (!ch || !ch->desc || ch->desc->connected || PLR_FLAGGED(ch, PLR_WRITING))
         return false;
@@ -1184,30 +1184,30 @@ bool mudlog_reaches(struct char_data* ch, int level, int type)
     return GET_LEVEL(ch) >= level && tp >= type;
 }
 
-void mudlog_debug_mob(char* buf, char_data* ch)
+void mudlog_debug_mob(const char* buf, const char_data* ch)
 {
     mudlog_aliased_mob(buf, ch, "debug");
 }
 
-void mudlog_aliased_mob(char* buf, char_data* ch, char* mob_alias)
+void mudlog_aliased_mob(const char* buf, const char_data* ch, const char* mob_alias)
 {
     if (strstr(ch->player.name, mob_alias)) {
         mudlog(buf, SPL, LEVEL_GOD, FALSE);
     }
 }
 
-int has_debug_flag(char_data* ch)
+int has_debug_flag(const char_data* ch)
 {
     return ch ? ch->debug_flag : 0;
 }
 
-void debug_flag_msg(char* buf, char_data* ch)
+void debug_flag_msg(const char* buf, const char_data* ch)
 {
     if (has_debug_flag(ch))
         send_to_char(buf, ch);
 }
 
-void vmudlog(char type, char* format, ...)
+void vmudlog(char type, const char* format, ...)
 {
 #define BUFSIZE 2048
     char buf[BUFSIZE];
@@ -1307,7 +1307,7 @@ void lowercase(char* str)
    which the loop's own i++ stepped past it and kept reading past the end of str. Advancing over
    the match and letting the loop re-test its condition removes that case: the terminator is only
    ever reached by the guard, never consumed as data. */
-void remove_pattern(char* str, char* result, char* patern)
+void remove_pattern(const char* str, char* result, const char* patern)
 {
     const int pattern_length = (int)strlen(patern);
     int n = 0;
@@ -1341,7 +1341,7 @@ void remove_pattern(char* str, char* result, char* patern)
    nothing about vulnerability, and reading them here printed a resistance's percentage on the
    vulnerable line for the same element. Vulnerability has no magnitude of its own, so it always
    renders the flat default. */
-void sprintbit_resistances(char_data* ch, long vektor, char* names[], char* result,
+void sprintbit_resistances(const char_data* ch, long vektor, char* names[], char* result,
     int default_percent, int use_affect_magnitudes)
 {
     char tmp[255];
@@ -1412,7 +1412,7 @@ struct time_info_data mud_time_passed(time_t t2, time_t t1)
     return now;
 }
 
-struct time_info_data age(struct char_data* ch)
+struct time_info_data age(const struct char_data* ch)
 {
     struct time_info_data player_age;
 
@@ -1556,7 +1556,7 @@ void decrypt_line(unsigned char* lp, int len)
         lp[tmp] = line[tmp];
 }
 
-char* strcpy_lang(char* str1, char* str2, byte freq, int maxlen)
+char* strcpy_lang(char* str1, const char* str2, byte freq, int maxlen)
 {
     int i, len;
 
@@ -1611,7 +1611,7 @@ void reshuffle(int* arr, int len)
 /*
  * Can character see at all?
  */
-int CAN_SEE(struct char_data* sub)
+int CAN_SEE(const struct char_data* sub)
 {
     if ((sub)->in_room == NOWHERE)
         return 0;
@@ -1710,7 +1710,7 @@ int CAN_SEE(struct char_data* sub, struct char_data* obj, int light_mode)
  * can they sense a hidden character?  Returns 1 if sub
  * can see obj, returns 0 otherwise.
  */
-int can_sense(char_data* sub, char_data* obj)
+int can_sense(const char_data* sub, const char_data* obj)
 {
     if (!IS_AFFECTED((sub), AFF_DETECT_HIDDEN) || GET_PERCEPTION(obj) <= 0)
         return 0;
@@ -1721,7 +1721,7 @@ int can_sense(char_data* sub, char_data* obj)
         return 0;
 }
 
-int CAN_SEE_OBJ(char_data* sub, obj_data* obj)
+int CAN_SEE_OBJ(const char_data* sub, const obj_data* obj)
 {
     if (!sub || !obj)
         return 0;
@@ -1739,7 +1739,7 @@ int CAN_SEE_OBJ(char_data* sub, obj_data* obj)
 }
 
 /* moved from utils.h */
-int CAN_GO(struct char_data* ch, int door)
+int CAN_GO(const struct char_data* ch, int door)
 {
     if ((EXIT(ch, door) && (EXIT(ch, door)->to_room != NOWHERE)) && (!(IS_SHADOW(ch) ? (IS_SET(EXIT(ch, door)->exit_info, EX_DOORISHEAVY) && IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)) : IS_SET(EXIT(ch, door)->exit_info, EX_CLOSED)) || IS_SET(EXIT(ch, door)->exit_info, EX_ISBROKEN)))
         return 1;
@@ -1747,7 +1747,7 @@ int CAN_GO(struct char_data* ch, int door)
     return 0;
 }
 
-int get_confuse_modifier(struct char_data* ch)
+int get_confuse_modifier(const struct char_data* ch)
 {
     struct affected_type* aff;
     int modifier = 0;
@@ -1760,7 +1760,7 @@ int get_confuse_modifier(struct char_data* ch)
     return modifier;
 }
 
-int get_power_of_arda(struct char_data* ch)
+int get_power_of_arda(const struct char_data* ch)
 {
     struct affected_type* aff;
     int sun_mod;
@@ -1774,7 +1774,7 @@ int get_power_of_arda(struct char_data* ch)
     return sun_mod;
 }
 
-int has_critical_stat_damage(struct char_data* ch)
+int has_critical_stat_damage(const struct char_data* ch)
 {
     if (((GET_STR(ch) * 100) / GET_STR_BASE(ch) < 30) || ((GET_DEX(ch) * 100) / GET_DEX_BASE(ch) < 30) || ((GET_CON(ch) * 100) / GET_CON_BASE(ch) < 30))
         return 1;
@@ -1782,7 +1782,7 @@ int has_critical_stat_damage(struct char_data* ch)
         return 0;
 }
 
-int can_breathe(struct char_data* ch)
+int can_breathe(const struct char_data* ch)
 {
     int result;
 
@@ -1838,7 +1838,7 @@ char* nth(int n)
     return r;
 }
 
-void day_to_str(struct time_info_data* loc_time_info, char* str)
+void day_to_str(const struct time_info_data* loc_time_info, char* str)
 {
     char* s;
     int day;
@@ -1853,7 +1853,7 @@ void day_to_str(struct time_info_data* loc_time_info, char* str)
     free(s);
 }
 
-int find_player_in_table(char* name, int idnum)
+int find_player_in_table(const char* name, int idnum)
 {
     int i;
 
@@ -1993,7 +1993,7 @@ static bool uses_legacy_weapon_spec(int attack_type)
 
    No legacy bit carries a magnitude - nothing writes an APPLY_RESIST affect for RESIST_NONE or
    for the defend spec - so a hit resolved on one falls back to the flat rule, exactly as live. */
-int check_resistances(char_data* victim, int attack_type, int* matched_resist_type)
+int check_resistances(const char_data* victim, int attack_type, int* matched_resist_type)
 {
     extern skill_data skills[];
 
@@ -2134,7 +2134,7 @@ bool refresh_object_to_prototype_version(obj_data* obj, const obj_data* proto)
  * is altered, and 1 if it's the same.  If no prototype is
  * found, we return -1.
  */
-int compare_obj_to_proto(struct obj_data* obj)
+int compare_obj_to_proto(const struct obj_data* obj)
 {
     int diff = 0, i;
     struct obj_data* tmp;
@@ -2452,7 +2452,7 @@ void check_equipment_proto(struct char_data* ch)
     }
 }
 
-static void check_container_proto(struct obj_data* obj, struct char_data* ch)
+static void check_container_proto(const struct obj_data* obj, struct char_data* ch)
 {
     int result = 0;
     struct obj_data* tmp;
@@ -2521,7 +2521,7 @@ char* PERS(struct char_data* target, struct char_data* observer,
     return name;
 }
 
-int has_alias(char_data* host, char* keyword)
+int has_alias(const char_data* host, const char* keyword)
 {
     if (strstr(host->player.name, keyword)) {
         return 1;
@@ -2530,7 +2530,7 @@ int has_alias(char_data* host, char* keyword)
     }
 }
 
-int has_program(char_data* host, int num)
+int has_program(const char_data* host, int num)
 {
     if ((int)host->specials.store_prog_number == num) {
         return 1;

@@ -44,7 +44,7 @@ ACMD(do_mental);
 extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 int check_simple_move(struct char_data* ch, int cmd, int* move_cost, int mode);
 extern char_data* g_skip_next_before_enter_for;
-int get_real_stealth(struct char_data* ch);
+int get_real_stealth(const struct char_data* ch);
 int find_door(const struct char_data* ch, const char* type, char* dir);
 void group_gain(struct char_data* ch, const struct char_data* victim);
 int get_number(char** name);

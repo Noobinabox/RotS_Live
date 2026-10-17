@@ -38,7 +38,7 @@ extern char* refer_dirs[];
 extern int movement_loss[];
 extern struct time_info_data time_info;
 extern struct skill_data skills[];
-extern int get_real_stealth(struct char_data* ch);
+extern int get_real_stealth(const struct char_data* ch);
 
 extern void raw_kill(char_data* ch, const char_data* killer, int attacktype);
 

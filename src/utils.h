@@ -23,7 +23,7 @@ extern char get_current_time_phase(); // returns the portion number of the tick
 // the next call. time_phase must be 0 to FAST_UPDATE_RATE - 1; any other value is logged
 // and ignored.
 void set_current_time_phase(int time_phase);
-extern int armor_absorb(struct obj_data* obj);
+extern int armor_absorb(const struct obj_data* obj);
 extern int get_weapon_damage(struct obj_data* obj);
 
 /* public functions */
@@ -50,27 +50,27 @@ int hide_roll(int prof, bool well); /* the cover of a finished hide */
 int see_hiding(const struct char_data*);
 char unaccent(char);
 char* str_dup(const char* source);
-int str_cmp(char* arg1, char* arg2);
-int strn_cmp(char* arg1, char* arg2, int n);
+int str_cmp(const char* arg1, const char* arg2);
+int strn_cmp(const char* arg1, const char* arg2, int n);
 void log(const char* str);
-void mudlog(char* str, char type, sh_int level, byte file);
-bool mudlog_reaches(struct char_data* ch, int level, int type);
-void mudlog_debug_mob(char* buf, char_data* ch);
-void mudlog_aliased_mob(char* buf, char_data* ch, char* mob_alias);
-int has_debug_flag(char_data* ch);
-void debug_flag_msg(char* buf, char_data* ch);
-void vmudlog(char type, char* format, ...);
-void log_death_trap(struct char_data* ch);
+void mudlog(const char* str, char type, sh_int level, byte file);
+bool mudlog_reaches(const struct char_data* ch, int level, int type);
+void mudlog_debug_mob(const char* buf, const char_data* ch);
+void mudlog_aliased_mob(const char* buf, const char_data* ch, const char* mob_alias);
+int has_debug_flag(const char_data* ch);
+void debug_flag_msg(const char* buf, const char_data* ch);
+void vmudlog(char type, const char* format, ...);
+void log_death_trap(const struct char_data* ch);
 int number(int from, int to);
 int dice(int number, int size);
 void sprintbit(long vektor, char* names[], char* result, int var);
 void sprinttype(int type, char* names[], char* result);
 void lowercase(char* str);
-void remove_pattern(char* str, char* result, char* patern);
-void sprintbit_resistances(char_data* ch, long vektor, char* names[], char* result,
+void remove_pattern(const char* str, char* result, const char* patern);
+void sprintbit_resistances(const char_data* ch, long vektor, char* names[], char* result,
     int default_percent, int use_affect_magnitudes);
 int get_real_OB(struct char_data* ch);
-int get_real_dodge(struct char_data* ch);
+int get_real_dodge(const struct char_data* ch);
 int get_real_parry(struct char_data* ch);
 int CHAR_WEARS_OBJ(struct char_data* ch, struct obj_data* obj);
 char get_colornum(const char_data* ch, int col);
@@ -80,12 +80,12 @@ void string_add_init(struct descriptor_data*, char**);
 void string_add_finish(struct descriptor_data*);
 void string_add(struct descriptor_data*, char*);
 int string_to_new_value(char* arg, int* value, char** stopped = 0);
-int string_to_negative_value(char* arg, int* value);
+int string_to_negative_value(const char* arg, int* value);
 char* nth(int);
-void day_to_str(time_info_data* loc_time_info, char* str);
-int find_player_in_table(char* name, int idnum);
+void day_to_str(const time_info_data* loc_time_info, char* str);
+int find_player_in_table(const char* name, int idnum);
 
-char* strcpy_lang(char* targ, char* src, byte freq, int maxlen);
+char* strcpy_lang(char* targ, const char* src, byte freq, int maxlen);
 void reshuffle(int* arr, int len);
 
 void* create_function(int elem_size, int elem_num, int line, const char* file);
@@ -93,10 +93,10 @@ void free_function(void* pnt);
 
 int get_total_fame(char_data* ch);
 
-int get_confuse_modifier(char_data* ch);
+int get_confuse_modifier(const char_data* ch);
 int resist_type_for_attack(int attack_type);
 int resist_magnitude_for(const char_data* victim, int resist_type);
-int compare_obj_to_proto(obj_data* obj);
+int compare_obj_to_proto(const obj_data* obj);
 struct obj_data* obj_to_proto(obj_data* obj);
 void check_inventory_proto(char_data* ch);
 void check_equipment_proto(char_data* ch);
@@ -113,18 +113,18 @@ std::string object_enchants_text(const obj_data* obj); // "ob +6 (good)", or "no
 bool object_takes_enchant(const obj_data* obj, const obj_enchant_type& enchant);
 void apply_object_enchant(obj_data* obj, const obj_enchant_type& enchant);
 bool record_object_enchant(obj_data* obj, const obj_enchant_type& enchant);
-sh_int get_race_perception(char_data* ch);
-int get_power_of_arda(char_data* ch);
-int has_critical_stat_damage(char_data* ch);
-int can_breathe(char_data* ch);
+sh_int get_race_perception(const char_data* ch);
+int get_power_of_arda(const char_data* ch);
+int has_critical_stat_damage(const char_data* ch);
+int can_breathe(const char_data* ch);
 
-struct time_info_data age(struct char_data* ch);
+struct time_info_data age(const struct char_data* ch);
 
 void track_specialized_mage(char_data* mage);
 void untrack_specialized_mage(const char_data* mage);
 
-int has_alias(char_data* host, char* keyword);
-int has_program(char_data* host, int num);
+int has_alias(const char_data* host, const char* keyword);
+int has_program(const char_data* host, int num);
 
 /* Mob aggression and helping as the mob turn applies them (mobact.cpp),
  * shared with the mob programs that run their own turn. */
@@ -629,11 +629,11 @@ extern struct race_bodypart_data bodyparts[MAX_BODYTYPES];
 
 #define GET_WAIT_PRIORITY(ch) ((ch)->delay.priority)
 
-int CAN_GO(char_data* ch, int door);
-int CAN_SEE(char_data* sub);
+int CAN_GO(const char_data* ch, int door);
+int CAN_SEE(const char_data* sub);
 int CAN_SEE(char_data* sub, char_data* obj, int light_mode = 0);
-int can_sense(char_data* sub, char_data* obj);
-int CAN_SEE_OBJ(char_data* sub, obj_data* obj);
+int can_sense(const char_data* sub, const char_data* obj);
+int CAN_SEE_OBJ(const char_data* sub, const obj_data* obj);
 
 /* Object And Carry related macros */
 
@@ -714,11 +714,11 @@ universal_list* pool_to_list(universal_list** list, universal_list** pool);
 void from_list_to_pool(universal_list** list, universal_list** head,
     universal_list* body);
 
-int get_race_weight(char_data* ch);
-int get_race_height(char_data* ch);
-sh_int get_race_perception(char_data* ch);
-sh_int get_naked_perception(char_data* ch);
-sh_int get_naked_willpower(char_data* ch);
+int get_race_weight(const char_data* ch);
+int get_race_height(const char_data* ch);
+sh_int get_race_perception(const char_data* ch);
+sh_int get_naked_perception(const char_data* ch);
+sh_int get_naked_willpower(const char_data* ch);
 
 // int get_mental_delay(char_data * ch); /* if mental is <= 1, can do it again. */
 void set_mental_delay(char_data* ch, int value);

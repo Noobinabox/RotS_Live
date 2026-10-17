@@ -53,7 +53,7 @@ extern int mortal_start_room[];
 extern int r_mortal_start_room[];
 extern int r_immort_start_room;
 extern struct index_data* mob_index;
-extern int armor_absorb(struct obj_data* obj);
+extern int armor_absorb(const struct obj_data* obj);
 extern const int average_mob_life;
 extern skill_data skills[];
 extern int max_race_str[];
@@ -64,7 +64,7 @@ extern char* pc_star_types[];
 
 /* External procedures */
 char* fread_string(FILE* fl, const char* error);
-int check_resistances(char_data* ch, int attacktype, int* matched_resist_type = nullptr);
+int check_resistances(const char_data* ch, int attacktype, int* matched_resist_type = nullptr);
 void stop_hiding(struct char_data*, char);
 void break_meditation(char_data* ch);
 ACMD(do_flee);

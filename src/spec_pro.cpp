@@ -2745,7 +2745,7 @@ SPECIAL(mob_jig)
     return FALSE;
 }
 
-int get_exit_width(room_data* room, int exit);
+int get_exit_width(const room_data* room, int exit);
 
 /*
  * Well in answer to Vakaurs' prayers i've removed

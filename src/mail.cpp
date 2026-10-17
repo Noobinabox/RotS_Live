@@ -108,8 +108,8 @@ extern struct room_data* world;
 extern struct index_data* mob_index;
 extern struct obj_data* object_list;
 extern int no_mail;
-int find_name(char* name);
-int _parse_name(char* arg, char* name);
+int find_name(const char* name);
+int _parse_name(const char* arg, char* name);
 
 mail_index_type* mail_index = 0; /* list of recs in the mail file  */
 position_list_type* free_list = 0; /* list of free positions in file */

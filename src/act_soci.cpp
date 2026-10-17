@@ -257,7 +257,7 @@ int social_parser(char_data* ch, const char* argument, waiting_type* wtl)
     return 1;
 }
 
-void report_wrong_position(char_data* ch);
+void report_wrong_position(const char_data* ch);
 
 ACMD(do_action)
 {

@@ -82,9 +82,9 @@ extern struct room_data world;
 extern struct obj_data* obj_proto;
 extern struct descriptor_data* descriptor_list;
 extern struct player_index_element* player_table;
-int find_name(char* name);
+int find_name(const char* name);
 int has_mail(char* recipient);
-int _parse_name(char* arg, char* name);
+int _parse_name(const char* arg, char* name);
 
 /*
  * format: lnum, vnum, read lvl, write lvl, remove lvl, filename, 0 at end

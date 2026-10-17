@@ -44,7 +44,7 @@ extern struct room_data world;
 extern struct skill_data skills[];
 extern int find_door(const struct char_data* ch, const char* type, char* dir);
 extern int get_followers_level(struct char_data*);
-extern int old_search_block(char*, int, unsigned int, const char**, int);
+extern int old_search_block(const char*, int, unsigned int, const char**, int);
 extern int get_number(char** name);
 extern int get_real_stealth(struct char_data*);
 extern int rev_dir[];

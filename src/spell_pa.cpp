@@ -36,7 +36,7 @@ extern char* dirs[];
 
 char* target_from_word(struct char_data*, char*, int, struct target_data*);
 int check_hallucinate(struct char_data*, struct char_data*);
-void report_wrong_target(struct char_data*, int, char);
+void report_wrong_target(const struct char_data*, int, char);
 void affect_update_person(struct char_data*, int);
 char saves_spell(struct char_data*, sh_int, int);
 bool new_saves_spell(const char_data* caster, const char_data* victim, int save_bonus);

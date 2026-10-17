@@ -108,7 +108,7 @@ extern char* vulnerability_name[];
 /* external functs */
 
 // char *crypt(const char *key, const char *salt);
-int find_name(char* name);
+int find_name(const char* name);
 void encrypt_line(unsigned char* line, int len);
 void show_room_affection(char* str, const affected_type* aff, int mode);
 void print_exploits(const char_data* sendto, const char* name);

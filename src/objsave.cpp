@@ -1712,7 +1712,7 @@ int gen_receptionist(struct char_data* ch, int cmd, char* arg, int mode)
     long rent_deadline;
 
     extern int valid_name(char*);
-    extern int _parse_name(char*, char*);
+    extern int _parse_name(const char*, char*);
     extern int number(int, int);
     extern int r_retirement_home_room;
 

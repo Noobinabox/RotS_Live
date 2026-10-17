@@ -3170,7 +3170,7 @@ SPECIAL(react_trap)
 {
     struct waiting_type w;
     ACMD(do_trap);
-    int target_check(struct char_data*, int, struct target_data*, struct target_data*);
+    int target_check(struct char_data*, int, const struct target_data*, const struct target_data*);
 
     if (callflag != SPECIAL_COMMAND && callflag != SPECIAL_ENTER)
         return FALSE;

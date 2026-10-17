@@ -611,7 +611,7 @@ int search_block(char* arg, char** list, char exact)
     return -1;
 }
 
-int old_search_block(char* argument, int begin, unsigned int length, const char** list, int mode)
+int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode)
 {
     unsigned int guess, found, search;
 
@@ -643,7 +643,7 @@ int old_search_block(char* argument, int begin, unsigned int length, const char*
         return -1;
 }
 
-void report_wrong_position(struct char_data* ch)
+void report_wrong_position(const struct char_data* ch)
 {
     switch (GET_POS(ch)) {
     case POSITION_DEAD:
@@ -719,7 +719,7 @@ int target_data::operator==(target_data t2)
  * assumes that they are not satisfied, and suggests
  * the correct usage to ch.
  */
-void report_wrong_target(struct char_data* ch, int mask, char has_arg)
+void report_wrong_target(const struct char_data* ch, int mask, char has_arg)
 {
     if (IS_SET(mask, TAR_TEXT_ALL)) {
         send_to_char("Strange. Please report to gods what you just did (1).\n\r",
@@ -826,7 +826,7 @@ void report_wrong_target(struct char_data* ch, int mask, char has_arg)
     return;
 }
 
-int target_check_one(struct char_data* ch, int mask, struct target_data* t1)
+int target_check_one(struct char_data* ch, int mask, const struct target_data* t1)
 /*
  * mask is the mask of possible targets,
  * t1 carries the target to check,
@@ -1138,8 +1138,8 @@ char* target_from_word(struct char_data* ch, char* argument, int mask, struct ta
     return 0;
 }
 
-int target_check(struct char_data* ch, int cmd, struct target_data* t1,
-    struct target_data* t2)
+int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
+    const struct target_data* t2)
 {
     struct command_info* this_command;
     int tmp, tc, res, last_tc, check, last_check;
@@ -1235,7 +1235,7 @@ int target_parser(struct char_data* ch, int cmd, char* argument,
     return 0;
 }
 
-void replace_aliases(struct char_data* ch, char* line)
+void replace_aliases(const struct char_data* ch, char* line)
 {
     char new_line[MAX_INPUT_LENGTH * 2];
     int begin, tmp;
@@ -1457,7 +1457,7 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         send_to_char("Huh?!?\n\r", ch);
 }
 
-void argument_interpreter(char* argument, char* first_arg, char* second_arg)
+void argument_interpreter(const char* argument, char* first_arg, char* second_arg)
 {
     int look_at, found, begin;
 
@@ -1492,7 +1492,7 @@ void argument_interpreter(char* argument, char* first_arg, char* second_arg)
     } while (fill_word(second_arg));
 }
 
-int is_number(char* str)
+int is_number(const char* str)
 {
     int look_at;
 
@@ -1546,7 +1546,7 @@ int fill_word(char* argument)
     return (search_block(argument, fill, TRUE) >= 0);
 }
 
-int is_abbrev(char* arg1, char* arg2)
+int is_abbrev(const char* arg1, const char* arg2)
 /* determine if a given string is an abbreviation of another string */
 {
     if (!*arg1)
@@ -1560,7 +1560,7 @@ int is_abbrev(char* arg1, char* arg2)
 }
 
 /* return first 'word' plus trailing substring of input string */
-void half_chop(char* string, char* arg1, char* arg2)
+void half_chop(const char* string, char* arg1, char* arg2)
 {
     for (; isspace(*string); string++)
         ;
@@ -2279,7 +2279,7 @@ void assign_command_pointers(void)
  *  Stuff for controlling the non-playing sockets (get name, pwd etc)       *
  ************************************************************************* */
 
-int find_name(char* name)
+int find_name(const char* name)
 /* locate entry in p_table with entry->name == name. -1 mrks failed search */
 {
     int i;
@@ -2291,7 +2291,7 @@ int find_name(char* name)
     return -1;
 }
 
-int _parse_name(char* arg, char* name)
+int _parse_name(const char* arg, char* name)
 {
     int i;
 
@@ -2701,7 +2701,7 @@ void discard_descriptor_character_selection(struct descriptor_data* d)
     d->pos = -1;
 }
 
-void mudlog_account_event(struct descriptor_data* d, const char* action, const char* email_override = nullptr)
+void mudlog_account_event(const struct descriptor_data* d, const char* action, const char* email_override = nullptr)
 {
     const char* account_email = email_override;
     if ((account_email == nullptr || !*account_email) && d != nullptr)

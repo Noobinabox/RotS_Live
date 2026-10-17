@@ -33,7 +33,7 @@ void store_to_char(const struct char_file_u* st, struct char_data* ch);
 extern char* command[];
 extern command_info cmd_info[];
 void assign_command_pointers(void);
-int old_search_block(char* argument, int begin, unsigned int length, const char** list, int mode);
+int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
 
 namespace {
 

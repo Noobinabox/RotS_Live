@@ -2786,7 +2786,7 @@ int load_player(char* name, struct char_file_u* char_element)
     return result;
 }
 
-int find_name(char* name);
+int find_name(const char* name);
 
 /* Load a char, TRUE if loaded, FALSE if not */
 int load_char(char* name, struct char_file_u* char_element)

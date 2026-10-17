@@ -337,7 +337,7 @@ void check_reboot(void);
 int isbanned(char* hostname);
 void* virt_program_number(int number);
 void* virt_obj_program_number(int number);
-void replace_aliases(char_data* ch, char* line);
+void replace_aliases(const char_data* ch, char* line);
 
 // int gethostname(char *, int);
 

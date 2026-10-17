@@ -230,7 +230,7 @@ void shape_center_proto(struct char_data* ch, char* argument);
 void shape_center_obj(struct char_data* ch, char* argument);
 void shape_center_room(struct char_data* ch, char* argument);
 void shape_center_zone(struct char_data* ch, char* argument);
-void shape_center_mudlle(struct char_data* ch, char* argument);
+void shape_center_mudlle(struct char_data* ch, const char* argument);
 void shape_center_script(struct char_data* ch, char* argument);
 void shape_center(struct char_data* ch, char* argument);
 int get_permission(int zonnum, struct char_data* ch, int mode = 0);

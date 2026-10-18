@@ -28,6 +28,11 @@ int main(int argc, char** argv)
     if (!affect_hours_registered) {
         return EXIT_FAILURE;
     }
+    const bool affect_hours_without_regen_registered
+        = harness::register_affect_hours_without_regen_schedule(schedules);
+    if (!affect_hours_without_regen_registered) {
+        return EXIT_FAILURE;
+    }
 
     harness::HarnessOptions options;
     std::string parse_error;

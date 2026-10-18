@@ -45,7 +45,8 @@ public:
     struct State {
         // Passes decided so far.
         int passes_decided = 0;
-        // Whether the passes it decides run the fast update.
+        // Whether the passes it decides run the fast update, with regeneration as the live game
+        // runs it.
         bool run_fast_update = false;
     };
 
@@ -60,6 +61,7 @@ public:
         shared_state->passes_decided++;
         WorldPass world_pass;
         world_pass.run_fast_update = shared_state->run_fast_update;
+        world_pass.run_regeneration = shared_state->run_fast_update;
         return world_pass;
     }
 
@@ -179,6 +181,8 @@ TEST(HarnessControlledSchedule, ReturnsTheSchedulesPassOncePerCall)
     for (int pass_number = 1; pass_number <= 3; ++pass_number) {
         const GameTickSchedule::WorldPass world_pass = under_test.wrapper.next_pass();
         EXPECT_TRUE(world_pass.run_fast_update) << "Expected the schedule's pass " << pass_number;
+        EXPECT_TRUE(world_pass.run_regeneration)
+            << "Expected the schedule's regeneration on pass " << pass_number;
         EXPECT_EQ(under_test.schedule_state->passes_decided, pass_number)
             << "Expected the schedule asked once per pass.";
     }

@@ -746,31 +746,11 @@ void point_update(void)
         } else if (GET_POS(i) == POSITION_INCAP)
             damage(i, i, 3, TYPE_SUFFERING, 0);
         else if (GET_POS(i) == POSITION_DEAD) {
-            /* A character can land directly at POSITION_DEAD via a
-             * script write to hit (see set_int_value()/int_fromstack())
-             * without ever going through damage()'s own die() call.
-             * Pick that up here instead of leaving a character stuck
-             * "dead" forever: safe to call die() with NULL killer from
-             * this loop (next_dude is already captured above, the same
-             * mid-walk-deletion safety fight.cpp's combat_next_dude
-             * relies on). do_quit() (act_othe.cpp) already calls
-             * die(ch, 0, 0) for a player who quits below
-             * POSITION_STUNNED - the same "no external killer, character
-             * just expires from their own state" case - so that's the
-             * precedent here, not fast_update()'s regen-death branch
-             * (which calls raw_kill() directly and skips the ON_DIE
-             * trigger and exp/PK/exploit bookkeeping die() performs).
-             * Going through die() here is intentional: scripted damage
-             * that lands someone at POSITION_DEAD should still be able
-             * to trigger ON_DIE side effects, same as an ordinary
-             * combat death.
-             *
-             * Re-derive position from current hit first: fast_update()'s
-             * passive regen never calls update_pos(), so a character
-             * parked at DEAD by a scripted hit only just past the
-             * -CON/2 threshold may have already healed back to positive
-             * hit by the time this sweep runs. Don't kill on a stale
-             * position. */
+            // A script that writes hit points can leave a character at POSITION_DEAD without
+            // killing them. Regeneration never updates position, so re-derive it first: they
+            // may have healed since. die(), not raw_kill(), runs the ON_DIE trigger and the
+            // experience loss; next_dude is already saved, so the loop is safe if die() frees
+            // the character.
             update_pos(i);
             if (GET_POS(i) == POSITION_DEAD) {
                 die(i, NULL, TYPE_UNDEFINED);
@@ -1572,48 +1552,72 @@ void affect_update()
     walker_remove_finished(); /* walkers whose route ended during this pass */
 }
 
-void fast_update()
+// Regenerates the character's hit points, moves and mana by one fast update's share of their
+// hourly gains, drawing one random roll for each, in that order. character must be non-null.
+// Returns true when negative regeneration killed the character: it has been through raw_kill()
+// and must not be used.
+static bool regenerate_points(char_data* character)
 {
     int freq = FAST_UPDATE_RATE;
-    for (char_data* character = character_list; character != nullptr; character = character->next) {
 
-        // Note:  Regen values can be negative, so we can't test if a character is below max as an
-        // optimization.
+    // Note:  Regen values can be negative, so we can't test if a character is below max as an
+    // optimization.
 
-        float health_regen_base = hit_gain(character) / freq;
-        int hitregen = int(health_regen_base);
-        if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base)))) {
-            hitregen += hitregen >= 0 ? 1 : -1;
-        }
+    float health_regen_base = hit_gain(character) / freq;
+    int hitregen = int(health_regen_base);
+    if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base)))) {
+        hitregen += hitregen >= 0 ? 1 : -1;
+    }
 
-        float move_regen_base = move_gain(character) / freq;
-        int moveregen = int(move_regen_base);
-        if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base)))) {
-            moveregen += moveregen >= 0 ? 1 : -1;
-        }
+    float move_regen_base = move_gain(character) / freq;
+    int moveregen = int(move_regen_base);
+    if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base)))) {
+        moveregen += moveregen >= 0 ? 1 : -1;
+    }
 
-        float mana_regen_base = mana_gain(character) / freq;
-        int manaregen = int(mana_regen_base);
-        if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base)))) {
-            manaregen += manaregen >= 0 ? 1 : -1;
-        }
+    float mana_regen_base = mana_gain(character) / freq;
+    int manaregen = int(mana_regen_base);
+    if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base)))) {
+        manaregen += manaregen >= 0 ? 1 : -1;
+    }
 
-        // Characters can die to negative regen values (think restlessness)
-        GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
-        if (GET_HIT(character) < 0 && hitregen < 0) {
-            act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
-            send_to_char("Your body failed to the magic.\n\r", character);
-            raw_kill(character, NULL, TYPE_UNDEFINED);
-            add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
+    // Characters can die to negative regen values (think restlessness)
+    GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
+    if (GET_HIT(character) < 0 && hitregen < 0) {
+        act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
+        send_to_char("Your body failed to the magic.\n\r", character);
+        raw_kill(character, NULL, TYPE_UNDEFINED);
+        add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
+        return true;
+    }
+
+    GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
+    GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
+
+    // Make sure characters moves don't drop below zero.
+    GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
+    return false;
+}
+
+// Regenerates every character in character_list, in list order (regenerate_points()). A death
+// from negative regeneration ends the pass: the dead character may have been freed.
+void regeneration_update()
+{
+    for (char_data* character = character_list; character != nullptr;
+        character = character->next) {
+        const bool died_of_regeneration = regenerate_points(character);
+        if (died_of_regeneration) {
             return;
         }
+    }
+}
 
-        GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
-        GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
-
-        // Make sure characters moves don't drop below zero.
-        GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
-
+// Gives every character in character_list, in list order, the Power of Arda for evil races and
+// the breathing and Fame War checks.
+void fast_update()
+{
+    for (char_data* character = character_list; character != nullptr;
+        character = character->next) {
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

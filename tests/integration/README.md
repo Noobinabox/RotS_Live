@@ -223,5 +223,9 @@ stands still until `server.advance_hours(n)` runs `n` whole game hours of the ho
 updates and returns once the server acknowledges them. Zone resets, mob activity, combat and
 skill timers do not run under that schedule. `advance_hours` fails a test without the marker.
 
+`@pytest.mark.schedule("affect-hours-without-regen")` runs the same hours, except that hit
+points, moves and mana do not regenerate. Use it when a scenario measures one of them exactly
+while an affect, such as poison, changes it; otherwise use `affect-hours`.
+
 Before writing or changing a scenario, or the harness itself, read the
 `rots-integration-scenario` skill (`.agents/skills/rots-integration-scenario/SKILL.md`).

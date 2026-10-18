@@ -16,6 +16,12 @@ static_assert(AffectHoursSchedule::MAX_PENDING_HOURS
 } // namespace
 
 //============================================================================
+AffectHoursSchedule::AffectHoursSchedule(Regeneration regeneration)
+    : pass_regeneration(regeneration)
+{
+}
+
+//============================================================================
 std::optional<std::string> AffectHoursSchedule::grant_hours(int hours)
 {
     if (hours < 1) {
@@ -45,6 +51,7 @@ GameTickSchedule::WorldPass AffectHoursSchedule::next_pass()
     current_phase = (current_phase + 1) % FAST_UPDATE_RATE;
     world_pass.time_phase = current_phase;
     world_pass.run_fast_update = true;
+    world_pass.run_regeneration = pass_regeneration == Regeneration::On;
     if (current_phase == 0) {
         world_pass.run_hourly_update = true;
         completed_hours++;

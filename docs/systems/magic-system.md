@@ -360,9 +360,9 @@ only if the caster out-levels them, and §4 becomes `save = 20 − 48/5 + 30/5 =
 
 Mana is the **mage** resource (`GET_MANA` = `tmpabilities.mana`); cleric/mystic powers spend
 **spirit** instead (cleric-mystic-system §1). Mana regenerates on a timer via `mana_gain`
-(`limits.cpp:128`), applied each `fast_update` tick.
+(`limits.cpp:136`), applied each `regeneration_update` tick.
 
-**Per-MUD-hour gain, PCs** (`limits.cpp:131-170`):
+**Per-MUD-hour gain, PCs** (`limits.cpp:139-179`):
 ```
 gain = 8 + INT/2 + WIL/5 + prof_level(MAGE)/5 + prof_level(CLERIC)/5
 gain ×= position:  sleeping ×2 · resting ×1.5 · sitting ×1.25 · (standing/fighting ×1)
@@ -389,8 +389,8 @@ high INT (`INT/2`) regenerates noticeably more mana than a mystic's high WIL (`W
 the mage being the mana-dependent class and the mystic leaning on the (kill-fed) spirit pool.
 
 ### Timing — the per-hour number is per real minute
-`fast_update` adds `mana_gain / FAST_UPDATE_RATE` each tick, with fractional **probabilistic
-rounding** (`limits.cpp:1502-1505`), so over a full MUD hour the integer total equals `mana_gain`.
+`regeneration_update` adds `mana_gain / FAST_UPDATE_RATE` each tick, with fractional **probabilistic
+rounding** (`limits.cpp:1598-1601`), so over a full MUD hour the integer total equals `mana_gain`.
 A **MUD hour is `SECS_PER_MUD_HOUR = 60` real seconds** (`structs.h:95`), so the per-hour figure is
 effectively **mana per real minute**. NPCs use a flat `level`-based gain (×1.5 out of combat).
 Regen can be **negative** (e.g. *restlessness*-style effects on the move/health channels) and the

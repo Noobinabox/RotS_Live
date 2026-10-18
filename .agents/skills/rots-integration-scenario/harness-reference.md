@@ -418,7 +418,7 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
   a fix must open both.
 - After `advance_hours` returns, the server has run the passes; `drain(1.0)` (or `expect` on
   the hour's marker, then `drain`) collects text already sent.
-- Regeneration (`fast_update`) runs inside every advanced hour, and the hourly update runs
+- Regeneration (`regeneration_update`) runs inside every advanced hour, and the hourly update runs
   before it in the same pass: assert hit points once, after the first hour, or as a range.
 
 ## Markers and groups
@@ -441,15 +441,20 @@ the Makefile need no change.
 Without a schedule the server runs on the wall clock: mob activity, combat, zone resets and the
 hourly update all happen in real time.
 
-With `@pytest.mark.schedule("affect-hours")`, the only schedule today, the harness binary
-starts and writes `harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits
-for it. World updates then run only when granted. `advance_hours(n)` writes `advance-hours n`
-(1 to 1000) to the server's stdin; the reply is `harness: done advance-hours n hours=<total>` or
+With `@pytest.mark.schedule("affect-hours")` the harness binary starts and writes
+`harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits for it. World
+updates then run only when granted. `advance_hours(n)` writes `advance-hours n` (1 to 1000) to
+the server's stdin; the reply is `harness: done advance-hours n hours=<total>` or
 `harness: error <reason>`, which raises `TimeControlError`.
 
 | An advanced hour runs | It never runs |
 | --- | --- |
-| 19 fast-update passes, then one pass with the hourly update (`weather_and_time`, `point_update`, `stat_update`) and the fast update (`fast_update`, `affect_update`) | zone resets, mob activity, combat (`perform_violence`), skill timers |
+| 19 fast-update passes, then one pass with the hourly update (`weather_and_time`, `point_update`, `stat_update`) and regeneration and the fast update (`regeneration_update`, `fast_update`, `affect_update`) | zone resets, mob activity, combat (`perform_violence`), skill timers |
+
+`@pytest.mark.schedule("affect-hours-without-regen")` runs the same hours and requests, and its
+ready line names it, but it never regenerates hit points, moves or mana; the fast update
+(`fast_update`: the Power of Arda, the breathing and Fame War checks) still runs. Choose it
+when a scenario measures one of those pools exactly while an affect changes it.
 
 So a scenario needing combat, wandering mobs or resets has no schedule today: it uses a plain
 server, or a new schedule (extending-the-harness.md).
@@ -460,7 +465,10 @@ Every draw goes through one `std::rand()` stream (`number()` and `dice()`, `util
 seeded from `--random-seed` (`ROTS_IT_SEED`). On a plain server mob activity and combat draw on
 the wall clock, so the seed does not make a run repeat. Under `affect-hours`, between requests
 only the scenario's commands draw, and each hour draws in the same order (`weather_change`
-among others), so the same commands give the same sequence.
+among others), so the same commands give the same sequence. A run under
+`affect-hours-without-regen` repeats for a seed too, but draws three fewer `number()` values per
+character per fast update than `affect-hours`, so the same seed gives a different sequence and a
+test moved between the two schedules can draw differently.
 
 ## The test world
 

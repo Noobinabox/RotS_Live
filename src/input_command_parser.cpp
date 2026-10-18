@@ -10,7 +10,7 @@ namespace {
 
 // Compared as unsigned so that bytes 0x80 and above stay inside a word, whatever the signedness
 // of char.
-bool ends_word(char character)
+bool does_end_word(char character)
 {
     return static_cast<unsigned char>(character) <= ' ';
 }
@@ -28,8 +28,8 @@ constexpr std::string_view social_whitespace = " \t\n\v\f\r";
 
 // Words skipped before a social's word, as in "smile at bob". The same words as the game's fill
 // table in interpre.cpp; a test fails when the two differ.
-constexpr std::array<std::string_view, 7> fill_words
-    = { "in", "from", "with", "the", "on", "at", "to" };
+using namespace std::string_view_literals;
+constexpr std::array fill_words = { "in"sv, "from"sv, "with"sv, "the"sv, "on"sv, "at"sv, "to"sv };
 
 bool equals_lowercased(std::string_view word, std::string_view lowercase_word)
 {
@@ -95,7 +95,7 @@ typed_line parse_typed_line(std::string_view line)
         parsed.shape_text = parsed.text.substr(1);
     }
 
-    const auto word_end = std::find_if(parsed.text.begin(), parsed.text.end(), ends_word);
+    const auto word_end = std::find_if(parsed.text.begin(), parsed.text.end(), does_end_word);
     const std::size_t word_length = static_cast<std::size_t>(word_end - parsed.text.begin());
     parsed.command_word = parsed.text.substr(0, word_length);
     parsed.handler_text = parsed.text.substr(word_length);
@@ -106,10 +106,10 @@ int find_command_number(std::string_view command_word, const char* const* comman
 {
     if (command_names == nullptr) {
         log((std::string("SYSERR: ") + __func__ + ": called with a null command table").c_str());
-        return -1;
+        return unknown_command_number;
     }
     if (command_word.empty()) {
-        return 0;
+        return empty_command_word_number;
     }
 
     for (int index = 0; command_names[index][0] != '\n'; ++index) {
@@ -117,7 +117,7 @@ int find_command_number(std::string_view command_word, const char* const* comman
             return index + 1;
         }
     }
-    return -1;
+    return unknown_command_number;
 }
 
 std::string_view view_terminated_text(const char* text, std::size_t max_length)
@@ -154,7 +154,7 @@ std::string_view read_social_word(std::string_view text)
             return last_fill_word.substr(0, 1);
         }
 
-        const auto word_end = std::find_if(remaining.begin(), remaining.end(), ends_word);
+        const auto word_end = std::find_if(remaining.begin(), remaining.end(), does_end_word);
         const std::size_t word_length = static_cast<std::size_t>(word_end - remaining.begin());
         const std::string_view word = remaining.substr(0, word_length);
         if (!is_fill_word(word)) {

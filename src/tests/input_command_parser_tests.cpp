@@ -106,23 +106,23 @@ TEST(FindCommandNumber, MatchesThePrefixOfTheFirstEntryInTableOrder)
 
 TEST(FindCommandNumber, ReturnsZeroForAnEmptyWord)
 {
-    EXPECT_EQ(find_command_number("", test_command_names), 0);
+    EXPECT_EQ(find_command_number("", test_command_names), empty_command_word_number);
 }
 
 TEST(FindCommandNumber, ReturnsMinusOneWhenNothingMatches)
 {
-    EXPECT_EQ(find_command_number("northx", test_command_names), -1);
-    EXPECT_EQ(find_command_number("x", test_command_names), -1);
+    EXPECT_EQ(find_command_number("northx", test_command_names), unknown_command_number);
+    EXPECT_EQ(find_command_number("x", test_command_names), unknown_command_number);
 }
 
 TEST(FindCommandNumber, NeverMatchesAnEmptyName)
 {
-    EXPECT_EQ(find_command_number("q", test_command_names), -1);
+    EXPECT_EQ(find_command_number("q", test_command_names), unknown_command_number);
 }
 
 TEST(FindCommandNumber, ReturnsMinusOneForANullTable)
 {
-    EXPECT_EQ(find_command_number("north", nullptr), -1);
+    EXPECT_EQ(find_command_number("north", nullptr), unknown_command_number);
 }
 
 TEST(ViewTerminatedText, StopsAtTheTerminatorOrTheLimit)

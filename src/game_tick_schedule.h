@@ -27,9 +27,8 @@ public:
         // True when the fast update runs on this pass: affects advance and the per-character
         // checks run.
         bool run_fast_update = false;
-        // True when hit points, moves and mana regenerate on this pass. It takes effect only on a
-        // pass that also runs the fast update; a schedule matching the live game sets it with
-        // every fast update.
+        // True when hit points, moves and mana regenerate on this pass. A schedule matching the
+        // live game sets it on every fast-update pass.
         bool run_regeneration = false;
         // True when skill cooldowns count down on this pass.
         bool run_skill_timer = false;

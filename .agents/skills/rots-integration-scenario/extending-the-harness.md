@@ -40,9 +40,9 @@ A schedule decides which world updates each game-loop pass runs (`GameTickSchedu
 1. `src/harness/<name>_schedule.{h,cpp}`: a class deriving `GameTickSchedule`. `next_pass()` is
    called exactly once per pass. Keep the phase contract the existing tests check: the phase
    stays in range, the hourly update comes only with the fast update at phase 0, and the phase
-   advances by one exactly on fast-update passes. Set `run_regeneration` on each fast-update pass
-   that should regenerate hit points, moves and mana, as the live game does on every one; it
-   defaults to false and may be set only together with `run_fast_update`.
+   advances by one exactly on fast-update passes. Set `run_regeneration` on each pass that should
+   regenerate hit points, moves and mana; it defaults to false, and a schedule matching the live
+   game sets it on every fast-update pass.
 2. `src/harness/<name>_registration.{h,cpp}`, modelled on `affect_hours_registration.cpp`:
    - a name constant;
    - a factory returning `ScheduleSetup{schedule, requests, ready_state}`

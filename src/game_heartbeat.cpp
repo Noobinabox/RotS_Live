@@ -21,10 +21,11 @@
 void affect_update(void);
 void check_pre_login_idle();
 void clean_expose_elements();
-void fast_update(bool regenerate);
+void fast_update();
 void mobile_activity(void);
 void msdp_update();
 void perform_violence();
+void regeneration_update();
 void stat_update();
 void weather_and_time(int mode);
 extern int autosave_time;
@@ -96,8 +97,11 @@ void GameHeartbeat::run_pass()
         stat_update();
         was_updated = 1;
     }
+    if (world_pass.run_regeneration) {
+        regeneration_update();
+    }
     if (world_pass.run_fast_update) {
-        fast_update(world_pass.run_regeneration);
+        fast_update();
         affect_update();
 
         clean_expose_elements();

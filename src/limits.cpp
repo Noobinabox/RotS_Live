@@ -757,7 +757,7 @@ void point_update(void)
              * die(ch, 0, 0) for a player who quits below
              * POSITION_STUNNED - the same "no external killer, character
              * just expires from their own state" case - so that's the
-             * precedent here, not fast_update()'s regen-death branch
+             * precedent here, not regeneration_update()'s regen-death branch
              * (which calls raw_kill() directly and skips the ON_DIE
              * trigger and exp/PK/exploit bookkeeping die() performs).
              * Going through die() here is intentional: scripted damage
@@ -765,7 +765,7 @@ void point_update(void)
              * to trigger ON_DIE side effects, same as an ordinary
              * combat death.
              *
-             * Re-derive position from current hit first: fast_update()'s
+             * Re-derive position from current hit first: regeneration_update()'s
              * passive regen never calls update_pos(), so a character
              * parked at DEAD by a scripted hit only just past the
              * -CON/2 threshold may have already healed back to positive
@@ -1619,20 +1619,23 @@ static bool regenerate_points(char_data* character)
     return false;
 }
 
-// Runs one fast update over character_list, in list order. When regenerate is true, each
-// character first regenerates (regenerate_points()), and a death from negative regeneration
-// ends the pass. Each character the pass reaches then gets the Power of Arda for evil races and
-// the breathing and Fame War checks.
-void fast_update(bool regenerate)
+// Regenerates every character in character_list, in list order (regenerate_points()). A death
+// from negative regeneration ends the pass: the dead character may have been freed.
+void regeneration_update()
 {
     for (char_data* character = character_list; character != nullptr; character = character->next) {
-        if (regenerate) {
-            const bool died_of_regeneration = regenerate_points(character);
-            if (died_of_regeneration) {
-                return;
-            }
+        const bool died_of_regeneration = regenerate_points(character);
+        if (died_of_regeneration) {
+            return;
         }
+    }
+}
 
+// Gives every character in character_list, in list order, the Power of Arda for evil races and
+// the breathing and Fame War checks.
+void fast_update()
+{
+    for (char_data* character = character_list; character != nullptr; character = character->next) {
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

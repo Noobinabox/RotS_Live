@@ -418,7 +418,7 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
   a fix must open both.
 - After `advance_hours` returns, the server has run the passes; `drain(1.0)` (or `expect` on
   the hour's marker, then `drain`) collects text already sent.
-- Regeneration (`fast_update`) runs inside every advanced hour, and the hourly update runs
+- Regeneration (`regeneration_update`) runs inside every advanced hour, and the hourly update runs
   before it in the same pass: assert hit points once, after the first hour, or as a range.
 
 ## Markers and groups
@@ -449,11 +449,11 @@ the server's stdin; the reply is `harness: done advance-hours n hours=<total>` o
 
 | An advanced hour runs | It never runs |
 | --- | --- |
-| 19 fast-update passes, then one pass with the hourly update (`weather_and_time`, `point_update`, `stat_update`) and the fast update (`fast_update`, `affect_update`) | zone resets, mob activity, combat (`perform_violence`), skill timers |
+| 19 fast-update passes, then one pass with the hourly update (`weather_and_time`, `point_update`, `stat_update`) and regeneration and the fast update (`regeneration_update`, `fast_update`, `affect_update`) | zone resets, mob activity, combat (`perform_violence`), skill timers |
 
 `@pytest.mark.schedule("affect-hours-without-regen")` runs the same hours and requests, and its
-ready line names it, but its fast updates never regenerate hit points, moves or mana; the rest
-of `fast_update` (the Power of Arda, the breathing and Fame War checks) still runs. Choose it
+ready line names it, but it never regenerates hit points, moves or mana; the fast update
+(`fast_update`: the Power of Arda, the breathing and Fame War checks) still runs. Choose it
 when a scenario measures one of those pools exactly while an affect changes it.
 
 So a scenario needing combat, wandering mobs or resets has no schedule today: it uses a plain

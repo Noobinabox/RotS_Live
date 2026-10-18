@@ -8,8 +8,8 @@
 #include <string>
 
 extern struct room_data world;
-// interpre.cpp's re-check of a command's targets and the builder of the cmd_info[] masks it
-// reads; no header declares either.
+// interpre.cpp's generic target check and the builder of the cmd_info[] masks it reads; no
+// header declares either.
 int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
     const struct target_data* t2);
 void assign_command_pointers(void);
@@ -93,10 +93,18 @@ protected:
     }
 
     // Runs the re-check command_interpreter makes when the caster's delay ends.
-    int recheck() { return target_check(&m_caster, m_delay.cmd, &m_delay.targ1, &m_delay.targ2); }
+    int recheck() { return delayed_command_target_check(&m_caster, &m_delay); }
 
     // What the re-check told the caster.
     std::string caster_output() const { return m_descriptor.output; }
+
+    // Empties what the caster has been told.
+    void clear_caster_output()
+    {
+        m_descriptor.small_outbuf[0] = '\0';
+        m_descriptor.bufptr = 0;
+        m_descriptor.bufspace = SMALL_BUFSIZE - 1;
+    }
 
     // The caster's name, which player.name points at.
     char m_caster_name[16] = "Caster";
@@ -118,12 +126,37 @@ protected:
 
 } // namespace
 
-TEST_F(DelayedCastTargetCheck, SummonAtAPlayerStandingInADarkRoomIsRefusedByTheReCheck)
+TEST_F(DelayedCastTargetCheck, SummonAtAPlayerStandingInADarkRoomPassesTheReCheck)
 {
     delay_cast_at_target(SPELL_SUMMON, TAR_CHAR_WORLD);
 
-    EXPECT_EQ(recheck(), 0);
-    EXPECT_EQ(caster_output(), "Nobody by that name.\n\r");
+    EXPECT_EQ(recheck(), 1) << "The caster read: " << caster_output();
+    EXPECT_EQ(caster_output(), "");
+}
+
+// The refusal is logged as a SYSERR and the caster is told nothing.
+TEST_F(DelayedCastTargetCheck, ANullDelayedCommandIsRefused)
+{
+    testing::internal::CaptureStderr();
+    const int accepted = delayed_command_target_check(&m_caster, nullptr);
+    const std::string logged = testing::internal::GetCapturedStderr();
+
+    EXPECT_EQ(accepted, 0);
+    EXPECT_EQ(caster_output(), "");
+    EXPECT_NE(logged.find("SYSERR: delayed_command_target_check"), std::string::npos) << logged;
+}
+
+// The refusal is logged as a SYSERR.
+TEST_F(DelayedCastTargetCheck, ANullCharacterIsRefused)
+{
+    delay_cast_at_target(SPELL_SUMMON, TAR_CHAR_WORLD);
+
+    testing::internal::CaptureStderr();
+    const int accepted = delayed_command_target_check(nullptr, &m_delay);
+    const std::string logged = testing::internal::GetCapturedStderr();
+
+    EXPECT_EQ(accepted, 0);
+    EXPECT_NE(logged.find("SYSERR: delayed_command_target_check"), std::string::npos) << logged;
 }
 
 TEST_F(DelayedCastTargetCheck, ASpellWithoutDarkOkIsRefusedATargetInTheDark)
@@ -186,7 +219,8 @@ TEST_F(DelayedCastTargetCheck, AnInterruptedCastIsRefusedATargetInTheDark)
     EXPECT_EQ(caster_output(), "Nobody by that name.\n\r");
 }
 
-// A non-cast command's subcmd is not a spell index, even when it equals summon's.
+// A non-cast command's subcmd is not a spell index, even when it equals summon's, and its
+// re-check is target_check()'s, result and message alike.
 TEST_F(DelayedCastTargetCheck, ANonCastCommandIsRefusedATargetInTheDark)
 {
     delay_cast_at_target(SPELL_SUMMON, TAR_CHAR_WORLD);
@@ -195,6 +229,13 @@ TEST_F(DelayedCastTargetCheck, ANonCastCommandIsRefusedATargetInTheDark)
     m_delay.targ1.choice = TAR_CHAR_ROOM;
     m_delay.targ2.cleanup();
 
-    EXPECT_EQ(recheck(), 0);
-    EXPECT_EQ(caster_output(), "Nobody here by that name.\n\r");
+    const int delayed_result = recheck();
+    const std::string delayed_output = caster_output();
+    clear_caster_output();
+    const int generic_result = target_check(&m_caster, CMD_KILL, &m_delay.targ1, &m_delay.targ2);
+
+    EXPECT_EQ(delayed_result, 0);
+    EXPECT_EQ(delayed_output, "Nobody here by that name.\n\r");
+    EXPECT_EQ(delayed_result, generic_result);
+    EXPECT_EQ(delayed_output, caster_output());
 }

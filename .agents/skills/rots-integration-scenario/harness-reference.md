@@ -413,9 +413,10 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
   character until the delay ends, and the outcome can arrive after the reply `command()`
   returns. `expect` the outcome.
 - When the delay ends, `command_interpreter` (`interpre.cpp`) checks the command's target again
-  (`target_check`, `target_check_one`), so a target test such as `CAN_SEE` can gate a
-  behaviour twice: once when the command is typed and once when it completes. A bite check or
-  a fix must open both.
+  (`delayed_command_target_check`, `target_check_one`), so a target test such as `CAN_SEE` can
+  gate a behaviour twice: once when the command is typed and once when it completes. A cast's
+  re-check also takes `TAR_DARK_OK` from its spell's targets. A bite check or a fix must open
+  both.
 - After `advance_hours` returns, the server has run the passes; `drain(1.0)` (or `expect` on
   the hour's marker, then `drain`) collects text already sent.
 - Regeneration (`fast_update`) runs inside every advanced hour, and the hourly update runs

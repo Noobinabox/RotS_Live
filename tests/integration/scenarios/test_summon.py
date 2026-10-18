@@ -241,6 +241,7 @@ def refill_caster(implementor: GameSession) -> None:
     assert restored.contains("Done."), restored.text
 
 
+@pytest.mark.xfail(strict=True, reason="summon reaches a player standing in a dark room")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CASTER, DARK_VICTIM)
 def test_a_mage_cannot_summon_a_player_standing_in_a_dark_room(server) -> None:
@@ -312,7 +313,6 @@ def test_a_mage_cannot_summon_a_player_standing_in_a_dark_room(server) -> None:
     assert "Arena Centre" in summoned, summoned
 
 
-@pytest.mark.xfail(strict=True, reason="pending: summon reaches a player standing in a dark room")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CASTER, DARK_VICTIM)
 def test_a_mage_summons_a_player_standing_in_a_dark_room(server) -> None:
@@ -425,6 +425,10 @@ def test_a_player_five_map_squares_away_is_summoned(server) -> None:
     assert "Arena Centre" in summoned, summoned
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="summon's distance bonus is the straight-line distance, the same in both directions",
+)
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CASTER, PLUS_TWENTY_VICTIM, MINUS_TWENTY_VICTIM)
 def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_same_distance_on_the_other(
@@ -500,10 +504,6 @@ def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_s
     assert minus_victim.command("look").room_name() == MINUS_TWENTY_CELL_NAME
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pending: a player twenty map squares away always resists, in either direction",
-)
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CASTER, PLUS_TWENTY_VICTIM, MINUS_TWENTY_VICTIM)
 def test_a_player_twenty_map_squares_away_always_resists_in_either_direction(server) -> None:

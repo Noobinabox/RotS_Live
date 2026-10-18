@@ -781,16 +781,62 @@ SummonOutcome cast_summon_within_one_zone(int save_roll) {
 
 } // namespace
 
-// The XOR formula gives a (3, 4) offset a bonus of -3: 6 + 3 - 3 is not above 13.
-TEST_F(MageProcTest, SummonAtAThreeFourOffsetLandsOnASaveRollOfSixUnderTheXorFormula) {
+// A (3, 4) offset saves a roll of 6, which the XOR formula's -3 let through.
+TEST_F(MageProcTest, SummonDistanceBonusIsNotTheXorFormula) {
     const SummonOutcome outcome = cast_summon_across_zones(MapSquare{3, 4}, 6);
+
+    EXPECT_FALSE(outcome.victim_arrived);
+    EXPECT_EQ(outcome.caster_output, "You failed.\n\r");
+}
+
+// A summon within the caster's own zone lands on a roll of 7, which the XOR formula's 4 saved.
+TEST_F(MageProcTest, SummonWithinTheCastersZoneIsNotTheXorFormulasFour) {
+    const SummonOutcome outcome = cast_summon_within_one_zone(7);
 
     EXPECT_TRUE(outcome.victim_arrived) << "The caster read: " << outcome.caster_output;
 }
 
-// The XOR formula gives the caster's own zone a bonus of 4: 7 + 3 + 4 is above 13.
-TEST_F(MageProcTest, SummonWithinTheCastersZoneIsSavedOnASaveRollOfSevenUnderTheXorFormula) {
-    const SummonOutcome outcome = cast_summon_within_one_zone(7);
+// A (3, 4) offset is 5 squares: a save roll of 5 reaches 13 and lands, a roll of 6 passes it.
+TEST_F(MageProcTest, SummonDistanceBonusIsTheStraightLineDistance) {
+    const SummonOutcome landed = cast_summon_across_zones(MapSquare{3, 4}, 5);
+    const SummonOutcome saved = cast_summon_across_zones(MapSquare{3, 4}, 6);
+
+    EXPECT_TRUE(landed.victim_arrived) << "The caster read: " << landed.caster_output;
+    EXPECT_FALSE(saved.victim_arrived);
+}
+
+// A (2, 3) offset is 3.6 squares, counted as 3: a save roll of 7 lands, a roll of 8 is saved.
+TEST_F(MageProcTest, SummonDistanceBonusRoundsDown) {
+    const SummonOutcome landed = cast_summon_across_zones(MapSquare{2, 3}, 7);
+    const SummonOutcome saved = cast_summon_across_zones(MapSquare{2, 3}, 8);
+
+    EXPECT_TRUE(landed.victim_arrived) << "The caster read: " << landed.caster_output;
+    EXPECT_FALSE(saved.victim_arrived);
+}
+
+// Casting from (3, 4) at a victim at (0, 0) gives the same 5 as the opposite way.
+TEST_F(MageProcTest, SummonDistanceBonusIsTheSameInBothDirections) {
+    const SummonOutcome landed =
+        cast_summon_at_zone(kSummonOtherZone, MapSquare{3, 4}, MapSquare{0, 0}, 5);
+    const SummonOutcome saved =
+        cast_summon_at_zone(kSummonOtherZone, MapSquare{3, 4}, MapSquare{0, 0}, 6);
+
+    EXPECT_TRUE(landed.victim_arrived) << "The caster read: " << landed.caster_output;
+    EXPECT_FALSE(saved.victim_arrived);
+}
+
+// A save roll of 10 reaches 13 and lands, a roll of 11 passes it.
+TEST_F(MageProcTest, SummonWithinTheCastersZoneHasNoDistanceBonus) {
+    const SummonOutcome landed = cast_summon_within_one_zone(10);
+    const SummonOutcome saved = cast_summon_within_one_zone(11);
+
+    EXPECT_TRUE(landed.victim_arrived) << "The caster read: " << landed.caster_output;
+    EXPECT_FALSE(saved.victim_arrived);
+}
+
+// A (12, 16) offset is 20 squares, the bonus at which new_saves_spell() saves whatever the roll.
+TEST_F(MageProcTest, SummonAtTwentySquaresAlwaysFails) {
+    const SummonOutcome outcome = cast_summon_across_zones(MapSquare{12, 16}, 1);
 
     EXPECT_FALSE(outcome.victim_arrived);
     EXPECT_EQ(outcome.caster_output, "You failed.\n\r");

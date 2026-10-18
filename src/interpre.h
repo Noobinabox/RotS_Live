@@ -77,6 +77,14 @@ inline constexpr int SPECIAL_DEATH = 64;
     }
 
 void command_interpreter(struct char_data* ch, char* arg_chr, struct waiting_type* arg_wtl = 0);
+/*
+ * Re-checks a delayed command's stored targets against the command's target masks when its
+ * delay ends, telling character what is wrong when they fail. A cast also accepts a target in
+ * the dark when its spell's targets carry TAR_DARK_OK; do_cast re-checks a cast's location
+ * rules. Returns 1 when the targets pass, otherwise 0. A null character or delayed_command is
+ * logged and returns 0.
+ */
+int delayed_command_target_check(char_data* character, const waiting_type* delayed_command);
 int search_block(char* arg, char** list, char exact);
 int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
 char lower(char c);

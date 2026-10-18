@@ -19,6 +19,7 @@
 #include "utils.h"
 #include "warrior_spec_handlers.h"
 #include "zone.h" /* For zone_table */
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -756,8 +757,6 @@ ASPELL(spell_vitalize_self)
  * Summon spell
  * Transfers a character from where they are to
  * the casters room.
- * We don't use this spell anymore should it be completely
- * removed?
  */
 
 ASPELL(spell_summon)
@@ -807,7 +806,11 @@ ASPELL(spell_summon)
     ch_y = zone_table[world[caster->in_room].zone].y;
     v_x = zone_table[world[victim->in_room].zone].x;
     v_y = zone_table[world[victim->in_room].zone].y;
-    dist = ((ch_x - v_x) ^ 2) + ((ch_y - v_y) ^ 2);
+    // The distance part of the victim's save bonus: one point per map square between the two
+    // zones, in a straight line, rounded down.
+    const int delta_x = ch_x - v_x;
+    const int delta_y = ch_y - v_y;
+    dist = static_cast<int>(std::sqrt(static_cast<double>(delta_x * delta_x + delta_y * delta_y)));
 
     int save_bonus = dist;
     /* Make high level mobs harder to summon */

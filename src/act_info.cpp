@@ -22,6 +22,7 @@
 #include "db.h"
 #include "game_time_text.h"
 #include "handler.h"
+#include "input_command_list.h"
 #include "interpre.h"
 #include "limits.h"
 #include "pkill.h"
@@ -76,7 +77,6 @@ extern char* where[];
 extern char* color_liquid[];
 extern char* fullness[];
 extern char* connected_types[];
-extern char* command[];
 extern char* prof_abbrevs[];
 extern char* race_abbrevs[];
 extern char* room_bits[];
@@ -2973,7 +2973,7 @@ void sort_commands(void)
 
     for (a = 1; a <= num_of_cmds - 1; a++)
         for (b = a + 1; b <= num_of_cmds; b++)
-            if (strcmp(command[cmd_info[a].sort_pos], command[cmd_info[b].sort_pos]) > 0) {
+            if (strcmp(COMMAND_NAMES[cmd_info[a].sort_pos], COMMAND_NAMES[cmd_info[b].sort_pos]) > 0) {
                 tmp = cmd_info[a].sort_pos;
                 cmd_info[a].sort_pos = cmd_info[b].sort_pos;
                 cmd_info[b].sort_pos = tmp;
@@ -3027,9 +3027,9 @@ ACMD(do_commands)
         i = cmd_info[cmd_num].sort_pos;
         if (cmd_info[i + 1].minimum_level >= 0 && (cmd_info[i + 1].minimum_level >= LEVEL_IMMORT) == wizhelp && GET_LEVEL(vict) >= cmd_info[i + 1].minimum_level && (wizhelp || socials == cmd_info[i + 1].is_social)) {
             if ((GET_LEVEL(ch) >= LEVEL_GOD) && PRF_FLAGGED(ch, PRF_ROOMFLAGS))
-                sprintf(buf + strlen(buf), "(%3d)%-11s", i + 1, command[i]);
+                sprintf(buf + strlen(buf), "(%3d)%-11s", i + 1, COMMAND_NAMES[i]);
             else
-                sprintf(buf + strlen(buf), "%-16s", command[i]);
+                sprintf(buf + strlen(buf), "%-16s", COMMAND_NAMES[i]);
             if (!(no % 5))
                 strcat(buf, "\n\r");
             no++;

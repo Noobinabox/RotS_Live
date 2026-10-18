@@ -1,5 +1,6 @@
 #include "../structs.h"
 #include "../db.h"
+#include "../input_command_list.h"
 #include "../input_command_parser.h"
 #include "../interpre.h"
 #include "../utils.h"
@@ -20,7 +21,6 @@
  */
 
 extern command_info cmd_info[];
-extern const char* command[];
 extern social_messg* soc_mess_list;
 extern int social_list_top;
 extern int no_specials;
@@ -121,7 +121,7 @@ protected:
     // The number of the command named exactly name in the game's command table.
     static int command_number(const char* name)
     {
-        return old_search_block(name, 0, std::strlen(name), command, 1);
+        return old_search_block(name, 0, std::strlen(name), const_cast<const char**>(COMMAND_NAMES), 1);
     }
 
     void allow_shaping_at_immortal_level()

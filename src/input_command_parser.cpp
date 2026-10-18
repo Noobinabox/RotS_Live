@@ -102,19 +102,16 @@ typed_line parse_typed_line(std::string_view line)
     return parsed;
 }
 
-int find_command_number(std::string_view command_word, const char* const* command_names)
+int input_command_parser_detail::find_command_number(std::string_view command_word,
+    const char* const* command_names, std::size_t name_count)
 {
-    if (command_names == nullptr) {
-        log((std::string("SYSERR: ") + __func__ + ": called with a null command table").c_str());
-        return UNKNOWN_COMMAND_NUMBER;
-    }
     if (command_word.empty()) {
         return EMPTY_COMMAND_WORD_NUMBER;
     }
 
-    for (int index = 0; command_names[index][0] != '\n'; ++index) {
+    for (std::size_t index = 0; index < name_count && command_names[index][0] != '\n'; ++index) {
         if (starts_with_lowercased(command_names[index], command_word)) {
-            return index + 1;
+            return static_cast<int>(index) + 1;
         }
     }
     return UNKNOWN_COMMAND_NUMBER;

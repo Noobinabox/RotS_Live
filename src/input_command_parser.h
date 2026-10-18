@@ -52,14 +52,26 @@ inline constexpr int EMPTY_COMMAND_WORD_NUMBER = 0;
 // find_command_number's answer when no command matches.
 inline constexpr int UNKNOWN_COMMAND_NUMBER = -1;
 
+namespace input_command_parser_detail {
+
+// find_command_number's search over the name_count names at command_names.
+[[nodiscard]] int find_command_number(std::string_view command_word,
+    const char* const* command_names, std::size_t name_count);
+
+} // namespace input_command_parser_detail
+
 // The number of the first command, in table order, that command_word is a prefix of, comparing
 // command_word with only A-Z lowercased. Numbers count from 1 for the table's first entry.
 // Returns EMPTY_COMMAND_WORD_NUMBER for an empty command_word without searching, and
 // UNKNOWN_COMMAND_NUMBER when nothing matches.
-// command_names is a list of lowercase names ended by an entry that starts with '\n'. A null
-// command_names is logged and returns UNKNOWN_COMMAND_NUMBER.
+// command_names holds lowercase names; the search ends at its last entry or at an entry that
+// starts with '\n', whichever comes first.
+template <std::size_t NAME_COUNT>
 [[nodiscard]] int find_command_number(std::string_view command_word,
-    const char* const* command_names);
+    const char* const (&command_names)[NAME_COUNT])
+{
+    return input_command_parser_detail::find_command_number(command_word, command_names, NAME_COUNT);
+}
 
 // The word a social is looked up by, read from the start of text the way the game reads a
 // command's first argument: whitespace (' ', \t, \n, \v, \f, \r) is skipped; a word runs up to

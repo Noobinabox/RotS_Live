@@ -120,9 +120,12 @@ TEST(FindCommandNumber, NeverMatchesAnEmptyName)
     EXPECT_EQ(find_command_number("q", TEST_COMMAND_NAMES), UNKNOWN_COMMAND_NUMBER);
 }
 
-TEST(FindCommandNumber, ReturnsMinusOneForANullTable)
+TEST(FindCommandNumber, StopsAtTheLastEntryOfATableWithNoEndEntry)
 {
-    EXPECT_EQ(find_command_number("north", nullptr), UNKNOWN_COMMAND_NUMBER);
+    const char* const names_without_end_entry[] = { "north", "east" };
+
+    EXPECT_EQ(find_command_number("e", names_without_end_entry), 2);
+    EXPECT_EQ(find_command_number("x", names_without_end_entry), UNKNOWN_COMMAND_NUMBER);
 }
 
 TEST(ViewTerminatedText, StopsAtTheTerminatorOrTheLimit)

@@ -746,31 +746,11 @@ void point_update(void)
         } else if (GET_POS(i) == POSITION_INCAP)
             damage(i, i, 3, TYPE_SUFFERING, 0);
         else if (GET_POS(i) == POSITION_DEAD) {
-            /* A character can land directly at POSITION_DEAD via a
-             * script write to hit (see set_int_value()/int_fromstack())
-             * without ever going through damage()'s own die() call.
-             * Pick that up here instead of leaving a character stuck
-             * "dead" forever: safe to call die() with NULL killer from
-             * this loop (next_dude is already captured above, the same
-             * mid-walk-deletion safety fight.cpp's combat_next_dude
-             * relies on). do_quit() (act_othe.cpp) already calls
-             * die(ch, 0, 0) for a player who quits below
-             * POSITION_STUNNED - the same "no external killer, character
-             * just expires from their own state" case - so that's the
-             * precedent here, not regeneration_update()'s regen-death branch
-             * (which calls raw_kill() directly and skips the ON_DIE
-             * trigger and exp/PK/exploit bookkeeping die() performs).
-             * Going through die() here is intentional: scripted damage
-             * that lands someone at POSITION_DEAD should still be able
-             * to trigger ON_DIE side effects, same as an ordinary
-             * combat death.
-             *
-             * Re-derive position from current hit first: regeneration_update()'s
-             * passive regen never calls update_pos(), so a character
-             * parked at DEAD by a scripted hit only just past the
-             * -CON/2 threshold may have already healed back to positive
-             * hit by the time this sweep runs. Don't kill on a stale
-             * position. */
+            // A script that writes hit points can leave a character at POSITION_DEAD without
+            // killing them. Regeneration never updates position, so re-derive it first: they
+            // may have healed since. die(), not raw_kill(), runs the ON_DIE trigger and the
+            // experience loss; next_dude is already saved, so the loop is safe if die() frees
+            // the character.
             update_pos(i);
             if (GET_POS(i) == POSITION_DEAD) {
                 die(i, NULL, TYPE_UNDEFINED);

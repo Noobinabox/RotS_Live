@@ -3,6 +3,7 @@
 #include "utils.h"
 
 #include <algorithm>
+#include <array>
 #include <string>
 
 namespace {
@@ -20,6 +21,30 @@ char lowercase_letter(char character)
         return static_cast<char>(character - 'A' + 'a');
     }
     return character;
+}
+
+// The characters isspace() accepts in the C locale, which the game never changes.
+constexpr std::string_view social_whitespace = " \t\n\v\f\r";
+
+// Words skipped before a social's word, as in "smile at bob".
+constexpr std::array<std::string_view, 7> fill_words
+    = { "in", "from", "with", "the", "on", "at", "to" };
+
+bool equals_lowercased(std::string_view word, std::string_view lowercase_word)
+{
+    if (word.size() != lowercase_word.size()) {
+        return false;
+    }
+    return std::equal(word.begin(), word.end(), lowercase_word.begin(),
+        [](char word_character, char lowercase_character) -> bool {
+            return lowercase_letter(word_character) == lowercase_character;
+        });
+}
+
+bool is_fill_word(std::string_view word)
+{
+    return std::any_of(fill_words.begin(), fill_words.end(),
+        [word](std::string_view fill_word) -> bool { return equals_lowercased(word, fill_word); });
 }
 
 bool starts_with_lowercased(std::string_view name, std::string_view word)
@@ -106,4 +131,35 @@ std::string_view view_terminated_text(const char* text, std::size_t max_length)
         return std::string_view(text, max_length);
     }
     return std::string_view(text, static_cast<std::size_t>(terminator - text));
+}
+
+std::string_view read_social_word(std::string_view text)
+{
+    std::string_view remaining = text;
+    std::string_view last_fill_word;
+
+    for (;;) {
+        const std::size_t word_start = remaining.find_first_not_of(social_whitespace);
+        if (word_start == std::string_view::npos) {
+            return remaining.substr(remaining.size());
+        }
+        remaining.remove_prefix(word_start);
+
+        // A word that starts with a quote is not read. The result is the first letter of the last
+        // fill word skipped, or nothing when none was. Socials have always been looked up this
+        // way after a fill word, so "the 'bob" performs the "t" social at bob, and this keeps
+        // that result.
+        if (remaining.front() == '\'') {
+            return last_fill_word.substr(0, 1);
+        }
+
+        const auto word_end = std::find_if(remaining.begin(), remaining.end(), ends_word);
+        const std::size_t word_length = static_cast<std::size_t>(word_end - remaining.begin());
+        const std::string_view word = remaining.substr(0, word_length);
+        if (!is_fill_word(word)) {
+            return word;
+        }
+        last_fill_word = word;
+        remaining.remove_prefix(word_length);
+    }
 }

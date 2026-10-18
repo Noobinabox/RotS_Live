@@ -52,6 +52,15 @@ struct typed_line {
 [[nodiscard]] int find_command_number(std::string_view command_word,
     const char* const* command_names);
 
+// The word a social is looked up by, read from the start of text the way the game reads a
+// command's first argument: whitespace (' ', \t, \n, \v, \f, \r) is skipped; a word runs up to
+// the first character that is <= ' ' as an unsigned char; and the fill words in, from, with, the,
+// on, at and to, matched with A-Z lowercased, are skipped. The view is as typed; the caller
+// lowercases it. Empty when no word follows.
+// A word that starts with ' gives the first letter of the last fill word skipped before it, or an
+// empty view when none was; see the definition for why.
+[[nodiscard]] std::string_view read_social_word(std::string_view text);
+
 // The text up to its terminating '\0', or its first max_length characters when no terminator
 // comes sooner; reads no further than that. A null text is logged and gives an empty view.
 [[nodiscard]] std::string_view view_terminated_text(const char* text, std::size_t max_length);

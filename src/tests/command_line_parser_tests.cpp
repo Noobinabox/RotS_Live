@@ -139,3 +139,43 @@ TEST(ViewTerminatedText, GivesAnEmptyViewForNullText)
 {
     EXPECT_TRUE(view_terminated_text(nullptr, 10).empty());
 }
+
+TEST(ReadSocialWord, SkipsEveryKindOfWhitespace)
+{
+    EXPECT_EQ(read_social_word(" \t\n\v\f\rsmile x"), "smile");
+}
+
+TEST(ReadSocialWord, SkipsFillWordsInAnyCase)
+{
+    EXPECT_EQ(read_social_word("the at smile"), "smile");
+    EXPECT_EQ(read_social_word("THE Smile"), "Smile");
+}
+
+TEST(ReadSocialWord, IsEmptyWhenOnlyFillWordsRemain)
+{
+    EXPECT_TRUE(read_social_word("the").empty());
+    EXPECT_TRUE(read_social_word("from  ").empty());
+    EXPECT_TRUE(read_social_word("").empty());
+}
+
+TEST(ReadSocialWord, KeepsAHighByteInsideTheWord)
+{
+    EXPECT_EQ(read_social_word("sm\xE9le"), "sm\xE9le");
+}
+
+TEST(ReadSocialWord, ReadsAQuotedWordAsTheLastFillWordsFirstLetter)
+{
+    EXPECT_EQ(read_social_word("the 'bob"), "t");
+    EXPECT_EQ(read_social_word("from 'x"), "f");
+    EXPECT_EQ(read_social_word("the at 'x"), "a");
+    EXPECT_EQ(read_social_word("THE 'x"), "T");
+
+    const std::string_view line = "the 'bob";
+    EXPECT_EQ(read_social_word(line).data(), line.data()) << "points at the fill word's letter";
+}
+
+TEST(ReadSocialWord, ReadsABareQuotedWordAsEmpty)
+{
+    EXPECT_TRUE(read_social_word("'x").empty());
+    EXPECT_TRUE(read_social_word(" 'x").empty());
+}

@@ -474,12 +474,14 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 13 | `zon/13.zon` | Harness plus-twenty zone | (20, 0) | 1301-1399 | none |
+| 14 | `zon/14.zon` | Harness minus-twenty zone | (-20, 0) | 1401-1499 | none |
 
 ### Rooms
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
+`OUTSIDE()` is true in all of them. Re-read the headers in `wld/11.wld` to `wld/14.wld` after
 anyone changes the world.
 
 | Vnum | Name | Flags | Sector | Exits |
@@ -503,6 +505,8 @@ anyone changes the world.
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1301 | Plus Twenty Cell (`world.ROOM_PLUS_TWENTY_CELL`, zone 13) | 0 (none) | 0 | none |
+| 1401 | Minus Twenty Cell (`world.ROOM_MINUS_TWENTY_CELL`, zone 14) | 0 (none) | 0 | none |
 
 1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
 so a character there sees only with infravision, holylight, or moonvision while the moon is up

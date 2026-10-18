@@ -1,8 +1,11 @@
+#include "../handler.h"
 #include "../spells.h"
 #include "../utils.h"
+#include "../zone.h"
 #include "test_random_utils.h"
 #include <algorithm>
 #include <gtest/gtest.h>
+#include <string>
 
 int get_mage_caster_level(const char_data *caster);
 int get_magic_power(const char_data *caster);
@@ -665,4 +668,130 @@ TEST_F(MageProcTest, LocateLifeSkipsBlockedDuplicateAndExcludedRooms) {
     EXPECT_EQ(west_room->n, 0);
     EXPECT_EQ(west_room->e, -1);
     EXPECT_EQ(west_room->u, 0);
+}
+
+namespace {
+
+// The two zone_table entries the summon tests use: the caster's zone and another one.
+constexpr int kSummonCasterZone = 0;
+constexpr int kSummonOtherZone = 1;
+// The rooms the summon tests use: the caster's in kSummonCasterZone and the victim's.
+constexpr int kSummonCasterRoom = 7;
+constexpr int kSummonVictimRoom = 8;
+
+// A zone's square on the world map, as zone_data's x and y hold it.
+struct MapSquare {
+    // The square's column.
+    int x;
+    // The square's row.
+    int y;
+};
+
+// Points zone_table at two zones for the guard's lifetime: char_to_room() and spell_summon()
+// read it, and no test boot fills it.
+class ZoneTableGuard {
+  public:
+    ZoneTableGuard() : m_saved_zone_table(zone_table) { zone_table = m_zones; }
+
+    ~ZoneTableGuard() { zone_table = m_saved_zone_table; }
+
+    ZoneTableGuard(const ZoneTableGuard &) = delete;
+    ZoneTableGuard &operator=(const ZoneTableGuard &) = delete;
+
+    // Puts zone kSummonCasterZone or kSummonOtherZone at square.
+    void place(int zone_number, MapSquare square) {
+        m_zones[zone_number].x = square.x;
+        m_zones[zone_number].y = square.y;
+    }
+
+  private:
+    // The table zone_table points at while the guard lives.
+    zone_data m_zones[2]{};
+    // The table zone_table pointed at before the guard; the destructor restores it.
+    zone_data *m_saved_zone_table;
+};
+
+// Makes descriptor a playing connection whose output collects in its small buffer.
+void prepare_capture_descriptor(descriptor_data &descriptor) {
+    descriptor.output = descriptor.small_outbuf;
+    descriptor.small_outbuf[0] = '\0';
+    descriptor.bufptr = 0;
+    descriptor.bufspace = SMALL_BUFSIZE - 1;
+    descriptor.connected = CON_PLYNG;
+}
+
+// What one summon cast did.
+struct SummonOutcome {
+    // True when the victim ended in the caster's room.
+    bool victim_arrived;
+    // Everything the caster was sent during the cast.
+    std::string caster_output;
+};
+
+// Casts summon from kSummonCasterRoom, in kSummonCasterZone at caster_square, at a player in
+// kSummonVictimRoom, in victim_zone, with kSummonOtherZone at other_square and the save roll
+// forced to save_roll (1 to 20). Both characters have mage level 0 and intelligence 20, so
+// new_saves_spell()'s DC is 13 and the victim's base save is 3: the victim saves when
+// save_roll + 3 + the distance bonus is above 13, and always once the bonus reaches 20.
+SummonOutcome cast_summon_at_zone(int victim_zone, MapSquare caster_square, MapSquare other_square,
+                                  int save_roll) {
+    ZoneTableGuard zone_table_guard;
+    zone_table_guard.place(kSummonCasterZone, caster_square);
+    zone_table_guard.place(kSummonOtherZone, other_square);
+    ZoneGuard zone_guard(kSummonCasterRoom, kSummonVictimRoom);
+    world[kSummonCasterRoom].zone = kSummonCasterZone;
+    world[kSummonVictimRoom].zone = victim_zone;
+    RoomExitGuard caster_room_guard(kSummonCasterRoom);
+    RoomExitGuard victim_room_guard(kSummonVictimRoom);
+    // A NO_TELEPORT flag left by another suite would refuse the summon before the save.
+    world[kSummonCasterRoom].room_flags = 0;
+    world[kSummonCasterRoom].people = nullptr;
+    world[kSummonVictimRoom].people = nullptr;
+
+    MageTestContext context;
+    char victim_name[16] = "test_target";
+    context.victim.player.name = victim_name;
+    descriptor_data caster_descriptor{};
+    prepare_capture_descriptor(caster_descriptor);
+    context.caster.desc = &caster_descriptor;
+    char_to_room(&context.caster, kSummonCasterRoom);
+    char_to_room(&context.victim, kSummonVictimRoom);
+
+    // The middle of save_roll's band of number(1, 20), the save's only draw.
+    push_test_random_value((save_roll - 0.5) / 20);
+    spell_summon(&context.caster, nullptr, 0, &context.victim, nullptr, 0, 0);
+
+    SummonOutcome outcome{context.victim.in_room == kSummonCasterRoom, caster_descriptor.output};
+    char_from_room(&context.victim);
+    char_from_room(&context.caster);
+    return outcome;
+}
+
+// Casts summon from a zone at (0, 0) at a player in another zone at victim_square, as
+// cast_summon_at_zone() describes.
+SummonOutcome cast_summon_across_zones(MapSquare victim_square, int save_roll) {
+    return cast_summon_at_zone(kSummonOtherZone, MapSquare{0, 0}, victim_square, save_roll);
+}
+
+// Casts summon at a player in another room of the caster's own zone, as cast_summon_at_zone()
+// describes.
+SummonOutcome cast_summon_within_one_zone(int save_roll) {
+    return cast_summon_at_zone(kSummonCasterZone, MapSquare{0, 0}, MapSquare{0, 0}, save_roll);
+}
+
+} // namespace
+
+// The XOR formula gives a (3, 4) offset a bonus of -3: 6 + 3 - 3 is not above 13.
+TEST_F(MageProcTest, SummonAtAThreeFourOffsetLandsOnASaveRollOfSixUnderTheXorFormula) {
+    const SummonOutcome outcome = cast_summon_across_zones(MapSquare{3, 4}, 6);
+
+    EXPECT_TRUE(outcome.victim_arrived) << "The caster read: " << outcome.caster_output;
+}
+
+// The XOR formula gives the caster's own zone a bonus of 4: 7 + 3 + 4 is above 13.
+TEST_F(MageProcTest, SummonWithinTheCastersZoneIsSavedOnASaveRollOfSevenUnderTheXorFormula) {
+    const SummonOutcome outcome = cast_summon_within_one_zone(7);
+
+    EXPECT_FALSE(outcome.victim_arrived);
+    EXPECT_EQ(outcome.caster_output, "You failed.\n\r");
 }

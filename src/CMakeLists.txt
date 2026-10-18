@@ -202,6 +202,7 @@ set(ROTS_TEST_SOURCES
     tests/damage_meters_tests.cpp
     tests/damage_tests.cpp
     tests/db_loader_tests.cpp
+    tests/delayed_command_target_check_tests.cpp
     tests/exploit_record_tests.cpp
     tests/exploits_json_tests.cpp
     tests/interpre_account_menu_tests.cpp

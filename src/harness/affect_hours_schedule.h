@@ -10,10 +10,23 @@
 
 namespace harness {
 
-// Schedules whole game hours of the hourly and fast updates, and only the hours granted to it.
-// It never runs zone updates, mobile activity, combat or skill-timer countdowns.
+// Whether an AffectHoursSchedule's fast-update passes regenerate hit points, moves and mana.
+enum class Regeneration {
+    // Every fast-update pass regenerates, as in the live game.
+    On,
+    // No pass regenerates; the fast update's affects and checks still run.
+    Off,
+};
+
+// Schedules whole game hours of the hourly and fast updates, and only the hours granted to it,
+// regenerating on its fast-update passes when built with Regeneration::On. It never runs zone
+// updates, mobile activity, combat or skill-timer countdowns.
 class AffectHoursSchedule : public GameTickSchedule {
 public:
+    // Builds a schedule with nothing granted, whose fast-update passes regenerate as
+    // regeneration says.
+    explicit AffectHoursSchedule(Regeneration regeneration);
+
     // The most game hours that may be granted and not yet run.
     static constexpr int MAX_PENDING_HOURS = 1000;
 
@@ -24,8 +37,9 @@ public:
 
     // Returns the next granted pass, or a pass with no world update when nothing is granted. A
     // granted hour is fast updates at phases 1 to FAST_UPDATE_RATE - 1, then the hourly update
-    // with the fast update at phase 0. Every pass carries the phase in force, which is 0
-    // between granted hours.
+    // with the fast update at phase 0; each of those passes regenerates when the schedule was
+    // built with Regeneration::On. Every pass carries the phase in force, which is 0 between
+    // granted hours.
     [[nodiscard]] WorldPass next_pass() override;
 
     // The granted passes next_pass() has not yet returned.
@@ -35,6 +49,8 @@ public:
     [[nodiscard]] int hours_completed() const;
 
 private:
+    // Whether granted passes regenerate; fixed at construction.
+    Regeneration pass_regeneration;
     // Granted passes still to be returned.
     int passes_pending = 0;
     // The phase of the last fast update returned; 0 before the first.

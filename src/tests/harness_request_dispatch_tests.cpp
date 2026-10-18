@@ -42,7 +42,7 @@ struct FakeRequestRegistry {
 struct AdvanceHoursRegistry {
     // The schedule the request grants hours on.
     std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     // The registry the lines are dispatched to.
     harness::HarnessRequestRegistry requests;
 

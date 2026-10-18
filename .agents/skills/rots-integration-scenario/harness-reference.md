@@ -441,15 +441,19 @@ the Makefile need no change.
 Without a schedule the server runs on the wall clock: mob activity, combat, zone resets and the
 hourly update all happen in real time.
 
-With `@pytest.mark.schedule("affect-hours")`, the only schedule today, the harness binary
-starts and writes `harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits
-for it. World updates then run only when granted. `advance_hours(n)` writes `advance-hours n`
+With `@pytest.mark.schedule("affect-hours")` the harness binary starts and writes
+`harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits for it. World updates then run only when granted. `advance_hours(n)` writes `advance-hours n`
 (1 to 1000) to the server's stdin; the reply is `harness: done advance-hours n hours=<total>` or
 `harness: error <reason>`, which raises `TimeControlError`.
 
 | An advanced hour runs | It never runs |
 | --- | --- |
 | 19 fast-update passes, then one pass with the hourly update (`weather_and_time`, `point_update`, `stat_update`) and the fast update (`fast_update`, `affect_update`) | zone resets, mob activity, combat (`perform_violence`), skill timers |
+
+`@pytest.mark.schedule("affect-hours-without-regen")` runs the same hours and requests, and its
+ready line names it, but its fast updates never regenerate hit points, moves or mana; the rest
+of `fast_update` (the Power of Arda, the breathing and Fame War checks) still runs. Choose it when a scenario
+measures one of those pools exactly while an affect changes it.
 
 So a scenario needing combat, wandering mobs or resets has no schedule today: it uses a plain
 server, or a new schedule (extending-the-harness.md).

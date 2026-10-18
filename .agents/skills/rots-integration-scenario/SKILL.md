@@ -59,7 +59,9 @@ the harness (extending-the-harness.md); never rely on luck.
   for every case including the control, the comment the reference's "Margin checks" shows:
   the code's expression evaluated term by term, ending in the value passed.
 - Mark the test `@pytest.mark.schedule("affect-hours")`, so only the scenario's own commands
-  and the hours it asks for draw.
+  and the hours it asks for draw. When the test measures hit points, moves or mana exactly
+  while an affect changes them, mark it `@pytest.mark.schedule("affect-hours-without-regen")`
+  instead: the same hours, with no regeneration to add to or hide the change.
 - A draw that only decides whether the attempt happens and has its own message (a lost
   concentration, a fumbled skill): repeat the attempt on that message, listed in `expect`.
   Bound the loop by what each attempt uses up (mana does not regenerate between requests under

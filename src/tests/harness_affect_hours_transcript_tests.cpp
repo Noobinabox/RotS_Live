@@ -96,6 +96,83 @@ TEST(AffectHoursTranscript, IsTheOnlyScheduleItsRegistrationAdds)
     EXPECT_FALSE(definition->summary.empty()) << "Expected a usage summary.";
 }
 
+TEST(AffectHoursTranscript, TheWithoutRegenScheduleIsTheOnlyScheduleItsRegistrationAdds)
+{
+    harness::ScheduleRegistry registry;
+
+    ASSERT_TRUE(harness::register_affect_hours_without_regen_schedule(registry))
+        << "Expected it to register.";
+
+    const std::vector<std::string> expected = { "affect-hours-without-regen" };
+    EXPECT_EQ(registry.names(), expected) << "Unexpected registered names.";
+    const harness::ScheduleDefinition* const definition
+        = registry.find("affect-hours-without-regen");
+    ASSERT_NE(definition, nullptr) << "Expected affect-hours-without-regen to be found.";
+    EXPECT_FALSE(definition->summary.empty()) << "Expected a usage summary.";
+}
+
+TEST(AffectHoursTranscript, BothAffectHoursSchedulesRegisterInOneRegistry)
+{
+    harness::ScheduleRegistry registry;
+
+    ASSERT_TRUE(harness::register_affect_hours_schedule(registry));
+    ASSERT_TRUE(harness::register_affect_hours_without_regen_schedule(registry));
+
+    const std::vector<std::string> expected = { "affect-hours", "affect-hours-without-regen" };
+    EXPECT_EQ(registry.names(), expected) << "Unexpected registered names.";
+    const harness::ScheduleDefinition* const with_regen = registry.find("affect-hours");
+    const harness::ScheduleDefinition* const without_regen
+        = registry.find("affect-hours-without-regen");
+    ASSERT_NE(with_regen, nullptr);
+    ASSERT_NE(without_regen, nullptr);
+    EXPECT_NE(with_regen->summary, without_regen->summary) << "Expected each its own summary.";
+}
+
+// Each registered schedule's setup grants hours through its own advance-hours request, and only
+// affect-hours regenerates on the granted passes.
+TEST(AffectHoursTranscript, OnlyAffectHoursRegeneratesOnTheHoursItsRequestGrants)
+{
+    harness::ScheduleRegistry registry;
+    ASSERT_TRUE(harness::register_affect_hours_schedule(registry));
+    ASSERT_TRUE(harness::register_affect_hours_without_regen_schedule(registry));
+
+    for (const bool regenerates : { true, false }) {
+        std::string name(harness::AFFECT_HOURS_WITHOUT_REGEN_SCHEDULE_NAME);
+        if (regenerates) {
+            name = std::string(harness::AFFECT_HOURS_SCHEDULE_NAME);
+        }
+        const harness::ScheduleDefinition* const definition = registry.find(name);
+        ASSERT_NE(definition, nullptr) << name;
+        const std::shared_ptr<harness_tests::FakeControlChannel::State> channel_state
+            = std::make_shared<harness_tests::FakeControlChannel::State>();
+        channel_state->lines_to_deliver = { "advance-hours 1" };
+        harness::HarnessControlledSchedule wrapper { name, definition->create_setup(),
+            std::make_unique<harness_tests::FakeControlChannel>(channel_state) };
+
+        int fast_passes = 0;
+        int regenerating_passes = 0;
+        for (int pass_number = 1; pass_number <= FAST_UPDATE_RATE + 1; ++pass_number) {
+            const GameTickSchedule::WorldPass world_pass = wrapper.next_pass();
+            if (world_pass.run_fast_update) {
+                fast_passes++;
+            }
+            if (world_pass.run_regeneration) {
+                regenerating_passes++;
+            }
+        }
+
+        EXPECT_EQ(fast_passes, FAST_UPDATE_RATE) << name << ": expected the granted hour to run";
+        int expected_regenerating_passes = 0;
+        if (regenerates) {
+            expected_regenerating_passes = FAST_UPDATE_RATE;
+        }
+        EXPECT_EQ(regenerating_passes, expected_regenerating_passes) << name;
+        const std::vector<std::string> expected_replies
+            = { "ready schedule=" + name + " hours=0", "done advance-hours 1 hours=1" };
+        EXPECT_EQ(channel_state->replies, expected_replies) << name;
+    }
+}
+
 TEST(AffectHoursTranscript, SendsTheReadyLineFirst)
 {
     AffectHoursRun run;

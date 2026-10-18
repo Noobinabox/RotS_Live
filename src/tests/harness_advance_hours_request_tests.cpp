@@ -51,7 +51,7 @@ std::uint64_t passes_in_hours(int hours)
 TEST(AdvanceHoursRequest, IsNamedAdvanceHours)
 {
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     const harness::AdvanceHoursRequest request(schedule);
 
     EXPECT_EQ(request.name(), harness::AdvanceHoursRequest::NAME) << "Unexpected request name.";
@@ -60,7 +60,7 @@ TEST(AdvanceHoursRequest, IsNamedAdvanceHours)
 TEST(AdvanceHoursRequest, GrantsAWholeNumberOfHoursAndDefersItsReply)
 {
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
 
     const harness::RequestOutcome outcome = request_hours(request, "3");
@@ -79,7 +79,7 @@ TEST(AdvanceHoursRequest, AcceptsTheSmallestAndLargestHourCounts)
     const std::vector<int> hour_counts = { 1, harness::AdvanceHoursRequest::MAX_REQUESTED_HOURS };
     for (const int hours : hour_counts) {
         const std::shared_ptr<harness::AffectHoursSchedule> schedule
-            = std::make_shared<harness::AffectHoursSchedule>();
+            = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
         harness::AdvanceHoursRequest request(schedule);
 
         const harness::RequestOutcome outcome = request_hours(request, std::to_string(hours));
@@ -95,7 +95,7 @@ TEST(AdvanceHoursRequest, AcceptsTheSmallestAndLargestHourCounts)
 TEST(AdvanceHoursRequest, WaitsForTheWholeBacklogWhenQueuedBehindAnotherGrant)
 {
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     static_cast<void>(request_hours(request, "1"));
 
@@ -110,7 +110,7 @@ TEST(AdvanceHoursRequest, WaitsForTheWholeBacklogWhenQueuedBehindAnotherGrant)
 TEST(AdvanceHoursRequest, BuildsItsReplyFromTheHoursCompletedWhenItIsSent)
 {
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     const harness::RequestOutcome outcome = request_hours(request, "1");
     const harness::DeferredReply* const deferred = std::get_if<harness::DeferredReply>(&outcome);
@@ -131,7 +131,7 @@ TEST(AdvanceHoursRequest, RefusesAnHourCountOutOfRange)
         = { "0", std::to_string(harness::AdvanceHoursRequest::MAX_REQUESTED_HOURS + 1) };
     for (const std::string_view hour_text : hour_texts) {
         const std::shared_ptr<harness::AffectHoursSchedule> schedule
-            = std::make_shared<harness::AffectHoursSchedule>();
+            = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
         harness::AdvanceHoursRequest request(schedule);
 
         const harness::RequestOutcome outcome = request_hours(request, hour_text);
@@ -150,7 +150,7 @@ TEST(AdvanceHoursRequest, RefusesASignPaddingLeadingZerosOrTrailingText)
     const std::vector<std::string> hour_texts = { "-1", "+1", " 1", "1 ", "01", "1x", "x", "" };
     for (const std::string_view hour_text : hour_texts) {
         const std::shared_ptr<harness::AffectHoursSchedule> schedule
-            = std::make_shared<harness::AffectHoursSchedule>();
+            = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
         harness::AdvanceHoursRequest request(schedule);
 
         const harness::RequestOutcome outcome = request_hours(request, hour_text);
@@ -167,7 +167,7 @@ TEST(AdvanceHoursRequest, RefusesASignPaddingLeadingZerosOrTrailingText)
 TEST(AdvanceHoursRequest, RefusesALineWithNoHourCount)
 {
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     const std::string bare_name(harness::AdvanceHoursRequest::NAME);
 
@@ -184,13 +184,13 @@ TEST(AdvanceHoursRequest, RepliesWithTheSchedulesReasonWhenItRefusesTheHours)
 {
     const int maximum = harness::AffectHoursSchedule::MAX_PENDING_HOURS;
     const std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     static_cast<void>(request_hours(request, std::to_string(maximum)));
 
     const harness::RequestOutcome outcome = request_hours(request, "1");
 
-    harness::AffectHoursSchedule reference;
+    harness::AffectHoursSchedule reference(harness::Regeneration::On);
     static_cast<void>(reference.grant_hours(maximum));
     const std::optional<std::string> refusal = reference.grant_hours(1);
     ASSERT_TRUE(refusal.has_value()) << "Expected the reference schedule to refuse.";
@@ -204,7 +204,7 @@ TEST(AdvanceHoursRequest, RepliesWithTheSchedulesReasonWhenItRefusesTheHours)
 TEST(AdvanceHoursRequest, RefusesAGrantOnceItsScheduleHasBeenDestroyed)
 {
     std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     schedule.reset();
 
@@ -225,7 +225,7 @@ TEST(AdvanceHoursRequest, RefusesAGrantOnceItsScheduleHasBeenDestroyed)
 TEST(AdvanceHoursRequest, SendsARefusalAsItsDeferredReplyOnceItsScheduleHasBeenDestroyed)
 {
     std::shared_ptr<harness::AffectHoursSchedule> schedule
-        = std::make_shared<harness::AffectHoursSchedule>();
+        = std::make_shared<harness::AffectHoursSchedule>(harness::Regeneration::On);
     harness::AdvanceHoursRequest request(schedule);
     const harness::RequestOutcome outcome = request_hours(request, "1");
     const harness::DeferredReply* const deferred = std::get_if<harness::DeferredReply>(&outcome);

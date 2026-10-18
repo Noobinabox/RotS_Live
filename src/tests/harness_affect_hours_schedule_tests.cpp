@@ -50,6 +50,9 @@ bool runs_other_updates(const GameTickSchedule::WorldPass& world_pass)
         || world_pass.run_violence || world_pass.run_skill_timer;
 }
 
+// Passes beyond the granted hours, so the idle passes after them are checked too.
+constexpr int IDLE_PASSES_AFTER_GRANT = 5;
+
 // Grants hours to schedule and fails the test when they are refused.
 void grant_or_fail(harness::AffectHoursSchedule& schedule, int hours)
 {
@@ -61,7 +64,7 @@ void grant_or_fail(harness::AffectHoursSchedule& schedule, int hours)
 
 TEST(AffectHoursSchedule, RunsNoWorldUpdateAtPhaseZeroUntilHoursAreGranted)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
 
     for (int pass_number = 1; pass_number <= FAST_UPDATE_RATE; ++pass_number) {
         const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
@@ -78,7 +81,7 @@ TEST(AffectHoursSchedule, RunsNoWorldUpdateAtPhaseZeroUntilHoursAreGranted)
 
 TEST(AffectHoursSchedule, RunsAGrantedHourAsFastUpdatesThroughThePhasesEndingWithTheHourlyUpdate)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, 1);
 
     for (int pass_number = 1; pass_number <= FAST_UPDATE_RATE; ++pass_number) {
@@ -100,7 +103,7 @@ TEST(AffectHoursSchedule, RunsAGrantedHourAsFastUpdatesThroughThePhasesEndingWit
 
 TEST(AffectHoursSchedule, KeepsThePhaseContractOnEveryPass)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, 3);
     int previous_phase = 0;
 
@@ -114,7 +117,7 @@ TEST(AffectHoursSchedule, KeepsThePhaseContractOnEveryPass)
 
 TEST(AffectHoursSchedule, NeverRunsZoneUpdatesMobileActivityCombatOrSkillTimers)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, 2);
 
     for (int pass_number = 1; pass_number <= 2 * FAST_UPDATE_RATE + 3; ++pass_number) {
@@ -126,7 +129,7 @@ TEST(AffectHoursSchedule, NeverRunsZoneUpdatesMobileActivityCombatOrSkillTimers)
 
 TEST(AffectHoursSchedule, QueuesASecondGrantBehindTheOneRunning)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, 1);
     constexpr int PASSES_BEFORE_SECOND_GRANT = 5;
     for (int pass_number = 1; pass_number <= PASSES_BEFORE_SECOND_GRANT; ++pass_number) {
@@ -150,7 +153,7 @@ TEST(AffectHoursSchedule, QueuesASecondGrantBehindTheOneRunning)
 
 TEST(AffectHoursSchedule, RefusesAGrantOfFewerThanOneHourAndKeepsItsState)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
 
     EXPECT_TRUE(schedule.grant_hours(0).has_value()) << "Expected 0 hours to be refused.";
     EXPECT_TRUE(schedule.grant_hours(-3).has_value()) << "Expected -3 hours to be refused.";
@@ -159,7 +162,7 @@ TEST(AffectHoursSchedule, RefusesAGrantOfFewerThanOneHourAndKeepsItsState)
 
 TEST(AffectHoursSchedule, RefusesAGrantThatWouldLeaveMoreThanTheMaximumHoursPending)
 {
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, harness::AffectHoursSchedule::MAX_PENDING_HOURS);
 
     EXPECT_TRUE(schedule.grant_hours(1).has_value()) << "Expected one more hour to be refused.";
@@ -186,10 +189,80 @@ TEST(AffectHoursSchedule, OrdersAnHoursFastAndHourlyUpdatesAsRealTimeDoes)
     ASSERT_EQ(real_time_hour.size(), static_cast<std::size_t>(FAST_UPDATE_RATE))
         << "Expected one real-time hour to hold FAST_UPDATE_RATE fast updates.";
 
-    harness::AffectHoursSchedule schedule;
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
     grant_or_fail(schedule, 1);
     const std::vector<FastPass> granted_hour = fast_passes_of(schedule, FAST_UPDATE_RATE);
 
     EXPECT_TRUE(granted_hour == real_time_hour)
         << "Expected a granted hour's phases and hourly update in real time's order.";
+}
+
+TEST(AffectHoursSchedule, RegeneratesOnEveryGrantedFastPassWhenRegenerationIsOn)
+{
+    harness::AffectHoursSchedule schedule(harness::Regeneration::On);
+    grant_or_fail(schedule, 2);
+
+    int regenerating_passes = 0;
+    for (int pass_number = 1; pass_number <= 2 * FAST_UPDATE_RATE + IDLE_PASSES_AFTER_GRANT;
+         ++pass_number) {
+        const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
+        EXPECT_EQ(world_pass.run_regeneration, world_pass.run_fast_update)
+            << "Expected regeneration exactly with the fast update; pass " << pass_number;
+        if (world_pass.run_regeneration) {
+            regenerating_passes++;
+        }
+    }
+    EXPECT_EQ(regenerating_passes, 2 * FAST_UPDATE_RATE)
+        << "Expected every granted pass, and no idle pass, to regenerate.";
+}
+
+TEST(AffectHoursSchedule, NeverRegeneratesWhenRegenerationIsOff)
+{
+    harness::AffectHoursSchedule schedule(harness::Regeneration::Off);
+    grant_or_fail(schedule, 2);
+    int previous_phase = 0;
+
+    for (int pass_number = 1; pass_number <= 2 * FAST_UPDATE_RATE + IDLE_PASSES_AFTER_GRANT;
+         ++pass_number) {
+        const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
+        EXPECT_FALSE(world_pass.run_regeneration) << "Expected no regeneration; pass " << pass_number;
+        EXPECT_TRUE(keeps_the_phase_contract(previous_phase, world_pass))
+            << "on pass " << pass_number;
+        previous_phase = world_pass.time_phase;
+    }
+    EXPECT_EQ(schedule.hours_completed(), 2) << "Expected both granted hours to run.";
+}
+
+// The regeneration choice changes run_regeneration and nothing else, through queued grants and
+// the idle passes after them.
+TEST(AffectHoursSchedule, RunsTheSameUpdatesWithAndWithoutRegeneration)
+{
+    harness::AffectHoursSchedule regenerating(harness::Regeneration::On);
+    harness::AffectHoursSchedule non_regenerating(harness::Regeneration::Off);
+    grant_or_fail(regenerating, 1);
+    grant_or_fail(non_regenerating, 1);
+
+    for (int pass_number = 1; pass_number <= 3 * FAST_UPDATE_RATE + IDLE_PASSES_AFTER_GRANT;
+         ++pass_number) {
+        if (pass_number == FAST_UPDATE_RATE / 2) {
+            grant_or_fail(regenerating, 2);
+            grant_or_fail(non_regenerating, 2);
+        }
+        const GameTickSchedule::WorldPass with_regen = regenerating.next_pass();
+        const GameTickSchedule::WorldPass without_regen = non_regenerating.next_pass();
+
+        EXPECT_EQ(with_regen.time_phase, without_regen.time_phase) << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_zone_update, without_regen.run_zone_update) << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_mobile_activity, without_regen.run_mobile_activity)
+            << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_violence, without_regen.run_violence) << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_hourly_update, without_regen.run_hourly_update)
+            << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_fast_update, without_regen.run_fast_update) << "pass " << pass_number;
+        EXPECT_EQ(with_regen.run_skill_timer, without_regen.run_skill_timer) << "pass " << pass_number;
+        EXPECT_EQ(regenerating.pending_passes(), non_regenerating.pending_passes())
+            << "pass " << pass_number;
+        EXPECT_EQ(regenerating.hours_completed(), non_regenerating.hours_completed())
+            << "pass " << pass_number;
+    }
 }

@@ -101,6 +101,7 @@ set(ROTS_SERVER_SOURCES
     color.cpp
     combat_manager.cpp
     comm.cpp
+    command_line_parser.cpp
     config.cpp
     consts.cpp
     crashsave_schedule.cpp
@@ -196,6 +197,7 @@ set(ROTS_TEST_SOURCES
     tests/character_json_tests.cpp
     tests/color_tests.cpp
     tests/command_interpreter_parsing_tests.cpp
+    tests/command_line_parser_tests.cpp
     tests/crashsave_schedule_tests.cpp
     tests/current_time_phase_tests.cpp
     tests/damage_meters_tests.cpp

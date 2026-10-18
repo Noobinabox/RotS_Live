@@ -43,6 +43,7 @@ SOURCES := \
     color.cpp \
     combat_manager.cpp \
     comm.cpp \
+    command_line_parser.cpp \
     config.cpp \
     consts.cpp \
     crashsave_schedule.cpp \

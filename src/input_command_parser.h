@@ -48,16 +48,16 @@ struct typed_line {
 [[nodiscard]] typed_line parse_typed_line(std::string_view line);
 
 // find_command_number's answer for an empty command word, as the game's older table search gives.
-inline constexpr int empty_command_word_number = 0;
+inline constexpr int EMPTY_COMMAND_WORD_NUMBER = 0;
 // find_command_number's answer when no command matches.
-inline constexpr int unknown_command_number = -1;
+inline constexpr int UNKNOWN_COMMAND_NUMBER = -1;
 
 // The number of the first command, in table order, that command_word is a prefix of, comparing
 // command_word with only A-Z lowercased. Numbers count from 1 for the table's first entry.
-// Returns empty_command_word_number for an empty command_word without searching, and
-// unknown_command_number when nothing matches.
+// Returns EMPTY_COMMAND_WORD_NUMBER for an empty command_word without searching, and
+// UNKNOWN_COMMAND_NUMBER when nothing matches.
 // command_names is a list of lowercase names ended by an entry that starts with '\n'. A null
-// command_names is logged and returns unknown_command_number.
+// command_names is logged and returns UNKNOWN_COMMAND_NUMBER.
 [[nodiscard]] int find_command_number(std::string_view command_word,
     const char* const* command_names);
 

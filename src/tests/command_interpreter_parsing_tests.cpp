@@ -63,8 +63,8 @@ char bow_name[] = "bow";
 char smile_name[] = "smile";
 char twitch_name[] = "twitch";
 
-constexpr int middle_social = 1; // smile
-constexpr int twitch_social = 2;
+constexpr int MIDDLE_SOCIAL = 1; // smile
+constexpr int TWITCH_SOCIAL = 2;
 
 } // namespace
 
@@ -351,7 +351,7 @@ TEST_F(CommandInterpreterParsingTest, FallsBackToSocialsForACommandAboveTheChara
     type("at");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.waiting_subcmd, MIDDLE_SOCIAL);
     EXPECT_EQ(last_command.text, "");
 }
 
@@ -364,7 +364,7 @@ TEST_F(CommandInterpreterParsingTest, FallsBackToSocialsForACommandARetiredChara
     type("sm");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.waiting_subcmd, MIDDLE_SOCIAL);
 }
 
 TEST_F(CommandInterpreterParsingTest, ReportsAnUnknownWordWithNoSocial)
@@ -381,7 +381,7 @@ TEST_F(CommandInterpreterParsingTest, ReadsTheSocialWordPastFillWords)
     type("the smile");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.waiting_subcmd, MIDDLE_SOCIAL);
     EXPECT_EQ(last_command.text, " smile");
 }
 
@@ -391,7 +391,7 @@ TEST_F(CommandInterpreterParsingTest, TreatsUppercaseFillWordsAsFillWords)
 
     type("THE TWITCH");
 
-    EXPECT_EQ(last_command.waiting_subcmd, twitch_social);
+    EXPECT_EQ(last_command.waiting_subcmd, TWITCH_SOCIAL);
 }
 
 TEST_F(CommandInterpreterParsingTest, LooksUpASocialAbbreviationWithFindAction)
@@ -401,7 +401,7 @@ TEST_F(CommandInterpreterParsingTest, LooksUpASocialAbbreviationWithFindAction)
     type("twi");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, twitch_social);
+    EXPECT_EQ(last_command.waiting_subcmd, TWITCH_SOCIAL);
 }
 
 TEST_F(CommandInterpreterParsingTest, PerformsTheMiddleSocialForAFillWordAlone)
@@ -411,7 +411,7 @@ TEST_F(CommandInterpreterParsingTest, PerformsTheMiddleSocialForAFillWordAlone)
     type("from");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.waiting_subcmd, MIDDLE_SOCIAL);
 }
 
 TEST_F(CommandInterpreterParsingTest, ReadsAQuotedSocialWordAsThePreviousFillWordsFirstLetter)
@@ -421,7 +421,7 @@ TEST_F(CommandInterpreterParsingTest, ReadsAQuotedSocialWordAsThePreviousFillWor
     type("the 'bob");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, twitch_social) << "t finds twitch";
+    EXPECT_EQ(last_command.waiting_subcmd, TWITCH_SOCIAL) << "t finds twitch";
     EXPECT_EQ(last_command.text, " 'bob");
 }
 
@@ -505,7 +505,7 @@ TEST_F(CommandInterpreterParsingTest, PerformsTheMiddleSocialForABareQuotedWord)
     type("''x");
 
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
-    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.waiting_subcmd, MIDDLE_SOCIAL);
     EXPECT_EQ(last_command.text, " 'x");
 }
 

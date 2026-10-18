@@ -8,7 +8,7 @@ namespace {
 
 // A small command table in the game's format: lowercase names, an empty name like the game's
 // bounce entry, and a "\n" entry that ends it.
-const char* const test_command_names[] = { "north", "east", "south", "say", "", "\n" };
+const char* const TEST_COMMAND_NAMES[] = { "north", "east", "south", "say", "", "\n" };
 
 bool lies_inside(std::string_view part, std::string_view whole)
 {
@@ -98,31 +98,31 @@ TEST(ParseTypedLine, PointsIntoTheGivenLine)
 
 TEST(FindCommandNumber, MatchesThePrefixOfTheFirstEntryInTableOrder)
 {
-    EXPECT_EQ(find_command_number("s", test_command_names), 3);
-    EXPECT_EQ(find_command_number("sa", test_command_names), 4);
-    EXPECT_EQ(find_command_number("north", test_command_names), 1);
-    EXPECT_EQ(find_command_number("NoRTH", test_command_names), 1);
+    EXPECT_EQ(find_command_number("s", TEST_COMMAND_NAMES), 3);
+    EXPECT_EQ(find_command_number("sa", TEST_COMMAND_NAMES), 4);
+    EXPECT_EQ(find_command_number("north", TEST_COMMAND_NAMES), 1);
+    EXPECT_EQ(find_command_number("NoRTH", TEST_COMMAND_NAMES), 1);
 }
 
 TEST(FindCommandNumber, ReturnsZeroForAnEmptyWord)
 {
-    EXPECT_EQ(find_command_number("", test_command_names), empty_command_word_number);
+    EXPECT_EQ(find_command_number("", TEST_COMMAND_NAMES), EMPTY_COMMAND_WORD_NUMBER);
 }
 
 TEST(FindCommandNumber, ReturnsMinusOneWhenNothingMatches)
 {
-    EXPECT_EQ(find_command_number("northx", test_command_names), unknown_command_number);
-    EXPECT_EQ(find_command_number("x", test_command_names), unknown_command_number);
+    EXPECT_EQ(find_command_number("northx", TEST_COMMAND_NAMES), UNKNOWN_COMMAND_NUMBER);
+    EXPECT_EQ(find_command_number("x", TEST_COMMAND_NAMES), UNKNOWN_COMMAND_NUMBER);
 }
 
 TEST(FindCommandNumber, NeverMatchesAnEmptyName)
 {
-    EXPECT_EQ(find_command_number("q", test_command_names), unknown_command_number);
+    EXPECT_EQ(find_command_number("q", TEST_COMMAND_NAMES), UNKNOWN_COMMAND_NUMBER);
 }
 
 TEST(FindCommandNumber, ReturnsMinusOneForANullTable)
 {
-    EXPECT_EQ(find_command_number("north", nullptr), unknown_command_number);
+    EXPECT_EQ(find_command_number("north", nullptr), UNKNOWN_COMMAND_NUMBER);
 }
 
 TEST(ViewTerminatedText, StopsAtTheTerminatorOrTheLimit)

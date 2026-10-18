@@ -24,12 +24,12 @@ char lowercase_letter(char character)
 }
 
 // The characters isspace() accepts in the C locale, which the game never changes.
-constexpr std::string_view social_whitespace = " \t\n\v\f\r";
+constexpr std::string_view SOCIAL_WHITESPACE = " \t\n\v\f\r";
 
 // Words skipped before a social's word, as in "smile at bob". The same words as the game's fill
 // table in interpre.cpp; a test fails when the two differ.
 using namespace std::string_view_literals;
-constexpr std::array fill_words = { "in"sv, "from"sv, "with"sv, "the"sv, "on"sv, "at"sv, "to"sv };
+constexpr std::array FILL_WORDS = { "in"sv, "from"sv, "with"sv, "the"sv, "on"sv, "at"sv, "to"sv };
 
 bool equals_lowercased(std::string_view word, std::string_view lowercase_word)
 {
@@ -44,7 +44,7 @@ bool equals_lowercased(std::string_view word, std::string_view lowercase_word)
 
 bool is_fill_word(std::string_view word)
 {
-    return std::any_of(fill_words.begin(), fill_words.end(),
+    return std::any_of(FILL_WORDS.begin(), FILL_WORDS.end(),
         [word](std::string_view fill_word) -> bool { return equals_lowercased(word, fill_word); });
 }
 
@@ -106,10 +106,10 @@ int find_command_number(std::string_view command_word, const char* const* comman
 {
     if (command_names == nullptr) {
         log((std::string("SYSERR: ") + __func__ + ": called with a null command table").c_str());
-        return unknown_command_number;
+        return UNKNOWN_COMMAND_NUMBER;
     }
     if (command_word.empty()) {
-        return empty_command_word_number;
+        return EMPTY_COMMAND_WORD_NUMBER;
     }
 
     for (int index = 0; command_names[index][0] != '\n'; ++index) {
@@ -117,7 +117,7 @@ int find_command_number(std::string_view command_word, const char* const* comman
             return index + 1;
         }
     }
-    return unknown_command_number;
+    return UNKNOWN_COMMAND_NUMBER;
 }
 
 std::string_view view_terminated_text(const char* text, std::size_t max_length)
@@ -140,7 +140,7 @@ std::string_view read_social_word(std::string_view text)
     std::string_view last_fill_word;
 
     for (;;) {
-        const std::size_t word_start = remaining.find_first_not_of(social_whitespace);
+        const std::size_t word_start = remaining.find_first_not_of(SOCIAL_WHITESPACE);
         if (word_start == std::string_view::npos) {
             return remaining.substr(remaining.size());
         }

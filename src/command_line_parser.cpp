@@ -26,7 +26,8 @@ char lowercase_letter(char character)
 // The characters isspace() accepts in the C locale, which the game never changes.
 constexpr std::string_view social_whitespace = " \t\n\v\f\r";
 
-// Words skipped before a social's word, as in "smile at bob".
+// Words skipped before a social's word, as in "smile at bob". The same words as the game's fill
+// table in interpre.cpp; a test fails when the two differ.
 constexpr std::array<std::string_view, 7> fill_words
     = { "in", "from", "with", "the", "on", "at", "to" };
 
@@ -146,9 +147,9 @@ std::string_view read_social_word(std::string_view text)
         remaining.remove_prefix(word_start);
 
         // A word that starts with a quote is not read. The result is the first letter of the last
-        // fill word skipped, or nothing when none was. Socials have always been looked up this
-        // way after a fill word, so "the 'bob" performs the "t" social at bob, and this keeps
-        // that result.
+        // fill word skipped, or nothing when none was, so "the 'bob" performs the "t" social at
+        // bob. Players rely on what a typed line does, so this matches the game's first-argument
+        // reading rather than reading the quoted word.
         if (remaining.front() == '\'') {
             return last_fill_word.substr(0, 1);
         }

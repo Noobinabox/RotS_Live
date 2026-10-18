@@ -5,8 +5,9 @@
 #include <string_view>
 
 // Reading a typed command line. These functions see only text and the tables they are given;
-// whether a character may use what they find is the caller's decision. None allocates, and every
-// returned view points into the text passed in.
+// whether a character may use what they find is the caller's decision. None allocates on valid
+// input (only logging a null argument does), and every returned view points into the text passed
+// in.
 
 // What a typed line starts with, after its leading spaces.
 enum class typed_line_kind {

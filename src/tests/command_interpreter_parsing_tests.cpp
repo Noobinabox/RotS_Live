@@ -1,5 +1,6 @@
 #include "../structs.h"
 #include "../db.h"
+#include "../command_line_parser.h"
 #include "../interpre.h"
 #include "../utils.h"
 
@@ -9,6 +10,7 @@
 #include <array>
 #include <cstring>
 #include <string>
+#include <vector>
 
 /*
  * How command_interpreter turns a typed line into a command and the text its handler receives.
@@ -22,6 +24,7 @@ extern const char* command[];
 extern social_messg* soc_mess_list;
 extern int social_list_top;
 extern int no_specials;
+extern char* fill[];
 void clear_char(struct char_data* ch, int mode);
 int old_search_block(const char* argument, int begin, unsigned int length, const char** list,
     int mode);
@@ -504,4 +507,23 @@ TEST_F(CommandInterpreterParsingTest, PerformsTheMiddleSocialForABareQuotedWord)
     EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
     EXPECT_EQ(last_command.waiting_subcmd, middle_social);
     EXPECT_EQ(last_command.text, " 'x");
+}
+
+// The social word must skip exactly the fill words the game's other commands skip, so a change to
+// either list fails here until both agree.
+TEST(SocialWordFillWords, MatchTheGamesFillWordTable)
+{
+    std::vector<std::string> game_fill_words;
+    for (int index = 0; fill[index][0] != '\n'; ++index) {
+        game_fill_words.emplace_back(fill[index]);
+    }
+    const std::vector<std::string> expected_fill_words
+        = { "in", "from", "with", "the", "on", "at", "to" };
+    EXPECT_EQ(game_fill_words, expected_fill_words);
+
+    for (const std::string& fill_word : game_fill_words) {
+        const std::string line = fill_word + " smile";
+        EXPECT_EQ(read_social_word(line), "smile") << fill_word << " is not skipped";
+    }
+    EXPECT_EQ(read_social_word("tiny smile"), "tiny") << "a word outside the table is skipped";
 }

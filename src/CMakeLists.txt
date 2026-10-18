@@ -210,6 +210,7 @@ set(ROTS_TEST_SOURCES
     tests/room_lists_tests.cpp
     tests/fight_proc_tests.cpp
     tests/game_heartbeat_tests.cpp
+    tests/game_heartbeat_world_update_tests.cpp
     tests/game_time_text_tests.cpp
     tests/mage_tests.cpp
     tests/ObjFlagDataBuilder.cpp

@@ -1623,7 +1623,8 @@ static bool regenerate_points(char_data* character)
 // from negative regeneration ends the pass: the dead character may have been freed.
 void regeneration_update()
 {
-    for (char_data* character = character_list; character != nullptr; character = character->next) {
+    for (char_data* character = character_list; character != nullptr;
+        character = character->next) {
         const bool died_of_regeneration = regenerate_points(character);
         if (died_of_regeneration) {
             return;
@@ -1635,7 +1636,8 @@ void regeneration_update()
 // the breathing and Fame War checks.
 void fast_update()
 {
-    for (char_data* character = character_list; character != nullptr; character = character->next) {
+    for (char_data* character = character_list; character != nullptr;
+        character = character->next) {
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);
         }

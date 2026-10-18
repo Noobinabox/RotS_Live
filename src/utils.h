@@ -13,6 +13,7 @@
 
 #include "platdef.h" /* For byte, sh_int, ush_int, etc. */
 #include "structs.h" /* For time_info_data */
+#include "server_log.h" /* For log() */
 
 #include <string>
 
@@ -52,7 +53,6 @@ char unaccent(char);
 char* str_dup(const char* source);
 int str_cmp(const char* arg1, const char* arg2);
 int strn_cmp(const char* arg1, const char* arg2, int n);
-void log(const char* str);
 void mudlog(const char* str, char type, sh_int level, byte file);
 bool mudlog_reaches(const struct char_data* ch, int level, int type);
 void mudlog_debug_mob(const char* buf, const char_data* ch);

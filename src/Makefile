@@ -98,6 +98,7 @@ SOURCES := \
     save_benchmark.cpp \
     savebench.cpp \
     script.cpp \
+    server_log.cpp \
     shapemdl.cpp \
     shapemob.cpp \
     shapeobj.cpp \

@@ -1116,23 +1116,6 @@ void log_death_trap(const struct char_data* ch)
     mudlog(buf, BRF, LEVEL_IMMORT, TRUE);
 }
 
-/* writes a string to the log */
-void log(const char* str)
-{
-    // time_t ct(0);
-    // char* time_string = asctime(localtime(&ct));
-
-    //*(time_string + std::strlen(time_string) - 1) = '\0';
-    // fprintf(stderr, "%-19.19s :: %s\n", time_string, str);
-
-    long ct;
-    char* tmstr;
-    ct = time(0);
-    tmstr = asctime(localtime(&ct));
-    *(tmstr + strlen(tmstr) - 1) = '\0';
-    fprintf(stderr, "%-19.19s :: %s\n", tmstr, str);
-}
-
 void mudlog(const char* str, char type, sh_int level, byte file)
 {
     char buf[8000];

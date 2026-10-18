@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - release-frodo
+      - release-frodo-next
   pull_request:
     branches:
       - master
       - release-frodo
+      - release-frodo-next
 
 permissions:
   contents: read

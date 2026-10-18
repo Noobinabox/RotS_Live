@@ -12,10 +12,12 @@ on:
   push:
     branches:
       - release-frodo
+      - release-frodo-next
   pull_request:
     branches:
       - master
       - release-frodo
+      - release-frodo-next
     types: [opened, synchronize, reopened, edited]
 
 permissions:

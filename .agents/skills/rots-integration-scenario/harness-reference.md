@@ -442,8 +442,9 @@ Without a schedule the server runs on the wall clock: mob activity, combat, zone
 hourly update all happen in real time.
 
 With `@pytest.mark.schedule("affect-hours")` the harness binary starts and writes
-`harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits for it. World updates then run only when granted. `advance_hours(n)` writes `advance-hours n`
-(1 to 1000) to the server's stdin; the reply is `harness: done advance-hours n hours=<total>` or
+`harness: ready schedule=affect-hours hours=0` to stdout; the fixture waits for it. World
+updates then run only when granted. `advance_hours(n)` writes `advance-hours n` (1 to 1000) to
+the server's stdin; the reply is `harness: done advance-hours n hours=<total>` or
 `harness: error <reason>`, which raises `TimeControlError`.
 
 | An advanced hour runs | It never runs |
@@ -452,8 +453,8 @@ With `@pytest.mark.schedule("affect-hours")` the harness binary starts and write
 
 `@pytest.mark.schedule("affect-hours-without-regen")` runs the same hours and requests, and its
 ready line names it, but its fast updates never regenerate hit points, moves or mana; the rest
-of `fast_update` (the Power of Arda, the breathing and Fame War checks) still runs. Choose it when a scenario
-measures one of those pools exactly while an affect changes it.
+of `fast_update` (the Power of Arda, the breathing and Fame War checks) still runs. Choose it
+when a scenario measures one of those pools exactly while an affect changes it.
 
 So a scenario needing combat, wandering mobs or resets has no schedule today: it uses a plain
 server, or a new schedule (extending-the-harness.md).
@@ -464,7 +465,10 @@ Every draw goes through one `std::rand()` stream (`number()` and `dice()`, `util
 seeded from `--random-seed` (`ROTS_IT_SEED`). On a plain server mob activity and combat draw on
 the wall clock, so the seed does not make a run repeat. Under `affect-hours`, between requests
 only the scenario's commands draw, and each hour draws in the same order (`weather_change`
-among others), so the same commands give the same sequence.
+among others), so the same commands give the same sequence. A run under
+`affect-hours-without-regen` repeats for a seed too, but draws three fewer `number()` values per
+character per fast update than `affect-hours`, so the same seed gives a different sequence and a
+test moved between the two schedules can draw differently.
 
 ## The test world
 

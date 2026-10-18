@@ -18,13 +18,11 @@ enum class Regeneration {
     Off,
 };
 
-// Schedules whole game hours of the hourly and fast updates, and only the hours granted to it,
-// regenerating on its fast-update passes when built with Regeneration::On. It never runs zone
-// updates, mobile activity, combat or skill-timer countdowns.
+// Schedules whole game hours of the hourly and fast updates, and only the hours granted to it.
+// It never runs zone updates, mobile activity, combat or skill-timer countdowns.
 class AffectHoursSchedule : public GameTickSchedule {
 public:
-    // Builds a schedule with nothing granted, whose fast-update passes regenerate as
-    // regeneration says.
+    // Builds a schedule with nothing granted; its regeneration is fixed for its lifetime.
     explicit AffectHoursSchedule(Regeneration regeneration);
 
     // The most game hours that may be granted and not yet run.
@@ -37,9 +35,8 @@ public:
 
     // Returns the next granted pass, or a pass with no world update when nothing is granted. A
     // granted hour is fast updates at phases 1 to FAST_UPDATE_RATE - 1, then the hourly update
-    // with the fast update at phase 0; each of those passes regenerates when the schedule was
-    // built with Regeneration::On. Every pass carries the phase in force, which is 0 between
-    // granted hours.
+    // with the fast update at phase 0; each of those passes regenerates as the schedule's
+    // Regeneration says. Every pass carries the phase in force, which is 0 between granted hours.
     [[nodiscard]] WorldPass next_pass() override;
 
     // The granted passes next_pass() has not yet returned.

@@ -33,8 +33,6 @@ POISON_HOURS = 4
 # SPELL_RESIST_POISON (which would shorten the duration), and the Beorning reduction is for
 # Beornings only. point_update's own 5-point poison damage needs AFF_POISON without a
 # SPELL_POISON affect, which never happens here: the bit is the affect's own and goes with it.
-# Under affect-hours regeneration cannot raise full hit points before the first tick, so only
-# that tick's damage reads exactly there.
 POISON_TICK_DAMAGE = 5
 # Damage all of the poison's ticks do together, with no regeneration to offset it.
 TOTAL_POISON_DAMAGE = POISON_TICK_DAMAGE * POISON_HOURS
@@ -97,6 +95,8 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
 
     first_hour = text_after_an_hour(server, mortal, POISON_TICK_MARKER)
     assert first_hour.count(POISON_TICK_MARKER) == 1, first_hour
+    # Regeneration cannot raise full hit points before the first tick, so only that tick's
+    # damage reads exactly under affect-hours.
     assert hit_points(mortal) == (maximum_hit - POISON_TICK_DAMAGE, maximum_hit)
 
     for hour in range(2, POISON_HOURS + 1):

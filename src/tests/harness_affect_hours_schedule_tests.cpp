@@ -225,7 +225,8 @@ TEST(AffectHoursSchedule, NeverRegeneratesWhenRegenerationIsOff)
     for (int pass_number = 1; pass_number <= 2 * FAST_UPDATE_RATE + IDLE_PASSES_AFTER_GRANT;
          ++pass_number) {
         const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
-        EXPECT_FALSE(world_pass.run_regeneration) << "Expected no regeneration; pass " << pass_number;
+        EXPECT_FALSE(world_pass.run_regeneration)
+            << "Expected no regeneration; pass " << pass_number;
         EXPECT_TRUE(keeps_the_phase_contract(previous_phase, world_pass))
             << "on pass " << pass_number;
         previous_phase = world_pass.time_phase;
@@ -248,18 +249,13 @@ TEST(AffectHoursSchedule, RunsTheSameUpdatesWithAndWithoutRegeneration)
             grant_or_fail(regenerating, 2);
             grant_or_fail(non_regenerating, 2);
         }
-        const GameTickSchedule::WorldPass with_regen = regenerating.next_pass();
-        const GameTickSchedule::WorldPass without_regen = non_regenerating.next_pass();
+        GameTickSchedule::WorldPass with_regen = regenerating.next_pass();
+        GameTickSchedule::WorldPass without_regen = non_regenerating.next_pass();
+        with_regen.run_regeneration = false;
+        without_regen.run_regeneration = false;
 
-        EXPECT_EQ(with_regen.time_phase, without_regen.time_phase) << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_zone_update, without_regen.run_zone_update) << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_mobile_activity, without_regen.run_mobile_activity)
+        EXPECT_EQ(describe_world_pass(with_regen), describe_world_pass(without_regen))
             << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_violence, without_regen.run_violence) << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_hourly_update, without_regen.run_hourly_update)
-            << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_fast_update, without_regen.run_fast_update) << "pass " << pass_number;
-        EXPECT_EQ(with_regen.run_skill_timer, without_regen.run_skill_timer) << "pass " << pass_number;
         EXPECT_EQ(regenerating.pending_passes(), non_regenerating.pending_passes())
             << "pass " << pass_number;
         EXPECT_EQ(regenerating.hours_completed(), non_regenerating.hours_completed())

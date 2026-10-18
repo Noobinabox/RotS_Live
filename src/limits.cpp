@@ -1573,8 +1573,9 @@ void affect_update()
 }
 
 // Regenerates the character's hit points, moves and mana by one fast update's share of their
-// hourly gains, drawing one random roll for each, in that order. Returns true when negative
-// regeneration killed the character: it has been through raw_kill() and must not be used.
+// hourly gains, drawing one random roll for each, in that order. character must be non-null.
+// Returns true when negative regeneration killed the character: it has been through raw_kill()
+// and must not be used.
 static bool regenerate_points(char_data* character)
 {
     int freq = FAST_UPDATE_RATE;

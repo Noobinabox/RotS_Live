@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-// These tests run the affect-hours schedule through its registration, its factory and the
+// These tests run the affect-hours schedules through their registrations, factories and the
 // wrapper, and compare every reply with the literal text the integration harness reads, so a
 // change to the wire text fails here.
 

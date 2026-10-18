@@ -7,7 +7,9 @@
 // fast-update phase.
 class GameTickSchedule {
 public:
-    // The periodic world updates due on one game-loop pass.
+    // The periodic world updates due on one game-loop pass. A field added here also goes in
+    // describe_world_pass() in src/tests/game_tick_schedule_contract.h, which tests compare
+    // passes by.
     struct WorldPass {
         // The game hour's fast-update phase from this pass until the next, 0 to
         // FAST_UPDATE_RATE - 1. It advances by one, wrapping to 0, only on a pass that runs
@@ -22,11 +24,12 @@ public:
         // True when the game hour advances on this pass. Such a pass also runs the fast
         // update, at phase 0.
         bool run_hourly_update = false;
-        // True when the fast update runs on this pass: affects advance, and the per-character
-        // checks run, with regeneration when run_regeneration is also set.
+        // True when the fast update runs on this pass: affects advance and the per-character
+        // checks run.
         bool run_fast_update = false;
         // True when hit points, moves and mana regenerate on this pass. It takes effect only on a
-        // pass that also runs the fast update.
+        // pass that also runs the fast update; a schedule matching the live game sets it with
+        // every fast update.
         bool run_regeneration = false;
         // True when skill cooldowns count down on this pass.
         bool run_skill_timer = false;

@@ -21,8 +21,8 @@ constexpr std::string_view AFFECT_HOURS_SUMMARY
 constexpr std::string_view AFFECT_HOURS_WITHOUT_REGEN_SUMMARY
     = "affect-hours with no hit point, move or mana regeneration";
 
-// Builds an AffectHoursSchedule that regenerates as regeneration says, with an
-// AdvanceHoursRequest that grants it hours. Returns a setup with no schedule if the request
+// Builds an AffectHoursSchedule with the given Regeneration, with an AdvanceHoursRequest that
+// grants it hours. Returns a setup with no schedule if the request
 // cannot be registered; the registry logs why.
 [[nodiscard]] ScheduleSetup create_affect_hours_setup(Regeneration regeneration)
 {

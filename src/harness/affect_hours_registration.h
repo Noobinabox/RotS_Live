@@ -16,9 +16,9 @@ inline constexpr std::string_view AFFECT_HOURS_WITHOUT_REGEN_SCHEDULE_NAME
     = "affect-hours-without-regen";
 
 // Registers the affect-hours schedule under AFFECT_HOURS_SCHEDULE_NAME. Each setup its factory
-// builds holds a fresh AffectHoursSchedule that regenerates on its fast-update passes, which
-// nothing advances until an AdvanceHoursRequest grants it hours, and the ready state "hours=0".
-// Returns false, with the refusal logged, when the registry refuses it.
+// builds holds a fresh AffectHoursSchedule built with Regeneration::On. Nothing advances it until
+// an AdvanceHoursRequest grants it hours, and its ready state is "hours=0". Returns false, with
+// the refusal logged, when the registry refuses it.
 [[nodiscard]] bool register_affect_hours_schedule(ScheduleRegistry& registry);
 
 // Registers the same schedule without regeneration under

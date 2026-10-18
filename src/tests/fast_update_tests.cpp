@@ -1,4 +1,4 @@
-// Fixes what one fast_update() pass does to hit points, moves and mana: each character gains a
+// Pins what one fast_update() pass does to hit points, moves and mana: each character gains a
 // FAST_UPDATE_RATE-th of its hourly gain, the fraction is settled by one random roll per point
 // pool, every pool is capped at its maximum, moves never drop below zero, the breathing and fame
 // war checks run after each character's regen, and a death from negative regen ends the pass. A
@@ -30,19 +30,26 @@ void fast_update(bool regenerate); // limits.cpp: not declared in limits.h
 namespace {
 
 // fast_update()'s regenerate argument, named for the call sites.
-constexpr bool kRegenerate = true;
-constexpr bool kSkipRegeneration = false;
+constexpr bool REGENERATE = true;
+constexpr bool SKIP_REGENERATION = false;
 
 // A room no other suite in the binary uses, below the 1024 that gtest_main.cpp allocates.
-constexpr int kRegenRoom = 1012;
+constexpr int REGEN_ROOM = 1012;
+
+// Whether REGEN_ROOM lies in the world's base allocation, before its extension rooms; world[]
+// silently aliases an index outside it onto another room.
+bool regen_room_is_allocated()
+{
+    return REGEN_ROOM < room_data::BASE_LENGTH - EXTENSION_SIZE;
+}
 
 // A roll at or above any fraction a gain leaves, so a pass adds only the whole points.
-constexpr double kRollAddsNothing = 0.999999;
+constexpr double ROLL_ADDS_NOTHING = 0.999999;
 // A roll below any non-zero fraction, so a pass adds one point more than the whole points.
-constexpr double kRollAddsOnePoint = 0.0;
+constexpr double ROLL_ADDS_ONE_POINT = 0.0;
 // Above the player's hit (0.25) and mana (about 0.1) fractions and below its move fraction
 // (0.40625), so it adds a point only when it is drawn for moves.
-constexpr double kRollAddsOnlyToPlayerMoves = 0.3;
+constexpr double ROLL_ADDS_ONLY_TO_PLAYER_MOVES = 0.3;
 
 // The sleeping player's hourly gains from limits.cpp's formulas and the stats set in
 // build_player():
@@ -50,49 +57,53 @@ constexpr double kRollAddsOnlyToPlayerMoves = 0.3;
 // moves (7 + (18 con + 18 dex) / 2 + 15 ranger / 6) * 1.75 sleeping = 48.125,
 // mana (8 + 20 int / 2 + 10 wil / 5 + 20 mage / 5 + 10 cleric / 5) * 2 sleeping = 52.
 // The flat move and mana regen are added after the formula.
-constexpr float kPlayerHourlyHitGain = 45.0f;
-constexpr float kPlayerFormulaMoveGain = 48.125f;
-constexpr float kPlayerFormulaManaGain = 52.0f;
-constexpr int kPlayerFlatMoveRegen = 40;
-constexpr int kPlayerFlatManaRegen = 10;
-constexpr float kPlayerHourlyMoveGain = kPlayerFormulaMoveGain + kPlayerFlatMoveRegen; // 88.125
-constexpr float kPlayerHourlyManaGain = kPlayerFormulaManaGain + kPlayerFlatManaRegen; // 62
+constexpr float PLAYER_HOURLY_HIT_GAIN = 45.0f;
+constexpr float PLAYER_FORMULA_MOVE_GAIN = 48.125f;
+constexpr float PLAYER_FORMULA_MANA_GAIN = 52.0f;
+constexpr int PLAYER_FLAT_MOVE_REGEN = 40;
+constexpr int PLAYER_FLAT_MANA_REGEN = 10;
+constexpr float PLAYER_HOURLY_MOVE_GAIN
+    = PLAYER_FORMULA_MOVE_GAIN + PLAYER_FLAT_MOVE_REGEN; // 88.125
+constexpr float PLAYER_HOURLY_MANA_GAIN
+    = PLAYER_FORMULA_MANA_GAIN + PLAYER_FLAT_MANA_REGEN; // 62
 // The whole points per pass, different for each pool so a pool given another's value is caught.
-constexpr int kPlayerWholeHitPointsPerPass = 2; // 2.25
-constexpr int kPlayerWholeMovesPerPass = 4; // 4.40625
-constexpr int kPlayerWholeManaPerPass = 3; // about 3.1
+// They, and the per-pass figures below, are worked out for this rate.
+static_assert(FAST_UPDATE_RATE == 20, "the per-pass constants assume 20 fast updates an hour");
+constexpr int PLAYER_WHOLE_HIT_POINTS_PER_PASS = 2; // 2.25
+constexpr int PLAYER_WHOLE_MOVES_PER_PASS = 4; // 4.40625
+constexpr int PLAYER_WHOLE_MANA_PER_PASS = 3; // about 3.1
 
 // The level-30 NPC's hourly gains: an NPC out of combat gains its level * 1.5 hit points and
 // mana, and 7 + (20 con + 20 dex) / 2 + 30 level / 6 + 80 default knowledge / 40 - 5 = 29 moves.
-constexpr float kNpcHourlyHitGain = 45.0f;
-constexpr float kNpcHourlyMoveGain = 29.0f;
-constexpr float kNpcHourlyManaGain = 45.0f;
-constexpr int kNpcWholeHitPointsPerPass = 2; // 2.25
-constexpr int kNpcWholeMovesPerPass = 1; // 1.45
-constexpr int kNpcWholeManaPerPass = 2; // 2.25
+constexpr float NPC_HOURLY_HIT_GAIN = 45.0f;
+constexpr float NPC_HOURLY_MOVE_GAIN = 29.0f;
+constexpr float NPC_HOURLY_MANA_GAIN = 45.0f;
+constexpr int NPC_WHOLE_HIT_POINTS_PER_PASS = 2; // 2.25
+constexpr int NPC_WHOLE_MOVES_PER_PASS = 1; // 1.45
+constexpr int NPC_WHOLE_MANA_PER_PASS = 2; // 2.25
 
 // Every pool starts here, below its maximum, unless a test sets it otherwise.
-constexpr int kStartingPoints = 100;
-constexpr int kMaximumPoints = 500;
+constexpr int STARTING_POINTS = 100;
+constexpr int MAXIMUM_POINTS = 500;
 
 // A flat health regen far below any natural gain, so one pass takes a character from
-// kStartingPoints to below zero.
-constexpr int kLethalHourlyHealthRegen = -1000 * FAST_UPDATE_RATE;
+// STARTING_POINTS to below zero.
+constexpr int LETHAL_HOURLY_HEALTH_REGEN = -1000 * FAST_UPDATE_RATE;
 
 // check_breathing() lowers an asphyxiation affect's modifier by one each pass a character can
 // breathe; above 1, so a pass leaves the affect in place.
-constexpr int kAsphyxiationMarker = 5;
+constexpr int ASPHYXIATION_MARKER = 5;
 // do_fame_war_bonuses() sets an unranked player's ranking to 0; any other value shows whether
 // it ran.
-constexpr int kRankingMarker = 7;
+constexpr int RANKING_MARKER = 7;
 
 // How many times dying_npc_special() has been asked about a death since the fixture's SetUp().
 int g_death_special_calls = 0;
 
 // A mob special that claims every death it is asked about, so raw_kill() returns before it
 // extracts and frees the NPC and the test can still read the NPC after the pass.
-int dying_npc_special(char_data* /*host*/, char_data* /*character*/, int /*cmd*/, char* /*argument*/,
-    int callflag, waiting_type* /*wait_data*/)
+int dying_npc_special(char_data* /*host*/, char_data* /*character*/, int /*cmd*/,
+    char* /*argument*/, int callflag, waiting_type* /*wait_data*/)
 {
     if (callflag == SPECIAL_DEATH) {
         ++g_death_special_calls;
@@ -102,7 +113,7 @@ int dying_npc_special(char_data* /*host*/, char_data* /*character*/, int /*cmd*/
 }
 
 // Distinct rolls a test queues to see whether a pass drew any of them.
-constexpr double kUntouchedRolls[] = { 0.125, 0.25, 0.375 };
+constexpr double UNTOUCHED_ROLLS[] = { 0.125, 0.25, 0.375 };
 
 // Describes how a pass's change was derived, for failure messages.
 std::string describe_gain(float hourly_gain, double roll)
@@ -113,27 +124,30 @@ std::string describe_gain(float hourly_gain, double roll)
     return description.str();
 }
 
-// Two sleeping human players and one level-30 NPC standing in kRegenRoom with known stats, the
+// Two sleeping human players and one level-30 NPC standing in REGEN_ROOM with known stats, the
 // first player and the NPC registered in character_list, and the global lists fast_update() and
 // raw_kill() walk isolated from the rest of the binary.
 class FastUpdateRegenTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
+        ASSERT_TRUE(regen_room_is_allocated())
+            << "Expected room " << REGEN_ROOM << " inside the world allocation of "
+            << room_data::BASE_LENGTH - EXTENSION_SIZE << " rooms from gtest_main.cpp.";
         m_saved_character_list = character_list;
         m_saved_waiting_list = waiting_list;
         m_saved_mob_index = mob_index;
         m_saved_top_of_mobt = top_of_mobt;
-        m_saved_room_people = world[kRegenRoom].people;
-        m_saved_room_sector = world[kRegenRoom].sector_type;
+        m_saved_room_people = world[REGEN_ROOM].people;
+        m_saved_room_sector = world[REGEN_ROOM].sector_type;
 
         // raw_kill() walks waiting_list; earlier suites can leave stale entries on it.
         waiting_list = nullptr;
         m_mob_index[0].func = dying_npc_special;
         mob_index = m_mob_index;
         top_of_mobt = 0;
-        world[kRegenRoom].sector_type = SECT_INSIDE;
-        world[kRegenRoom].people = nullptr;
+        world[REGEN_ROOM].sector_type = SECT_INSIDE;
+        world[REGEN_ROOM].people = nullptr;
         clear_test_random_values();
         g_death_special_calls = 0;
 
@@ -149,7 +163,7 @@ protected:
         m_npc.specials2.conditions[THIRST] = -1;
         m_npc.tmpabilities.con = 20;
         m_npc.tmpabilities.dex = 20;
-        set_points(m_npc, kStartingPoints, kMaximumPoints);
+        set_points(m_npc, STARTING_POINTS, MAXIMUM_POINTS);
         place_in_room(m_npc);
 
         register_characters({ &m_player, &m_npc });
@@ -157,6 +171,10 @@ protected:
 
     void TearDown() override
     {
+        // SetUp() saved nothing when it stopped on an unallocated room.
+        if (!regen_room_is_allocated()) {
+            return;
+        }
         clear_test_random_values();
         for (char_data* character : { &m_player, &m_second_player, &m_npc, &m_dying_npc }) {
             // The markers are fixture members, not heap affects.
@@ -169,34 +187,34 @@ protected:
         waiting_list = m_saved_waiting_list;
         mob_index = m_saved_mob_index;
         top_of_mobt = m_saved_top_of_mobt;
-        world[kRegenRoom].people = m_saved_room_people;
-        world[kRegenRoom].sector_type = m_saved_room_sector;
+        world[REGEN_ROOM].people = m_saved_room_people;
+        world[REGEN_ROOM].sector_type = m_saved_room_sector;
     }
 
-    // Makes `character` the sleeping level-20 human player whose gains the kPlayer constants
-    // describe, standing in kRegenRoom but not registered in character_list.
-    void build_player(char_data& character, char* name)
+    // Makes `out_character` the sleeping level-20 human player whose gains the PLAYER_
+    // constants describe, standing in REGEN_ROOM but not registered in character_list.
+    void build_player(char_data& out_character, char* name)
     {
-        clear_char(&character, MOB_VOID);
-        character.player.name = name;
-        character.player.level = 20;
-        character.player.race = RACE_HUMAN;
-        character.player_index = -1;
-        character.specials.position = POSITION_SLEEPING;
-        character.specials2.conditions[FULL] = 24;
-        character.specials2.conditions[THIRST] = 24;
-        character.tmpabilities.con = 18;
-        character.tmpabilities.dex = 18;
-        character.tmpabilities.intel = 20;
-        character.tmpabilities.wil = 10;
-        character.profs->prof_level[PROF_WARRIOR] = 30;
-        character.profs->prof_level[PROF_RANGER] = 15;
-        character.profs->prof_level[PROF_MAGE] = 20;
-        character.profs->prof_level[PROF_CLERIC] = 10;
-        character.points.move_regen = kPlayerFlatMoveRegen;
-        character.points.mana_regen = kPlayerFlatManaRegen;
-        set_points(character, kStartingPoints, kMaximumPoints);
-        place_in_room(character);
+        clear_char(&out_character, MOB_VOID);
+        out_character.player.name = name;
+        out_character.player.level = 20;
+        out_character.player.race = RACE_HUMAN;
+        out_character.player_index = -1;
+        out_character.specials.position = POSITION_SLEEPING;
+        out_character.specials2.conditions[FULL] = 24;
+        out_character.specials2.conditions[THIRST] = 24;
+        out_character.tmpabilities.con = 18;
+        out_character.tmpabilities.dex = 18;
+        out_character.tmpabilities.intel = 20;
+        out_character.tmpabilities.wil = 10;
+        out_character.profs->prof_level[PROF_WARRIOR] = 30;
+        out_character.profs->prof_level[PROF_RANGER] = 15;
+        out_character.profs->prof_level[PROF_MAGE] = 20;
+        out_character.profs->prof_level[PROF_CLERIC] = 10;
+        out_character.points.move_regen = PLAYER_FLAT_MOVE_REGEN;
+        out_character.points.mana_regen = PLAYER_FLAT_MANA_REGEN;
+        set_points(out_character, STARTING_POINTS, MAXIMUM_POINTS);
+        place_in_room(out_character);
     }
 
     static void set_points(char_data& character, int current_points, int maximum_points)
@@ -216,9 +234,9 @@ protected:
 
     static void place_in_room(char_data& character)
     {
-        character.in_room = kRegenRoom;
-        character.next_in_room = world[kRegenRoom].people;
-        world[kRegenRoom].people = &character;
+        character.in_room = REGEN_ROOM;
+        character.next_in_room = world[REGEN_ROOM].people;
+        world[REGEN_ROOM].people = &character;
     }
 
     // Makes `characters` the whole of character_list, in pass order.
@@ -253,22 +271,22 @@ protected:
         }
     }
 
-    // Gives `character` both markers the after-regen checks change, using `marker` as its
+    // Gives `character` both markers the after-regen checks change, using `out_marker` as its
     // asphyxiation affect.
-    static void add_check_markers(char_data& character, affected_type& marker)
+    static void add_check_markers(char_data& character, affected_type& out_marker)
     {
-        marker = affected_type {};
-        marker.type = SPELL_ASPHYXIATION;
-        marker.duration = 100;
-        marker.modifier = kAsphyxiationMarker;
-        marker.location = APPLY_NONE;
-        marker.next = character.affected;
-        character.affected = &marker;
-        character.player.ranking = kRankingMarker;
+        out_marker = affected_type {};
+        out_marker.type = SPELL_ASPHYXIATION;
+        out_marker.duration = 100;
+        out_marker.modifier = ASPHYXIATION_MARKER;
+        out_marker.location = APPLY_NONE;
+        out_marker.next = character.affected;
+        character.affected = &out_marker;
+        character.player.ranking = RANKING_MARKER;
     }
 
     // Turns m_dying_npc into an NPC whose death special keeps it alive, losing far more hit
-    // points per pass than it has. It stands in kRegenRoom but is not registered.
+    // points per pass than it has. It stands in REGEN_ROOM but is not registered.
     void build_dying_npc()
     {
         clear_char(&m_dying_npc, MOB_ISNPC);
@@ -279,8 +297,8 @@ protected:
         m_dying_npc.player.level = 30;
         m_dying_npc.specials2.conditions[FULL] = -1;
         m_dying_npc.specials2.conditions[THIRST] = -1;
-        m_dying_npc.points.health_regen = kLethalHourlyHealthRegen;
-        set_points(m_dying_npc, kStartingPoints, kMaximumPoints);
+        m_dying_npc.points.health_regen = LETHAL_HOURLY_HEALTH_REGEN;
+        set_points(m_dying_npc, STARTING_POINTS, MAXIMUM_POINTS);
         place_in_room(m_dying_npc);
     }
 
@@ -299,214 +317,217 @@ protected:
     char_data* m_saved_waiting_list = nullptr; // restored in TearDown()
     index_data* m_saved_mob_index = nullptr; // restored in TearDown()
     int m_saved_top_of_mobt = 0; // restored in TearDown()
-    char_data* m_saved_room_people = nullptr; // kRegenRoom's occupants, restored in TearDown()
-    int m_saved_room_sector = 0; // kRegenRoom's sector, restored in TearDown()
+    char_data* m_saved_room_people = nullptr; // REGEN_ROOM's occupants, restored in TearDown()
+    int m_saved_room_sector = 0; // REGEN_ROOM's sector, restored in TearDown()
 };
 
 TEST_F(FastUpdateRegenTest, APassGivesAPlayerItsHourlyGainsDividedByTheFastUpdateRate)
 {
-    ASSERT_FLOAT_EQ(hit_gain(&m_player), kPlayerHourlyHitGain);
-    ASSERT_FLOAT_EQ(move_gain(&m_player), kPlayerHourlyMoveGain);
-    ASSERT_FLOAT_EQ(mana_gain(&m_player), kPlayerHourlyManaGain);
-    ASSERT_EQ(static_cast<int>(kPlayerHourlyHitGain / FAST_UPDATE_RATE), kPlayerWholeHitPointsPerPass);
-    ASSERT_EQ(static_cast<int>(kPlayerHourlyMoveGain / FAST_UPDATE_RATE), kPlayerWholeMovesPerPass);
-    ASSERT_EQ(static_cast<int>(kPlayerHourlyManaGain / FAST_UPDATE_RATE), kPlayerWholeManaPerPass);
-    queue_rolls(kRollAddsNothing, 2);
+    ASSERT_FLOAT_EQ(hit_gain(&m_player), PLAYER_HOURLY_HIT_GAIN);
+    ASSERT_FLOAT_EQ(move_gain(&m_player), PLAYER_HOURLY_MOVE_GAIN);
+    ASSERT_FLOAT_EQ(mana_gain(&m_player), PLAYER_HOURLY_MANA_GAIN);
+    ASSERT_EQ(static_cast<int>(PLAYER_HOURLY_HIT_GAIN / FAST_UPDATE_RATE),
+        PLAYER_WHOLE_HIT_POINTS_PER_PASS);
+    ASSERT_EQ(static_cast<int>(PLAYER_HOURLY_MOVE_GAIN / FAST_UPDATE_RATE),
+        PLAYER_WHOLE_MOVES_PER_PASS);
+    ASSERT_EQ(static_cast<int>(PLAYER_HOURLY_MANA_GAIN / FAST_UPDATE_RATE),
+        PLAYER_WHOLE_MANA_PER_PASS);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass)
-        << describe_gain(kPlayerHourlyHitGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MOVE(&m_player), kStartingPoints + kPlayerWholeMovesPerPass)
-        << describe_gain(kPlayerHourlyMoveGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MANA(&m_player), kStartingPoints + kPlayerWholeManaPerPass)
-        << describe_gain(kPlayerHourlyManaGain, kRollAddsNothing);
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS)
+        << describe_gain(PLAYER_HOURLY_HIT_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MOVE(&m_player), STARTING_POINTS + PLAYER_WHOLE_MOVES_PER_PASS)
+        << describe_gain(PLAYER_HOURLY_MOVE_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MANA(&m_player), STARTING_POINTS + PLAYER_WHOLE_MANA_PER_PASS)
+        << describe_gain(PLAYER_HOURLY_MANA_GAIN, ROLL_ADDS_NOTHING);
 }
 
 TEST_F(FastUpdateRegenTest, ARollBelowAGainsFractionAddsOneMorePoint)
 {
-    queue_rolls(kRollAddsOnePoint, 2);
+    queue_rolls(ROLL_ADDS_ONE_POINT, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass + 1)
-        << describe_gain(kPlayerHourlyHitGain, kRollAddsOnePoint);
-    EXPECT_EQ(GET_MOVE(&m_player), kStartingPoints + kPlayerWholeMovesPerPass + 1)
-        << describe_gain(kPlayerHourlyMoveGain, kRollAddsOnePoint);
-    EXPECT_EQ(GET_MANA(&m_player), kStartingPoints + kPlayerWholeManaPerPass + 1)
-        << describe_gain(kPlayerHourlyManaGain, kRollAddsOnePoint);
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS + 1)
+        << describe_gain(PLAYER_HOURLY_HIT_GAIN, ROLL_ADDS_ONE_POINT);
+    EXPECT_EQ(GET_MOVE(&m_player), STARTING_POINTS + PLAYER_WHOLE_MOVES_PER_PASS + 1)
+        << describe_gain(PLAYER_HOURLY_MOVE_GAIN, ROLL_ADDS_ONE_POINT);
+    EXPECT_EQ(GET_MANA(&m_player), STARTING_POINTS + PLAYER_WHOLE_MANA_PER_PASS + 1)
+        << describe_gain(PLAYER_HOURLY_MANA_GAIN, ROLL_ADDS_ONE_POINT);
 }
 
 // The three rolls are chosen so any other draw order changes at least one pool.
 TEST_F(FastUpdateRegenTest, RollsAreDrawnForHitPointsThenMovesThenMana)
 {
-    queue_character_rolls(kRollAddsNothing, kRollAddsOnlyToPlayerMoves, kRollAddsOnePoint);
-    queue_rolls(kRollAddsNothing, 1);
+    queue_character_rolls(ROLL_ADDS_NOTHING, ROLL_ADDS_ONLY_TO_PLAYER_MOVES, ROLL_ADDS_ONE_POINT);
+    queue_rolls(ROLL_ADDS_NOTHING, 1);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass)
-        << describe_gain(kPlayerHourlyHitGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MOVE(&m_player), kStartingPoints + kPlayerWholeMovesPerPass + 1)
-        << describe_gain(kPlayerHourlyMoveGain, kRollAddsOnlyToPlayerMoves);
-    EXPECT_EQ(GET_MANA(&m_player), kStartingPoints + kPlayerWholeManaPerPass + 1)
-        << describe_gain(kPlayerHourlyManaGain, kRollAddsOnePoint);
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS)
+        << describe_gain(PLAYER_HOURLY_HIT_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MOVE(&m_player), STARTING_POINTS + PLAYER_WHOLE_MOVES_PER_PASS + 1)
+        << describe_gain(PLAYER_HOURLY_MOVE_GAIN, ROLL_ADDS_ONLY_TO_PLAYER_MOVES);
+    EXPECT_EQ(GET_MANA(&m_player), STARTING_POINTS + PLAYER_WHOLE_MANA_PER_PASS + 1)
+        << describe_gain(PLAYER_HOURLY_MANA_GAIN, ROLL_ADDS_ONE_POINT);
 }
 
 // The player's hit points are already full, yet it still draws three rolls, so the NPC after it
 // draws the fourth roll for its hit points.
 TEST_F(FastUpdateRegenTest, EachCharacterDrawsThreeRollsEvenForAFullPool)
 {
-    set_pools(m_player, kMaximumPoints, kStartingPoints, kStartingPoints);
-    queue_rolls(kRollAddsNothing, 1);
-    queue_character_rolls(kRollAddsOnePoint, kRollAddsNothing, kRollAddsNothing);
+    set_pools(m_player, MAXIMUM_POINTS, STARTING_POINTS, STARTING_POINTS);
+    queue_rolls(ROLL_ADDS_NOTHING, 1);
+    queue_character_rolls(ROLL_ADDS_ONE_POINT, ROLL_ADDS_NOTHING, ROLL_ADDS_NOTHING);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kMaximumPoints);
-    EXPECT_EQ(GET_HIT(&m_npc), kStartingPoints + kNpcWholeHitPointsPerPass + 1)
-        << describe_gain(kNpcHourlyHitGain, kRollAddsOnePoint);
-    EXPECT_EQ(GET_MOVE(&m_npc), kStartingPoints + kNpcWholeMovesPerPass)
-        << describe_gain(kNpcHourlyMoveGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MANA(&m_npc), kStartingPoints + kNpcWholeManaPerPass)
-        << describe_gain(kNpcHourlyManaGain, kRollAddsNothing);
+    EXPECT_EQ(GET_HIT(&m_player), MAXIMUM_POINTS);
+    EXPECT_EQ(GET_HIT(&m_npc), STARTING_POINTS + NPC_WHOLE_HIT_POINTS_PER_PASS + 1)
+        << describe_gain(NPC_HOURLY_HIT_GAIN, ROLL_ADDS_ONE_POINT);
+    EXPECT_EQ(GET_MOVE(&m_npc), STARTING_POINTS + NPC_WHOLE_MOVES_PER_PASS)
+        << describe_gain(NPC_HOURLY_MOVE_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MANA(&m_npc), STARTING_POINTS + NPC_WHOLE_MANA_PER_PASS)
+        << describe_gain(NPC_HOURLY_MANA_GAIN, ROLL_ADDS_NOTHING);
 }
 
 TEST_F(FastUpdateRegenTest, APassGivesAnNpcItsHourlyGainsDividedByTheFastUpdateRate)
 {
-    ASSERT_FLOAT_EQ(hit_gain(&m_npc), kNpcHourlyHitGain);
-    ASSERT_FLOAT_EQ(move_gain(&m_npc), kNpcHourlyMoveGain);
-    ASSERT_FLOAT_EQ(mana_gain(&m_npc), kNpcHourlyManaGain);
-    queue_rolls(kRollAddsNothing, 2);
+    ASSERT_FLOAT_EQ(hit_gain(&m_npc), NPC_HOURLY_HIT_GAIN);
+    ASSERT_FLOAT_EQ(move_gain(&m_npc), NPC_HOURLY_MOVE_GAIN);
+    ASSERT_FLOAT_EQ(mana_gain(&m_npc), NPC_HOURLY_MANA_GAIN);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_npc), kStartingPoints + kNpcWholeHitPointsPerPass)
-        << describe_gain(kNpcHourlyHitGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MOVE(&m_npc), kStartingPoints + kNpcWholeMovesPerPass)
-        << describe_gain(kNpcHourlyMoveGain, kRollAddsNothing);
-    EXPECT_EQ(GET_MANA(&m_npc), kStartingPoints + kNpcWholeManaPerPass)
-        << describe_gain(kNpcHourlyManaGain, kRollAddsNothing);
+    EXPECT_EQ(GET_HIT(&m_npc), STARTING_POINTS + NPC_WHOLE_HIT_POINTS_PER_PASS)
+        << describe_gain(NPC_HOURLY_HIT_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MOVE(&m_npc), STARTING_POINTS + NPC_WHOLE_MOVES_PER_PASS)
+        << describe_gain(NPC_HOURLY_MOVE_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_MANA(&m_npc), STARTING_POINTS + NPC_WHOLE_MANA_PER_PASS)
+        << describe_gain(NPC_HOURLY_MANA_GAIN, ROLL_ADDS_NOTHING);
 }
 
 // Each pool has its own maximum and gains more than one point, so only its own cap stops it.
 TEST_F(FastUpdateRegenTest, EachPoolStopsAtItsOwnMaximum)
 {
-    constexpr int kMaximumHitPoints = 400;
-    constexpr int kMaximumMoves = 450;
-    constexpr int kMaximumMana = 500;
-    m_player.abilities.hit = kMaximumHitPoints;
-    m_player.abilities.move = kMaximumMoves;
-    m_player.abilities.mana = kMaximumMana;
-    set_pools(m_player, kMaximumHitPoints - 1, kMaximumMoves - 1, kMaximumMana - 1);
-    queue_rolls(kRollAddsNothing, 2);
+    constexpr int MAXIMUM_HIT_POINTS = 400;
+    constexpr int MAXIMUM_MOVES = 450;
+    constexpr int MAXIMUM_MANA = 500;
+    m_player.abilities.hit = MAXIMUM_HIT_POINTS;
+    m_player.abilities.move = MAXIMUM_MOVES;
+    m_player.abilities.mana = MAXIMUM_MANA;
+    set_pools(m_player, MAXIMUM_HIT_POINTS - 1, MAXIMUM_MOVES - 1, MAXIMUM_MANA - 1);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kMaximumHitPoints);
-    EXPECT_EQ(GET_MOVE(&m_player), kMaximumMoves);
-    EXPECT_EQ(GET_MANA(&m_player), kMaximumMana);
+    EXPECT_EQ(GET_HIT(&m_player), MAXIMUM_HIT_POINTS);
+    EXPECT_EQ(GET_MOVE(&m_player), MAXIMUM_MOVES);
+    EXPECT_EQ(GET_MANA(&m_player), MAXIMUM_MANA);
 }
 
 TEST_F(FastUpdateRegenTest, APoolAboveItsMaximumDropsToTheMaximum)
 {
-    constexpr int kAboveMaximum = kMaximumPoints + 100;
-    set_pools(m_player, kAboveMaximum, kAboveMaximum, kAboveMaximum);
-    queue_rolls(kRollAddsNothing, 2);
+    constexpr int ABOVE_MAXIMUM = MAXIMUM_POINTS + 100;
+    set_pools(m_player, ABOVE_MAXIMUM, ABOVE_MAXIMUM, ABOVE_MAXIMUM);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kMaximumPoints);
-    EXPECT_EQ(GET_MOVE(&m_player), kMaximumPoints);
-    EXPECT_EQ(GET_MANA(&m_player), kMaximumPoints);
+    EXPECT_EQ(GET_HIT(&m_player), MAXIMUM_POINTS);
+    EXPECT_EQ(GET_MOVE(&m_player), MAXIMUM_POINTS);
+    EXPECT_EQ(GET_MANA(&m_player), MAXIMUM_POINTS);
 }
 
 TEST_F(FastUpdateRegenTest, NegativeRegenDrainsAFullPool)
 {
-    constexpr float kHourlyManaGain = -60.0f; // exactly -3 per pass
-    m_player.points.mana_regen = static_cast<int>(kHourlyManaGain - kPlayerFormulaManaGain);
-    set_pools(m_player, kStartingPoints, kStartingPoints, kMaximumPoints);
-    ASSERT_FLOAT_EQ(mana_gain(&m_player), kHourlyManaGain);
-    queue_rolls(kRollAddsNothing, 2);
+    constexpr float HOURLY_MANA_GAIN = -60.0f; // exactly -3 per pass
+    m_player.points.mana_regen = static_cast<int>(HOURLY_MANA_GAIN - PLAYER_FORMULA_MANA_GAIN);
+    set_pools(m_player, STARTING_POINTS, STARTING_POINTS, MAXIMUM_POINTS);
+    ASSERT_FLOAT_EQ(mana_gain(&m_player), HOURLY_MANA_GAIN);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_MANA(&m_player), kMaximumPoints - 3)
-        << describe_gain(kHourlyManaGain, kRollAddsNothing);
+    EXPECT_EQ(GET_MANA(&m_player), MAXIMUM_POINTS - 3)
+        << describe_gain(HOURLY_MANA_GAIN, ROLL_ADDS_NOTHING);
 }
 
 TEST_F(FastUpdateRegenTest, ARollBelowANegativeGainsFractionTakesOneMorePoint)
 {
-    constexpr float kHourlyManaGain = -50.0f; // -2.5 per pass
-    m_player.points.mana_regen = static_cast<int>(kHourlyManaGain - kPlayerFormulaManaGain);
-    ASSERT_FLOAT_EQ(mana_gain(&m_player), kHourlyManaGain);
-    queue_character_rolls(kRollAddsNothing, kRollAddsNothing, kRollAddsOnePoint);
-    queue_rolls(kRollAddsNothing, 1);
+    constexpr float HOURLY_MANA_GAIN = -50.0f; // -2.5 per pass
+    m_player.points.mana_regen = static_cast<int>(HOURLY_MANA_GAIN - PLAYER_FORMULA_MANA_GAIN);
+    ASSERT_FLOAT_EQ(mana_gain(&m_player), HOURLY_MANA_GAIN);
+    queue_character_rolls(ROLL_ADDS_NOTHING, ROLL_ADDS_NOTHING, ROLL_ADDS_ONE_POINT);
+    queue_rolls(ROLL_ADDS_NOTHING, 1);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_MANA(&m_player), kStartingPoints - 3)
-        << describe_gain(kHourlyManaGain, kRollAddsOnePoint);
+    EXPECT_EQ(GET_MANA(&m_player), STARTING_POINTS - 3)
+        << describe_gain(HOURLY_MANA_GAIN, ROLL_ADDS_ONE_POINT);
 }
 
-// Fixes the current behaviour: a negative per-pass gain between -1 and 0 truncates to 0, and a
+// Pins the current behaviour: a negative per-pass gain between -1 and 0 truncates to 0, and a
 // roll below its fraction then adds a point instead of taking one.
 TEST_F(FastUpdateRegenTest, LegacyARollBelowASmallNegativeGainsFractionAddsAPoint)
 {
-    constexpr float kHourlyManaGain = -10.0f; // -0.5 per pass
-    m_player.points.mana_regen = static_cast<int>(kHourlyManaGain - kPlayerFormulaManaGain);
-    ASSERT_FLOAT_EQ(mana_gain(&m_player), kHourlyManaGain);
-    queue_character_rolls(kRollAddsNothing, kRollAddsNothing, kRollAddsOnePoint);
-    queue_rolls(kRollAddsNothing, 1);
+    constexpr float HOURLY_MANA_GAIN = -10.0f; // -0.5 per pass
+    m_player.points.mana_regen = static_cast<int>(HOURLY_MANA_GAIN - PLAYER_FORMULA_MANA_GAIN);
+    ASSERT_FLOAT_EQ(mana_gain(&m_player), HOURLY_MANA_GAIN);
+    queue_character_rolls(ROLL_ADDS_NOTHING, ROLL_ADDS_NOTHING, ROLL_ADDS_ONE_POINT);
+    queue_rolls(ROLL_ADDS_NOTHING, 1);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_MANA(&m_player), kStartingPoints + 1)
-        << describe_gain(kHourlyManaGain, kRollAddsOnePoint);
+    EXPECT_EQ(GET_MANA(&m_player), STARTING_POINTS + 1)
+        << describe_gain(HOURLY_MANA_GAIN, ROLL_ADDS_ONE_POINT);
 }
 
 TEST_F(FastUpdateRegenTest, MovesNeverDropBelowZero)
 {
-    constexpr int kDrainingMoveRegen = -2000;
-    m_player.points.move_regen = kDrainingMoveRegen;
-    set_pools(m_player, kStartingPoints, 1, kStartingPoints);
-    queue_rolls(kRollAddsNothing, 2);
+    constexpr int DRAINING_MOVE_REGEN = -2000;
+    m_player.points.move_regen = DRAINING_MOVE_REGEN;
+    set_pools(m_player, STARTING_POINTS, 1, STARTING_POINTS);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
     EXPECT_EQ(GET_MOVE(&m_player), 0)
-        << describe_gain(kPlayerFormulaMoveGain + kDrainingMoveRegen, kRollAddsNothing);
+        << describe_gain(PLAYER_FORMULA_MOVE_GAIN + DRAINING_MOVE_REGEN, ROLL_ADDS_NOTHING);
 }
 
 TEST_F(FastUpdateRegenTest, TheBreathingAndFameWarChecksRunForEveryCharacter)
 {
     add_check_markers(m_player, m_markers[0]);
     add_check_markers(m_npc, m_markers[1]);
-    queue_rolls(kRollAddsNothing, 2);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(m_markers[0].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the player";
+    EXPECT_EQ(m_markers[0].modifier, ASPHYXIATION_MARKER - 1) << "check_breathing() on the player";
     EXPECT_EQ(m_player.player.ranking, 0) << "do_fame_war_bonuses() on the unranked player";
-    EXPECT_EQ(m_markers[1].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the NPC";
+    EXPECT_EQ(m_markers[1].modifier, ASPHYXIATION_MARKER - 1) << "check_breathing() on the NPC";
 }
 
 // A pass that leaves a character on exactly 0 hit points does not kill it.
 TEST_F(FastUpdateRegenTest, RegenThatLeavesZeroHitPointsDoesNotKill)
 {
-    constexpr float kHourlyHitGain = -100.0f; // exactly -5 per pass
+    constexpr float HOURLY_HIT_GAIN = -100.0f; // exactly -5 per pass
     build_dying_npc();
-    m_dying_npc.points.health_regen = static_cast<int>(kHourlyHitGain - kNpcHourlyHitGain);
+    m_dying_npc.points.health_regen = static_cast<int>(HOURLY_HIT_GAIN - NPC_HOURLY_HIT_GAIN);
     GET_HIT(&m_dying_npc) = 5;
-    ASSERT_FLOAT_EQ(hit_gain(&m_dying_npc), kHourlyHitGain);
+    ASSERT_FLOAT_EQ(hit_gain(&m_dying_npc), HOURLY_HIT_GAIN);
     register_characters({ &m_dying_npc, &m_player });
-    queue_rolls(kRollAddsNothing, 2);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
     EXPECT_EQ(g_death_special_calls, 0);
-    EXPECT_EQ(GET_HIT(&m_dying_npc), 0) << describe_gain(kHourlyHitGain, kRollAddsNothing);
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass)
+    EXPECT_EQ(GET_HIT(&m_dying_npc), 0) << describe_gain(HOURLY_HIT_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS)
         << "the pass should go on to the next character";
 }
 
@@ -517,18 +538,18 @@ TEST_F(FastUpdateRegenTest, ACharacterBelowZeroThatIsHealingDoesNotDie)
     m_dying_npc.points.health_regen = 0;
     GET_HIT(&m_dying_npc) = -10;
     register_characters({ &m_dying_npc, &m_player });
-    queue_rolls(kRollAddsNothing, 2);
+    queue_rolls(ROLL_ADDS_NOTHING, 2);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
     EXPECT_EQ(g_death_special_calls, 0);
-    EXPECT_EQ(GET_HIT(&m_dying_npc), -10 + kNpcWholeHitPointsPerPass)
-        << describe_gain(kNpcHourlyHitGain, kRollAddsNothing);
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass)
+    EXPECT_EQ(GET_HIT(&m_dying_npc), -10 + NPC_WHOLE_HIT_POINTS_PER_PASS)
+        << describe_gain(NPC_HOURLY_HIT_GAIN, ROLL_ADDS_NOTHING);
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS)
         << "the pass should go on to the next character";
 }
 
-// Fixes the current behaviour: the pass stops at a regen death, before the dead character's
+// Pins the current behaviour: the pass stops at a regen death, before the dead character's
 // mana, moves and after-regen checks, so characters after it in character_list miss that pass.
 TEST_F(FastUpdateRegenTest, LegacyARegenDeathEndsThePassBeforeTheNextCharacter)
 {
@@ -537,32 +558,35 @@ TEST_F(FastUpdateRegenTest, LegacyARegenDeathEndsThePassBeforeTheNextCharacter)
     add_check_markers(m_dying_npc, m_markers[1]);
     add_check_markers(m_second_player, m_markers[2]);
     register_characters({ &m_player, &m_dying_npc, &m_second_player });
-    queue_rolls(kRollAddsNothing, 3);
+    queue_rolls(ROLL_ADDS_NOTHING, 3);
 
-    fast_update(kRegenerate);
+    fast_update(REGENERATE);
 
-    EXPECT_EQ(GET_HIT(&m_player), kStartingPoints + kPlayerWholeHitPointsPerPass)
+    EXPECT_EQ(GET_HIT(&m_player), STARTING_POINTS + PLAYER_WHOLE_HIT_POINTS_PER_PASS)
         << "the character before the death regenerates";
-    EXPECT_EQ(m_markers[0].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the first player";
+    EXPECT_EQ(m_markers[0].modifier, ASPHYXIATION_MARKER - 1)
+        << "check_breathing() on the first player";
     EXPECT_EQ(m_player.player.ranking, 0) << "do_fame_war_bonuses() on the first player";
 
     EXPECT_EQ(g_death_special_calls, 1) << "the NPC should have died of its regen";
     EXPECT_LT(GET_HIT(&m_dying_npc), 0);
-    EXPECT_EQ(GET_MOVE(&m_dying_npc), kStartingPoints)
-        << "the death comes before moves would gain " << kNpcWholeMovesPerPass << " ("
-        << describe_gain(kNpcHourlyMoveGain, kRollAddsNothing) << ")";
-    EXPECT_EQ(GET_MANA(&m_dying_npc), kStartingPoints)
-        << "the death comes before mana would gain " << kNpcWholeManaPerPass << " ("
-        << describe_gain(kNpcHourlyManaGain, kRollAddsNothing) << ")";
-    EXPECT_EQ(m_markers[1].modifier, kAsphyxiationMarker) << "the death comes before check_breathing()";
+    EXPECT_EQ(GET_MOVE(&m_dying_npc), STARTING_POINTS)
+        << "the death comes before moves would gain " << NPC_WHOLE_MOVES_PER_PASS << " ("
+        << describe_gain(NPC_HOURLY_MOVE_GAIN, ROLL_ADDS_NOTHING) << ")";
+    EXPECT_EQ(GET_MANA(&m_dying_npc), STARTING_POINTS)
+        << "the death comes before mana would gain " << NPC_WHOLE_MANA_PER_PASS << " ("
+        << describe_gain(NPC_HOURLY_MANA_GAIN, ROLL_ADDS_NOTHING) << ")";
+    EXPECT_EQ(m_markers[1].modifier, ASPHYXIATION_MARKER)
+        << "the death comes before check_breathing()";
 
-    EXPECT_EQ(GET_HIT(&m_second_player), kStartingPoints)
+    EXPECT_EQ(GET_HIT(&m_second_player), STARTING_POINTS)
         << "the pass should end at the death, before the hit point gain of "
-        << kPlayerWholeHitPointsPerPass;
-    EXPECT_EQ(GET_MOVE(&m_second_player), kStartingPoints);
-    EXPECT_EQ(GET_MANA(&m_second_player), kStartingPoints);
-    EXPECT_EQ(m_markers[2].modifier, kAsphyxiationMarker) << "no check_breathing() after the death";
-    EXPECT_EQ(m_second_player.player.ranking, kRankingMarker) << "no do_fame_war_bonuses() after the death";
+        << PLAYER_WHOLE_HIT_POINTS_PER_PASS;
+    EXPECT_EQ(GET_MOVE(&m_second_player), STARTING_POINTS);
+    EXPECT_EQ(GET_MANA(&m_second_player), STARTING_POINTS);
+    EXPECT_EQ(m_markers[2].modifier, ASPHYXIATION_MARKER) << "no check_breathing() after the death";
+    EXPECT_EQ(m_second_player.player.ranking, RANKING_MARKER)
+        << "no do_fame_war_bonuses() after the death";
 }
 
 TEST_F(FastUpdateRegenTest, WithoutRegenerationAPassLeavesEveryPoolUnchanged)
@@ -570,27 +594,28 @@ TEST_F(FastUpdateRegenTest, WithoutRegenerationAPassLeavesEveryPoolUnchanged)
     build_dying_npc();
     register_characters({ &m_player, &m_dying_npc, &m_npc });
 
-    fast_update(kSkipRegeneration);
+    fast_update(SKIP_REGENERATION);
 
     for (const char_data* character : { &m_player, &m_dying_npc, &m_npc }) {
-        EXPECT_EQ(GET_HIT(character), kStartingPoints) << GET_NAME(character);
-        EXPECT_EQ(GET_MOVE(character), kStartingPoints) << GET_NAME(character);
-        EXPECT_EQ(GET_MANA(character), kStartingPoints) << GET_NAME(character);
+        EXPECT_EQ(GET_HIT(character), STARTING_POINTS) << GET_NAME(character);
+        EXPECT_EQ(GET_MOVE(character), STARTING_POINTS) << GET_NAME(character);
+        EXPECT_EQ(GET_MANA(character), STARTING_POINTS) << GET_NAME(character);
     }
     EXPECT_EQ(g_death_special_calls, 0) << "lethal regen must not kill when regeneration is off";
 }
 
 TEST_F(FastUpdateRegenTest, WithoutRegenerationAPassDrawsNoRandomNumbers)
 {
-    for (const double roll : kUntouchedRolls) {
+    for (const double roll : UNTOUCHED_ROLLS) {
         push_test_random_value(roll);
     }
 
-    fast_update(kSkipRegeneration);
+    fast_update(SKIP_REGENERATION);
 
     // In the test build number() returns queued rolls first, so all three must still be queued.
-    for (const double roll : kUntouchedRolls) {
-        EXPECT_DOUBLE_EQ(number(), roll) << "the pass should have drawn none of the queued rolls";
+    for (const double roll : UNTOUCHED_ROLLS) {
+        const double next_roll = number();
+        EXPECT_DOUBLE_EQ(next_roll, roll) << "the pass should have drawn none of the queued rolls";
     }
 }
 
@@ -603,12 +628,14 @@ TEST_F(FastUpdateRegenTest, WithoutRegenerationTheChecksStillRunForEveryCharacte
     add_check_markers(m_second_player, m_markers[2]);
     register_characters({ &m_player, &m_dying_npc, &m_second_player });
 
-    fast_update(kSkipRegeneration);
+    fast_update(SKIP_REGENERATION);
 
-    EXPECT_EQ(m_markers[0].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the first player";
+    EXPECT_EQ(m_markers[0].modifier, ASPHYXIATION_MARKER - 1)
+        << "check_breathing() on the first player";
     EXPECT_EQ(m_player.player.ranking, 0) << "do_fame_war_bonuses() on the first player";
-    EXPECT_EQ(m_markers[1].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the NPC";
-    EXPECT_EQ(m_markers[2].modifier, kAsphyxiationMarker - 1) << "check_breathing() on the second player";
+    EXPECT_EQ(m_markers[1].modifier, ASPHYXIATION_MARKER - 1) << "check_breathing() on the NPC";
+    EXPECT_EQ(m_markers[2].modifier, ASPHYXIATION_MARKER - 1)
+        << "check_breathing() on the second player";
     EXPECT_EQ(m_second_player.player.ranking, 0) << "do_fame_war_bonuses() on the second player";
 }
 

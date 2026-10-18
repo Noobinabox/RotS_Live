@@ -109,7 +109,7 @@ protected:
         command_info& entry = cmd_info[command_number];
         entry.command_pointer = record_command;
         entry.minimum_position = POSITION_RESTING;
-        entry.minimum_level = minimum_level;
+        entry.minimum_level = static_cast<sh_int>(minimum_level);
         entry.retired_allowed = retired_allowed;
         entry.mask = mask;
         entry.add_target(TAR_IGNORE, TAR_IGNORE);

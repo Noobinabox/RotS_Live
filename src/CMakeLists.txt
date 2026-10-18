@@ -195,6 +195,7 @@ set(ROTS_TEST_SOURCES
     tests/char_utils_tests.cpp
     tests/character_json_tests.cpp
     tests/color_tests.cpp
+    tests/command_interpreter_parsing_tests.cpp
     tests/crashsave_schedule_tests.cpp
     tests/current_time_phase_tests.cpp
     tests/damage_meters_tests.cpp

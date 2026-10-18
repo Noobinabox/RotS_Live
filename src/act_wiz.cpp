@@ -1420,7 +1420,7 @@ ACMD(do_purge)
 
             /* TEMP fix to save players when they're purged */
             if (!IS_NPC(vict))
-                Crash_idlesave(ch);
+                Crash_idlesave(vict);
 
             act("$n disintegrates $N.", FALSE, ch, 0, vict, TO_NOTVICT);
 

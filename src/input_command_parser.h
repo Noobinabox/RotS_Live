@@ -1,5 +1,5 @@
-#ifndef COMMAND_LINE_PARSER_H
-#define COMMAND_LINE_PARSER_H
+#ifndef INPUT_COMMAND_PARSER_H
+#define INPUT_COMMAND_PARSER_H
 
 #include <cstddef>
 #include <string_view>
@@ -66,4 +66,4 @@ struct typed_line {
 // comes sooner; reads no further than that. A null text is logged and gives an empty view.
 [[nodiscard]] std::string_view view_terminated_text(const char* text, std::size_t max_length);
 
-#endif // COMMAND_LINE_PARSER_H
+#endif // INPUT_COMMAND_PARSER_H

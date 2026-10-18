@@ -43,7 +43,6 @@ SOURCES := \
     color.cpp \
     combat_manager.cpp \
     comm.cpp \
-    command_line_parser.cpp \
     config.cpp \
     consts.cpp \
     crashsave_schedule.cpp \
@@ -55,6 +54,7 @@ SOURCES := \
     game_time_text.cpp \
     graph.cpp \
     handler.cpp \
+    input_command_parser.cpp \
     interpre.cpp \
     environment_utils.cpp \
     account_management.cpp \

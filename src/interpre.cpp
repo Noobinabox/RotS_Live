@@ -24,7 +24,7 @@
 #include "account_ppc.h"
 #include "color.h"
 #include "comm.h"
-#include "command_line_parser.h"
+#include "input_command_parser.h"
 #include "db.h"
 #include "game_boot_options.h"
 #include "handler.h"

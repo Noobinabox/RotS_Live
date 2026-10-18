@@ -204,6 +204,7 @@ set(ROTS_TEST_SOURCES
     tests/db_loader_tests.cpp
     tests/exploit_record_tests.cpp
     tests/exploits_json_tests.cpp
+    tests/fast_update_tests.cpp
     tests/interpre_account_menu_tests.cpp
     tests/intrusive_list_tests.cpp
     tests/room_lists_tests.cpp

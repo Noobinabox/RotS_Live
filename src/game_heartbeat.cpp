@@ -21,7 +21,7 @@
 void affect_update(void);
 void check_pre_login_idle();
 void clean_expose_elements();
-void fast_update(void);
+void fast_update(bool regenerate);
 void mobile_activity(void);
 void msdp_update();
 void perform_violence();
@@ -97,8 +97,9 @@ void GameHeartbeat::run_pass()
         was_updated = 1;
     }
     if (world_pass.run_fast_update) {
-        // fast_update() regenerates hit points, mana and moves.
-        fast_update();
+        // fast_update() regenerates hit points, mana and moves only when the schedule asks for
+        // regeneration; its per-character checks run either way.
+        fast_update(world_pass.run_regeneration);
         affect_update();
 
         clean_expose_elements();

@@ -1572,47 +1572,65 @@ void affect_update()
     walker_remove_finished(); /* walkers whose route ended during this pass */
 }
 
-void fast_update()
+// Regenerates the character's hit points, moves and mana by one fast update's share of their
+// hourly gains, drawing one random roll for each, in that order. Returns true when negative
+// regeneration killed the character: it has been through raw_kill() and must not be used.
+static bool regenerate_points(char_data* character)
 {
     int freq = FAST_UPDATE_RATE;
+
+    // Note:  Regen values can be negative, so we can't test if a character is below max as an
+    // optimization.
+
+    float health_regen_base = hit_gain(character) / freq;
+    int hitregen = int(health_regen_base);
+    if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base)))) {
+        hitregen += hitregen >= 0 ? 1 : -1;
+    }
+
+    float move_regen_base = move_gain(character) / freq;
+    int moveregen = int(move_regen_base);
+    if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base)))) {
+        moveregen += moveregen >= 0 ? 1 : -1;
+    }
+
+    float mana_regen_base = mana_gain(character) / freq;
+    int manaregen = int(mana_regen_base);
+    if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base)))) {
+        manaregen += manaregen >= 0 ? 1 : -1;
+    }
+
+    // Characters can die to negative regen values (think restlessness)
+    GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
+    if (GET_HIT(character) < 0 && hitregen < 0) {
+        act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
+        send_to_char("Your body failed to the magic.\n\r", character);
+        raw_kill(character, NULL, TYPE_UNDEFINED);
+        add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
+        return true;
+    }
+
+    GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
+    GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
+
+    // Make sure characters moves don't drop below zero.
+    GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
+    return false;
+}
+
+// Runs one fast update over character_list, in list order. When regenerate is true, each
+// character first regenerates (regenerate_points()), and a death from negative regeneration
+// ends the pass. Each character the pass reaches then gets the Power of Arda for evil races and
+// the breathing and Fame War checks.
+void fast_update(bool regenerate)
+{
     for (char_data* character = character_list; character != nullptr; character = character->next) {
-
-        // Note:  Regen values can be negative, so we can't test if a character is below max as an
-        // optimization.
-
-        float health_regen_base = hit_gain(character) / freq;
-        int hitregen = int(health_regen_base);
-        if (number() < (std::abs(health_regen_base) - std::abs(std::trunc(health_regen_base)))) {
-            hitregen += hitregen >= 0 ? 1 : -1;
+        if (regenerate) {
+            const bool died_of_regeneration = regenerate_points(character);
+            if (died_of_regeneration) {
+                return;
+            }
         }
-
-        float move_regen_base = move_gain(character) / freq;
-        int moveregen = int(move_regen_base);
-        if (number() < (std::abs(move_regen_base) - std::abs(std::trunc(move_regen_base)))) {
-            moveregen += moveregen >= 0 ? 1 : -1;
-        }
-
-        float mana_regen_base = mana_gain(character) / freq;
-        int manaregen = int(mana_regen_base);
-        if (number() < (std::abs(mana_regen_base) - std::abs(std::trunc(mana_regen_base)))) {
-            manaregen += manaregen >= 0 ? 1 : -1;
-        }
-
-        // Characters can die to negative regen values (think restlessness)
-        GET_HIT(character) = std::min(GET_HIT(character) + hitregen, GET_MAX_HIT(character));
-        if (GET_HIT(character) < 0 && hitregen < 0) {
-            act("$n suddenly collapses on the ground.", TRUE, character, 0, 0, TO_ROOM);
-            send_to_char("Your body failed to the magic.\n\r", character);
-            raw_kill(character, NULL, TYPE_UNDEFINED);
-            add_exploit_record(EXPLOIT_REGEN_DEATH, character, 0, NULL);
-            return;
-        }
-
-        GET_MANA(character) = std::min(GET_MANA(character) + manaregen, (int)GET_MAX_MANA(character));
-        GET_MOVE(character) = std::min(GET_MOVE(character) + moveregen, (int)GET_MAX_MOVE(character));
-
-        // Make sure characters moves don't drop below zero.
-        GET_MOVE(character) = std::max((int)GET_MOVE(character), 0);
 
         if (EVIL_RACE(character)) {
             do_power_of_arda(character);

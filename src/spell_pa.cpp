@@ -45,7 +45,7 @@ void do_sense_magic(const struct char_data*, int);
 char saves_mystic(const struct char_data*);
 void appear(struct char_data*);
 void affect_update();
-void fast_update();
+void fast_update(bool regenerate);
 void check_break_prep(struct char_data* ch);
 
 ACMD(do_flee);

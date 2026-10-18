@@ -22,8 +22,12 @@ public:
         // True when the game hour advances on this pass. Such a pass also runs the fast
         // update, at phase 0.
         bool run_hourly_update = false;
-        // True when regeneration and affects advance on this pass.
+        // True when the fast update runs on this pass: affects advance, and the per-character
+        // checks run, with regeneration when run_regeneration is also set.
         bool run_fast_update = false;
+        // True when hit points, moves and mana regenerate on this pass. It takes effect only on a
+        // pass that also runs the fast update.
+        bool run_regeneration = false;
         // True when skill cooldowns count down on this pass.
         bool run_skill_timer = false;
     };

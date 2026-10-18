@@ -40,6 +40,7 @@ GameTickSchedule::WorldPass RealTimeTickSchedule::next_pass()
     world_pass.run_violence = true;
     world_pass.run_hourly_update = pulse_of_hour == 0;
     world_pass.run_fast_update = pulse_of_hour % PULSE_FAST_UPDATE == 0;
+    world_pass.run_regeneration = world_pass.run_fast_update;
     world_pass.run_skill_timer = pulse_of_hour % SKILL_TIMER_INTERVAL == 0;
     return world_pass;
 }

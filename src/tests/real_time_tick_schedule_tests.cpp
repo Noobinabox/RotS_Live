@@ -25,6 +25,7 @@ GameTickSchedule::WorldPass reference_world_pass(int pulse)
     world_pass.run_violence = true;
     world_pass.run_hourly_update = !(pulse % (SECS_PER_MUD_HOUR * 4));
     world_pass.run_fast_update = !(pulse % PULSE_FAST_UPDATE);
+    world_pass.run_regeneration = !(pulse % PULSE_FAST_UPDATE);
     world_pass.run_skill_timer = !(pulse % 4);
     return world_pass;
 }
@@ -41,6 +42,7 @@ TEST(GameTickSchedule, ADefaultWorldPassRunsNoWorldUpdate)
     EXPECT_FALSE(world_pass.run_violence) << "Expected no combat on a default pass.";
     EXPECT_FALSE(world_pass.run_hourly_update) << "Expected no hourly update on a default pass.";
     EXPECT_FALSE(world_pass.run_fast_update) << "Expected no fast update on a default pass.";
+    EXPECT_FALSE(world_pass.run_regeneration) << "Expected no regeneration on a default pass.";
     EXPECT_FALSE(world_pass.run_skill_timer) << "Expected no skill timer on a default pass.";
 }
 
@@ -66,6 +68,8 @@ TEST(RealTimeTickSchedule, MatchesTheReferenceCadenceOnEveryPass)
             << "run_hourly_update differs on pass " << pass_number;
         ASSERT_EQ(actual.run_fast_update, expected.run_fast_update)
             << "run_fast_update differs on pass " << pass_number;
+        ASSERT_EQ(actual.run_regeneration, expected.run_regeneration)
+            << "run_regeneration differs on pass " << pass_number;
         ASSERT_EQ(actual.run_skill_timer, expected.run_skill_timer)
             << "run_skill_timer differs on pass " << pass_number;
 
@@ -108,4 +112,16 @@ TEST(RealTimeTickSchedule, RunsOneHourlyUpdateAndOneFastUpdatePerPhaseEachGameHo
     EXPECT_EQ(hourly_updates, 1) << "Expected exactly one hourly update in one game hour.";
     EXPECT_EQ(fast_updates, FAST_UPDATE_RATE)
         << "Expected one fast update per phase in one game hour.";
+}
+
+TEST(RealTimeTickSchedule, RegeneratesOnExactlyTheFastUpdatePassesOfAGameHour)
+{
+    RealTimeTickSchedule schedule;
+
+    for (int pass_number = 1; pass_number <= PASSES_PER_GAME_HOUR; ++pass_number) {
+        const GameTickSchedule::WorldPass world_pass = schedule.next_pass();
+
+        ASSERT_EQ(world_pass.run_regeneration, world_pass.run_fast_update)
+            << "Expected regeneration exactly with the fast update, on pass " << pass_number;
+    }
 }

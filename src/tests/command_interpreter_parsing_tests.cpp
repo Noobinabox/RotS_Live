@@ -470,3 +470,38 @@ TEST_F(CommandInterpreterParsingTest, HandsOverALineThatFillsTheBuffer)
 
     EXPECT_EQ(last_command.text, " " + tail);
 }
+
+TEST_F(CommandInterpreterParsingTest, IgnoresANullLine)
+{
+    install(CMD_LOOK);
+
+    command_interpreter(&character, nullptr);
+
+    EXPECT_EQ(last_command.calls, 0);
+    EXPECT_EQ(output(), "");
+}
+
+TEST_F(CommandInterpreterParsingTest, CutsALongerLineToTheBuffer)
+{
+    install(CMD_LOOK);
+    const std::string word = "look";
+    const std::string tail(2 * MAX_INPUT_LENGTH, 'x');
+    std::string line = word + " " + tail;
+
+    command_interpreter(&character, line.data());
+
+    const std::string expected_tail(MAX_INPUT_LENGTH - 1 - word.size() - 1, 'x');
+    EXPECT_EQ(last_command.text, " " + expected_tail);
+}
+
+TEST_F(CommandInterpreterParsingTest, PerformsTheMiddleSocialForABareQuotedWord)
+{
+    install(CMD_SAY, LEVEL_GOD);
+    install(CMD_SOCIAL);
+
+    type("''x");
+
+    EXPECT_EQ(last_command.cmd, CMD_SOCIAL);
+    EXPECT_EQ(last_command.waiting_subcmd, middle_social);
+    EXPECT_EQ(last_command.text, " 'x");
+}

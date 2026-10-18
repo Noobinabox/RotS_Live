@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -22,6 +24,7 @@
 #include "account_ppc.h"
 #include "color.h"
 #include "comm.h"
+#include "command_line_parser.h"
 #include "db.h"
 #include "game_boot_options.h"
 #include "handler.h"
@@ -1262,6 +1265,16 @@ void replace_aliases(const struct char_data* ch, char* line)
     strcpy(line, new_line);
 }
 
+// Copies text into out_buffer with only A-Z lowercased, cut to fit with room for the terminator.
+static void copy_lowercased(std::string_view text, char (&out_buffer)[MAX_INPUT_LENGTH])
+{
+    const std::size_t copied_length
+        = std::min(text.size(), static_cast<std::size_t>(MAX_INPUT_LENGTH - 1));
+    std::transform(text.begin(), text.begin() + copied_length, out_buffer,
+        [](char character) -> char { return static_cast<char>(LOWER(character)); });
+    out_buffer[copied_length] = '\0';
+}
+
 void command_interpreter(struct char_data* ch, char* argument_chr,
     struct waiting_type* argument_wtl)
 {
@@ -1286,6 +1299,12 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         argument_raw = "";
         mode = 1;
     } else {
+        if (argument_chr == nullptr) {
+            const std::string message
+                = std::string("SYSERR: ") + __func__ + ": called with a null command line";
+            log(message.c_str());
+            return;
+        }
         argument_raw = argument_chr;
         argument_info = &interp_argument_info;
         mode = 0;
@@ -1302,17 +1321,18 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
 
     /* there's nothing special going on with this guy */
     if (!mode) {
-        bzero(argument, MAX_INPUT_LENGTH);
+        const std::string_view raw_line = view_terminated_text(argument_raw, MAX_INPUT_LENGTH);
+        const typed_line parsed = parse_typed_line(raw_line);
 
-        /* Find first non blank */
-        for (begin = 0; (*(argument_raw + begin) == ' '); begin++)
-            ;
-        strcpy(argument, argument_raw + begin);
-        begin = 0;
+        // Handlers receive a pointer into this copy of the line, so it stays a terminated buffer.
+        bzero(argument, MAX_INPUT_LENGTH);
+        const std::size_t copied_length
+            = std::min(parsed.text.size(), static_cast<std::size_t>(MAX_INPUT_LENGTH - 1));
+        std::copy_n(parsed.text.begin(), copied_length, argument);
 
         /* Use do_shape level */
-        if ((*(argument + begin) == '/') && (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) && !(RETIRED(ch))) {
-            shape_center(ch, argument + begin + 1);
+        if (parsed.starts_with_shape_marker && (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) && !(RETIRED(ch))) {
+            shape_center(ch, argument + 1);
             return;
         }
 
@@ -1325,29 +1345,22 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
             return;
         }
 
-        /* special checks required for shortcut tokenized commands */
-        if (*(argument + begin) == '\'') {
-            cmd = CMD_SAY;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        } else if (*(argument + begin) == ';') {
-            cmd = CMD_WIZNET;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        } else if (*(argument + begin) == ',') {
-            cmd = CMD_EMOTE;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        }
-        /* they entered a blank line */
-        else if (*(argument + begin) == 0)
+        // A shortcut's handler receives the whole line with the shortcut character replaced by a
+        // space; a word's handler receives the text after the word.
+        if (parsed.kind == typed_line_kind::blank) {
             return;
-        else {
-            /* get lower case letters and length */
-            for (look_at = 0; *(argument + begin + look_at) > ' '; look_at++)
-                *(argument + begin + look_at) = LOWER(*(argument + begin + look_at));
-
-            cmd = old_search_block(argument, begin, look_at, command, 0);
+        } else if (parsed.kind == typed_line_kind::say_shortcut) {
+            cmd = CMD_SAY;
+            argument[0] = ' ';
+        } else if (parsed.kind == typed_line_kind::wiznet_shortcut) {
+            cmd = CMD_WIZNET;
+            argument[0] = ' ';
+        } else if (parsed.kind == typed_line_kind::emote_shortcut) {
+            cmd = CMD_EMOTE;
+            argument[0] = ' ';
+        } else {
+            cmd = find_command_number(parsed.command_word, command);
+            look_at = static_cast<int>(std::min(parsed.command_word.size(), copied_length));
         }
     } else {
         /* if you're hazed, you have a 10% chance of forgetting targ1 */
@@ -1372,7 +1385,10 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         cmd = -1;
 
     if (cmd <= 0) {
-        one_argument(argument + begin, local_buf);
+        // Bounded so that an unwritten buffer in callback mode is not read past its end.
+        const std::string_view social_text = view_terminated_text(argument + begin, MAX_INPUT_LENGTH);
+        const std::string_view social_word = read_social_word(social_text);
+        copy_lowercased(social_word, local_buf);
         subcmd = find_action(local_buf);
         if (subcmd >= 0)
             cmd = CMD_SOCIAL;

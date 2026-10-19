@@ -4,8 +4,10 @@
 #include "../exploits_json.h"
 #include "../handler.h"
 #include "../interpre.h"
+#include "../obj2html.h"
 #include "../objects_json.h"
 #include "../structs.h"
+#include "../utils.h"
 
 #include "AccountRecordOnDiskBuilder.h"
 
@@ -22,6 +24,7 @@
 ACMD(do_account);
 ACMD(do_shutdown);
 ACMD(do_whoacct);
+ACMD(do_obj2html);
 ACMD(do_wizset);
 extern struct player_index_element* player_table;
 extern struct descriptor_data* descriptor_list;
@@ -796,7 +799,7 @@ TEST(ActWiz, AccountCommandAcceptsEmailForMigrateChar)
     ASSERT_TRUE(account::read_account_file(".", "alpha-admin", &migrated_account, &error_message)) << error_message;
     EXPECT_TRUE(account::account_has_character(migrated_account, "aragorn"));
 
-    struct stat file_info {};
+    struct stat file_info { };
     EXPECT_EQ(stat(account::account_character_player_path(".", "alpha-admin", "aragorn").c_str(), &file_info), 0);
     EXPECT_NE(stat(account::account_character_object_path(".", "alpha-admin", "aragorn").c_str(), &file_info), -1);
     EXPECT_NE(stat(account::account_character_exploits_path(".", "alpha-admin", "aragorn").c_str(), &file_info), -1);
@@ -1218,4 +1221,420 @@ TEST(ActWiz, ShutdownStaysOneLevelBelowGreaterGodUnlessADeployLowersIt)
     EXPECT_EQ(cmd_info[shutdown_command].minimum_level, LEVEL_GRGOD - 1)
         << "shutdown opened to level " << cmd_info[shutdown_command].minimum_level
         << "; only scripts/deploy.py may lower it, and only on the test port's copy";
+}
+
+/* restyle and the skin lines of stat */
+
+#include "../object_skins.h"
+
+ACMD(do_restyle);
+void do_stat_object(const struct char_data* ch, struct obj_data* j);
+void clear_object(struct obj_data* obj);
+extern struct index_data* obj_index;
+extern struct obj_data* obj_proto;
+extern int top_of_objt;
+extern struct room_data world;
+
+namespace {
+const int kSkinBase = 4512, kSkinOwn = 4513, kSkinPlain = 4514, kSkinKey = 4600;
+
+/* Four prototypes (a base, two skins of it, an unrelated key) and two characters: an
+ * immortal and a player. */
+struct SkinWorld {
+    index_data index[4] {};
+    obj_data proto[4] {};
+    char name[4][32] {};
+    char text[4][48] {};
+    index_data* saved_index;
+    obj_data* saved_proto;
+    int saved_top;
+    int saved_light;
+    ScopedCharacterList characters;
+    descriptor_data imm_desc = make_descriptor();
+    descriptor_data pc_desc = make_descriptor();
+    char_data* imm;
+    char_data* pc;
+
+    SkinWorld()
+    {
+        saved_index = obj_index;
+        saved_proto = obj_proto;
+        saved_top = top_of_objt;
+        const int vnums[4] = { kSkinBase, kSkinOwn, kSkinPlain, kSkinKey };
+        const char* shorts[4] = { "a long steel sword", "a slender elven blade", "a plain dagger", "a key" };
+        const char* names[4] = { "sword", "blade", "dagger", "key" };
+        for (int i = 0; i < 4; ++i) {
+            index[i].virt = vnums[i];
+            clear_object(&proto[i]);
+            proto[i].item_number = i;
+            std::snprintf(name[i], sizeof(name[i]), "%s", names[i]);
+            std::snprintf(text[i], sizeof(text[i]), "%s", shorts[i]);
+            proto[i].name = name[i];
+            proto[i].short_description = text[i];
+        }
+        proto[0].obj_flags.type_flag = ITEM_WEAPON;
+        proto[0].obj_flags.cost = 100;
+        for (int i = 0; i < 3; ++i) {
+            proto[i].obj_flags.weight = 5;
+            proto[i].obj_flags.value[2] = 5;
+        }
+        proto[1].obj_flags.skin_base = kSkinBase;
+        proto[2].obj_flags.skin_base = kSkinBase;
+        proto[3].obj_flags.type_flag = ITEM_KEY;
+        obj_index = index;
+        obj_proto = proto;
+        top_of_objt = 3;
+
+        imm = attach_active_character(&imm_desc, "Gandalf", 100, 7);
+        pc = attach_active_character(&pc_desc, "Aragorn", 20, 1234);
+        /* CAN_SEE needs a lit room 0 for the characters to find things */
+        if (room_data::BASE_WORLD == nullptr)
+            world.create_bulk(1);
+        saved_light = world[0].light;
+        world[0].light = 1;
+        imm->in_room = pc->in_room = 0;
+        imm->next = character_list;
+        character_list = imm;
+        pc->next = character_list;
+        character_list = pc;
+    }
+
+    ~SkinWorld()
+    {
+        for (char_data* c : { imm, pc }) {
+            for (int slot = 0; slot < MAX_WEAR; ++slot)
+                if (c->equipment[slot])
+                    extract_obj(c->equipment[slot]);
+            while (c->carrying)
+                extract_obj(c->carrying);
+            free(c->player.name);
+            delete c;
+        }
+        world[0].light = saved_light;
+        obj_index = saved_index;
+        obj_proto = saved_proto;
+        top_of_objt = saved_top;
+    }
+
+    obj_data* load(int vnum) { return read_object(real_object(vnum), REAL); }
+    std::string imm_out() { return imm_desc.output; }
+    void run(const char* arg)
+    {
+        char buffer[MAX_INPUT_LENGTH];
+        std::snprintf(buffer, sizeof(buffer), "%s", arg);
+        imm_desc.small_outbuf[0] = '\0';
+        imm_desc.bufptr = 0;
+        do_restyle(imm, buffer, nullptr, 0, 0);
+    }
+};
+} // namespace
+
+/* obj2html lists a weapon it can't place in any table (bad type, or bulk outside 0-10) under
+ * Problem Objects with its skins right under it, and counts only the problem object itself. */
+TEST(ActWiz, Obj2htmlListsUnplacedWeaponsWithTheirSkins)
+{
+    for (int bad_bulk = 0; bad_bulk < 2; ++bad_bulk) {
+        SkinWorld w;
+        w.proto[0].obj_flags.value[3] = bad_bulk ? 3 : 22;
+        w.proto[0].obj_flags.value[2] = bad_bulk ? 12 : 5;
+        TemporaryDirectory dir;
+        ASSERT_EQ(mkdir((dir.path() + "/lib").c_str(), 0700), 0);
+        ASSERT_EQ(mkdir((dir.path() + "/www").c_str(), 0700), 0);
+        char saved[PATH_MAX];
+        ASSERT_NE(getcwd(saved, sizeof(saved)), nullptr);
+        ASSERT_EQ(chdir((dir.path() + "/lib").c_str()), 0);
+        char arg[] = "weapon";
+        w.imm_desc.small_outbuf[0] = '\0';
+        w.imm_desc.bufptr = 0;
+        do_obj2html(w.imm, arg, nullptr, 0, 0);
+        ASSERT_EQ(chdir(saved), 0);
+
+        EXPECT_NE(w.imm_out().find("\n1 problem object listed at the end."), std::string::npos) << w.imm_out();
+        FILE* f = std::fopen((dir.path() + "/www/objects.html").c_str(), "r");
+        ASSERT_NE(f, nullptr);
+        std::string page;
+        char chunk[512];
+        while (std::fgets(chunk, sizeof(chunk), f))
+            page += chunk;
+        std::fclose(f);
+        const std::string problem = bad_bulk ? "bulk 12 fits no one- or two-handed table" : "weapon type 22 is not a weapon type";
+        size_t at = page.find(problem);
+        ASSERT_NE(at, std::string::npos) << page;
+        size_t skin1 = page.find("a slender elven blade", at), skin2 = page.find("a plain dagger", at);
+        EXPECT_NE(skin1, std::string::npos) << page;
+        EXPECT_NE(skin2, std::string::npos) << page;
+        EXPECT_NE(page.find("skin of 4512", at), std::string::npos) << page;
+        /* The skins are indented under the problem object; it is not. */
+        EXPECT_NE(page.find("<TD ALIGN=LEFT> &nbsp;&nbsp;- a slender elven blade </TD>", at), std::string::npos) << page;
+        EXPECT_NE(page.find("<TD ALIGN=LEFT> &nbsp;&nbsp;- a plain dagger </TD>", at), std::string::npos) << page;
+        EXPECT_NE(page.find("<TD ALIGN=LEFT> a long steel sword </TD>"), std::string::npos) << page;
+    }
+}
+
+namespace {
+/* Runs obj2html with these words in a scratch lib/ folder; returns the page, the reply in *reply. */
+std::string run_obj2html(SkinWorld& w, const char* words, std::string* reply)
+{
+    TemporaryDirectory dir;
+    mkdir((dir.path() + "/lib").c_str(), 0700);
+    mkdir((dir.path() + "/www").c_str(), 0700);
+    char saved[PATH_MAX];
+    if (!getcwd(saved, sizeof(saved)) || chdir((dir.path() + "/lib").c_str()) != 0)
+        return "";
+    char arg[64];
+    std::snprintf(arg, sizeof(arg), "%s", words);
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_obj2html(w.imm, arg, nullptr, 0, 0);
+    if (chdir(saved) != 0)
+        return "";
+    *reply = w.imm_out();
+    std::string page;
+    if (FILE* f = std::fopen((dir.path() + "/www/objects.html").c_str(), "r")) {
+        char chunk[512];
+        while (std::fgets(chunk, sizeof(chunk), f))
+            page += chunk;
+        std::fclose(f);
+    }
+    return page;
+}
+
+/* Whether any table in this list still holds an output list. */
+bool obj2html_holds_tables(const struct obj2html_type* list)
+{
+    for (int i = 0; list[i].title != NULL; ++i)
+        if (list[i].to_output || (list[i].subtypes && obj2html_holds_tables(list[i].subtypes)))
+            return true;
+    return false;
+}
+} // namespace
+
+/* A run that can't open the page (no ../www) frees the tables it made. */
+TEST(ActWiz, Obj2htmlFreesItsTablesWhenThePageCannotOpen)
+{
+    SkinWorld w;
+    TemporaryDirectory dir;
+    ASSERT_EQ(mkdir((dir.path() + "/lib").c_str(), 0700), 0);
+    char saved[PATH_MAX];
+    ASSERT_NE(getcwd(saved, sizeof(saved)), nullptr);
+    ASSERT_EQ(chdir((dir.path() + "/lib").c_str()), 0);
+    char arg[] = "weapon";
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_obj2html(w.imm, arg, nullptr, 0, 0);
+    ASSERT_EQ(chdir(saved), 0);
+
+    EXPECT_NE(w.imm_out().find("Failed to start the HTML dump."), std::string::npos) << w.imm_out();
+    EXPECT_FALSE(obj2html_holds_tables(obj2html_types));
+}
+
+/* Armor whose wear flags fit no armor table is a problem row with its skins under it; a weapon
+ * with a bad bulk is listed only when its kind is in the run. */
+TEST(ActWiz, Obj2htmlListsUnplacedArmorAndBulkByKind)
+{
+    {
+        SkinWorld w;
+        w.proto[0].obj_flags.type_flag = ITEM_ARMOR;
+        w.proto[0].obj_flags.wear_flags = ITEM_TAKE;
+        std::string reply;
+        std::string page = run_obj2html(w, "armor", &reply);
+        size_t at = page.find("wear flags 1 fit no armor table");
+        ASSERT_NE(at, std::string::npos) << page;
+        EXPECT_NE(page.find("skin of 4512", at), std::string::npos) << page;
+        EXPECT_NE(reply.find("\n1 problem object listed at the end."), std::string::npos) << reply;
+    }
+    {
+        SkinWorld w;
+        w.proto[0].obj_flags.value[3] = 0; /* a whip */
+        w.proto[0].obj_flags.value[2] = 12;
+        std::string reply;
+        std::string page = run_obj2html(w, "slash", &reply);
+        EXPECT_EQ(page.find("bulk 12"), std::string::npos) << "not a slashing weapon: " << page;
+        EXPECT_EQ(reply.find("problem object"), std::string::npos) << reply;
+        page = run_obj2html(w, "whip", &reply);
+        EXPECT_NE(page.find("bulk 12 fits no one- or two-handed table"), std::string::npos) << page;
+    }
+}
+
+/* stat reads the family from the prototype: a copy made while its prototype was a skin shows no
+ * "Skin of" once implement has made the prototype plain. */
+TEST(ActWiz, StatSkinLineFollowsThePrototype)
+{
+    SkinWorld w;
+    obj_data* skin = w.load(kSkinOwn);
+    obj_to_char(skin, w.imm);
+    w.proto[1].obj_flags.skin_base = 0; /* demoted at implement; the copy still says 4512 */
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_stat_object(w.imm, skin);
+    EXPECT_EQ(w.imm_out().find("Skin of"), std::string::npos) << w.imm_out();
+}
+
+TEST(ActWiz, RestyleOwnItem)
+{
+    SkinWorld w;
+    obj_data* sword = w.load(kSkinBase);
+    obj_to_char(sword, w.imm);
+    w.run("sword 4513");
+    EXPECT_EQ(w.imm_out(), "Restyled obj 4512 (a long steel sword) to obj 4513 (a slender elven blade).\n\r");
+    ASSERT_NE(w.imm->carrying, nullptr);
+    EXPECT_EQ(obj_index[w.imm->carrying->item_number].virt, kSkinOwn);
+    EXPECT_TRUE(IS_SET(PLR_FLAGS(w.imm), PLR_CRASH));
+}
+
+TEST(ActWiz, RestyleReplyFits78Columns)
+{
+    SkinWorld w;
+    std::snprintf(w.text[0], sizeof(w.text[0]), "a very long and heavily notched steel sword");
+    std::snprintf(w.text[1], sizeof(w.text[1]), "a slender and finely wrought elven blade");
+    obj_data* sword = w.load(kSkinBase);
+    obj_to_char(sword, w.imm);
+    w.run("sword 4513");
+    const std::string out = w.imm_out();
+    EXPECT_EQ(out, "Restyled obj 4512 (a very long and heavi) to obj 4513 (a slender and finely ).\n\r");
+    EXPECT_EQ(out.size() - 2, 78u) << out;
+
+    /* a short old text leaves its room to the new one */
+    std::snprintf(w.text[0], sizeof(w.text[0]), "a sword");
+    std::snprintf(w.text[1], sizeof(w.text[1]), "a slender, finely wrought and runed elven blade");
+    obj_data* other = w.load(kSkinBase);
+    obj_to_char(other, w.imm);
+    w.run("sword 4513");
+    EXPECT_EQ(w.imm_out(), "Restyled obj 4512 (a sword) to obj 4513 (a slender, finely wrought and runed).\n\r");
+}
+
+TEST(ActWiz, RestylePlayerWornItem)
+{
+    SkinWorld w;
+    obj_data* sword = w.load(kSkinBase);
+    equip_char(w.pc, sword, WIELD);
+    REMOVE_BIT(PLR_FLAGS(w.pc), PLR_CRASH);
+    w.pc_desc.small_outbuf[0] = '\0';
+    w.pc_desc.bufptr = 0;
+    w.run("aragorn sword 4514");
+    EXPECT_EQ(w.imm_out(), "Restyled obj 4512 (a long steel sword) to obj 4514 (a plain dagger).\n\r");
+    ASSERT_NE(w.pc->equipment[WIELD], nullptr);
+    EXPECT_EQ(obj_index[w.pc->equipment[WIELD]->item_number].virt, kSkinPlain);
+    EXPECT_TRUE(IS_SET(PLR_FLAGS(w.pc), PLR_CRASH));
+    /* The player is told, without the immortal's name. */
+    EXPECT_EQ(std::string(w.pc_desc.output), "A long steel sword has been restyled into a plain dagger.\n\r");
+}
+
+TEST(ActWiz, RestyleRefusesOutOfFamily)
+{
+    SkinWorld w;
+    obj_data* sword = w.load(kSkinBase);
+    obj_to_char(sword, w.imm);
+    w.run("sword 4600");
+    EXPECT_EQ(w.imm_out(), "Obj 4600 is not a look of obj 4512.\n\r");
+    EXPECT_EQ(w.imm->carrying, sword);
+    EXPECT_EQ(obj_index[sword->item_number].virt, kSkinBase);
+    w.run("sword 9999");
+    EXPECT_EQ(w.imm_out(), "There is no obj 9999.\n\r");
+    w.run("sword 4512");
+    EXPECT_EQ(w.imm_out(), "It is already obj 4512.\n\r");
+    w.run("sword");
+    EXPECT_EQ(w.imm_out(), "Restyle what to which vnum?\n\r");
+    w.run("axe 4513");
+    EXPECT_EQ(w.imm_out(), "You don't see that.\n\r");
+    w.run("nobody sword 4513");
+    EXPECT_EQ(w.imm_out(), "No such player.\n\r");
+    EXPECT_EQ(w.imm->carrying, sword);
+}
+
+std::vector<std::string> stat_skins_lines(const std::vector<int>& vnums);
+
+/* A long Skins list wraps, indented under the first line: every vnum is shown once and no line
+ * passes 78 columns; only the last vnum has no comma. */
+TEST(ActWiz, StatSkinsListWrapsWithin78Columns)
+{
+    EXPECT_TRUE(stat_skins_lines({}).empty());
+    EXPECT_EQ(stat_skins_lines({ 4513, 4514 }), std::vector<std::string>({ "Skins: 4513, 4514" }));
+
+    std::vector<int> vnums;
+    for (int v = 10000; v < 10030; ++v)
+        vnums.push_back(v);
+    std::vector<std::string> lines = stat_skins_lines(vnums);
+    ASSERT_GT(lines.size(), 1u);
+    EXPECT_EQ(lines[0].rfind("Skins: 10000,", 0), 0u) << lines[0];
+    std::string all;
+    for (size_t i = 0; i < lines.size(); ++i) {
+        EXPECT_LE(lines[i].size(), 78u) << lines[i];
+        if (i > 0)
+            EXPECT_EQ(lines[i].rfind("       1", 0), 0u) << "indented under the first: " << lines[i];
+        EXPECT_EQ(lines[i].back() == ',', i + 1 < lines.size()) << lines[i];
+        all += lines[i];
+    }
+    for (int v : vnums)
+        EXPECT_NE(all.find(std::to_string(v)), std::string::npos) << v;
+}
+
+/* A long base name is cut so the Skin of line stays within 78 columns. */
+TEST(ActWiz, StatSkinOfLineFits78Columns)
+{
+    SkinWorld w;
+    static char long_name[] = "a very long, gleaming, intricately engraved and finely balanced sword of the west";
+    obj_proto[real_object(kSkinBase)].short_description = long_name;
+    obj_data* skin = w.load(kSkinOwn);
+    obj_to_char(skin, w.imm);
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_stat_object(w.imm, skin);
+    std::string out = w.imm_out();
+    size_t at = out.find("Skin of: obj 4512 (a very long");
+    ASSERT_NE(at, std::string::npos) << out;
+    std::string line = out.substr(at, out.find("\n\r", at) - at);
+    EXPECT_EQ(line.size(), 78u) << line;
+    EXPECT_EQ(line.back(), ')') << line;
+}
+
+TEST(ActWiz, StatShowsSkinLines)
+{
+    SkinWorld w;
+    obj_data* base = w.load(kSkinBase);
+    obj_data* skin = w.load(kSkinOwn);
+    obj_data* key = w.load(kSkinKey);
+    for (obj_data* o : { base, skin, key })
+        obj_to_char(o, w.imm);
+
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_stat_object(w.imm, skin);
+    EXPECT_NE(w.imm_out().find("Skin of: obj 4512 (a long steel sword)\n\r"), std::string::npos) << w.imm_out();
+    EXPECT_EQ(w.imm_out().find("Skins:"), std::string::npos);
+
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_stat_object(w.imm, base);
+    EXPECT_NE(w.imm_out().find("Skins: 4513, 4514\n\r"), std::string::npos) << w.imm_out();
+    EXPECT_EQ(w.imm_out().find("Skin of:"), std::string::npos);
+
+    w.imm_desc.small_outbuf[0] = '\0';
+    w.imm_desc.bufptr = 0;
+    do_stat_object(w.imm, key);
+    EXPECT_EQ(w.imm_out().find("Skin"), std::string::npos);
+}
+
+/* A skin named exactly "gizmo" is a placeholder and stays hidden, as every other gizmo does: not
+ * under its parent's row, and not under a problem object in the footer. */
+TEST(ActWiz, Obj2htmlHidesGizmoSkins)
+{
+    {
+        SkinWorld w;
+        std::snprintf(w.text[2], sizeof(w.text[2]), "gizmo");
+        std::string reply;
+        std::string page = run_obj2html(w, "weapon", &reply);
+        EXPECT_NE(page.find("&nbsp;&nbsp;- a slender elven blade <I>(#4512)</I>"), std::string::npos) << page;
+        EXPECT_EQ(page.find("gizmo"), std::string::npos) << page;
+    }
+    {
+        SkinWorld w;
+        std::snprintf(w.text[2], sizeof(w.text[2]), "gizmo");
+        w.proto[0].obj_flags.value[3] = 22; /* not a weapon type: a problem row */
+        std::string reply;
+        std::string page = run_obj2html(w, "weapon", &reply);
+        ASSERT_NE(page.find("weapon type 22 is not a weapon type"), std::string::npos) << page;
+        EXPECT_NE(page.find("a slender elven blade"), std::string::npos) << page;
+        EXPECT_EQ(page.find("gizmo"), std::string::npos) << page;
+    }
 }

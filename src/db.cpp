@@ -38,6 +38,7 @@
 #include "character_json.h"
 #include "exploits_json.h"
 #include "mob_options.h"
+#include "object_skins.h"
 #include "mob_walker.h"
 #include "game_boot_options.h"
 #include "mob_progs/banker.h"
@@ -424,6 +425,9 @@ void boot_db(void)
 
     log("Loading objs and generating index.");
     index_boot(DB_BOOT_OBJ);
+
+    log("Applying object skins.");
+    apply_object_skins();
 
     log("Renumbering zone table.");
     renum_zone_table();
@@ -2206,13 +2210,20 @@ void load_objects(FILE* obj_f)
             obj_proto[i].obj_flags.cost_per_day = tmp3;
 
             /* An older line has four numbers: no version, not whatever tmp5 last held. */
-            if (fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4, &tmp5) < 5)
-                tmp5 = 0;
+            int level_nums[7];
+            read_object_level_line(obj_f, level_nums);
+            tmp = level_nums[0];
+            tmp2 = level_nums[1];
+            tmp3 = level_nums[2];
+            tmp4 = level_nums[3];
+            tmp5 = level_nums[4];
             obj_proto[i].obj_flags.level = tmp;
             obj_proto[i].obj_flags.rarity = tmp2;
             obj_proto[i].obj_flags.material = tmp3;
             obj_proto[i].obj_flags.script_number = tmp4;
             obj_proto[i].obj_flags.version = tmp5;
+            obj_proto[i].obj_flags.skin_base = level_nums[5];
+            obj_proto[i].obj_flags.skin_own = level_nums[6];
             /*fscanf(obj_f, " %d %d %d %d %d", &tmp, &tmp2, &tmp3, &tmp4);
             obj_proto[i].obj_flags.poisoned = tmp;
             obj_proto[i].obj_flags.poisondata[0] = tmp2;

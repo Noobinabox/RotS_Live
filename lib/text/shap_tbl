@@ -659,6 +659,9 @@ See also: ONE TWO
 
 Cost in copper coins. This value should be about 10 * level ^2 for levels
 up to 10, double for every level thereafter. 0 means shops won't trade it.
+On a skin (see /23), a number gives the skin its own cost; the word base
+makes it follow the base's cost again. A skin's own cost is what shops pay
+for it, and its rent when rent is -1, also after a restyle.
 #
 "OBJ 15"
 
@@ -694,6 +697,10 @@ Material of an object, 0-13.
 11  fur
 12  glass
 13  plant
+On a skin (see /23), a number gives the skin its own material; the word
+base makes it follow the base's material again. Material is not only a
+look: chain and metal armor turn arrows, smite works on metal, and shops
+trade by material.
 #
 "OBJ 19"
 
@@ -790,6 +797,31 @@ another port), its numbers go back. Players' copies holding a higher
 number are then refreshed back to the older object, and copies already
 stamped with a number are skipped until a bump passes it. Bump again to
 get past it.
+#
+"OBJ 23"
+
+/23 makes this object a skin of a base object: type the base's vnum, or 0
+for none. A skin keeps its own aliases and descriptions (/1-/5) and takes
+every stat from the base: type, flags, values, weight, rent, level,
+affects, script and version. Its stat fields can't be edited here; edit
+the base, and its skins follow once the base is implemented.
+Cost and material follow the base too, but a skin may set its own with
+/14 or /18; typing base there makes it follow the base again.
+
+Keys and notes can't have skins, a skin can't be a base, and an object
+that has skins can't become one. /23 0 turns a skin back into a plain
+object that keeps the stats it has now.
+
+If the base is a drink container that starts full, start the skin's
+aliases with the liquid word (e.g. water jug clay): filling, emptying
+and restyle treat the first alias of a full container as its liquid.
+
+Players' copies are refreshed by version (see /22). When a base's stats
+change and players' converted copies need the new stats, bump the base's
+version (/22) by hand.
+Making an object that players already have into a skin, or moving a
+skin to another base, also needs the base's version (/22) bumped above
+the skin's old version, or players' copies won't take the new stats.
 #
 "OBJ 49"
 

@@ -240,6 +240,7 @@ def read_objects(path: Path) -> list[GameObject]:
         wear_flags = cursor.read_int()
         skip_ints(cursor, 5 + 3 + 4)  # values; weight, cost, rent; level, rarity, material, script
         cursor.read_int(default=0)  # version, absent from older lines
+        skip_ints(cursor, 2, default=0)  # skin base vnum and own fields, written only for skins
         game_object = GameObject(vnum, keywords, short_description, item_type, extra_flags, wear_flags)
         token = cursor.read_word()
         while token == "E":

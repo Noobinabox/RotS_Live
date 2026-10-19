@@ -8,8 +8,10 @@
 #include "../exploits_json.h"
 #include "../handler.h"
 #include "../mob_progs/banker.h"
+#include "../object_skins.h"
 #include "../objects_json.h"
 #include "../protos.h" /* shape_object, for the object editor's version field */
+#include "../script.h" /* check_script_vnums, for the RESTYLE_OBJ target check */
 #include "../spells.h" /* SPELL_RESIST_* for the affect-persistence tests */
 #include "../utils.h"
 #include "AccountRecordOnDiskBuilder.h"
@@ -2341,15 +2343,54 @@ TEST(DbLoader, AnEnchantedWeaponSavedByTheGameLoadsBackAndTheRentListingReadsPas
 void write_object(FILE* f, const struct obj_data* obj, int num);
 void load_objects(FILE* obj_f);
 
+TEST(DbLoader, SkinLevelLineWrittenOnlyForSkins)
+{
+    char name[] = "sword";
+    char empty[] = "";
+    obj_data o {};
+    o.name = name;
+    o.short_description = name;
+    o.description = name;
+    o.action_description = empty;
+    o.obj_flags.level = 12;
+    o.obj_flags.material = 4;
+    o.obj_flags.version = 3;
+
+    auto level_line = [&]() {
+        FILE* f = tmpfile();
+        write_object(f, &o, 77);
+        std::rewind(f);
+        char line[256];
+        std::string last, all;
+        while (std::fgets(line, sizeof line, f)) {
+            all = line;
+            while (!all.empty() && all[0] == '\r') /* lines end "\n\r" */
+                all.erase(0, 1);
+            if (all.find("12 0 4 0 3") == 0)
+                last = all;
+        }
+        std::fclose(f);
+        while (!last.empty() && (last.back() == '\n' || last.back() == '\r'))
+            last.pop_back();
+        return last;
+    };
+    EXPECT_EQ(level_line(), "12 0 4 0 3");
+    o.obj_flags.skin_base = 4512;
+    o.obj_flags.skin_own = 1;
+    EXPECT_EQ(level_line(), "12 0 4 0 3 4512 1");
+}
+
 // load_objects keeps its place in the prototype table between calls (boot reads one file after
 // another), so this is the one test that may call it.
+/* Also the boot side of a skin's 7-number level line (load_objects is single-use, so it is here):
+ * the 6th and 7th numbers become skin_base and skin_own. */
 TEST(DbLoader, WorldObjectVersionSurvivesWriteAndLoadAndAShortLevelLineReadsAsNone)
 {
     index_data* const previous_obj_index = obj_index;
     obj_data* const previous_obj_proto = obj_proto;
     const int previous_top_of_objt = top_of_objt;
-    obj_index = new index_data[3] {};
-    obj_proto = new obj_data[3] {};
+    obj_index = new index_data[4] {};
+    obj_proto = new obj_data[4] {};
 
     char name[] = "sword";
     char short_description[] = "a sword";
@@ -2374,13 +2415,17 @@ TEST(DbLoader, WorldObjectVersionSurvivesWriteAndLoadAndAShortLevelLineReadsAsNo
     // A line from before the fifth number existed. Its value[4] above it is 9: what the version
     // used to be left holding when the line ran short.
     std::fputs("#2003\nsword~\na sword~\nA sword lies here.~\n~\n5 0 0\n0 0 0 0 9\n1 1 1\n12 0 0 7\n", file);
+    written.obj_flags.version = 4;
+    written.obj_flags.skin_base = 2001;
+    written.obj_flags.skin_own = SKIN_OWN_COST | SKIN_OWN_MATERIAL;
+    write_object(file, &written, 2004); // a skin: a 7-number level line
     std::fputs("#99999\n$~\n", file);
     std::rewind(file);
 
     load_objects(file);
     std::fclose(file);
 
-    EXPECT_EQ(top_of_objt, 2);
+    EXPECT_EQ(top_of_objt, 3);
     EXPECT_EQ(obj_index[0].virt, 2001);
     EXPECT_EQ(obj_proto[0].obj_flags.version, 4);
     EXPECT_EQ(obj_proto[0].obj_flags.script_number, 7);
@@ -2390,6 +2435,12 @@ TEST(DbLoader, WorldObjectVersionSurvivesWriteAndLoadAndAShortLevelLineReadsAsNo
     EXPECT_EQ(obj_proto[2].obj_flags.script_number, 7);
     EXPECT_EQ(obj_proto[2].obj_flags.value[4], 9);
     EXPECT_EQ(obj_proto[2].obj_flags.version, 0);
+    EXPECT_EQ(obj_proto[2].obj_flags.skin_base, 0) << "a short line is not a skin";
+    EXPECT_EQ(obj_proto[0].obj_flags.skin_base, 0);
+    EXPECT_EQ(obj_index[3].virt, 2004);
+    EXPECT_EQ(obj_proto[3].obj_flags.version, 4);
+    EXPECT_EQ(obj_proto[3].obj_flags.skin_base, 2001);
+    EXPECT_EQ(obj_proto[3].obj_flags.skin_own, SKIN_OWN_COST | SKIN_OWN_MATERIAL);
 
     delete[] obj_proto;
     delete[] obj_index;
@@ -2435,6 +2486,575 @@ TEST(DbLoader, ObjectEditorVersionFieldTakesExactlyBOrO)
     EXPECT_EQ(answer("b"), 3) << "the next bump counts on from the kept number";
 
     builder.temp = nullptr;
+}
+
+void implement_object(const struct char_data* ch);
+int load_object(struct char_data* ch, const char* arg);
+int replace_object(struct char_data* ch, char* arg);
+void list_object(const struct char_data* ch, const struct obj_data* obj);
+extern int object_master_idnum;
+
+namespace {
+
+/* An object editor session over a small prototype table: base 4512 (a sword) with skins 4513 and
+ * 4514, a key 4600 and a plain staff 4700. The working copy is edited as obj `basenum`; output is captured. */
+class SkinEditorSession {
+public:
+    SkinEditorSession(int basenum)
+        : m_previous_obj_index(obj_index)
+        , m_previous_obj_proto(obj_proto)
+        , m_previous_top_of_objt(top_of_objt)
+    {
+        obj_index = new index_data[5] {};
+        obj_proto = new obj_data[5] {};
+        top_of_objt = 4;
+
+        init(0, 4512, "a long steel sword");
+        obj_flag_data& sword = obj_proto[0].obj_flags;
+        sword.type_flag = ITEM_WEAPON;
+        sword.extra_flags = 64;
+        sword.wear_flags = ITEM_TAKE | ITEM_WIELD;
+        sword.value[0] = 5;
+        sword.value[1] = 2;
+        sword.value[2] = 10;
+        sword.value[3] = 3;
+        sword.weight = 50;
+        sword.cost = 100;
+        sword.cost_per_day = 7;
+        sword.level = 12;
+        sword.material = 4;
+        sword.script_number = 0;
+        sword.version = 2;
+        obj_proto[0].affected[0].location = APPLY_OB;
+        obj_proto[0].affected[0].modifier = 2;
+        for (int i = 1; i <= 2; i++) {
+            init(i, 4512 + i, "a skin");
+            obj_proto[i].obj_flags.skin_base = 4512;
+            copy_skin_stats_from_base(obj_proto[i], obj_proto[0]);
+        }
+        init(3, 4600, "a brass key");
+        obj_proto[3].obj_flags.type_flag = ITEM_KEY;
+        init(4, 4700, "a wooden staff");
+        obj_proto[4].obj_flags.type_flag = ITEM_STAFF;
+
+        m_descriptor.output = m_descriptor.small_outbuf;
+        m_descriptor.small_outbuf[0] = '\0';
+        m_descriptor.bufptr = 0;
+        m_descriptor.bufspace = SMALL_BUFSIZE - 1;
+        m_descriptor.connected = CON_PLYNG;
+
+        clear_object(&object);
+        object.name = strdup("cloak");
+        object.short_description = strdup("a grey cloak");
+        object.description = strdup("A grey cloak lies here.");
+        object.action_description = strdup("");
+        object.obj_flags.type_flag = ITEM_WORN;
+        object.obj_flags.weight = 20;
+        object.obj_flags.cost = 90;
+        object.obj_flags.material = 4;
+
+        shape.object = &object;
+        shape.procedure = SHAPE_EDIT;
+        shape.flags = SHAPE_OBJECT_LOADED;
+        shape.basenum = basenum;
+        shape.number = basenum;
+        shape.permission = 1;
+
+        clear_char(&builder, MOB_VOID);
+        builder.temp = &shape;
+        builder.desc = &m_descriptor;
+        m_descriptor.character = &builder;
+    }
+
+    ~SkinEditorSession()
+    {
+        builder.temp = nullptr;
+        builder.desc = nullptr;
+        delete[] obj_proto;
+        delete[] obj_index;
+        obj_proto = m_previous_obj_proto;
+        obj_index = m_previous_obj_index;
+        top_of_objt = m_previous_top_of_objt;
+    }
+
+    /* Field `field`: the first call shows the prompt, the second takes the answer. */
+    std::string answer(int field, const char* typed)
+    {
+        char prompt[] = "";
+        shape.editflag = field;
+        shape_center_obj(&builder, prompt);
+        if (IS_SET(shape.flags, SHAPE_DIGIT_ACTIVE)) {
+            char reply[64];
+            std::snprintf(reply, sizeof(reply), "%s", typed);
+            shape_center_obj(&builder, reply);
+        }
+        return take();
+    }
+
+    std::string take()
+    {
+        std::string text = m_descriptor.output;
+        m_descriptor.output[0] = '\0';
+        m_descriptor.bufptr = 0;
+        m_descriptor.bufspace = (m_descriptor.large_outbuf ? LARGE_BUFSIZE : SMALL_BUFSIZE) - 1;
+        return text;
+    }
+
+    obj_data object {};
+    shape_object shape {};
+    char_data builder {};
+
+private:
+    void init(int index, int virt, const char* short_description)
+    {
+        obj_index[index].virt = virt;
+        clear_object(&obj_proto[index]);
+        obj_proto[index].name = strdup("thing");
+        obj_proto[index].short_description = strdup(short_description);
+        obj_proto[index].description = strdup(short_description);
+        obj_proto[index].action_description = strdup("");
+        obj_proto[index].item_number = index;
+    }
+
+    index_data* m_previous_obj_index;
+    obj_data* m_previous_obj_proto;
+    int m_previous_top_of_objt;
+    descriptor_data m_descriptor {};
+};
+
+bool has(const std::string& text, const char* line) { return text.find(line) != std::string::npos; }
+
+} // namespace
+
+TEST(DbLoader, ObjectEditorSetsSkinBase)
+{
+    SkinEditorSession session(4520);
+
+    const std::string out = session.answer(23, "4512");
+
+    const obj_flag_data& flags = session.object.obj_flags;
+    EXPECT_EQ(flags.skin_base, 4512);
+    EXPECT_EQ(flags.skin_own, 0);
+    EXPECT_EQ(flags.type_flag, ITEM_WEAPON);
+    EXPECT_EQ(flags.weight, 50);
+    EXPECT_EQ(flags.value[2], 10);
+    EXPECT_EQ(flags.cost, 100);
+    EXPECT_EQ(flags.level, 12);
+    EXPECT_EQ(session.object.affected[0].location, APPLY_OB);
+    EXPECT_STREQ(session.object.short_description, "a grey cloak") << "text stays its own";
+    EXPECT_TRUE(has(out, "Enter BASE (vnum of the object this is a skin of, 0 = none) [0]:")) << out;
+    EXPECT_TRUE(has(out, "This object is now a skin of obj 4512 (a long steel sword).\n\r")) << out;
+    EXPECT_TRUE(has(out, "Stats, values, affects and flags now come from 4512.\n\r")) << out;
+    EXPECT_TRUE(has(out, "Cost was 90, now follows base (100).\n\r")) << out;
+    EXPECT_FALSE(has(out, "Material was")) << "material did not differ: " << out;
+}
+
+TEST(DbLoader, ObjectEditorRefusesKeyBase)
+{
+    SkinEditorSession session(4520);
+
+    const std::string out = session.answer(23, "4600");
+
+    EXPECT_EQ(session.object.obj_flags.skin_base, 0);
+    EXPECT_EQ(session.object.obj_flags.type_flag, ITEM_WORN);
+    EXPECT_TRUE(has(out, "Keys can't have skins.\n\r")) << out;
+}
+
+TEST(DbLoader, ObjectEditorRefusesSkinAsBase)
+{
+    SkinEditorSession session(4520);
+
+    std::string out = session.answer(23, "4513");
+    EXPECT_EQ(session.object.obj_flags.skin_base, 0);
+    EXPECT_TRUE(has(out, "Obj 4513 is a skin of obj 4512; use /23 4512.\n\r")) << out;
+
+    out = session.answer(23, "4999");
+    EXPECT_EQ(session.object.obj_flags.skin_base, 0);
+    EXPECT_TRUE(has(out, "There is no obj 4999.\n\r")) << out;
+
+    out = session.answer(23, "4520");
+    EXPECT_EQ(session.object.obj_flags.skin_base, 0);
+    EXPECT_TRUE(has(out, "An object can't be its own base.\n\r")) << out;
+
+    SkinEditorSession base_session(4512);
+    out = base_session.answer(23, "4700");
+    EXPECT_EQ(base_session.object.obj_flags.skin_base, 0);
+    EXPECT_TRUE(has(out, "Obj 4512 has skins (4513, 4514); it can't become a skin.\n\r")) << out;
+}
+
+TEST(DbLoader, ObjectEditorRefusesStatEditOnSkin)
+{
+    SkinEditorSession session(4521);
+    session.answer(23, "4512");
+
+    const std::string out = session.answer(13, "75");
+
+    EXPECT_EQ(session.object.obj_flags.weight, 50);
+    EXPECT_TRUE(has(out, "Obj 4521 is a skin of obj 4512; edit stats on 4512.\n\r")) << out;
+    EXPECT_FALSE(has(out, "Enter WEIGHT")) << "no prompt on a skin: " << out;
+    EXPECT_FALSE(IS_SET(session.shape.flags, SHAPE_DIGIT_ACTIVE));
+    EXPECT_EQ(session.shape.editflag, 0);
+
+    /* The creation chain refuses its stat steps (9, 11, 12, 13) and stops at cost. */
+    char blank[] = "";
+    session.shape.flags |= SHAPE_CHAIN;
+    session.shape.editflag = 9;
+    shape_center_obj(&session.builder, blank);
+    std::string chain = session.take();
+    EXPECT_TRUE(has(chain, "Obj 4521 is a skin of obj 4512; edit stats on 4512.\n\r")) << chain;
+    EXPECT_FALSE(has(chain, "Enter TYPE")) << chain;
+    EXPECT_TRUE(has(chain, "Enter COST")) << chain;
+    EXPECT_EQ(session.shape.editflag, 14);
+    shape_center_obj(&session.builder, blank); /* keep the cost; the chain ends there */
+    chain = session.take();
+    EXPECT_FALSE(has(chain, "is a skin of")) << "refused once per chain: " << chain;
+    EXPECT_EQ(session.shape.editflag, 0);
+    EXPECT_EQ(session.object.obj_flags.cost, 100);
+    EXPECT_EQ(session.object.obj_flags.skin_own, 0) << "a blank cost answer is not an own cost";
+}
+
+/* /49 on a skin: one refusal for the whole chain, then text, cost and the end. */
+TEST(DbLoader, ObjectEditorSkinChainRefusesOnce)
+{
+    SkinEditorSession session(4521);
+    session.answer(23, "4512");
+
+    char blank[] = "";
+    char start[] = "49";
+    session.shape.editflag = 0;
+    shape_center_obj(&session.builder, start);
+    std::string out = session.take();
+    for (int step = 0; step < 12 && session.shape.editflag != 0; step++) {
+        shape_center_obj(&session.builder, blank);
+        out += session.take();
+    }
+    EXPECT_EQ(session.shape.editflag, 0) << out;
+    const std::string refusal = "Obj 4521 is a skin of obj 4512; edit stats on 4512.\n\r";
+    size_t first = out.find(refusal);
+    ASSERT_NE(first, std::string::npos) << out;
+    EXPECT_EQ(out.find(refusal, first + 1), std::string::npos) << "refused twice: " << out;
+    EXPECT_TRUE(has(out, "Enter COST")) << out;
+    EXPECT_FALSE(has(out, "Enter WEIGHT")) << out;
+}
+
+/* A vnum that is not booted yet: the editor's basenum is -1, its number is the vnum. */
+TEST(DbLoader, ObjectEditorSkinMessagesOnNewVnum)
+{
+    SkinEditorSession session(-1);
+    session.shape.number = 5013;
+    session.answer(23, "4512");
+
+    std::string out = session.answer(13, "75");
+    EXPECT_TRUE(has(out, "Obj 5013 is a skin of obj 4512; edit stats on 4512.\n\r")) << out;
+
+    out = session.answer(23, "5013");
+    EXPECT_TRUE(has(out, "An object can't be its own base.\n\r")) << out;
+    EXPECT_EQ(session.object.obj_flags.skin_base, 4512);
+}
+
+TEST(DbLoader, ObjectEditorOwnCostThenBase)
+{
+    SkinEditorSession session(4521);
+    session.answer(23, "4512");
+
+    session.answer(14, "250");
+    EXPECT_EQ(session.object.obj_flags.cost, 250);
+    EXPECT_TRUE(session.object.obj_flags.skin_own & SKIN_OWN_COST);
+
+    const std::string out = session.answer(14, "base");
+    EXPECT_EQ(session.object.obj_flags.cost, 100);
+    EXPECT_FALSE(session.object.obj_flags.skin_own & SKIN_OWN_COST);
+    EXPECT_TRUE(has(out, "Cost now follows base (100).\n\r")) << out;
+
+    session.answer(18, "2");
+    EXPECT_EQ(session.object.obj_flags.material, 2);
+    EXPECT_TRUE(session.object.obj_flags.skin_own & SKIN_OWN_MATERIAL);
+    const std::string material = session.answer(18, "base");
+    EXPECT_EQ(session.object.obj_flags.material, 4);
+    EXPECT_FALSE(session.object.obj_flags.skin_own & SKIN_OWN_MATERIAL);
+    EXPECT_TRUE(has(material, "Material now follows base (4).\n\r")) << material;
+}
+
+/* A skin whose base is no longer valid (here a key) boots as a plain object: "base" at /14 and /18
+ * is refused and copies nothing, its stats can be edited, and the list shows none as the base's. */
+TEST(DbLoader, ObjectEditorSkinOfInvalidBaseIsEditedAsPlain)
+{
+    SkinEditorSession session(4521);
+    session.object.obj_flags.skin_base = 4600;
+
+    const std::string cost = session.answer(14, "base");
+    EXPECT_TRUE(has(cost, "Can't follow the base: base obj 4600 is a key.\n\r")) << cost;
+    const std::string material = session.answer(18, "base");
+    EXPECT_TRUE(has(material, "Can't follow the base: base obj 4600 is a key.\n\r")) << material;
+    const obj_flag_data& flags = session.object.obj_flags;
+    EXPECT_EQ(flags.type_flag, ITEM_WORN) << "nothing copied from the key";
+    EXPECT_EQ(flags.cost, 90);
+    EXPECT_EQ(flags.material, 4);
+
+    const std::string weight = session.answer(13, "75");
+    EXPECT_FALSE(has(weight, "edit stats on")) << weight;
+    EXPECT_EQ(flags.weight, 75);
+
+    list_object(&session.builder, &session.object);
+    const std::string list = session.take();
+    EXPECT_FALSE(has(list, "(from 4600)")) << list;
+
+    /* The creation chain asks its stat steps instead of skipping them. */
+    char blank[] = "";
+    session.shape.flags |= SHAPE_CHAIN;
+    session.shape.editflag = 9;
+    shape_center_obj(&session.builder, blank);
+    const std::string chain = session.take();
+    EXPECT_FALSE(has(chain, "edit stats on")) << chain;
+    EXPECT_TRUE(has(chain, "Enter TYPE")) << chain;
+}
+
+/* On a skin of a valid base the list marks each stat "(from M)", and an own cost "[own]". */
+TEST(DbLoader, ObjectEditorListMarksASkinsStats)
+{
+    SkinEditorSession session(4521);
+    session.answer(23, "4512");
+    session.answer(14, "250");
+
+    list_object(&session.builder, &session.object);
+    const std::string list = session.take();
+    EXPECT_TRUE(has(list, "(from 4512)")) << list;
+    EXPECT_TRUE(has(list, "[own]")) << list;
+}
+
+TEST(DbLoader, ObjectEditorUnskinKeepsStats)
+{
+    SkinEditorSession session(4521);
+    session.answer(23, "4512");
+    session.answer(14, "250");
+
+    const std::string out = session.answer(23, "0");
+
+    const obj_flag_data& flags = session.object.obj_flags;
+    EXPECT_EQ(flags.skin_base, 0);
+    EXPECT_EQ(flags.skin_own, 0);
+    EXPECT_EQ(flags.cost, 250);
+    EXPECT_EQ(flags.weight, 50);
+    EXPECT_EQ(flags.type_flag, ITEM_WEAPON);
+    EXPECT_TRUE(has(out, "This object is no longer a skin; its stats are now its own.\n\r")) << out;
+
+    session.answer(13, "75");
+    EXPECT_EQ(flags.weight, 75) << "stats can be edited again";
+}
+
+TEST(DbLoader, ObjectEditorRefusesKeyTypeOnBaseWithSkins)
+{
+    SkinEditorSession session(4512);
+    session.object.obj_flags.type_flag = ITEM_WEAPON;
+
+    const std::string out = session.answer(9, "18");
+
+    EXPECT_EQ(session.object.obj_flags.type_flag, ITEM_WEAPON);
+    EXPECT_TRUE(has(out, "Obj 4512 has skins (4513, 4514); it can't become a key.\n\r")) << out;
+}
+
+TEST(DbLoader, ObjectEditorRefusesNoteTypeOnBaseWithSkins)
+{
+    SkinEditorSession session(4512);
+    session.object.obj_flags.type_flag = ITEM_WEAPON;
+
+    const std::string out = session.answer(9, "16");
+
+    EXPECT_EQ(session.object.obj_flags.type_flag, ITEM_WEAPON);
+    EXPECT_TRUE(has(out, "Obj 4512 has skins (4513, 4514); it can't become a note.\n\r")) << out;
+}
+
+TEST(DbLoader, ImplementBaseRefreshesSkinProtos)
+{
+    SkinEditorSession session(4512);
+    session.object.obj_flags = obj_proto[0].obj_flags;
+    session.object.obj_flags.weight = 80;
+    session.object.obj_flags.cost = 140;
+    obj_proto[2].obj_flags.skin_own = SKIN_OWN_COST;
+    obj_proto[2].obj_flags.cost = 7;
+
+    implement_object(&session.builder);
+
+    EXPECT_EQ(obj_proto[0].obj_flags.weight, 80);
+    EXPECT_EQ(obj_proto[1].obj_flags.weight, 80);
+    EXPECT_EQ(obj_proto[1].obj_flags.cost, 140);
+    EXPECT_EQ(obj_proto[2].obj_flags.weight, 80);
+    EXPECT_EQ(obj_proto[2].obj_flags.cost, 7) << "own cost kept";
+
+    /* Implementing a skin takes the base's stats into its live proto, whatever the working copy
+     * held, and keeps skin_base and skin_own. */
+    SkinEditorSession skin_session(4513);
+    skin_session.object.obj_flags.skin_base = 4512;
+    skin_session.object.obj_flags.skin_own = SKIN_OWN_MATERIAL;
+    skin_session.object.obj_flags.material = 9;
+    skin_session.object.obj_flags.weight = 3;
+    implement_object(&skin_session.builder);
+    EXPECT_EQ(obj_proto[1].obj_flags.skin_base, 4512);
+    EXPECT_EQ(obj_proto[1].obj_flags.skin_own, SKIN_OWN_MATERIAL);
+    EXPECT_EQ(obj_proto[1].obj_flags.weight, 50);
+    EXPECT_EQ(obj_proto[1].obj_flags.material, 9);
+}
+
+TEST(DbLoader, ImplementSkinWithKeyBaseStoresPlain)
+{
+    /* Saved as a skin of 4600 before 4600 became a key (or loaded so from the file). */
+    SkinEditorSession session(4513);
+    session.object.obj_flags.skin_base = 4600;
+    session.object.obj_flags.skin_own = SKIN_OWN_COST;
+    session.object.obj_flags.weight = 33;
+    obj_proto[3].obj_flags.weight = 1;
+    obj_proto[3].obj_flags.value[0] = 42;
+
+    implement_object(&session.builder);
+    const std::string out = session.take();
+
+    EXPECT_EQ(obj_proto[1].obj_flags.skin_base, 0);
+    EXPECT_EQ(obj_proto[1].obj_flags.skin_own, 0);
+    EXPECT_EQ(obj_proto[1].obj_flags.type_flag, ITEM_WORN) << "not the key's type";
+    EXPECT_EQ(obj_proto[1].obj_flags.weight, 33) << "not the key's weight";
+    EXPECT_EQ(obj_proto[1].obj_flags.value[0], 0);
+    EXPECT_EQ(session.object.obj_flags.skin_base, 4600) << "the working copy keeps the builder's base";
+    EXPECT_TRUE(has(out, "Skin not applied: base obj 4600 is a key.\n\r")) << out;
+    EXPECT_TRUE(skin_rnums_of(3).empty());
+}
+
+/* /23 refuses a skin base on an object that has skins, but implementing it later must too: 4512
+ * (with live skins 4513, 4514) implemented as a skin of 4700 would make skins of a skin. */
+TEST(DbLoader, ImplementSkinThatHasSkinsStoresPlain)
+{
+    SkinEditorSession session(4512);
+    session.object.obj_flags = obj_proto[0].obj_flags;
+    session.object.obj_flags.skin_base = 4700;
+
+    implement_object(&session.builder);
+    const std::string out = session.take();
+
+    EXPECT_EQ(obj_proto[0].obj_flags.skin_base, 0);
+    EXPECT_EQ(session.object.obj_flags.skin_base, 4700) << "the working copy keeps the builder's base";
+    EXPECT_TRUE(has(out, "Skin not applied: obj 4512 has skins.\n\r")) << out;
+    EXPECT_EQ(skin_rnums_of(0).size(), 2u) << "its skins stay skins of it";
+}
+
+/* /9 refuses a key or note type on a base with skins while editing, but the type can also come
+ * from the file: implement refuses then and nothing changes in the game. */
+TEST(DbLoader, ImplementRefusesKeyOrNoteTypeOnBaseWithSkins)
+{
+    for (int type : { ITEM_KEY, ITEM_NOTE }) {
+        SkinEditorSession session(4512);
+        session.object.obj_flags = obj_proto[0].obj_flags;
+        session.object.obj_flags.type_flag = type;
+        session.object.obj_flags.weight = 99;
+
+        implement_object(&session.builder);
+        const std::string out = session.take();
+
+        EXPECT_EQ(obj_proto[0].obj_flags.type_flag, ITEM_WEAPON);
+        EXPECT_EQ(obj_proto[0].obj_flags.weight, 50) << "nothing implemented";
+        const std::string want = std::string("Obj 4512 has skins (4513, 4514); it can't become ")
+            + (type == ITEM_KEY ? "a key" : "a note") + ".\n\rNot implemented.\n\r";
+        EXPECT_TRUE(has(out, want.c_str())) << out;
+    }
+}
+
+/* A note can't be a base: /23 refuses it, like a key. */
+TEST(DbLoader, ObjectEditorRefusesNoteBase)
+{
+    SkinEditorSession session(4521);
+    obj_proto[4].obj_flags.type_flag = ITEM_NOTE;
+
+    const std::string out = session.answer(23, "4700");
+
+    EXPECT_EQ(session.object.obj_flags.skin_base, 0);
+    EXPECT_TRUE(has(out, "Notes can't have skins.\n\r")) << out;
+}
+
+/* Runs the editor's file code in a scratch world/obj folder holding 45.obj, then goes back. */
+class ScratchObjFiles {
+public:
+    explicit ScratchObjFiles(const std::string& obj45)
+    {
+        m_saved = std::filesystem::current_path();
+        m_dir = std::filesystem::temp_directory_path() / ("rots-skin-files-" + std::to_string(getpid()));
+        std::filesystem::remove_all(m_dir);
+        std::filesystem::create_directories(m_dir / "world/obj/oldobjs");
+        std::ofstream(m_dir / "world/obj/45.obj", std::ios::binary) << obj45;
+        std::filesystem::current_path(m_dir);
+    }
+    ~ScratchObjFiles()
+    {
+        std::filesystem::current_path(m_saved);
+        std::filesystem::remove_all(m_dir);
+    }
+    std::string read45() const
+    {
+        std::ifstream in(m_dir / "world/obj/45.obj", std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    }
+
+private:
+    std::filesystem::path m_saved, m_dir;
+};
+
+/* A skin's stats in its file are only a fallback: loading it into the editor shows the base's
+ * current stats, and saving it writes them, so /50 and the file never show stale numbers. */
+TEST(DbLoader, EditorLoadAndSaveOfASkinUseTheBasesCurrentStats)
+{
+    const std::string file = "#4513\n\ra skin~\n\ra skin~\n\rA skin lies here.~\n\r~\n\r"
+                             "5 0 8193\n\r1 1 1 3 0\n\r33 100 -1\n\r1 0 4 0 0 4512 0\n\r#99999\n\r$~\n\r";
+    ScratchObjFiles files(file);
+    SkinEditorSession session(4513);
+    session.builder.specials2.idnum = object_master_idnum; /* full permission, no zone lookup */
+
+    ASSERT_EQ(load_object(&session.builder, "object 4513"), 4513) << session.take();
+    obj_data* loaded = session.shape.object;
+    EXPECT_EQ(loaded->obj_flags.skin_base, 4512);
+    EXPECT_EQ(loaded->obj_flags.weight, 50) << "the base's weight, not the file's 33";
+    EXPECT_EQ(loaded->obj_flags.level, 12);
+    EXPECT_EQ(loaded->obj_flags.value[0], 5);
+
+    loaded->obj_flags.weight = 77; /* a stale working copy */
+    char no_arg[] = "";
+    replace_object(&session.builder, no_arg);
+    const std::string saved = files.read45();
+    EXPECT_NE(saved.find("50 100 7\n\r"), std::string::npos) << "saved with the base's stats:\n" << saved;
+    EXPECT_NE(saved.find("12 0 4 0 2 4512 0\n\r"), std::string::npos) << saved;
+}
+
+extern struct script_head* script_table;
+extern int top_of_script_table;
+
+/* Boot and implement check a RESTYLE_OBJ target: a typed vnum must exist; a number variable
+ * (int1, ob2.vnum) is read when the line runs, so it is skipped. */
+TEST(DbLoader, ScriptVnumCheckCoversRestyleTargets)
+{
+    SkinEditorSession session(4512);
+    script_data rows[3] {};
+    const int targets[3] = { 4513, 99998, SCRIPT_PARAM_OB2_VNUM };
+    for (int i = 0; i < 3; ++i) {
+        rows[i].command_type = SCRIPT_RESTYLE_OBJ;
+        rows[i].number = i + 1;
+        rows[i].param[0] = SCRIPT_PARAM_OB1;
+        rows[i].param[1] = targets[i];
+        rows[i].next = i < 2 ? &rows[i + 1] : nullptr;
+    }
+    script_head head {};
+    head.number = 9901;
+    head.script = &rows[0];
+    script_head* saved_table = script_table;
+    int saved_top = top_of_script_table;
+    script_table = &head;
+    top_of_script_table = 0;
+
+    check_script_vnums(0, &session.builder);
+    const std::string out = session.take();
+
+    script_table = saved_table;
+    top_of_script_table = saved_top;
+    EXPECT_NE(out.find("SCRIPT ERROR: script #9901, line 2 (restyle obj): object vnum 99998 not found"),
+        std::string::npos)
+        << out;
+    EXPECT_EQ(out.find("line 1"), std::string::npos) << "4513 exists: " << out;
+    EXPECT_EQ(out.find("line 3"), std::string::npos) << "ob2.vnum is read when the line runs: " << out;
 }
 
 TEST(DbLoader, AccountNativeCharacterAndObjectsJsonSupportEquippedLoginWithoutMigration)

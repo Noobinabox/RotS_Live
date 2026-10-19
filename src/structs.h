@@ -440,6 +440,10 @@ public:
      * bump). Saved copy: the version it was made or last refreshed from. See
      * Crash_refresh_object. */
     int version;
+    /* Skin: a prototype with its own text whose stats come from this base prototype's
+     * vnum (0 = not a skin). skin_own is a bitmask of SKIN_OWN_* (object_skins.h). */
+    int skin_base;
+    ubyte skin_own;
     struct info_script* script_info; /* Pointer to char_script (protos.h) 0 if no script */
     bool poisoned;
     int poisondata[5];

@@ -474,7 +474,7 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
-| 18 | `zon/18.zon` | Harness boar pen | (6, 6) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
+| 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
 
 ### Rooms
 

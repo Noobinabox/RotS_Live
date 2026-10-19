@@ -525,13 +525,15 @@ Five of these answer to the keyword `orc`, as do two of the guildmaster copies b
 above). `mob/guildmasters.mob` copies seven real guildmasters at their real vnums (1503, 2043,
 4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them; each one's
 program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the traveller 1503,
-16 for Scorther 10003 and 28 for Aroden 10054. It also holds three guild-special mobs at vnums
-`spec_ass.cpp` binds the guild special to, with programs chosen for the posing refusal rather
-than the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and
-8500 `enchanter` (program 62), the last two naming no row. Each teaches the races in its last
-field, the `will_teach` mask (`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood elf, hobbit
-and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003 and 10054; 2048 (uruk-hai)
-for 4601; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768 (uruk-lhuth) for 13600.
+16 for Scorther 10003 and 28 for Aroden 10054. It also holds four guild-special mobs at vnums
+`spec_ass.cpp` binds the guild special to, with programs chosen for a scenario rather than the
+real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and
+8500 `enchanter` (program 62), the last two naming no row, and 4608 `trainer` (program 9, the
+URUK WARRIOR row, speaking human language) for the reject-message bug pin. Each teaches the races
+in its last field, the `will_teach` mask (`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood
+elf, hobbit and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003 and 10054; 2048
+(uruk-hai) for 4601 and 4608; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768
+(uruk-lhuth) for 13600.
 
 | Object | Keyword | What it is |
 | --- | --- | --- |
@@ -540,6 +542,7 @@ for 4601; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768 (uruk-l
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1171 | `circlet` | iron circlet, head armour; its `A 1 2` line (`APPLY_STR`) adds 2 to strength |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 

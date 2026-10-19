@@ -136,6 +136,20 @@ A glade where wood elves begin.
 ~
 11 0 0 0
 S
+#1180
+Signpost Room~
+A bare room where a signpost stands for the shaping scenarios.
+~
+11 0 0 0
+E
+plaque sign~
+The plaque reads FIRST.
+~
+E
+sign~
+The sign reads SECOND.
+~
+S
 #1184
 Beorning Start~
 A wooden lodge where Beornings begin.

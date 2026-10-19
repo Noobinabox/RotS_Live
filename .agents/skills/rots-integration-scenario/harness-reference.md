@@ -499,6 +499,7 @@ anyone changes the world.
 | 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
+| 1180 | Signpost Room (`world.ROOM_SIGNPOST`) | 0 (none) | 0 | none; two extra descriptions, `plaque sign` ("The plaque reads FIRST.") then `sign` ("The sign reads SECOND."), in that file order |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
@@ -532,7 +533,17 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
 
-There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+There are no shops (`shp/index` is `$` alone), and `mdl/11.mdl` is a stub.
+
+| Script | Name | Rows |
+| --- | --- | --- |
+| 1100 | `harness stub` | none |
+| 1180 | `ordered triggers` | three `ON_ENTER` rows numbered 1, 2, 3, with the texts `first`, `second`, `third` |
+| 1181 | `out-of-order triggers` | four `ON_ENTER` rows numbered 1, 2, 4, 3, with the texts `one`, `two`, `four`, `three` |
+
+The shaping editors' `/save` copies the file it rewrites into a backup directory first and fails
+without it (`SHAPE_*_BACKDIR`, `protos.h`). The test world provides all five, each kept in git by
+an empty `.gitkeep`: `wld/oldroms`, `mob/oldmobs`, `obj/oldobjs`, `zon/oldzons` and `scr/oldscrs`.
 
 ### File formats
 

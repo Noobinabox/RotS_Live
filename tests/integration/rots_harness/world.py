@@ -18,3 +18,17 @@ ROOM_BANK_HALL = 1301
 ROOM_TRADE_HALL = 1302
 # Room 1303, the trader's store room in zone 13, with no exits; zone 13 stocks one leather cap.
 ROOM_STORE_ROOM = 1303
+# Room 1304, a DARK hall in zone 13, where zone 13 resets the dark banker (mob 1304).
+ROOM_DARK_VAULT_HALL = 1304
+# Room 1305 in zone 13, where zone 13 resets the morning banker (mob 1305), open hours 0 to 11.
+ROOM_MORNING_BANK = 1305
+# Room 1306 in zone 13, where zone 13 resets the evening banker (mob 1306), open hours 12 to 23.
+ROOM_EVENING_BANK = 1306
+# Room 1307 in zone 13, where zone 13 resets the odd trader (mob 1307).
+ROOM_ODD_TRADE_HALL = 1307
+# Room 1308, the odd trader's store room in zone 13, with no exits; zone 13 stocks a leather cap,
+# an iron cap and a lead ingot.
+ROOM_ODD_STORE_ROOM = 1308
+# Room 1309 in zone 13, where zone 13 resets the broken banker (mob 1308) and the broken trader
+# (mob 1309), each disabled by its options.
+ROOM_BROKEN_MARKET = 1309

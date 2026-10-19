@@ -24,5 +24,41 @@ A locked store room with no way in, holding the harness trader's stock.
 ~
 13 0 0 0
 S
+#1304
+Dark Vault Hall~
+An unlit hall where a second harness banker keeps the account vaults in the dark.
+~
+13 1 0 0
+S
+#1305
+Morning Bank~
+A hall whose harness banker opens only from midnight until noon.
+~
+13 0 0 0
+S
+#1306
+Evening Bank~
+A hall whose harness banker opens only from noon until midnight.
+~
+13 0 0 0
+S
+#1307
+Odd Trade Hall~
+A hall where a second harness trader barters odd goods for copper beads.
+~
+13 0 0 0
+S
+#1308
+Odd Store Room~
+A locked store room with no way in, holding the odd trader's stock.
+~
+13 0 0 0
+S
+#1309
+Broken Market~
+A hall where a misconfigured banker and a misconfigured trader stand idle.
+~
+13 0 0 0
+S
 #99999
 $~

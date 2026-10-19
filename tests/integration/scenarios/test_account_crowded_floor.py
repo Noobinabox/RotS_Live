@@ -3,6 +3,8 @@ in the room still reach the player."""
 
 from __future__ import annotations
 
+from typing import Optional
+
 import pytest
 
 from rots_harness import world
@@ -27,39 +29,54 @@ CAP_DROPPED = "You drop a leather cap."
 CAP_FLOOR_LINE = "A leather cap lies here."
 # The most objects a room's floor lists (list_obj_to_char, act_info.cpp).
 FLOOR_LIST_LIMIT = 100
-# Caps put on the floor: five more than the list shows.
-CAPS_DROPPED = FLOOR_LIST_LIMIT + 5
-# The line that counts the objects past the limit (list_obj_to_char).
-REMAINDER_LINE = "...and 5 more items are lying here."
-# How the onlooker sees the implementor in the room (show_char_to_char, act_info.cpp): its name and
-# rotstool's title, then the tag get_char_flag_line adds for a character big_brother forbids the
-# onlooker to attack.
-IMPLEMENTOR_IN_ROOM_LINE = "Testimm the Human (holy protection) is standing here."
+# The start of every line that counts the objects past the limit (list_obj_to_char).
+REMAINDER_LINE_START = "...and "
+# How the onlooker sees the implementor in the room (show_char_to_char, act_info.cpp): its name, its
+# title, and the end of the line. The title comes from rotstool, so only the ends are matched.
+IMPLEMENTOR_LINE_START = f"{IMPLEMENTOR.name} "
+IMPLEMENTOR_LINE_END = " is standing here."
+# What write_to_output appends when a player's output buffer overflows (comm.cpp).
+OVERFLOW_MARKER = "**OVERFLOW**"
 # Seconds the onlooker reads before looking, so the drop messages are not taken for the look's reply.
 SETTLE_SECONDS = 1.0
 
 
+@pytest.mark.parametrize(
+    ("caps_dropped", "remainder_line"),
+    [
+        pytest.param(FLOOR_LIST_LIMIT, None, id="exactly-100"),
+        pytest.param(FLOOR_LIST_LIMIT + 1, "...and 1 more item is lying here.", id="101"),
+        pytest.param(FLOOR_LIST_LIMIT + 5, "...and 5 more items are lying here.", id="105"),
+    ],
+)
 @pytest.mark.characters(IMPLEMENTOR, ONLOOKER)
-def test_a_floor_with_more_than_100_objects_lists_100_then_a_remainder_line_then_the_people(server) -> None:
-    """Pins #300: a room's floor lists at most 100 objects, then one line counting the rest, then the
-    people in the room."""
+def test_a_crowded_floor_lists_100_objects_then_a_remainder_line_then_the_people(
+    server, caps_dropped: int, remainder_line: Optional[str]
+) -> None:
+    """Pins #300: a room's floor lists at most 100 objects, then one line counting the rest (none when
+    nothing is left over, singular for one), then the people in the room, with nothing dropped."""
     implementor = server.login(IMPLEMENTOR.name)
     onlooker = server.login(ONLOOKER.name)
-    for _cap in range(CAPS_DROPPED):
+    for _cap in range(caps_dropped):
         implementor.send_line(f"load obj {CAP_VNUM}")
         loaded = implementor.expect([CAP_CREATED, NO_SUCH_OBJECT])
         assert CAP_CREATED in loaded, loaded
     implementor.command(f"goto {world.ROOM_ARENA_CENTRE}")
     dropped = implementor.command("drop all")
-    assert dropped.text.count(CAP_DROPPED) == CAPS_DROPPED, dropped.text
+    assert dropped.text.count(CAP_DROPPED) == caps_dropped, dropped.text
     onlooker.drain(SETTLE_SECONDS)
 
     looked = onlooker.command("look").text
+    assert OVERFLOW_MARKER not in looked, looked
     lines = [line.strip() for line in looked.splitlines() if line.strip()]
     cap_lines = [index for index, line in enumerate(lines) if line == CAP_FLOOR_LINE]
     assert len(cap_lines) == FLOOR_LIST_LIMIT, looked
-    assert REMAINDER_LINE in lines, looked
-    remainder_index = lines.index(REMAINDER_LINE)
-    assert IMPLEMENTOR_IN_ROOM_LINE in lines, looked
-    people_index = lines.index(IMPLEMENTOR_IN_ROOM_LINE)
-    assert cap_lines[-1] < remainder_index < people_index, looked
+    remainder_lines = [index for index, line in enumerate(lines) if line.startswith(REMAINDER_LINE_START)]
+    people_lines = [index for index, line in enumerate(lines) if line.startswith(IMPLEMENTOR_LINE_START) and line.endswith(IMPLEMENTOR_LINE_END)]
+    assert len(people_lines) == 1, looked
+    if remainder_line is None:
+        assert remainder_lines == [], looked
+        assert cap_lines[-1] < people_lines[0], looked
+    else:
+        assert [lines[index] for index in remainder_lines] == [remainder_line], looked
+        assert cap_lines[-1] < remainder_lines[0] < people_lines[0], looked

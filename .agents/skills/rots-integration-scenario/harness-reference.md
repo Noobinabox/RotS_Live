@@ -490,7 +490,7 @@ anyone changes the world.
 | 1129 | Olog-hai Start | 0 (none) | 0 | none |
 | 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
 | 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | 0 (none) | 0 | west 1131 |
+| 1132 | Arena East (`world.ROOM_ARENA_EAST`) | 0 (none) | 0 | west 1131 |
 | 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
 | 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
 | 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
@@ -500,7 +500,7 @@ anyone changes the world.
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle | 0 (none) | 0 | none |
+| 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 

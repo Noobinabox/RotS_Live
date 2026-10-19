@@ -505,9 +505,19 @@ every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` f
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 | 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
-| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | west 1801 |
+| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | east 1803 (one way), west 1801 |
+| 1803 | Whistle Hub (`world.ROOM_WHISTLE_HUB`, zone 18) | 0 (none) | 0 | north 1804, east 1805, south 1806, west 1807, up 1808, down 1809 |
+| 1804 | North Spoke (`world.ROOM_NORTH_SPOKE`, zone 18) | 0 (none) | 0 | south 1803 |
+| 1805 | East Spoke (`world.ROOM_EAST_SPOKE`, zone 18) | 0 (none) | 0 | west 1803 |
+| 1806 | South Spoke (zone 18) | 0 (none) | 0 | north 1803 |
+| 1807 | West Spoke (zone 18) | 0 (none) | 0 | east 1803 |
+| 1808 | Upper Spoke (zone 18) | 0 (none) | 0 | down 1803 |
+| 1809 | Lower Spoke (`world.ROOM_LOWER_SPOKE`, zone 18) | 0 (none) | 0 | up 1803 |
 
-1133 and 1801 are the only rooms with a flag. In 1801, `PEACEROOM` makes `do_hit`
+Every exit of the whistle hub (1803) leads to a spoke, so `do_flee` (`act_offe.cpp`) finds an
+exit on its first draw there, and every spoke comes after the hub in the world, which
+`do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows. 1133 and 1801 are the only
+rooms with a flag. In 1801, `PEACEROOM` makes `do_hit`
 (`act_offe.cpp`) refuse every attack, a failed tame's included. `IS_DARK` is true in 1133
 unless something in it gives light, so a character there sees only with infravision,
 holylight, or moonvision while the moon is up
@@ -524,6 +534,13 @@ holylight, or moonvision while the moon is up
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
 | 1450 | `boar pen` | an animal (bodytype 2, perception 0, level 1, `SENTINEL`) a ranger can tame; zone 18 resets one into 1801. In `mob/14.mob`, listed before `guildmasters.mob` so vnums ascend |
+| 1451 | `bear grizzly` | a level-14 animal (perception 0), one level past a level-30 ranger's tame cap at full tame knowledge |
+| 1452 | `wolf grey` | a level-12 animal (perception 0), within that cap only while the ranger has no other tame |
+| 1453 | `owl watchful` | an animal with perception 10, which tame refuses |
+| 1454 | `scarecrow straw` | perception 0 but bodytype 1, not an animal, which tame refuses |
+
+1451 to 1454 are level 1 unless the table says otherwise, `SENTINEL`, and follow 1450 in
+`mob/14.mob`; nothing resets them, so a scenario loads them with `load mob`.
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"

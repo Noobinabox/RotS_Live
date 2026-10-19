@@ -17,7 +17,8 @@ from rots_harness.session import GameSession
 pytestmark = [pytest.mark.scenario, pytest.mark.object_versions]
 
 # A level-30 human mystic in the implementors' room who knows enchant weapon fully: a mortal
-# caster. Enchant weapon is a level-20 mystic spell (skills[] in consts.cpp).
+# caster, and the mortal who rents at the inn. Enchant weapon is a level-20 mystic spell (skills[]
+# in consts.cpp).
 MORTAL_MYSTIC = Character(
     name="Testmystic",
     race="human",
@@ -29,7 +30,7 @@ MORTAL_MYSTIC = Character(
 )
 # A level-91 mystic who owns the enchanted weapon across a quit. It is an immortal because only
 # an immortal's quit saves what it carries (do_quit, act_othe.cpp): a mortal's possessions drop
-# to the ground, and the test world has no receptionist to rent with.
+# to the ground, and a mortal keeps them only by renting at the inn.
 OWNER = Character(
     name="Testowner",
     race="human",
@@ -108,6 +109,29 @@ IMPLEMENTED_MARKER = "Object implemented"
 NOTHING_TO_IMPLEMENT_MARKER = "You have nothing to implement"
 NOT_AUTHORIZED_MARKER = "You're not authorized to do this."
 RELEASED_MARKER = "You released an object and stopped shaping."
+
+# What the mortal reads when the implementor teleports it (do_teleport, act_wiz.cpp), and what
+# the implementor reads when the name matches no one.
+TELEPORTED_MARKER = f"{IMPLEMENTOR.name} has teleported you!"
+NO_ONE_MARKER = "No-one by that name around."
+# The inn's name and its innkeeper's long description (tests/integration/world: wld/16.wld,
+# mob/11.mob), which a character in the inn reads in the room.
+INN_ROOM_NAME = "Harness Inn"
+INNKEEPER_IN_ROOM_LINE = "The harness innkeeper stands behind the counter, ready to rent you a room."
+# What the innkeeper's receptionist special answers (gen_receptionist and Crash_offer_rent,
+# objsave.cpp): the rent, the refusals the code can reach here, and the offer's two lines.
+RENTED_MARKER = "The harness innkeeper stores your belongings and helps you into your private chamber."
+NOTHING_TO_STORE_MARKER = "The harness innkeeper tells you, 'But you are not carrying anything!  Just quit!'"
+CANNOT_SEE_RENTER_MARKER = "The harness innkeeper says, 'I don't deal with people I can't see!'"
+OFFER_QUOTE_MARKER = "The harness innkeeper tells you, 'It will cost you 6 silver and 88 copper for the first day.'"
+LIFETIME_OF_RENT_MARKER = "The harness innkeeper tells you, 'You have enough gold for a lifetime of rent.'"
+# What rent and offer answer with no receptionist in the room (do_rent, objsave.cpp; do_not_here,
+# act_othe.cpp).
+FIELD_RENT_DISABLED_MARKER = "Field-rent is disabled. You have to go to an inn now."
+NOT_HERE_MARKER = "Sorry, but you can't do that here!"
+# The character menu's prompt (show_character_menu_impl, interpre.cpp): rent ends the character's
+# play there, leaving the connection open.
+CHARACTER_MENU_PROMPT = "Make your choice:"
 
 # The server log line each refresh writes (Crash_refresh_object, objsave.cpp); format with the
 # owner's idnum and the enchant note.
@@ -208,6 +232,32 @@ def shape_sword_prototype(implementor: GameSession, give_strength_affect: bool) 
 def quit_and_log_in_again(server, session: GameSession, character: Character) -> GameSession:
     """Quits the character and logs it in again on a new connection; returns the new session."""
     session.quit()
+    return server.login(character.name)
+
+
+def send_to_inn(implementor: GameSession, mortal: GameSession, character: Character) -> None:
+    """Teleports the mortal into the inn and asserts it arrived where the innkeeper stands.
+
+    The mortal types nothing in the inn before rent or offer: the receptionist special draws for
+    every other command typed there, and on a 0 the innkeeper performs a social (gen_receptionist).
+    """
+    teleport = implementor.command(f"teleport {character.name.lower()} {world.ROOM_INN}")
+    assert not teleport.contains(NO_ONE_MARKER), teleport.text
+    arrival = mortal.expect([TELEPORTED_MARKER]) + mortal.drain(SETTLE_SECONDS)
+    assert INN_ROOM_NAME in arrival, arrival
+    assert INNKEEPER_IN_ROOM_LINE in arrival, arrival
+
+
+def rent_and_log_in_again(server, mortal: GameSession, character: Character) -> GameSession:
+    """Rents at the innkeeper, asserting it stores the mortal's belongings and returns the connection
+    to the character menu; closes that connection and logs the character in again on a new one,
+    which it returns."""
+    mortal.send_line("rent")
+    outcomes = [CHARACTER_MENU_PROMPT, NOTHING_TO_STORE_MARKER, CANNOT_SEE_RENTER_MARKER, FIELD_RENT_DISABLED_MARKER]
+    reply = mortal.expect(outcomes) + mortal.drain(SETTLE_SECONDS)
+    assert RENTED_MARKER in reply, reply
+    assert CHARACTER_MENU_PROMPT in reply, reply
+    mortal.close()
     return server.login(character.name)
 
 
@@ -339,6 +389,77 @@ def test_a_version_bump_refreshes_the_owners_copy_at_the_next_login_and_keeps_it
     assert ENCHANT_LINE_FORMAT.format("good") in refreshed_lines, refreshed_lines
     assert ENCHANT_AFFECTIONS_LINE in refreshed_lines, refreshed_lines
     wait_for_log_line(server.run_dir / "game.log", REFRESH_LOG_FORMAT.format(owner_idnum, "kept"))
+
+
+@pytest.mark.schedule("affect-hours")
+@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
+def test_a_version_bump_refreshes_a_mortals_rented_copy_when_it_returns_and_keeps_its_enchant(server) -> None:
+    """Pins #343 for a mortal: the copy a mortal saves by renting at an inn is refreshed when it
+    returns, and keeps its recorded enchant, since the bumped prototype can still take it.
+
+    The mortal enchants its sword; the implementor bumps the prototype's version in the object
+    editor and implements it, then teleports the mortal into the test world's inn. The mortal
+    rents: the innkeeper stores its belongings and the connection returns to the character menu.
+    Logged in again, the mortal is back in the inn and reads that the sword was updated; stat obj
+    shows the copy stamped with the prototype's version, the enchant and its +6 OB still on it,
+    and the server log records the refresh with `enchant kept`. Rent costs nothing
+    (Crash_offer_rent and Crash_rentsave, objsave.cpp), so the mortal needs no gold.
+    The one draw that can stop the cast is the concentration roll in do_cast, which
+    cast_enchant_weapon repeats. The affect-hours schedule keeps the world from drawing; the
+    innkeeper's special draws for the login's look in the inn, which decides nothing here.
+    """
+    implementor = server.login(IMPLEMENTOR.name)
+    mystic = server.login(MORTAL_MYSTIC.name)
+    prepare_caster(implementor, MORTAL_MYSTIC, GOOD_ALIGNMENT)
+    give_plain_sword(implementor, MORTAL_MYSTIC)
+    mystic_idnum = player_idnum(implementor, MORTAL_MYSTIC.name)
+
+    reply = cast_enchant_weapon(mystic)
+    assert GLOW_MARKER_FORMAT.format("blue") in reply, reply
+
+    shape_sword_prototype(implementor, give_strength_affect=False)
+    online_lines = stat_sword(implementor)
+    assert BUMPED_BEFORE_LOGIN_LINE in online_lines, online_lines
+
+    send_to_inn(implementor, mystic, MORTAL_MYSTIC)
+    mystic = rent_and_log_in_again(server, mystic, MORTAL_MYSTIC)
+    returned_text = mystic.everything
+    assert UPDATED_MARKER_FORMAT.format(SWORD_SHORT_DESCRIPTION) in returned_text, returned_text[-QUOTED_TEXT_LENGTH:]
+    assert INN_ROOM_NAME in returned_text, returned_text[-QUOTED_TEXT_LENGTH:]
+
+    refreshed_lines = stat_sword(implementor)
+    assert REFRESHED_LINE in refreshed_lines, refreshed_lines
+    assert ENCHANT_LINE_FORMAT.format("good") in refreshed_lines, refreshed_lines
+    assert ENCHANT_AFFECTIONS_LINE in refreshed_lines, refreshed_lines
+    wait_for_log_line(server.run_dir / "game.log", REFRESH_LOG_FORMAT.format(mystic_idnum, "kept"))
+
+
+@pytest.mark.schedule("affect-hours")
+@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
+def test_the_test_innkeeper_quotes_free_rent_for_what_a_mortal_carries(server) -> None:
+    """Pins the test world's innkeeper fixture: mob 1105 in the inn has the receptionist special
+    (spec_ass.cpp), so a mortal's offer there gets its quote.
+
+    The quote is the day's cost of the level and the carried sword (Crash_offer_rent,
+    objsave.cpp); the second line says the mortal's gold lasts a lifetime, because the code zeroes
+    the cost before comparing it with the gold. Nothing on this path draws.
+    """
+    implementor = server.login(IMPLEMENTOR.name)
+    mystic = server.login(MORTAL_MYSTIC.name)
+    give_plain_sword(implementor, MORTAL_MYSTIC)
+    send_to_inn(implementor, mystic, MORTAL_MYSTIC)
+
+    # The quote, with factor RENT_FACTOR (1) and RENT_HALFTIME 300 (objsave.cpp):
+    #   totalcost = level * factor + (cost_per_day(sword) >> 1) * factor
+    #             = 30 * 1         + ((2000 / 100) / 8 >> 1) * 1
+    #               (Testmystic's level; the sword's cost 2000, rent -1 and level 1, obj/16.obj)
+    #             = 30 + (2 >> 1) = 31
+    #   shown     = totalcost * RENT_HALFTIME * 24 / (RENT_HALFTIME + 24)
+    #             = 31 * 300 * 24 / 324 = 688 copper, "6 silver and 88 copper" (money_message)
+    mystic.send_line("offer")
+    reply = mystic.expect([LIFETIME_OF_RENT_MARKER, NOTHING_TO_STORE_MARKER, CANNOT_SEE_RENTER_MARKER, NOT_HERE_MARKER]) + mystic.drain(SETTLE_SECONDS)
+    assert OFFER_QUOTE_MARKER in reply, reply
+    assert LIFETIME_OF_RENT_MARKER in reply, reply
 
 
 @pytest.mark.schedule("affect-hours")

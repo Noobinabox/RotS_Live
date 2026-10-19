@@ -557,7 +557,8 @@ is how a mortal keeps its items across a login. The innkeeper's special is `gen_
   chamber.`, saves what the character carries and wears (`Crash_rentsave`), and returns the
   connection to the character menu (`Make your choice:`) with the socket still open. Close that
   session with `close()`, then `server.login(name)`: the mortal returns to the inn with its
-  items (`calc_load_room`).
+  items (`calc_load_room`). `rent_and_log_in_again` in `scenarios/test_object_versions.py` does
+  this.
 - Every other command typed in the inn draws `number(0, 30)`, and on 0 the innkeeper performs a
   random social, so text can arrive there unasked. Bring the mortal in with the implementor's
   `teleport <name> 1601` (it reads `<Implementor> has teleported you!` and the room) just

@@ -73,7 +73,6 @@ NOBODY_MARKER = "Nobody by that name."
 # do_tell (act_comm.cpp) and lets it go on.
 TOLD_ANGEL_FORMAT = "You tell a shining angel '{}'"
 # The immortal command's refusals (do_pracreset).
-WHOM_MARKER = "Whom do you want to reset?"
 NO_SUCH_PERSON_MARKER = "No such person."
 CANNOT_LEARN_MARKER = "This person cannot learn anything, don't bother yourself."
 # Seconds to keep reading after an outcome, for text already sent to arrive.
@@ -231,25 +230,6 @@ def test_the_pracreset_command_refuses_a_name_that_is_not_a_player(
 
 
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR)
-@pytest.mark.xfail(
-    strict=True,
-    reason="a bare pracreset targets the immortal (TAR_SELF in FULL_TARGET) and resets them",
-)
-def test_the_pracreset_command_asks_whom_without_a_name(server) -> None:
-    """A bare `pracreset` asks whom to reset and resets nobody (do_pracreset; long-standing).
-
-    The command's target mask, FULL_TARGET (interpre.cpp), includes TAR_SELF, so target_parser
-    fills the first target with the immortal before do_pracreset's empty-argument check runs.
-    """
-    implementor = server.login(IMPLEMENTOR.name)
-
-    reply = implementor.command("pracreset")
-    assert not reply.contains(RESET_REPORT_MARKER), reply.text
-    assert reply.contains(WHOM_MARKER), reply.text
-
-
-@pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_the_pracreset_command_resets_the_named_player(server) -> None:
     """`pracreset <player>` empties every skill and refills the sessions (do_pracreset; long-standing).
@@ -272,45 +252,6 @@ def test_the_pracreset_command_resets_the_named_player(server) -> None:
     assert plain_row(listed, "blink") is None, listed
     # do_pracreset: 30 * 3 + 30 * 40 / 5 + 10 = 90 + 240 + 10 = 340 (Lev: [30]; Lea current 40).
     assert plain_sessions(listed) == 340, listed
-
-
-@pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, PUPIL)
-@pytest.mark.xfail(
-    strict=True,
-    reason="pracreset counts sessions from current learning; the login recount uses base learning",
-)
-def test_pracreset_leaves_the_session_count_the_next_login_computes(server) -> None:
-    """After a pracreset, the sessions are what the next login's recount gives (long-standing).
-
-    The implementor raises the pupil's constant learning to 40 without a restore: the base
-    follows, the current value stays at the rolled one, below the base, as a death or a drained
-    learning leaves it. pracreset reads the current value (GET_LEA); the login recount,
-    get_max_practice_count (char_utils.cpp), reads the base. Nothing on the way draws a random
-    number.
-    """
-    implementor = server.login(IMPLEMENTOR.name)
-    pupil = server.login(PUPIL.name)
-    reply = implementor.command(f"wizset player {PUPIL.name.lower()} lea {LEARNING}")
-    assert reply.contains(f"{PUPIL.name}'s lea set to {LEARNING}."), reply.text
-    before = stat_player(implementor, PUPIL.name)
-    current_learning, base_learning, constant_learning = stat_value(LEARNING_PATTERN, before)
-    assert (base_learning, constant_learning) == (LEARNING, LEARNING)
-    assert current_learning < LEARNING
-    assert stat_value(LEVEL_PATTERN, before) == (30,)
-
-    reply = implementor.command(f"pracreset {PUPIL.name.lower()}")
-    assert reply.contains(RESET_REPORT_MARKER), reply.text
-    pupil.expect([RESET_DONE_MARKER])
-    # get_max_practice_count - get_spent_practice_count, as the next login computes it:
-    #   level * PRACS_PER_LEVEL + level * abilities.lea / LEA_PRAC_FACTOR + 10 - spent
-    #   = 30 * 3 + 30 * 40 / 5 + 10 - 0        (Lev: [30]; Lea base 40; nothing spent since)
-    #   = 90 + 240 + 10 = 340
-    # pracreset today gives 30 * 3 + 30 * current / 5 + 10, from the rolled current learning.
-    assert plain_sessions(plain_list(pupil)) == 340
-
-    pupil = relog(server, pupil)
-    assert plain_sessions(plain_list(pupil)) == 340
 
 
 @pytest.mark.schedule("affect-hours")

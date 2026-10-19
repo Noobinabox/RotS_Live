@@ -3093,8 +3093,10 @@ void nanny(struct descriptor_data* d, char* arg)
             continue;
 
         /* blank input = we disconnect you */
-        if (!*arg)
-            close_socket(d);
+        if (!*arg) {
+            STATE(d) = CON_CLOSE;
+            return;
+        }
 
         {
             account::AccountData account_data;

@@ -430,4 +430,76 @@ His script (1724) answers when anyone speaks.
 0
 10 10 10 10 10 10
 0 10 0 0 1724 100 0
+#1730
+crier~
+a crier~
+A crier stands here, clearing his throat.~
+His script (1730) says a line, waits, says a second line and waits again as its last row.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1730 100 0
+#1731
+clerk first~
+a first clerk~
+A first clerk sits here behind a ledger.~
+His script (1731) skips a false IF whose block ends with a nested block without an else.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1731 100 0
+#1732
+clerk second~
+a second clerk~
+A second clerk sits here behind a ledger.~
+His script (1732) skips a false IF whose block holds a nested block with a non-empty else.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1732 100 0
+#1733
+copyist careless~
+a careless copyist~
+A careless copyist waits here to copy something.~
+His script (1733) is the scribe's with 0 in LOAD_OBJ_X's unused first parameter.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1733 100 0
 #99999

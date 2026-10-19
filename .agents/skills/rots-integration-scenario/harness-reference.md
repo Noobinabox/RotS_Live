@@ -518,11 +518,14 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1170 | `angel shining` | act flags `3` (`MOB_SPEC`) and program 14, the resetter (`spec_ass.cpp`): `tell angel pracreset` resets a player's practice |
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
-4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
+above). `mob/guildmasters.mob` copies seven real guildmasters at their real vnums (1503, 2043,
+4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them; each one's
+program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the traveller 1503,
+16 for Scorther 10003 and 28 for Aroden 10054.
 
 | Object | Keyword | What it is |
 | --- | --- | --- |

@@ -474,7 +474,7 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
-| 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303 |
+| 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
 
 ### Rooms
 
@@ -507,10 +507,16 @@ the world.
 | 1301 | Bank Hall (`world.ROOM_BANK_HALL`, zone 13) | 0 (none) | 0 | east 1302 |
 | 1302 | Trade Hall (`world.ROOM_TRADE_HALL`, zone 13) | 0 (none) | 0 | west 1301 |
 | 1303 | Store Room (`world.ROOM_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the trader's stock |
+| 1304 | Dark Vault Hall (`world.ROOM_DARK_VAULT_HALL`, zone 13) | 1 (`DARK`) | 0 | none |
+| 1305 | Morning Bank (`world.ROOM_MORNING_BANK`, zone 13) | 0 (none) | 0 | none |
+| 1306 | Evening Bank (`world.ROOM_EVENING_BANK`, zone 13) | 0 (none) | 0 | none |
+| 1307 | Odd Trade Hall (`world.ROOM_ODD_TRADE_HALL`, zone 13) | 0 (none) | 0 | none |
+| 1308 | Odd Store Room (`world.ROOM_ODD_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the odd trader's stock |
+| 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
 
-1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
-so a character there sees only with infravision, holylight, or moonvision while the moon is up
-(1133 counts as outside, and moonlight follows the uncontrolled game hour).
+1133 and 1304 are the only rooms with a flag. `IS_DARK` is true there unless something in them
+gives light, so a character there sees only with infravision, holylight, or moonvision while the
+moon is up (both count as outside, and moonlight follows the uncontrolled game hour).
 
 ### Mobs and objects
 
@@ -523,7 +529,17 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
 | 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
-| 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1130x2`; zone 13 resets one into 1302 |
+| 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1308x2`; zone 13 resets one into 1302 |
+| 1304 | `banker dark` | a banker as 1301; zone 13 resets one into the dark room 1304, where it cannot see a customer without infravision |
+| 1305 | `banker morning` | a banker with `hours=0-12` (open hours 0 to 11); zone 13 resets one into 1305 |
+| 1306 | `banker evening` | a banker with `hours=12-0` (open hours 12 to 23); zone 13 resets one into 1306 |
+| 1307 | `trader odd` | a barter vendor with `store=1308`, `list=Step right up!`, `price 1137 1308x2 deduct`, `price 1304 1308x1`, `price 1305 1308x1`, `attacks=no`; zone 13 resets one into 1307 |
+| 1308 | `banker broken` | a banker with `fee=0`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
+| 1309 | `trader broken` | a barter vendor with no `store=`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
+
+Zone 13's keepers speak no language (the first number of each one's last numeric line is 0;
+`load_mobiles`, `db.cpp`), so a keeper's `say` reaches every listener unchanged. The zone 11 mobs
+speak language 1, the animal tongue, which `say_to_char` (`act_comm.cpp`) garbles for players.
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
@@ -537,6 +553,11 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1304 | `cap` | iron cap, head armour (`obj/13.obj`); its keywords are `cap iron` |
+| 1305 | `ingot` | lead ingot weighing 90000, more than any character can carry (`CAN_CARRY_W`, `utils.h`, is at most 42000) |
+| 1306 | `key` | brass key, type 18 (`ITEM_KEY`), which `Crash_is_unrentable` (`objsave.cpp`) refuses |
+| 1307 | `ring` | cursed ring, extra flags 128 (`ITEM_NODROP`): it can be put in a container but not given or dropped |
+| 1308 | `bead` | copper bead, a plain object (type 12): zone 13's barter currency |
 
 There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
 instead. `scr/11.scr` and `mdl/11.mdl` are stubs.
@@ -588,7 +609,8 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to `obj/13.obj` for zone 13's range; avoid vnums
+  `spec_ass.cpp` passes to `ASSIGNOBJ`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

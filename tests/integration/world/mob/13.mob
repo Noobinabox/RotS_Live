@@ -1,0 +1,43 @@
+#1301
+banker~
+a banker~
+A banker stands behind a counter here, keeping the account vaults.~
+It exists so the harness can deposit and withdraw through program 34.
+~
+19
+0 0 M
+5 10 0 0
+30 30
+2 0
+0 100 0
+8 8 1 1 0
+150 70 34 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
+attacks=no
+~
+#1302
+trader~
+a trader~
+A trader stands here, bartering leather caps for harness tokens.~
+It exists so the harness can trade through program 33.
+~
+19
+0 0 M
+5 10 0 0
+30 30
+2 0
+0 100 0
+8 8 1 1 0
+150 70 33 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
+store=1303
+attacks=no
+price 1137 1130x2
+~
+#99999

@@ -1,0 +1,14 @@
+#13
+Harness market~
+Banker and barter vendor fixtures for the bank and vendor scenarios.
+~
+~
+0
+? 6 6 5
+1399
+999
+2
+M 0 1301 1301 0 100 100 1 1 banker waits in the bank hall
+M 0 1302 1302 0 100 100 1 1 trader waits in the trade hall
+O 0 1137 1303 0 100 1 leather cap stocks the trader's store room
+S

@@ -12,3 +12,9 @@ ROOM_ARENA_CENTRE = 1131
 ROOM_DARK_CELL = 1133
 # Room 1201, the only room of zone 12, whose map square is (3, 4).
 ROOM_DISTANT_CELL = 1201
+# Room 1301, the lit bank hall in zone 13, where zone 13 resets the banker (mob 1301).
+ROOM_BANK_HALL = 1301
+# Room 1302, the lit trade hall in zone 13, where zone 13 resets the trader (mob 1302).
+ROOM_TRADE_HALL = 1302
+# Room 1303, the trader's store room in zone 13, with no exits; zone 13 stocks one leather cap.
+ROOM_STORE_ROOM = 1303

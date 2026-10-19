@@ -45,4 +45,24 @@ A piece of tainted bread lies here.~
 2 0 0 1 0
 1 0 -1
 0 0 0 0 0
+#1185
+girdle stone~
+a stone girdle~
+A stone girdle lies here.~
+~
+12 268730368 2049
+0 0 0 0 0
+1 0 -1
+0 0 0 0 0
+A
+6 3
+#1186
+shirt chain~
+a chain shirt~
+A chain shirt lies here.~
+~
+9 0 9
+0 5 0 0 0
+100 0 -1
+0 0 0 0 0
 #99999

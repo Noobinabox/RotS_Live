@@ -21,7 +21,7 @@ attacks=no
 #1302
 trader~
 a trader~
-A trader stands here, bartering leather caps for harness tokens.~
+A trader stands here, bartering leather caps for copper beads.~
 It exists so the harness can trade through program 33.
 ~
 19
@@ -38,7 +38,7 @@ It exists so the harness can trade through program 33.
 0 10 0 0 0 100 0
 store=1303
 attacks=no
-price 1137 1130x2
+price 1137 1308x2
 ~
 #1304
 banker dark~

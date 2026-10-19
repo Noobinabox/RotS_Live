@@ -5522,6 +5522,25 @@ TEST(InterpreAccountMenu, ResetCodePromptDisconnectsOnEmptyInput)
     close(descriptor.descriptor);
 }
 
+// The connection is left for the game loop's closing sweep, so nanny() itself never frees it.
+TEST(InterpreAccountMenu, BlankEmailLineLeavesTheConnectionClosingWithNoFurtherOutput)
+{
+    ScopedDescriptorListReset descriptor_list_reset;
+
+    descriptor_data descriptor = make_descriptor();
+    descriptor.connected = CON_NME;
+    char blank_line[] = "";
+
+    nanny(&descriptor, blank_line);
+
+    EXPECT_EQ(descriptor.connected, CON_CLOSE);
+    EXPECT_EQ(std::string(descriptor.output), "");
+
+    ASSERT_NE(descriptor.character, nullptr);
+    descriptor.character->desc = nullptr;
+    free_char(descriptor.character);
+}
+
 TEST(InterpreAccountMenu, ForgotPasswordHappyPathResetsThePasswordAndDisconnects)
 {
     TemporaryDirectory temp_directory;

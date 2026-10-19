@@ -1,0 +1,55 @@
+#1700
+smith plain~
+a plain smith~
+A plain smith waits here for a star token.~
+His script (1700) checks a given object in a nested block, with no section rows.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1700 100 0
+#1701
+smith labelled~
+a labelled smith~
+A labelled smith waits here for a star token.~
+His script (1701) is the plain smith's with section rows added.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1701 100 0
+#1702
+foreman weary~
+a weary foreman~
+A weary foreman leans here, waiting to be told goodbye.~
+His script (1702) waits between two lines and then ends.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+0 10 0 0 1702 100 0
+#99999

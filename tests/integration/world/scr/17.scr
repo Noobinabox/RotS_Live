@@ -1,0 +1,86 @@
+#1700 Harness plain smith~
+Brali's shape (#2709): the star token block holds a nested guard with an empty else branch.~
+15 1 0 0 0 0 0 0
+ a given object starts the token check~
+57 2 1700 955 0 0 0 0
+ int3 is the star token's vnum~
+4 3 402 955 0 0 0 0
+ is the object the star token?~
+1 4 0 0 0 0 0 0
+ ~
+8 5 200 0 0 0 0 0
+ a mob giver halts the script~
+1 6 0 0 0 0 0 0
+ ~
+30 7 100 0 0 0 0 0
+ I do not trade with your kind.~
+6 8 0 0 0 0 0 0
+ ~
+5 9 0 0 0 0 0 0
+ ~
+2 10 0 0 0 0 0 0
+ ~
+30 11 100 0 0 0 0 0
+ A star token! Here is your reward.~
+5 12 0 0 0 0 0 0
+ ~
+30 13 100 0 0 0 0 0
+ That is no star token.~
+2 14 0 0 0 0 0 0
+ ~
+30 15 100 0 0 0 0 0
+ Who is next?~
+999 0 0 0 0 0 0 0
+#1701 Harness labelled smith~
+Script 1700 with section rows: between the IF and its BEGIN, before the nested IF, and on the empty else branch.~
+15 1 0 0 0 0 0 0
+ a given object starts the token check~
+78 2 0 0 0 0 0 0
+ Token check | the reward runs only for the star token~
+57 3 1700 955 0 0 0 0
+ int3 is the star token's vnum~
+4 4 402 955 0 0 0 0
+ is the object the star token?~
+78 5 0 0 0 0 0 0
+ Reward | the star token's block~
+1 6 0 0 0 0 0 0
+ ~
+78 7 0 0 0 0 0 0
+ Guard | a mob giver halts the script~
+8 8 200 0 0 0 0 0
+ a mob giver halts the script~
+1 9 0 0 0 0 0 0
+ ~
+30 10 100 0 0 0 0 0
+ I do not trade with your kind.~
+6 11 0 0 0 0 0 0
+ ~
+5 12 0 0 0 0 0 0
+ ~
+78 13 0 0 0 0 0 0
+ No guard | a player giver goes on~
+2 14 0 0 0 0 0 0
+ ~
+30 15 100 0 0 0 0 0
+ A star token! Here is your reward.~
+5 16 0 0 0 0 0 0
+ ~
+30 17 100 0 0 0 0 0
+ That is no star token.~
+2 18 0 0 0 0 0 0
+ ~
+30 19 100 0 0 0 0 0
+ Who is next?~
+999 0 0 0 0 0 0 0
+#1702 Harness weary foreman~
+Says one line, waits, says a last line and ends (#270).~
+17 1 0 0 0 0 0 0
+ anything said in the room starts the farewell~
+30 2 100 0 0 0 0 0
+ Goodbye, then.~
+58 3 4 0 0 0 0 0
+ four pulses, one second~
+30 4 100 0 0 0 0 0
+ My shift is over at last.~
+999 0 0 0 0 0 0 0
+#99999

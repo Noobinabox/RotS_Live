@@ -518,11 +518,16 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1700 | `smith plain` | runs script 1700 when given an object (`ON_RECEIVE`): an IF on the star token (object 1700) whose block holds a nested guard IF with an empty else branch, then says `A star token! Here is your reward.`; otherwise `That is no star token.`; always ends with `Who is next?` |
+| 1701 | `smith labelled` | runs script 1701: script 1700 with `SECTION` rows between the IF and its BEGIN, before the nested IF, and on the nested empty else branch |
+| 1702 | `foreman weary` | runs script 1702 when anyone in the room speaks (`ON_HEAR_SAY`): says `Goodbye, then.`, waits four passes (`DO_WAIT`), says `My shift is over at last.` and ends |
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
-4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
+above). Six real guildmasters are copied at their real vnums (1503, 2043, 4601, 10003, 13600,
+32200) so `spec_ass.cpp` binds the guild special to them: 1503 in `mob/15.mob`, so that the
+mobs of `mob/17.mob` keep the vnums ascending, and the other five in `mob/guildmasters.mob`.
+The 1700s mobs speak no language (language 0), so every listener reads their lines exactly.
 
 | Object | Keyword | What it is |
 | --- | --- | --- |
@@ -531,8 +536,11 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1700 | `star token` | star token, the object scripts 1700 and 1701 reward |
+| 1701 | `pebble grey` | grey pebble, an object that is not the star token |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+`scr/17.scr` holds scripts 1700 to 1702, which the 1700s mobs run.
 
 ### File formats
 
@@ -581,7 +589,8 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`. A new
+  `obj/<n>.obj` file needs `git add -f`, because `.gitignore` ignores `*.obj`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

@@ -474,13 +474,14 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 18 | `zon/18.zon` | Harness boar pen | (6, 6) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
 
 ### Rooms
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
-anyone changes the world.
+`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld`, `wld/12.wld` or
+`wld/18.wld` after anyone changes the world.
 
 | Vnum | Name | Flags | Sector | Exits |
 | --- | --- | --- | --- | --- |
@@ -503,9 +504,13 @@ anyone changes the world.
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
+| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | west 1801 |
 
-1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
-so a character there sees only with infravision, holylight, or moonvision while the moon is up
+1133 and 1801 are the only rooms with a flag. In 1801, `PEACEROOM` makes `do_hit`
+(`act_offe.cpp`) refuse every attack, a failed tame's included. `IS_DARK` is true in 1133
+unless something in it gives light, so a character there sees only with infravision,
+holylight, or moonvision while the moon is up
 (1133 counts as outside, and moonlight follows the uncontrolled game hour).
 
 ### Mobs and objects
@@ -518,6 +523,7 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1450 | `boar pen` | an animal (bodytype 2, perception 0, level 1, `SENTINEL`) a ranger can tame; zone 18 resets one into 1801. In `mob/14.mob`, listed before `guildmasters.mob` so vnums ascend |
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"

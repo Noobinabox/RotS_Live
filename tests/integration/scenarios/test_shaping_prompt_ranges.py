@@ -54,7 +54,7 @@ REFUSAL_CASES = [
     (
         OBJECT_EDITOR,
         [
-            Refusal("/9", "26", "Item type must be 1-25. dropped.", "(9) type flag    :12"),
+            Refusal("/9", "27", "Item type must be 1-26. dropped.", "(9) type flag    :12"),
             Refusal("/16", "256", "Level must be 0-255. dropped.", "(16) level        :0"),
             Refusal("/18", "14", "Material must be 0-13. dropped.", "(18) material     :0 (Usual stuff)"),
         ],

@@ -172,6 +172,7 @@ set(ROTS_SERVER_SOURCES
 set(ROTS_TEST_SOURCES
     tests/barter_vendor_tests.cpp
     tests/banker_tests.cpp
+    tests/keyring_tests.cpp
     tests/ranger_prog_tests.cpp
     tests/mage_prog_tests.cpp
     tests/guild_practice_tests.cpp

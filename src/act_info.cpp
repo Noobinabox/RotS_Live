@@ -1077,12 +1077,84 @@ char* keywords[] = { "north", "east", "south", "west", "up",
     "\n" };
 
 /* subcmd == 1 serves for "examine" calls */
+/* True when ch can't look now (no connection, asleep, blind, dark); tells
+ * them why. */
+static bool cannot_look(char_data* ch)
+{
+    if (!ch->desc)
+        return true;
+    if (!ch->desc->descriptor)
+        return true;
+
+    /* Position/condition checking */
+    if (GET_POS(ch) < POSITION_SLEEPING) {
+        send_to_char("You can't see anything but stars!\n\r", ch);
+        return true;
+    } else if (GET_POS(ch) == POSITION_SLEEPING) {
+        send_to_char("You can't see anything, you're sleeping!\n\r", ch);
+        return true;
+    } else if (IS_AFFECTED(ch, AFF_BLIND)) {
+        send_to_char("You can't see a damned thing, you're blinded!\n\r", ch);
+        return true;
+    } else if (!CAN_SEE(ch)) {
+        send_to_char("It is pitch black...\n\r", ch);
+        list_char_to_char(world[ch->in_room].people, ch, 0);
+        return true;
+    }
+    return false;
+}
+
+/* What "look in" shows for obj, found by find_container (bits says where:
+ * FIND_OBJ_BELT_KEYRING for a keyring on the belt). Examine's contents step
+ * shows the same. */
+static void show_obj_contents(char_data* ch, obj_data* obj, int bits)
+{
+    int temp;
+
+    if (bits == FIND_OBJ_BELT_KEYRING) {
+        send_to_char(fname(obj->name), ch);
+        send_to_char(" (worn) : \n\r", ch);
+        list_obj_to_char(obj->contains, ch, 2, true);
+    } else if ((GET_ITEM_TYPE(obj) == ITEM_DRINKCON) || (GET_ITEM_TYPE(obj) == ITEM_FOUNTAIN)) {
+        /* Found a drink container */
+        if (obj->obj_flags.value[1] <= 0)
+            act("It is empty.", FALSE, ch, 0, 0, TO_CHAR);
+        else { /* It's not empty, how full is it? */
+            if (obj->obj_flags.value[0]) {
+                temp = (obj->obj_flags.value[1] * 3) / obj->obj_flags.value[0];
+                sprintf(buf, "It's %sfull of a %s liquid.\n\r", fullness[temp],
+                    color_liquid[obj->obj_flags.value[2]]);
+            } else
+                sprintf(buf, "It's max_content is zero, beware!\n\r");
+            send_to_char(buf, ch);
+        }
+    } else if (GET_ITEM_TYPE(obj) == ITEM_CONTAINER && IS_SET(obj->obj_flags.value[1], CONT_CLOSED)) {
+        send_to_char("It is closed.\n\r", ch); /* A keyring is always open */
+    } else if (obj->holds_items()) {
+        /* A normal container (backpack, pouch, etc) or a keyring */
+        send_to_char(fname(obj->name), ch);
+        switch (bits) {
+        case FIND_OBJ_INV:
+            send_to_char(" (carried) : \n\r", ch);
+            break;
+        case FIND_OBJ_ROOM:
+            send_to_char(" (here) : \n\r", ch);
+            break;
+        case FIND_OBJ_EQUIP:
+            send_to_char(" (used) : \n\r", ch);
+            break;
+        }
+        list_obj_to_char(obj->contains, ch, 2, true);
+    } else /* They looked in something that isn't a container */
+        send_to_char("That is not a container.\n\r", ch);
+}
+
 ACMD(do_look)
 {
     char arg1[MAX_INPUT_LENGTH], arg2[MAX_INPUT_LENGTH];
     char str[2000];
     int keyword_no;
-    int j, bits = 0, temp, tmp;
+    int j, bits = 0, tmp;
     char found;
     struct obj_data *tmp_object, *found_object;
     struct char_data* tmp_char;
@@ -1091,26 +1163,8 @@ ACMD(do_look)
     sh_int exit_choice;
     char exit_line[20];
 
-    if (!ch->desc)
+    if (cannot_look(ch))
         return;
-    if (!ch->desc->descriptor)
-        return;
-
-    /* Position/condition checking */
-    if (GET_POS(ch) < POSITION_SLEEPING) {
-        send_to_char("You can't see anything but stars!\n\r", ch);
-        return;
-    } else if (GET_POS(ch) == POSITION_SLEEPING) {
-        send_to_char("You can't see anything, you're sleeping!\n\r", ch);
-        return;
-    } else if (IS_AFFECTED(ch, AFF_BLIND)) {
-        send_to_char("You can't see a damned thing, you're blinded!\n\r", ch);
-        return;
-    } else if (!CAN_SEE(ch)) {
-        send_to_char("It is pitch black...\n\r", ch);
-        list_char_to_char(world[ch->in_room].people, ch, 0);
-        return;
-    }
 
     argument_split_2(argument, arg1, arg2);
     keyword_no = search_block(arg1, keywords, FALSE); /* Partial match */
@@ -1205,45 +1259,10 @@ ACMD(do_look)
 
     case 6: /* look 'in' */
         if (*arg2) { /* look in <item carried> */
-            bits = generic_find(arg2, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tmp_char,
-                &tmp_object);
-
-            if (bits) { /* Found something */
-                if ((GET_ITEM_TYPE(tmp_object) == ITEM_DRINKCON) || (GET_ITEM_TYPE(tmp_object) == ITEM_FOUNTAIN)) {
-                    /* Found a drink container */
-                    if (tmp_object->obj_flags.value[1] <= 0)
-                        act("It is empty.", FALSE, ch, 0, 0, TO_CHAR);
-                    else { /* It's not empty, how full is it? */
-                        if (tmp_object->obj_flags.value[0]) {
-                            temp = (tmp_object->obj_flags.value[1] * 3) / tmp_object->obj_flags.value[0];
-                            sprintf(buf, "It's %sfull of a %s liquid.\n\r", fullness[temp],
-                                color_liquid[tmp_object->obj_flags.value[2]]);
-                        } else
-                            sprintf(buf, "It's max_content is zero, beware!\n\r");
-                        send_to_char(buf, ch);
-                    }
-                } else if (GET_ITEM_TYPE(tmp_object) == ITEM_CONTAINER) {
-                    /* Found a normal container; i.e.: backpack, pouch, etc */
-                    if (!IS_SET(tmp_object->obj_flags.value[1], CONT_CLOSED)) {
-                        /* The item isn't closed, so they can see into it */
-                        send_to_char(fname(tmp_object->name), ch);
-                        switch (bits) {
-                        case FIND_OBJ_INV:
-                            send_to_char(" (carried) : \n\r", ch);
-                            break;
-                        case FIND_OBJ_ROOM:
-                            send_to_char(" (here) : \n\r", ch);
-                            break;
-                        case FIND_OBJ_EQUIP:
-                            send_to_char(" (used) : \n\r", ch);
-                            break;
-                        }
-                        list_obj_to_char(tmp_object->contains, ch, 2, true);
-                    } else /* It was closed, pretty simple case */
-                        send_to_char("It is closed.\n\r", ch);
-                } else /* They looked in something that isn't a container */
-                    send_to_char("That is not a container.\n\r", ch);
-            } else /* They looked at something that isn't here */
+            if ((bits = find_container(ch, arg2, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, &tmp_char,
+                     &tmp_object)))
+                show_obj_contents(ch, tmp_object, bits); /* Found something */
+            else /* They looked at something that isn't here */
                 send_to_char("You do not see that item here.\n\r", ch);
         } else /* They didn't look "in" anything! */
             send_to_char("Look in what?!\n\r", ch);
@@ -1274,9 +1293,9 @@ ACMD(do_look)
             }
 
             if (tmp == -1) /* Still haven't found anyone */
-                bits = generic_find(arg2,
+                bits = find_container(ch, arg2,
                     FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP | FIND_CHAR_ROOM,
-                    ch, &tmp_char, &found_object);
+                    &tmp_char, &found_object);
             /*
              * The next line was the cause of look spirit crashes.
              *
@@ -1527,7 +1546,7 @@ ACMD(do_read)
  */
 ACMD(do_examine)
 {
-    char name[100], buf[100];
+    char name[MAX_INPUT_LENGTH];
     int bits;
     struct char_data* tmp_char;
     struct obj_data* tmp_object;
@@ -1546,14 +1565,26 @@ ACMD(do_examine)
         return;
     }
 
-    bits = generic_find(name, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, ch, &tmp_char,
+    /* The contents step searches again, with the same search as the
+     * description step: an examine script may have destroyed or moved the
+     * object, so a pointer kept from that step is not safe. */
+    bits = find_container(ch, name, FIND_OBJ_INV | FIND_OBJ_ROOM | FIND_OBJ_EQUIP, &tmp_char,
         &tmp_object);
 
     if (tmp_object) {
-        if ((GET_ITEM_TYPE(tmp_object) == ITEM_DRINKCON) || (GET_ITEM_TYPE(tmp_object) == ITEM_FOUNTAIN) || (GET_ITEM_TYPE(tmp_object) == ITEM_CONTAINER)) {
+        if (tmp_object->holds_items() || GET_ITEM_TYPE(tmp_object) == ITEM_DRINKCON || GET_ITEM_TYPE(tmp_object) == ITEM_FOUNTAIN) {
             send_to_char("When you look inside, you see:\n\r", ch);
-            sprintf(buf, "in %s", argument);
-            do_look(ch, buf, wtl, 15, 0);
+            /* When the first raw word is not the one examine used (a fill
+             * word such as "the", a quote, a tab), look in reads the raw
+             * word, as it always has. */
+            char raw[MAX_INPUT_LENGTH], unused[MAX_INPUT_LENGTH];
+            argument_split_2(argument, raw, unused);
+            if (strcmp(raw, name)) {
+                char look_in[MAX_INPUT_LENGTH + 4];
+                snprintf(look_in, sizeof(look_in), "in %s", argument);
+                do_look(ch, look_in, wtl, 15, 0);
+            } else if (!cannot_look(ch))
+                show_obj_contents(ch, tmp_object, bits);
         }
     }
 }
@@ -4281,6 +4312,7 @@ char* item_messages[] = {
     "fountain",
     "shield",
     "lever",
+    "keyring",
 };
 
 char* extra_messages[] = {
@@ -4505,7 +4537,17 @@ char* value_array[][5] = {
         "",
         "",
     }, /* Lever */
+    {
+        "Capacity",
+        "",
+        "",
+        "",
+        "",
+    }, /* Keyring */
 };
+/* Identify reads value_array by item type: one row for every type. */
+static_assert(sizeof(value_array) / sizeof(value_array[0]) == ITEM_KEYRING + 1,
+    "value_array needs a row for every item type");
 
 char* weapon_types[] = {
 

@@ -139,6 +139,7 @@ inline constexpr int ITEM_BOAT = 22;
 inline constexpr int ITEM_FOUNTAIN = 23;
 inline constexpr int ITEM_SHIELD = 24;
 inline constexpr int ITEM_LEVER = 25;
+inline constexpr int ITEM_KEYRING = 26;
 
 /* For obj_flags.value[] of an ITEM_LIGHT */
 
@@ -512,6 +513,12 @@ public:
 
     // Returns true if the object is a quiver.
     bool is_quiver() const;
+
+    // Returns true if the object is a keyring.
+    bool is_keyring() const;
+
+    // Returns true if the object can hold other items (container or keyring).
+    bool holds_items() const;
 
     // Returns true if the weapon is a ranged weapon.
     bool is_ranged_weapon() const;

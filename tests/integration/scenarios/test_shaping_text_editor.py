@@ -36,10 +36,19 @@ COMMAND_LIST_HEAD = [
 # The list's line about %f and %%, and its line about %h for text with no help entry of its own.
 FORMAT_LINE = "  %f format the text         %% a % sign"
 GENERAL_HELP_LINE = "  %h more on these commands"
-# The mob options field's line in place of FORMAT_LINE.
+# The mob options field's line in place of FORMAT_LINE, and its %h line, which offers the
+# field's own help entry first.
 PERCENT_ONLY_LINE = "  %% a % sign"
+FIELD_HELP_LINE = "  %h help for this field, and more on these commands"
 # What %f prints in the mob options field (string_add, modify.cpp).
 FORMAT_REFUSED = "This text is one setting per line, so %f is not allowed here."
+# The ways to type format: the command letter in either case, after '%' or '~'.
+FORMAT_COMMANDS = ["%f", "%F", "~f"]
+# Two settings typed into the options, which a format would join into one line.
+OPTION_LINES = ["first setting", "second setting"]
+# What %r prints before the text, and after the part before the cursor (string_add, modify.cpp).
+TEXT_SO_FAR = "Your text so far:"
+CURSOR_MARK = ">>"
 # What %f prints in any other text that is still empty.
 NOTHING_TO_FORMAT = "What are you trying to format?"
 # The start of what %f prints once it has formatted a text.
@@ -117,21 +126,29 @@ def test_the_mob_options_editor_does_not_offer_format(server) -> None:
 
     opened_lines = lines_of(opened)
     start = opened_lines.index(COMMAND_LIST_HEAD[0]) if COMMAND_LIST_HEAD[0] in opened_lines else -1
-    expected = COMMAND_LIST_HEAD + [PERCENT_ONLY_LINE]
+    expected = COMMAND_LIST_HEAD + [PERCENT_ONLY_LINE, FIELD_HELP_LINE]
     assert start >= 0 and opened_lines[start:start + len(expected)] == expected, opened
     assert not any("%f" in line for line in opened_lines), opened
 
 
+@pytest.mark.parametrize("format_command", FORMAT_COMMANDS)
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
-def test_the_mob_options_editor_refuses_format(server) -> None:
-    """Pins #357: %f in the mob options field is refused, since joining the lines would merge
-    the settings."""
+def test_the_mob_options_editor_refuses_format(server, format_command: str) -> None:
+    """Pins #357: format in the mob options field, however it is typed, is refused, since joining
+    the lines would merge the settings; the text keeps one setting per line."""
     implementor = server.login(IMPLEMENTOR.name)
 
     opened = open_mob_options(implementor)
     assert OPTIONS_FIELD_MARKER in opened, opened
-    formatted = reply_to(implementor, "%f", [FORMAT_REFUSED, NOTHING_TO_FORMAT, FORMATTED_MARKER])
+    for option_line in OPTION_LINES:
+        implementor.send_line(option_line)
+    formatted = reply_to(implementor, format_command, [FORMAT_REFUSED, NOTHING_TO_FORMAT, FORMATTED_MARKER])
+    shown = reply_to(implementor, "%r", [CURSOR_MARK])
     close_mob_editor(implementor)
 
     assert FORMAT_REFUSED in lines_of(formatted), formatted
+    shown_lines = lines_of(shown)
+    start = shown_lines.index(TEXT_SO_FAR) if TEXT_SO_FAR in shown_lines else -1
+    shown_text = [line for line in shown_lines[start + 1:] if line] if start >= 0 else []
+    assert shown_text[:3] == OPTION_LINES + [CURSOR_MARK], shown

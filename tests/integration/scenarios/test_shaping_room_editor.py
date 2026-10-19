@@ -1,12 +1,12 @@
 """The room editor: affections are added, changed and removed and reach the room on /implement,
-and a flag answer with several flags says where it stopped."""
+a room's flags survive /implement, and a flag answer with several flags says where it stopped."""
 
 from __future__ import annotations
 
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR
+from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
@@ -54,8 +54,26 @@ MULTI_FLAG_ANSWER = "p6 pause p7"
 MULTI_FLAG_STOPPED = "Stopped at 'pause': it and the rest were not applied."
 # How /50 shows the room's flags afterwards: SHADOWY alone, 1 << 6.
 SHADOWY_FLAGS_LISTED = "(3) room flag  :64"
+# What look shows a character who cannot see the room (do_look, act_info.cpp).
+PITCH_BLACK = "It is pitch black..."
+# The dark cell's name, and its flags as stat room names them (do_stat_room, act_wiz.cpp).
+DARK_CELL_NAME = "Dark Cell"
+DARK_FLAGS_LINE = "SpecProc: No, Flags:  DARK."
+# The blink affection again, now also setting room flag bit 0, DARK (structs.h).
+DARKENING_AFFECTION_ANSWER = f"1 {SPELL_NUMBER} {SPELL_LEVEL} 1"
 # Seconds to keep reading after a marker, for the rest of the reply.
 SETTLE_SECONDS = 0.5
+
+
+def mortal_in(room_vnum: int) -> Character:
+    """A level-10 human warrior starting in room_vnum: a mortal without infravision, who sees
+    only in a lit room."""
+    return Character(name="Testlooker", race="human", sex="male", level=10, load_room=room_vnum, class_name="warrior")
+
+
+# The mortal in the dark cell, and the mortal in the implementor's room.
+MORTAL_IN_DARK_CELL = mortal_in(world.ROOM_DARK_CELL)
+MORTAL_IN_ROOM = mortal_in(ROOM_VNUM)
 
 
 def lines_of(text: str) -> list:
@@ -72,16 +90,22 @@ def editor_step(implementor: GameSession, line: str, outcomes: list) -> str:
     return implementor.expect(outcomes) + implementor.drain(SETTLE_SECONDS)
 
 
-def open_room_editor(implementor: GameSession) -> None:
-    """Starts shaping the implementor's room."""
-    loaded = editor_step(implementor, f"shape room {ROOM_VNUM}", [ROOM_LOADED_MARKER, *ROOM_LOAD_FAILURES])
-    assert ROOM_LOADED_MARKER in loaded, loaded
+def open_room_editor(implementor: GameSession, room_vnum: int = ROOM_VNUM) -> None:
+    """Starts shaping a room, the implementor's unless another is named."""
+    marker = f"loading room #{room_vnum}"
+    loaded = editor_step(implementor, f"shape room {room_vnum}", [marker, *ROOM_LOAD_FAILURES])
+    assert marker in loaded, loaded
 
 
 def close_room_editor(implementor: GameSession) -> None:
     """Leaves the editor, so the session can quit when the test ends."""
     released = editor_step(implementor, "/free", [ROOM_RELEASED_MARKER])
     assert ROOM_RELEASED_MARKER in released, released
+
+
+def look(mortal: GameSession) -> str:
+    """The first line of what the mortal's look shows: the room's name, or PITCH_BLACK."""
+    return mortal.command("look").room_name()
 
 
 def stat_room_affections(implementor: GameSession) -> list:
@@ -172,3 +196,57 @@ def test_a_flag_answer_stops_at_the_first_word_that_is_not_a_flag(server) -> Non
 
     assert MULTI_FLAG_STOPPED in lines_of(answered), answered
     assert SHADOWY_FLAGS_LISTED in lines_of(listed), listed
+
+
+@pytest.mark.schedule("affect-hours")
+@pytest.mark.characters(IMPLEMENTOR, MORTAL_IN_DARK_CELL)
+def test_implementing_a_dark_room_unchanged_leaves_it_dark(server) -> None:
+    """Pins #318: /implement of the dark cell, unedited, keeps its DARK flag, so a mortal there
+    still sees nothing and stat room still shows the flag.
+
+    /implement removes the room's affections, whose bits come off its flags, before it sets the
+    flags again (implement_room, shaperom.cpp).
+    """
+    implementor = server.login(IMPLEMENTOR.name)
+    mortal = server.login(MORTAL_IN_DARK_CELL.name)
+    booted_look = look(mortal)
+
+    open_room_editor(implementor, world.ROOM_DARK_CELL)
+    implement_room(implementor)
+    close_room_editor(implementor)
+    implemented_look = look(mortal)
+    implementor.command(f"goto {world.ROOM_DARK_CELL}")
+    implementor.send_line("stat room")
+    stat_text = implementor.expect(["Affections:"]) + implementor.drain(SETTLE_SECONDS)
+
+    assert booted_look == PITCH_BLACK
+    assert implemented_look == PITCH_BLACK
+    assert DARK_FLAGS_LINE in lines_of(stat_text), stat_text
+
+
+@pytest.mark.schedule("affect-hours")
+@pytest.mark.characters(IMPLEMENTOR, MORTAL_IN_ROOM)
+def test_an_implemented_affections_room_flags_take_effect_and_leave_with_it(server) -> None:
+    """Pins #318: an affection whose flags set DARK darkens the room once implemented, so a
+    mortal there sees nothing, and removing it and implementing again lights the room."""
+    implementor = server.login(IMPLEMENTOR.name)
+    mortal = server.login(MORTAL_IN_ROOM.name)
+    lit_look = look(mortal)
+
+    open_room_editor(implementor)
+    added = editor_step(implementor, "/19", [AFFECTION_ADDED, ROOM_PROMPT])
+    assert AFFECTION_ADDED in added, added
+    prompt = editor_step(implementor, "/18", [NEW_AFFECTION_VALUES, "Current:", NO_AFFECTIONS_FOUND])
+    assert NEW_AFFECTION_VALUES in lines_of(prompt), prompt
+    editor_step(implementor, DARKENING_AFFECTION_ANSWER, [ROOM_PROMPT])
+    implement_room(implementor)
+    darkened_look = look(mortal)
+    removed = editor_step(implementor, "/20", [AFFECTION_REMOVED, NO_AFFECTIONS_EXIST])
+    assert AFFECTION_REMOVED in lines_of(removed), removed
+    implement_room(implementor)
+    close_room_editor(implementor)
+    relit_look = look(mortal)
+
+    assert lit_look == "Immortal Start"
+    assert darkened_look == PITCH_BLACK
+    assert relit_look == "Immortal Start"

@@ -540,8 +540,18 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
 | 1601 | `sword` | plain sword, `obj/16.obj`: a weapon without the `MAGIC` flag or affects, so enchant weapon takes on it (`object_takes_enchant`, `utility.cpp`); version 0 |
 | 1602 | `stone` | dwarven stone, `obj/16.obj`: type other, extra flags `DWARF` (bit 18) and `STAY_ZONE` (bit 28) only |
+| 1603 | `helm` | leather helm, `obj/16.obj`: head armour without affects |
+| 1604 | `key` | brass key, `obj/16.obj`: a key (type 18) with `BREAKABLE`, so its first use breaks it (`check_break_key`, `act_move.cpp`); keys cannot be rented (`Crash_is_unrentable`, `objsave.cpp`) |
+| 1605 | `chest` | small chest, `obj/16.obj`: a container, closed and locked (values `100 13 1604`), that key 1604 opens |
+| 1606 | `trinket` | cursed trinket, `obj/16.obj`: type other with rent per day -2, so the inn refuses it |
+| 1607 | `token` | pewter token, `obj/16.obj`: type other with `NORENT` (bit 12); answers to `token` like 1130 |
+| 1608 | `waterskin` | waterskin, `obj/16.obj`: a drink container holding 10 of 20 drinks of water |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+
+`obj/oldobjs/` holds only a README: the object editor's `/save` and `/done` copy the zone's object
+file there before rewriting it (`replace_object`, `shapeobj.cpp`; `SHAPE_OBJ_BACKDIR`, `protos.h`),
+and refuse to save without the folder.
 
 ### The innkeeper
 
@@ -553,6 +563,10 @@ is how a mortal keeps its items across a login. The innkeeper's special is `gen_
   needs no gold. `offer` still quotes a price for the first day, from the level and what the
   character carries, then says `You have enough gold for a lifetime of rent.` whatever the gold.
   A character carrying nothing gets `But you are not carrying anything!  Just quit!`.
+- Before quoting or storing, `rent` and `offer` refuse each item the character carries or wears,
+  containers' contents included, that `Crash_is_unrentable` (`objsave.cpp`) names: a key, an item with
+  `NORENT`, or one whose rent per day is below -1 (fixtures 1604, 1607 and 1606). Each gets
+  `The harness innkeeper tells you, 'You cannot store <item>.'` and the rent goes no further.
 - `rent` replies `The harness innkeeper stores your belongings and helps you into your private
   chamber.`, saves what the character carries and wears (`Crash_rentsave`), and returns the
   connection to the character menu (`Make your choice:`) with the socket still open. Close that

@@ -535,6 +535,7 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
 | 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
 | 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
+| 1404 | `bracelet` | kindling bracelet (`obj/14.obj`), worn on a wrist; its `A 27 161` line has a strength of 0, so `APPLY_SPELL` grants a fire resistance worth the wearer's level |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 
@@ -586,7 +587,7 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
 - An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/14.obj`
-  holds 1400 to 1403); avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+  holds 1400 to 1404); avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

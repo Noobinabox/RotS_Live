@@ -474,13 +474,14 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303 |
 
 ### Rooms
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
-anyone changes the world.
+`OUTSIDE()` is true in all of them. Re-read the header in `wld/<zone>.wld` after anyone changes
+the world.
 
 | Vnum | Name | Flags | Sector | Exits |
 | --- | --- | --- | --- | --- |
@@ -503,6 +504,9 @@ anyone changes the world.
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1301 | Bank Hall (`world.ROOM_BANK_HALL`, zone 13) | 0 (none) | 0 | east 1302 |
+| 1302 | Trade Hall (`world.ROOM_TRADE_HALL`, zone 13) | 0 (none) | 0 | west 1301 |
+| 1303 | Store Room (`world.ROOM_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the trader's stock |
 
 1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
 so a character there sees only with infravision, holylight, or moonvision while the moon is up
@@ -518,6 +522,8 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
+| 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1130x2`; zone 13 resets one into 1302 |
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
 32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
@@ -532,7 +538,8 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
 
-There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
+instead. `scr/11.scr` and `mdl/11.mdl` are stubs.
 
 ### File formats
 

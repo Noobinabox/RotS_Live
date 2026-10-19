@@ -531,6 +531,8 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1400 | `circlet` | fire circlet (`obj/14.obj`), head armour; its `A 27 5281` line (`APPLY_SPELL`, 20 * 256 + `SPELL_RESIST_FIRE` 161) grants a 20% fire resistance |
+| 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 
@@ -581,7 +583,8 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/14.obj`
+  holds 1400 and 1401); avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

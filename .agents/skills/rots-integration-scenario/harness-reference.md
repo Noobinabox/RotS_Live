@@ -474,9 +474,9 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
-| 16 | `zon/16.zon` | Harness object workshop | (6, 6) | none (top room 1699) | none |
+| 16 | `zon/16.zon` | Harness object workshop | (6, 6) | 1601-1699 | harness innkeeper (mob 1105) to 1601 |
 
-Zone 16 has no rooms. It exists for the objects in `obj/16.obj`: the object editor loads
+Zone 16 holds the inn, room 1601, and exists for the objects in `obj/16.obj`: the object editor loads
 `shape object <vnum>` from `world/obj/<vnum / 100>.obj`, and `/implement` is refused for a vnum
 outside every zone (`load_object`, `shapeobj.cpp`; `get_permission`, `shapemob.cpp`).
 
@@ -484,7 +484,7 @@ outside every zone (`load_object`, `shapeobj.cpp`; `get_permission`, `shapemob.c
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
+`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld`, `wld/12.wld` or `wld/16.wld` after
 anyone changes the world.
 
 | Vnum | Name | Flags | Sector | Exits |
@@ -508,6 +508,7 @@ anyone changes the world.
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1601 | Harness Inn (`world.ROOM_INN`, zone 16) | 0 (none) | 0 | none; the harness innkeeper stands here |
 
 1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
 so a character there sees only with infravision, holylight, or moonvision while the moon is up
@@ -517,6 +518,7 @@ so a character there sees only with infravision, holylight, or moonvision while 
 
 | Mob | Keywords | What it is |
 | --- | --- | --- |
+| 1105 | `innkeeper harness` | the harness innkeeper, a human whose vnum `spec_ass.cpp` assigns the receptionist special (act flags `3` include `MOB_SPEC`); zone 16 resets one into the inn, 1601. See "The innkeeper" below |
 | 1130 | `target orc` | a plain melee target; zone 11 resets one into 1132 |
 | 1131 | `snake harness` | its bite poisons; act flags `3` include `MOB_SPEC`; zone 11 resets one into 1134 |
 | 1132 | `bystander orc` | involved in nothing, there to be splashed |
@@ -540,6 +542,29 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1602 | `stone` | dwarven stone, `obj/16.obj`: type other, extra flags `DWARF` (bit 18) and `STAY_ZONE` (bit 28) only |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+
+### The innkeeper
+
+A mortal's `quit` drops everything it carries (`do_quit`, `act_othe.cpp`); renting at the inn
+is how a mortal keeps its items across a login. The innkeeper's special is `gen_receptionist`
+(`objsave.cpp`), which answers `rent` and `offer` typed in its room:
+
+- Rent costs nothing: `Crash_offer_rent` and `gen_receptionist` set the cost to 0, so a mortal
+  needs no gold. `offer` still quotes a price for the first day, from the level and what the
+  character carries, then says `You have enough gold for a lifetime of rent.` whatever the gold.
+  A character carrying nothing gets `But you are not carrying anything!  Just quit!`.
+- `rent` replies `The harness innkeeper stores your belongings and helps you into your private
+  chamber.`, saves what the character carries and wears (`Crash_rentsave`), and returns the
+  connection to the character menu (`Make your choice:`) with the socket still open. Close that
+  session with `close()`, then `server.login(name)`: the mortal returns to the inn with its
+  items (`calc_load_room`).
+- Every other command typed in the inn draws `number(0, 30)`, and on 0 the innkeeper performs a
+  random social, so text can arrive there unasked. Bring the mortal in with the implementor's
+  `teleport <name> 1601` (it reads `<Implementor> has teleported you!` and the room) just
+  before `rent` or `offer`.
+- A `yell` anywhere in zone 16 outside the inn would log `SYSERR: Fubar'd receptionist.`, which
+  fails the test: `do_gen_com` (`act_comm.cpp`) calls the specials of every room in the zone,
+  and `gen_receptionist` looks for the innkeeper in the yeller's room.
 
 ### File formats
 

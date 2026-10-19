@@ -12,3 +12,5 @@ ROOM_ARENA_CENTRE = 1131
 ROOM_DARK_CELL = 1133
 # Room 1201, the only room of zone 12, whose map square is (3, 4).
 ROOM_DISTANT_CELL = 1201
+# Room 1601, the inn of zone 16, where the harness innkeeper (mob 1105) rents rooms to mortals.
+ROOM_INN = 1601

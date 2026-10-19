@@ -474,6 +474,11 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 16 | `zon/16.zon` | Harness object workshop | (6, 6) | none (top room 1699) | none |
+
+Zone 16 has no rooms. It exists for the objects in `obj/16.obj`: the object editor loads
+`shape object <vnum>` from `world/obj/<vnum / 100>.obj`, and `/implement` is refused for a vnum
+outside every zone (`load_object`, `shapeobj.cpp`; `get_permission`, `shapemob.cpp`).
 
 ### Rooms
 
@@ -531,6 +536,8 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1601 | `sword` | plain sword, `obj/16.obj`: a weapon without the `MAGIC` flag or affects, so enchant weapon takes on it (`object_takes_enchant`, `utility.cpp`); version 0 |
+| 1602 | `stone` | dwarven stone, `obj/16.obj`: type other, extra flags `DWARF` (bit 18) and `STAY_ZONE` (bit 28) only |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 
@@ -581,7 +588,9 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to the file of its zone (`obj/16.obj`) when the object
+  editor must load it; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`. `.gitignore` ignores
+  `*.obj`, so a new object file needs `git add -f`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

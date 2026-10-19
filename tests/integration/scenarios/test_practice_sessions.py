@@ -384,7 +384,9 @@ def test_advancing_down_and_back_up_moves_the_sessions_by_the_formula(server) ->
     adv * base learning / LEA_PRAC_FACTOR; each level gained runs advance_level (profs.cpp),
     whose last step is the recount. The pupil was level 30 before, so the way back up rolls no
     hit points, rerolls no abilities and raises no stat (those need a mini-level above its
-    highest, mml in `stat`).
+    highest, mml in `stat`). Learning 40 makes each level's share, 40 / 5, a whole number, so
+    the subtraction going down and the recount agree here; for learning that is not a multiple
+    of 5 they differ by the dropped fractions.
     """
     implementor = server.login(IMPLEMENTOR.name)
     pupil = server.login(PUPIL.name)

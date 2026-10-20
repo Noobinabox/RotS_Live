@@ -67,8 +67,10 @@ cache under `build/integration/libs/`.
 ## Continuous integration
 
 The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull requests into
-`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. A pull
-request runs:
+`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. Its
+"Choose the integration groups" job first runs `make integration-unit`, which includes the test
+world check (`unit/test_world_files.py`), so a broken world fails in seconds. A pull request
+runs:
 
 - `boot`, always;
 - each group its description names as `@integration-test-<group>`, such as

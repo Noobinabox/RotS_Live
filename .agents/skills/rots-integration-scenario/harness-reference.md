@@ -546,6 +546,7 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1606 | `trinket` | cursed trinket, `obj/16.obj`: type other with rent per day -2, so the inn refuses it |
 | 1607 | `token` | pewter token, `obj/16.obj`: type other with `NORENT` (bit 12); answers to `token` like 1130 |
 | 1608 | `waterskin` | waterskin, `obj/16.obj`: a drink container holding 10 of 20 drinks of water |
+| 1609 | `relic` | strange relic, `obj/16.obj`: type other, wear flags `TAKE` and `THROW` (bit 15), and every extra flag from bit 0 to 28 but 5 (`INVISIBLE`), 7 (`NODROP`) and 13 (the retired `!DONATE`), `WILLPOWER` (bit 15) among them; for the known-bugs pins |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 

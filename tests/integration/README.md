@@ -77,8 +77,8 @@ runs:
   `@integration-test-poison`, or every group for `@integration-test-all`;
 - the groups of each scenario file it changes, and the group of each group file it changes;
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
-  `requirements.txt`, the test world, a scenario file other than a `test_*.py`, `src/harness/`,
-  `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
+  `requirements.txt`, the test world (other than its notes), a scenario file other than a
+  `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
 
 A change to the game's own code adds no group by itself, so name the groups whose behaviour it
 touches. A name no group file registers fails the job and lists the registered groups.
@@ -223,6 +223,14 @@ characters at once also declares one above that level, such as `IMPLEMENTOR` (le
 
 A new group needs its own file, `groups/<group>.txt`, holding one line that says what the group
 pins; `conftest.py` registers a marker for each file.
+
+The test world's fixtures are listed by `make world-catalogue PYTHON=.venv/bin/python`
+(`ZONE=<n>` for one zone, `CATEGORY=rooms` for one table), and explained in one notes file per
+zone, `world/notes/zone-<n>.md`. A new scenario area adds its own zone (its world files, vnums,
+map square and notes file), its own group file, and keeps its room constants in its scenario
+file; `rots_harness/world.py` holds only the rooms two or more scenario files share. `make
+integration-unit` checks the world's files (`unit/test_world_files.py`): index order, ascending
+vnums, zone ranges and map squares, notes files and leftover conflict markers.
 
 A plain server's game time follows the wall clock. A test marked
 `@pytest.mark.schedule("affect-hours")` runs `bin/ageland_harness` instead, whose game time

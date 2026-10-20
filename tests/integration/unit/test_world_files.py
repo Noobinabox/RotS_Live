@@ -12,6 +12,7 @@ from rots_harness.world_files import (
     index_text,
     read_index,
     read_zone,
+    zone_blocks,
     zone_vnum_ranges,
     read_zones,
 )
@@ -97,6 +98,7 @@ def all_problems(world_dir: Path) -> list[str]:
         world_check.vnum_order_problems,
         world_check.end_record_problems,
         world_check.zone_problems,
+        world_check.notes_problems,
     ],
 )
 def test_the_committed_world_passes(check) -> None:
@@ -203,3 +205,8 @@ def test_a_zone_file_is_read_with_its_square_top_and_resets(world: Path) -> None
 
 def test_zone_ranges_start_above_the_previous_zones_top(world: Path) -> None:
     assert zone_vnum_ranges(read_zones(world)) == {11: (0, 1199), 12: (1200, 1299)}
+
+
+def test_a_zones_own_vnums_are_its_hundred_cut_to_its_top(world: Path) -> None:
+    write_zone(world, 12, (3, 4), 1250)
+    assert zone_blocks(read_zones(world)) == {11: (1100, 1199), 12: (1200, 1250)}

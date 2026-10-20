@@ -15,6 +15,7 @@ from typing import Iterable
 from rots_harness.world_files import (
     END_OF_FILE_VNUM,
     INDEX_FILE_NAME,
+    VNUMS_PER_ZONE_NUMBER,
     WORLD_CATEGORIES,
     ZONE_CATEGORY,
     WorldFileError,
@@ -37,9 +38,6 @@ ZONE_NOTES_NAME = "zone-{number}.md"
 TERMINATED_CATEGORIES = ("wld", "mob", "obj", "scr", "mdl")
 # The room category, whose every vnum must lie inside some zone or the boot stops.
 ROOM_CATEGORY = "wld"
-# A world file named <n>.<extension> holds the vnums n * 100 to n * 100 + 99: the shaping editors
-# open and rewrite the file named after vnum / 100 (shapeobj.cpp, shapemob.cpp, shaperom.cpp).
-VNUMS_PER_FILE_NUMBER = 100
 # A line git writes when a merge leaves a conflict: <<<<<<<, |||||||, ======= or >>>>>>>.
 CONFLICT_MARKER_LINE = re.compile(r"^(?:(?:<{7}|\|{7}|>{7})(?: |$)|={7}$)", re.MULTILINE)
 
@@ -120,7 +118,8 @@ def zone_problems(world_dir: Path) -> list[str]:
             if not path.stem.isdigit():
                 continue
             file_number = int(path.stem)
-            block = (file_number * VNUMS_PER_FILE_NUMBER, file_number * VNUMS_PER_FILE_NUMBER + VNUMS_PER_FILE_NUMBER - 1)
+            # A file named <n>.<extension> holds n * 100 to n * 100 + 99, where the shaping editors look.
+            block = (file_number * VNUMS_PER_ZONE_NUMBER, file_number * VNUMS_PER_ZONE_NUMBER + VNUMS_PER_ZONE_NUMBER - 1)
             zone_range = ranges.get(file_number)
             for vnum in fixture_vnums(read_world_text(path)):
                 if not block[0] <= vnum <= block[1]:

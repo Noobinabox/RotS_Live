@@ -40,6 +40,8 @@ HARNESS_PATH_PREFIXES = (
     "src/harness/",
     "src/tools/rotstool/",
 )
+# The per-zone fixture notes under the world: documentation the harness never copies into a lib.
+WORLD_NOTES_DIRECTORY = "tests/integration/world/notes/"
 HARNESS_FILES = frozenset({
     "tests/integration/conftest.py",
     "tests/integration/pytest.ini",
@@ -101,6 +103,8 @@ def scenario_groups(source: str, groups: Iterable[str]) -> list[str]:
 
 def is_harness_path(path: str) -> bool:
     """Whether a change to this repository path can affect every scenario."""
+    if path.startswith(WORLD_NOTES_DIRECTORY):
+        return False
     if path in HARNESS_FILES or path.startswith(HARNESS_PATH_PREFIXES):
         return True
     # A scenario helper or conftest is shared by every scenario file.

@@ -26,6 +26,9 @@ RECORD_LINE = re.compile(r"^[ \t]*#(\d+)", re.MULTILINE)
 NUMBER_PATTERN = re.compile(r"[-+]?\d+")
 # The vnum of the record that ends a room, mob, object, script or mudlle file; never a fixture.
 END_OF_FILE_VNUM = 99999
+# The world file and zone a vnum belongs to are named after vnum / 100: the shaping editors open
+# <vnum / 100>.<extension> (shapeobj.cpp, shapemob.cpp, shaperom.cpp) and check zone vnum / 100.
+VNUMS_PER_ZONE_NUMBER = 100
 # Reset commands followed by two more numbers than the six every row has (load_zones, zone.cpp).
 RESET_COMMANDS_WITH_EIGHT_NUMBERS = frozenset("MNXHEKQ")
 # Reset commands followed by one more number.
@@ -167,7 +170,12 @@ class TextCursor:
         return line.rstrip("\r")
 
     def read_string(self) -> str:
-        """A string as fread_string reads one: whole lines until one whose last non-space character is ~."""
+        """A string as fread_string reads one: whole lines until one whose last non-space character is ~.
+
+        Leading whitespace and blank lines are skipped first, as the loaders' scanf formats and
+        fread_string's own blank-line skip do.
+        """
+        self.skip_whitespace()
         lines = []
         while True:
             if self._position >= len(self._text):
@@ -255,6 +263,16 @@ def parse_reset_row(command: str, rest: str) -> ResetRow:
 def read_zones(world_dir: Path) -> list[Zone]:
     """The zones the zone index lists, in index order."""
     return [read_zone(path) for path in indexed_files(world_dir, ZONE_CATEGORY)]
+
+
+def zone_blocks(zones: list[Zone]) -> dict[int, tuple[int, int]]:
+    """Each zone's own vnums: n * 100 to n * 100 + 99, the vnums the shaping editors keep in its
+    files, cut to its room range (a zone whose top is lower ends there)."""
+    blocks = {}
+    for zone_number, (low, high) in zone_vnum_ranges(zones).items():
+        block_low = zone_number * VNUMS_PER_ZONE_NUMBER
+        blocks[zone_number] = (max(low, block_low), min(high, block_low + VNUMS_PER_ZONE_NUMBER - 1))
+    return blocks
 
 
 def zone_vnum_ranges(zones: list[Zone]) -> dict[int, tuple[int, int]]:

@@ -143,7 +143,15 @@ def test_a_harness_change_runs_every_group(path: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "path", ["tests/integration/unit/test_launcher.py", "tests/integration/README.md", "tests/integration/groups/boot.txt", "src/handler.cpp", ".github/workflows/ci.yml"],
+    "path",
+    [
+        "tests/integration/unit/test_launcher.py",
+        "tests/integration/README.md",
+        "tests/integration/groups/boot.txt",
+        "tests/integration/world/notes/zone-11.md",
+        "src/handler.cpp",
+        ".github/workflows/ci.yml",
+    ],
 )
 def test_other_changes_do_not_run_every_group(path: str) -> None:
     assert select(changed=(path,)).groups == ["boot"]

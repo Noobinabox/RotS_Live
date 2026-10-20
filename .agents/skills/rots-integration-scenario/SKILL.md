@@ -78,11 +78,24 @@ race keyword, never its name (reference, "Names, sides and lookups").
 
 ## 6. Change the world only when it lacks what you need
 
-Read the test world first (reference, "The test world"). Keep vnums ascending and list a new
-file in its `index`. Boot after every change: a bad file shows only as a `SYSERR` or a server
-that never reaches the login prompt. The world files, the room constants in
-`rots_harness/world.py` and the group files in `tests/integration/groups/` are scenario territory; the rest of
-`tests/integration/` and `src/harness/` is the harness.
+Find what the test world has with `make world-catalogue PYTHON=.venv/bin/python` (`ZONE=<n>`,
+`CATEGORY=mobs`) and the zone notes in `tests/integration/world/notes/`; the rules and gotchas
+are in the reference, "The test world".
+
+- A new scenario area adds its own zone: the next zone number (19 today), its own world files,
+  vnums from `n * 100` and map square, and its notes file `world/notes/zone-<n>.md`. It appends
+  to zone 11's files only for a fixture zone 11's existing scenarios need.
+- List each new file in its category's `index` by first vnum, keep vnums ascending, and write
+  each fixture's purpose and quirks in its zone's notes.
+- Run `make integration-unit` (its world check catches order, index and zone mistakes), then
+  boot after every change: a bad field shows only as a `SYSERR` or a server that never reaches
+  the login prompt.
+- A room or value only one scenario file uses is a constant in that file;
+  `rots_harness/world.py` holds only the rooms two or more scenario files name.
+
+The world files and their notes, the scenario files with their constants, the shared room
+constants in `rots_harness/world.py` and the group files in `tests/integration/groups/` are
+scenario territory; the rest of `tests/integration/` and `src/harness/` is the harness.
 
 ## 7. Assert what players see
 

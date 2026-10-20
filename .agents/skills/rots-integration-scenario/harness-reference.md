@@ -470,233 +470,99 @@ among others), so the same commands give the same sequence.
 ## The test world
 
 `LibTemplateBuilder.build` (`rots_harness/libbuilder.py`) copies `tests/integration/world/<cat>`
-for each of `wld mob obj zon shp scr mdl` into the lib; the real `lib/world` is not used. Adding
-a category means editing `WORLD_CATEGORIES`.
+for each of `wld mob obj zon shp scr mdl` into the lib; the real `lib/world` is not used. Adding a
+category means editing `WORLD_CATEGORIES` (`rots_harness/world_files.py`). The world's `notes/`
+folder is documentation; the harness never copies it.
 
-### Zones
+This section holds the rules for using and changing the world, not a list of its fixtures. The
+fixtures are found as below, so a branch that adds an area edits no shared list here.
 
-| Zone | File | Name | Map (x, y) | Rooms | Resets |
-| --- | --- | --- | --- | --- | --- |
-| 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
-| 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
-| 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
-| 16 | `zon/16.zon` | Harness object workshop | (6, 2) | 1601-1699 | harness innkeeper (mob 1105) to 1601 |
-| 17 | `zon/17.zon` | Harness gatehouse | (2, 8) | 1701-1799 | none |
-| 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
+### Finding a fixture
 
-Zone 16 holds the inn, room 1601, and exists for the objects in `obj/16.obj`: the object editor loads
-`shape object <vnum>` from `world/obj/<vnum / 100>.obj`, and `/implement` is refused for a vnum
-outside every zone (`load_object`, `shapeobj.cpp`; `get_permission`, `shapemob.cpp`).
+- **The catalogue** prints every zone, room, mob, object and script from the world files, with
+  the flag numbers decoded: `make world-catalogue PYTHON=.venv/bin/python` from the repository
+  root, or `python -m rots_harness.world_catalogue` from `tests/integration`. `ZONE=<n>`
+  (`--zone`) keeps one zone and the fixtures among its own vnums; `CATEGORY=` (`--category`)
+  `zones`, `rooms`, `mobs`, `objects` or `scripts` keeps one table. It shows each zone's map
+  square, vnums and resets; each room's flags, sector and exits (with a door's flags and
+  keyword); each mob's keywords, level, act flags, special program, script and options; each
+  object's type, extra and wear flags and affects; each script's triggers.
+- **The notes**, `world/notes/zone-<n>.md`, one per zone: what the zone is for, and what each
+  fixture does that its numbers do not show (its behaviour, its quirks, why a value is what it
+  is, which scenarios rely on it). Fixtures outside every zone's own vnums (`mob/14.mob`,
+  `mob/15.mob`, `mob/guildmasters.mob`, `obj/14.obj`) are in `world/notes/shared.md`.
+- **The world files** for anything else, decoded as "File formats" below.
+- **Room constants**: `rots_harness/world.py` holds the rooms that two or more scenario files, or
+  the harness itself, name. A room only one scenario file names is a constant in that file.
 
-### Rooms
+### Rules and gotchas
 
-Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
-every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/<zone>.wld` after anyone changes
-the world.
-
-| Vnum | Name | Flags | Sector | Exits |
-| --- | --- | --- | --- | --- |
-| 1101 | Immortal Start (`world.ROOM_IMMORTAL_START`) | 0 (none) | 0 | none |
-| 1102 | Immortal Idle | 0 (none) | 0 | none |
-| 1110 | Frozen Room | 0 (none) | 0 | none |
-| 1129 | Olog-hai Start | 0 (none) | 0 | none |
-| 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
-| 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East (`world.ROOM_ARENA_EAST`) | 0 (none) | 0 | west 1131 |
-| 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
-| 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
-| 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
-| 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
-| 1137 | Gallows Pit (`world.ROOM_GALLOWS_PIT`) | 2 (`DEATH`) | 0 | none |
-| 1138 | Gallows Approach (`world.ROOM_GALLOWS_APPROACH`) | 0 (none) | 0 | east 1137 |
-| 1151 | Retirement Home | 0 (none) | 0 | none |
-| 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
-| 1160 | Human Start | 0 (none) | 0 | none |
-| 1170 | Wood-elf Start | 0 (none) | 0 | none |
-| 1180 | Signpost Room (`world.ROOM_SIGNPOST`) | 0 (none) | 0 | none; two extra descriptions, `plaque sign` ("The plaque reads FIRST.") then `sign` ("The sign reads SECOND."), in that file order |
-| 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
-| 1191 | Orc Idle | 0 (none) | 0 | none |
-| 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
-| 1301 | Bank Hall (`world.ROOM_BANK_HALL`, zone 13) | 0 (none) | 0 | east 1302 |
-| 1302 | Trade Hall (`world.ROOM_TRADE_HALL`, zone 13) | 0 (none) | 0 | west 1301 |
-| 1303 | Store Room (`world.ROOM_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the trader's stock |
-| 1304 | Dark Vault Hall (`world.ROOM_DARK_VAULT_HALL`, zone 13) | 1 (`DARK`) | 0 | none |
-| 1305 | Morning Bank (`world.ROOM_MORNING_BANK`, zone 13) | 0 (none) | 0 | none |
-| 1306 | Evening Bank (`world.ROOM_EVENING_BANK`, zone 13) | 0 (none) | 0 | none |
-| 1307 | Odd Trade Hall (`world.ROOM_ODD_TRADE_HALL`, zone 13) | 0 (none) | 0 | none |
-| 1308 | Odd Store Room (`world.ROOM_ODD_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the odd trader's stock |
-| 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
-| 1601 | Harness Inn (`world.ROOM_INN`, zone 16) | 0 (none) | 0 | none; the harness innkeeper stands here |
-| 1701 | Gatehouse Yard (`world.ROOM_GATEHOUSE_YARD`, zone 17) | 0 (none) | 0 | north 1702 through a closed door (exit flags 3, `EX_ISDOOR` and `EX_CLOSED`; keyword `door`) |
-| 1702 | Beyond the Gate (`world.ROOM_BEYOND_THE_GATE`, zone 17) | 0 (none) | 0 | south 1701 through the same door (keyword `gate`) |
-| 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
-| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | east 1803 (one way), west 1801 |
-| 1803 | Whistle Hub (`world.ROOM_WHISTLE_HUB`, zone 18) | 0 (none) | 0 | north 1804, east 1805, south 1806, west 1807, up 1808, down 1809 |
-| 1804 | North Spoke (`world.ROOM_NORTH_SPOKE`, zone 18) | 0 (none) | 0 | south 1803 |
-| 1805 | East Spoke (`world.ROOM_EAST_SPOKE`, zone 18) | 0 (none) | 0 | west 1803 |
-| 1806 | South Spoke (zone 18) | 0 (none) | 0 | north 1803 |
-| 1807 | West Spoke (zone 18) | 0 (none) | 0 | east 1803 |
-| 1808 | Upper Spoke (zone 18) | 0 (none) | 0 | down 1803 |
-| 1809 | Lower Spoke (`world.ROOM_LOWER_SPOKE`, zone 18) | 0 (none) | 0 | up 1803 |
-
-1133, 1137, 1304 and 1801 are the only rooms with a flag. `IS_DARK` is true in 1133 and 1304 unless
-something in them gives light, so a character there sees only with infravision, holylight, or
-moonvision while the moon is up (both count as outside, and moonlight follows the uncontrolled game
-hour). Whoever walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with no
-killer); a mortal wakes in its race's start room with 1 hit point and no moves. `goto` and
-`teleport` into it kill nobody. In 1801, `PEACEROOM` makes `do_hit` (`act_offe.cpp`) refuse every
-attack, a failed tame's included. The door between 1701 and 1702 is the only door; it starts closed
-and no zone reset changes it. Every exit of the whistle hub (1803) leads to a spoke, so `do_flee`
-(`act_offe.cpp`) finds an exit on its first draw there, and every spoke comes after the hub in the
-world, which `do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows.
-
-### Mobs and objects
-
-| Mob | Keywords | What it is |
-| --- | --- | --- |
-| 1105 | `innkeeper harness` | the harness innkeeper, a human whose vnum `spec_ass.cpp` assigns the receptionist special (act flags `3` include `MOB_SPEC`); zone 16 resets one into the inn, 1601. See "The innkeeper" below |
-| 1130 | `target orc` | a plain melee target; zone 11 resets one into 1132 |
-| 1131 | `snake harness` | its bite poisons; act flags `3` include `MOB_SPEC`; zone 11 resets one into 1134 |
-| 1132 | `bystander orc` | involved in nothing, there to be splashed |
-| 1133 | `brute orc` | hits very hard |
-| 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
-| 1135 | `target orc hardy` | a target that outlives several ticks of damage |
-| 1160 | `zerostam mob` | a stamina-less mob: the bystander orc with no maximum moves; neither has any maximum stamina (`0 0 0 1` and `0 0 50 1` lines) |
-| 1161 | `pony harness` | a harness pony: act flags `514` (`SENTINEL`, `MOB_MOUNT`), so a player can `ride` it; no moves, so it never takes a step |
-| 1170 | `angel shining` | act flags `3` (`MOB_SPEC`) and program 14, the resetter (`spec_ass.cpp`): `tell angel pracreset` resets a player's practice |
-| 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
-| 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1308x2`; zone 13 resets one into 1302 |
-| 1304 | `banker dark` | a banker as 1301; zone 13 resets one into the dark room 1304, where it cannot see a customer without infravision |
-| 1305 | `banker morning` | a banker with `hours=0-12` (open hours 0 to 11); zone 13 resets one into 1305 |
-| 1306 | `banker evening` | a banker with `hours=12-0` (open hours 12 to 23); zone 13 resets one into 1306 |
-| 1307 | `trader odd` | a barter vendor with `store=1308`, `list=Step right up!`, `price 1137 1308x2 deduct`, `price 1304 1308x1`, `price 1305 1308x1`, `attacks=no`; zone 13 resets one into 1307 |
-| 1308 | `banker broken` | a banker with `fee=0`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
-| 1309 | `trader broken` | a barter vendor with no `store=`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
-| 1450 | `boar pen` | an animal (bodytype 2, perception 0, level 1, `SENTINEL`) a ranger can tame; zone 18 resets one into 1801. In `mob/14.mob`, listed before `guildmasters.mob` so vnums ascend |
-| 1451 | `bear grizzly` | a level-14 animal (perception 0), one level past a level-30 ranger's tame cap at full tame knowledge |
-| 1452 | `wolf grey` | a level-12 animal (perception 0), within that cap only while the ranger has no other tame |
-| 1453 | `owl watchful` | an animal with perception 10, which tame refuses |
-| 1454 | `scarecrow straw` | perception 0 but bodytype 1, not an animal, which tame refuses |
-| 1700 | `smith plain` | runs script 1700 when given an object (`ON_RECEIVE`): an IF on the star token (object 1700) whose block holds a nested guard IF with an empty else branch, then says `A star token! Here is your reward.`; otherwise `That is no star token.`; always ends with `Who is next?` |
-| 1701 | `smith labelled` | runs script 1701: script 1700 with `SECTION` rows between the IF and its BEGIN, before the nested IF, and on the nested empty else branch |
-| 1702 | `foreman weary` | runs script 1702 when anyone in the room speaks (`ON_HEAR_SAY`): says `Goodbye, then.`, waits four passes (`DO_WAIT`), says `My shift is over at last.` and ends |
-| 1703 | `gatekeeper keeper` | given anything, opens the door north of his room (`SET_EXIT_STATE` state 0); hearing speech containing `lock`, closes and locks it (state 2) |
-| 1704 | `surveyor` | given anything, points his room's up exit at 1101 (`CHANGE_EXIT_TO`; a room without that exit is reported), then says `Still here.` |
-| 1705 | `courier` | given anything, runs a `TELEPORT_CHAR` that moves nobody, then `TELEPORT_CHAR_XL` to rm1, which is unset (reported), then says `Still here.` |
-| 1706 | `valet` | given anything, runs `ASSIGN_EQ` on slot 22 (reported, at boot too), then says `Still here.` |
-| 1707 | `dresser` | given anything, runs `DO_REMOVE` on slot 22 (reported, at boot too), then says `Still here.` |
-| 1708 | `appraiser` | given anything, loads a leather cap, runs `ASSIGN_EQ` on unset ch3's head slot, and says `Phantom.` if it found an object or `Nothing.` if not, then `Still here.` |
-| 1709 | `mumbler` | given anything, says `Still here.`, then skips a false IF whose nested block never reaches an END (`Never said.` inside it) |
-| 1710 | `renamer` | hearing speech, runs `ASSIGN_STR` to ch1.name (refused and logged), then says `Still here.` |
-| 1711 | `smiler` | hearing speech, runs `DO_SOCIAL smile` by unset ch3, then says `Still here.` |
-| 1712 | `fitter` | hearing speech, runs `DO_WEAR` of ob1, which a hear trigger leaves unset, then says `Still here.` |
-| 1713 | `copier` | hearing speech, runs `LOAD_OBJ_X`, which copies the unset ob1, then says `Still here.` |
-| 1714 | `hatter` | given an object, wears it (`DO_WEAR`) |
-| 1715 | `scribe` | given an object, copies it (`LOAD_OBJ_X`), takes the copy and gives it to the giver |
-| 1716 | `hale wrestler` | given anything, writes 5000000 to his own hit points |
-| 1717 | `dazed wrestler` | given anything, writes 0 to his own hit points; hearing speech, writes 50 |
-| 1718 | `doomed wrestler` | given anything, writes -5000000 to his own hit points |
-| 1719 | `accountant` | given anything, sets int1 to 99, divides 1000000 by 0 into int1 (`SET_INT_DIV`), and says `Quotient zero.` or `Quotient not zero.` |
-| 1721 | `foreman patient` | script 1721: script 1702 with a wait of 400 passes (100 seconds) |
-| 1722 | `porter` | no script, for an implementor to `force` |
-| 1723 | `wanderer` | hearing speech, teleports himself to 1201 (`TELEPORT_CHAR_X`) |
-| 1724 | `listener` | hearing speech, says `I heard that.` |
-| 1730 | `crier` | hearing speech, says `First.`, waits four passes, says `Second.` and waits four passes again as the script's last row |
-| 1731 | `clerk first` | given anything, skips a false IF whose block ends with a nested IF / BEGIN / ... / END (`Nested body.`), then has an else branch saying `Outer else.` and a last row saying `After.` |
-| 1732 | `clerk second` | given anything, skips a false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END (`Nested then.`, `Nested else.`) and a row saying `Outer tail.`, then has an else branch saying `Outer else.` and a last row saying `After.` |
-| 1733 | `copyist careless` | script 1715 with 0 in `LOAD_OBJ_X`'s first parameter |
-
-1451 to 1454 are level 1 unless the table says otherwise, `SENTINEL`, and follow 1450 in
-`mob/14.mob`; nothing resets them, so a scenario loads them with `load mob`.
-
-Zone 13's keepers speak no language (the first number of each one's last numeric line is 0;
-`load_mobiles`, `db.cpp`), so a keeper's `say` reaches every listener unchanged. The zone 11 mobs
-speak language 1, the animal tongue, which `say_to_char` (`act_comm.cpp`) garbles for players.
-
-Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one is
-loaded ("Names, sides and lookups" above). Seven real guildmasters are copied at their real vnums
-(1503, 2043, 4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them;
-each one's program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the
-traveller 1503, 16 for Scorther 10003 and 28 for Aroden 10054. Four more guild-special mobs sit at
-vnums `spec_ass.cpp` binds the guild special to, with programs chosen for a scenario rather than
-the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and 8500
-`enchanter` (program 62), the last two naming no row, and 4608 `trainer` (program 9, the URUK
-WARRIOR row, speaking human language) for the reject-message bug pin. 1503 and 1509 are in
-`mob/15.mob`, so that the mobs of `mob/17.mob` keep the vnums ascending; the rest are in
-`mob/guildmasters.mob`. Each teaches the races in its last field, the `will_teach` mask
-(`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood elf, hobbit and high elf, not the beorning)
-for 1503, 1509, 3888, 8500, 10003 and 10054; 2048 (uruk-hai) for 4601 and 4608; 10240 (uruk-hai and
-orc) for 2043; 8192 (orc) for 32200; 32768 (uruk-lhuth) for 13600.
-
-The 1700s mobs speak no language (language 0), so every listener reads their lines exactly. All
-have constitution 10, 60 hit points and level 5. Only one mob that speaks when it hears speech may
-be in a room: `do_say` (`act_comm.cpp`) runs every other mob's `ON_HEAR_SAY` script inside the say,
-so two of them answer each other until the server's stack overflows.
-
-| Object | Keyword | What it is |
-| --- | --- | --- |
-| 1130 | `token` | harness token; its vnum is one `spec_ass.cpp` assigns a board to |
-| 1136 | `bag` | leather bag, a container |
-| 1137 | `cap` | leather cap, head armour |
-| 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
-| 1139 | `bread` | tainted bread: food, fill 2, poisoned |
-
-There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
-instead. `mdl/11.mdl` is a stub. `scr/11.scr` holds these scripts:
-
-| Script | Name | Rows |
-| --- | --- | --- |
-| 1100 | `harness stub` | none |
-| 1180 | `ordered triggers` | three `ON_ENTER` rows numbered 1, 2, 3, with the texts `first`, `second`, `third` |
-| 1181 | `out-of-order triggers` | four `ON_ENTER` rows numbered 1, 2, 4, 3, with the texts `one`, `two`, `four`, `three` |
-
-`scr/17.scr` holds scripts 1700 to 1702 and, from 1703 on, one script per mob numbered like the
-mob, which the 1700s mobs run. Script 1720 belongs to no mob and never runs: each of its lines
-names something missing (mob, object and room vnum 1799, which is left undefined, slot 22 and -1,
-direction 6 and 7), so the boot check writes twelve `SCRIPT ERROR: script #1720, ...` lines to
-every test's `game.log`, and the valet's and dresser's scripts add one line each.
-
-The shaping editors' `/save` copies the file it rewrites into a backup directory first and fails
-without it (`SHAPE_*_BACKDIR`, `protos.h`). The test world provides all five, each kept in git by
-an empty `.gitkeep`: `wld/oldroms`, `mob/oldmobs`, `obj/oldobjs`, `zon/oldzons` and `scr/oldscrs`;
-`obj/oldobjs` also holds a README. The object editor's `/save` and `/done`, for example, copy the
-zone's object file there before rewriting it (`replace_object`, `shapeobj.cpp`).
-
-### The innkeeper
-
-A mortal's `quit` drops everything it carries (`do_quit`, `act_othe.cpp`); renting at the inn
-is how a mortal keeps its items across a login. The innkeeper's special is `gen_receptionist`
-(`objsave.cpp`), which answers `rent` and `offer` typed in its room:
-
-- Rent costs nothing: `Crash_offer_rent` and `gen_receptionist` set the cost to 0, so a mortal
-  needs no gold. `offer` still quotes a price for the first day, from the level and what the
-  character carries, then says `You have enough gold for a lifetime of rent.` whatever the gold.
-  A character carrying nothing gets `But you are not carrying anything!  Just quit!`.
-- Before quoting or storing, `rent` and `offer` refuse each item the character carries or wears,
-  containers' contents included, that `Crash_is_unrentable` (`objsave.cpp`) names: a key, an item with
-  `NORENT`, or one whose rent per day is below -1 (fixtures 1604, 1607 and 1606). Each gets
-  `The harness innkeeper tells you, 'You cannot store <item>.'` and the rent goes no further.
-- `rent` replies `The harness innkeeper stores your belongings and helps you into your private
-  chamber.`, saves what the character carries and wears (`Crash_rentsave`), and returns the
-  connection to the character menu (`Make your choice:`) with the socket still open. Close that
-  session with `close()`, then `server.login(name)`: the mortal returns to the inn with its
-  items (`calc_load_room`). `rent_and_log_in_again` in `scenarios/test_object_versions.py` does
-  this.
-- Every other command typed in the inn draws `number(0, 30)`, and on 0 the innkeeper performs a
-  random social, so text can arrive there unasked. Bring the mortal in with the implementor's
-  `teleport <name> 1601` (it reads `<Implementor> has teleported you!` and the room) just
-  before `rent` or `offer`.
-- A `yell` anywhere in zone 16 outside the inn would log `SYSERR: Fubar'd receptionist.`, which
-  fails the test: `do_gen_com` (`act_comm.cpp`) calls the specials of every room in the zone,
-  and `gen_receptionist` looks for the innkeeper in the yeller's room.
+- **Vnums ascend across each category**, within each file and from file to file in index order,
+  with no repeats: `real_room`, `real_mobile` and `real_object` binary-search, so an entry out of
+  order is silently never found.
+- **Each index lists exactly its folder's world files, by first vnum** (so zone files by zone
+  number), then `$`; a file not in its `index` is not loaded. The index files stay committed
+  because something outside the harness boots on this world: `scripts/nightly_deploy.py` copies
+  it into `lib/world` for the account smoke flow (`tools/account_smoke.py`).
+- **A zone owns its own vnums**: zone `n` owns `n * 100` to `n * 100 + 99`, up to its top line.
+  The shaping editors open the file named after `vnum / 100` (`<n>.wld`, `<n>.obj`, ...) and
+  check the builder's permission on zone `vnum / 100` (`load_object`, `shapeobj.cpp`;
+  `get_permission`, `shapemob.cpp`), so a file `<n>.*` holds only zone `n`'s vnums. `load_rooms`
+  (`db.cpp`) gives each room to the first zone in the index whose top is not below it; a room
+  above every zone's top stops the boot (`Room <n> is outside of any zone.`) without a `SYSERR`.
+- **Each zone has a map square no other zone uses** (its `<symbol> <x> <y> <level>` line):
+  relocate and the world map find a zone by its square.
+- **Each zone has its notes file**, `world/notes/zone-<n>.md`.
+- **The world check** (`unit/test_world_files.py`, run by `make integration-unit` and first in
+  CI's "Choose the integration groups" job) fails on each of these: an index out of step with
+  its folder (it prints the listing it expects), vnums out of order or repeated, a file without
+  its closing `#99999`, a shared map square, a vnum outside its zone or its file's block, a zone
+  without notes, and a merge conflict marker in the world or the group files. Run it after every
+  world change, then boot.
+- **Boot after every change**: the check catches layout and order, but only the server's loaders
+  catch a field they misread. The boot check is `test_boot.py`, and every other scenario booting,
+  failing on any `SYSERR`, crash or missing login prompt.
+- **Rooms and light**: every room so far is `SECT_INSIDE` without `INDOORS`, so `OUTSIDE()` is
+  true and no room is ever sunlit (SKILL.md, "Read the behaviour in the code"). A `DARK` room is
+  dark unless something in it gives light; the test world has no light object.
+- **One speaking hear-script mob per room**: `do_say` (`act_comm.cpp`) runs every other mob's
+  `ON_HEAR_SAY` script inside the say, so two mobs that speak when they hear speech answer each
+  other until the server's stack overflows.
+- **A mob's language decides what players read**: language 0 reaches every listener exactly;
+  language 1, the animal tongue, is garbled for players by `say_to_char` (`act_comm.cpp`). The
+  first number of a mob's last numeric line sets it (`load_mobiles`, `db.cpp`); give 0 to a mob
+  whose lines a scenario reads.
+- **Keywords are shared**: several mobs answer to `orc`, and several to `harness` (the zone 11
+  notes list them). Give a new fixture keywords no other fixture uses, or a lookup can pick the
+  wrong one ("Names, sides and lookups" above).
+- **Specials are bound by vnum**: `spec_ass.cpp` binds specials to particular mob and object
+  vnums (the receptionist, the guild masters, boards). A mob gets its special only with the
+  `MOB_SPEC` act flag as well; a mob's program number is a special's row only with that flag.
+  Avoid object vnums `spec_ass.cpp` passes to `ASSIGNOBJ` unless the scenario wants that special.
+- **The inn's random social**: every command typed in the inn (room 1601) other than `rent` and
+  `offer` draws `number(0, 30)`, and on 0 the innkeeper performs a random social, so text can
+  arrive there unasked. Teleport the mortal in just before `rent` or `offer`, and rent rather
+  than `quit`, which drops everything a mortal carries (`world/notes/zone-16.md`).
+- **No `yell` in zone 16**: a yell anywhere in zone 16 outside the inn logs
+  `SYSERR: Fubar'd receptionist.`, which fails the test (`do_gen_com`, `act_comm.cpp`, calls every
+  room special in the zone). Keep rooms where a scenario yells out of zone 16.
+- **Expected boot reports**: the boot check of scripts writes `SCRIPT ERROR: script #1720, ...`
+  lines, and one each for the valet's and dresser's scripts, to every test's `game.log`
+  (`world/notes/zone-17.md`). They are not `SYSERR` lines and fail nothing.
+- **Backup folders**: the shaping editors' `/save` copies the file it rewrites into a backup
+  folder first and fails without it (`SHAPE_*_BACKDIR`, `protos.h`; the object editor's `/save`
+  and `/done` in `replace_object`, `shapeobj.cpp`, for example). The world provides all five,
+  each kept in git by an empty `.gitkeep`: `wld/oldroms`, `mob/oldmobs`, `obj/oldobjs`,
+  `zon/oldzons` and `scr/oldscrs` (`obj/oldobjs` also holds a README). They are not world files
+  and no index lists them.
+- **Empty categories**: there are no `.shp` shops (`shp/index` is `$` alone), and `mdl/11.mdl` is
+  a stub.
+- **`*.obj` is ignored by git** (`.gitignore`): a new `obj/<n>.obj` file needs `git add -f`.
 
 ### File formats
 
 Each category directory has an `index` listing its files one per line, ending with a line `$`
-(`index_boot`, `db.cpp`). A file not in its `index` is not loaded.
+(`index_boot`, `db.cpp`).
 
 A room (`load_rooms`, `db.cpp`):
 
@@ -719,45 +585,47 @@ S
   0 inside, 1 city, 2 field, 3 forest, 4 hills, 5 mountain, 6 water (swim), 7 water (no swim),
   8 underwater, 9 road, 10 crack, 11 dense forest, 12 swamp.
 - An exit is `D<direction>` (0 north, 1 east, 2 south, 3 west, 4 up, 5 down), its description
-  `~`, its keyword `~`, then `<exit flags> <key> <to room> <width>` (`setup_dir`).
-- `S` ends the room; the file ends with `#99999` and `$~`.
-- Rooms must ascend and sit inside a zone's range: a room outside every zone stops the boot
-  (`Room <n> is outside of any zone.`) without a `SYSERR`.
+  `~`, its keyword `~`, then `<exit flags> <key> <to room> <width>` (`setup_dir`). Exit flags
+  include `EX_ISDOOR` 1, `EX_CLOSED` 2 and `EX_LOCKED` 4.
+- `E` starts an extra description: its keywords `~`, then its text `~`. `S` ends the room; the
+  file ends with `#99999` and `$~`.
 
 A zone (`load_zones`, `zone.cpp`): `#<n>`, name `~`, description `~`, map `~`, an owner list
 ending in `0`, `<symbol> <x> <y> <level>`, the top room, the lifespan, the reset mode, then reset
 rows ending with `S`. An `M` row is `M <if> <mob> <room> <max in world> <percent> <difficulty>
-<max existing> <trophy> <comment>`.
+<max existing> <trophy> <comment>`; an `O` row is `O <if> <object> <room> ...`.
 
 Mobs (`load_mobiles`) and objects (`load_objects`) in `db.cpp`: copy an existing entry and read
-the loader before changing a field you do not know. Vnums must ascend across the files of the
-index as well as within each, because `real_mobile` and `real_object` binary-search.
+the loader before changing a field you do not know. Every room, mob, object, script and mudlle
+file ends with a `#99999` record, which `count_hash_records` (`db.cpp`) counts on.
 
 ### Adding to the world
 
-- A room: append it to `wld/11.wld` before `#99999`, between 1101 and 1199 in vnum order, or
-  add `wld/<n>.wld` with a `zon/<n>.zon` and list both in their `index` files, as zones 12 and 17
-  are. Give a new zone a map square no other zone uses (the zones table lists them): relocate and
-  the world map find a zone by its square. Add a constant to `rots_harness/world.py` when a
-  scenario names it.
-- A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
-  as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/13.obj`
-  holds zone 13's range, `obj/14.obj` 1400 to 1404, `obj/16.obj` zone 16's, `obj/17.obj` 1700
-  and 1701); an object the object editor must load goes in its zone's file. Avoid vnums
-  `spec_ass.cpp` passes to `ASSIGNOBJ`. A new `obj/<n>.obj` file needs `git add -f`, because
-  `.gitignore` ignores `*.obj`.
-- Boot after every change: the only check is `test_boot.py` and every other scenario booting,
-  failing on any `SYSERR`, crash or missing login prompt.
+- **A new scenario area gets its own zone**: the next zone number above the highest (19 today;
+  14 and 15 are taken, since `mob/14.mob`, `mob/15.mob` and `obj/14.obj` already hold fixtures
+  numbered 1400 to 1599; when another open branch already claims the number, take the next). It
+  has its own files (`wld/<n>.wld` and `zon/<n>.zon`, plus `mob/<n>.mob`,
+  `obj/<n>.obj` and `scr/<n>.scr` as needed), its own vnums from `n * 100`, a top line of at most
+  `n * 100 + 99` and above every earlier zone's, a map square no other zone uses, and its own notes file
+  `world/notes/zone-<n>.md`. List each new file in its category's `index` at its first-vnum place.
+  With its own group file and its constants in its scenario file, the area then edits no file
+  another area's branch edits, apart from the checked indexes.
+- **Append to zone 11's files** (`wld/11.wld` before `#99999`, `mob/11.mob`, `obj/11.obj`) only
+  for a fixture zone 11's existing scenarios need, keeping its vnums between 1101 and 1199.
+- A mob: a special needs the `MOB_SPEC` act flag as well as the program number. Place it with a
+  zone reset row or `load mob`.
+- An object the object editor must load goes in its zone's file.
+- Record each new fixture's purpose and quirks in its zone's notes file, and name a room in
+  `rots_harness/world.py` only when a second scenario file needs it.
 
 ## Scenario territory and harness territory
 
 | Scenario territory | Harness territory (extending-the-harness.md) |
 | --- | --- |
 | `tests/integration/scenarios/test_<group>.py` | `tests/integration/conftest.py` |
-| `tests/integration/world/` | `tests/integration/rots_harness/` other than `world.py` |
-| room constants in `rots_harness/world.py` | `tests/integration/unit/` |
+| `tests/integration/world/`, its notes files included | `tests/integration/rots_harness/` other than `world.py` |
+| room constants shared by two scenario files, in `rots_harness/world.py` | `tests/integration/unit/` |
 | a group file in `tests/integration/groups/` | `src/harness/`, `src/tools/rotstool/` |
 
-A helper used by one scenario stays in its scenario file, as `hit_points` does in
-`test_poison.py`.
+A helper or constant used by one scenario file stays in that file, as `hit_points` does in
+`test_poison.py` and `ROOM_BANK_HALL` in `test_bank.py`.

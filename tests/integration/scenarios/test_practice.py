@@ -19,7 +19,7 @@ pytestmark = [pytest.mark.scenario, pytest.mark.practice]
 
 @dataclass(frozen=True)
 class Guildmaster:
-    """A guildmaster copy in mob/guildmasters.mob and the lines a pupil reads from it."""
+    """A guildmaster copy (mob/15.mob or mob/guildmasters.mob) and the lines a pupil reads from it."""
 
     # The copy's vnum: one spec_ass.cpp binds the guild special to.
     vnum: int

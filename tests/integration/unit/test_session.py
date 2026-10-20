@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import socket
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import pytest
 
 from rots_harness import session
-from rots_harness.launcher import ServerHandle
-from rots_harness.session import GameSession, QuitRefused, Transcript, end_sessions, ends_with_prompt
+from rots_harness.launcher import LOGIN_EMAIL_PROMPT, ServerHandle
+from rots_harness.session import GameSession, QuitRefused, SessionTimeout, Transcript, end_sessions, ends_with_prompt
+from rots_harness.telnet import DO, IAC, OPTION_MCCP2, OPTION_MSDP, OPTION_NAWS, OPTION_TTYPE, SB, SE, WILL, TelnetNegotiation, TelnetSubnegotiation, TelnetText, subnegotiation_bytes
+from rots_harness.telnet_payloads import encode_msdp
+from rots_harness.telnet_profile import MSDP_CLIENT, SILENT_CLIENT, TelnetClientProfile
+from rots_harness.telnet_record import TelnetDirection
 
 
 def test_transcript_room_name_is_the_first_non_empty_line() -> None:
@@ -34,33 +38,40 @@ def test_prompt_detection_accepts_trailing_whitespace_and_both_terminators() -> 
 class FakeSocket:
     """Stands in for the server connection. `replies` maps a line the session sends to the answers
     for its first, second, ... send; a line with no answer left is never answered. `greeting` is
-    what the server sends on connect."""
+    what the server sends on connect: bytes for one recv, or a list of chunks for one recv each.
+    With `closes`, a recv with nothing left reports the server closing the connection."""
 
-    def __init__(self, replies: dict[str, list[bytes]], greeting: bytes = b"") -> None:
+    def __init__(self, replies: dict[str, list[bytes]], greeting: Union[bytes, list[bytes]] = b"", closes: bool = False) -> None:
         # Answers still to give per sent line, in send order; copied so the caller's lists stay intact.
         self._replies = {line: list(answers) for line, answers in replies.items()}
-        # Bytes the next recv() returns; empty means recv() times out.
-        self._pending = greeting
+        # Chunks still to deliver, one per recv(), in order; with none left recv() times out or reports the close.
+        self._pending = [chunk for chunk in (greeting if isinstance(greeting, list) else [greeting]) if chunk]
+        # Whether recv() returns b"" instead of timing out once the chunks run out.
+        self._closes = closes
         # Whether the session has closed the connection.
         self.closed = False
         # Every line the session sent, in order and without the newline.
         self.sent_lines: list[str] = []
+        # Every byte the session sent, in order.
+        self.sent_bytes = bytearray()
 
     def settimeout(self, _timeout: float) -> None:
         pass
 
     def sendall(self, data: bytes) -> None:
+        self.sent_bytes.extend(data)
         line = data.decode("latin-1").strip()
         self.sent_lines.append(line)
         answers = self._replies.get(line, [])
         if answers:
-            self._pending += answers.pop(0)
+            self._pending.append(answers.pop(0))
 
     def recv(self, _size: int) -> bytes:
         if not self._pending:
+            if self._closes:
+                return b""
             raise socket.timeout()
-        chunk, self._pending = self._pending, b""
-        return chunk
+        return self._pending.pop(0)
 
     def close(self) -> None:
         self.closed = True
@@ -84,12 +95,19 @@ def login_replies() -> dict[str, list[bytes]]:
     }
 
 
-def connect_fake_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, replies: dict[str, list[bytes]], greeting: bytes = b"") -> tuple[GameSession, FakeSocket]:
-    """A session for Testmage connected to a FakeSocket that answers with `replies` after sending `greeting`."""
-    fake_socket = FakeSocket(replies, greeting)
+def connect_fake_session(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    replies: dict[str, list[bytes]],
+    greeting: Union[bytes, list[bytes]] = b"",
+    client: TelnetClientProfile = SILENT_CLIENT,
+    closes: bool = False,
+) -> tuple[GameSession, FakeSocket]:
+    """A session for Testmage, negotiating as `client`, connected to a FakeSocket that answers with `replies` after sending `greeting`."""
+    fake_socket = FakeSocket(replies, greeting, closes)
     monkeypatch.setattr(session.socket, "create_connection", lambda _address, timeout: fake_socket)
     handle = ServerHandle("127.0.0.1", 1, tmp_path / "game.log", None)  # type: ignore[arg-type]
-    return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path), fake_socket
+    return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path, client=client), fake_socket
 
 
 def test_login_walks_the_account_menu_and_enters_the_game(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -224,6 +242,8 @@ class FakeEndingSession:
         # How many times quit() and close() were called.
         self.quit_calls = 0
         self.close_calls = 0
+        # Whether the fake reached the game; end_sessions quits only a session that did.
+        self.logged_in = True
 
     @property
     def is_closed(self) -> bool:
@@ -272,3 +292,135 @@ def test_ending_sessions_collects_quit_failures_and_still_quits_the_rest() -> No
     problems = end_sessions([refused, disconnected, last], server_alive=True)
     assert problems == ["Testimm: quit was refused or never answered", "Testmage: server closed the connection"]
     assert last.quit_calls == 1
+
+
+# The server's first offer on connect.
+DO_TTYPE = bytes([IAC, DO, OPTION_TTYPE])
+# What a session that never answers negotiation sends during login().
+SILENT_LOGIN_BYTES = b"harness@example.com\nHarness1x\n2\nTestmage\n1\nlook\n"
+# A frame the server sends once the client agrees to MSDP.
+MSDP_PAYLOAD = encode_msdp("ROOM_VNUM", "1100")
+MSDP_FRAME = subnegotiation_bytes(OPTION_MSDP, MSDP_PAYLOAD)
+
+
+def test_a_silent_session_sends_only_its_lines(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), DO_TTYPE + GREETING)
+    game_session.login(timeout=1.0)
+    assert fake_socket.sent_bytes == SILENT_LOGIN_BYTES
+
+
+def test_an_msdp_client_answers_do_ttype_before_the_email(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), DO_TTYPE + GREETING, client=MSDP_CLIENT)
+    game_session.expect([LOGIN_EMAIL_PROMPT], timeout=1.0)
+    assert fake_socket.sent_bytes == bytes([IAC, WILL, OPTION_TTYPE])
+
+
+def test_a_negotiation_split_across_reads_is_answered_once(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    chunks = [bytes([IAC]), bytes([DO]), bytes([OPTION_TTYPE]) + GREETING]
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), chunks, client=MSDP_CLIENT)
+    game_session.expect([LOGIN_EMAIL_PROMPT], timeout=1.0)
+    assert fake_socket.sent_bytes == bytes([IAC, WILL, OPTION_TTYPE])
+
+
+def test_everything_raw_keeps_the_colour_that_everything_strips(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, b"\x1b[33mArena\x1b[0m>")
+    game_session.drain(0.1)
+    assert game_session.everything.endswith("Arena>")
+    assert "\x1b[33m" in game_session.everything_raw
+
+
+def test_a_wait_finds_a_subnegotiation_that_arrived_before_it(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, MSDP_FRAME + GREETING)
+    game_session.drain(0.1)
+    assert game_session.expect_subnegotiation(OPTION_MSDP).event.payload == MSDP_PAYLOAD
+    with pytest.raises(SessionTimeout):
+        game_session.expect_subnegotiation(OPTION_MSDP, timeout=0.3)
+
+
+def test_waits_in_the_reverse_of_arrival_order_each_find_their_event(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    greeting = DO_TTYPE + bytes([IAC, WILL, OPTION_MSDP]) + bytes([IAC, DO, OPTION_NAWS]) + GREETING
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, greeting)
+    assert game_session.expect_negotiation(DO, OPTION_NAWS, timeout=1.0).event == TelnetNegotiation(DO, OPTION_NAWS)
+    assert game_session.expect_negotiation(WILL, OPTION_MSDP, timeout=1.0).event == TelnetNegotiation(WILL, OPTION_MSDP)
+    assert game_session.expect_negotiation(DO, OPTION_TTYPE, timeout=1.0).event == TelnetNegotiation(DO, OPTION_TTYPE)
+    assert LOGIN_EMAIL_PROMPT in game_session.expect([LOGIN_EMAIL_PROMPT], timeout=1.0), "a telnet wait leaves the text unread"
+
+
+def test_a_subnegotiation_wait_skips_frames_its_test_rejects(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    other_payload = encode_msdp("HEALTH", "10")
+    greeting = subnegotiation_bytes(OPTION_MSDP, other_payload) + MSDP_FRAME
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, greeting)
+    assert game_session.expect_subnegotiation(OPTION_MSDP, timeout=1.0, matching=lambda payload: payload == MSDP_PAYLOAD).event.payload == MSDP_PAYLOAD
+    assert game_session.expect_subnegotiation(OPTION_MSDP, timeout=1.0).event.payload == other_payload
+
+
+def test_a_wait_timeout_lists_the_unclaimed_events(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, bytes([IAC, WILL, OPTION_MSDP]) + GREETING)
+    with pytest.raises(SessionTimeout, match=r"(?s)DO NAWS.*WILL MSDP") as timeout:
+        game_session.expect_negotiation(DO, OPTION_NAWS, timeout=0.3)
+    assert "Account email" not in str(timeout.value), "text is not listed among the unclaimed events"
+
+
+def test_the_server_closing_during_a_telnet_wait_raises_connection_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, GREETING, closes=True)
+    with pytest.raises(ConnectionError, match=r"(?s)server closed the connection.*Account email"):
+        game_session.expect_negotiation(DO, OPTION_TTYPE, timeout=1.0)
+
+
+def test_a_start_compression_frame_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, GREETING + bytes([IAC, SB, OPTION_MCCP2, IAC, SE]))
+    with pytest.raises(session.TelnetCompressionUnsupported, match=r"(?s)MCCP2.*Account email"):
+        game_session.drain(0.1)
+    assert game_session.everything == GREETING.decode("latin-1"), "text before the frame still reaches the transcript"
+
+
+def test_send_line_doubles_a_255(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {})
+    game_session.send_line("\xff")
+    assert fake_socket.sent_bytes == b"\xff\xff\n"
+
+
+def test_the_raw_senders_send_their_bytes_verbatim(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {})
+    game_session.send_bytes(b"\x00\xff\xff")
+    game_session.send_negotiation(DO, OPTION_MSDP)
+    game_session.send_subnegotiation(OPTION_NAWS, b"\x00\xff")
+    game_session.send_msdp("LIST", "COMMANDS")
+    assert fake_socket.sent_bytes == (
+        b"\x00\xff\xff" + bytes([IAC, DO, OPTION_MSDP]) + subnegotiation_bytes(OPTION_NAWS, b"\x00\xff") + subnegotiation_bytes(OPTION_MSDP, encode_msdp("LIST", "COMMANDS"))
+    )
+    sent_events = [recorded.event for recorded in game_session.telnet_events if recorded.direction is TelnetDirection.SENT]
+    assert sent_events == [
+        TelnetText(b"\x00\xff"),
+        TelnetNegotiation(DO, OPTION_MSDP),
+        TelnetSubnegotiation(OPTION_NAWS, b"\x00\xff"),
+        TelnetSubnegotiation(OPTION_MSDP, encode_msdp("LIST", "COMMANDS")),
+    ]
+
+
+def test_the_wire_files_hold_the_bytes_both_ways(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    greeting = DO_TTYPE + GREETING
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), greeting, client=MSDP_CLIENT)
+    game_session.expect([LOGIN_EMAIL_PROMPT], timeout=1.0)
+    game_session.send_line("harness@example.com")
+    assert game_session.received_bytes == greeting
+    assert (tmp_path / "testmage.received.bin").read_bytes() == greeting
+    assert (tmp_path / "testmage.sent.bin").read_bytes() == fake_socket.sent_bytes
+    telnet_log = (tmp_path / "testmage.telnet.log").read_text(encoding="utf-8")
+    assert "received DO TTYPE" in telnet_log
+    assert "sent     WILL TTYPE" in telnet_log
+
+
+def test_login_marks_the_session_logged_in(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), GREETING)
+    assert not game_session.logged_in
+    game_session.login(timeout=1.0)
+    assert game_session.logged_in
+
+
+def test_end_sessions_closes_a_session_that_never_logged_in_without_quitting(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {"quit": [b"Goodbye, friend.. Come back soon!\r\n"]}, GREETING)
+    assert end_sessions([game_session], server_alive=True) == []
+    assert "quit" not in fake_socket.sent_lines
+    assert game_session.is_closed
+    assert fake_socket.closed

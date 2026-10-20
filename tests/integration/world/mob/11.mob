@@ -124,4 +124,58 @@ It exists to outlive a burning room's own ticks until a scenario floors its hit.
 0
 10 10 10 10 10 10
 1 10 0 0 0 100 0
+#1160
+zerostam mob~
+a stamina-less mob~
+A stamina-less mob loiters here, without a step left in it.~
+Its maximum mana and moves are both 0.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 13 0
+150 70 0 0 0 0
+0 0 0 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
+#1161
+pony harness~
+a harness pony~
+A harness pony stands here, too tired to carry anyone far.~
+It can be ridden, and it has no moves to spend.
+~
+514
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 13 0
+150 70 0 0 0 0
+0 0 0 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
+#1170
+angel shining~
+a shining angel~
+A shining angel hovers here, offering to reset what you have learned.~
+It resets a player's practice when told "pracreset": program 14, the resetter.
+~
+3
+0 1000 M
+20 60 10 10
+100 100
+2 0
+0 1000 0
+8 8 1 1 0
+150 70 14 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+2 10 0 0 0 100 0
 #99999

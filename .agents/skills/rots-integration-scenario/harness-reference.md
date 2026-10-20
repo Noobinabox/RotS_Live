@@ -365,7 +365,7 @@ What an observer reads for a character is `PERS` (`utility.cpp`): the name, a st
 | `expect(markers, timeout=8.0)` | returns all unread text once any marker appears in it |
 | `drain(timeout=0.5)` | reads for `timeout` seconds and returns the unread text |
 | `send_line(line)` | sends a line without waiting; a 0xFF byte goes out doubled so it stays text |
-| `login(timeout=15.0)` | logs a session from `connect` in |
+| `login(timeout=15.0)` | logs in a session opened with `connect` |
 | `everything` | all text received so far |
 | `everything_raw` | the same text with colour and other control sequences kept |
 | `received_bytes` | every byte received, exactly as it arrived |
@@ -391,7 +391,7 @@ The profiles live in `rots_harness/telnet_profile.py`:
 
 | Profile | Answers | Accepts | Use |
 | --- | --- | --- | --- |
-| `SILENT_CLIENT` (default) | no | nothing | today's behaviour byte for byte |
+| `SILENT_CLIENT` (default) | no | nothing | sends only the test's lines; the default |
 | `REFUSING_CLIENT` | yes | nothing | a plain telnet client that refuses every option |
 | `MSDP_CLIENT` | yes | TTYPE, ECHO, NAWS, CHARSET, MSDP | a protocol client; the stream stays uncompressed |
 | `FULL_CLIENT` | yes | everything RotS knows, MCCP2 included | every option on; the stream stays plain, because RotS never compresses |

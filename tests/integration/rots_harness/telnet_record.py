@@ -32,8 +32,11 @@ class RecordedTelnetEvent:
 
 
 class TelnetRecord:
-    """Keeps one session's telnet events in order with their direction, mirrors each to the
-    session's telnet log, and hands each matching event to at most one wait."""
+    """One session's telnet events, in order and with their direction.
+
+    Each event is mirrored to the session's telnet log as it is added, and each matching event is
+    handed to at most one wait.
+    """
 
     def __init__(self, log_path: Path) -> None:
         # The telnet log; created by the first add() and appended to by each one.

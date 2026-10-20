@@ -87,7 +87,7 @@ _PROTOCOL_CHARSETS = ("ISO-8859-1",)
 # The options MSDP_CLIENT accepts; none of them changes the stream's framing.
 _MSDP_CLIENT_OPTIONS = frozenset((OPTION_TTYPE, OPTION_ECHO, OPTION_NAWS, OPTION_CHARSET, OPTION_MSDP))
 
-# Today's harness behaviour and the session default: it never answers a negotiation.
+# The session default: it never answers a negotiation, so the session sends only the test's own lines.
 SILENT_CLIENT = TelnetClientProfile(name="silent", answers_negotiation=False)
 
 # A plain telnet client that refuses every option.

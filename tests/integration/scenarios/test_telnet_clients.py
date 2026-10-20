@@ -30,7 +30,7 @@ from rots_harness.telnet import (
     TelnetText,
     describe_event,
 )
-from rots_harness.telnet_payloads import MSDP_VAL, MSDP_VAR, decode_msdp, decode_mssp
+from rots_harness.telnet_payloads import MSDP_VAL, MSDP_VAR, TTYPE_SEND, decode_msdp, decode_mssp
 from rots_harness.telnet_profile import FULL_CLIENT, MSDP_CLIENT, REFUSING_CLIENT
 from rots_harness.telnet_record import TelnetDirection
 
@@ -62,7 +62,7 @@ OFFER_COMMANDS = (WILL, DO)
 REFUSAL_COMMANDS = (WONT, DONT)
 
 # SB TTYPE SEND: the server asking for the next terminal type.
-TTYPE_SEND_PAYLOAD = b"\x01"
+TTYPE_SEND_PAYLOAD = bytes([TTYPE_SEND])
 
 # How many times the server asks MSDP_CLIENT for a terminal type: it stops once a reply repeats
 # the one before.
@@ -81,7 +81,7 @@ MSDP_COMMANDS_VARIABLE = "COMMANDS"
 COMMANDS_FRAME_START = bytes([MSDP_VAR]) + MSDP_COMMANDS_VARIABLE.encode("ascii") + bytes([MSDP_VAL])
 
 # The server's answer to MSDP LIST COMMANDS.
-MSDP_COMMANDS_REPLY = {"COMMANDS": ["LIST", "REPORT", "RESET", "SEND", "UNREPORT"]}
+MSDP_COMMANDS_REPLY = {MSDP_COMMANDS_VARIABLE: ["LIST", "REPORT", "RESET", "SEND", "UNREPORT"]}
 
 # The command that turns the msdp preference on; the server sends in-game MSDP frames only with it.
 MSDP_ON_COMMAND = "set msdp on"
@@ -140,7 +140,7 @@ def wire_listing(game_session: GameSession) -> str:
     )
 
 
-def names_msdp_commands(payload: bytes) -> bool:
+def sets_msdp_commands(payload: bytes) -> bool:
     """Whether an MSDP frame sets the COMMANDS variable."""
     return payload.startswith(COMMANDS_FRAME_START)
 
@@ -198,7 +198,7 @@ def test_an_msdp_client_lists_commands_at_the_login_prompt(server) -> None:
     mage = server.connect(MAGE.name, client=MSDP_CLIENT)
     mage.expect_subnegotiation(OPTION_CHARSET)
     mage.send_msdp("LIST", "COMMANDS")
-    reply = mage.expect_subnegotiation(OPTION_MSDP, matching=names_msdp_commands)
+    reply = mage.expect_subnegotiation(OPTION_MSDP, matching=sets_msdp_commands)
     assert decode_msdp(reply.event.payload) == MSDP_COMMANDS_REPLY, wire_listing(mage)
 
 

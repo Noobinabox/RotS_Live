@@ -105,7 +105,7 @@ class GameSession:
 
     def __init__(self, handle: ServerHandle, character_name: str, email: str, password: str, transcript_dir: Path, client: TelnetClientProfile = SILENT_CLIENT) -> None:
         """Connects to the server and answers its negotiation as client directs; login() then brings the character into the game, picking it from the account's list by name."""
-        # Names the character in errors and in the wire file names, and picks it at the character list.
+        # Names the character in errors and picks it at the character list; the session's file names use its lower-case form.
         self._character_name = character_name
         # The account credentials login() sends.
         self._email = email

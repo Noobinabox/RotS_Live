@@ -660,6 +660,7 @@ so two of them answer each other until the server's stack overflows.
 | 1606 | `trinket` | cursed trinket, `obj/16.obj`: type other with rent per day -2, so the inn refuses it |
 | 1607 | `token` | pewter token, `obj/16.obj`: type other with `NORENT` (bit 12); answers to `token` like 1130 |
 | 1608 | `waterskin` | waterskin, `obj/16.obj`: a drink container holding 10 of 20 drinks of water |
+| 1609 | `relic` | strange relic, `obj/16.obj`: type other, wear flags `TAKE` and `THROW` (bit 15), and every extra flag from bit 0 to 28 but 5 (`INVISIBLE`), 7 (`NODROP`) and 13 (the retired `!DONATE`), `WILLPOWER` (bit 15) among them; for the known-bugs pins |
 | 1700 | `star token` | star token, the object scripts 1700 and 1701 reward |
 | 1701 | `pebble grey` | grey pebble, an object that is not the star token |
 

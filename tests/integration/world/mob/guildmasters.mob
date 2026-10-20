@@ -52,6 +52,25 @@ A copy of the young uruk mage in zone 46, for the guild-teaching scenario.
 0
 10 10 10 10 10 10
 3 10 0 0 0 100 2048
+#4608
+scarred trainer~
+a scarred trainer~
+A scarred trainer glowers here.~
+A guild-special copy at 4608 with program 9, the URUK WARRIOR row; it teaches only uruk-hai
+and speaks human language.
+~
+3
+0 0 M
+20 60 10 10
+100 100
+2 0
+0 1000 0
+8 8 1 11 0
+150 70 9 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+2 10 0 0 0 100 2048
 #8500
 elven enchanter elf~
 an elven enchanter~

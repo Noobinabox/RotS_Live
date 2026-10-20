@@ -608,15 +608,17 @@ Five of these answer to the keyword `orc`, as do two of the guildmaster copies b
 loaded ("Names, sides and lookups" above). Seven real guildmasters are copied at their real vnums
 (1503, 2043, 4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them;
 each one's program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the
-traveller 1503, 16 for Scorther 10003 and 28 for Aroden 10054. Three more guild-special mobs sit at
-vnums `spec_ass.cpp` binds the guild special to, with programs chosen for the posing refusal rather
-than the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and 8500
-`enchanter` (program 62), the last two naming no row. 1503 and 1509 are in `mob/15.mob`, so that
-the mobs of `mob/17.mob` keep the vnums ascending; the rest are in `mob/guildmasters.mob`. Each
-teaches the races in its last field, the `will_teach` mask (`WILL_TEACH`, `utils.h`): 63 (god,
-human, dwarf, wood elf, hobbit and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003
-and 10054; 2048 (uruk-hai) for 4601; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768
-(uruk-lhuth) for 13600.
+traveller 1503, 16 for Scorther 10003 and 28 for Aroden 10054. Four more guild-special mobs sit at
+vnums `spec_ass.cpp` binds the guild special to, with programs chosen for a scenario rather than
+the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and 8500
+`enchanter` (program 62), the last two naming no row, and 4608 `trainer` (program 9, the URUK
+WARRIOR row, speaking human language) for the reject-message bug pin. 1503 and 1509 are in
+`mob/15.mob`, so that the mobs of `mob/17.mob` keep the vnums ascending; the rest are in
+`mob/guildmasters.mob`. Each teaches the races in its last field, the `will_teach` mask
+(`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood elf, hobbit and high elf, not the beorning)
+for 1503, 1509, 3888, 8500, 10003 and 10054; 2048 (uruk-hai) for 4601 and 4608; 10240 (uruk-hai and
+orc) for 2043; 8192 (orc) for 32200; 32768 (uruk-lhuth) for 13600.
+
 The 1700s mobs speak no language (language 0), so every listener reads their lines exactly. All
 have constitution 10, 60 hit points and level 5. Only one mob that speaks when it hears speech may
 be in a room: `do_say` (`act_comm.cpp`) runs every other mob's `ON_HEAR_SAY` script inside the say,
@@ -630,6 +632,7 @@ so two of them answer each other until the server's stack overflows.
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
 | 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
+| 1171 | `circlet` | iron circlet, head armour; its `A 1 2` line (`APPLY_STR`) adds 2 to strength |
 | 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
 | 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
 | 1304 | `cap` | iron cap, head armour (`obj/13.obj`); its keywords are `cap iron` |

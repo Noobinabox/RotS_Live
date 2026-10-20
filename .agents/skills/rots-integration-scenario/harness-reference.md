@@ -490,11 +490,13 @@ anyone changes the world.
 | 1129 | Olog-hai Start | 0 (none) | 0 | none |
 | 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
 | 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | 0 (none) | 0 | west 1131 |
+| 1132 | Arena East (`world.ROOM_ARENA_EAST`) | 0 (none) | 0 | west 1131 |
 | 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
 | 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
 | 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
 | 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
+| 1137 | Gallows Pit (`world.ROOM_GALLOWS_PIT`) | 2 (`DEATH`) | 0 | none |
+| 1138 | Gallows Approach (`world.ROOM_GALLOWS_APPROACH`) | 0 (none) | 0 | east 1137 |
 | 1151 | Retirement Home | 0 (none) | 0 | none |
 | 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
 | 1160 | Human Start | 0 (none) | 0 | none |
@@ -504,9 +506,12 @@ anyone changes the world.
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 
-1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
-so a character there sees only with infravision, holylight, or moonvision while the moon is up
-(1133 counts as outside, and moonlight follows the uncontrolled game hour).
+1133 and 1137 are the only rooms with a flag. `IS_DARK` is true in 1133 unless something in it
+gives light, so a character there sees only with infravision, holylight, or moonvision while the
+moon is up (1133 counts as outside, and moonlight follows the uncontrolled game hour). Whoever
+walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with no killer); a mortal
+wakes in its race's start room with 1 hit point and no moves. `goto` and `teleport` into it kill
+nobody.
 
 ### Mobs and objects
 
@@ -518,10 +523,12 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1160 | `zerostam mob` | a stamina-less mob: the bystander orc with no maximum moves; neither has any maximum stamina (`0 0 0 1` and `0 0 50 1` lines) |
+| 1161 | `pony harness` | a harness pony: act flags `514` (`SENTINEL`, `MOB_MOUNT`), so a player can `ride` it; no moves, so it never takes a step |
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
+32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one
+is loaded ("Names, sides and lookups" above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
 4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
 
 | Object | Keyword | What it is |
@@ -531,6 +538,7 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
 | 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
 | 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
 

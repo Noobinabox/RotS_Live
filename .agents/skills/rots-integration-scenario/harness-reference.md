@@ -109,7 +109,7 @@ process under emulation can hang the container.
 ### Environment variables
 
 `validate_environment()` in `conftest.py` checks `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`,
-`ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` and `ROTS_IT_HOUR_TIMEOUT` before any test; a bad value is
+`ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`, `ROTS_IT_HOUR_TIMEOUT` and `ROTS_IT_SHARD` before any test; a bad value is
 a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 `ROTS_IT_DOCKER_LOCK_DIR` are not checked.
 
@@ -122,6 +122,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds the Docker launcher waits for the lock |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
+| `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI runs four shards. An empty share passes |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.

@@ -4,6 +4,7 @@ name: Integration
 # the description reruns only this job. tests/integration/rots_harness/ci_groups.py chooses the
 # groups: boot always, each @integration-test-<group> in the description, the groups of changed
 # scenario files, and every group for @integration-test-all, a harness change or a push.
+# The selected scenarios run split across parallel shards, one job each.
 
 on:
   push:
@@ -25,9 +26,16 @@ concurrency:
 
 jobs:
   scenarios:
-    name: Integration scenarios (Ubuntu 22.04 image)
+    name: Integration scenarios (Ubuntu 22.04 image, shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      # Every shard reports its own failures, so one failing shard does not cancel the others.
+      fail-fast: false
+      matrix:
+        # Each job builds the server and runs every shard-th selected scenario (ROTS_IT_SHARD);
+        # this list alone sets the shard count, which the jobs read as strategy.job-total.
+        shard: [1, 2, 3, 4]
 
     steps:
       - name: Check out repository
@@ -67,11 +75,13 @@ jobs:
       - name: Run the scenarios
         env:
           GROUP: ${{ steps.select.outputs.group }}
+          ROTS_IT_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
         # The local launcher runs the programs directly inside the image; make integration reads
-        # GROUP from the environment, and an empty GROUP runs every scenario.
+        # GROUP from the environment, and an empty GROUP runs every scenario. A shard whose share
+        # of the selection is empty passes.
         run: >-
           docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
-          --env GROUP --env HOME=/tmp --env ROTS_IT_LAUNCHER=local
+          --env GROUP --env ROTS_IT_SHARD --env HOME=/tmp --env ROTS_IT_LAUNCHER=local
           rots-dev:ci bash -lc 'ulimit -c 0;
           python3 -m venv /tmp/harness-venv &&
           /tmp/harness-venv/bin/pip install --quiet --requirement tests/integration/requirements.txt &&
@@ -81,6 +91,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-runs
+          name: integration-runs-shard-${{ matrix.shard }}
           path: build/integration/runs/
           if-no-files-found: ignore

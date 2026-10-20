@@ -29,6 +29,7 @@ from rots_harness.launcher import (
 from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
+from rots_harness.sharding import Shard, in_shard, parse_shard
 from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
 
 # tests/integration: this file, pytest.ini and the test world.
@@ -56,6 +57,9 @@ READY_TIMEOUT_SECONDS = 30.0
 
 # Where pytest_configure keeps the run's RunDirectoryReport.
 RUN_DIRECTORY_REPORT_KEY = pytest.StashKey[RunDirectoryReport]()
+# Set by pytest_collection_modifyitems when ROTS_IT_SHARD left this run's share empty although the
+# selection was not; pytest_sessionfinish then reports success instead of "no tests ran".
+SHARD_LEFT_NOTHING_KEY = pytest.StashKey[bool]()
 
 
 @pytest.hookimpl(trylast=True)
@@ -98,6 +102,31 @@ def validate_environment() -> None:
     lock_wait_seconds()
     binary_relative()
     hour_timeout_seconds()
+    shard()
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Keeps only this run's share of the selected tests when ROTS_IT_SHARD is set, deselecting the rest.
+
+    trylast, so the -m and -k deselection has already run and the shards split only the selection.
+    """
+    selected_shard = shard()
+    if selected_shard is None or not items:
+        return
+    kept_ids = in_shard((item.nodeid for item in items), selected_shard)
+    kept = [item for item in items if item.nodeid in kept_ids]
+    deselected = [item for item in items if item.nodeid not in kept_ids]
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = kept
+    config.stash[SHARD_LEFT_NOTHING_KEY] = not kept
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Turns "no tests ran" into success for a shard whose share of a non-empty selection is empty."""
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED and session.config.stash.get(SHARD_LEFT_NOTHING_KEY, False):
+        session.exitstatus = pytest.ExitCode.OK
 
 
 def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
@@ -141,6 +170,17 @@ def session_seed() -> int:
         return int(value)
     except ValueError:
         raise pytest.UsageError(f"ROTS_IT_SEED must be an integer, not {value!r}") from None
+
+
+def shard() -> Optional[Shard]:
+    """The share of the selected tests ROTS_IT_SHARD (k/N) asks this run to keep, or None to run them all; raises pytest.UsageError."""
+    value = os.environ.get("ROTS_IT_SHARD")
+    if value is None:
+        return None
+    try:
+        return parse_shard(value)
+    except ValueError:
+        raise pytest.UsageError(f"ROTS_IT_SHARD must be k/N with whole numbers and 1 <= k <= N, such as 2/4, not {value!r}") from None
 
 
 def lock_wait_seconds() -> float:

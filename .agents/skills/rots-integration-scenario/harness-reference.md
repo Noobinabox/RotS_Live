@@ -476,7 +476,7 @@ a category means editing `WORLD_CATEGORIES`.
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
 | 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
-| 16 | `zon/16.zon` | Harness object workshop | (6, 6) | 1601-1699 | harness innkeeper (mob 1105) to 1601 |
+| 16 | `zon/16.zon` | Harness object workshop | (6, 2) | 1601-1699 | harness innkeeper (mob 1105) to 1601 |
 | 17 | `zon/17.zon` | Harness gatehouse | (2, 8) | 1701-1799 | none |
 | 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
 
@@ -733,7 +733,9 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
 
 - A room: append it to `wld/11.wld` before `#99999`, between 1101 and 1199 in vnum order, or
   add `wld/<n>.wld` with a `zon/<n>.zon` and list both in their `index` files, as zones 12 and 17
-  are. Add a constant to `rots_harness/world.py` when a scenario names it.
+  are. Give a new zone a map square no other zone uses (the zones table lists them): relocate and
+  the world map find a zone by its square. Add a constant to `rots_harness/world.py` when a
+  scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
 - An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/13.obj`

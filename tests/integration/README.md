@@ -55,10 +55,11 @@ make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 ```
 
-A group is a marker registered in `tests/integration/pytest.ini`, such as `boot`. `GROUP` may
-be an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
-name that neither `pytest.ini` nor pytest itself registers stops the run with a usage error that
-lists the registered names, so a misspelt group never passes by selecting nothing.
+A group is a marker such as `boot`, registered by its file `tests/integration/groups/<group>.txt`,
+which holds the group's one-line description. `GROUP` may be an expression such as
+`GROUP="boot or other"`; it always stays inside the `scenario` filter. A name that no group file,
+`pytest.ini` or pytest itself registers stops the run with a usage error that lists the registered
+names, so a misspelt group never passes by selecting nothing.
 
 Run one harness session per checkout at a time: every session in a checkout shares the template
 cache under `build/integration/libs/`.
@@ -72,13 +73,13 @@ request runs:
 - `boot`, always;
 - each group its description names as `@integration-test-<group>`, such as
   `@integration-test-poison`, or every group for `@integration-test-all`;
-- the groups of each scenario file it changes;
+- the groups of each scenario file it changes, and the group of each group file it changes;
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
   `requirements.txt`, the test world, a scenario file other than a `test_*.py`, `src/harness/`,
   `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
 
 A change to the game's own code adds no group by itself, so name the groups whose behaviour it
-touches. A name `pytest.ini` does not register fails the job and lists the registered groups.
+touches. A name no group file registers fails the job and lists the registered groups.
 Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
 and the "Choose the integration groups" job's summary lists the groups that run and why. A run of
 every group is split across eight parallel jobs, `shard 1/8` to `shard 8/8`, through
@@ -218,7 +219,8 @@ fixture quits every session after the test. The game lets an account have only o
 online unless the account owns a character above level 91, so a test that logs in two
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).
 
-A new group needs a line under `markers` in `pytest.ini`.
+A new group needs its own file, `groups/<group>.txt`, holding one line that says what the group
+pins; `conftest.py` registers a marker for each file.
 
 A plain server's game time follows the wall clock. A test marked
 `@pytest.mark.schedule("affect-hours")` runs `bin/ageland_harness` instead, whose game time

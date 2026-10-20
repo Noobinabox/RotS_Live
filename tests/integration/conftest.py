@@ -32,8 +32,10 @@ from rots_harness.session import GameSession, end_sessions
 from rots_harness.sharding import Shard, in_shard, parse_shard
 from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
 
-# tests/integration: this file, pytest.ini and the test world.
+# tests/integration: this file, pytest.ini, the group files and the test world.
 INTEGRATION_ROOT = Path(__file__).resolve().parent
+# One <group>.txt per scenario group, holding its description; each registers a marker.
+GROUPS_DIR = INTEGRATION_ROOT / groups.GROUPS_DIRECTORY_NAME
 # The checkout whose bin/ and lib/ the harness uses; containers mount it at /rots.
 REPO_ROOT = INTEGRATION_ROOT.parents[1]
 # One directory per test: its lib, game.log and one transcript per character.
@@ -64,12 +66,14 @@ SHARD_LEFT_NOTHING_KEY = pytest.StashKey[bool]()
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Stops the run with a usage error for an unregistered marker in -m or a bad ROTS_IT_* variable.
+    """Registers a marker per group file, then stops the run with a usage error for a bad group
+    file, an unregistered marker in -m or a bad ROTS_IT_* variable.
 
     Runs after the built-in plugins have registered their markers, so -m may name them. When
     the checks pass, makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock
     is released and every started server stopped, and starts the kept run directory report.
     """
+    register_group_markers(config)
     expression = config.getoption("markexpr", default="") or ""
     registered = groups.registered_marker_names(config.getini("markers"))
     unknown = groups.unknown_marker_names(expression, registered)
@@ -80,6 +84,23 @@ def pytest_configure(config: pytest.Config) -> None:
     report = RunDirectoryReport()
     config.pluginmanager.register(report)
     config.stash[RUN_DIRECTORY_REPORT_KEY] = report
+
+
+def register_group_markers(config: pytest.Config) -> None:
+    """Registers each group file's marker, so --strict-markers and -m accept the group.
+
+    Raises pytest.UsageError for a group file the harness cannot read, or one named like a
+    marker pytest.ini or pytest itself already registers.
+    """
+    try:
+        descriptions = groups.read_group_descriptions(GROUPS_DIR)
+    except (groups.GroupFileError, OSError) as error:
+        raise pytest.UsageError(f"cannot read the scenario groups: {error}") from error
+    registered = set(groups.registered_marker_names(config.getini("markers")))
+    for name, description in descriptions.items():
+        if name in registered:
+            raise pytest.UsageError(f"group file {GROUPS_DIR / name}{groups.GROUP_FILE_SUFFIX} names the marker {name}, which is already registered")
+        config.addinivalue_line("markers", f"{name}: {description}")
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:

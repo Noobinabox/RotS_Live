@@ -81,7 +81,7 @@ race keyword, never its name (reference, "Names, sides and lookups").
 Read the test world first (reference, "The test world"). Keep vnums ascending and list a new
 file in its `index`. Boot after every change: a bad file shows only as a `SYSERR` or a server
 that never reaches the login prompt. The world files, the room constants in
-`rots_harness/world.py` and the markers in `pytest.ini` are scenario territory; the rest of
+`rots_harness/world.py` and the group files in `tests/integration/groups/` are scenario territory; the rest of
 `tests/integration/` and `src/harness/` is the harness.
 
 ## 7. Assert what players see
@@ -98,11 +98,11 @@ that never reaches the login prompt. The world files, the room constants in
 
 ## 8. Tag the group
 
-Add `<name>: <what the group pins>` under `markers =` in `tests/integration/pytest.ini`, and set
+Add `tests/integration/groups/<name>.txt` holding one line, what the group pins, and set
 `pytestmark = [pytest.mark.scenario, pytest.mark.<name>]`. `GROUP=<name>` then selects it.
-In CI, a pull request runs `boot` and the groups of the scenario files it changes; a change to
-the game's code runs a group only when the description names it as `@integration-test-<name>`
-(integration README, "Continuous integration").
+In CI, a pull request runs `boot` and the groups of the scenario and group files it changes; a
+change to the game's code runs a group only when the description names it as
+`@integration-test-<name>` (integration README, "Continuous integration").
 
 ## 9. Run it repeatedly
 

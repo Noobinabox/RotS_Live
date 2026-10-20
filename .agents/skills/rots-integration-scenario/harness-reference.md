@@ -424,18 +424,22 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
 
 ## Markers and groups
 
-`tests/integration/pytest.ini` runs under `--strict-markers`:
+`tests/integration/pytest.ini` runs under `--strict-markers` and registers the markers that are
+not groups:
 
 | Marker | Effect |
 | --- | --- |
 | `scenario` | boots its own server through the `server` fixture; `make integration` always selects it |
 | `characters(*characters)` | the test's characters; a test using `server` without it fails |
 | `schedule(name)` | runs `bin/ageland_harness --schedule <name>`; game time advances only through `advance_hours` |
-| every other line under `markers =` | a group, with no behaviour of its own |
+| a group, one per `tests/integration/groups/<name>.txt` | no behaviour of its own |
 
-A new group is one line `<name>: <description>` under `markers =` (the name must start the
-line), plus `pytest.mark.<name>` in the scenario's `pytestmark`. `rots_harness/groups.py` and
-the Makefile need no change.
+A new group is a new file `tests/integration/groups/<name>.txt` holding its description on one
+line, plus `pytest.mark.<name>` in the scenario's `pytestmark`. `conftest.py` registers a marker
+per file (`register_group_markers`, reading through `rots_harness/groups.py`), and CI's group
+choice reads the same folder. A name must be a marker name (letters, digits and underscores). A
+unit test (`unit/test_groups.py`) fails when a scenario marks a group with no file or a file names
+a group no scenario marks. Neither `pytest.ini` nor the Makefile changes.
 
 ## Time control
 
@@ -753,7 +757,7 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
 | `tests/integration/scenarios/test_<group>.py` | `tests/integration/conftest.py` |
 | `tests/integration/world/` | `tests/integration/rots_harness/` other than `world.py` |
 | room constants in `rots_harness/world.py` | `tests/integration/unit/` |
-| a marker line in `tests/integration/pytest.ini` | `src/harness/`, `src/tools/rotstool/` |
+| a group file in `tests/integration/groups/` | `src/harness/`, `src/tools/rotstool/` |
 
 A helper used by one scenario stays in its scenario file, as `hit_points` does in
 `test_poison.py`.

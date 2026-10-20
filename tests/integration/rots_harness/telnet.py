@@ -254,7 +254,8 @@ def _option_name(option: int) -> str:
 
 
 class TelnetStreamSanitizer:
-    """Keeps the text of a telnet byte stream fed in chunks, dropping every telnet command."""
+    """Keeps the text of a telnet byte stream fed in chunks, dropping every telnet command; it is
+    the text-only view of the stream, kept for callers that want text without events."""
 
     def __init__(self) -> None:
         # Parser state survives between feed() calls so a sequence split across chunks is still dropped.

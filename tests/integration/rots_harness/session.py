@@ -24,7 +24,7 @@ from rots_harness.telnet import (
     subnegotiation_bytes,
 )
 from rots_harness.telnet_negotiator import TelnetNegotiator
-from rots_harness.telnet_payloads import encode_msdp
+from rots_harness.telnet_payloads import TelnetPayloadError, encode_msdp
 from rots_harness.telnet_profile import SILENT_CLIENT, TelnetClientProfile
 from rots_harness.telnet_record import RecordedTelnetEvent, TelnetDirection, TelnetRecord
 
@@ -63,7 +63,10 @@ class LoginRefused(AssertionError):
 
 
 class TelnetCompressionUnsupported(ConnectionError):
-    """The server started MCCP2 compression, which the harness cannot read; RotS never compresses, so the server has changed."""
+    """The server started MCCP2 compression, which the harness cannot read; RotS never compresses, so the server has changed.
+
+    The session is closed when this is raised.
+    """
 
 
 def ends_with_prompt(text: str) -> bool:
@@ -187,7 +190,7 @@ class GameSession:
         """Reads one chunk if any arrives within the read timeout, records its events and sends the negotiator's replies; returns whether one arrived.
 
         Raises ConnectionError when the server closes the connection, TelnetCompressionUnsupported when it
-        starts MCCP2, and TelnetPayloadError for a malformed CHARSET request.
+        starts MCCP2, and TelnetPayloadError for a malformed CHARSET request once the whole chunk is recorded.
         """
         try:
             chunk = self._socket.recv(4096)
@@ -200,6 +203,8 @@ class GameSession:
             received_file.write(chunk)
         text_parts: list[bytes] = []
         compression_started = False
+        # The first reply failure in this chunk; raised once every event of the chunk is recorded.
+        reply_error: Optional[TelnetPayloadError] = None
         try:
             for event in self._received_parser.feed(chunk):
                 self._record.add(TelnetDirection.RECEIVED, event)
@@ -209,13 +214,24 @@ class GameSession:
                     # Every byte after this frame is compressed, so the rest of the chunk is not telnet.
                     compression_started = True
                     break
-                for reply in self._negotiator.respond(event):
+                try:
+                    replies = self._negotiator.respond(event)
+                except TelnetPayloadError as error:
+                    # The events after a malformed request still belong in the record and the text.
+                    if reply_error is None:
+                        reply_error = error
+                    continue
+                for reply in replies:
                     self._send(encode_event(reply))
         finally:
             # Text read before a failure still reaches everything and the transcript.
             self._add_text(b"".join(text_parts).decode("latin-1"))
         if compression_started:
+            # A later read would parse compressed bytes as telnet, and a quit could only time out.
+            self.close()
             raise TelnetCompressionUnsupported(f"{self.character_name}: the server started MCCP2 compression, which the harness cannot read; unread text:\n{self._unconsumed()[-PENDING_TEXT_QUOTED:]}")
+        if reply_error is not None:
+            raise reply_error
         return True
 
     def _add_text(self, text: str) -> None:

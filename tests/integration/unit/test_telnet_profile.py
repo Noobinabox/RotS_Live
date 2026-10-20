@@ -65,6 +65,17 @@ def test_accepting_charset_needs_a_charset() -> None:
         )
 
 
+def test_a_window_size_must_hold_exactly_two_values() -> None:
+    for window_size in ((80,), (80, 24, 1)):
+        with pytest.raises(ValueError, match="exactly a width and a height"):
+            TelnetClientProfile(
+                name="misshapen",
+                answers_negotiation=True,
+                accepted_options=frozenset({OPTION_NAWS}),
+                window_size=window_size,  # type: ignore[arg-type]
+            )
+
+
 def test_window_dimensions_must_fit_sixteen_bits() -> None:
     for window_size in ((65536, 24), (80, 65536), (-1, 24), (80, -1)):
         with pytest.raises(ValueError):

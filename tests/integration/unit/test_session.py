@@ -9,8 +9,8 @@ import pytest
 from rots_harness import session
 from rots_harness.launcher import LOGIN_EMAIL_PROMPT, ServerHandle
 from rots_harness.session import GameSession, QuitRefused, SessionTimeout, Transcript, end_sessions, ends_with_prompt
-from rots_harness.telnet import DO, IAC, OPTION_MCCP2, OPTION_MSDP, OPTION_NAWS, OPTION_TTYPE, SB, SE, WILL, TelnetNegotiation, TelnetSubnegotiation, TelnetText, subnegotiation_bytes
-from rots_harness.telnet_payloads import encode_msdp
+from rots_harness.telnet import DO, IAC, OPTION_CHARSET, OPTION_MCCP2, OPTION_MSDP, OPTION_NAWS, OPTION_TTYPE, SB, SE, WILL, TelnetNegotiation, TelnetSubnegotiation, TelnetText, subnegotiation_bytes
+from rots_harness.telnet_payloads import TelnetPayloadError, encode_msdp
 from rots_harness.telnet_profile import MSDP_CLIENT, SILENT_CLIENT, TelnetClientProfile
 from rots_harness.telnet_record import TelnetDirection
 
@@ -372,6 +372,31 @@ def test_a_start_compression_frame_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
     with pytest.raises(session.TelnetCompressionUnsupported, match=r"(?s)MCCP2.*Account email"):
         game_session.drain(0.1)
     assert game_session.everything == GREETING.decode("latin-1"), "text before the frame still reaches the transcript"
+
+
+def test_a_start_compression_frame_closes_the_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, GREETING + bytes([IAC, SB, OPTION_MCCP2, IAC, SE]))
+    with pytest.raises(session.TelnetCompressionUnsupported):
+        game_session.drain(0.1)
+    assert game_session.is_closed, "end_sessions skips the session instead of waiting out a quit"
+    assert fake_socket.closed
+
+
+def test_a_malformed_charset_request_still_records_the_rest_of_its_chunk(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # A REQUEST with no separator, between the DO that turns CHARSET on and the text and offer after it.
+    chunk = bytes([IAC, DO, OPTION_CHARSET]) + subnegotiation_bytes(OPTION_CHARSET, b"\x01") + GREETING + DO_TTYPE
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, {}, chunk, client=MSDP_CLIENT)
+    with pytest.raises(TelnetPayloadError, match="separator"):
+        game_session.drain(0.1)
+    received = [recorded.event for recorded in game_session.telnet_events if recorded.direction is TelnetDirection.RECEIVED]
+    assert received == [
+        TelnetNegotiation(DO, OPTION_CHARSET),
+        TelnetSubnegotiation(OPTION_CHARSET, b"\x01"),
+        TelnetText(GREETING),
+        TelnetNegotiation(DO, OPTION_TTYPE),
+    ]
+    assert game_session.everything == GREETING.decode("latin-1")
+    assert fake_socket.sent_bytes == bytes([IAC, WILL, OPTION_CHARSET, IAC, WILL, OPTION_TTYPE]), "events after the failure are still answered"
 
 
 def test_send_line_doubles_a_255(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

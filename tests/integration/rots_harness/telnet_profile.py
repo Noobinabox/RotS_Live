@@ -57,6 +57,11 @@ class TelnetClientProfile:
         if OPTION_CHARSET in self.accepted_options and not self.charsets:
             raise ValueError(f"profile {self.name!r} accepts CHARSET but has no character sets")
         if self.window_size is not None:
+            if len(self.window_size) != 2:
+                raise ValueError(
+                    f"profile {self.name!r} window size {self.window_size} must hold exactly a "
+                    "width and a height"
+                )
             for dimension in self.window_size:
                 if not 0 <= dimension <= NAWS_DIMENSION_LIMIT:
                     raise ValueError(

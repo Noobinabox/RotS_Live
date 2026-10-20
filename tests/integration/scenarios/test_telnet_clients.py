@@ -77,6 +77,9 @@ MSDP_CLIENT_CHARSET_REPLIES = [b"\x02ISO-8859-1"]
 # The variable an MSDP LIST COMMANDS reply sets.
 MSDP_COMMANDS_VARIABLE = "COMMANDS"
 
+# The start of the MSDP frame that sets COMMANDS; selecting by it leaves other frames undecoded.
+COMMANDS_FRAME_START = bytes([MSDP_VAR]) + MSDP_COMMANDS_VARIABLE.encode("ascii") + bytes([MSDP_VAL])
+
 # The server's answer to MSDP LIST COMMANDS.
 MSDP_COMMANDS_REPLY = {"COMMANDS": ["LIST", "REPORT", "RESET", "SEND", "UNREPORT"]}
 
@@ -139,7 +142,7 @@ def wire_listing(game_session: GameSession) -> str:
 
 def names_msdp_commands(payload: bytes) -> bool:
     """Whether an MSDP frame sets the COMMANDS variable."""
-    return MSDP_COMMANDS_VARIABLE in decode_msdp(payload)
+    return payload.startswith(COMMANDS_FRAME_START)
 
 
 def sets_room_vnum(payload: bytes) -> bool:

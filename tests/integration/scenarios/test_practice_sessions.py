@@ -26,7 +26,7 @@ PUPIL = Character(
     skills=(("blink", BLINK_SESSIONS_SPENT),),
 )
 
-# The traveller (mob/guildmasters.mob), a guildmaster who teaches blink up to 100.
+# The traveller (mob/15.mob), a guildmaster who teaches blink up to 100.
 TRAVELLER_VNUM = 1503
 TRAVELLER_CREATED_MARKER = "You create a mysterious traveller."
 TRAVELLER_LIST_HEADER = "Hello, Testreset! I can teach you these spells:"

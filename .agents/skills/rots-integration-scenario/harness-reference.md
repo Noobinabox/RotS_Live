@@ -474,13 +474,16 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
+| 17 | `zon/17.zon` | Harness gatehouse | (2, 8) | 1701-1799 | none |
+| 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
 
 ### Rooms
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
-anyone changes the world.
+`OUTSIDE()` is true in all of them. Re-read the header in `wld/<zone>.wld` after anyone changes
+the world.
 
 | Vnum | Name | Flags | Sector | Exits |
 | --- | --- | --- | --- | --- |
@@ -490,23 +493,52 @@ anyone changes the world.
 | 1129 | Olog-hai Start | 0 (none) | 0 | none |
 | 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
 | 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | 0 (none) | 0 | west 1131 |
+| 1132 | Arena East (`world.ROOM_ARENA_EAST`) | 0 (none) | 0 | west 1131 |
 | 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
 | 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
 | 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
 | 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
+| 1137 | Gallows Pit (`world.ROOM_GALLOWS_PIT`) | 2 (`DEATH`) | 0 | none |
+| 1138 | Gallows Approach (`world.ROOM_GALLOWS_APPROACH`) | 0 (none) | 0 | east 1137 |
 | 1151 | Retirement Home | 0 (none) | 0 | none |
 | 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle | 0 (none) | 0 | none |
+| 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1301 | Bank Hall (`world.ROOM_BANK_HALL`, zone 13) | 0 (none) | 0 | east 1302 |
+| 1302 | Trade Hall (`world.ROOM_TRADE_HALL`, zone 13) | 0 (none) | 0 | west 1301 |
+| 1303 | Store Room (`world.ROOM_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the trader's stock |
+| 1304 | Dark Vault Hall (`world.ROOM_DARK_VAULT_HALL`, zone 13) | 1 (`DARK`) | 0 | none |
+| 1305 | Morning Bank (`world.ROOM_MORNING_BANK`, zone 13) | 0 (none) | 0 | none |
+| 1306 | Evening Bank (`world.ROOM_EVENING_BANK`, zone 13) | 0 (none) | 0 | none |
+| 1307 | Odd Trade Hall (`world.ROOM_ODD_TRADE_HALL`, zone 13) | 0 (none) | 0 | none |
+| 1308 | Odd Store Room (`world.ROOM_ODD_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the odd trader's stock |
+| 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
+| 1701 | Gatehouse Yard (`world.ROOM_GATEHOUSE_YARD`, zone 17) | 0 (none) | 0 | north 1702 through a closed door (exit flags 3, `EX_ISDOOR` and `EX_CLOSED`; keyword `door`) |
+| 1702 | Beyond the Gate (`world.ROOM_BEYOND_THE_GATE`, zone 17) | 0 (none) | 0 | south 1701 through the same door (keyword `gate`) |
+| 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
+| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | east 1803 (one way), west 1801 |
+| 1803 | Whistle Hub (`world.ROOM_WHISTLE_HUB`, zone 18) | 0 (none) | 0 | north 1804, east 1805, south 1806, west 1807, up 1808, down 1809 |
+| 1804 | North Spoke (`world.ROOM_NORTH_SPOKE`, zone 18) | 0 (none) | 0 | south 1803 |
+| 1805 | East Spoke (`world.ROOM_EAST_SPOKE`, zone 18) | 0 (none) | 0 | west 1803 |
+| 1806 | South Spoke (zone 18) | 0 (none) | 0 | north 1803 |
+| 1807 | West Spoke (zone 18) | 0 (none) | 0 | east 1803 |
+| 1808 | Upper Spoke (zone 18) | 0 (none) | 0 | down 1803 |
+| 1809 | Lower Spoke (`world.ROOM_LOWER_SPOKE`, zone 18) | 0 (none) | 0 | up 1803 |
 
-1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
-so a character there sees only with infravision, holylight, or moonvision while the moon is up
-(1133 counts as outside, and moonlight follows the uncontrolled game hour).
+1133, 1137, 1304 and 1801 are the only rooms with a flag. `IS_DARK` is true in 1133 and 1304 unless
+something in them gives light, so a character there sees only with infravision, holylight, or
+moonvision while the moon is up (both count as outside, and moonlight follows the uncontrolled game
+hour). Whoever walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with no
+killer); a mortal wakes in its race's start room with 1 hit point and no moves. `goto` and
+`teleport` into it kill nobody. In 1801, `PEACEROOM` makes `do_hit` (`act_offe.cpp`) refuse every
+attack, a failed tame's included. The door between 1701 and 1702 is the only door; it starts closed
+and no zone reset changes it. Every exit of the whistle hub (1803) leads to a spoke, so `do_flee`
+(`act_offe.cpp`) finds an exit on its first draw there, and every spoke comes after the hub in the
+world, which `do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows.
 
 ### Mobs and objects
 
@@ -518,22 +550,78 @@ so a character there sees only with infravision, holylight, or moonvision while 
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1160 | `zerostam mob` | a stamina-less mob: the bystander orc with no maximum moves; neither has any maximum stamina (`0 0 0 1` and `0 0 50 1` lines) |
+| 1161 | `pony harness` | a harness pony: act flags `514` (`SENTINEL`, `MOB_MOUNT`), so a player can `ride` it; no moves, so it never takes a step |
 | 1170 | `angel shining` | act flags `3` (`MOB_SPEC`) and program 14, the resetter (`spec_ass.cpp`): `tell angel pracreset` resets a player's practice |
+| 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
+| 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1308x2`; zone 13 resets one into 1302 |
+| 1304 | `banker dark` | a banker as 1301; zone 13 resets one into the dark room 1304, where it cannot see a customer without infravision |
+| 1305 | `banker morning` | a banker with `hours=0-12` (open hours 0 to 11); zone 13 resets one into 1305 |
+| 1306 | `banker evening` | a banker with `hours=12-0` (open hours 12 to 23); zone 13 resets one into 1306 |
+| 1307 | `trader odd` | a barter vendor with `store=1308`, `list=Step right up!`, `price 1137 1308x2 deduct`, `price 1304 1308x1`, `price 1305 1308x1`, `attacks=no`; zone 13 resets one into 1307 |
+| 1308 | `banker broken` | a banker with `fee=0`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
+| 1309 | `trader broken` | a barter vendor with no `store=`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
+| 1450 | `boar pen` | an animal (bodytype 2, perception 0, level 1, `SENTINEL`) a ranger can tame; zone 18 resets one into 1801. In `mob/14.mob`, listed before `guildmasters.mob` so vnums ascend |
+| 1451 | `bear grizzly` | a level-14 animal (perception 0), one level past a level-30 ranger's tame cap at full tame knowledge |
+| 1452 | `wolf grey` | a level-12 animal (perception 0), within that cap only while the ranger has no other tame |
+| 1453 | `owl watchful` | an animal with perception 10, which tame refuses |
+| 1454 | `scarecrow straw` | perception 0 but bodytype 1, not an animal, which tame refuses |
+| 1700 | `smith plain` | runs script 1700 when given an object (`ON_RECEIVE`): an IF on the star token (object 1700) whose block holds a nested guard IF with an empty else branch, then says `A star token! Here is your reward.`; otherwise `That is no star token.`; always ends with `Who is next?` |
+| 1701 | `smith labelled` | runs script 1701: script 1700 with `SECTION` rows between the IF and its BEGIN, before the nested IF, and on the nested empty else branch |
+| 1702 | `foreman weary` | runs script 1702 when anyone in the room speaks (`ON_HEAR_SAY`): says `Goodbye, then.`, waits four passes (`DO_WAIT`), says `My shift is over at last.` and ends |
+| 1703 | `gatekeeper keeper` | given anything, opens the door north of his room (`SET_EXIT_STATE` state 0); hearing speech containing `lock`, closes and locks it (state 2) |
+| 1704 | `surveyor` | given anything, points his room's up exit at 1101 (`CHANGE_EXIT_TO`; a room without that exit is reported), then says `Still here.` |
+| 1705 | `courier` | given anything, runs a `TELEPORT_CHAR` that moves nobody, then `TELEPORT_CHAR_XL` to rm1, which is unset (reported), then says `Still here.` |
+| 1706 | `valet` | given anything, runs `ASSIGN_EQ` on slot 22 (reported, at boot too), then says `Still here.` |
+| 1707 | `dresser` | given anything, runs `DO_REMOVE` on slot 22 (reported, at boot too), then says `Still here.` |
+| 1708 | `appraiser` | given anything, loads a leather cap, runs `ASSIGN_EQ` on unset ch3's head slot, and says `Phantom.` if it found an object or `Nothing.` if not, then `Still here.` |
+| 1709 | `mumbler` | given anything, says `Still here.`, then skips a false IF whose nested block never reaches an END (`Never said.` inside it) |
+| 1710 | `renamer` | hearing speech, runs `ASSIGN_STR` to ch1.name (refused and logged), then says `Still here.` |
+| 1711 | `smiler` | hearing speech, runs `DO_SOCIAL smile` by unset ch3, then says `Still here.` |
+| 1712 | `fitter` | hearing speech, runs `DO_WEAR` of ob1, which a hear trigger leaves unset, then says `Still here.` |
+| 1713 | `copier` | hearing speech, runs `LOAD_OBJ_X`, which copies the unset ob1, then says `Still here.` |
+| 1714 | `hatter` | given an object, wears it (`DO_WEAR`) |
+| 1715 | `scribe` | given an object, copies it (`LOAD_OBJ_X`), takes the copy and gives it to the giver |
+| 1716 | `hale wrestler` | given anything, writes 5000000 to his own hit points |
+| 1717 | `dazed wrestler` | given anything, writes 0 to his own hit points; hearing speech, writes 50 |
+| 1718 | `doomed wrestler` | given anything, writes -5000000 to his own hit points |
+| 1719 | `accountant` | given anything, sets int1 to 99, divides 1000000 by 0 into int1 (`SET_INT_DIV`), and says `Quotient zero.` or `Quotient not zero.` |
+| 1721 | `foreman patient` | script 1721: script 1702 with a wait of 400 passes (100 seconds) |
+| 1722 | `porter` | no script, for an implementor to `force` |
+| 1723 | `wanderer` | hearing speech, teleports himself to 1201 (`TELEPORT_CHAR_X`) |
+| 1724 | `listener` | hearing speech, says `I heard that.` |
+| 1730 | `crier` | hearing speech, says `First.`, waits four passes, says `Second.` and waits four passes again as the script's last row |
+| 1731 | `clerk first` | given anything, skips a false IF whose block ends with a nested IF / BEGIN / ... / END (`Nested body.`), then has an else branch saying `Outer else.` and a last row saying `After.` |
+| 1732 | `clerk second` | given anything, skips a false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END (`Nested then.`, `Nested else.`) and a row saying `Outer tail.`, then has an else branch saying `Outer else.` and a last row saying `After.` |
+| 1733 | `copyist careless` | script 1715 with 0 in `LOAD_OBJ_X`'s first parameter |
+
+1451 to 1454 are level 1 unless the table says otherwise, `SENTINEL`, and follow 1450 in
+`mob/14.mob`; nothing resets them, so a scenario loads them with `load mob`.
+
+Zone 13's keepers speak no language (the first number of each one's last numeric line is 0;
+`load_mobiles`, `db.cpp`), so a keeper's `say` reaches every listener unchanged. The zone 11 mobs
+speak language 1, the animal tongue, which `say_to_char` (`act_comm.cpp`) garbles for players.
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies seven real guildmasters at their real vnums (1503, 2043,
-4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them; each one's
-program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the traveller 1503,
-16 for Scorther 10003 and 28 for Aroden 10054. It also holds four guild-special mobs at vnums
-`spec_ass.cpp` binds the guild special to, with programs chosen for a scenario rather than the
-real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and
-8500 `enchanter` (program 62), the last two naming no row, and 4608 `trainer` (program 9, the
-URUK WARRIOR row, speaking human language) for the reject-message bug pin. Each teaches the races
-in its last field, the `will_teach` mask (`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood
-elf, hobbit and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003 and 10054; 2048
-(uruk-hai) for 4601 and 4608; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768
-(uruk-lhuth) for 13600.
+32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one is
+loaded ("Names, sides and lookups" above). Seven real guildmasters are copied at their real vnums
+(1503, 2043, 4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them;
+each one's program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the
+traveller 1503, 16 for Scorther 10003 and 28 for Aroden 10054. Four more guild-special mobs sit at
+vnums `spec_ass.cpp` binds the guild special to, with programs chosen for a scenario rather than
+the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and 8500
+`enchanter` (program 62), the last two naming no row, and 4608 `trainer` (program 9, the URUK
+WARRIOR row, speaking human language) for the reject-message bug pin. 1503 and 1509 are in
+`mob/15.mob`, so that the mobs of `mob/17.mob` keep the vnums ascending; the rest are in
+`mob/guildmasters.mob`. Each teaches the races in its last field, the `will_teach` mask
+(`WILL_TEACH`, `utils.h`): 63 (god, human, dwarf, wood elf, hobbit and high elf, not the beorning)
+for 1503, 1509, 3888, 8500, 10003 and 10054; 2048 (uruk-hai) for 4601 and 4608; 10240 (uruk-hai and
+orc) for 2043; 8192 (orc) for 32200; 32768 (uruk-lhuth) for 13600.
+
+The 1700s mobs speak no language (language 0), so every listener reads their lines exactly. All
+have constitution 10, 60 hit points and level 5. Only one mob that speaks when it hears speech may
+be in a room: `do_say` (`act_comm.cpp`) runs every other mob's `ON_HEAR_SAY` script inside the say,
+so two of them answer each other until the server's stack overflows.
 
 | Object | Keyword | What it is |
 | --- | --- | --- |
@@ -542,9 +630,30 @@ elf, hobbit and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003 an
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
 | 1171 | `circlet` | iron circlet, head armour; its `A 1 2` line (`APPLY_STR`) adds 2 to strength |
+| 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
+| 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
+| 1304 | `cap` | iron cap, head armour (`obj/13.obj`); its keywords are `cap iron` |
+| 1305 | `ingot` | lead ingot weighing 90000, more than any character can carry (`CAN_CARRY_W`, `utils.h`, is at most 42000) |
+| 1306 | `key` | brass key, type 18 (`ITEM_KEY`), which `Crash_is_unrentable` (`objsave.cpp`) refuses |
+| 1307 | `ring` | cursed ring, extra flags 128 (`ITEM_NODROP`): it can be put in a container but not given or dropped |
+| 1308 | `bead` | copper bead, a plain object (type 12): zone 13's barter currency |
+| 1400 | `circlet` | fire circlet (`obj/14.obj`), head armour; its `A 27 5281` line (`APPLY_SPELL`, 20 * 256 + `SPELL_RESIST_FIRE` 161) grants a 20% fire resistance |
+| 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
+| 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
+| 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
+| 1404 | `bracelet` | kindling bracelet (`obj/14.obj`), worn on a wrist; its `A 27 161` line has a strength of 0, so `APPLY_SPELL` grants a fire resistance worth the wearer's level |
+| 1700 | `star token` | star token, the object scripts 1700 and 1701 reward |
+| 1701 | `pebble grey` | grey pebble, an object that is not the star token |
 
-There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
+instead. `scr/11.scr` and `mdl/11.mdl` are stubs.
+`scr/17.scr` holds scripts 1700 to 1702 and, from 1703 on, one script per mob numbered like the
+mob, which the 1700s mobs run. Script 1720 belongs to no mob and never runs: each of its lines
+names something missing (mob, object and room vnum 1799, which is left undefined, slot 22 and -1,
+direction 6 and 7), so the boot check writes twelve `SCRIPT ERROR: script #1720, ...` lines to
+every test's `game.log`, and the valet's and dresser's scripts add one line each.
 
 ### File formats
 
@@ -589,11 +698,14 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
 ### Adding to the world
 
 - A room: append it to `wld/11.wld` before `#99999`, between 1101 and 1199 in vnum order, or
-  add `wld/<n>.wld` with a `zon/<n>.zon` and list both in their `index` files. Add a constant
-  to `rots_harness/world.py` when a scenario names it.
+  add `wld/<n>.wld` with a `zon/<n>.zon` and list both in their `index` files, as zones 12 and 17
+  are. Add a constant to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/13.obj`
+  holds zone 13's range, `obj/14.obj` 1400 to 1404, `obj/17.obj` 1700 and 1701); avoid vnums
+  `spec_ass.cpp` passes to `ASSIGNOBJ`. A new `obj/<n>.obj` file needs `git add -f`, because
+  `.gitignore` ignores `*.obj`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

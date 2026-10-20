@@ -1,8 +1,9 @@
 """Chooses the scenario groups a CI run tests, from the pull request's description and changed files.
 
 `boot` always runs. A description token `@integration-test-<group>` adds that group, and
-`@integration-test-all` runs every group. A changed scenario file adds the groups it marks. A
-change to the harness itself, or a push, runs every group. Only a run of every group is split
+`@integration-test-all` runs every group. A changed scenario file adds the groups it marks, and a
+changed group file (tests/integration/groups/<group>.txt) adds its group. A change to the harness
+itself, or a push, runs every group. Only a run of every group is split
 across parallel shards; a run of chosen groups is one job.
 
 Run from tests/integration as `python3 -m rots_harness.ci_groups`; the description arrives in
@@ -12,7 +13,6 @@ the PR_BODY environment variable so it is never part of a shell command.
 from __future__ import annotations
 
 import argparse
-import configparser
 import json
 import os
 import re
@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
-from rots_harness.groups import MARKER_NAME_PATTERN
+from rots_harness import groups as group_files
 
 ALWAYS_RUN_GROUP = "boot"
 ALL_GROUPS_TOKEN = "all"
@@ -31,8 +31,8 @@ DESCRIPTION_TOKEN = re.compile(r"(?<![\w-])@integration-test-([A-Za-z0-9_]+)")
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
 SCENARIO_MARKER = re.compile(r"pytest\.mark\.([A-Za-z_][A-Za-z0-9_]*)")
 SCENARIO_DIRECTORY = "tests/integration/scenarios/"
-# Markers that every scenario carries or that configure a test; never a group.
-NON_GROUP_MARKERS = frozenset({"scenario"})
+# One <group>.txt per group; a change to one adds only its group, so it is not a harness path.
+GROUPS_DIRECTORY = f"tests/integration/{group_files.GROUPS_DIRECTORY_NAME}/"
 # Paths whose change can affect any scenario, so every group runs.
 HARNESS_PATH_PREFIXES = (
     "tests/integration/rots_harness/",
@@ -40,6 +40,8 @@ HARNESS_PATH_PREFIXES = (
     "src/harness/",
     "src/tools/rotstool/",
 )
+# The per-zone fixture notes under the world: documentation the harness never copies into a lib.
+WORLD_NOTES_DIRECTORY = "tests/integration/world/notes/"
 HARNESS_FILES = frozenset({
     "tests/integration/conftest.py",
     "tests/integration/pytest.ini",
@@ -50,7 +52,7 @@ HARNESS_FILES = frozenset({
 
 
 class UnknownGroups(ValueError):
-    """The description names groups pytest.ini does not register; the message lists the valid ones."""
+    """The description names groups no group file registers; the message lists the valid ones."""
 
 
 @dataclass
@@ -72,24 +74,12 @@ class Selection:
         return list(range(1, full_suite_shards + 1)) if self.groups is None else [1]
 
 
-def group_marker_names(ini_lines: Iterable[str]) -> list[str]:
-    """The registered markers that name groups: those taking no arguments, other than scenario."""
-    names = []
-    for line in ini_lines:
-        stripped = line.strip()
-        match = MARKER_NAME_PATTERN.match(stripped)
-        if match is None or stripped[match.end():].startswith("("):
-            continue
-        if match.group(0) not in NON_GROUP_MARKERS:
-            names.append(match.group(0))
-    return names
-
-
-def read_marker_lines(ini_path: Path) -> list[str]:
-    """The lines of pytest.ini's markers setting."""
-    parser = configparser.ConfigParser(interpolation=None)
-    parser.read(ini_path, encoding="utf-8")
-    return [line for line in parser.get("pytest", "markers", fallback="").splitlines() if line.strip()]
+def changed_group_file(path: str) -> Optional[str]:
+    """The group a changed path's group file names, or None when the path is not a group file."""
+    if not (path.startswith(GROUPS_DIRECTORY) and path.endswith(group_files.GROUP_FILE_SUFFIX)):
+        return None
+    relative = path[len(GROUPS_DIRECTORY):]
+    return None if "/" in relative else relative[: -len(group_files.GROUP_FILE_SUFFIX)]
 
 
 def description_tokens(body: str) -> list[str]:
@@ -113,6 +103,8 @@ def scenario_groups(source: str, groups: Iterable[str]) -> list[str]:
 
 def is_harness_path(path: str) -> bool:
     """Whether a change to this repository path can affect every scenario."""
+    if path.startswith(WORLD_NOTES_DIRECTORY):
+        return False
     if path in HARNESS_FILES or path.startswith(HARNESS_PATH_PREFIXES):
         return True
     # A scenario helper or conftest is shared by every scenario file.
@@ -125,7 +117,8 @@ def select_groups(
     """The groups a CI run tests.
 
     read_scenario returns a changed scenario file's source, or None when the change deleted it.
-    Raises UnknownGroups when the description names a group pytest.ini does not register.
+    groups lists the registered groups; a changed group file adds its group only while it is one.
+    Raises UnknownGroups when the description names a group no group file registers.
     """
     if event == "push":
         return Selection(None, ["every group: a push runs the whole suite"])
@@ -149,6 +142,12 @@ def select_groups(
             selected.append(name)
             reasons.append(f"{name}: named in the description")
     for path in changed:
+        group_name = changed_group_file(path)
+        if group_name is not None:
+            if group_name in groups and group_name not in selected:
+                selected.append(group_name)
+                reasons.append(f"{group_name}: its group file {Path(path).name} changed")
+            continue
         if not (path.startswith(SCENARIO_DIRECTORY) and path.endswith(".py")):
             continue
         source = read_scenario(path)
@@ -172,7 +171,10 @@ def summary_markdown(selection: Selection, shard_count: int = 1) -> str:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Writes `group=<expression>` and `shards=<JSON list>` to --output and the summary to --summary; 2 on unknown groups."""
+    """Writes `group=<expression>` and `shards=<JSON list>` to --output and the summary to --summary.
+
+    Returns 2 when the description names an unknown group or a group file cannot be read.
+    """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--event", required=True, help="the GitHub event name: pull_request or push")
     parser.add_argument("--changed-files", type=Path, help="a file listing the changed paths, one per line")
@@ -184,7 +186,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     if arguments.full_suite_shards < 1:
         parser.error("--full-suite-shards must be at least 1")
     repo_root = arguments.repo_root
-    groups = group_marker_names(read_marker_lines(repo_root / "tests/integration/pytest.ini"))
+    try:
+        groups = list(group_files.read_group_descriptions(repo_root / GROUPS_DIRECTORY))
+    except (group_files.GroupFileError, OSError) as error:
+        print(f"error: cannot read the scenario groups: {error}", file=sys.stderr)
+        return 2
     changed = []
     if arguments.changed_files is not None:
         changed = [line.strip() for line in arguments.changed_files.read_text(encoding="utf-8").splitlines() if line.strip()]

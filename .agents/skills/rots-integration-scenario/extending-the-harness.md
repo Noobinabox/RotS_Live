@@ -152,4 +152,19 @@ seam that acts after boot, for example on the first pass in `HarnessControlledSc
    `fixture_character_maker.cpp`) with `src/tests/rotstool_fixture_spec_tests.cpp` and
    `rotstool_fixture_maker_tests.cpp`.
 5. Update `tests/integration/README.md` for anything a scenario writer uses: a new marker,
-   method, variable or file in the run directory.
+   method, variable or file in the run directory. A marker that configures a test goes under
+   `markers` in `pytest.ini`; a group is never a harness change, only a file in
+   `tests/integration/groups/` (`rots_harness/groups.py` reads them for `conftest.py` and CI).
+
+## The world check and the catalogue
+
+- `rots_harness/world_files.py` reads the test world's files: `WORLD_CATEGORIES` (the folders
+  the lib builder copies), each index's expected order (`index_order`), record vnums and zone
+  headers. `rots_harness/world_check.py` holds the checks `unit/test_world_files.py` runs on the
+  committed world; a new rule is a function there returning one line per problem, with a
+  synthetic-world test that it fails.
+- `rots_harness/world_catalogue.py` prints the world (`make world-catalogue`); its readers follow
+  the loaders in `db.cpp`, so a new field the loaders read changes the reader too. The flag names
+  it prints are copied from `src/structs.h` and `src/script.h` into `rots_harness/world_flags.py`;
+  `unit/test_world_catalogue.py` checks them against the headers, so a renamed or renumbered
+  constant fails there until the table follows it.

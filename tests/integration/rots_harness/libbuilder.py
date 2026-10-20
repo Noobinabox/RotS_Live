@@ -11,12 +11,12 @@ from typing import Callable, Protocol
 
 from rots_harness.characters import CharacterSet
 from rots_harness.launcher import ToolResult
+from rots_harness.world_files import WORLD_CATEGORIES
 
 BUCKETS = ("A-E", "F-J", "K-O", "P-T", "U-Z", "ZZZ")
 BUCKETED_DIRECTORIES = ("players", "accounts", "account_characters", "plrobjs", "exploits")
 # The lib/misc files git tracks; the rest of a developer's lib/misc is live data that must not reach a run.
 TRACKED_MISC_FILES = ("badsites", "crimelist", "messages", "mudlle", "mudlle.old", "socials", "wizlist")
-WORLD_CATEGORIES = ("wld", "mob", "obj", "zon", "shp", "scr", "mdl")
 SPEC_FILE_NAME = "fixture-spec.json"
 ROTSTOOL_RELATIVE = "bin/rotstool"
 BOOT_OPTIONS_RELATIVE = "misc/game_boot_options.json"

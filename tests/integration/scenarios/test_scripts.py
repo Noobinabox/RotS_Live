@@ -19,6 +19,11 @@ from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.scripts]
 
+# Room 1701, zone 17's yard, whose north exit is a door (keyword door) to 1702.
+ROOM_GATEHOUSE_YARD = 1701
+# Room 1702, north of the yard, whose south exit is the same door seen from its side (keyword gate).
+ROOM_BEYOND_THE_GATE = 1702
+
 
 @dataclass(frozen=True)
 class ScriptMob:
@@ -691,7 +696,7 @@ GATE_WATCHER = Character(
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_BEYOND_THE_GATE,
+    load_room=ROOM_BEYOND_THE_GATE,
     class_name="warrior",
 )
 
@@ -708,7 +713,7 @@ def test_a_script_opens_and_locks_a_north_door_from_both_sides(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     watcher = server.login(GATE_WATCHER.name)
-    assert implementor.command(f"goto {world.ROOM_GATEHOUSE_YARD}").contains("Gatehouse Yard")
+    assert implementor.command(f"goto {ROOM_GATEHOUSE_YARD}").contains("Gatehouse Yard")
     load_mob(implementor, GATEKEEPER)
     watcher.drain(SETTLE_SECONDS)
 

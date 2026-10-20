@@ -3,7 +3,8 @@ name: Integration
 # Runs the integration scenarios a pull request asks for. Separate from ci.yml so that editing
 # the description reruns only this job. tests/integration/rots_harness/ci_groups.py chooses the
 # groups: boot always, each @integration-test-<group> in the description, the groups of changed
-# scenario files, and every group for @integration-test-all, a harness change or a push.
+# scenario and group files, and every group for @integration-test-all, a harness change or a push.
+# The harness's own unit tests, the test world check among them, run first in the select job.
 # A run of every group is split across parallel shards, one job each; a run of chosen groups is
 # one job.
 
@@ -29,7 +30,7 @@ jobs:
   select:
     name: Choose the integration groups
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     outputs:
       group: ${{ steps.select.outputs.group }}
       shards: ${{ steps.select.outputs.shards }}
@@ -41,6 +42,14 @@ jobs:
           persist-credentials: false
           # The full history, so the pull request's changed files can be listed.
           fetch-depth: 0
+
+      - name: Run the harness unit tests
+        # Includes the test world check, so a misordered or conflicted world fails here in seconds,
+        # before any shard builds the server.
+        run: |
+          python3 -m venv "$RUNNER_TEMP/harness-venv"
+          "$RUNNER_TEMP/harness-venv/bin/pip" install --quiet --requirement tests/integration/requirements.txt
+          make integration-unit PYTHON="$RUNNER_TEMP/harness-venv/bin/python"
 
       - name: Choose the scenario groups
         id: select

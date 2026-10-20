@@ -16,13 +16,22 @@ from rots_harness.session import GameSession, Transcript
 
 pytestmark = [pytest.mark.scenario, pytest.mark.bank]
 
+# Room 1301, the lit bank hall in zone 13, where zone 13 resets the banker (mob 1301).
+ROOM_BANK_HALL = 1301
+# Room 1304, a DARK hall in zone 13, where zone 13 resets the dark banker (mob 1304).
+ROOM_DARK_VAULT_HALL = 1304
+# Room 1305 in zone 13, where zone 13 resets the morning banker (mob 1305), open hours 0 to 11.
+ROOM_MORNING_BANK = 1305
+# Room 1306 in zone 13, where zone 13 resets the evening banker (mob 1306), open hours 12 to 23.
+ROOM_EVENING_BANK = 1306
+
 # A level-20 human warrior in the bank hall: a mortal of the light side, which the banker serves.
 DEPOSITOR = Character(
     name="Testsaver",
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 # A level-20 dwarf warrior in the bank hall: another light-side character of the same account.
@@ -31,7 +40,7 @@ KINSMAN = Character(
     race="dwarf",
     sex="male",
     level=20,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 # A level-20 uruk-hai warrior in the bank hall: a character of the same account on the dark side.
@@ -40,7 +49,7 @@ OUTSIDER = Character(
     race="uruk-hai",
     sex="male",
     level=20,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 # Immortals one level below `vault` (LEVEL_GRGOD, 97), at it, and one below `gameoptions`
@@ -50,7 +59,7 @@ LESSER_GOD = Character(
     race="human",
     sex="male",
     level=96,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 GREATER_GOD = Character(
@@ -58,7 +67,7 @@ GREATER_GOD = Character(
     race="human",
     sex="male",
     level=97,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 ELDER_GOD = Character(
@@ -66,7 +75,7 @@ ELDER_GOD = Character(
     race="human",
     sex="male",
     level=99,
-    load_room=world.ROOM_BANK_HALL,
+    load_room=ROOM_BANK_HALL,
     class_name="warrior",
 )
 # A level-20 human warrior in the dark vault hall: a human has no infravision, and neither does
@@ -76,7 +85,7 @@ DARK_CUSTOMER = Character(
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_DARK_VAULT_HALL,
+    load_room=ROOM_DARK_VAULT_HALL,
     class_name="warrior",
 )
 # Level-20 human warriors before the morning banker (hours=0-12) and the evening banker
@@ -86,7 +95,7 @@ EARLY_CUSTOMER = Character(
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_MORNING_BANK,
+    load_room=ROOM_MORNING_BANK,
     class_name="warrior",
 )
 LATE_CUSTOMER = Character(
@@ -94,7 +103,7 @@ LATE_CUSTOMER = Character(
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_EVENING_BANK,
+    load_room=ROOM_EVENING_BANK,
     class_name="warrior",
 )
 # A level-20 human warrior in the broken market, before the banker its fee=0 option disables.
@@ -302,7 +311,7 @@ def hand_object(implementor: GameSession, vnum: int, keyword: str, recipient: Ch
 
 def go_to_bank_hall(implementor: GameSession) -> None:
     """Brings the implementor to the bank hall."""
-    arrived = implementor.command(f"goto {world.ROOM_BANK_HALL}")
+    arrived = implementor.command(f"goto {ROOM_BANK_HALL}")
     assert arrived.room_name() == "Bank Hall", arrived.text
 
 

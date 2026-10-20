@@ -12,6 +12,11 @@ from rots_harness.session import GameSession, Transcript
 
 pytestmark = [pytest.mark.scenario, pytest.mark.vendor]
 
+# Room 1303, the trader's store room in zone 13, with no exits; zone 13 stocks one leather cap.
+ROOM_STORE_ROOM = 1303
+# Room 1307 in zone 13, where zone 13 resets the odd trader (mob 1307).
+ROOM_ODD_TRADE_HALL = 1307
+
 # A level-20 human warrior in the trade hall: a mortal the trader serves.
 BUYER = Character(
     name="Testbuyer",
@@ -27,7 +32,7 @@ ODD_BUYER = Character(
     race="human",
     sex="male",
     level=20,
-    load_room=world.ROOM_ODD_TRADE_HALL,
+    load_room=ROOM_ODD_TRADE_HALL,
     class_name="warrior",
 )
 # A level-20 human warrior in the arena's west end, where no keeper of any kind stands.
@@ -232,7 +237,7 @@ def test_a_vendor_with_an_empty_store_has_nothing_to_sell(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     buyer = server.login(BUYER.name)
-    arrived = implementor.command(f"goto {world.ROOM_STORE_ROOM}")
+    arrived = implementor.command(f"goto {ROOM_STORE_ROOM}")
     assert arrived.room_name() == "Store Room", arrived.text
     assert implementor.command("get cap").contains(f"You get {LEATHER_CAP_NAME}.")
 
@@ -310,7 +315,7 @@ def test_a_vendor_sells_by_list_number_and_by_numbered_keyword(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     buyer = server.login(ODD_BUYER.name)
-    give_beads(implementor, world.ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, 2 * ODD_IRON_CAP_PRICE_BEADS)
+    give_beads(implementor, ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, 2 * ODD_IRON_CAP_PRICE_BEADS)
 
     assert_lines(buyer.command("buy 2"), trade_lines(ODD_IRON_CAP_PRICE_BEADS, IRON_CAP_NAME))
     assert_lines(buyer.command("buy 2.cap"), trade_lines(ODD_IRON_CAP_PRICE_BEADS, IRON_CAP_NAME))
@@ -329,7 +334,7 @@ def test_a_vendor_hands_over_a_deducted_store_copy_and_stops_listing_it(server) 
     """
     implementor = server.login(IMPLEMENTOR.name)
     buyer = server.login(ODD_BUYER.name)
-    give_beads(implementor, world.ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, ODD_LEATHER_CAP_PRICE_BEADS)
+    give_beads(implementor, ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, ODD_LEATHER_CAP_PRICE_BEADS)
 
     assert_lines(buyer.command("buy cap"), trade_lines(ODD_LEATHER_CAP_PRICE_BEADS, LEATHER_CAP_NAME))
     remaining = stock_lines(
@@ -355,7 +360,7 @@ def test_a_vendor_refuses_an_item_too_heavy_to_carry_and_keeps_no_payment(server
     """
     implementor = server.login(IMPLEMENTOR.name)
     buyer = server.login(ODD_BUYER.name)
-    give_beads(implementor, world.ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, ODD_INGOT_PRICE_BEADS)
+    give_beads(implementor, ROOM_ODD_TRADE_HALL, "Odd Trade Hall", ODD_BUYER, ODD_INGOT_PRICE_BEADS)
 
     assert buyer.command("buy 3").contains(TOO_HEAVY_MARKER)
     assert carried_count(buyer, CURRENCY_NAME) == ODD_INGOT_PRICE_BEADS

@@ -2,7 +2,8 @@
 
 `boot` always runs. A description token `@integration-test-<group>` adds that group, and
 `@integration-test-all` runs every group. A changed scenario file adds the groups it marks. A
-change to the harness itself, or a push, runs every group.
+change to the harness itself, or a push, runs every group. Only a run of every group is split
+across parallel shards; a run of chosen groups is one job.
 
 Run from tests/integration as `python3 -m rots_harness.ci_groups`; the description arrives in
 the PR_BODY environment variable so it is never part of a shell command.
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import configparser
+import json
 import os
 import re
 import sys
@@ -63,6 +65,11 @@ class Selection:
     def expression(self) -> str:
         """The GROUP value for make integration; empty runs every scenario."""
         return "" if self.groups is None else " or ".join(self.groups)
+
+    def shard_numbers(self, full_suite_shards: int) -> list[int]:
+        """The CI shards to run: 1 to full_suite_shards for every group, and only shard 1 otherwise,
+        since a few groups do not repay building the server once per shard."""
+        return list(range(1, full_suite_shards + 1)) if self.groups is None else [1]
 
 
 def group_marker_names(ini_lines: Iterable[str]) -> list[str]:
@@ -154,23 +161,28 @@ def select_groups(
     return Selection(selected, reasons)
 
 
-def summary_markdown(selection: Selection) -> str:
-    """The job summary: what runs and why."""
+def summary_markdown(selection: Selection, shard_count: int = 1) -> str:
+    """The job summary: what runs, why, and across how many shards."""
     ran = "every group" if selection.groups is None else ", ".join(f"`{name}`" for name in selection.groups)
     lines = [f"### Integration groups: {ran}", ""]
     lines.extend(f"- {reason}" for reason in selection.reasons)
+    if shard_count > 1:
+        lines.extend(["", f"Split across {shard_count} parallel shards."])
     return "\n".join(lines) + "\n"
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Writes `group=<expression>` to --output and the summary to --summary; 2 on unknown groups."""
+    """Writes `group=<expression>` and `shards=<JSON list>` to --output and the summary to --summary; 2 on unknown groups."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--event", required=True, help="the GitHub event name: pull_request or push")
     parser.add_argument("--changed-files", type=Path, help="a file listing the changed paths, one per line")
     parser.add_argument("--repo-root", type=Path, default=Path("../.."), help="the repository root")
     parser.add_argument("--output", type=Path, required=True, help="the file that receives group=<expression>")
     parser.add_argument("--summary", type=Path, help="the file that receives the markdown summary")
+    parser.add_argument("--full-suite-shards", type=int, default=1, help="how many shards a run of every group uses")
     arguments = parser.parse_args(argv)
+    if arguments.full_suite_shards < 1:
+        parser.error("--full-suite-shards must be at least 1")
     repo_root = arguments.repo_root
     groups = group_marker_names(read_marker_lines(repo_root / "tests/integration/pytest.ini"))
     changed = []
@@ -186,9 +198,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     except UnknownGroups as unknown:
         print(f"error: {unknown}", file=sys.stderr)
         return 2
+    shards = selection.shard_numbers(arguments.full_suite_shards)
     with arguments.output.open("a", encoding="utf-8") as output:
         output.write(f"group={selection.expression()}\n")
-    summary = summary_markdown(selection)
+        output.write(f"shards={json.dumps(shards)}\n")
+    summary = summary_markdown(selection, len(shards))
     if arguments.summary is not None:
         with arguments.summary.open("a", encoding="utf-8") as summary_file:
             summary_file.write(summary)

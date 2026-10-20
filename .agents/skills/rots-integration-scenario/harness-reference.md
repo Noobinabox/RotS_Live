@@ -122,7 +122,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds the Docker launcher waits for the lock |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
-| `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI runs eight shards. An empty share passes |
+| `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI shards only a run of every group, eight ways. An empty share passes |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.

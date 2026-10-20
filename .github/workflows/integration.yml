@@ -4,7 +4,8 @@ name: Integration
 # the description reruns only this job. tests/integration/rots_harness/ci_groups.py chooses the
 # groups: boot always, each @integration-test-<group> in the description, the groups of changed
 # scenario files, and every group for @integration-test-all, a harness change or a push.
-# The selected scenarios run split across parallel shards, one job each.
+# A run of every group is split across parallel shards, one job each; a run of chosen groups is
+# one job.
 
 on:
   push:
@@ -25,17 +26,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  scenarios:
-    name: Integration scenarios (Ubuntu 22.04 image, shard ${{ matrix.shard }}/${{ strategy.job-total }})
+  select:
+    name: Choose the integration groups
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
-    strategy:
-      # Every shard reports its own failures, so one failing shard does not cancel the others.
-      fail-fast: false
-      matrix:
-        # Each job builds the server and runs every shard-th selected scenario (ROTS_IT_SHARD);
-        # this list alone sets the shard count, which the jobs read as strategy.job-total.
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    timeout-minutes: 5
+    outputs:
+      group: ${{ steps.select.outputs.group }}
+      shards: ${{ steps.select.outputs.shards }}
 
     steps:
       - name: Check out repository
@@ -60,8 +57,30 @@ jobs:
             git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$changed_files"
           fi
           cd tests/integration
+          # A run of every group uses this many shards; the scenarios job reads the list as its matrix.
           python3 -m rots_harness.ci_groups --event "$EVENT_NAME" --changed-files "$changed_files" \
-            --output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
+            --output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY" --full-suite-shards 8
+
+  scenarios:
+    needs: select
+    name: >-
+      ${{ strategy.job-total > 1
+      && format('Integration scenarios (Ubuntu 22.04 image, shard {0}/{1})', matrix.shard, strategy.job-total)
+      || 'Integration scenarios (Ubuntu 22.04 image)' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      # Every shard reports its own failures, so one failing shard does not cancel the others.
+      fail-fast: false
+      matrix:
+        # Each job builds the server and runs every shard-th selected scenario (ROTS_IT_SHARD).
+        shard: ${{ fromJSON(needs.select.outputs.shards) }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Build the development image
         run: docker build --tag rots-dev:ci .
@@ -74,7 +93,7 @@ jobs:
 
       - name: Run the scenarios
         env:
-          GROUP: ${{ steps.select.outputs.group }}
+          GROUP: ${{ needs.select.outputs.group }}
           ROTS_IT_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
         # The local launcher runs the programs directly inside the image; make integration reads
         # GROUP from the environment, and an empty GROUP runs every scenario. A shard whose share

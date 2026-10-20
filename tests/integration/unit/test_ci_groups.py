@@ -153,11 +153,40 @@ def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, 
     monkeypatch.setenv("PR_BODY", "$(rm -rf /) @integration-test-poison")
     status = ci_groups.main([
         "--event", "pull_request", "--changed-files", str(changed_files), "--repo-root", str(repo_root),
-        "--output", str(output), "--summary", str(summary),
+        "--output", str(output), "--summary", str(summary), "--full-suite-shards", "8",
     ])
     assert status == 0
-    assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\n"
+    assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\nshards=[1]\n"
     assert summary.read_text(encoding="utf-8").startswith("### Integration groups: `boot`, `poison`, `summon`\n")
+    assert "parallel shards" not in summary.read_text(encoding="utf-8")
+
+
+def test_main_shards_a_run_of_every_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = tmp_path / "repo"
+    (repo_root / "tests/integration").mkdir(parents=True)
+    (repo_root / "tests/integration/pytest.ini").write_text("[pytest]\nmarkers =\n    " + "\n    ".join(INI_LINES) + "\n", encoding="utf-8")
+    output = tmp_path / "output"
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("PR_BODY", "@integration-test-all")
+    status = ci_groups.main([
+        "--event", "pull_request", "--repo-root", str(repo_root), "--output", str(output), "--summary", str(summary),
+        "--full-suite-shards", "8",
+    ])
+    assert status == 0
+    assert output.read_text(encoding="utf-8") == "group=\nshards=[1, 2, 3, 4, 5, 6, 7, 8]\n"
+    assert summary.read_text(encoding="utf-8").endswith("\nSplit across 8 parallel shards.\n")
+
+
+def test_main_refuses_fewer_than_one_full_suite_shard(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        ci_groups.main(["--event", "push", "--output", str(tmp_path / "output"), "--full-suite-shards", "0"])
+
+
+def test_only_a_run_of_every_group_is_sharded() -> None:
+    assert select(event="push").shard_numbers(8) == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert select(body="@integration-test-all").shard_numbers(3) == [1, 2, 3]
+    assert select(body="@integration-test-poison").shard_numbers(8) == [1]
+    assert select().shard_numbers(8) == [1]
 
 
 def test_main_fails_with_status_2_on_an_unknown_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:

@@ -79,9 +79,11 @@ request runs:
 
 A change to the game's own code adds no group by itself, so name the groups whose behaviour it
 touches. A name `pytest.ini` does not register fails the job and lists the registered groups.
-Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the job,
-and the job summary lists the groups that ran and why. When a scenario fails, its kept run
-directories are uploaded as the `integration-runs` artifact.
+Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
+and the "Choose the integration groups" job's summary lists the groups that run and why. A run of
+every group is split across eight parallel jobs, `shard 1/8` to `shard 8/8`, through
+`ROTS_IT_SHARD`; a run of chosen groups is one job. When a scenario fails, its kept run
+directories are uploaded as that job's `integration-runs-shard-<k>` artifact.
 
 ## Launchers
 
@@ -109,9 +111,10 @@ Environment variables:
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock, a finite number |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
+| `ROTS_IT_SHARD` | unset | `k/N`, such as `2/4`: runs only every N-th selected test in node id order, starting at the k-th; a shard left with no tests passes |
 
-A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` or
-`ROTS_IT_HOUR_TIMEOUT` value the harness cannot use stops the run before any test with a usage
+A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`,
+`ROTS_IT_HOUR_TIMEOUT` or `ROTS_IT_SHARD` value the harness cannot use stops the run before any test with a usage
 error naming the variable and its value.
 
 ## Shared Docker lock

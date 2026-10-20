@@ -81,7 +81,7 @@ A change to the game's own code adds no group by itself, so name the groups whos
 touches. A name `pytest.ini` does not register fails the job and lists the registered groups.
 Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
 and each job summary lists the groups that ran and why. The selected scenarios are split across
-four parallel jobs, `shard 1/4` to `shard 4/4`, through `ROTS_IT_SHARD`. When a scenario fails,
+eight parallel jobs, `shard 1/8` to `shard 8/8`, through `ROTS_IT_SHARD`. When a scenario fails,
 its kept run directories are uploaded as that shard's `integration-runs-shard-<k>` artifact.
 
 ## Launchers

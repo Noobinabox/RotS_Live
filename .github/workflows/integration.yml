@@ -35,7 +35,7 @@ jobs:
       matrix:
         # Each job builds the server and runs every shard-th selected scenario (ROTS_IT_SHARD);
         # this list alone sets the shard count, which the jobs read as strategy.job-total.
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
 
     steps:
       - name: Check out repository

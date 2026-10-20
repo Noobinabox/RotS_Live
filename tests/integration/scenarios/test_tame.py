@@ -13,6 +13,19 @@ from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.tame]
 
+# Room 1802, the pen gate east of the boar pen in zone 18, with a one-way exit east to the
+# whistle hub.
+ROOM_PEN_GATE = 1802
+# Room 1803, zone 18's whistle hub: its six exits lead to the spokes 1804 to 1809, each a dead
+# end back to the hub, and it has no exit back to the pen gate.
+ROOM_WHISTLE_HUB = 1803
+# Room 1804, the whistle hub's north spoke, the first of its six spokes.
+ROOM_NORTH_SPOKE = 1804
+# Room 1805, the whistle hub's east spoke.
+ROOM_EAST_SPOKE = 1805
+# Room 1809, the whistle hub's lower spoke, the last of its six spokes.
+ROOM_LOWER_SPOKE = 1809
+
 # A level-30 human ranger in the boar pen who knows tame and whistle fully: 100 practice
 # sessions put each knowledge at the cap (recalc_skills, spec_pro.cpp).
 TAMER = Character(
@@ -25,14 +38,14 @@ TAMER = Character(
     skills=(("tame", 100), ("whistle", 100)),
 )
 # The same ranger starting at the pen gate, away from the pen boar, for tame's refusals.
-TAMER_AT_GATE = dataclasses.replace(TAMER, load_room=world.ROOM_PEN_GATE)
+TAMER_AT_GATE = dataclasses.replace(TAMER, load_room=ROOM_PEN_GATE)
 # A level-30 human ranger at the pen gate who has never practised tame.
 NOVICE = Character(
     name="Testnovice",
     race="human",
     sex="male",
     level=30,
-    load_room=world.ROOM_PEN_GATE,
+    load_room=ROOM_PEN_GATE,
     class_name="ranger",
 )
 
@@ -59,7 +72,7 @@ BOAR_ZONE = 18
 # The end of the implementor's reply to `zreset 18` (do_zreset, act_wiz.cpp).
 ZONE_RESET_MARKER = ": Harness boar pen."
 # The whistle hub's six spokes, each one exit from the hub.
-HUB_SPOKES = range(world.ROOM_NORTH_SPOKE, world.ROOM_LOWER_SPOKE + 1)
+HUB_SPOKES = range(ROOM_NORTH_SPOKE, ROOM_LOWER_SPOKE + 1)
 
 # What everyone in the room but the boar reads when the tame succeeds (do_tame, ranger.cpp).
 TAMED_MARKER = "A pen boar seems tamed."
@@ -242,7 +255,7 @@ def tame_and_walk_to_hub(implementor: GameSession, tamer: GameSession) -> None:
     tame_boar(tamer)
     assert tamer.command("east").room_name() == "Pen Gate"
     assert tamer.command("east").room_name() == "Whistle Hub"
-    assert boar_rooms(implementor) == [world.ROOM_WHISTLE_HUB]
+    assert boar_rooms(implementor) == [ROOM_WHISTLE_HUB]
 
 
 def whistle(tamer: GameSession) -> str:
@@ -260,7 +273,7 @@ def set_tame_on_hardy_orc(implementor: GameSession, tamer: GameSession) -> None:
     a hit calls damage(), which sets them. The boar's damage cannot floor the orc's 900 hit
     points, and the affect-hours schedule runs no combat rounds after it.
     """
-    goto(implementor, world.ROOM_WHISTLE_HUB)
+    goto(implementor, ROOM_WHISTLE_HUB)
     load_mob(implementor, HARDY_ORC_VNUM)
     tamer.send_line("order boar kill target")
     ordered = tamer.expect([BOAR_ATTACKS_HARDY_ORC_MARKER, *ORDER_REFUSAL_MARKERS]) + tamer.drain(SETTLE_SECONDS)
@@ -298,12 +311,12 @@ def test_a_tamed_animal_frees_its_zone_slot_once_so_resets_keep_one_wild_copy(se
 
     # The tame follows its tamer out of the pen, so where tells it from the wild copy by room.
     assert tamer.command("east").room_name() == "Pen Gate"
-    assert boar_rooms(implementor) == [world.ROOM_PEN_GATE]
+    assert boar_rooms(implementor) == [ROOM_PEN_GATE]
 
     reset_boar_zone(implementor)
-    assert boar_rooms(implementor) == [world.ROOM_BOAR_PEN, world.ROOM_PEN_GATE]
+    assert boar_rooms(implementor) == [world.ROOM_BOAR_PEN, ROOM_PEN_GATE]
 
-    goto(implementor, world.ROOM_PEN_GATE)
+    goto(implementor, ROOM_PEN_GATE)
     removed = implementor.command(f"{removal_command} {BOAR_KEYWORD}")
     assert removed.contains(removal_reply), removed.text
     assert boar_rooms(implementor) == [world.ROOM_BOAR_PEN]
@@ -354,7 +367,7 @@ def test_tame_refuses_a_target_it_cannot_tame_before_any_roll(server, mob_vnums,
     implementor = server.login(IMPLEMENTOR.name)
     tamer = server.login(TAMER_AT_GATE.name)
 
-    goto(implementor, world.ROOM_PEN_GATE)
+    goto(implementor, ROOM_PEN_GATE)
     for vnum in mob_vnums:
         load_mob(implementor, vnum)
     if setup_command is not None:
@@ -389,7 +402,7 @@ def test_tame_refuses_a_ranger_who_has_not_learned_it(server) -> None:
     implementor = server.login(IMPLEMENTOR.name)
     novice = server.login(NOVICE.name)
 
-    goto(implementor, world.ROOM_PEN_GATE)
+    goto(implementor, ROOM_PEN_GATE)
     load_mob(implementor, BOAR_VNUM)
     assert ranger_level(implementor, NOVICE) == 30
     practice = novice.command("practice")
@@ -492,12 +505,12 @@ def test_whistle_recalls_the_whistlers_tame_from_elsewhere_in_the_zone(server) -
     tame_and_walk_to_hub(implementor, tamer)
     # A tame will not walk away from its master (do_move, act_move.cpp), so the implementor
     # carries it to the north spoke.
-    goto(implementor, world.ROOM_NORTH_SPOKE)
+    goto(implementor, ROOM_NORTH_SPOKE)
     transferred = implementor.command(f"transfer {BOAR_KEYWORD}")
     assert transferred.contains("A pen boar arrives from a puff of smoke."), transferred.text
-    goto(implementor, world.ROOM_EAST_SPOKE)
+    goto(implementor, ROOM_EAST_SPOKE)
     load_mob(implementor, BOAR_VNUM)
-    assert boar_rooms(implementor) == [world.ROOM_NORTH_SPOKE, world.ROOM_EAST_SPOKE]
+    assert boar_rooms(implementor) == [ROOM_NORTH_SPOKE, ROOM_EAST_SPOKE]
 
     whistled = whistle(tamer)
     assert WHISTLED_MARKER in whistled, whistled
@@ -509,7 +522,7 @@ def test_whistle_recalls_the_whistlers_tame_from_elsewhere_in_the_zone(server) -
     assert not ACTIVITY_AFFECT_PATTERN.search(wild), wild
     assert "HUNT" not in affect_bits(wild), wild
 
-    goto(implementor, world.ROOM_NORTH_SPOKE)
+    goto(implementor, ROOM_NORTH_SPOKE)
     recalled = stat_mob(implementor, BOAR_KEYWORD)
     assert f"Master is: {TAMER.name}," in recalled, recalled
     assert ACTIVITY_AFFECT_PATTERN.search(recalled), recalled
@@ -519,8 +532,8 @@ def test_whistle_recalls_the_whistlers_tame_from_elsewhere_in_the_zone(server) -
     for _whistle in range(3):
         server.advance_hours(1)
         hours_text += tamer.drain(SETTLE_SECONDS)
-        if boar_rooms(implementor) == [world.ROOM_WHISTLE_HUB, world.ROOM_EAST_SPOKE]:
+        if boar_rooms(implementor) == [ROOM_WHISTLE_HUB, ROOM_EAST_SPOKE]:
             break
         assert WHISTLED_MARKER in whistle(tamer)
-    assert boar_rooms(implementor) == [world.ROOM_WHISTLE_HUB, world.ROOM_EAST_SPOKE]
+    assert boar_rooms(implementor) == [ROOM_WHISTLE_HUB, ROOM_EAST_SPOKE]
     assert RETURNED_MARKER in hours_text, hours_text

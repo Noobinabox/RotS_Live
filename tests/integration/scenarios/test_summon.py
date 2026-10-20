@@ -13,6 +13,9 @@ from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.summon]
 
+# Room 1201, the only room of zone 12, whose map square is (3, 4).
+ROOM_DISTANT_CELL = 1201
+
 # A level-30 human mage in the arena centre who knows summon fully: 100 practice sessions put
 # its knowledge at the cap of 100 (recalc_skills, spec_pro.cpp).
 CASTER = Character(
@@ -39,7 +42,7 @@ DISTANT_VICTIM = Character(
     race="human",
     sex="male",
     level=12,
-    load_room=world.ROOM_DISTANT_CELL,
+    load_room=ROOM_DISTANT_CELL,
     class_name="warrior",
 )
 

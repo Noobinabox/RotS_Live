@@ -28,6 +28,9 @@ from rots_harness.session import (
 
 pytestmark = [pytest.mark.scenario, pytest.mark.account_menu]
 
+# Room 1190, the Uruk-hai idle room (mortal_idle_room, consts.cpp).
+ROOM_URUK_IDLE = 1190
+
 # A password the harness account does not have.
 WRONG_PASSWORD = "Wrongpass9"
 # A reset code that can never match: the game's codes are six digits
@@ -175,7 +178,7 @@ ROSTER_RANGER = Character(
     name="Aswin", race="human", sex="male", level=25, load_room=world.ROOM_ARENA_WEST, class_name="ranger"
 )
 ROSTER_URUK = Character(
-    name="Mordak", race="uruk-hai", sex="male", level=12, load_room=world.ROOM_URUK_IDLE, class_name="warrior"
+    name="Mordak", race="uruk-hai", sex="male", level=12, load_room=ROOM_URUK_IDLE, class_name="warrior"
 )
 ROSTER_MYSTIC = Character(
     name="Helwyn", race="human", sex="female", level=8, load_room=world.ROOM_ARENA_CENTRE, class_name="mystic"

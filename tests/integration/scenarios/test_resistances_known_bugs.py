@@ -1,6 +1,6 @@
-"""Known resistance bugs, each pinned as a strict xfail of the correct behaviour: a strength-0
-resist item left behind by a level change, and a weak protection lowering a flag-only
-resistance."""
+"""Resistance bugs: a strength-0 resist item left behind by a level change, pinned as a strict
+xfail of the correct behaviour, and a weak protection lowering a flag-only resistance, fixed
+for issue #452 and kept here as its regression test."""
 
 from __future__ import annotations
 
@@ -174,21 +174,16 @@ def test_removing_a_level_strength_item_after_a_level_change_leaves_no_resistanc
     assert NOT_AFFECTED_MARKER in shown, shown
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="a protection weaker than a flag-only resistance must leave the flat 33% in force (pending "
-    "the owner's confirmation that a cast never lowers an existing resistance); today it shows 20%",
-)
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, NOVICE)
 def test_a_weak_protection_does_not_lower_a_flag_only_fire_resistance(server) -> None:
-    """Suspected bug: a weak protection lowers a flag-only fire resistance (PR #315 code).
+    """A weak protection does not lower a flag-only fire resistance (issue #452).
 
-    resist_magnitude_for (fight.cpp:1604-1615) returns the largest affect strength, and both
-    sprintbit_resistances (utility.cpp:1365-1366) and damage() (fight.cpp:1791-1806) use the flat
-    33% only when it returns 0, so the novice's 20% protection replaces the ring's 33% on
-    display and in damage. The one draw that can stop the cast is the concentration roll in
-    do_cast, which cast_protection_fire repeats.
+    effective_resist_magnitude (fight.cpp) weighs the ring's flag at the flat 33% against the
+    largest affect strength, and the higher wins; damage() and sprintbit_resistances both read
+    it. Before the fix, any strength replaced the flag, so the novice's 20% protection showed
+    and applied as 20%. The one draw that can stop the cast is the concentration roll in do_cast,
+    which cast_protection_fire repeats.
     """
     implementor = server.login(IMPLEMENTOR.name)
     novice = server.login(NOVICE.name)

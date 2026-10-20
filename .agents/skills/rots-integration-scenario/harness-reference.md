@@ -502,7 +502,7 @@ anyone changes the world.
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle | 0 (none) | 0 | none |
+| 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 

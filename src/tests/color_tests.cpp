@@ -1,4 +1,5 @@
 #include "../color.h"
+#include "../input_command_list.h"
 #include "../interpre.h"
 #include "../structs.h"
 #include "../utils.h"
@@ -10,7 +11,6 @@
 
 void clear_char(struct char_data* ch, int mode);
 ACMD(do_color);
-extern char* command[];
 extern command_info cmd_info[];
 void assign_command_pointers(void);
 int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
@@ -217,8 +217,8 @@ TEST(Color, InterpreterAcceptsColorAsAliasForColour)
 
     char american_spelling[] = "color";
     char british_spelling[] = "colour";
-    const int color_command = old_search_block(american_spelling, 0, std::strlen(american_spelling), const_cast<const char**>(command), 0);
-    const int colour_command = old_search_block(british_spelling, 0, std::strlen(british_spelling), const_cast<const char**>(command), 0);
+    const int color_command = old_search_block(american_spelling, 0, std::strlen(american_spelling), const_cast<const char**>(COMMAND_NAMES), 0);
+    const int colour_command = old_search_block(british_spelling, 0, std::strlen(british_spelling), const_cast<const char**>(COMMAND_NAMES), 0);
 
     ASSERT_GE(color_command, 0);
     ASSERT_GE(colour_command, 0);

@@ -114,6 +114,7 @@ set(ROTS_SERVER_SOURCES
     game_time_text.cpp
     graph.cpp
     handler.cpp
+    input_command_parser.cpp
     interpre.cpp
     lap_timer.cpp
     limits.cpp
@@ -146,6 +147,7 @@ set(ROTS_SERVER_SOURCES
     save_benchmark.cpp
     savebench.cpp
     script.cpp
+    server_log.cpp
     server_startup.cpp
     shapemdl.cpp
     shapemob.cpp
@@ -197,6 +199,7 @@ set(ROTS_TEST_SOURCES
     tests/char_utils_tests.cpp
     tests/character_json_tests.cpp
     tests/color_tests.cpp
+    tests/command_interpreter_parsing_tests.cpp
     tests/crashsave_schedule_tests.cpp
     tests/current_time_phase_tests.cpp
     tests/damage_meters_tests.cpp
@@ -205,6 +208,7 @@ set(ROTS_TEST_SOURCES
     tests/delayed_command_target_check_tests.cpp
     tests/exploit_record_tests.cpp
     tests/exploits_json_tests.cpp
+    tests/input_command_parser_tests.cpp
     tests/interpre_account_menu_tests.cpp
     tests/intrusive_list_tests.cpp
     tests/room_lists_tests.cpp

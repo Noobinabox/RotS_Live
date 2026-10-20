@@ -3,6 +3,7 @@
 #include "../db.h"
 #include "../exploits_json.h"
 #include "../handler.h"
+#include "../input_command_list.h"
 #include "../interpre.h"
 #include "../objects_json.h"
 #include "../structs.h"
@@ -30,7 +31,6 @@ extern int top_of_p_table;
 void clear_char(struct char_data* ch, int mode);
 void save_player(struct char_data* ch, int load_room, int index_pos);
 void store_to_char(const struct char_file_u* st, struct char_data* ch);
-extern char* command[];
 extern command_info cmd_info[];
 void assign_command_pointers(void);
 int old_search_block(const char* argument, int begin, unsigned int length, const char** list, int mode);
@@ -1206,7 +1206,7 @@ TEST(ActWiz, ShutdownStaysOneLevelBelowGreaterGodUnlessADeployLowersIt)
     assign_command_pointers();
 
     char name[] = "shutdown";
-    const int shutdown_command = old_search_block(name, 0, std::strlen(name), const_cast<const char**>(command), 0);
+    const int shutdown_command = old_search_block(name, 0, std::strlen(name), const_cast<const char**>(COMMAND_NAMES), 0);
 
     ASSERT_GE(shutdown_command, 0) << "the command list has no \"shutdown\" entry";
     ASSERT_EQ(cmd_info[shutdown_command].command_pointer, &do_shutdown)

@@ -55,6 +55,7 @@ SOURCES := \
     game_time_text.cpp \
     graph.cpp \
     handler.cpp \
+    input_command_parser.cpp \
     interpre.cpp \
     environment_utils.cpp \
     account_management.cpp \
@@ -99,6 +100,7 @@ SOURCES := \
     save_benchmark.cpp \
     savebench.cpp \
     script.cpp \
+    server_log.cpp \
     server_startup.cpp \
     shapemdl.cpp \
     shapemob.cpp \

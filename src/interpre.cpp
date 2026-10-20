@@ -14,7 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -26,6 +28,8 @@
 #include "db.h"
 #include "game_boot_options.h"
 #include "handler.h"
+#include "input_command_list.h"
+#include "input_command_parser.h"
 #include "interpre.h"
 #include "limits.h"
 #include "mail.h"
@@ -317,266 +321,6 @@ void do_details(char_data* character, char* argument, waiting_type* wait_list, i
 void do_renounce(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
 
 void do_unprotect(char_data* character, char* argument, waiting_type* wait_list, int command, int sub_command);
-
-const char* command[] = {
-    "north", /* 1 */
-    "east",
-    "south",
-    "west",
-    "up",
-    "down",
-    "enter",
-    "exits",
-    "flee",
-    "get",
-    "drink", /* 11 */
-    "eat",
-    "wear",
-    "wield",
-    "look",
-    "score",
-    "say", /* 17, do not shift */
-    "yell", /* shout */
-    "tell",
-    "inventory",
-    "qui", /* 21 */
-    "", /* bounce */
-    "kill",
-    "insult",
-    "help",
-    "who",
-    "emote",
-    "echo",
-    "stand",
-    "sit",
-    "rest", /* 31 */
-    "sleep",
-    "wake",
-    "force",
-    "transfer",
-    "news",
-    "equipment",
-    "buy",
-    "sell",
-    "value",
-    "list", /* 41 */
-    "drop",
-    "goto",
-    "weather",
-    "read",
-    "pour",
-    "grab",
-    "remove",
-    "put",
-    "shutdow",
-    "save", /* 51 */
-    "hit",
-    "petitio", /* string */
-    "give",
-    "quit",
-    "stat",
-    "rank", /* skillset */
-    "time",
-    "load",
-    "purge",
-    "shutdown", /* 61 */
-    "compare", /* idea */
-    "wiztrack", /* typo */
-    "sing", /* bug */
-    "whisper",
-    "cast",
-    "at",
-    "ask",
-    "order",
-    "sip",
-    "taste", /* 71 */
-    "snoop",
-    "follow",
-    "rent",
-    "offer",
-    "advance",
-    "open",
-    "close",
-    "lock",
-    "unlock",
-    "leave", /* 81 */
-    "write",
-    "hold",
-    "hold", /* never used */ /* 84 */
-    "sneak",
-    "hide",
-    "ambush",
-    "pick",
-    "behead", /* steal */
-    "bash",
-    "rescue", /* 91 */
-    "kick",
-    "practice",
-    "examine",
-    "take",
-    "info",
-    "'",
-    "practise",
-    "use",
-    "where",
-    "levels", /* 101 */
-    "wizutil", /* reroll */
-    ":",
-    "wizset",
-    "wizlist",
-    "consider",
-    "group",
-    "restore",
-    "return",
-    "switch",
-    "", /* quaff */ /* 111 */
-    "", /* recite */
-    "users",
-    "", /* immlist */
-    "afk", /* noshout */
-    "wizhelp",
-    "credits",
-    "petition", /* compact */
-    "pracreset", /* display */
-    "poofin",
-    "poofout", /* 121 */
-    "teleport",
-    "gecho",
-    "wiznet", /* don't move */
-    "search", /* holylight */
-    "invis",
-    "specialize",
-    "set",
-    "ungroup",
-    "pray", /* notell */
-    "wizlock", /* 131 */
-    "jig", /* junk */
-    "", /* gsay */
-    "hunt", /* pardon */
-    "disengage", /* murder */
-    "alias", /* title */
-    ";", /* wiznet */
-    "balance",
-    "deposit",
-    "withdraw",
-    "", /* visible */ /* 141 */
-    "twohanded", /* quest */
-    "concentrate", /* freeze */
-    "dc",
-    "butcher",
-    "assist",
-    "split",
-    "gtell",
-    "reply",
-    "onehanded", /* norepeat */
-    "knock", /* toggle */ /* 151 */
-    "map",
-    "check",
-    "receive",
-    "mail",
-    "register", /* holler */
-    "vnum",
-    "whois", /* fill */
-    "uptime",
-    "commands",
-    "socials", /* 161 */
-    "ban",
-    "unban",
-    "date",
-    "zreset",
-    "colour",
-    "show",
-    "next", /* prompt */
-    "handbook",
-    "policy",
-    "color", /* 171 */
-    "manual", /* nogossip */
-    "findzone", /* noauction */
-    "setfree", /* nograts */
-    "ride", /* roomflags */
-    "noshout",
-    "dismount", /* nowiz */
-    "pull", /* notitle */
-    "whistle", /* thaw */
-    "swing", /* unaffect */
-    "cls", /* 181 */
-    "clear",
-    "version",
-    "chat", /* gossip */
-    "narrate", /* auction */
-    "affections", /* grats */
-    "", /* donate */
-    "page",
-    "report",
-    "diagnose",
-    "reload", /* 191 */
-    "syslog",
-    "last",
-    "slowns",
-    "track",
-    "whoami",
-    "vstat",
-    "beep",
-    "lose",
-    "shape",
-    "zone", /* 201 */
-    "slay",
-    "gather",
-    "will",
-    "prepare",
-    "light",
-    "blowout",
-    "fame",
-    "trash", /* reserved for orc delay */
-    "tame",
-    "calm", /* 211 */
-    "fish",
-    "recruit",
-    "refollow",
-    "stalk",
-    "cover",
-    "lead",
-    "exploits",
-    "trophy",
-    "trap", /* "trap",   */
-    "account", /* 221 */
-    "", /* 222: was linkaccount, removed (no way into the game without an account) */
-    "whoacct",
-    "obj2html",
-    "delete",
-    "world",
-    "top",
-    "groll",
-    "shoot",
-    "recover", // 230
-    "retrieve",
-    "scan",
-    "details",
-    "bite",
-    "rend", // 235
-    "maul",
-    "mark",
-    "blind",
-    "bend",
-    "windblast", // 240
-    "smash",
-    "frenzy",
-    "stomp",
-    "cleave",
-    "overrun", // 245
-    "defend",
-    "renounce",
-    "mob2csv",
-    "savebench", // 249
-    "", /* 250: reserved for harness, PR #309 */
-    "debug",
-    "unprotect", // 252
-    "vault",
-    "gameoptions", // 254
-    "\n"
-};
-
-/* CEND: search for me when you're looking for the end of the cmd list! :) */
 
 /* these words are effectively ignored */
 char* fill[] = {
@@ -1296,6 +1040,16 @@ void replace_aliases(const struct char_data* ch, char* line)
     strcpy(line, new_line);
 }
 
+// Copies text into out_buffer with only A-Z lowercased, cut to fit with room for the terminator.
+static void copy_lowercased(std::string_view text, char (&out_buffer)[MAX_INPUT_LENGTH])
+{
+    const std::size_t copied_length
+        = std::min(text.size(), static_cast<std::size_t>(MAX_INPUT_LENGTH - 1));
+    std::transform(text.begin(), text.begin() + copied_length, out_buffer,
+        [](char character) -> char { return static_cast<char>(LOWER(character)); });
+    out_buffer[copied_length] = '\0';
+}
+
 void command_interpreter(struct char_data* ch, char* argument_chr,
     struct waiting_type* argument_wtl)
 {
@@ -1320,6 +1074,12 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         argument_raw = "";
         mode = 1;
     } else {
+        if (argument_chr == nullptr) {
+            const std::string message
+                = std::string("SYSERR: ") + __func__ + ": called with a null command line";
+            log(message.c_str());
+            return;
+        }
         argument_raw = argument_chr;
         argument_info = &interp_argument_info;
         mode = 0;
@@ -1336,17 +1096,18 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
 
     /* there's nothing special going on with this guy */
     if (!mode) {
-        bzero(argument, MAX_INPUT_LENGTH);
+        const std::string_view raw_line = view_terminated_text(argument_raw, MAX_INPUT_LENGTH);
+        const typed_line parsed = parse_typed_line(raw_line);
 
-        /* Find first non blank */
-        for (begin = 0; (*(argument_raw + begin) == ' '); begin++)
-            ;
-        strcpy(argument, argument_raw + begin);
-        begin = 0;
+        // Handlers receive a pointer into this copy of the line, so it stays a terminated buffer.
+        bzero(argument, MAX_INPUT_LENGTH);
+        const std::size_t copied_length
+            = std::min(parsed.text.size(), static_cast<std::size_t>(MAX_INPUT_LENGTH - 1));
+        std::copy_n(parsed.text.begin(), copied_length, argument);
 
         /* Use do_shape level */
-        if ((*(argument + begin) == '/') && (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) && !(RETIRED(ch))) {
-            shape_center(ch, argument + begin + 1);
+        if (parsed.starts_with_shape_marker && (GET_LEVEL(ch) >= cmd_info[CMD_SHAPE].minimum_level) && !(RETIRED(ch))) {
+            shape_center(ch, argument + 1);
             return;
         }
 
@@ -1359,29 +1120,22 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
             return;
         }
 
-        /* special checks required for shortcut tokenized commands */
-        if (*(argument + begin) == '\'') {
-            cmd = CMD_SAY;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        } else if (*(argument + begin) == ';') {
-            cmd = CMD_WIZNET;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        } else if (*(argument + begin) == ',') {
-            cmd = CMD_EMOTE;
-            *(argument + begin) = ' ';
-            look_at = 0;
-        }
-        /* they entered a blank line */
-        else if (*(argument + begin) == 0)
+        // A shortcut's handler receives the whole line with the shortcut character replaced by a
+        // space; a word's handler receives the text after the word.
+        if (parsed.kind == typed_line_kind::blank) {
             return;
-        else {
-            /* get lower case letters and length */
-            for (look_at = 0; *(argument + begin + look_at) > ' '; look_at++)
-                *(argument + begin + look_at) = LOWER(*(argument + begin + look_at));
-
-            cmd = old_search_block(argument, begin, look_at, command, 0);
+        } else if (parsed.kind == typed_line_kind::say_shortcut) {
+            cmd = CMD_SAY;
+            argument[0] = ' ';
+        } else if (parsed.kind == typed_line_kind::wiznet_shortcut) {
+            cmd = CMD_WIZNET;
+            argument[0] = ' ';
+        } else if (parsed.kind == typed_line_kind::emote_shortcut) {
+            cmd = CMD_EMOTE;
+            argument[0] = ' ';
+        } else {
+            cmd = find_command_number(parsed.command_word, COMMAND_NAMES);
+            look_at = static_cast<int>(std::min(parsed.command_word.size(), copied_length));
         }
     } else {
         /* if you're hazed, you have a 10% chance of forgetting targ1 */
@@ -1407,7 +1161,10 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
         cmd = -1;
 
     if (cmd <= 0) {
-        one_argument(argument + begin, local_buf);
+        // Bounded so that an unwritten buffer in callback mode is not read past its end.
+        const std::string_view social_text = view_terminated_text(argument + begin, MAX_INPUT_LENGTH);
+        const std::string_view social_word = read_social_word(social_text);
+        copy_lowercased(social_word, local_buf);
         subcmd = find_action(local_buf);
         if (subcmd >= 0)
             cmd = CMD_SOCIAL;

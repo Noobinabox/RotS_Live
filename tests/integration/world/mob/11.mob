@@ -1,3 +1,21 @@
+#1105
+innkeeper harness~
+the harness innkeeper~
+The harness innkeeper stands behind the counter, ready to rent you a room.~
+Its vnum is one spec_ass.cpp assigns the receptionist special to, so it rents rooms.
+~
+3
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 2 1 0
+150 70 0 0 0 0
+0 0 50 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
 #1130
 target orc~
 a target orc~

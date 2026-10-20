@@ -40,6 +40,8 @@ ROOM_ODD_STORE_ROOM = 1308
 # Room 1309 in zone 13, where zone 13 resets the broken banker (mob 1308) and the broken trader
 # (mob 1309), each disabled by its options.
 ROOM_BROKEN_MARKET = 1309
+# Room 1601, the inn of zone 16, where the harness innkeeper (mob 1105) rents rooms to mortals.
+ROOM_INN = 1601
 # Room 1701, zone 17's yard, whose north exit is a door (keyword door) to 1702.
 ROOM_GATEHOUSE_YARD = 1701
 # Room 1702, north of the yard, whose south exit is the same door seen from its side (keyword gate).

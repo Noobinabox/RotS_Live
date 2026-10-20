@@ -476,8 +476,13 @@ a category means editing `WORLD_CATEGORIES`.
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
 | 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
+| 16 | `zon/16.zon` | Harness object workshop | (6, 6) | 1601-1699 | harness innkeeper (mob 1105) to 1601 |
 | 17 | `zon/17.zon` | Harness gatehouse | (2, 8) | 1701-1799 | none |
 | 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
+
+Zone 16 holds the inn, room 1601, and exists for the objects in `obj/16.obj`: the object editor loads
+`shape object <vnum>` from `world/obj/<vnum / 100>.obj`, and `/implement` is refused for a vnum
+outside every zone (`load_object`, `shapeobj.cpp`; `get_permission`, `shapemob.cpp`).
 
 ### Rooms
 
@@ -518,6 +523,7 @@ the world.
 | 1307 | Odd Trade Hall (`world.ROOM_ODD_TRADE_HALL`, zone 13) | 0 (none) | 0 | none |
 | 1308 | Odd Store Room (`world.ROOM_ODD_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the odd trader's stock |
 | 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
+| 1601 | Harness Inn (`world.ROOM_INN`, zone 16) | 0 (none) | 0 | none; the harness innkeeper stands here |
 | 1701 | Gatehouse Yard (`world.ROOM_GATEHOUSE_YARD`, zone 17) | 0 (none) | 0 | north 1702 through a closed door (exit flags 3, `EX_ISDOOR` and `EX_CLOSED`; keyword `door`) |
 | 1702 | Beyond the Gate (`world.ROOM_BEYOND_THE_GATE`, zone 17) | 0 (none) | 0 | south 1701 through the same door (keyword `gate`) |
 | 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
@@ -545,6 +551,7 @@ world, which `do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows.
 
 | Mob | Keywords | What it is |
 | --- | --- | --- |
+| 1105 | `innkeeper harness` | the harness innkeeper, a human whose vnum `spec_ass.cpp` assigns the receptionist special (act flags `3` include `MOB_SPEC`); zone 16 resets one into the inn, 1601. See "The innkeeper" below |
 | 1130 | `target orc` | a plain melee target; zone 11 resets one into 1132 |
 | 1131 | `snake harness` | its bite poisons; act flags `3` include `MOB_SPEC`; zone 11 resets one into 1134 |
 | 1132 | `bystander orc` | involved in nothing, there to be splashed |
@@ -645,6 +652,14 @@ so two of them answer each other until the server's stack overflows.
 | 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
 | 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
 | 1404 | `bracelet` | kindling bracelet (`obj/14.obj`), worn on a wrist; its `A 27 161` line has a strength of 0, so `APPLY_SPELL` grants a fire resistance worth the wearer's level |
+| 1601 | `sword` | plain sword, `obj/16.obj`: a weapon without the `MAGIC` flag or affects, so enchant weapon takes on it (`object_takes_enchant`, `utility.cpp`); version 0 |
+| 1602 | `stone` | dwarven stone, `obj/16.obj`: type other, extra flags `DWARF` (bit 18) and `STAY_ZONE` (bit 28) only |
+| 1603 | `helm` | leather helm, `obj/16.obj`: head armour without affects |
+| 1604 | `key` | brass key, `obj/16.obj`: a key (type 18) with `BREAKABLE`, so its first use breaks it (`check_break_key`, `act_move.cpp`); keys cannot be rented (`Crash_is_unrentable`, `objsave.cpp`) |
+| 1605 | `chest` | small chest, `obj/16.obj`: a container, closed and locked (values `100 13 1604`), that key 1604 opens |
+| 1606 | `trinket` | cursed trinket, `obj/16.obj`: type other with rent per day -2, so the inn refuses it |
+| 1607 | `token` | pewter token, `obj/16.obj`: type other with `NORENT` (bit 12); answers to `token` like 1130 |
+| 1608 | `waterskin` | waterskin, `obj/16.obj`: a drink container holding 10 of 20 drinks of water |
 | 1700 | `star token` | star token, the object scripts 1700 and 1701 reward |
 | 1701 | `pebble grey` | grey pebble, an object that is not the star token |
 
@@ -655,6 +670,38 @@ mob, which the 1700s mobs run. Script 1720 belongs to no mob and never runs: eac
 names something missing (mob, object and room vnum 1799, which is left undefined, slot 22 and -1,
 direction 6 and 7), so the boot check writes twelve `SCRIPT ERROR: script #1720, ...` lines to
 every test's `game.log`, and the valet's and dresser's scripts add one line each.
+
+`obj/oldobjs/` holds only a README: the object editor's `/save` and `/done` copy the zone's object
+file there before rewriting it (`replace_object`, `shapeobj.cpp`; `SHAPE_OBJ_BACKDIR`, `protos.h`),
+and refuse to save without the folder.
+
+### The innkeeper
+
+A mortal's `quit` drops everything it carries (`do_quit`, `act_othe.cpp`); renting at the inn
+is how a mortal keeps its items across a login. The innkeeper's special is `gen_receptionist`
+(`objsave.cpp`), which answers `rent` and `offer` typed in its room:
+
+- Rent costs nothing: `Crash_offer_rent` and `gen_receptionist` set the cost to 0, so a mortal
+  needs no gold. `offer` still quotes a price for the first day, from the level and what the
+  character carries, then says `You have enough gold for a lifetime of rent.` whatever the gold.
+  A character carrying nothing gets `But you are not carrying anything!  Just quit!`.
+- Before quoting or storing, `rent` and `offer` refuse each item the character carries or wears,
+  containers' contents included, that `Crash_is_unrentable` (`objsave.cpp`) names: a key, an item with
+  `NORENT`, or one whose rent per day is below -1 (fixtures 1604, 1607 and 1606). Each gets
+  `The harness innkeeper tells you, 'You cannot store <item>.'` and the rent goes no further.
+- `rent` replies `The harness innkeeper stores your belongings and helps you into your private
+  chamber.`, saves what the character carries and wears (`Crash_rentsave`), and returns the
+  connection to the character menu (`Make your choice:`) with the socket still open. Close that
+  session with `close()`, then `server.login(name)`: the mortal returns to the inn with its
+  items (`calc_load_room`). `rent_and_log_in_again` in `scenarios/test_object_versions.py` does
+  this.
+- Every other command typed in the inn draws `number(0, 30)`, and on 0 the innkeeper performs a
+  random social, so text can arrive there unasked. Bring the mortal in with the implementor's
+  `teleport <name> 1601` (it reads `<Implementor> has teleported you!` and the room) just
+  before `rent` or `offer`.
+- A `yell` anywhere in zone 16 outside the inn would log `SYSERR: Fubar'd receptionist.`, which
+  fails the test: `do_gen_com` (`act_comm.cpp`) calls the specials of every room in the zone,
+  and `gen_receptionist` looks for the innkeeper in the yeller's room.
 
 ### File formats
 
@@ -704,7 +751,8 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
 - An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/13.obj`
-  holds zone 13's range, `obj/14.obj` 1400 to 1404, `obj/17.obj` 1700 and 1701); avoid vnums
+  holds zone 13's range, `obj/14.obj` 1400 to 1404, `obj/16.obj` zone 16's, `obj/17.obj` 1700
+  and 1701); an object the object editor must load goes in its zone's file. Avoid vnums
   `spec_ass.cpp` passes to `ASSIGNOBJ`. A new `obj/<n>.obj` file needs `git add -f`, because
   `.gitignore` ignores `*.obj`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,

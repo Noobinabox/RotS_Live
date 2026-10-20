@@ -149,6 +149,7 @@ ACMD(do_string);
 ACMD(do_give);
 ACMD(do_stat);
 ACMD(do_wizset);
+ACMD(do_restyle);
 ACMD(do_time);
 ACMD(do_weather);
 ACMD(do_load);
@@ -572,6 +573,7 @@ const char* command[] = {
     "unprotect", // 252
     "vault",
     "gameoptions", // 254
+    "restyle", // 255
     "\n"
 };
 
@@ -2273,6 +2275,8 @@ void assign_command_pointers(void)
     COMMANDO(253, POSITION_DEAD, do_vault, LEVEL_GRGOD, FALSE, 0,
         FULL_TARGET, FULL_TARGET, 0);
     COMMANDO(254, POSITION_DEAD, do_gameoptions, LEVEL_IMPL, FALSE, 0,
+        FULL_TARGET, FULL_TARGET, 0);
+    COMMANDO(255, POSITION_DEAD, do_restyle, LEVEL_GRGOD, FALSE, 0,
         FULL_TARGET, FULL_TARGET, 0);
 }
 

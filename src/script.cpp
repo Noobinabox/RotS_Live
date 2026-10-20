@@ -29,6 +29,7 @@
 #include "handler.h"
 #include "interpre.h"
 #include "limits.h"
+#include "object_skins.h"
 #include "pkill.h"
 #include "protos.h"
 #include "script.h"
@@ -58,6 +59,7 @@ int find_eq_pos(const struct char_data* ch, const struct obj_data* obj, char* ar
 void perform_wear(struct char_data* ch, struct obj_data* obj, int where, bool wearall = false);
 int find_action(const char* arg);
 extern struct index_data* obj_index;
+extern char* get_param_text(int); /* shapescript.cpp */
 
 // Internal declarations
 int trigger_room_enter(const room_data* room, const char_data* ch);
@@ -107,6 +109,8 @@ static const char* script_cmd_name(int command)
         return "load mob";
     case SCRIPT_LOAD_OBJ:
         return "load obj";
+    case SCRIPT_RESTYLE_OBJ:
+        return "restyle obj";
     case SCRIPT_SET_EXIT_STATE:
         return "set exit state";
     case SCRIPT_TELEPORT_CHAR:
@@ -254,6 +258,13 @@ void check_script_vnums(int script_index, char_data* to)
         case SCRIPT_EQUIP_CHAR:
             first = 1;
             last = 5;
+            kind = SREF_OBJ;
+            break;
+        case SCRIPT_RESTYLE_OBJ:
+            /* a typed vnum; a variable (int1, ob2.vnum) is read, or refused, when the line runs */
+            if (get_param_text(cmd->param[1]))
+                continue;
+            first = last = 1;
             kind = SREF_OBJ;
             break;
         default:
@@ -510,6 +521,21 @@ char* get_text_param(int param, const info_script* info)
     default:
         return 0;
     }
+}
+
+/* A RESTYLE_OBJ target held in a variable: int1-3 or obN.vnum, read when the line runs. */
+bool is_restyle_target_param(int param)
+{
+    switch (param) {
+    case SCRIPT_PARAM_INT1:
+    case SCRIPT_PARAM_INT2:
+    case SCRIPT_PARAM_INT3:
+    case SCRIPT_PARAM_OB1_VNUM:
+    case SCRIPT_PARAM_OB2_VNUM:
+    case SCRIPT_PARAM_OB3_VNUM:
+        return true;
+    }
+    return false;
 }
 
 /*
@@ -1092,6 +1118,66 @@ static script_data* script_guarded(script_data* curr)
     return curr;
 }
 
+/* RESTYLE_OBJ <ob1-3> <vnum, int1-3 or obN.vnum>: changes the object, in place, into another
+ * look of its family. A refusal changes nothing and is logged; the script carries on. */
+static void restyle_script_object(info_script* info, script_data* curr)
+{
+    char errbuf[256];
+    int script_no = (info->index >= 0 && info->index <= top_of_script_table)
+        ? script_table[info->index].number
+        : -1;
+    int obj_var = curr->param[0];
+    bool obj_var_ok = obj_var == SCRIPT_PARAM_OB1 || obj_var == SCRIPT_PARAM_OB2 || obj_var == SCRIPT_PARAM_OB3;
+    obj_data* old_obj = obj_var_ok ? get_obj_param(obj_var, info) : 0;
+    int vnum = curr->param[1];
+    const char* problem = 0;
+    char reason[96];
+
+    /* The editor allows only these; a world file edited by hand can hold anything. */
+    if (is_restyle_target_param(vnum)) {
+        int* v = get_int_param(vnum, info);
+        vnum = v ? *v : 0;
+    } else if (get_param_text(vnum)) {
+        problem = "target must be a vnum, int1-3 or obN.vnum";
+    }
+    if (!obj_var_ok)
+        problem = "object must be ob1-3";
+    if (!problem && (!old_obj || old_obj->item_number < 0)) {
+        problem = "no object";
+    } else if (!problem) {
+        int old_vnum = obj_index[old_obj->item_number].virt;
+        obj_data* new_obj = 0;
+        switch (restyle_object(old_obj, real_object(vnum), &new_obj)) {
+        case restyle_result::ok: {
+            /* new_obj is old_obj, changed in place: the script's ob[] and the trigger's caller
+             * still hold a valid object. */
+            obj_data* top = new_obj;
+            while (top->in_obj)
+                top = top->in_obj;
+            if (top->carried_by && !IS_NPC(top->carried_by))
+                SET_BIT(PLR_FLAGS(top->carried_by), PLR_CRASH);
+            return;
+        }
+        case restyle_result::no_such_object:
+            report_script_vnum(info->index, curr, SREF_OBJ, vnum, 0);
+            return;
+        case restyle_result::same_object:
+            sprintf(reason, "already obj %d", vnum);
+            break;
+        case restyle_result::not_same_family:
+            sprintf(reason, "obj %d -> %d not same family", old_vnum, vnum);
+            break;
+        default:
+            strcpy(reason, "no object");
+            break;
+        }
+        problem = reason;
+    }
+    sprintf(errbuf, "SCRIPT ERROR: script #%d, line %d (%s): %s", script_no, curr->number,
+        script_cmd_name(curr->command_type), problem);
+    mudlog(errbuf, NRM, LEVEL_AREAGOD, TRUE);
+}
+
 int run_script(struct info_script* info, struct script_data* position)
 {
     char output[500];
@@ -1462,6 +1548,11 @@ int run_script(struct info_script* info, struct script_data* position)
                 tmpobj = 0;
                 assign_obj_param(curr->param[0], info, tmpobj);
             }
+            curr = curr->next;
+            break;
+
+        case SCRIPT_RESTYLE_OBJ:
+            restyle_script_object(info, curr);
             curr = curr->next;
             break;
 

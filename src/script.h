@@ -96,6 +96,7 @@ inline constexpr int SCRIPT_TELEPORT_CHAR_XL = 75; //  Take char_from_room then 
 inline constexpr int SCRIPT_IF_INT_FALSE = 76; //  Test to see whether one integer is less than 1
 inline constexpr int SCRIPT_LOAD_OBJ_X = 77; //  Load an object from another object - note this object is not placed in the game
 inline constexpr int SCRIPT_SECTION = 78; //  A title row for the editor's list: text is "title | comment", does nothing when run
+inline constexpr int SCRIPT_RESTYLE_OBJ = 79; //  Change an object, in place, into another look of its family
 
 inline constexpr int SCRIPT_COMMAND_NONE = 99; //  Given to new or unused commands
 // 999 - reserved for script loading - do not use
@@ -169,6 +170,7 @@ void continue_char_script(char_data* ch);
 
 /* Report script lines whose vnums name nothing -- informational only. */
 void check_script_vnums(int script_index, struct char_data* to);
+bool is_restyle_target_param(int param); /* int1-3 or obN.vnum */
 void check_script_table(void);
 bool report_script_negative_room(void);
 

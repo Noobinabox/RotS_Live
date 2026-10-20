@@ -553,6 +553,7 @@ world, which `do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows.
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
 | 1160 | `zerostam mob` | a stamina-less mob: the bystander orc with no maximum moves; neither has any maximum stamina (`0 0 0 1` and `0 0 50 1` lines) |
 | 1161 | `pony harness` | a harness pony: act flags `514` (`SENTINEL`, `MOB_MOUNT`), so a player can `ride` it; no moves, so it never takes a step |
+| 1170 | `angel shining` | act flags `3` (`MOB_SPEC`) and program 14, the resetter (`spec_ass.cpp`): `tell angel pracreset` resets a player's practice |
 | 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
 | 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1308x2`; zone 13 resets one into 1302 |
 | 1304 | `banker dark` | a banker as 1301; zone 13 resets one into the dark room 1304, where it cannot see a customer without infravision |
@@ -603,14 +604,23 @@ Zone 13's keepers speak no language (the first number of each one's last numeric
 speak language 1, the animal tongue, which `say_to_char` (`act_comm.cpp`) garbles for players.
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one
-is loaded ("Names, sides and lookups" above). Six real guildmasters are copied at their real vnums (1503, 2043, 4601, 10003, 13600,
-32200) so `spec_ass.cpp` binds the guild special to them: 1503 in `mob/15.mob`, so that the
-mobs of `mob/17.mob` keep the vnums ascending, and the other five in `mob/guildmasters.mob`.
+32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one is
+loaded ("Names, sides and lookups" above). Seven real guildmasters are copied at their real vnums
+(1503, 2043, 4601, 10003, 10054, 13600, 32200) so `spec_ass.cpp` binds the guild special to them;
+each one's program number is its row of `guildmasters[]` (`consts.cpp`), such as 7 for the
+traveller 1503, 16 for Scorther 10003 and 28 for Aroden 10054. Three more guild-special mobs sit at
+vnums `spec_ass.cpp` binds the guild special to, with programs chosen for the posing refusal rather
+than the real mob's: 1509 `mystic` (program 61, the last row), 3888 `prisoner` (program 0) and 8500
+`enchanter` (program 62), the last two naming no row. 1503 and 1509 are in `mob/15.mob`, so that
+the mobs of `mob/17.mob` keep the vnums ascending; the rest are in `mob/guildmasters.mob`. Each
+teaches the races in its last field, the `will_teach` mask (`WILL_TEACH`, `utils.h`): 63 (god,
+human, dwarf, wood elf, hobbit and high elf, not the beorning) for 1503, 1509, 3888, 8500, 10003
+and 10054; 2048 (uruk-hai) for 4601; 10240 (uruk-hai and orc) for 2043; 8192 (orc) for 32200; 32768
+(uruk-lhuth) for 13600.
 The 1700s mobs speak no language (language 0), so every listener reads their lines exactly. All
-have constitution 10, 60 hit points and level 5. Only one mob that speaks when it hears speech
-may be in a room: `do_say` (`act_comm.cpp`) runs every other mob's `ON_HEAR_SAY` script inside
-the say, so two of them answer each other until the server's stack overflows.
+have constitution 10, 60 hit points and level 5. Only one mob that speaks when it hears speech may
+be in a room: `do_say` (`act_comm.cpp`) runs every other mob's `ON_HEAR_SAY` script inside the say,
+so two of them answer each other until the server's stack overflows.
 
 | Object | Keyword | What it is |
 | --- | --- | --- |

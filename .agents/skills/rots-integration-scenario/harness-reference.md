@@ -539,6 +539,8 @@ is loaded ("Names, sides and lookups" above). `mob/guildmasters.mob` copies six 
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
 | 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
+| 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
+| 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 

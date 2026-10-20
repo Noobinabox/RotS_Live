@@ -330,4 +330,92 @@ Answers when he hears speech.~
 30 2 100 0 0 0 0 0
  I heard that.~
 999 0 0 0 0 0 0 0
+#1730 Harness crier~
+Says a line, waits, says a second line and waits again: a DO_WAIT is the script's last row.~
+17 1 0 0 0 0 0 0
+ anything said starts it~
+30 2 100 0 0 0 0 0
+ First.~
+58 3 4 0 0 0 0 0
+ four pulses, one second~
+30 4 100 0 0 0 0 0
+ Second.~
+58 5 4 0 0 0 0 0
+ four pulses, the script's last row~
+999 0 0 0 0 0 0 0
+#1731 Harness first clerk~
+A false IF whose block ends with a nested IF / BEGIN / ... / END that has no else branch.~
+15 1 0 0 0 0 0 0
+ a given object starts it~
+57 2 1 953 0 0 0 0
+ int1 = 1~
+57 3 0 954 0 0 0 0
+ int2 = 0~
+4 4 953 954 0 0 0 0
+ int1 == int2: false~
+1 5 0 0 0 0 0 0
+ ~
+7 6 954 953 0 0 0 0
+ int2 < int1~
+1 7 0 0 0 0 0 0
+ ~
+30 8 100 0 0 0 0 0
+ Nested body.~
+2 9 0 0 0 0 0 0
+ ~
+5 10 0 0 0 0 0 0
+ ~
+30 11 100 0 0 0 0 0
+ Outer else.~
+2 12 0 0 0 0 0 0
+ ~
+30 13 100 0 0 0 0 0
+ After.~
+999 0 0 0 0 0 0 0
+#1732 Harness second clerk~
+A false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END with a non-empty else branch.~
+15 1 0 0 0 0 0 0
+ a given object starts it~
+57 2 1 953 0 0 0 0
+ int1 = 1~
+57 3 0 954 0 0 0 0
+ int2 = 0~
+4 4 953 954 0 0 0 0
+ int1 == int2: false~
+1 5 0 0 0 0 0 0
+ ~
+7 6 954 953 0 0 0 0
+ int2 < int1~
+1 7 0 0 0 0 0 0
+ ~
+30 8 100 0 0 0 0 0
+ Nested then.~
+5 9 0 0 0 0 0 0
+ ~
+30 10 100 0 0 0 0 0
+ Nested else.~
+2 11 0 0 0 0 0 0
+ ~
+30 12 100 0 0 0 0 0
+ Outer tail.~
+5 13 0 0 0 0 0 0
+ ~
+30 14 100 0 0 0 0 0
+ Outer else.~
+2 15 0 0 0 0 0 0
+ ~
+30 16 100 0 0 0 0 0
+ After.~
+999 0 0 0 0 0 0 0
+#1733 Harness careless copyist~
+Script 1715 with 0 in LOAD_OBJ_X's first parameter, which the script editor calls unused.~
+15 1 0 0 0 0 0 0
+ a given object starts it~
+77 2 0 500 0 0 0 0
+ a copy of ob1 into ob2, with 0 as the unused first parameter~
+48 3 500 100 0 0 0 0
+ ob2 into ch1's inventory~
+46 4 100 200 500 0 0 0
+ ch1 gives ob2 to ch2~
+999 0 0 0 0 0 0 0
 #99999

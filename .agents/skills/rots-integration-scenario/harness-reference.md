@@ -572,6 +572,10 @@ and 1702 is the only door; it starts closed and no zone reset changes it.
 | 1722 | `porter` | no script, for an implementor to `force` |
 | 1723 | `wanderer` | hearing speech, teleports himself to 1201 (`TELEPORT_CHAR_X`) |
 | 1724 | `listener` | hearing speech, says `I heard that.` |
+| 1730 | `crier` | hearing speech, says `First.`, waits four passes, says `Second.` and waits four passes again as the script's last row |
+| 1731 | `clerk first` | given anything, skips a false IF whose block ends with a nested IF / BEGIN / ... / END (`Nested body.`), then has an else branch saying `Outer else.` and a last row saying `After.` |
+| 1732 | `clerk second` | given anything, skips a false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END (`Nested then.`, `Nested else.`) and a row saying `Outer tail.`, then has an else branch saying `Outer else.` and a last row saying `After.` |
+| 1733 | `copyist careless` | script 1715 with 0 in `LOAD_OBJ_X`'s first parameter |
 
 Zone 13's keepers speak no language (the first number of each one's last numeric line is 0;
 `load_mobiles`, `db.cpp`), so a keeper's `say` reaches every listener unchanged. The zone 11 mobs

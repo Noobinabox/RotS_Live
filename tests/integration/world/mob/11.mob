@@ -106,4 +106,40 @@ It exists to outlive a burning room's own ticks until a scenario floors its hit.
 0
 10 10 10 10 10 10
 1 10 0 0 0 100 0
+#1160
+zerostam mob~
+a stamina-less mob~
+A stamina-less mob loiters here, without a step left in it.~
+Its maximum mana and moves are both 0.
+~
+2
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 13 0
+150 70 0 0 0 0
+0 0 0 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
+#1161
+pony harness~
+a harness pony~
+A harness pony stands here, too tired to carry anyone far.~
+It can be ridden, and it has no moves to spend.
+~
+514
+0 0 M
+5 10 0 0
+60 60
+2 0
+0 1000 0
+8 8 1 13 0
+150 70 0 0 0 0
+0 0 0 1
+0
+10 10 10 10 10 10
+1 10 0 0 0 100 0
 #99999

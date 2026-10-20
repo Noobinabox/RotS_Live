@@ -112,6 +112,22 @@ D4
 ~
 0 0 1130 5
 S
+#1137
+Gallows Pit~
+A sheer pit beneath the gallows. Whoever falls in does not climb out.
+~
+11 2 0 0
+S
+#1138
+Gallows Approach~
+A ledge before the gallows. The pit lies east.
+~
+11 0 0 0
+D1
+~
+~
+0 0 1137 5
+S
 #1151
 Retirement Home~
 A peaceful room for retired characters.

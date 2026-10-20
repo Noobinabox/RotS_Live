@@ -491,17 +491,19 @@ the world.
 | 1129 | Olog-hai Start | 0 (none) | 0 | none |
 | 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
 | 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | 0 (none) | 0 | west 1131 |
+| 1132 | Arena East (`world.ROOM_ARENA_EAST`) | 0 (none) | 0 | west 1131 |
 | 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
 | 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
 | 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
 | 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
+| 1137 | Gallows Pit (`world.ROOM_GALLOWS_PIT`) | 2 (`DEATH`) | 0 | none |
+| 1138 | Gallows Approach (`world.ROOM_GALLOWS_APPROACH`) | 0 (none) | 0 | east 1137 |
 | 1151 | Retirement Home | 0 (none) | 0 | none |
 | 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle | 0 (none) | 0 | none |
+| 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
 | 1301 | Bank Hall (`world.ROOM_BANK_HALL`, zone 13) | 0 (none) | 0 | east 1302 |
@@ -514,9 +516,12 @@ the world.
 | 1308 | Odd Store Room (`world.ROOM_ODD_STORE_ROOM`, zone 13) | 0 (none) | 0 | none; the odd trader's stock |
 | 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
 
-1133 and 1304 are the only rooms with a flag. `IS_DARK` is true there unless something in them
-gives light, so a character there sees only with infravision, holylight, or moonvision while the
-moon is up (both count as outside, and moonlight follows the uncontrolled game hour).
+1133, 1137 and 1304 are the only rooms with a flag. `IS_DARK` is true in 1133 and 1304 unless
+something in them gives light, so a character there sees only with infravision, holylight, or
+moonvision while the moon is up (both count as outside, and moonlight follows the uncontrolled
+game hour). Whoever walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with
+no killer); a mortal wakes in its race's start room with 1 hit point and no moves. `goto` and
+`teleport` into it kill nobody.
 
 ### Mobs and objects
 
@@ -528,6 +533,8 @@ moon is up (both count as outside, and moonlight follows the uncontrolled game h
 | 1133 | `brute orc` | hits very hard |
 | 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
 | 1135 | `target orc hardy` | a target that outlives several ticks of damage |
+| 1160 | `zerostam mob` | a stamina-less mob: the bystander orc with no maximum moves; neither has any maximum stamina (`0 0 0 1` and `0 0 50 1` lines) |
+| 1161 | `pony harness` | a harness pony: act flags `514` (`SENTINEL`, `MOB_MOUNT`), so a player can `ride` it; no moves, so it never takes a step |
 | 1301 | `banker` | mob program 34 (banker), option `attacks=no`; zone 13 resets one into 1301 |
 | 1302 | `trader` | mob program 33 (barter vendor), options `store=1303`, `attacks=no`, `price 1137 1308x2`; zone 13 resets one into 1302 |
 | 1304 | `banker dark` | a banker as 1301; zone 13 resets one into the dark room 1304, where it cannot see a customer without infravision |
@@ -542,8 +549,8 @@ Zone 13's keepers speak no language (the first number of each one's last numeric
 speak language 1, the animal tongue, which `say_to_char` (`act_comm.cpp`) garbles for players.
 
 Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
+32200), and two answer to `harness` (1131 and 1161); this matters for name lookups whenever one
+is loaded ("Names, sides and lookups" above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
 4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
 
 | Object | Keyword | What it is |
@@ -553,11 +560,19 @@ above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums 
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
+| 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
+| 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
+| 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
 | 1304 | `cap` | iron cap, head armour (`obj/13.obj`); its keywords are `cap iron` |
 | 1305 | `ingot` | lead ingot weighing 90000, more than any character can carry (`CAN_CARRY_W`, `utils.h`, is at most 42000) |
 | 1306 | `key` | brass key, type 18 (`ITEM_KEY`), which `Crash_is_unrentable` (`objsave.cpp`) refuses |
 | 1307 | `ring` | cursed ring, extra flags 128 (`ITEM_NODROP`): it can be put in a container but not given or dropped |
 | 1308 | `bead` | copper bead, a plain object (type 12): zone 13's barter currency |
+| 1400 | `circlet` | fire circlet (`obj/14.obj`), head armour; its `A 27 5281` line (`APPLY_SPELL`, 20 * 256 + `SPELL_RESIST_FIRE` 161) grants a 20% fire resistance |
+| 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
+| 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
+| 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
+| 1404 | `bracelet` | kindling bracelet (`obj/14.obj`), worn on a wrist; its `A 27 161` line has a strength of 0, so `APPLY_SPELL` grants a fire resistance worth the wearer's level |
 
 There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
 instead. `scr/11.scr` and `mdl/11.mdl` are stubs.
@@ -609,8 +624,9 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`, or to `obj/13.obj` for zone 13's range; avoid vnums
-  `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/13.obj`
+  holds zone 13's range, `obj/14.obj` 1400 to 1404); avoid vnums `spec_ass.cpp` passes to
+  `ASSIGNOBJ`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

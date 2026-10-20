@@ -541,6 +541,10 @@ is loaded ("Names, sides and lookups" above). `mob/guildmasters.mob` copies six 
 | 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
 | 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
 | 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
+| 1400 | `circlet` | fire circlet (`obj/14.obj`), head armour; its `A 27 5281` line (`APPLY_SPELL`, 20 * 256 + `SPELL_RESIST_FIRE` 161) grants a 20% fire resistance |
+| 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
+| 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
+| 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
 
 There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
 
@@ -591,7 +595,8 @@ index as well as within each, because `real_mobile` and `real_object` binary-sea
   to `rots_harness/world.py` when a scenario names it.
 - A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
   as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
+- An object: append to `obj/11.obj`, or to another file listed in `obj/index` (`obj/14.obj`
+  holds 1400 to 1403); avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
 - Boot after every change: the only check is `test_boot.py` and every other scenario booting,
   failing on any `SYSERR`, crash or missing login prompt.
 

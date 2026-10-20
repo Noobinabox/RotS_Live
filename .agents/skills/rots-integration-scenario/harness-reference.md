@@ -477,6 +477,7 @@ a category means editing `WORLD_CATEGORIES`.
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
 | 13 | `zon/13.zon` | Harness market | (6, 6) | 1301-1399 | banker (mob 1301) to 1301; trader (mob 1302) to 1302; a leather cap (object 1137) to 1303; dark banker (mob 1304) to 1304; morning banker (mob 1305) to 1305; evening banker (mob 1306) to 1306; odd trader (mob 1307) to 1307; a leather cap, an iron cap (object 1304) and a lead ingot (object 1305) to 1308; broken banker (mob 1308) and broken trader (mob 1309) to 1309 |
 | 17 | `zon/17.zon` | Harness gatehouse | (2, 8) | 1701-1799 | none |
+| 18 | `zon/18.zon` | Harness boar pen | (9, 9) | 1801-1809 | pen boar (mob 1450) to 1801, max existing 1 |
 
 ### Rooms
 
@@ -519,14 +520,26 @@ the world.
 | 1309 | Broken Market (`world.ROOM_BROKEN_MARKET`, zone 13) | 0 (none) | 0 | none |
 | 1701 | Gatehouse Yard (`world.ROOM_GATEHOUSE_YARD`, zone 17) | 0 (none) | 0 | north 1702 through a closed door (exit flags 3, `EX_ISDOOR` and `EX_CLOSED`; keyword `door`) |
 | 1702 | Beyond the Gate (`world.ROOM_BEYOND_THE_GATE`, zone 17) | 0 (none) | 0 | south 1701 through the same door (keyword `gate`) |
+| 1801 | Boar Pen (`world.ROOM_BOAR_PEN`, zone 18) | 32768 (`PEACEROOM`) | 0 | east 1802 |
+| 1802 | Pen Gate (`world.ROOM_PEN_GATE`, zone 18) | 0 (none) | 0 | east 1803 (one way), west 1801 |
+| 1803 | Whistle Hub (`world.ROOM_WHISTLE_HUB`, zone 18) | 0 (none) | 0 | north 1804, east 1805, south 1806, west 1807, up 1808, down 1809 |
+| 1804 | North Spoke (`world.ROOM_NORTH_SPOKE`, zone 18) | 0 (none) | 0 | south 1803 |
+| 1805 | East Spoke (`world.ROOM_EAST_SPOKE`, zone 18) | 0 (none) | 0 | west 1803 |
+| 1806 | South Spoke (zone 18) | 0 (none) | 0 | north 1803 |
+| 1807 | West Spoke (zone 18) | 0 (none) | 0 | east 1803 |
+| 1808 | Upper Spoke (zone 18) | 0 (none) | 0 | down 1803 |
+| 1809 | Lower Spoke (`world.ROOM_LOWER_SPOKE`, zone 18) | 0 (none) | 0 | up 1803 |
 
-1133, 1137 and 1304 are the only rooms with a flag. `IS_DARK` is true in 1133 and 1304 unless
+1133, 1137, 1304 and 1801 are the only rooms with a flag. `IS_DARK` is true in 1133 and 1304 unless
 something in them gives light, so a character there sees only with infravision, holylight, or
-moonvision while the moon is up (both count as outside, and moonlight follows the uncontrolled
-game hour). Whoever walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with
-no killer); a mortal wakes in its race's start room with 1 hit point and no moves. `goto` and
-`teleport` into it kill nobody. The door between 1701
-and 1702 is the only door; it starts closed and no zone reset changes it.
+moonvision while the moon is up (both count as outside, and moonlight follows the uncontrolled game
+hour). Whoever walks into 1137 dies there (`do_move`, `act_move.cpp`, calls `raw_kill` with no
+killer); a mortal wakes in its race's start room with 1 hit point and no moves. `goto` and
+`teleport` into it kill nobody. In 1801, `PEACEROOM` makes `do_hit` (`act_offe.cpp`) refuse every
+attack, a failed tame's included. The door between 1701 and 1702 is the only door; it starts closed
+and no zone reset changes it. Every exit of the whistle hub (1803) leads to a spoke, so `do_flee`
+(`act_offe.cpp`) finds an exit on its first draw there, and every spoke comes after the hub in the
+world, which `do_whistle`'s walk over the zone's rooms (`ranger.cpp`) follows.
 
 ### Mobs and objects
 
@@ -548,6 +561,11 @@ and 1702 is the only door; it starts closed and no zone reset changes it.
 | 1307 | `trader odd` | a barter vendor with `store=1308`, `list=Step right up!`, `price 1137 1308x2 deduct`, `price 1304 1308x1`, `price 1305 1308x1`, `attacks=no`; zone 13 resets one into 1307 |
 | 1308 | `banker broken` | a banker with `fee=0`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
 | 1309 | `trader broken` | a barter vendor with no `store=`, which disables it (a `MOB ERROR` line at boot); zone 13 resets one into 1309 |
+| 1450 | `boar pen` | an animal (bodytype 2, perception 0, level 1, `SENTINEL`) a ranger can tame; zone 18 resets one into 1801. In `mob/14.mob`, listed before `guildmasters.mob` so vnums ascend |
+| 1451 | `bear grizzly` | a level-14 animal (perception 0), one level past a level-30 ranger's tame cap at full tame knowledge |
+| 1452 | `wolf grey` | a level-12 animal (perception 0), within that cap only while the ranger has no other tame |
+| 1453 | `owl watchful` | an animal with perception 10, which tame refuses |
+| 1454 | `scarecrow straw` | perception 0 but bodytype 1, not an animal, which tame refuses |
 | 1700 | `smith plain` | runs script 1700 when given an object (`ON_RECEIVE`): an IF on the star token (object 1700) whose block holds a nested guard IF with an empty else branch, then says `A star token! Here is your reward.`; otherwise `That is no star token.`; always ends with `Who is next?` |
 | 1701 | `smith labelled` | runs script 1701: script 1700 with `SECTION` rows between the IF and its BEGIN, before the nested IF, and on the nested empty else branch |
 | 1702 | `foreman weary` | runs script 1702 when anyone in the room speaks (`ON_HEAR_SAY`): says `Goodbye, then.`, waits four passes (`DO_WAIT`), says `My shift is over at last.` and ends |
@@ -576,6 +594,9 @@ and 1702 is the only door; it starts closed and no zone reset changes it.
 | 1731 | `clerk first` | given anything, skips a false IF whose block ends with a nested IF / BEGIN / ... / END (`Nested body.`), then has an else branch saying `Outer else.` and a last row saying `After.` |
 | 1732 | `clerk second` | given anything, skips a false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END (`Nested then.`, `Nested else.`) and a row saying `Outer tail.`, then has an else branch saying `Outer else.` and a last row saying `After.` |
 | 1733 | `copyist careless` | script 1715 with 0 in `LOAD_OBJ_X`'s first parameter |
+
+1451 to 1454 are level 1 unless the table says otherwise, `SENTINEL`, and follow 1450 in
+`mob/14.mob`; nothing resets them, so a scenario loads them with `load mob`.
 
 Zone 13's keepers speak no language (the first number of each one's last numeric line is 0;
 `load_mobiles`, `db.cpp`), so a keeper's `say` reaches every listener unchanged. The zone 11 mobs

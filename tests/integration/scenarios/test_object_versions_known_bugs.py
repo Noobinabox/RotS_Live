@@ -126,7 +126,7 @@ def extra_flags_line(stat_lines: list) -> str:
     raise AssertionError(f"no extra flags line in {stat_lines!r}")
 
 
-@pytest.mark.xfail(strict=True, reason="purge <player> should leave the purging immortal's inventory alone; today it destroys it (TASK-347)")
+@pytest.mark.xfail(strict=True, reason="purge <player> should leave the purging immortal's inventory alone; today it destroys it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_purging_a_player_leaves_the_purgers_inventory_alone(server) -> None:
@@ -211,14 +211,14 @@ def test_a_builder_set_willpower_flag_survives_a_drop(server) -> None:
     assert WILLPOWER_FLAG in dropped_flags, dropped_flags
 
 
-@pytest.mark.xfail(strict=True, reason="an offer to a mortal with no gold should not both quote a price and promise a lifetime of rent (TASK-346)")
+@pytest.mark.xfail(strict=True, reason="an offer to a mortal with no gold should not both quote a price and promise a lifetime of rent")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_an_offer_to_a_mortal_without_gold_does_not_promise_a_lifetime_of_rent(server) -> None:
     """Pins that the inn's offer agrees with itself: a mortal with no gold who is quoted 6 silver
     and 88 copper a day is not told its gold lasts a lifetime.
 
-    Bug (TASK-346): Crash_offer_rent (objsave.cpp:1638-1647) quotes the day's cost, then sets
+    Bug: Crash_offer_rent (objsave.cpp:1638-1647) quotes the day's cost, then sets
     the cost to 0 before comparing it with the gold, so every offer ends with the lifetime line,
     whatever the gold; the rent itself is never charged (gen_receptionist). Either fix (no quote
     while rent is free, or a real charge that this mortal cannot pay) passes this pin. Nothing on

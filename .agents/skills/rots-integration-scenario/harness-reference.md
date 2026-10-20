@@ -510,6 +510,7 @@ the world.
 | 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
 | 1160 | Human Start | 0 (none) | 0 | none |
 | 1170 | Wood-elf Start | 0 (none) | 0 | none |
+| 1180 | Signpost Room (`world.ROOM_SIGNPOST`) | 0 (none) | 0 | none; two extra descriptions, `plaque sign` ("The plaque reads FIRST.") then `sign` ("The sign reads SECOND."), in that file order |
 | 1184 | Beorning Start | 0 (none) | 0 | none |
 | 1190 | Uruk Idle (`world.ROOM_URUK_IDLE`) | 0 (none) | 0 | none; the Uruk-hai idle room (`mortal_idle_room`, `consts.cpp`) |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
@@ -638,43 +639,27 @@ so two of them answer each other until the server's stack overflows.
 | 1137 | `cap` | leather cap, head armour |
 | 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
 | 1139 | `bread` | tainted bread: food, fill 2, poisoned |
-| 1160 | `ring` | ring of invisibility, worn on a finger; its `A 28 9` line sets `AFF_INVISIBLE` on the wearer, hiding it from anyone without holylight |
-| 1171 | `circlet` | iron circlet, head armour; its `A 1 2` line (`APPLY_STR`) adds 2 to strength |
-| 1185 | `girdle` | stone girdle, type 12 (other): extra flags WILLPOWER, DWARF and STAY_ZONE, wear flags TAKE and WAIST, and an `A 6 3` line (+3 to location 6, `APPLY_LEA`) |
-| 1186 | `shirt` | chain shirt, body armour; its value[1] of 5 gives the wearer a non-zero absorb (`get_percent_absorb`, `act_info.cpp`) |
-| 1304 | `cap` | iron cap, head armour (`obj/13.obj`); its keywords are `cap iron` |
-| 1305 | `ingot` | lead ingot weighing 90000, more than any character can carry (`CAN_CARRY_W`, `utils.h`, is at most 42000) |
-| 1306 | `key` | brass key, type 18 (`ITEM_KEY`), which `Crash_is_unrentable` (`objsave.cpp`) refuses |
-| 1307 | `ring` | cursed ring, extra flags 128 (`ITEM_NODROP`): it can be put in a container but not given or dropped |
-| 1308 | `bead` | copper bead, a plain object (type 12): zone 13's barter currency |
-| 1400 | `circlet` | fire circlet (`obj/14.obj`), head armour; its `A 27 5281` line (`APPLY_SPELL`, 20 * 256 + `SPELL_RESIST_FIRE` 161) grants a 20% fire resistance |
-| 1401 | `pendant` | fire pendant (`obj/14.obj`), worn on the neck; its `A 27 10401` line (40 * 256 + 161) grants a 40% fire resistance |
-| 1402 | `ring` | ember ring (`obj/14.obj`), worn on a finger; its `A 30 1` line (`APPLY_RESIST`, `RESIST_FIRE` 1) sets the fire resistance bit with no affect behind it, so it shows the flat 33% |
-| 1403 | `band` | tinder band (`obj/14.obj`), worn on a finger; its `A 31 1` line (`APPLY_VULN`, fire) makes the wearer vulnerable to fire, shown as 50% |
-| 1404 | `bracelet` | kindling bracelet (`obj/14.obj`), worn on a wrist; its `A 27 161` line has a strength of 0, so `APPLY_SPELL` grants a fire resistance worth the wearer's level |
-| 1601 | `sword` | plain sword, `obj/16.obj`: a weapon without the `MAGIC` flag or affects, so enchant weapon takes on it (`object_takes_enchant`, `utility.cpp`); version 0 |
-| 1602 | `stone` | dwarven stone, `obj/16.obj`: type other, extra flags `DWARF` (bit 18) and `STAY_ZONE` (bit 28) only |
-| 1603 | `helm` | leather helm, `obj/16.obj`: head armour without affects |
-| 1604 | `key` | brass key, `obj/16.obj`: a key (type 18) with `BREAKABLE`, so its first use breaks it (`check_break_key`, `act_move.cpp`); keys cannot be rented (`Crash_is_unrentable`, `objsave.cpp`) |
-| 1605 | `chest` | small chest, `obj/16.obj`: a container, closed and locked (values `100 13 1604`), that key 1604 opens |
-| 1606 | `trinket` | cursed trinket, `obj/16.obj`: type other with rent per day -2, so the inn refuses it |
-| 1607 | `token` | pewter token, `obj/16.obj`: type other with `NORENT` (bit 12); answers to `token` like 1130 |
-| 1608 | `waterskin` | waterskin, `obj/16.obj`: a drink container holding 10 of 20 drinks of water |
-| 1609 | `relic` | strange relic, `obj/16.obj`: type other, wear flags `TAKE` and `THROW` (bit 15), and every extra flag from bit 0 to 28 but 5 (`INVISIBLE`), 7 (`NODROP`) and 13 (the retired `!DONATE`), `WILLPOWER` (bit 15) among them; for the known-bugs pins |
-| 1700 | `star token` | star token, the object scripts 1700 and 1701 reward |
-| 1701 | `pebble grey` | grey pebble, an object that is not the star token |
 
 There are no `.shp` shops (`shp/index` is `$` alone); the trader trades through its mob options
-instead. `scr/11.scr` and `mdl/11.mdl` are stubs.
+instead. `mdl/11.mdl` is a stub. `scr/11.scr` holds these scripts:
+
+| Script | Name | Rows |
+| --- | --- | --- |
+| 1100 | `harness stub` | none |
+| 1180 | `ordered triggers` | three `ON_ENTER` rows numbered 1, 2, 3, with the texts `first`, `second`, `third` |
+| 1181 | `out-of-order triggers` | four `ON_ENTER` rows numbered 1, 2, 4, 3, with the texts `one`, `two`, `four`, `three` |
+
 `scr/17.scr` holds scripts 1700 to 1702 and, from 1703 on, one script per mob numbered like the
 mob, which the 1700s mobs run. Script 1720 belongs to no mob and never runs: each of its lines
 names something missing (mob, object and room vnum 1799, which is left undefined, slot 22 and -1,
 direction 6 and 7), so the boot check writes twelve `SCRIPT ERROR: script #1720, ...` lines to
 every test's `game.log`, and the valet's and dresser's scripts add one line each.
 
-`obj/oldobjs/` holds only a README: the object editor's `/save` and `/done` copy the zone's object
-file there before rewriting it (`replace_object`, `shapeobj.cpp`; `SHAPE_OBJ_BACKDIR`, `protos.h`),
-and refuse to save without the folder.
+The shaping editors' `/save` copies the file it rewrites into a backup directory first and fails
+without it (`SHAPE_*_BACKDIR`, `protos.h`). The test world provides all five, each kept in git by
+an empty `.gitkeep`: `wld/oldroms`, `mob/oldmobs`, `obj/oldobjs`, `zon/oldzons` and `scr/oldscrs`;
+`obj/oldobjs` also holds a README. The object editor's `/save` and `/done`, for example, copy the
+zone's object file there before rewriting it (`replace_object`, `shapeobj.cpp`).
 
 ### The innkeeper
 

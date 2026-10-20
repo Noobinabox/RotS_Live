@@ -16,6 +16,8 @@ ROOM_DARK_CELL = 1133
 ROOM_GALLOWS_PIT = 1137
 # Room 1138, in zone 11, whose one exit leads east into the Gallows Pit.
 ROOM_GALLOWS_APPROACH = 1138
+# Room 1180, the signpost room in zone 11, whose two extra descriptions both answer to "sign".
+ROOM_SIGNPOST = 1180
 # Room 1190, the Uruk-hai idle room (mortal_idle_room, consts.cpp).
 ROOM_URUK_IDLE = 1190
 # Room 1201, the only room of zone 12, whose map square is (3, 4).

@@ -138,6 +138,12 @@ Each test gets `build/integration/runs/<12 hex>/`:
 | `game.log` | the server's stderr, and its stdout too when the test has no schedule |
 | `stdout.log` | a schedule server's ordinary stdout lines; `harness: ` replies are not written here |
 | `<lowercase name>.txt` | one transcript per character, appended on every read, colour codes removed |
+| `<lowercase name>.telnet.log` | one line per telnet event in both directions, text included: sequence number, `received` or `sent`, the event (`describe_event`, `rots_harness/telnet.py`) |
+| `<lowercase name>.received.bin`, `<lowercase name>.sent.bin` | the raw bytes each way, appended as they arrive or leave |
+
+The fixture password goes out as plain bytes, so it appears in `<name>.telnet.log` (as a text
+event) and in `<name>.sent.bin`. It is a fixture password, not a real credential, but run
+directories are local test artefacts: do not paste them into issues or pull requests.
 
 A passing test's directory is deleted. It is kept when `ROTS_IT_KEEP=1`, when any test in the
 session has failed, when the server's checks fail, when the run is interrupted, or when setup
@@ -346,7 +352,8 @@ What an observer reads for a character is `PERS` (`utility.cpp`): the name, a st
 
 | Member | Use |
 | --- | --- |
-| `login(name)` | logs the character in and returns its `GameSession`; it is quit after the test |
+| `login(name, client=SILENT_CLIENT)` | logs the character in and returns its `GameSession`, answering negotiation as `client`; it is quit after the test |
+| `connect(name, client=SILENT_CLIENT)` | opens the character's `GameSession` without logging in; call its `login()` later, or leave it and the fixture closes it after the test |
 | `advance_hours(n)` | runs `n` game hours on a schedule server and returns when the server acknowledges them; fails the test without `@pytest.mark.schedule` |
 | `run_dir`, `lib_dir` | the run directory and the test's lib |
 
@@ -357,12 +364,48 @@ What an observer reads for a character is `PERS` (`utility.cpp`): the name, a st
 | `command(text, timeout=8.0)` | drains unread text for 0.1 s and discards it, sends `text`, returns a `Transcript` of everything up to the first read whose text ends in `>` or `]` |
 | `expect(markers, timeout=8.0)` | returns all unread text once any marker appears in it |
 | `drain(timeout=0.5)` | reads for `timeout` seconds and returns the unread text |
-| `send_line(line)` | sends a line without waiting |
+| `send_line(line)` | sends a line without waiting; a 0xFF byte goes out doubled so it stays text |
+| `login(timeout=15.0)` | logs a session from `connect` in |
 | `everything` | all text received so far |
+| `everything_raw` | the same text with colour and other control sequences kept |
+| `received_bytes` | every byte received, exactly as it arrived |
+| `telnet_events` | every `RecordedTelnetEvent` (`sequence`, `direction`, `event`) both ways, text included, oldest first (`rots_harness/telnet_record.py`) |
+| `client` | the session's `TelnetClientProfile` |
+| `expect_negotiation(command, option, timeout=8.0)` | waits for a received `IAC <command> <option>` and returns its `RecordedTelnetEvent` |
+| `expect_subnegotiation(option, timeout=8.0, matching=None)` | waits for a received `SB <option>` whose payload passes `matching` (any payload when `None`) |
+| `send_bytes(data)` | sends `data` exactly, unescaped |
+| `send_negotiation(command, option)` | sends `IAC <command> <option>` |
+| `send_subnegotiation(option, payload)` | sends `IAC SB <option> <payload> IAC SE`, 0xFF in the payload doubled |
+| `send_msdp(name, *values)` | sends an MSDP frame setting `name` to `values` |
 
 `Transcript` has `.text`, `.contains(marker)` and `.room_name()`, the first non-empty line up to
 two spaces. A timeout raises `SessionTimeout` (an `AssertionError`) quoting the last 1500
 characters. A refused login raises `LoginRefused` at once with the game's words.
+
+A telnet wait claims the first received event that matches and no earlier wait has claimed.
+Events that arrived before the call count, and no event is returned twice. It leaves text
+unread, and its `SessionTimeout` lists the unclaimed events instead of text. The negotiator
+does not learn of what `send_bytes`, `send_negotiation` and `send_subnegotiation` send.
+
+The profiles live in `rots_harness/telnet_profile.py`:
+
+| Profile | Answers | Accepts | Use |
+| --- | --- | --- | --- |
+| `SILENT_CLIENT` (default) | no | nothing | today's behaviour byte for byte |
+| `REFUSING_CLIENT` | yes | nothing | a plain telnet client that refuses every option |
+| `MSDP_CLIENT` | yes | TTYPE, ECHO, NAWS, CHARSET, MSDP | a protocol client; the stream stays uncompressed |
+| `FULL_CLIENT` | yes | everything RotS knows, MCCP2 included | every option on; the stream stays plain, because RotS never compresses |
+
+- Replies to negotiation go out from the read loop, so they are sent when the test next reads.
+  `login()` reads at once.
+- Before `login()`, check with a telnet wait, not a text wait: `login()` itself waits for the
+  email prompt.
+- The server sends in-game MSDP frames only to a character with the `msdp` preference;
+  `set msdp on` turns it on.
+- A server `SB MCCP2` raises `TelnetCompressionUnsupported` (a `ConnectionError`); a malformed
+  CHARSET request raises `TelnetPayloadError`.
+
+`scenarios/test_telnet_clients.py` (group `telnet`) is the worked example.
 
 What helpers return in odd states (`do_look`, `act_info.cpp`): a character who cannot see gets
 `It is pitch black...` instead of the room, so `room_name()` returns `It is pitch black...`;

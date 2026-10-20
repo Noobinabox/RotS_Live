@@ -413,9 +413,10 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
   character until the delay ends, and the outcome can arrive after the reply `command()`
   returns. `expect` the outcome.
 - When the delay ends, `command_interpreter` (`interpre.cpp`) checks the command's target again
-  (`target_check`, `target_check_one`), so a target test such as `CAN_SEE` can gate a
-  behaviour twice: once when the command is typed and once when it completes. A bite check or
-  a fix must open both.
+  (`delayed_command_target_check`, `target_check_one`), so a target test such as `CAN_SEE` can
+  gate a behaviour twice: once when the command is typed and once when it completes. A cast's
+  re-check also takes `TAR_DARK_OK` from its spell's targets. A bite check or a fix must open
+  both.
 - After `advance_hours` returns, the server has run the passes; `drain(1.0)` (or `expect` on
   the hour's marker, then `drain`) collects text already sent.
 - Regeneration (`fast_update`) runs inside every advanced hour, and the hourly update runs
@@ -474,12 +475,14 @@ a category means editing `WORLD_CATEGORIES`.
 | --- | --- | --- | --- | --- | --- |
 | 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
 | 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
+| 13 | `zon/13.zon` | Harness plus-twenty zone | (20, 0) | 1301-1399 | none |
+| 14 | `zon/14.zon` | Harness minus-twenty zone | (-20, 0) | 1401-1499 | none |
 
 ### Rooms
 
 Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
 every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the header in `wld/11.wld` or `wld/12.wld` after
+`OUTSIDE()` is true in all of them. Re-read the headers in `wld/11.wld` to `wld/14.wld` after
 anyone changes the world.
 
 | Vnum | Name | Flags | Sector | Exits |
@@ -503,6 +506,8 @@ anyone changes the world.
 | 1190 | Uruk Idle | 0 (none) | 0 | none |
 | 1191 | Orc Idle | 0 (none) | 0 | none |
 | 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
+| 1301 | Plus Twenty Cell (`world.ROOM_PLUS_TWENTY_CELL`, zone 13) | 0 (none) | 0 | none |
+| 1401 | Minus Twenty Cell (`world.ROOM_MINUS_TWENTY_CELL`, zone 14) | 0 (none) | 0 | none |
 
 1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
 so a character there sees only with infravision, holylight, or moonvision while the moon is up

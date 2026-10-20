@@ -68,6 +68,7 @@ extern struct index_data* mob_index;
 extern int top_of_mobt;
 extern struct index_data* obj_index;
 extern struct room_data world;
+extern struct skill_data skills[MAX_SKILLS];
 
 extern int social_command_number;
 extern char* wizlock_default;
@@ -1139,8 +1140,9 @@ char* target_from_word(struct char_data* ch, char* argument, int mask, struct ta
     return 0;
 }
 
-int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
-    const struct target_data* t2)
+// target_check() with extra_second_target_mask added to every second-target mask the command tries.
+static int target_check_with_extra_second_target_mask(struct char_data* ch, int cmd,
+    const struct target_data* t1, const struct target_data* t2, int extra_second_target_mask)
 {
     struct command_info* this_command;
     int tmp, tc, res, last_tc, check, last_check;
@@ -1153,7 +1155,9 @@ int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
             check = target_check_one(ch, 1 << tc, t1);
 
             if (check) {
-                res = target_check_one(ch, cmd_info[cmd].target_mask[tc], t2) != 0;
+                const int second_target_mask
+                    = cmd_info[cmd].target_mask[tc] | extra_second_target_mask;
+                res = target_check_one(ch, second_target_mask, t2) != 0;
                 last_check = check;
                 last_tc = tc;
             } else
@@ -1183,6 +1187,35 @@ int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
     }
 
     return 0;
+}
+
+int target_check(struct char_data* ch, int cmd, const struct target_data* t1,
+    const struct target_data* t2)
+{
+    return target_check_with_extra_second_target_mask(ch, cmd, t1, t2, 0);
+}
+
+int delayed_command_target_check(char_data* character, const waiting_type* delayed_command)
+{
+    if (character == nullptr || delayed_command == nullptr) {
+        log("SYSERR: delayed_command_target_check called with a null character or delayed "
+            "command.");
+        return 0;
+    }
+
+    int extra_second_target_mask = 0;
+    const int spell_index = delayed_command->subcmd;
+    const bool is_spell_cast
+        = delayed_command->cmd == CMD_CAST && spell_index > 0 && spell_index < MAX_SKILLS;
+    if (is_spell_cast) {
+        // Only the spell's sight rule carries over. do_cast re-checks its location rules itself,
+        // names the reason, and compares a stored inventory or worn object by pointer rather than
+        // reading one extracted during the delay.
+        extra_second_target_mask = skills[spell_index].targets & TAR_DARK_OK;
+    }
+
+    return target_check_with_extra_second_target_mask(character, delayed_command->cmd,
+        &delayed_command->targ1, &delayed_command->targ2, extra_second_target_mask);
 }
 
 int target_parser(struct char_data* ch, int cmd, char* argument,
@@ -1360,8 +1393,9 @@ void command_interpreter(struct char_data* ch, char* argument_chr,
 
         cmd = argument_info->cmd;
         subcmd = argument_info->subcmd;
-        if (!target_check(ch, cmd, &argument_info->targ1, &argument_info->targ2))
+        if (!delayed_command_target_check(ch, argument_info)) {
             return;
+        }
     }
 
     /* lacking minimum level requirement */

@@ -29,10 +29,13 @@ from rots_harness.launcher import (
 from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
+from rots_harness.sharding import Shard, in_shard, parse_shard
 from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
 
-# tests/integration: this file, pytest.ini and the test world.
+# tests/integration: this file, pytest.ini, the group files and the test world.
 INTEGRATION_ROOT = Path(__file__).resolve().parent
+# One <group>.txt per scenario group, holding its description; each registers a marker.
+GROUPS_DIR = INTEGRATION_ROOT / groups.GROUPS_DIRECTORY_NAME
 # The checkout whose bin/ and lib/ the harness uses; containers mount it at /rots.
 REPO_ROOT = INTEGRATION_ROOT.parents[1]
 # One directory per test: its lib, game.log and one transcript per character.
@@ -56,16 +59,21 @@ READY_TIMEOUT_SECONDS = 30.0
 
 # Where pytest_configure keeps the run's RunDirectoryReport.
 RUN_DIRECTORY_REPORT_KEY = pytest.StashKey[RunDirectoryReport]()
+# Set by pytest_collection_modifyitems when ROTS_IT_SHARD left this run's share empty although the
+# selection was not; pytest_sessionfinish then reports success instead of "no tests ran".
+SHARD_LEFT_NOTHING_KEY = pytest.StashKey[bool]()
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Stops the run with a usage error for an unregistered marker in -m or a bad ROTS_IT_* variable.
+    """Registers a marker per group file, then stops the run with a usage error for a bad group
+    file, an unregistered marker in -m or a bad ROTS_IT_* variable.
 
     Runs after the built-in plugins have registered their markers, so -m may name them. When
     the checks pass, makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock
     is released and every started server stopped, and starts the kept run directory report.
     """
+    register_group_markers(config)
     expression = config.getoption("markexpr", default="") or ""
     registered = groups.registered_marker_names(config.getini("markers"))
     unknown = groups.unknown_marker_names(expression, registered)
@@ -76,6 +84,23 @@ def pytest_configure(config: pytest.Config) -> None:
     report = RunDirectoryReport()
     config.pluginmanager.register(report)
     config.stash[RUN_DIRECTORY_REPORT_KEY] = report
+
+
+def register_group_markers(config: pytest.Config) -> None:
+    """Registers each group file's marker, so --strict-markers and -m accept the group.
+
+    Raises pytest.UsageError for a group file the harness cannot read, or one named like a
+    marker pytest.ini or pytest itself already registers.
+    """
+    try:
+        descriptions = groups.read_group_descriptions(GROUPS_DIR)
+    except (groups.GroupFileError, OSError) as error:
+        raise pytest.UsageError(f"cannot read the scenario groups: {error}") from error
+    registered = set(groups.registered_marker_names(config.getini("markers")))
+    for name, description in descriptions.items():
+        if name in registered:
+            raise pytest.UsageError(f"group file {GROUPS_DIR / name}{groups.GROUP_FILE_SUFFIX} names the marker {name}, which is already registered")
+        config.addinivalue_line("markers", f"{name}: {description}")
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:
@@ -98,6 +123,31 @@ def validate_environment() -> None:
     lock_wait_seconds()
     binary_relative()
     hour_timeout_seconds()
+    shard()
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Keeps only this run's share of the selected tests when ROTS_IT_SHARD is set, deselecting the rest.
+
+    trylast, so the -m and -k deselection has already run and the shards split only the selection.
+    """
+    selected_shard = shard()
+    if selected_shard is None or not items:
+        return
+    kept_ids = in_shard((item.nodeid for item in items), selected_shard)
+    kept = [item for item in items if item.nodeid in kept_ids]
+    deselected = [item for item in items if item.nodeid not in kept_ids]
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = kept
+    config.stash[SHARD_LEFT_NOTHING_KEY] = not kept
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Turns "no tests ran" into success for a shard whose share of a non-empty selection is empty."""
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED and session.config.stash.get(SHARD_LEFT_NOTHING_KEY, False):
+        session.exitstatus = pytest.ExitCode.OK
 
 
 def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
@@ -141,6 +191,17 @@ def session_seed() -> int:
         return int(value)
     except ValueError:
         raise pytest.UsageError(f"ROTS_IT_SEED must be an integer, not {value!r}") from None
+
+
+def shard() -> Optional[Shard]:
+    """The share of the selected tests ROTS_IT_SHARD (k/N) asks this run to keep, or None to run them all; raises pytest.UsageError."""
+    value = os.environ.get("ROTS_IT_SHARD")
+    if value is None:
+        return None
+    try:
+        return parse_shard(value)
+    except ValueError:
+        raise pytest.UsageError(f"ROTS_IT_SHARD must be k/N with whole numbers and 1 <= k <= N, such as 2/4, not {value!r}") from None
 
 
 def lock_wait_seconds() -> float:

@@ -55,10 +55,11 @@ make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 ```
 
-A group is a marker registered in `tests/integration/pytest.ini`, such as `boot`. `GROUP` may
-be an expression such as `GROUP="boot or other"`; it always stays inside the `scenario` filter. A
-name that neither `pytest.ini` nor pytest itself registers stops the run with a usage error that
-lists the registered names, so a misspelt group never passes by selecting nothing.
+A group is a marker such as `boot`, registered by its file `tests/integration/groups/<group>.txt`,
+which holds the group's one-line description. `GROUP` may be an expression such as
+`GROUP="boot or other"`; it always stays inside the `scenario` filter. A name that no group file,
+`pytest.ini` or pytest itself registers stops the run with a usage error that lists the registered
+names, so a misspelt group never passes by selecting nothing.
 
 Run one harness session per checkout at a time: every session in a checkout shares the template
 cache under `build/integration/libs/`.
@@ -66,22 +67,26 @@ cache under `build/integration/libs/`.
 ## Continuous integration
 
 The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull requests into
-`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. A pull
-request runs:
+`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. Its
+"Choose the integration groups" job first runs `make integration-unit`, which includes the test
+world check (`unit/test_world_files.py`), so a broken world fails in seconds. A pull request
+runs:
 
 - `boot`, always;
 - each group its description names as `@integration-test-<group>`, such as
   `@integration-test-poison`, or every group for `@integration-test-all`;
-- the groups of each scenario file it changes;
+- the groups of each scenario file it changes, and the group of each group file it changes;
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
-  `requirements.txt`, the test world, a scenario file other than a `test_*.py`, `src/harness/`,
-  `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
+  `requirements.txt`, the test world (other than its notes), a scenario file other than a
+  `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
 
 A change to the game's own code adds no group by itself, so name the groups whose behaviour it
-touches. A name `pytest.ini` does not register fails the job and lists the registered groups.
-Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the job,
-and the job summary lists the groups that ran and why. When a scenario fails, its kept run
-directories are uploaded as the `integration-runs` artifact.
+touches. A name no group file registers fails the job and lists the registered groups.
+Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
+and the "Choose the integration groups" job's summary lists the groups that run and why. A run of
+every group is split across eight parallel jobs, `shard 1/8` to `shard 8/8`, through
+`ROTS_IT_SHARD`; a run of chosen groups is one job. When a scenario fails, its kept run
+directories are uploaded as that job's `integration-runs-shard-<k>` artifact.
 
 ## Launchers
 
@@ -109,9 +114,10 @@ Environment variables:
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds to wait for the Docker lock, a finite number |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
+| `ROTS_IT_SHARD` | unset | `k/N`, such as `2/4`: runs only every N-th selected test in node id order, starting at the k-th; a shard left with no tests passes |
 
-A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` or
-`ROTS_IT_HOUR_TIMEOUT` value the harness cannot use stops the run before any test with a usage
+A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`,
+`ROTS_IT_HOUR_TIMEOUT` or `ROTS_IT_SHARD` value the harness cannot use stops the run before any test with a usage
 error naming the variable and its value.
 
 ## Shared Docker lock
@@ -215,7 +221,16 @@ fixture quits every session after the test. The game lets an account have only o
 online unless the account owns a character above level 91, so a test that logs in two
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).
 
-A new group needs a line under `markers` in `pytest.ini`.
+A new group needs its own file, `groups/<group>.txt`, holding one line that says what the group
+pins; `conftest.py` registers a marker for each file.
+
+The test world's fixtures are listed by `make world-catalogue PYTHON=.venv/bin/python`
+(`ZONE=<n>` for one zone, `CATEGORY=rooms` for one table), and explained in one notes file per
+zone, `world/notes/zone-<n>.md`. A new scenario area adds its own zone (its world files, vnums,
+map square and notes file), its own group file, and keeps its room constants in its scenario
+file; `rots_harness/world.py` holds only the rooms two or more scenario files share. `make
+integration-unit` checks the world's files (`unit/test_world_files.py`): index order, ascending
+vnums, zone ranges and map squares, notes files and leftover conflict markers.
 
 A plain server's game time follows the wall clock. A test marked
 `@pytest.mark.schedule("affect-hours")` runs `bin/ageland_harness` instead, whose game time

@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "act_offe.h"
 #include "color.h"
 #include "comm.h"
 #include "db.h"
@@ -705,6 +706,70 @@ char* rescue_message[MAX_RACES][2] = {
         "Roaring, $n fearlessly rescues $N.\r\n" }
 };
 
+/*
+ * Returns whoever in the rescuer's room is currently swinging at `victim`, or
+ * NULL if nobody eligible is.  Wraiths can only be pulled off by wraiths, and
+ * mortals can't step in front of a wraith's target.
+ */
+char_data* find_rescue_attacker(char_data* rescuer, char_data* victim)
+{
+    byte shadow_flag = IS_SHADOW(rescuer);
+    char_data* tmp_ch;
+
+    for (tmp_ch = world[rescuer->in_room].people;
+         tmp_ch && ((tmp_ch->specials.fighting != victim) || (shadow_flag && !IS_SHADOW(tmp_ch)) || (!shadow_flag && IS_NPC(tmp_ch) && IS_SHADOW(tmp_ch)));
+         tmp_ch = tmp_ch->next_in_room)
+        ;
+
+    return tmp_ch;
+}
+
+/*
+ * Returns the charmed follower beside the leader, and visible to them, who is
+ * closest to dying among those someone is fighting, or NULL.  `saw_follower`,
+ * when given, is set to whether any such follower stood in the room at all, so
+ * the caller can tell "none here" from "none need rescuing".  `follower_here`,
+ * when given, is set to whether any charmed follower is in the room, seen or
+ * not.
+ */
+char_data* find_most_hurt_rescuable_follower(char_data* leader, bool* saw_follower, bool* follower_here)
+{
+    char_data* worst = nullptr;
+    long long worst_health = 0;
+
+    if (saw_follower)
+        *saw_follower = false;
+    if (follower_here)
+        *follower_here = false;
+
+    for (follow_type* k = leader->followers; k; k = k->next) {
+        char_data* pet = k->follower;
+
+        if (pet->in_room != leader->in_room)
+            continue;
+        if (!IS_AFFECTED(pet, AFF_CHARM))
+            continue;
+        if (follower_here)
+            *follower_here = true;
+        if (!CAN_SEE(leader, pet))
+            continue;
+        if (saw_follower)
+            *saw_follower = true;
+        if (GET_MAX_HIT(pet) <= 0)
+            continue;
+        if (!find_rescue_attacker(leader, pet))
+            continue;
+
+        long long health = (1000LL * GET_HIT(pet)) / GET_MAX_HIT(pet);
+        if (!worst || health < worst_health) {
+            worst = pet;
+            worst_health = health;
+        }
+    }
+
+    return worst;
+}
+
 ACMD(do_rescue)
 {
 
@@ -724,19 +789,81 @@ ACMD(do_rescue)
         return;
     }
 
-    if (wtl) {
-        if ((wtl->targ1.type != TARGET_CHAR) || !char_exists(wtl->targ1.ch_num) || wtl->targ1.ptr.ch->in_room != ch->in_room) {
+    /* A bare 'rescue' names nobody, whatever target the interpreter filled in. */
+    const char* rest = argument;
+    while (*rest == ' ')
+        rest++;
+    if (!*rest) {
+        send_to_char("Who do you want to rescue?\n\r", ch);
+        return;
+    }
+
+    /* one_argument() drops a word that opens with a quote (it never copies its
+     * first letter), while the target parser strips the quotes, so read a
+     * quoted word here the same way -- 'leader' must mean leader. */
+    if (*rest == '\'') {
+        int length = 0;
+        for (const char* letter = rest + 1; *letter && *letter != '\'' && length < MAX_INPUT_LENGTH - 1; letter++)
+            arg[length++] = LOWER(*letter);
+        arg[length] = '\0';
+    } else {
+        one_argument(argument, arg);
+    }
+    const bool wants_leader = is_abbrev(arg, "leader") || is_abbrev(arg, "master");
+    const bool wants_followers = !wants_leader && is_abbrev(arg, "followers");
+
+    /*
+     * 'leader'/'master' and 'followers' win over any character the word also
+     * names whenever they apply -- in a fight with an 'orc leader', 'order
+     * followers rescue leader' must save the master, not the orc.  They apply
+     * when the leader, or a charmed follower, is in the room, seen or not: an
+     * unseen one gets the "not here" answer rather than letting the word fall
+     * back to an enemy's name.  Only typed or ordered rescues (cmd CMD_RESCUE)
+     * read keywords: mob bodyguards call in with cmd 0, a resolved target and
+     * that target's own first name.
+     */
+    victim = nullptr;
+    if (cmd == CMD_RESCUE) {
+        if (wants_leader) {
+            if (ch->master && ch->master->in_room == ch->in_room) {
+                if (!CAN_SEE(ch, ch->master)) {
+                    send_to_char("Your leader isn't here.\n\r", ch);
+                    return;
+                }
+                victim = ch->master;
+            }
+        } else if (wants_followers) {
+            bool saw_follower = false;
+            bool follower_here = false;
+            victim = find_most_hurt_rescuable_follower(ch, &saw_follower, &follower_here);
+            if (!victim && saw_follower) {
+                send_to_char("None of your followers need rescuing.\n\r", ch);
+                return;
+            }
+            if (!victim && follower_here) {
+                send_to_char("None of your followers are here.\n\r", ch);
+                return;
+            }
+        }
+    }
+
+    if (victim) {
+        /* A keyword applied. */
+    } else if (wtl && wtl->targ1.type == TARGET_CHAR) {
+        if (!char_exists(wtl->targ1.ch_num) || wtl->targ1.ptr.ch->in_room != ch->in_room) {
             send_to_char("Alas! You lost your victim.\n\r", ch);
             return;
         }
         victim = wtl->targ1.ptr.ch;
-    } else {
-        one_argument(argument, arg);
-
-        if (!(victim = get_char_room_vis(ch, arg))) {
+    } else if (!(victim = get_char_room_vis(ch, arg))) {
+        /* The word named nobody here, and no keyword applied. */
+        if (wants_leader)
+            send_to_char("Your leader isn't here.\n\r", ch);
+        else if (wants_followers)
+            send_to_char("None of your followers are here.\n\r", ch);
+        else
             send_to_char("Who do you want to rescue?\n\r", ch);
-            return;
-        }
+        return;
     }
     if (victim == ch) {
         send_to_char("What about fleeing instead?\n\r", ch);
@@ -750,10 +877,7 @@ ACMD(do_rescue)
 
     shadow_flag = IS_SHADOW(ch);
 
-    for (tmp_ch = world[ch->in_room].people;
-         tmp_ch && ((tmp_ch->specials.fighting != victim) || (shadow_flag && !IS_SHADOW(tmp_ch)) || (!shadow_flag && IS_NPC(tmp_ch) && IS_SHADOW(tmp_ch)));
-         tmp_ch = tmp_ch->next_in_room)
-        ;
+    tmp_ch = find_rescue_attacker(ch, victim);
 
     if (!tmp_ch) {
         if (!shadow_flag)

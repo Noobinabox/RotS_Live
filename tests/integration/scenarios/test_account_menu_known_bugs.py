@@ -88,6 +88,7 @@ def closes_within(connection: GameSession, seconds: float) -> bool:
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="after `Illegal name, please try another:` at the new character confirmation, the next name should be offered for confirmation; today it is read as an account email address",
 )
 @pytest.mark.characters(IMPLEMENTOR)
@@ -117,6 +118,7 @@ def test_a_name_refused_at_the_new_character_confirmation_is_followed_by_another
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="`delete <player> rots` should delete and disconnect that player; it extracts a mob answering to the name in the implementor's room instead and leaves the player connected",
 )
 @pytest.mark.characters(IMPLEMENTOR, BYSTANDER)

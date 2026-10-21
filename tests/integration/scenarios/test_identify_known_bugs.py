@@ -93,7 +93,7 @@ def identify_relic(server) -> list:
             return [line.strip() for line in reply.splitlines()]
 
 
-@pytest.mark.xfail(strict=True, reason="identify should describe the NOINVIS and WILLPOWER flags; today extra_messages[] prints 'ERROR: Please report' for them")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="identify should describe the NOINVIS and WILLPOWER flags; today extra_messages[] prints 'ERROR: Please report' for them")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MAGE)
 def test_identify_describes_every_flag_a_builder_can_set(server) -> None:
@@ -117,7 +117,7 @@ def test_identify_describes_every_flag_a_builder_can_set(server) -> None:
     assert not [line for line in attributes if ERROR_FRAGMENT in line], attributes
 
 
-@pytest.mark.xfail(strict=True, reason="identify should say a THROW item can be thrown; today wear_messages[15] says 'used as a light source'")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="identify should say a THROW item can be thrown; today wear_messages[15] says 'used as a light source'")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MAGE)
 def test_identify_says_a_throwable_item_can_be_thrown_not_used_as_a_light(server) -> None:

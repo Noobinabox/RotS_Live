@@ -48,6 +48,7 @@ extern struct room_data world;
 extern struct message_list fight_messages[MAX_MESSAGES];
 extern struct obj_data* object_list;
 extern struct char_data* waiting_list; /* in db.cpp */
+extern struct char_data* mob_proto;
 extern int immort_start_room;
 extern int mortal_start_room[];
 extern int r_mortal_start_room[];
@@ -1614,6 +1615,56 @@ int resist_magnitude_for(const char_data* victim, int resist_type)
     return magnitude;
 }
 
+/* What a flag-only resistance is worth when it is weighed against a magnitude. The flag cuts a
+   third; against a melee hit (IS_PHYSICAL) it also misses one swing in three, so on average it is
+   worth two thirds of that. Archery and wild swings resist as physical but have no miss roll, so
+   for them the flag is worth the full third. */
+constexpr int FLAG_RESIST_PERCENT = 33;
+constexpr int FLAG_RESIST_PHYSICAL_AVERAGE = 22;
+
+/* Whether a source with no strength gives the victim this element: a worn APPLY_RESIST item
+   ("A 30"), a mob's own record, or a resist affect with no magnitude. Worn items follow
+   equip_char's rule that a held item without ITEM_HOLD applies nothing. */
+static bool has_flag_resistance(const char_data* victim, int resist_type)
+{
+    for (int pos = 0; pos < MAX_WEAR; ++pos) {
+        const obj_data* item = victim->equipment[pos];
+        if (item == nullptr || (pos == HOLD && !CAN_WEAR(item, ITEM_HOLD)))
+            continue;
+
+        for (int i = 0; i < MAX_OBJ_AFFECT; ++i) {
+            if (item->affected[i].location == APPLY_RESIST && item->affected[i].modifier == resist_type)
+                return true;
+        }
+    }
+
+    /* Same guard as affect_naked, which restores these bits from the prototype. */
+    if (IS_NPC(victim) && mob_proto && victim->nr > -1
+        && (mob_proto[victim->nr].specials.resistance & (1 << resist_type)))
+        return true;
+
+    int count = 0;
+    for (const affected_type* aff = victim->affected; aff && count < MAX_AFFECT; aff = aff->next, count++) {
+        if (aff->location == APPLY_RESIST && aff->modifier == resist_type && aff->effect_modifier <= 0)
+            return true;
+    }
+
+    return false;
+}
+
+/* The magnitude that applies against this element, or 0 when the flag rule does. The higher
+   source wins: the largest magnitude, or a flag-only source at its flat worth. A tie keeps the
+   flag rule, which is how it works on live. Damage and affections both read this. */
+int effective_resist_magnitude(const char_data* victim, int resist_type, bool physical_attack)
+{
+    const int magnitude = resist_magnitude_for(victim, resist_type);
+    if (magnitude <= 0 || !has_flag_resistance(victim, resist_type))
+        return magnitude;
+
+    const int flag_worth = physical_attack ? FLAG_RESIST_PHYSICAL_AVERAGE : FLAG_RESIST_PERCENT;
+    return magnitude > flag_worth ? magnitude : 0;
+}
+
 /*
  * damage now modified to return int - 1 if the victim was
  * killed, 0 if not.
@@ -1789,21 +1840,33 @@ int damage(char_data* attacker, char_data* victim, int dam, int attacktype, int 
     }
 
     if (tmp > 0) {
-        const int magnitude = resist_magnitude_for(victim, resist_type);
+        const int magnitude = effective_resist_magnitude(victim, resist_type, IS_PHYSICAL(attacktype));
         if (magnitude > 0) {
             dam = apply_resistance(dam, magnitude);
             if (has_debug_flag(victim)) {
-                sprintf(buf, "::DAMAGE:: resisted %d%% -> dam %d\n\r", magnitude, dam);
+                sprintf(buf, "::DAMAGE:: resisted %d%% -> dam %d%s\n\r", magnitude, dam,
+                    has_flag_resistance(victim, resist_type) ? " (over flag)" : "");
                 debug_flag_msg(buf, victim);
             }
             send_to_char("You resist a lot.\n\r", victim);
             act("$n resists a lot.\n\r", TRUE, victim, 0, 0, TO_ROOM);
         } else if (!physical_check_misses) {
-            /* Flag resistance from a mob record or an APPLY_RESIST item: no magnitude
-               exists, so the original flat rule applies unchanged, including the 1-in-3
-               chance that a physical resistance does not fire at all. */
+            /* Flag resistance from a mob record or an APPLY_RESIST item, with no magnitude
+               or none higher than the flag is worth: the original flat rule applies
+               unchanged, including the 1-in-3 chance that a physical resistance does not
+               fire at all. */
             dam = dam * 2 / 3;
-            debug_flag_msg("::DAMAGE:: flag resistance, flat 1/3\n\r", victim);
+            if (has_debug_flag(victim)) {
+                /* Say when a magnitude was there and lost to the flag, or tied it. */
+                const int lost = resist_magnitude_for(victim, resist_type);
+                const int flag_worth = IS_PHYSICAL(attacktype) ? FLAG_RESIST_PHYSICAL_AVERAGE : FLAG_RESIST_PERCENT;
+                if (lost > 0)
+                    sprintf(buf, "::DAMAGE:: flag resistance, flat 1/3 (%s %d%%)\n\r",
+                        lost == flag_worth ? "ties" : "beat", lost);
+                else
+                    sprintf(buf, "::DAMAGE:: flag resistance, flat 1/3\n\r");
+                debug_flag_msg(buf, victim);
+            }
             send_to_char("You resist a lot.\n\r", victim);
             act("$n resists a lot.\n\r", TRUE, victim, 0, 0, TO_ROOM);
         }

@@ -5,16 +5,14 @@ from typing import Optional
 
 import pytest
 
-from rots_harness import ci_groups
+from rots_harness import ci_groups, groups
 
-INI_LINES = [
-    "scenario: boots its own server through the server fixture",
-    "boot: the server boots on a harness lib and characters log in",
-    "characters(*characters): the characters the test's server is built with",
-    "schedule(name): runs the test's server as ageland_harness with the named schedule",
-    "poison: poison ticks once per game hour for its duration, then wears off",
-    "summon: summon cannot reach a player in a dark room",
-]
+# Each group file's description, by group name.
+GROUP_DESCRIPTIONS = {
+    "boot": "the server boots on a harness lib and characters log in",
+    "poison": "poison ticks once per game hour for its duration, then wears off",
+    "summon": "summon cannot reach a player in a dark room",
+}
 GROUPS = ["boot", "poison", "summon"]
 SCENARIO_SOURCES = {
     "tests/integration/scenarios/test_poison.py": "pytestmark = [pytest.mark.scenario, pytest.mark.poison]\n",
@@ -30,13 +28,18 @@ def select(body: str = "", changed: tuple[str, ...] = (), event: str = "pull_req
     return ci_groups.select_groups(event, body, changed, read_scenario, GROUPS)
 
 
-def test_groups_are_the_markers_without_arguments_other_than_scenario() -> None:
-    assert ci_groups.group_marker_names(INI_LINES) == GROUPS
+def write_repo(repo_root: Path) -> None:
+    """A repository with the integration folder and one file per group in GROUP_DESCRIPTIONS."""
+    groups_dir = repo_root / ci_groups.GROUPS_DIRECTORY
+    groups_dir.mkdir(parents=True)
+    (repo_root / "tests/integration/scenarios").mkdir(parents=True)
+    for name, description in GROUP_DESCRIPTIONS.items():
+        (groups_dir / f"{name}.txt").write_text(description + "\n", encoding="utf-8")
 
 
-def test_the_real_pytest_ini_registers_boot_as_a_group() -> None:
-    ini_path = Path(__file__).resolve().parents[1] / "pytest.ini"
-    assert ci_groups.ALWAYS_RUN_GROUP in ci_groups.group_marker_names(ci_groups.read_marker_lines(ini_path))
+def test_the_real_group_folder_registers_boot() -> None:
+    groups_dir = Path(__file__).resolve().parents[1] / "groups"
+    assert ci_groups.ALWAYS_RUN_GROUP in groups.read_group_descriptions(groups_dir)
 
 
 def test_a_plain_pull_request_runs_boot_only() -> None:
@@ -91,6 +94,27 @@ def test_a_deleted_scenario_file_adds_nothing() -> None:
     assert select(changed=("tests/integration/scenarios/test_gone.py",)).groups == ["boot"]
 
 
+def test_a_changed_group_file_adds_its_group() -> None:
+    selection = select(changed=("tests/integration/groups/poison.txt",))
+    assert selection.groups == ["boot", "poison"]
+    assert selection.reasons[1] == "poison: its group file poison.txt changed"
+
+
+def test_a_deleted_group_file_adds_nothing() -> None:
+    assert select(changed=("tests/integration/groups/gone.txt",)).groups == ["boot"]
+
+
+@pytest.mark.parametrize("path", ["tests/integration/groups/README.md", "tests/integration/groups/nested/poison.txt"])
+def test_other_files_in_the_group_folder_add_nothing(path: str) -> None:
+    assert select(changed=(path,)).groups == ["boot"]
+
+
+def test_a_group_file_changed_with_its_scenario_file_is_listed_once() -> None:
+    selection = select(changed=("tests/integration/groups/summon.txt", "tests/integration/scenarios/test_summon.py"))
+    assert selection.groups == ["boot", "summon"]
+    assert selection.reasons == ["boot: always runs", "summon: its group file summon.txt changed"]
+
+
 def test_a_group_both_named_and_changed_is_listed_once() -> None:
     selection = select(body="@integration-test-poison", changed=("tests/integration/scenarios/test_poison.py",))
     assert selection.groups == ["boot", "poison"]
@@ -118,7 +142,17 @@ def test_a_harness_change_runs_every_group(path: str) -> None:
     assert selection.reasons == [f"every group: harness file {path} changed"]
 
 
-@pytest.mark.parametrize("path", ["tests/integration/unit/test_launcher.py", "tests/integration/README.md", "src/handler.cpp", ".github/workflows/ci.yml"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tests/integration/unit/test_launcher.py",
+        "tests/integration/README.md",
+        "tests/integration/groups/boot.txt",
+        "tests/integration/world/notes/zone-11.md",
+        "src/handler.cpp",
+        ".github/workflows/ci.yml",
+    ],
+)
 def test_other_changes_do_not_run_every_group(path: str) -> None:
     assert select(changed=(path,)).groups == ["boot"]
 
@@ -142,8 +176,7 @@ def test_the_summary_names_what_runs_and_why() -> None:
 
 def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo_root = tmp_path / "repo"
-    (repo_root / "tests/integration/scenarios").mkdir(parents=True)
-    (repo_root / "tests/integration/pytest.ini").write_text("[pytest]\nmarkers =\n    " + "\n    ".join(INI_LINES) + "\n", encoding="utf-8")
+    write_repo(repo_root)
     (repo_root / "tests/integration/scenarios/test_summon.py").write_text(SCENARIO_SOURCES["tests/integration/scenarios/test_summon.py"], encoding="utf-8")
     changed_files = tmp_path / "changed.txt"
     changed_files.write_text("src/spells.cpp\ntests/integration/scenarios/test_summon.py\n\n", encoding="utf-8")
@@ -153,20 +186,59 @@ def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, 
     monkeypatch.setenv("PR_BODY", "$(rm -rf /) @integration-test-poison")
     status = ci_groups.main([
         "--event", "pull_request", "--changed-files", str(changed_files), "--repo-root", str(repo_root),
-        "--output", str(output), "--summary", str(summary),
+        "--output", str(output), "--summary", str(summary), "--full-suite-shards", "8",
     ])
     assert status == 0
-    assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\n"
+    assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\nshards=[1]\n"
     assert summary.read_text(encoding="utf-8").startswith("### Integration groups: `boot`, `poison`, `summon`\n")
+    assert "parallel shards" not in summary.read_text(encoding="utf-8")
+
+
+def test_main_shards_a_run_of_every_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = tmp_path / "repo"
+    write_repo(repo_root)
+    output = tmp_path / "output"
+    summary = tmp_path / "summary.md"
+    monkeypatch.setenv("PR_BODY", "@integration-test-all")
+    status = ci_groups.main([
+        "--event", "pull_request", "--repo-root", str(repo_root), "--output", str(output), "--summary", str(summary),
+        "--full-suite-shards", "8",
+    ])
+    assert status == 0
+    assert output.read_text(encoding="utf-8") == "group=\nshards=[1, 2, 3, 4, 5, 6, 7, 8]\n"
+    assert summary.read_text(encoding="utf-8").endswith("\nSplit across 8 parallel shards.\n")
+
+
+def test_main_refuses_fewer_than_one_full_suite_shard(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        ci_groups.main(["--event", "push", "--output", str(tmp_path / "output"), "--full-suite-shards", "0"])
+
+
+def test_only_a_run_of_every_group_is_sharded() -> None:
+    assert select(event="push").shard_numbers(8) == [1, 2, 3, 4, 5, 6, 7, 8]
+    assert select(body="@integration-test-all").shard_numbers(3) == [1, 2, 3]
+    assert select(body="@integration-test-poison").shard_numbers(8) == [1]
+    assert select().shard_numbers(8) == [1]
 
 
 def test_main_fails_with_status_2_on_an_unknown_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     repo_root = tmp_path / "repo"
-    (repo_root / "tests/integration").mkdir(parents=True)
-    (repo_root / "tests/integration/pytest.ini").write_text("[pytest]\nmarkers =\n    " + "\n    ".join(INI_LINES) + "\n", encoding="utf-8")
+    write_repo(repo_root)
     output = tmp_path / "output"
     monkeypatch.setenv("PR_BODY", "@integration-test-posion")
     status = ci_groups.main(["--event", "pull_request", "--repo-root", str(repo_root), "--output", str(output)])
     assert status == 2
     assert "unknown integration groups: posion" in capsys.readouterr().err
+    assert not output.exists()
+
+
+def test_main_fails_with_status_2_on_an_unreadable_group_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    repo_root = tmp_path / "repo"
+    write_repo(repo_root)
+    (repo_root / ci_groups.GROUPS_DIRECTORY / "bad-name.txt").write_text("a group\n", encoding="utf-8")
+    output = tmp_path / "output"
+    monkeypatch.setenv("PR_BODY", "")
+    status = ci_groups.main(["--event", "pull_request", "--repo-root", str(repo_root), "--output", str(output)])
+    assert status == 2
+    assert "cannot read the scenario groups" in capsys.readouterr().err
     assert not output.exists()

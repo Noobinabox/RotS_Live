@@ -96,6 +96,7 @@ int get_total_fame(char_data* ch);
 int get_confuse_modifier(const char_data* ch);
 int resist_type_for_attack(int attack_type);
 int resist_magnitude_for(const char_data* victim, int resist_type);
+int effective_resist_magnitude(const char_data* victim, int resist_type, bool physical_attack);
 int compare_obj_to_proto(const obj_data* obj);
 struct obj_data* obj_to_proto(obj_data* obj);
 void check_inventory_proto(char_data* ch);

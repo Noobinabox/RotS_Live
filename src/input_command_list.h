@@ -259,6 +259,7 @@ inline constexpr const char* COMMAND_NAMES[] = {
     "unprotect", // 252
     "vault",
     "gameoptions", // 254
+    "restyle", // 255
     "\n"
 };
 

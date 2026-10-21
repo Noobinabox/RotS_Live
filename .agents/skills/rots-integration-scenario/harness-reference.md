@@ -109,7 +109,7 @@ process under emulation can hang the container.
 ### Environment variables
 
 `validate_environment()` in `conftest.py` checks `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`,
-`ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY` and `ROTS_IT_HOUR_TIMEOUT` before any test; a bad value is
+`ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`, `ROTS_IT_HOUR_TIMEOUT` and `ROTS_IT_SHARD` before any test; a bad value is
 a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 `ROTS_IT_DOCKER_LOCK_DIR` are not checked.
 
@@ -122,6 +122,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_LOCK_WAIT` | `600` | seconds the Docker launcher waits for the lock |
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
+| `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI shards only a run of every group, eight ways. An empty share passes |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.
@@ -424,18 +425,22 @@ def test_tainted_bread_poisons_a_mortal_once_per_game_hour_then_wears_off(server
 
 ## Markers and groups
 
-`tests/integration/pytest.ini` runs under `--strict-markers`:
+`tests/integration/pytest.ini` runs under `--strict-markers` and registers the markers that are
+not groups:
 
 | Marker | Effect |
 | --- | --- |
 | `scenario` | boots its own server through the `server` fixture; `make integration` always selects it |
 | `characters(*characters)` | the test's characters; a test using `server` without it fails |
 | `schedule(name)` | runs `bin/ageland_harness --schedule <name>`; game time advances only through `advance_hours` |
-| every other line under `markers =` | a group, with no behaviour of its own |
+| a group, one per `tests/integration/groups/<name>.txt` | no behaviour of its own |
 
-A new group is one line `<name>: <description>` under `markers =` (the name must start the
-line), plus `pytest.mark.<name>` in the scenario's `pytestmark`. `rots_harness/groups.py` and
-the Makefile need no change.
+A new group is a new file `tests/integration/groups/<name>.txt` holding its description on one
+line, plus `pytest.mark.<name>` in the scenario's `pytestmark`. `conftest.py` registers a marker
+per file (`register_group_markers`, reading through `rots_harness/groups.py`), and CI's group
+choice reads the same folder. A name must be a marker name (letters, digits and underscores). A
+unit test (`unit/test_groups.py`) fails when a scenario marks a group with no file or a file names
+a group no scenario marks. Neither `pytest.ini` nor the Makefile changes.
 
 ## Time control
 
@@ -466,83 +471,99 @@ among others), so the same commands give the same sequence.
 ## The test world
 
 `LibTemplateBuilder.build` (`rots_harness/libbuilder.py`) copies `tests/integration/world/<cat>`
-for each of `wld mob obj zon shp scr mdl` into the lib; the real `lib/world` is not used. Adding
-a category means editing `WORLD_CATEGORIES`.
+for each of `wld mob obj zon shp scr mdl` into the lib; the real `lib/world` is not used. Adding a
+category means editing `WORLD_CATEGORIES` (`rots_harness/world_files.py`). The world's `notes/`
+folder is documentation; the harness never copies it.
 
-### Zones
+This section holds the rules for using and changing the world, not a list of its fixtures. The
+fixtures are found as below, so a branch that adds an area edits no shared list here.
 
-| Zone | File | Name | Map (x, y) | Rooms | Resets |
-| --- | --- | --- | --- | --- | --- |
-| 11 | `zon/11.zon` | Harness arena | (0, 0) | 1101-1199 | target orc (mob 1130) to 1132; harness snake (mob 1131) to 1134 |
-| 12 | `zon/12.zon` | Harness distant zone | (3, 4) | 1201-1299 | none |
-| 13 | `zon/13.zon` | Harness plus-twenty zone | (20, 0) | 1301-1399 | none |
-| 14 | `zon/14.zon` | Harness minus-twenty zone | (-20, 0) | 1401-1499 | none |
+### Finding a fixture
 
-### Rooms
+- **The catalogue** prints every zone, room, mob, object and script from the world files, with
+  the flag numbers decoded: `make world-catalogue PYTHON=.venv/bin/python` from the repository
+  root, or `python -m rots_harness.world_catalogue` from `tests/integration`. `ZONE=<n>`
+  (`--zone`) keeps one zone and the fixtures among its own vnums; `CATEGORY=` (`--category`)
+  `zones`, `rooms`, `mobs`, `objects` or `scripts` keeps one table. It shows each zone's map
+  square, vnums and resets; each room's flags, sector and exits (with a door's flags and
+  keyword); each mob's keywords, level, act flags, special program, script and options; each
+  object's type, extra and wear flags and affects; each script's triggers.
+- **The notes**, `world/notes/zone-<n>.md`, one per zone: what the zone is for, and what each
+  fixture does that its numbers do not show (its behaviour, its quirks, why a value is what it
+  is, which scenarios rely on it). Fixtures outside every zone's own vnums (`mob/14.mob`,
+  `mob/15.mob`, `mob/guildmasters.mob`, `obj/14.obj`) are in `world/notes/shared.md`.
+- **The world files** for anything else, decoded as "File formats" below.
+- **Room constants**: `rots_harness/world.py` holds the rooms that two or more scenario files, or
+  the harness itself, name. A room only one scenario file names is a constant in that file.
 
-Every room in the test world, decoded from its header line (`<zone> <flags> <sector> <level>`;
-every room's level is 0). Sector 0 is `SECT_INSIDE`. No room has the `INDOORS` flag, so
-`OUTSIDE()` is true in all of them. Re-read the headers in `wld/11.wld` to `wld/14.wld` after
-anyone changes the world.
+### Rules and gotchas
 
-| Vnum | Name | Flags | Sector | Exits |
-| --- | --- | --- | --- | --- |
-| 1101 | Immortal Start (`world.ROOM_IMMORTAL_START`) | 0 (none) | 0 | none |
-| 1102 | Immortal Idle | 0 (none) | 0 | none |
-| 1110 | Frozen Room | 0 (none) | 0 | none |
-| 1129 | Olog-hai Start | 0 (none) | 0 | none |
-| 1130 | Arena West (`world.ROOM_ARENA_WEST`) | 0 (none) | 0 | east 1131, down 1136 |
-| 1131 | Arena Centre (`world.ROOM_ARENA_CENTRE`) | 0 (none) | 0 | north 1133, east 1132, south 1134, west 1130 |
-| 1132 | Arena East | 0 (none) | 0 | west 1131 |
-| 1133 | Dark Cell (`world.ROOM_DARK_CELL`) | 1 (`DARK`) | 0 | south 1131 |
-| 1134 | Corridor One | 0 (none) | 0 | north 1131, south 1135 |
-| 1135 | Corridor Two | 0 (none) | 0 | north 1134 |
-| 1136 | Crevice Floor | 0 (none) | 0 | up 1130 |
-| 1151 | Retirement Home | 0 (none) | 0 | none |
-| 1152 | Lost and Found | 0 (none) | 0 | none; where a character with a bad load room arrives |
-| 1160 | Human Start | 0 (none) | 0 | none |
-| 1170 | Wood-elf Start | 0 (none) | 0 | none |
-| 1184 | Beorning Start | 0 (none) | 0 | none |
-| 1190 | Uruk Idle | 0 (none) | 0 | none |
-| 1191 | Orc Idle | 0 (none) | 0 | none |
-| 1201 | Distant Cell (`world.ROOM_DISTANT_CELL`, zone 12) | 0 (none) | 0 | none |
-| 1301 | Plus Twenty Cell (`world.ROOM_PLUS_TWENTY_CELL`, zone 13) | 0 (none) | 0 | none |
-| 1401 | Minus Twenty Cell (`world.ROOM_MINUS_TWENTY_CELL`, zone 14) | 0 (none) | 0 | none |
-
-1133 is the only room with a flag. `IS_DARK` is true there unless something in it gives light,
-so a character there sees only with infravision, holylight, or moonvision while the moon is up
-(1133 counts as outside, and moonlight follows the uncontrolled game hour).
-
-### Mobs and objects
-
-| Mob | Keywords | What it is |
-| --- | --- | --- |
-| 1130 | `target orc` | a plain melee target; zone 11 resets one into 1132 |
-| 1131 | `snake harness` | its bite poisons; act flags `3` include `MOB_SPEC`; zone 11 resets one into 1134 |
-| 1132 | `bystander orc` | involved in nothing, there to be splashed |
-| 1133 | `brute orc` | hits very hard |
-| 1134 | `pet orc` | carries the `MOB_PET` flag (act flags `2097154`) |
-| 1135 | `target orc hardy` | a target that outlives several ticks of damage |
-
-Five of these answer to the keyword `orc`, as do two of the guildmaster copies below (4601 and
-32200); this matters for name lookups whenever one is loaded ("Names, sides and lookups"
-above). `mob/guildmasters.mob` copies six real guildmasters at their real vnums (1503, 2043,
-4601, 10003, 13600, 32200) so `spec_ass.cpp` binds the guild special to them.
-
-| Object | Keyword | What it is |
-| --- | --- | --- |
-| 1130 | `token` | harness token; its vnum is one `spec_ass.cpp` assigns a board to |
-| 1136 | `bag` | leather bag, a container |
-| 1137 | `cap` | leather cap, head armour |
-| 1138 | `amulet` | sickly amulet, worn on the neck; its `A 28 11` line (`APPLY_BITVECTOR`, bit 11) sets `AFF_POISON` on the wearer with no poison affect behind it |
-| 1139 | `bread` | tainted bread: food, fill 2, poisoned |
-
-There are no shops (`shp/index` is `$` alone); `scr/11.scr` and `mdl/11.mdl` are stubs.
+- **Vnums ascend across each category**, within each file and from file to file in index order,
+  with no repeats: `real_room`, `real_mobile` and `real_object` binary-search, so an entry out of
+  order is silently never found.
+- **Each index lists exactly its folder's world files, by first vnum** (so zone files by zone
+  number), then `$`; a file not in its `index` is not loaded. The index files stay committed
+  because something outside the harness boots on this world: `scripts/nightly_deploy.py` copies
+  it into `lib/world` for the account smoke flow (`tools/account_smoke.py`).
+- **A zone owns its own vnums**: zone `n` owns `n * 100` to `n * 100 + 99`, up to its top line.
+  The shaping editors open the file named after `vnum / 100` (`<n>.wld`, `<n>.obj`, ...) and
+  check the builder's permission on zone `vnum / 100` (`load_object`, `shapeobj.cpp`;
+  `get_permission`, `shapemob.cpp`), so a file `<n>.*` holds only zone `n`'s vnums. `load_rooms`
+  (`db.cpp`) gives each room to the first zone in the index whose top is not below it; a room
+  above every zone's top stops the boot (`Room <n> is outside of any zone.`) without a `SYSERR`.
+- **Each zone has a map square no other zone uses** (its `<symbol> <x> <y> <level>` line):
+  relocate and the world map find a zone by its square.
+- **Each zone has its notes file**, `world/notes/zone-<n>.md`.
+- **The world check** (`unit/test_world_files.py`, run by `make integration-unit` and first in
+  CI's "Choose the integration groups" job) fails on each of these: an index out of step with
+  its folder (it prints the listing it expects), vnums out of order or repeated, a file without
+  its closing `#99999`, a shared map square, a vnum outside its zone or its file's block, a zone
+  without notes, and a merge conflict marker in the world or the group files. Run it after every
+  world change, then boot.
+- **Boot after every change**: the check catches layout and order, but only the server's loaders
+  catch a field they misread. The boot check is `test_boot.py`, and every other scenario booting,
+  failing on any `SYSERR`, crash or missing login prompt.
+- **Rooms and light**: every room so far is `SECT_INSIDE` without `INDOORS`, so `OUTSIDE()` is
+  true and no room is ever sunlit (SKILL.md, "Read the behaviour in the code"). A `DARK` room is
+  dark unless something in it gives light; the test world has no light object.
+- **One speaking hear-script mob per room**: `do_say` (`act_comm.cpp`) runs every other mob's
+  `ON_HEAR_SAY` script inside the say, so two mobs that speak when they hear speech answer each
+  other until the server's stack overflows.
+- **A mob's language decides what players read**: language 0 reaches every listener exactly;
+  language 1, the animal tongue, is garbled for players by `say_to_char` (`act_comm.cpp`). The
+  first number of a mob's last numeric line sets it (`load_mobiles`, `db.cpp`); give 0 to a mob
+  whose lines a scenario reads.
+- **Keywords are shared**: several mobs answer to `orc`, and several to `harness` (the zone 11
+  notes list them). Give a new fixture keywords no other fixture uses, or a lookup can pick the
+  wrong one ("Names, sides and lookups" above).
+- **Specials are bound by vnum**: `spec_ass.cpp` binds specials to particular mob and object
+  vnums (the receptionist, the guild masters, boards). A mob gets its special only with the
+  `MOB_SPEC` act flag as well; a mob's program number is a special's row only with that flag.
+  Avoid object vnums `spec_ass.cpp` passes to `ASSIGNOBJ` unless the scenario wants that special.
+- **The inn's random social**: every command typed in the inn (room 1601) other than `rent` and
+  `offer` draws `number(0, 30)`, and on 0 the innkeeper performs a random social, so text can
+  arrive there unasked. Teleport the mortal in just before `rent` or `offer`, and rent rather
+  than `quit`, which drops everything a mortal carries (`world/notes/zone-16.md`).
+- **No `yell` in zone 16**: a yell anywhere in zone 16 outside the inn logs
+  `SYSERR: Fubar'd receptionist.`, which fails the test (`do_gen_com`, `act_comm.cpp`, calls every
+  room special in the zone). Keep rooms where a scenario yells out of zone 16.
+- **Expected boot reports**: the boot check of scripts writes `SCRIPT ERROR: script #1720, ...`
+  lines, and one each for the valet's and dresser's scripts, to every test's `game.log`
+  (`world/notes/zone-17.md`). They are not `SYSERR` lines and fail nothing.
+- **Backup folders**: the shaping editors' `/save` copies the file it rewrites into a backup
+  folder first and fails without it (`SHAPE_*_BACKDIR`, `protos.h`; the object editor's `/save`
+  and `/done` in `replace_object`, `shapeobj.cpp`, for example). The world provides all five,
+  each kept in git by an empty `.gitkeep`: `wld/oldroms`, `mob/oldmobs`, `obj/oldobjs`,
+  `zon/oldzons` and `scr/oldscrs` (`obj/oldobjs` also holds a README). They are not world files
+  and no index lists them.
+- **Empty categories**: there are no `.shp` shops (`shp/index` is `$` alone), and `mdl/11.mdl` is
+  a stub.
+- **`*.obj` is ignored by git** (`.gitignore`): a new `obj/<n>.obj` file needs `git add -f`.
 
 ### File formats
 
 Each category directory has an `index` listing its files one per line, ending with a line `$`
-(`index_boot`, `db.cpp`). A file not in its `index` is not loaded.
+(`index_boot`, `db.cpp`).
 
 A room (`load_rooms`, `db.cpp`):
 
@@ -565,39 +586,47 @@ S
   0 inside, 1 city, 2 field, 3 forest, 4 hills, 5 mountain, 6 water (swim), 7 water (no swim),
   8 underwater, 9 road, 10 crack, 11 dense forest, 12 swamp.
 - An exit is `D<direction>` (0 north, 1 east, 2 south, 3 west, 4 up, 5 down), its description
-  `~`, its keyword `~`, then `<exit flags> <key> <to room> <width>` (`setup_dir`).
-- `S` ends the room; the file ends with `#99999` and `$~`.
-- Rooms must ascend and sit inside a zone's range: a room outside every zone stops the boot
-  (`Room <n> is outside of any zone.`) without a `SYSERR`.
+  `~`, its keyword `~`, then `<exit flags> <key> <to room> <width>` (`setup_dir`). Exit flags
+  include `EX_ISDOOR` 1, `EX_CLOSED` 2 and `EX_LOCKED` 4.
+- `E` starts an extra description: its keywords `~`, then its text `~`. `S` ends the room; the
+  file ends with `#99999` and `$~`.
 
 A zone (`load_zones`, `zone.cpp`): `#<n>`, name `~`, description `~`, map `~`, an owner list
 ending in `0`, `<symbol> <x> <y> <level>`, the top room, the lifespan, the reset mode, then reset
 rows ending with `S`. An `M` row is `M <if> <mob> <room> <max in world> <percent> <difficulty>
-<max existing> <trophy> <comment>`.
+<max existing> <trophy> <comment>`; an `O` row is `O <if> <object> <room> ...`.
 
 Mobs (`load_mobiles`) and objects (`load_objects`) in `db.cpp`: copy an existing entry and read
-the loader before changing a field you do not know. Vnums must ascend across the files of the
-index as well as within each, because `real_mobile` and `real_object` binary-search.
+the loader before changing a field you do not know. Every room, mob, object, script and mudlle
+file ends with a `#99999` record, which `count_hash_records` (`db.cpp`) counts on.
 
 ### Adding to the world
 
-- A room: append it to `wld/11.wld` before `#99999`, between 1101 and 1199 in vnum order, or
-  add `wld/<n>.wld` with a `zon/<n>.zon` and list both in their `index` files. Add a constant
-  to `rots_harness/world.py` when a scenario names it.
-- A mob: append to `mob/11.mob` in vnum order. A special needs the `MOB_SPEC` act flag as well
-  as the program number. Place it with a zone reset row or `load mob`.
-- An object: append to `obj/11.obj`; avoid vnums `spec_ass.cpp` passes to `ASSIGNOBJ`.
-- Boot after every change: the only check is `test_boot.py` and every other scenario booting,
-  failing on any `SYSERR`, crash or missing login prompt.
+- **A new scenario area gets its own zone**: the next zone number above the highest (19 today;
+  14 and 15 are taken, since `mob/14.mob`, `mob/15.mob` and `obj/14.obj` already hold fixtures
+  numbered 1400 to 1599; when another open branch already claims the number, take the next). It
+  has its own files (`wld/<n>.wld` and `zon/<n>.zon`, plus `mob/<n>.mob`,
+  `obj/<n>.obj` and `scr/<n>.scr` as needed), its own vnums from `n * 100`, a top line of at most
+  `n * 100 + 99` and above every earlier zone's, a map square no other zone uses, and its own notes file
+  `world/notes/zone-<n>.md`. List each new file in its category's `index` at its first-vnum place.
+  With its own group file and its constants in its scenario file, the area then edits no file
+  another area's branch edits, apart from the checked indexes.
+- **Append to zone 11's files** (`wld/11.wld` before `#99999`, `mob/11.mob`, `obj/11.obj`) only
+  for a fixture zone 11's existing scenarios need, keeping its vnums between 1101 and 1199.
+- A mob: a special needs the `MOB_SPEC` act flag as well as the program number. Place it with a
+  zone reset row or `load mob`.
+- An object the object editor must load goes in its zone's file.
+- Record each new fixture's purpose and quirks in its zone's notes file, and name a room in
+  `rots_harness/world.py` only when a second scenario file needs it.
 
 ## Scenario territory and harness territory
 
 | Scenario territory | Harness territory (extending-the-harness.md) |
 | --- | --- |
 | `tests/integration/scenarios/test_<group>.py` | `tests/integration/conftest.py` |
-| `tests/integration/world/` | `tests/integration/rots_harness/` other than `world.py` |
-| room constants in `rots_harness/world.py` | `tests/integration/unit/` |
-| a marker line in `tests/integration/pytest.ini` | `src/harness/`, `src/tools/rotstool/` |
+| `tests/integration/world/`, its notes files included | `tests/integration/rots_harness/` other than `world.py` |
+| room constants shared by two scenario files, in `rots_harness/world.py` | `tests/integration/unit/` |
+| a group file in `tests/integration/groups/` | `src/harness/`, `src/tools/rotstool/` |
 
-A helper used by one scenario stays in its scenario file, as `hit_points` does in
-`test_poison.py`.
+A helper or constant used by one scenario file stays in that file, as `hit_points` does in
+`test_poison.py` and `ROOM_BANK_HALL` in `test_bank.py`.

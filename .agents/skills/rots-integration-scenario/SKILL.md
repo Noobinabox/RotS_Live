@@ -46,8 +46,11 @@ the harness (extending-the-harness.md); never rely on luck.
   code, and passing there. Its docstring says so, and that it becomes a strict xfail when the
   behaviour changes.
 - The commit that changes the behaviour marks it
-  `@pytest.mark.xfail(strict=True, reason="<the new behaviour>")`; strict makes it fail the run
-  if it ever passes again.
+  `@pytest.mark.xfail(strict=True, raises=AssertionError, reason="<the new behaviour>")`; strict
+  makes it fail the run if it ever passes again, and `raises` makes any other error (a dropped
+  connection, a missing fixture file, a typo) fail the run instead of counting as the expected
+  failure. The harness's timeouts are `AssertionError`s, so a pin can still fail by waiting for
+  text that never comes. `unit/test_scenario_markers.py` rejects an xfail without both.
 - A **new-behaviour pin** fails before the change and passes after it.
 - A crash or memory-safety fix gets no legacy pin.
 

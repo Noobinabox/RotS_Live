@@ -126,7 +126,7 @@ def read_object_stat(implementor: GameSession, keyword: str) -> str:
     return implementor.expect(["Affections:"]) + implementor.drain(SETTLE_SECONDS)
 
 
-@pytest.mark.xfail(strict=True, reason="help uruk should show the URUK-HAI URUK entry, whose keywords include URUK exactly")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="help uruk should show the URUK-HAI URUK entry, whose keywords include URUK exactly")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_help_uruk_shows_the_uruk_hai_entry(server) -> None:
     """Bug: `help uruk` shows the uruk-lhuth entry, though the uruk-hai entry has URUK as an exact keyword.
@@ -143,7 +143,7 @@ def test_help_uruk_shows_the_uruk_hai_entry(server) -> None:
     assert URUK_LHUTH_KEYWORD_LINE not in entry, entry
 
 
-@pytest.mark.xfail(strict=True, reason="color should list and set colours with a board in the room, as colour does")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="color should list and set colours with a board in the room, as colour does")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_color_works_beside_a_board(server) -> None:
     """Bug: with a board in the room, `color` is taken as a mail letter.
@@ -168,7 +168,7 @@ def test_color_works_beside_a_board(server) -> None:
     assert MOB_SLOT_SET_REPLY in slot_set, slot_set
 
 
-@pytest.mark.xfail(strict=True, reason="stat should name AFF_HALLUCINATE as HALLU. on the AFF line itself")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="stat should name AFF_HALLUCINATE as HALLU. on the AFF line itself")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_stat_names_hallucinate_on_one_aff_line(server) -> None:
     """Bug: stat prints a line break between HALLU and the AFF line's closing period.
@@ -187,7 +187,7 @@ def test_stat_names_hallucinate_on_one_aff_line(server) -> None:
     assert re.search(rf"AFF:[^\r\n]*{HALLUCINATE_NAME}\.", stat), stat
 
 
-@pytest.mark.xfail(strict=True, reason="after set chat off, set should still show Incognito Mode: OFF")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="after set chat off, set should still show Incognito Mode: OFF")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_turning_chat_off_leaves_incognito_off_in_set(server) -> None:
     """Bug: `set chat off` makes `set` show Incognito Mode: ON.
@@ -205,7 +205,7 @@ def test_turning_chat_off_leaves_incognito_off_in_set(server) -> None:
     assert incognito_display(player) == "OFF"
 
 
-@pytest.mark.xfail(strict=True, reason="after set incognito on, set should show Incognito Mode: ON")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="after set incognito on, set should show Incognito Mode: ON")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_turning_incognito_on_shows_it_on_in_set(server) -> None:
     """Bug: `set incognito on` sets PLR_INCOGNITO, but `set` still shows Incognito Mode: OFF.
@@ -221,7 +221,7 @@ def test_turning_incognito_on_shows_it_on_in_set(server) -> None:
     assert incognito_display(player) == "ON"
 
 
-@pytest.mark.xfail(strict=True, reason="turning advancedview or advancedprompt off should say \"... is now off.\" like every other preference")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="turning advancedview or advancedprompt off should say \"... is now off.\" like every other preference")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_turning_the_advanced_preferences_off_says_they_are_now_off(server) -> None:
     """Bug: `set advancedview off` and `set advancedprompt off` reply with the status text.
@@ -240,7 +240,7 @@ def test_turning_the_advanced_preferences_off_says_they_are_now_off(server) -> N
         assert off_reply in turned_off, turned_off
 
 
-@pytest.mark.xfail(strict=True, reason="stat obj should not label a location-6 (APPLY_LEA, learning) affect SEX; LEA is the likely label")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="stat obj should not label a location-6 (APPLY_LEA, learning) affect SEX; LEA is the likely label")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_stat_obj_does_not_label_a_learning_affect_sex(server) -> None:
     """Bug: stat obj calls the girdle's learning affect "+3 to SEX".
@@ -260,7 +260,7 @@ def test_stat_obj_does_not_label_a_learning_affect_sex(server) -> None:
     assert STALE_LEARNING_LABEL not in affect_line.group(1).split(), affect_line.group(0)
 
 
-@pytest.mark.xfail(strict=True, reason="stat player should show the statted player's own absorb, the figure its info shows")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="stat player should show the statted player's own absorb, the figure its info shows")
 @pytest.mark.characters(IMPLEMENTOR, PLAYER)
 def test_stat_shows_the_statted_characters_absorb(server) -> None:
     """Bug: stat player shows the viewer's absorb, so an unarmoured immortal sees 0 for an armoured player.

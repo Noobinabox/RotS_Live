@@ -177,6 +177,7 @@ def practice_once(pupil: GameSession, skill: str) -> str:
 @pytest.mark.characters(IMPLEMENTOR, RESET_PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="pracreset should leave the session count the next login computes, from base learning",
 )
 def test_pracreset_leaves_the_session_count_the_next_login_computes(server) -> None:
@@ -217,6 +218,7 @@ def test_pracreset_leaves_the_session_count_the_next_login_computes(server) -> N
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a bare pracreset should ask whom to reset and reset nobody",
 )
 def test_the_pracreset_command_asks_whom_without_a_name(server) -> None:
@@ -237,6 +239,7 @@ def test_the_pracreset_command_asks_whom_without_a_name(server) -> None:
 @pytest.mark.characters(IMPLEMENTOR, RESET_PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="advancing down should leave the session count the login recount gives at the new level",
 )
 def test_advancing_down_leaves_the_count_the_login_recount_gives(server) -> None:
@@ -271,6 +274,7 @@ def test_advancing_down_leaves_the_count_the_login_recount_gives(server) -> None
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a chosen spoken language should survive a relog and a practice session",
 )
 @pytest.mark.parametrize("recount", ["relog", "practice-session"])
@@ -302,6 +306,7 @@ def test_a_chosen_spoken_language_survives_the_next_skill_recount(server, recoun
 @pytest.mark.characters(IMPLEMENTOR, REROLL_PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="the angel's reroll should recount the practice sessions from the new learning",
 )
 def test_the_angels_reroll_recounts_the_sessions_from_the_new_learning(server) -> None:
@@ -345,6 +350,7 @@ def test_the_angels_reroll_recounts_the_sessions_from_the_new_learning(server) -
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a race the guildmaster will not teach should read the guildmaster's own reject message",
 )
 def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(server) -> None:
@@ -370,6 +376,7 @@ def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(serv
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a practice session should keep the strength worn gear adds to base strength",
 )
 def test_a_practice_session_keeps_the_strength_worn_gear_adds(server) -> None:

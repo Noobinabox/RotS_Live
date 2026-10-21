@@ -67,6 +67,7 @@ def give_object(implementor: GameSession, vnum: int, keyword: str, short_name: s
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="`sell` where no shopkeeper serves it should answer 'Sorry, but you can't do that here!' as buy, value and list do",
 )
 @pytest.mark.schedule("affect-hours")
@@ -92,6 +93,7 @@ def test_sell_with_no_keeper_in_the_room_is_not_for_here(server) -> None:
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="`buy lea` should buy the leather cap, matching an abbreviated keyword as deposit and withdraw do",
 )
 @pytest.mark.schedule("affect-hours")

@@ -248,7 +248,7 @@ def refill_caster(implementor: GameSession) -> None:
     assert restored.contains("Done."), restored.text
 
 
-@pytest.mark.xfail(strict=True, reason="summon reaches a player standing in a dark room")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="summon reaches a player standing in a dark room")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CASTER, DARK_VICTIM)
 def test_a_mage_cannot_summon_a_player_standing_in_a_dark_room(server) -> None:
@@ -434,6 +434,7 @@ def test_a_player_five_map_squares_away_is_summoned(server) -> None:
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="summon's distance bonus is the straight-line distance, the same in both directions",
 )
 @pytest.mark.schedule("affect-hours")

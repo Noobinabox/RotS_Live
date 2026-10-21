@@ -1331,11 +1331,13 @@ void remove_pattern(const char* str, char* result, const char* patern)
    than a sentinel default_percent so that the call site states which table it means instead of
    encoding it in a number that also has to read as a percentage.
 
-   For the resistance table, when a spell or item affect wrote an APPLY_RESIST entry for this
-   element the largest effect_modifier on the list wins; the lookup is resist_magnitude_for(),
-   the same function the damage path uses, so display and damage cannot drift apart. A bit with
-   no backing affect - set by a mob record or a flag-only APPLY_RESIST item - falls back to the
-   flat legacy default.
+   For the resistance table, the lookup is effective_resist_magnitude(), the same function the
+   damage path uses: the largest effect_modifier on the list, unless a flag-only source (a mob
+   record or an APPLY_RESIST item) is worth more, in which case - as with a bit with no backing
+   affect at all - the flat legacy default shows. Physical is weighed as a melee hit weighs it
+   (the flag at 22%). Archery and wild swings have no miss roll and weigh the flag at 33%, so
+   with a physical protection between those two the line shows the protection while those
+   attacks use the flag.
 
    For the vulnerability table the affect list is never consulted: APPLY_RESIST affects say
    nothing about vulnerability, and reading them here printed a resistance's percentage on the
@@ -1362,7 +1364,7 @@ void sprintbit_resistances(const char_data* ch, long vektor, char* names[], char
         remove_pattern(names[nr], tmp, (char*)"V-");
         lowercase(tmp);
 
-        const int magnitude = use_affect_magnitudes ? resist_magnitude_for(ch, nr) : 0;
+        const int magnitude = use_affect_magnitudes ? effective_resist_magnitude(ch, nr, nr == RESIST_PHYS) : 0;
         const int percent = magnitude > 0 ? magnitude : default_percent;
 
         sprintf(result, "%s   %s (%d%%)\n\r", result, tmp, percent);

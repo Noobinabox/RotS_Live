@@ -144,6 +144,7 @@ def cast_protection_fire(caster: GameSession) -> str:
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="removing a strength-0 resist item must end its resistance even after the wearer's level "
     "changed; today the resistance stays for good",
 )

@@ -160,6 +160,7 @@ def ride_after_the_leader(leader: GameSession, rider: GameSession) -> None:
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="`ungroup <non-member>` should tell the leader alone 'That person is not in your group!'",
 )
 @pytest.mark.schedule("affect-hours")
@@ -189,6 +190,7 @@ def test_ungroup_refuses_a_character_outside_the_group(server) -> None:
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="report should read 'and I am', as do_report's format string writes it",
 )
 @pytest.mark.schedule("affect-hours")
@@ -212,6 +214,7 @@ def test_report_keeps_the_capital_i_its_format_string_writes(server) -> None:
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a death-room death should leave a cap inside the bag it was in, as any death but a player kill or poison does",
 )
 @pytest.mark.schedule("affect-hours")
@@ -253,6 +256,7 @@ def test_a_death_room_death_leaves_a_bagged_cap_in_its_bag(server) -> None:
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a leader who cannot see a follower should read no ACK line when the follower's own step fails, as when it never tries",
 )
 @pytest.mark.schedule("affect-hours")
@@ -287,6 +291,7 @@ def test_a_follower_without_moves_the_leader_cannot_see_leaves_the_leader_no_ack
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a rider whose mount cannot take the step should not be told 'You follow'",
 )
 @pytest.mark.schedule("affect-hours")
@@ -310,6 +315,7 @@ def test_a_rider_whose_mount_cannot_move_is_not_told_it_follows(server) -> None:
 @pytest.mark.followers
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="mounting should name the mount by its own pronoun: 'start riding him' for the male pony",
 )
 @pytest.mark.schedule("affect-hours")
@@ -337,6 +343,7 @@ def test_mounting_names_the_mount_by_its_own_pronoun(server) -> None:
 @pytest.mark.wizlevels
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="a lower-level immortal should not teleport a higher-level one, as transfer, force, wizset and snoop refuse (intent unconfirmed)",
 )
 @pytest.mark.schedule("affect-hours")

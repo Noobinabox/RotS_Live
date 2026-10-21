@@ -52,7 +52,7 @@ ZONE_RESET_BY_NUMBER_MARKER = "Reset zone 18: Harness boar pen."
 MOVE_PATTERN = re.compile(r"Move :\[(-?\d+)/(-?\d+)\+")
 
 
-@pytest.mark.xfail(strict=True, reason="`tame <own name>` answers \"Aren't we funny today...\"")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="`tame <own name>` answers \"Aren't we funny today...\"")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, TAMER_AT_GATE)
 def test_tame_on_yourself_answers_with_its_own_joke(server) -> None:
@@ -71,7 +71,7 @@ def test_tame_on_yourself_answers_with_its_own_joke(server) -> None:
     assert SELF_TAME_MARKER in reply, reply
 
 
-@pytest.mark.xfail(strict=True, reason="a tame that flees on a whistle is recalled only by the next whistle")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="a tame that flees on a whistle is recalled only by the next whistle")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, TAMER)
 def test_a_tame_that_flees_on_a_whistle_is_not_recalled_by_the_same_whistle(server) -> None:
@@ -100,7 +100,7 @@ def test_a_tame_that_flees_on_a_whistle_is_not_recalled_by_the_same_whistle(serv
     assert "HUNT" not in affect_bits(fled), fled
 
 
-@pytest.mark.xfail(strict=True, reason="a tame restored at login keeps the maximum moves it had when saved")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="a tame restored at login keeps the maximum moves it had when saved")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WARDEN)
 def test_a_tame_restored_at_login_keeps_its_tamed_maximum_moves(server) -> None:
@@ -143,7 +143,7 @@ def test_a_tame_restored_at_login_keeps_its_tamed_maximum_moves(server) -> None:
     assert int(restored_move.group(2)) == int(tamed_move.group(2)), restored
 
 
-@pytest.mark.xfail(strict=True, reason="an immortal's quit takes its saved tame out of the world, so its login brings back the only copy")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="an immortal's quit takes its saved tame out of the world, so its login brings back the only copy")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WARDEN)
 def test_an_immortals_quit_leaves_no_copy_of_its_tame_behind(server) -> None:
@@ -167,7 +167,7 @@ def test_an_immortals_quit_leaves_no_copy_of_its_tame_behind(server) -> None:
     assert len(boar_rooms(implementor)) == 1
 
 
-@pytest.mark.xfail(strict=True, reason="`zreset 18` answers with zone 18, the number the implementor typed")
+@pytest.mark.xfail(strict=True, raises=AssertionError, reason="`zreset 18` answers with zone 18, the number the implementor typed")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_zreset_names_the_zone_by_its_number(server) -> None:

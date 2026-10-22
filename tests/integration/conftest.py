@@ -74,8 +74,6 @@ KEPT_RUN_DIRECTORIES_WORKER_OUTPUT = "rots_it_kept_run_directories"
 WORKER_NODES_KEY = pytest.StashKey[list]()
 # Where the controller keeps the Docker lock it holds while the tests run; absent while it holds none.
 DOCKER_LOCK_KEY = pytest.StashKey[DockerLock]()
-# Where the controller keeps the recorder of each test's time, merged into DURATIONS_FILE at the end.
-DURATION_RECORDER_KEY = pytest.StashKey[durations.DurationRecorder]()
 # Each test's last recorded time, which the run plan estimates a run from.
 DURATIONS_FILE = REPO_ROOT / durations.DURATIONS_RELATIVE
 
@@ -107,9 +105,7 @@ def pytest_configure(config: pytest.Config) -> None:
     else:
         config.stash[SESSION_ID_KEY] = uuid.uuid4().hex[:12]
         config.stash[WORKER_NODES_KEY] = []
-        recorder = durations.DurationRecorder()
-        config.pluginmanager.register(recorder)
-        config.stash[DURATION_RECORDER_KEY] = recorder
+        config.pluginmanager.register(durations.DurationRecorder(DURATIONS_FILE))
 
 
 def is_worker(config: pytest.Config) -> bool:
@@ -239,8 +235,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     """Turns "no tests ran" into success for a shard whose share of a non-empty selection is empty, then ends this process's part of the session.
 
     A pytest-xdist worker hands its kept run directories to the controller. The controller adds
-    every worker's to its own report, releases the Docker lock, deletes the session's templates
-    unless ROTS_IT_KEEP=1, and merges the times of the tests that ran into DURATIONS_FILE.
+    every worker's to its own report, releases the Docker lock, and deletes the session's
+    templates unless ROTS_IT_KEEP=1.
     """
     # trylast: pytest's own pytest_sessionfinish tears down the fixtures an interrupt left set up,
     # stopping their servers, and pytest-xdist's stops the workers; both run first.
@@ -262,17 +258,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         lock.release()
     if not keep_requested():
         discard_session_templates(TEMPLATES_ROOT, config.stash[SESSION_ID_KEY])
-    record_durations(config.stash[DURATION_RECORDER_KEY])
-
-
-def record_durations(recorder: durations.DurationRecorder) -> None:
-    """Merges the times of the tests that ran into DURATIONS_FILE; a file that cannot be written only prints a warning."""
-    if not recorder.seconds:
-        return
-    try:
-        durations.merge_durations(DURATIONS_FILE, recorder.seconds)
-    except OSError as error:
-        print(f"warning: cannot record the test times in {DURATIONS_FILE}: {error}", file=sys.stderr, flush=True)
 
 
 def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:

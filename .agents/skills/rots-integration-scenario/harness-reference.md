@@ -28,12 +28,24 @@ tests/integration/requirements.txt`.
 | One group | `make integration PYTHON=.venv/bin/python GROUP=poison` |
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
-| One test, by node id | `.venv/bin/python -m pytest -q "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
+| One test, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
+| Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
+| Every test in a file | `.venv/bin/python -m pytest -q -m scenario tests/integration/scenarios/test_bank.py` |
+| Whether CI's group filter selects your tests | `.venv/bin/python -m pytest --collect-only -q -m "scenario and (bank)" <node ids>` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
 (<GROUP>)"`. Run directly, pytest finds the same `tests/integration/pytest.ini` and rootdir and
-reads the same `ROTS_IT_*` variables, so the direct commands behave like `make integration`.
+reads the same `ROTS_IT_*` variables as `make integration`, but only `make integration` adds the
+group filter. A node id runs its test even when the test lacks its group marker, so step 9
+checks membership with `--collect-only`. With `-m scenario`, a lone node id whose test lacks
+`scenario` collects nothing and exits 5; among several, it only adds to `N deselected`.
 `-k` is not checked: a name that matches nothing runs nothing and prints only `N deselected`.
+A node id that names nothing is an error (`ERROR: not found`), so node ids are the safer way to
+pick the tests step 9 repeats. `--collect-only -q` prints node ids relative to
+`tests/integration` (`scenarios/test_bank.py::...`): put `tests/integration/` in front of each
+to run it from the repository root. A parametrized test's node id includes its case in
+brackets; quote it in the shell. Unset `ROTS_IT_SHARD` for these runs: a shard can leave a run
+nothing to run, and that run still passes.
 `-m` is checked: an unregistered name in it is a usage error listing the registered names
 (`pytest_configure` in `conftest.py`, `rots_harness/groups.py`).
 
@@ -87,8 +99,11 @@ repository root, with `ROTS_UID` and `ROTS_GID` exported
 docker compose -f docker-compose.yml run --rm -T rots bash -lc '
   ulimit -c 0
   python3 -m venv /tmp/harness-venv && /tmp/harness-venv/bin/pip install -q -r tests/integration/requirements.txt || exit 1
-  for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || exit 1; done'
+  for run in 1 2 3; do ROTS_IT_LAUNCHER=local /tmp/harness-venv/bin/python -m pytest -q -m scenario <node ids> || exit 1; done'
 ```
+
+Put the node ids of the scenarios step 9 repeats in place of `<node ids>`, each in double
+quotes: the whole script is inside single quotes, so a single quote would end it.
 
 The container runs as the host user, so the run directories it writes stay the host user's.
 The command exits 1 at the first failing run. `ulimit -c 0` matters: a core dump of a crashing
@@ -100,9 +115,10 @@ process under emulation can hang the container.
 2. Rebuild `ageland` and `ageland_harness` (`cmake --build build --target ageland
    ageland_harness`; on a Mac through `docker compose run --rm -T rots bash -lc '...'` under a
    lock taken by hand).
-3. Run the pin's group once. It must fail on the pin's own assertion; a `SessionTimeout`, a
-   setup error or a crash means the break or the pin needs another look.
-4. Undo the edit with `git restore <files>`, rebuild, and run the group again: it must pass.
+3. Run your scenarios (skill, step 9) once, by node id. The pin must fail on its own
+   assertion; a `SessionTimeout`, a setup error or a crash means the break or the pin needs
+   another look.
+4. Undo the edit with `git restore <files>`, rebuild, and run them again: they must pass.
 5. Check `git status` shows no change in `src/` before you commit anything. Never commit the
    break.
 

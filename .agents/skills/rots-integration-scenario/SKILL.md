@@ -155,10 +155,11 @@ change to the game's code runs a group only when the description names it as
   same file. A change under `tests/integration/world/`, or to a scenario module that is not a
   `test_*.py`, can break any group: run every scenario once (`make integration
   PYTHON=.venv/bin/python`) instead.
-- `make integration` prints its plan first and, without a terminal, stops with exit status 10
-  (`Error 10`) when the estimate reaches 10 minutes. Before such a run, run `make
-  integration-plan` with the same `GROUP`, show your user the plan as a checklist and ask which
-  groups to keep, then run with `SKIP_GROUPS=` (or `GROUP=`) and `CONFIRM=yes`. Never pass
+- `make integration` prints its plan first and, without a terminal, stops when the estimate
+  reaches 10 minutes, printing a line that starts `ROTS_IT_NEEDS_CONFIRMATION:`. Look for that
+  line, not the exit status: `make` exits 2 for it, as for any failure. Before such a run, run
+  `make integration-plan` with the same `GROUP`, show your user the plan as a checklist and ask
+  which groups to keep, then run with `SKIP_GROUPS=` (or `GROUP=`) and `CONFIRM=yes`. Never pass
   `CONFIRM=yes` for a run over the threshold without your user's answer (reference, "Running").
 - Every run must pass.
 - Wait out lock waits; `DockerLockHeld` is not a result (reference, "The shared Docker

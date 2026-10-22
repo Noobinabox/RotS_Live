@@ -91,16 +91,17 @@ integration-unit:
 
 # Shows the planned groups and asks about them (rots_harness/run_plan.py), then runs pytest, which
 # writes each test's result and time to build/integration/results.xml and lists the slowest tests.
-# The values reach Python through the environment, so the shell never reads a GROUP expression as
-# command text.
+# GROUP, SKIP_GROUPS and CONFIRM reach Python through the environment, so the shell never reads a
+# GROUP expression as command text. Every value is passed as --name=value, so one starting with -
+# is not read as an option.
 integration integration-plan: export ROTS_IT_RUN_GROUP := $(GROUP)
 integration integration-plan: export ROTS_IT_RUN_SKIP_GROUPS := $(SKIP_GROUPS)
 integration integration-plan: export ROTS_IT_RUN_CONFIRM := $(CONFIRM)
 integration:
-	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python "$(PYTHON)" --jobs "$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --confirm="$$ROTS_IT_RUN_CONFIRM"
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python="$(PYTHON)" --jobs="$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --confirm="$$ROTS_IT_RUN_CONFIRM"
 
 integration-plan:
-	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python "$(PYTHON)" --jobs "$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --plan-only
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python="$(PYTHON)" --jobs="$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --plan-only
 
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:

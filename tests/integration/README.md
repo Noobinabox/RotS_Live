@@ -99,7 +99,10 @@ it holds the results of whichever finished last.
 `make integration` (`rots_harness/run_plan.py`) first prints its plan: one numbered checkbox per
 selected group with its test count and estimated minutes, then the total, the launcher, `JOBS`
 and any `ROTS_IT_SHARD`. A test counts toward every group that marks it; the total counts it
-once. `make integration-plan` prints the plan and exits 0 without asking or running anything.
+once. Each group counts only the tests that will run, so a test another left-out group also
+marks is not counted. With `ROTS_IT_SHARD` the plan shows this shard's share of the tests left
+after the groups left out, which is what the run then runs. `make integration-plan` prints the
+plan and exits 0 without asking or running anything.
 
 - At a terminal every group starts ticked. Numbers (and ranges such as `3-5`) toggle groups, `a`
   ticks all, `n` unticks all, Enter or `y` starts and `q` (or Ctrl-C) cancels. With no answer
@@ -107,30 +110,37 @@ once. `make integration-plan` prints the plan and exits 0 without asking or runn
   countdown. Unticking a group drops every test it marks, even one another ticked group marks.
   A run that started by itself gets no input from the terminal.
 - Without a terminal (scripts, agents, `docker compose run -T`), a run estimated under
-  `ROTS_IT_CONFIRM_MINUTES` (default 10) starts at once. A longer one prints the plan and stops
-  with exit status 10 unless `CONFIRM=yes` is given, so whoever runs it can ask first or choose
-  fewer groups.
+  `ROTS_IT_CONFIRM_MINUTES` (default 10) starts at once. A longer one, unless `CONFIRM=yes` is
+  given, prints the plan and one line starting `ROTS_IT_NEEDS_CONFIRMATION:`, and stops with exit
+  status 10, so whoever runs it can ask first or choose fewer groups. Through `make` the status is
+  2 (below), so a script looks for that line instead.
 - `CONFIRM=yes` starts the run as soon as the plan prints, without asking.
 - `SKIP_GROUPS="poison summon"` (spaces or commas) leaves groups out; they are listed as skipped.
   A name no group file registers stops the run with the registered names.
 - A run that left groups out ends with a `Repeat: make integration ... CONFIRM=yes` line that
   repeats the choice.
 - With `CI=true` (GitHub Actions sets it) none of this happens: the run is the plain pytest
-  command, with no plan.
+  command, with no plan. A `SKIP_GROUPS` given there still leaves its groups out, and an
+  unregistered name in it still stops the run.
 
 | Exit status | Meaning |
 | --- | --- |
-| 2 | a `SKIP_GROUPS`, `CONFIRM` or `ROTS_IT_CONFIRM_MINUTES` value it cannot use (pytest also uses 2 for an interrupted run) |
-| 10 | no terminal, and the estimate reached `ROTS_IT_CONFIRM_MINUTES` without `CONFIRM=yes` |
-| 11 | cancelled at the prompt; nothing ran |
+| 2 | a `SKIP_GROUPS`, `CONFIRM`, `ROTS_IT_CONFIRM_MINUTES` or `ROTS_IT_SHARD` value it cannot use (pytest also uses 2 for an interrupted run) |
+| 10 | no terminal, and the estimate reached `ROTS_IT_CONFIRM_MINUTES` without `CONFIRM=yes`; the `ROTS_IT_NEEDS_CONFIRMATION:` line says so |
+| 11 | cancelled at the prompt or while collecting the tests; nothing ran |
 | anything else | pytest's own status |
 
-`make` itself exits 2 whenever its command fails; it names the command's status as
-`Error 10` or `Error 11`.
+These are the statuses of `rots_harness/run_plan.py`. `make` itself exits 2 whenever its command
+fails, and only names the command's status in its message (`Error 10`), so through `make` a
+needed confirmation shows only in the `ROTS_IT_NEEDS_CONFIRMATION:` line.
 
-Estimates come from `build/integration/durations.json`, which every run updates with the time of
-each scenario it ran (setup, call and teardown), keeping the rest. A scenario with no recorded time
-counts 15 seconds. The minutes are divided by `JOBS`, so they are only approximate; the plan says
+Estimates come from `build/integration/durations.json`. A run records the time (setup, call and
+teardown) of each scenario that ran to the end: one that passed or failed as an expected
+failure replaces its recorded time, and one that failed only raises it (or, with no time yet,
+gets one only above 15 seconds). A scenario that errored
+in setup or teardown, or was skipped, keeps its earlier time, and an interrupted run records
+nothing. A scenario with no recorded time counts 15 seconds. The minutes are divided between
+the `JOBS` workers, never more workers than tests, so they are only approximate; the plan says
 how many tests had no recorded time.
 
 ### The groups your changes reach
@@ -272,7 +282,8 @@ lock file it cannot read. It waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`), print
 files hold the tree, then stops the run before any test.
 
 Ctrl-C, SIGTERM and SIGHUP all end the run the same way: the harness stops the server it
-started and removes its lock file. A `harness-it-<pid>-<id>.lock` whose process is no longer
+started and removes its lock file. Under `make integration`, a SIGTERM or SIGHUP sent to `make`
+reaches pytest through the run plan, which passes on the first one. A `harness-it-<pid>-<id>.lock` whose process is no longer
 running (a run that was killed outright) is removed automatically, and the removal is printed.
 The harness never removes any other lock file.
 

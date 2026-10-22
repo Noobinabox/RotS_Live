@@ -44,16 +44,20 @@ tests/integration/requirements.txt`.
 <JOBS>` when `JOBS` is above 1, and writes each test's result and time to
 `build/integration/results.xml` and lists the 25 slowest.
 
-Before that it shows its plan (`rots_harness/run_plan.py`): each selected group with its test
-count and minutes estimated from `build/integration/durations.json`, which every run updates (15
-s for a test without a time). At a terminal the groups are checkboxes to untick, and no answer
-starts the run after 5 minutes. Without a terminal, an estimate of `ROTS_IT_CONFIRM_MINUTES`
-(default 10) or more stops with exit status 10 unless `CONFIRM=yes`; `make` reports it as `Error
-10`. An agent then runs `make integration-plan`, shows its user the plan as a checklist, asks
-which groups to keep, and reruns with `SKIP_GROUPS=` (or `GROUP=`) and `CONFIRM=yes`; it never
-passes `CONFIRM=yes` for such a run without that answer. A cancelled prompt exits 11, a bad
-`SKIP_GROUPS`, `CONFIRM` or `ROTS_IT_CONFIRM_MINUTES` exits 2, and `CI=true` skips the plan
-altogether. After a run that left groups out, a `Repeat:` line gives the command that repeats it. Run directly, pytest finds the same
+Before that it shows its plan (`rots_harness/run_plan.py`): each selected group with the tests
+it will run (this shard's, under `ROTS_IT_SHARD`) and minutes estimated from
+`build/integration/durations.json`, which runs update with the times of the scenarios that ran
+to the end (15 s for a test without a time). At a terminal the groups are checkboxes to untick,
+and no answer starts the run after 5 minutes. Without a terminal, an estimate of
+`ROTS_IT_CONFIRM_MINUTES` (default 10) or more, without `CONFIRM=yes`, prints a line starting
+`ROTS_IT_NEEDS_CONFIRMATION:` and stops. Detect that line: the run plan's own status is 10, but
+`make` exits 2 for it as for every failure. An agent then runs `make integration-plan`, shows its
+user the plan as a checklist, asks which groups to keep, and reruns with `SKIP_GROUPS=` (or
+`GROUP=`) and `CONFIRM=yes`; it never passes `CONFIRM=yes` for such a run without that answer. A
+cancelled prompt exits 11, a bad `SKIP_GROUPS`, `CONFIRM`, `ROTS_IT_CONFIRM_MINUTES` or
+`ROTS_IT_SHARD` exits 2, and `CI=true` skips the plan and question but still applies
+`SKIP_GROUPS`. After a run that left groups out, a `Repeat:` line gives the command that repeats
+it. Run directly, pytest finds the same
 `tests/integration/pytest.ini` and rootdir and reads the same `ROTS_IT_*` variables as `make
 integration`, but only `make integration` adds the group filter. A node id runs its test even
 when the test lacks its group marker, so step 9 checks membership with `--collect-only`. With

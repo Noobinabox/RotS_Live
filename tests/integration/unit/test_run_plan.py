@@ -1,14 +1,21 @@
 from __future__ import annotations
 
+import itertools
+import os
+import signal
+import subprocess
+import sys
 import threading
+import time
 from pathlib import Path
 from typing import Optional
 
 import pytest
 
-from rots_harness import run_plan
+from rots_harness import run_plan, sharding
 from rots_harness.collect_report import CollectedTest
 from rots_harness.run_plan import AnswerOutcome, Gate
+from rots_harness.sharding import Shard
 
 # The registered groups, in registration order; shaping marks no selected test.
 GROUPS = ["boot", "poison", "shaping", "summon"]
@@ -30,8 +37,8 @@ TODAYS_BOOT_COMMAND = [
 ]
 
 
-def plan(skipped: Optional[list[str]] = None, jobs: int = 1) -> run_plan.RunPlan:
-    return run_plan.build_plan(TESTS, GROUPS, skipped or [], DURATIONS, jobs)
+def plan(skipped: Optional[list[str]] = None, jobs: int = 1, shard: Optional[Shard] = None) -> run_plan.RunPlan:
+    return run_plan.build_plan(TESTS, GROUPS, skipped or [], DURATIONS, jobs, shard)
 
 
 # Plan building
@@ -39,7 +46,7 @@ def plan(skipped: Optional[list[str]] = None, jobs: int = 1) -> run_plan.RunPlan
 
 def test_each_group_counts_every_test_it_marks_and_empty_groups_are_dropped() -> None:
     built = plan()
-    assert [(group.name, len(group.test_ids)) for group in built.offered_groups] == [("boot", 2), ("poison", 2), ("summon", 1)]
+    assert [(name, len(built.group_test_ids(name, []))) for name in built.offered_groups] == [("boot", 2), ("poison", 2), ("summon", 1)]
     assert built.skipped_groups == []
 
 
@@ -49,8 +56,8 @@ def test_the_total_counts_a_test_in_two_groups_once() -> None:
 
 def test_skipped_groups_are_listed_as_skipped_and_not_offered() -> None:
     built = plan(skipped=["summon", "shaping"])
-    assert [group.name for group in built.offered_groups] == ["boot", "poison"]
-    assert [group.name for group in built.skipped_groups] == ["summon"]
+    assert built.offered_groups == ["boot", "poison"]
+    assert built.skipped_groups == ["summon"]
     assert built.kept_test_ids([]) == ALL_IDS[:3]
 
 
@@ -62,7 +69,31 @@ def test_a_test_in_no_group_still_counts_in_the_total() -> None:
     ungrouped = CollectedTest("scenarios/test_x.py::test_loose", frozenset({"scenario"}))
     built = run_plan.build_plan([*TESTS, ungrouped], GROUPS, [], {}, 1)
     assert built.kept_test_ids(["boot", "poison", "summon"]) == [ungrouped.node_id]
-    assert built.ungrouped_count == 1
+    assert built.ungrouped_count([]) == 1
+
+
+def test_a_group_counts_only_the_tests_that_run_with_the_other_groups_left_out() -> None:
+    built = plan(skipped=["poison"])
+    # test_two is in boot and poison; poison is skipped, so boot runs test_one alone.
+    assert built.group_test_ids("boot", []) == [ALL_IDS[0]]
+    # A skipped or unticked group counts what it would run if it were kept.
+    assert built.group_test_ids("poison", []) == ALL_IDS[1:3]
+    assert built.group_test_ids("summon", ["summon"]) == [ALL_IDS[3]]
+
+
+# The groups a test leaves out: every combination of the registered ones.
+EXCLUSION_CHOICES = [list(combination) for count in range(len(GROUPS) + 1) for combination in itertools.combinations(GROUPS, count)]
+
+
+@pytest.mark.parametrize("shard", [Shard(number, count) for count in (2, 3) for number in range(1, count + 1)], ids=str)
+@pytest.mark.parametrize("excluded", EXCLUSION_CHOICES, ids=lambda excluded: "-".join(excluded) or "none")
+def test_a_sharded_plan_keeps_exactly_the_tests_conftest_keeps(shard: Shard, excluded: list[str]) -> None:
+    # pytest's -m leaves out every test an excluded group marks; conftest then shards what is left.
+    selected = [test.node_id for test in TESTS if not test.markers & set(excluded)]
+    conftest_kept = sharding.in_shard(selected, shard)
+    skipped, unticked = excluded[:1], excluded[1:]
+    built = plan(skipped=skipped, shard=shard)
+    assert set(built.kept_test_ids(unticked)) == conftest_kept
 
 
 def test_skip_groups_are_split_on_spaces_and_commas_without_repeats() -> None:
@@ -90,8 +121,15 @@ def test_the_estimate_is_divided_by_the_workers() -> None:
 
 
 def test_a_group_estimate_covers_its_own_tests() -> None:
-    poison = plan().offered_groups[1]
-    assert plan().estimated_minutes(poison.test_ids) == pytest.approx(105 / 60)
+    poison = plan().group_test_ids("poison", [])
+    assert plan().estimated_minutes(poison) == pytest.approx(105 / 60)
+
+
+def test_the_estimate_divides_by_no_more_workers_than_tests() -> None:
+    # 150 seconds on 4 of the 8 workers.
+    assert plan(jobs=8).estimated_minutes(ALL_IDS) == pytest.approx(150 / 4 / 60)
+    assert plan(jobs=8).estimated_minutes(ALL_IDS[:1]) == pytest.approx(30 / 60)
+    assert plan(jobs=8).estimated_minutes([]) == 0
 
 
 @pytest.mark.parametrize("minutes, text", [(0.0, "0.0 min"), (0.44, "0.4 min"), (9.94, "9.9 min"), (12.6, "13 min")])
@@ -115,6 +153,16 @@ def test_the_plan_text_shows_checkboxes_skipped_groups_totals_and_the_footer() -
     # Unticking poison leaves only test_one: 30 seconds.
     assert "Total: 1 test, about 0.5 min (estimate from recorded times)" in text
     assert "even one another ticked group also marks" in text
+
+
+def test_the_sharded_plan_text_counts_this_shards_tests_and_says_how_unticking_moves_them() -> None:
+    built = plan(shard=Shard(2, 2))
+    lines = run_plan.format_plan(built, (True, True, True), run_plan.RunContext(launcher="local", jobs_text="1", shard="2/2"))
+    text = "\n".join(lines)
+    # The sorted selection is one, two, three, four; shard 2/2 keeps two and four.
+    assert "Total: 2 tests" in text
+    assert "summon     1 test" in text
+    assert "ROTS_IT_SHARD" in text
 
 
 def test_the_plan_text_counts_the_kept_tests_without_a_recorded_time() -> None:
@@ -370,10 +418,25 @@ def run_main(arguments: list[str], environ: dict[str, str], runner: FakeRunner, 
 
 def test_under_ci_main_runs_todays_command_without_collecting(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     runner = FakeRunner(status=3)
-    status = run_main(["--python", "py", "--group", "boot", "--jobs", "8", "--skip-groups", "poison"], {"CI": "true"}, runner, tmp_path)
+    status = run_main(["--python", "py", "--group", "boot", "--jobs", "8", "--skip-groups", ""], {"CI": "true"}, runner, tmp_path)
     assert status == 3
     assert runner.commands == [(TODAYS_BOOT_COMMAND, True)]
     assert capsys.readouterr().out == ""
+
+
+def test_under_ci_skip_groups_leave_groups_out_without_a_plan(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    runner = FakeRunner()
+    status = run_main(["--python", "py", "--group", "boot or poison", "--jobs", "8", "--skip-groups", "poison,summon"], {"CI": "true"}, runner, tmp_path)
+    assert status == 0
+    assert runner.commands == [(run_plan.pytest_run_command("py", "scenario and (boot or poison) and not (poison or summon)", "8"), True)]
+    assert capsys.readouterr().out == ""
+
+
+def test_under_ci_an_unknown_skip_group_is_a_usage_error(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    runner = FakeRunner()
+    assert run_main(["--python", "py", "--skip-groups", "bot"], {"CI": "true"}, runner, tmp_path) == run_plan.EXIT_USAGE
+    assert runner.commands == []
+    assert "bot" in capsys.readouterr().err
 
 
 def test_an_unknown_skip_group_is_a_usage_error(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
@@ -410,11 +473,90 @@ def test_without_a_terminal_a_short_run_starts_at_once(tmp_path: Path, capsys: p
     assert "[x] 1. boot" in capsys.readouterr().out
 
 
-def test_without_a_terminal_a_long_run_stops_with_its_own_status(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+def test_without_a_terminal_a_long_run_stops_with_its_own_status_and_line(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     runner = FakeRunner()
     assert run_main(["--python", "py"], {}, runner, tmp_path, collect=collect_forty_tests) == run_plan.EXIT_NEEDS_CONFIRMATION
     assert runner.commands == []
-    assert "CONFIRM=yes" in capsys.readouterr().out
+    lines = capsys.readouterr().out.splitlines()
+    marked = [line for line in lines if line.startswith(run_plan.NEEDS_CONFIRMATION_PREFIX)]
+    assert len(marked) == 1
+    assert "CONFIRM=yes" in marked[0]
+
+
+def test_a_run_that_starts_prints_no_confirmation_line(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    assert run_main(["--python", "py", "--group", "boot"], {}, FakeRunner(), tmp_path, collect=collect_boot_tests) == 0
+    assert run_plan.NEEDS_CONFIRMATION_PREFIX not in capsys.readouterr().out
+
+
+def test_a_sharded_run_collects_without_the_shard_and_plans_this_shards_tests(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    environments: list[dict] = []
+
+    def collect_all(python: str, group: str, environ) -> tuple[Optional[list[CollectedTest]], int]:
+        environments.append(dict(environ))
+        return TESTS, 0
+
+    environ = {"ROTS_IT_SHARD": "1/3", "OTHER": "kept"}
+    status = run_main(["--python", "py", "--skip-groups", "poison", "--plan-only"], environ, FakeRunner(), tmp_path, collect=collect_all)
+    assert status == 0
+    assert environments == [{"OTHER": "kept"}]
+    # Without poison the sorted selection is test_one and test_four; shard 1/3 keeps test_one.
+    assert "Total: 1 test," in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("value", ["", "4/3", "two"])
+def test_a_bad_shard_is_a_usage_error(tmp_path: Path, value: str, capsys: pytest.CaptureFixture) -> None:
+    runner = FakeRunner()
+    assert run_main(["--python", "py"], {"ROTS_IT_SHARD": value}, runner, tmp_path, collect=collect_boot_tests) == run_plan.EXIT_USAGE
+    assert runner.commands == []
+    assert "ROTS_IT_SHARD" in capsys.readouterr().err
+
+
+def test_ctrl_c_while_collecting_cancels(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    def interrupted(python: str, group: str, environ) -> tuple[Optional[list[CollectedTest]], int]:
+        raise KeyboardInterrupt
+
+    runner = FakeRunner()
+    assert run_main(["--python", "py"], {}, runner, tmp_path, collect=interrupted) == run_plan.EXIT_CANCELLED
+    assert runner.commands == []
+    assert "Cancelled" in capsys.readouterr().out
+
+
+# A stand-in for pytest, found through PYTHONPATH: it notes that it started, and notes that it
+# survived unless it is stopped within SURVIVAL_SECONDS.
+SLOW_COLLECTION = """
+import pathlib
+import sys
+import time
+
+folder = pathlib.Path(__file__).resolve().parents[1]
+(folder / "started").write_text("", encoding="utf-8")
+time.sleep(1.0)
+(folder / "survived").write_text("", encoding="utf-8")
+"""
+# Longer than SLOW_COLLECTION sleeps.
+SURVIVAL_SECONDS = 1.5
+
+
+def test_ctrl_c_while_collecting_stops_the_collection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    stand_in = tmp_path / "pytest"
+    stand_in.mkdir()
+    # A regular package, which, unlike a namespace package, comes before the installed pytest.
+    (stand_in / "__init__.py").write_text("", encoding="utf-8")
+    (stand_in / "__main__.py").write_text(SLOW_COLLECTION, encoding="utf-8")
+
+    def interrupted_communicate(process: subprocess.Popen, *arguments, **keywords):
+        deadline = time.monotonic() + 10
+        while not (tmp_path / "started").exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(subprocess.Popen, "communicate", interrupted_communicate)
+    environ = {"PYTHONPATH": str(tmp_path), "PATH": os.environ.get("PATH", "")}
+    status = run_plan.main(["--python", sys.executable], environ=environ, run_command=FakeRunner(), interactive=False, durations_path=tmp_path / "durations.json")
+    assert status == run_plan.EXIT_CANCELLED
+    assert (tmp_path / "started").exists()
+    time.sleep(SURVIVAL_SECONDS)
+    assert not (tmp_path / "survived").exists()
 
 
 def test_a_higher_threshold_lets_the_long_run_start(tmp_path: Path) -> None:
@@ -522,3 +664,118 @@ def test_ctrl_c_at_the_prompt_cancels(tmp_path: Path) -> None:
     )
     assert status == run_plan.EXIT_CANCELLED
     assert runner.commands == []
+
+
+# Signals while pytest runs
+
+
+class FakeProcess:
+    """A child process that records the signals sent to it."""
+
+    def __init__(self) -> None:
+        # Every signal sent, in order.
+        self.signals: list[int] = []
+
+    def send_signal(self, signal_number: int) -> None:
+        self.signals.append(signal_number)
+
+
+def test_a_sigterm_before_the_child_starts_reaches_it_once_it_has() -> None:
+    process = FakeProcess()
+    forwarder = run_plan.ChildSignalForwarder()
+    forwarder.install()
+    try:
+        signal.raise_signal(signal.SIGTERM)
+        assert process.signals == []
+        forwarder.attach(process)
+    finally:
+        forwarder.restore()
+    assert process.signals == [signal.SIGTERM]
+
+
+def test_only_the_first_stopping_signal_is_forwarded_and_ctrl_c_is_ignored() -> None:
+    process = FakeProcess()
+    forwarder = run_plan.ChildSignalForwarder()
+    forwarder.install()
+    try:
+        forwarder.attach(process)
+        signal.raise_signal(signal.SIGINT)
+        signal.raise_signal(signal.SIGTERM)
+        signal.raise_signal(signal.SIGTERM)
+    finally:
+        forwarder.restore()
+    assert process.signals == [signal.SIGTERM]
+
+
+def test_restore_puts_back_the_previous_handlers() -> None:
+    before = {signal_number: signal.getsignal(signal_number) for signal_number in (signal.SIGINT, signal.SIGTERM)}
+    forwarder = run_plan.ChildSignalForwarder()
+    forwarder.install()
+    forwarder.restore()
+    assert {signal_number: signal.getsignal(signal_number) for signal_number in before} == before
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGHUP"), reason="this platform has no SIGHUP")
+def test_an_ignored_signal_stays_ignored_so_the_child_inherits_that() -> None:
+    previous = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    try:
+        forwarder = run_plan.ChildSignalForwarder()
+        forwarder.install()
+        try:
+            assert signal.getsignal(signal.SIGHUP) == signal.SIG_IGN
+        finally:
+            forwarder.restore()
+    finally:
+        signal.signal(signal.SIGHUP, previous)
+
+
+# A child that, like pytest, stops on SIGTERM or SIGHUP: it signals its parent (the process running
+# run_in_foreground) with Ctrl-C, then SIGTERM, waits until that SIGTERM reaches it, signals SIGTERM
+# and SIGHUP again, notes each signal it receives and exits 7.
+SIGNALLING_CHILD = """
+import os
+import pathlib
+import signal
+import sys
+import time
+
+log = pathlib.Path(sys.argv[1])
+received = []
+
+
+def note(signal_number, frame):
+    received.append(signal.Signals(signal_number).name)
+    log.write_text(" ".join(received), encoding="utf-8")
+
+
+signal.signal(signal.SIGTERM, note)
+signal.signal(signal.SIGHUP, note)
+parent = os.getppid()
+os.kill(parent, signal.SIGINT)
+os.kill(parent, signal.SIGTERM)
+deadline = time.monotonic() + 5
+while not received and time.monotonic() < deadline:
+    time.sleep(0.01)
+os.kill(parent, signal.SIGTERM)
+os.kill(parent, signal.SIGHUP)
+time.sleep(1.0)
+sys.exit(7)
+"""
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGHUP"), reason="signals another process with os.kill, which is POSIX-only")
+def test_run_in_foreground_forwards_the_first_sigterm_and_returns_the_childs_status(tmp_path: Path) -> None:
+    script = tmp_path / "child.py"
+    script.write_text(SIGNALLING_CHILD, encoding="utf-8")
+    log = tmp_path / "signals.log"
+    assert run_plan.run_in_foreground([sys.executable, str(script), str(log)], False) == 7
+    assert log.read_text(encoding="utf-8") == "SIGTERM"
+
+
+def test_a_child_killed_by_a_signal_returns_the_shells_status(tmp_path: Path) -> None:
+    command = [sys.executable, "-c", "import os, signal; signal.raise_signal(signal.SIGTERM)"]
+    status = run_plan.run_in_foreground(command, False)
+    if os.name == "posix":
+        assert status == 128 + signal.SIGTERM
+    else:
+        assert status != 0

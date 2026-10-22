@@ -4,8 +4,9 @@ The plan lists each selected group with its test count and estimated minutes, fr
 build/integration/durations.json recorded. At a terminal every group starts ticked: the developer
 can untick groups, start or cancel, and an unanswered plan starts by itself after 5 minutes.
 Without a terminal a run estimated under ROTS_IT_CONFIRM_MINUTES (default 10) starts at once and
-a longer one stops with EXIT_NEEDS_CONFIRMATION unless CONFIRM=yes. Under CI=true it runs the
-pytest command make integration always ran, and prints nothing of its own.
+a longer one prints a NEEDS_CONFIRMATION_PREFIX line and stops with EXIT_NEEDS_CONFIRMATION unless
+CONFIRM=yes. Under CI=true it runs the pytest command make integration always ran, leaving out
+any SKIP_GROUPS, and prints nothing of its own.
 
 Run from the repository root as `make integration` or `make integration-plan`.
 """
@@ -26,13 +27,14 @@ import sys
 import tempfile
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional, Sequence
 
-from rots_harness import collect_report, durations
+from rots_harness import collect_report, durations, sharding
 from rots_harness import groups as group_files
 from rots_harness.collect_report import CollectedTest
+from rots_harness.sharding import Shard
 
 # tests/integration: the groups folder, the scenarios and the rots_harness package.
 INTEGRATION_ROOT = Path(__file__).resolve().parents[1]
@@ -50,11 +52,16 @@ EXIT_USAGE = 2
 # No terminal to ask at, and the run's estimate reaches ROTS_IT_CONFIRM_MINUTES without CONFIRM=yes.
 # Above pytest's own statuses (0 to 5), so a caller can tell it apart from a test result.
 EXIT_NEEDS_CONFIRMATION = 10
-# The developer cancelled the run at the prompt; nothing ran.
+# The developer cancelled the run at the prompt or while it collected the tests; nothing ran.
 EXIT_CANCELLED = 11
+# Starts the one line printed with EXIT_NEEDS_CONFIRMATION. make exits 2 for every failed command,
+# so a caller of make finds this line rather than the status.
+NEEDS_CONFIRMATION_PREFIX = "ROTS_IT_NEEDS_CONFIRMATION:"
 
-# Seconds counted for a test with no recorded time; CI's measured average was 14.8.
-DEFAULT_TEST_SECONDS = 15.0
+# Seconds counted for a test with no recorded time.
+DEFAULT_TEST_SECONDS = durations.DEFAULT_TEST_SECONDS
+# The environment variable splitting a run into shards, which conftest.py applies to the selection.
+SHARD_VARIABLE = "ROTS_IT_SHARD"
 # The environment variable holding the estimate, in minutes, from which a run without a terminal needs CONFIRM=yes.
 CONFIRM_MINUTES_VARIABLE = "ROTS_IT_CONFIRM_MINUTES"
 # The confirmation threshold when CONFIRM_MINUTES_VARIABLE is unset.
@@ -81,50 +88,73 @@ START_ANSWERS = frozenset({"", "y", "yes"})
 PROMPT_HELP = "Numbers (and ranges like 3-5) toggle groups, a ticks all, n unticks all, Enter or y starts, q cancels."
 # The plan's footer about tests in several groups.
 UNTICK_FOOTER = "Unticking a group drops every test it marks, even one another ticked group also marks."
-
-
-@dataclass(frozen=True)
-class PlannedGroup:
-    """A group with at least one selected test."""
-
-    # The group's marker name.
-    name: str
-    # The node ids of the selected tests it marks, in collection order.
-    test_ids: tuple[str, ...]
+# The plan's footer under ROTS_IT_SHARD.
+SHARD_FOOTER = "ROTS_IT_SHARD splits the tests left after the groups left out, so unticking a group changes which tests this shard runs."
+# Seconds between checks on pytest while it runs, so a signal handled on the main thread is acted on promptly.
+WAIT_POLL_SECONDS = 0.25
 
 
 @dataclass
 class RunPlan:
-    """The selected tests, the groups they fall in, and what the recorded times say the run will take."""
+    """The selected tests, the groups they fall in, and what the recorded times say the run will take.
 
-    # Every selected test, in collection order.
+    The tests a run keeps are those no skipped or unticked group marks, split by the shard as
+    conftest.py splits them, so the plan shows what pytest will run.
+    """
+
+    # Every test GROUP selects, in collection order, before any shard.
     tests: list[CollectedTest]
     # The groups offered as checkboxes, in registration order; a group no selected test is in is left out.
-    offered_groups: list[PlannedGroup]
+    offered_groups: list[str]
     # The SKIP_GROUPS groups with a selected test, in registration order.
-    skipped_groups: list[PlannedGroup]
+    skipped_groups: list[str]
     # Every SKIP_GROUPS name; their tests never run.
     skipped_names: frozenset[str]
     # Recorded seconds by node id.
     recorded_seconds: Mapping[str, float]
     # The workers the run is divided between, at least 1.
     workers: int
-    # Selected tests that no registered group marks.
-    ungrouped_count: int = 0
+    # The share of the kept tests ROTS_IT_SHARD runs, or None to run them all.
+    shard: Optional[Shard] = None
+    # The node ids of the selected tests that no registered group marks.
+    ungrouped_ids: frozenset[str] = frozenset()
 
     def kept_test_ids(self, unticked: Iterable[str]) -> list[str]:
-        """The node ids of the selected tests no skipped or unticked group marks, in collection order."""
-        excluded = self.skipped_names | set(unticked)
-        return [test.node_id for test in self.tests if not test.markers & excluded]
+        """The node ids of the tests the run keeps with the unticked groups left out, in collection order."""
+        return self._run_test_ids(self.skipped_names | set(unticked))
 
-    def estimated_minutes(self, test_ids: Iterable[str]) -> float:
-        """Minutes the tests take on the run's workers: recorded seconds, or DEFAULT_TEST_SECONDS for a test without."""
+    def group_test_ids(self, name: str, unticked: Iterable[str]) -> list[str]:
+        """The node ids of the tests the group runs: those it marks that the run keeps with the group itself kept.
+
+        For a ticked group these are among kept_test_ids; for an unticked or skipped group, the
+        tests ticking it again would add.
+        """
+        excluded = (self.skipped_names | set(unticked)) - {name}
+        run_ids = set(self._run_test_ids(excluded))
+        return [test.node_id for test in self.tests if name in test.markers and test.node_id in run_ids]
+
+    def _run_test_ids(self, excluded: frozenset[str]) -> list[str]:
+        """The node ids of the tests no excluded group marks, then split by the shard, in collection order."""
+        kept = [test.node_id for test in self.tests if not test.markers & excluded]
+        if self.shard is None:
+            return kept
+        shard_ids = sharding.in_shard(kept, self.shard)
+        return [node_id for node_id in kept if node_id in shard_ids]
+
+    def estimated_minutes(self, test_ids: Sequence[str]) -> float:
+        """Minutes the tests take on the run's workers, no more workers than tests: recorded seconds, or DEFAULT_TEST_SECONDS for a test without."""
+        if not test_ids:
+            return 0.0
         seconds = sum(self.recorded_seconds.get(node_id, DEFAULT_TEST_SECONDS) for node_id in test_ids)
-        return seconds / self.workers / 60
+        return seconds / min(self.workers, len(test_ids)) / 60
 
     def untimed_count(self, test_ids: Iterable[str]) -> int:
         """How many of the tests have no recorded time."""
         return sum(1 for node_id in test_ids if node_id not in self.recorded_seconds)
+
+    def ungrouped_count(self, unticked: Iterable[str]) -> int:
+        """How many of the tests the run keeps no registered group marks."""
+        return sum(1 for node_id in self.kept_test_ids(unticked) if node_id in self.ungrouped_ids)
 
 
 @dataclass(frozen=True)
@@ -242,21 +272,28 @@ def launcher_name(environ: Mapping[str, str]) -> str:
 
 
 def build_plan(
-    tests: Iterable[CollectedTest], registered: Sequence[str], skipped: Iterable[str], recorded_seconds: Mapping[str, float], workers: int,
+    tests: Iterable[CollectedTest],
+    registered: Sequence[str],
+    skipped: Iterable[str],
+    recorded_seconds: Mapping[str, float],
+    workers: int,
+    shard: Optional[Shard] = None,
 ) -> RunPlan:
-    """The plan for the collected tests: a test counts toward every registered group it is marked with."""
+    """The plan for the tests GROUP selects, collected without a shard: a test counts toward every registered group it is marked with."""
     test_list = list(tests)
     skipped_names = frozenset(skipped)
-    offered: list[PlannedGroup] = []
-    skipped_groups: list[PlannedGroup] = []
+    offered: list[str] = []
+    skipped_groups: list[str] = []
     for name in registered:
-        test_ids = tuple(test.node_id for test in test_list if name in test.markers)
-        if not test_ids:
+        if not any(name in test.markers for test in test_list):
             continue
-        (skipped_groups if name in skipped_names else offered).append(PlannedGroup(name, test_ids))
+        if name in skipped_names:
+            skipped_groups.append(name)
+        else:
+            offered.append(name)
     registered_names = set(registered)
-    ungrouped = sum(1 for test in test_list if not test.markers & registered_names)
-    return RunPlan(test_list, offered, skipped_groups, skipped_names, dict(recorded_seconds), max(workers, 1), ungrouped)
+    ungrouped_ids = frozenset(test.node_id for test in test_list if not test.markers & registered_names)
+    return RunPlan(test_list, offered, skipped_groups, skipped_names, dict(recorded_seconds), max(workers, 1), shard, ungrouped_ids)
 
 
 def count_text(count: int) -> str:
@@ -278,17 +315,20 @@ def format_plan(plan: RunPlan, ticked: Sequence[bool], context: RunContext) -> l
         heading += f", shard {context.shard}"
     lines = [heading]
     shown = plan.offered_groups + plan.skipped_groups
-    name_width = max((len(group.name) for group in shown), default=0)
+    name_width = max((len(name) for name in shown), default=0)
     number_width = len(str(len(plan.offered_groups)))
-    for number, (group, is_ticked) in enumerate(zip(plan.offered_groups, ticked), start=1):
+    unticked = [name for name, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
+    for number, (name, is_ticked) in enumerate(zip(plan.offered_groups, ticked), start=1):
         box = "x" if is_ticked else " "
-        minutes = format_minutes(plan.estimated_minutes(group.test_ids))
-        lines.append(f"  [{box}] {number:>{number_width}}. {group.name:<{name_width}}  {count_text(len(group.test_ids)):>9}  {minutes:>8}")
-    for group in plan.skipped_groups:
-        lines.append(f"  skipped: {group.name} ({count_text(len(group.test_ids))})")
-    if plan.ungrouped_count:
-        lines.append(f"  {count_text(plan.ungrouped_count)} in no group")
-    unticked = [group.name for group, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
+        group_ids = plan.group_test_ids(name, unticked)
+        minutes = format_minutes(plan.estimated_minutes(group_ids))
+        lines.append(f"  [{box}] {number:>{number_width}}. {name:<{name_width}}  {count_text(len(group_ids)):>9}  {minutes:>8}")
+    for name in plan.skipped_groups:
+        group_ids = plan.group_test_ids(name, unticked)
+        lines.append(f"  skipped: {name} ({count_text(len(group_ids))})")
+    ungrouped = plan.ungrouped_count(unticked)
+    if ungrouped:
+        lines.append(f"  {count_text(ungrouped)} in no group")
     kept = plan.kept_test_ids(unticked)
     untimed = plan.untimed_count(kept)
     if untimed:
@@ -299,6 +339,8 @@ def format_plan(plan: RunPlan, ticked: Sequence[bool], context: RunContext) -> l
     lines.append(f"Total: {count_text(len(kept))}, about {format_minutes(plan.estimated_minutes(kept))} ({note}).")
     if plan.offered_groups:
         lines.append(UNTICK_FOOTER)
+    if plan.shard is not None:
+        lines.append(SHARD_FOOTER)
     return lines
 
 
@@ -321,7 +363,7 @@ def pytest_run_command(python: str, expression: str, jobs_text: str) -> list[str
 
 
 def collect_command(python: str, group: str) -> list[str]:
-    """The pytest command that collects GROUP's scenarios, sharding included, and reports them through collect_report."""
+    """The pytest command that collects GROUP's scenarios and reports them through collect_report."""
     return [python, "-m", "pytest", SCENARIOS_RELATIVE, "-q", "--collect-only", "-p", collect_report.__name__, "-m", run_expression(group, [])]
 
 
@@ -484,31 +526,103 @@ def ask(
             write(plan_line)
 
 
-def run_in_foreground(command: list[str], keep_stdin: bool) -> int:
-    """Runs command in the repository root and returns its exit status; stdin is the terminal's only when keep_stdin.
+class ChildSignalForwarder:
+    """While installed, passes the first SIGTERM or SIGHUP this process receives to a child process, and ignores Ctrl-C.
 
-    pytest handles Ctrl-C, SIGTERM and SIGHUP itself, stopping its servers and releasing the
-    Docker lock, so this process ignores them while it waits rather than cutting that short.
-    They reach pytest when they are sent to the process group, as a terminal sends them. The
-    handlers change only once pytest has started, so pytest does not inherit them.
+    pytest stops on SIGTERM and SIGHUP as on Ctrl-C, stopping its servers and releasing the Docker
+    lock. GNU make, and anything else stopping this process, signals only this process, so the
+    signal is passed on; a signal that arrives before the child exists is passed on once it is
+    attached. Later stopping signals are ignored, since a second interrupt would cut pytest's
+    cleanup short. Ctrl-C at a terminal reaches pytest directly, with its whole process group, so
+    it is ignored here. A signal this process already ignores stays ignored, for the child to
+    inherit. Install, attach and restore on the main thread.
     """
-    process = subprocess.Popen(command, cwd=REPO_ROOT, stdin=None if keep_stdin else subprocess.DEVNULL)
-    previous_handlers = {}
-    for signal_name in ("SIGINT", "SIGTERM", "SIGHUP"):
-        signal_number = getattr(signal, signal_name, None)
-        if signal_number is not None:
-            previous_handlers[signal_number] = signal.signal(signal_number, signal.SIG_IGN)
-    try:
-        return process.wait()
-    finally:
-        for signal_number, handler in previous_handlers.items():
+
+    # The signals passed on to the child; SIGHUP only where the platform has it.
+    FORWARDED_SIGNAL_NAMES = ("SIGTERM", "SIGHUP")
+
+    def __init__(self) -> None:
+        # The child signals are passed to; None until attach.
+        self._process: Optional[subprocess.Popen] = None
+        # A signal received before attach, to pass on once the child exists.
+        self._pending: Optional[int] = None
+        # Whether a stopping signal has been received; later ones are ignored.
+        self._received = False
+        # The handler each signal had before install, which restore puts back.
+        self._previous_handlers: dict[int, object] = {}
+
+    def install(self) -> None:
+        """Takes over SIGINT, SIGTERM and SIGHUP, except any this process ignores."""
+        handlers = {"SIGINT": self._ignore}
+        for signal_name in self.FORWARDED_SIGNAL_NAMES:
+            handlers[signal_name] = self._forward
+        for signal_name, handler in handlers.items():
+            signal_number = getattr(signal, signal_name, None)
+            if signal_number is None or signal.getsignal(signal_number) == signal.SIG_IGN:
+                continue
+            # A Python handler, unlike SIG_IGN, is not inherited: a child started after install
+            # still gets each signal's default action.
+            self._previous_handlers[signal_number] = signal.signal(signal_number, handler)
+
+    def attach(self, process) -> None:
+        """Makes process the child signals go to, passing on one that arrived before it existed."""
+        self._process = process
+        pending = self._pending
+        self._pending = None
+        if pending is not None:
+            process.send_signal(pending)
+
+    def restore(self) -> None:
+        """Puts back the handlers install replaced."""
+        for signal_number, handler in self._previous_handlers.items():
             signal.signal(signal_number, handler)
+        self._previous_handlers.clear()
+
+    def _ignore(self, signal_number: int, _frame: object) -> None:
+        """Does nothing: the child receives Ctrl-C itself."""
+
+    def _forward(self, signal_number: int, _frame: object) -> None:
+        """Passes the first stopping signal to the child, or keeps it until the child is attached."""
+        if self._received:
+            return
+        self._received = True
+        if self._process is None:
+            self._pending = signal_number
+        else:
+            self._process.send_signal(signal_number)
+
+
+def run_in_foreground(command: list[str], keep_stdin: bool) -> int:
+    """Runs command in the repository root and returns its exit status, 128 + N for a child killed by signal N.
+
+    stdin is the terminal's only when keep_stdin. While it runs, ChildSignalForwarder passes the
+    first SIGTERM or SIGHUP to it and Ctrl-C is left to it, and this process waits for it to end.
+    """
+    forwarder = ChildSignalForwarder()
+    forwarder.install()
+    try:
+        process = subprocess.Popen(command, cwd=REPO_ROOT, stdin=None if keep_stdin else subprocess.DEVNULL)
+        forwarder.attach(process)
+        while True:
+            # A signal handler runs on the main thread only; waiting in steps lets it run even
+            # when the signal was delivered to another thread.
+            try:
+                status = process.wait(timeout=WAIT_POLL_SECONDS)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+    finally:
+        forwarder.restore()
+    if status < 0:
+        return 128 - status
+    return status
 
 
 def collect_selection(python: str, group: str, environ: Mapping[str, str]) -> tuple[Optional[list[CollectedTest]], int]:
-    """The tests a run of GROUP selects, with the environment's ROTS_IT_SHARD applied, and pytest's exit status.
+    """The tests a run of GROUP selects in the environment environ, and pytest's exit status.
 
-    The tests are None when collection fails; pytest's output is then printed to stderr.
+    The tests are None when collection fails; pytest's output is then printed to stderr. Ctrl-C
+    raises KeyboardInterrupt once the collecting pytest has been stopped.
     """
     with tempfile.TemporaryDirectory(prefix="rots-run-plan-") as folder:
         report_path = Path(folder) / "collected.json"
@@ -529,6 +643,33 @@ def collect_selection(python: str, group: str, environ: Mapping[str, str]) -> tu
     sys.stderr.write(completed.stderr)
     print(f"error: collecting the selection failed (pytest exit status {completed.returncode})", file=sys.stderr)
     return None, completed.returncode or EXIT_USAGE
+
+
+def parse_shard_variable(value: Optional[str]) -> Optional[Shard]:
+    """The shard ROTS_IT_SHARD names, or None when it is unset; raises ValueError for a value conftest.py would refuse."""
+    if value is None:
+        return None
+    try:
+        return sharding.parse_shard(value)
+    except ValueError as error:
+        raise ValueError(f"{SHARD_VARIABLE}: {error}") from None
+
+
+def run_ci(python: str, group: str, skip_groups: str, jobs_text: str, run_command: Callable[[list[str], bool], int]) -> int:
+    """Runs pytest on GROUP's scenarios without the SKIP_GROUPS groups, with no plan and no question, and returns its status.
+
+    This is the whole of a CI=true run. An unregistered SKIP_GROUPS name prints an error and
+    returns EXIT_USAGE; an empty SKIP_GROUPS reads no group file.
+    """
+    skipped: list[str] = []
+    if skip_groups.strip():
+        try:
+            registered = list(group_files.read_group_descriptions(GROUPS_DIR))
+            skipped = parse_skip_groups(skip_groups, registered)
+        except (ValueError, OSError) as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_USAGE
+    return run_command(pytest_run_command(python, run_expression(group, skipped), jobs_text), True)
 
 
 def _print_lines(lines: Iterable[str]) -> None:
@@ -570,21 +711,30 @@ def main(
     arguments = parser.parse_args(argv)
     environment = os.environ if environ is None else environ
     if not arguments.plan_only and is_ci(environment):
-        return run_command(pytest_run_command(arguments.python, run_expression(arguments.group, []), arguments.jobs), True)
+        return run_ci(arguments.python, arguments.group, arguments.skip_groups, arguments.jobs, run_command)
+    shard_text = environment.get(SHARD_VARIABLE)
     try:
         registered = list(group_files.read_group_descriptions(GROUPS_DIR))
         skipped = parse_skip_groups(arguments.skip_groups, registered)
         confirm = parse_confirm(arguments.confirm)
         threshold_minutes = parse_confirm_minutes(environment.get(CONFIRM_MINUTES_VARIABLE))
+        shard = parse_shard_variable(shard_text)
     except (ValueError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_USAGE
-    tests, status = collect(arguments.python, arguments.group, environment)
+    # The plan shards the tests left after the groups it leaves out, as the run's conftest.py
+    # does, so the collection must see every selected test.
+    collect_environment = {name: value for name, value in environment.items() if name != SHARD_VARIABLE}
+    try:
+        tests, status = collect(arguments.python, arguments.group, collect_environment)
+    except KeyboardInterrupt:
+        _write_line(f"Cancelled while collecting the tests; nothing ran (exit status {EXIT_CANCELLED}).")
+        return EXIT_CANCELLED
     if tests is None:
         return status
     recorded = durations.read_durations(durations_path or REPO_ROOT / durations.DURATIONS_RELATIVE)
-    plan = build_plan(tests, registered, skipped, recorded, parse_jobs(arguments.jobs))
-    context = RunContext(launcher_name(environment), arguments.jobs, environment.get("ROTS_IT_SHARD") or None)
+    plan = build_plan(tests, registered, skipped, recorded, parse_jobs(arguments.jobs), shard)
+    context = RunContext(launcher_name(environment), arguments.jobs, shard_text)
 
     def render(ticked: tuple[bool, ...]) -> list[str]:
         return format_plan(plan, ticked, context)
@@ -617,14 +767,14 @@ def main(
             _write_line("The run started by itself, so it reads no input from this terminal.")
     else:
         _print_lines(render(ticked))
-        if gate is Gate.NEEDS_CONFIRMATION and plan.tests:
-            _print_lines([
-                f"This run is estimated at about {format_minutes(estimate)}, reaching {CONFIRM_MINUTES_VARIABLE} ({threshold_minutes:g} min), "
-                "and there is no terminal to ask at.",
-                f"Start it with CONFIRM={CONFIRM_YES}, or choose fewer groups with GROUP= or SKIP_GROUPS= (exit status {EXIT_NEEDS_CONFIRMATION}).",
-            ])
+        if gate is Gate.NEEDS_CONFIRMATION:
+            _write_line(
+                f"{NEEDS_CONFIRMATION_PREFIX} the run is estimated at about {format_minutes(estimate)}, reaching {CONFIRM_MINUTES_VARIABLE} "
+                f"({threshold_minutes:g} min), with no terminal to ask at; ask first, then start it with CONFIRM={CONFIRM_YES}, "
+                f"or choose fewer groups with GROUP= or SKIP_GROUPS= (exit status {EXIT_NEEDS_CONFIRMATION})."
+            )
             return EXIT_NEEDS_CONFIRMATION
-    unticked = [group.name for group, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
+    unticked = [name for name, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
     excluded = skipped + [name for name in unticked if name not in skipped]
     status = run_command(pytest_run_command(arguments.python, run_expression(arguments.group, excluded), arguments.jobs), keep_stdin)
     if excluded:

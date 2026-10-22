@@ -27,7 +27,7 @@ BASE ?= origin/release-frodo-next
 
 .DEFAULT_GOAL := help
 .PHONY: help configure setup build test run smoke-account integration-unit integration world-catalogue format clean
-.PHONY: integration-changed
+.PHONY: integration-build integration-changed
 
 help:
 	@printf "Available targets:\n"
@@ -41,6 +41,7 @@ help:
 	@printf "                         JOBS=<n> for n parallel workers)\n"
 	@printf "  make world-catalogue   Print the integration test world's zones, rooms, mobs, objects\n"
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
+	@printf "  make integration-build Build the server, harness server and rotstool the scenarios run\n"
 	@printf "  make integration-changed  Run the scenario groups this checkout's changes reach\n"
 	@printf "                         (BASE=<branch>, default %s)\n" "$(BASE)"
 	@printf "  make format            clang-format the WHOLE tree -- see the warning above the target;\n"
@@ -83,6 +84,10 @@ integration:
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:
 	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.world_catalogue$(if $(ZONE), --zone $(ZONE))$(if $(CATEGORY), --category $(CATEGORY))
+
+# The programs the scenarios run, built as CI builds them; make build builds only the server.
+integration-build: $(CMAKE_CACHE)
+	+$(CMAKE) --build $(BUILD_DIR) --target ageland ageland_harness rotstool --parallel $(JOBS)
 
 # Prints why each group was chosen, then runs make integration with them.
 integration-changed:

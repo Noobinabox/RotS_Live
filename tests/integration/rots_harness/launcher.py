@@ -12,6 +12,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Callable, Iterator, Optional
 
@@ -49,6 +50,16 @@ INPUT_CLOSED_POLL_SECONDS = 0.05
 PORT_IN_USE_LOG_TEXT = "bind: Address already in use"
 # How many ports start_on_a_free_port tries before it gives up on a port taken each time.
 PORT_ATTEMPTS = 3
+# Set to 1 to run a program older than its sources, for example to test an old build on purpose.
+ALLOW_STALE_VARIABLE = "ROTS_IT_ALLOW_STALE"
+# The folder, relative to the repository root, holding the sources the programs are built from.
+SOURCE_DIRECTORY_RELATIVE = "src"
+# The suffixes of the source files whose changes make a program stale.
+SOURCE_SUFFIXES = (".cpp", ".h")
+# The unit tests' folder under SOURCE_DIRECTORY_RELATIVE; no program the harness runs is built from it.
+UNIT_TEST_SOURCES_RELATIVE = "tests"
+# Folders under SOURCE_DIRECTORY_RELATIVE built into one program only, by folder; every other program ignores them.
+PROGRAM_ONLY_SOURCES = {"harness": HARNESS_BINARY_RELATIVE, "tools/rotstool": "bin/rotstool"}
 
 
 class PortInUse(RuntimeError):
@@ -106,6 +117,33 @@ def check_repo_relative(relative_path: str) -> None:
     normalized = os.path.normpath(relative_path)
     if os.path.isabs(relative_path) or normalized in (os.curdir, os.pardir) or normalized.startswith(os.pardir + os.sep):
         raise ValueError(f"{relative_path!r} must name a file by a path relative to the repository root that stays inside it")
+
+
+def newest_source(source_root: Path, program_relative: str) -> Optional[tuple[Path, float]]:
+    """The newest .cpp or .h file under source_root that program_relative is built from, with its modification time.
+
+    Skips the unit tests and the folders built only into another program; None when no source is found.
+    """
+    excluded = {UNIT_TEST_SOURCES_RELATIVE}
+    excluded.update(folder for folder, owner in PROGRAM_ONLY_SOURCES.items() if owner != program_relative)
+    newest: Optional[tuple[Path, float]] = None
+    for directory, subdirectories, file_names in os.walk(source_root):
+        directory_path = Path(directory)
+        relative_directory = directory_path.relative_to(source_root)
+        # Pruned in place, so os.walk never descends into an excluded folder.
+        subdirectories[:] = [name for name in subdirectories if (relative_directory / name).as_posix() not in excluded]
+        for file_name in file_names:
+            if not file_name.endswith(SOURCE_SUFFIXES):
+                continue
+            source_path = directory_path / file_name
+            try:
+                modified = source_path.stat().st_mtime
+            except OSError:
+                # A file removed during the walk cannot make the program stale.
+                continue
+            if newest is None or modified > newest[1]:
+                newest = (source_path, modified)
+    return newest
 
 
 def wait_for_login_prompt(
@@ -315,9 +353,28 @@ class ServerLauncher:
         return BUILD_COMMAND
 
     def require_program(self, program_relative: str) -> None:
-        """Raises RuntimeError naming build_hint() when the repo's program is missing or is not a file."""
-        if not (self._repo_root / program_relative).is_file():
+        """Raises RuntimeError naming build_hint() when the repo's program is missing, is not a file, or is stale.
+
+        A program is stale when it is older than the newest source it is built from (newest_source).
+        Setting ROTS_IT_ALLOW_STALE=1 skips that check.
+        """
+        program_path = self._repo_root / program_relative
+        if not program_path.is_file():
             raise RuntimeError(f"{program_relative} is missing; build it first: {self.build_hint()}")
+        if os.environ.get(ALLOW_STALE_VARIABLE) == "1":
+            return
+        newest = newest_source(self._repo_root / SOURCE_DIRECTORY_RELATIVE, program_relative)
+        if newest is None:
+            return
+        source_path, source_modified = newest
+        if program_path.stat().st_mtime >= source_modified:
+            return
+        source_relative = source_path.relative_to(self._repo_root).as_posix()
+        modified_text = datetime.fromtimestamp(source_modified).isoformat(sep=" ", timespec="seconds")
+        raise RuntimeError(
+            f"{program_relative} is older than {source_relative} (modified {modified_text}); rebuild it: {self.build_hint()}, "
+            f"or set {ALLOW_STALE_VARIABLE}=1 to run it as it is"
+        )
 
 
 class LocalProcessLauncher(ServerLauncher):

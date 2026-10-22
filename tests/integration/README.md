@@ -41,6 +41,14 @@ scenarios; `unit/` tests the harness itself without a server.
    lock when the build ends. A run whose server binary, `ageland_harness` (for a test with a
    schedule) or `rotstool` is missing stops at once with the build command for its launcher.
 
+   `make integration-build` runs that build (`make configure`, then the three targets with
+   `--parallel $(JOBS)`), on Linux or inside the container
+   (`docker compose run --rm -T rots bash -lc 'make integration-build'`). A program older than
+   the newest `.cpp` or `.h` file it is built from also stops the run with the build command.
+   That is any such file under `src/` except `src/tests/`, with `src/harness/` counting only for
+   `ageland_harness` and `src/tools/rotstool/` only for `rotstool`. `ROTS_IT_ALLOW_STALE=1` runs
+   it anyway.
+
 2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 
    ```bash
@@ -162,6 +170,7 @@ Environment variables:
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
 | `ROTS_IT_SHARD` | unset | `k/N`, such as `2/4`: runs only every N-th selected test in node id order, starting at the k-th; a shard left with no tests passes |
+| `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources, for example to test an old build on purpose |
 
 A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`,
 `ROTS_IT_HOUR_TIMEOUT` or `ROTS_IT_SHARD` value the harness cannot use stops the run before any test with a usage

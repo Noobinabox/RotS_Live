@@ -46,8 +46,10 @@ scenarios; `unit/` tests the harness itself without a server.
    (`docker compose run --rm -T rots bash -lc 'make integration-build'`). A program older than
    the newest `.cpp` or `.h` file it is built from also stops the run with the build command.
    That is any such file under `src/` except `src/tests/`, with `src/harness/` counting only for
-   `ageland_harness` and `src/tools/rotstool/` only for `rotstool`. `ROTS_IT_ALLOW_STALE=1` runs
-   it anyway.
+   `ageland_harness`, `src/tools/rotstool/` only for `rotstool` and `src/main.cpp` only for
+   `ageland`. `ROTS_IT_ALLOW_STALE=1` runs it anyway. The check compares modification times
+   only, so a deleted source goes unnoticed and files copied with their old times can read as
+   fresh; `ROTS_IT_ALLOW_STALE=1` is also the way past a wrong verdict.
 
 2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 

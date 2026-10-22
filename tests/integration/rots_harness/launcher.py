@@ -58,8 +58,9 @@ SOURCE_DIRECTORY_RELATIVE = "src"
 SOURCE_SUFFIXES = (".cpp", ".h")
 # The unit tests' folder under SOURCE_DIRECTORY_RELATIVE; no program the harness runs is built from it.
 UNIT_TEST_SOURCES_RELATIVE = "tests"
-# Folders under SOURCE_DIRECTORY_RELATIVE built into one program only, by folder; every other program ignores them.
-PROGRAM_ONLY_SOURCES = {"harness": HARNESS_BINARY_RELATIVE, "tools/rotstool": "bin/rotstool"}
+# Folders and files under SOURCE_DIRECTORY_RELATIVE built into one program only, mapped to that program;
+# every other program ignores them. Each program has its own main.cpp.
+PROGRAM_ONLY_SOURCES = {"harness": HARNESS_BINARY_RELATIVE, "tools/rotstool": "bin/rotstool", "main.cpp": "bin/ageland"}
 
 
 class PortInUse(RuntimeError):
@@ -122,7 +123,7 @@ def check_repo_relative(relative_path: str) -> None:
 def newest_source(source_root: Path, program_relative: str) -> Optional[tuple[Path, float]]:
     """The newest .cpp or .h file under source_root that program_relative is built from, with its modification time.
 
-    Skips the unit tests and the folders built only into another program; None when no source is found.
+    Skips the unit tests and the folders and files built only into another program; None when no source is found.
     """
     excluded = {UNIT_TEST_SOURCES_RELATIVE}
     excluded.update(folder for folder, owner in PROGRAM_ONLY_SOURCES.items() if owner != program_relative)
@@ -133,7 +134,7 @@ def newest_source(source_root: Path, program_relative: str) -> Optional[tuple[Pa
         # Pruned in place, so os.walk never descends into an excluded folder.
         subdirectories[:] = [name for name in subdirectories if (relative_directory / name).as_posix() not in excluded]
         for file_name in file_names:
-            if not file_name.endswith(SOURCE_SUFFIXES):
+            if not file_name.endswith(SOURCE_SUFFIXES) or (relative_directory / file_name).as_posix() in excluded:
                 continue
             source_path = directory_path / file_name
             try:

@@ -22,8 +22,14 @@ GROUP ?=
 ZONE ?=
 # make world-catalogue prints only this table: zones, rooms, mobs, objects or scripts.
 CATEGORY ?=
-# The branch make integration-changed measures changes from.
-BASE ?= origin/release-frodo-next
+# The branch make integration-changed measures changes from, e.g. BASE=origin/master. Only a
+# command-line BASE counts: an exported BASE is too generic a name to trust. $(value ...) keeps
+# make from expanding anything inside it.
+ifeq ($(origin BASE),command line)
+INTEGRATION_CHANGED_BASE := $(value BASE)
+else
+INTEGRATION_CHANGED_BASE := origin/release-frodo-next
+endif
 
 .DEFAULT_GOAL := help
 .PHONY: help configure setup build test run smoke-account integration-unit integration world-catalogue format clean
@@ -43,12 +49,12 @@ help:
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
 	@printf "  make integration-build Build the server, harness server and rotstool the scenarios run\n"
 	@printf "  make integration-changed  Run the scenario groups this checkout's changes reach\n"
-	@printf "                         (BASE=<branch>, default %s)\n" "$(BASE)"
+	@printf "                         (BASE=<branch>, default origin/release-frodo-next)\n"
 	@printf "  make format            clang-format the WHOLE tree -- see the warning above the target;\n"
 	@printf "                         format only your changed files instead\n"
 	@printf "  make run               Build and start the server in the foreground\n"
 	@printf "  make clean             Clean the configured CMake build tree\n"
-	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, ZONE, CATEGORY\n" "$(BUILD_DIR)" "$(JOBS)"
+	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, ZONE, CATEGORY, BASE\n" "$(BUILD_DIR)" "$(JOBS)"
 	@printf "Changing CMAKE_CONFIGURE_ARGS needs a fresh BUILD_DIR; an existing tree keeps its cache.\n"
 
 $(CMAKE_CACHE):
@@ -89,9 +95,11 @@ world-catalogue:
 integration-build: $(CMAKE_CACHE)
 	+$(CMAKE) --build $(BUILD_DIR) --target ageland ageland_harness rotstool --parallel $(JOBS)
 
-# Prints why each group was chosen, then runs make integration with them.
+# Prints why each group was chosen, then runs make integration with them. The base reaches
+# Python through the environment, so the shell never reads it as command text.
+integration-changed: export INTEGRATION_CHANGED_BASE := $(INTEGRATION_CHANGED_BASE)
 integration-changed:
-	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.changed_groups --base "$(BASE)" --python "$(PYTHON)" --make "$(MAKE)"
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.changed_groups --base="$$INTEGRATION_CHANGED_BASE" --python "$(PYTHON)" --make "$(MAKE)"
 
 # DO NOT RUN THIS on a change you are about to commit. It is clang-format over the WHOLE
 # tree: ~1200 lines nobody touched get rewritten (db.cpp and act_wiz.cpp worst), and the

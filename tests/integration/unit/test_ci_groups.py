@@ -134,6 +134,7 @@ def test_a_group_both_named_and_changed_is_listed_once() -> None:
         "src/tools/rotstool/main.cpp",
         "Dockerfile",
         ".github/workflows/integration.yml",
+        ".github/actions/dev-image/action.yml",
     ],
 )
 def test_a_harness_change_runs_every_group(path: str) -> None:

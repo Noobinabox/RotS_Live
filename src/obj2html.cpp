@@ -343,7 +343,8 @@ char* type_keywords[][2] = {
     { "boat", NULL },
     { "fountain", NULL },
     { "shield", NULL },
-    { "lever", NULL }
+    { "lever", NULL },
+    { "keyring", NULL }
 };
 
 unsigned long
@@ -432,6 +433,9 @@ struct obj2html_type obj2html_types[] = {
     { "Lever Objects", type_keywords[ITEM_LEVER],
         1 << ITEM_LEVER, item_typemask, NULL,
         NULL, 0, 0 },
+    { "Keyrings", type_keywords[ITEM_KEYRING],
+        1 << ITEM_KEYRING, item_typemask, NULL,
+        NULL, 0, 0 },
     { NULL, NULL, 0, NULL, NULL, NULL, 0, 0 }
 };
 
@@ -513,6 +517,9 @@ void obj2html_newtable(const struct char_data* ch, FILE* f,
             "          <TH> Room </TH>\n"
             "          <TH> Direction </TH>\n");
         break;
+    case ITEM_KEYRING:
+        fprintf(f, "          <TH> Can Carry </TH>\n");
+        break;
     }
 
     fprintf(f,
@@ -550,6 +557,7 @@ static int obj2html_type_cells(int type)
     case ITEM_LIGHT:
     case ITEM_NOTE:
     case ITEM_DRINKCON:
+    case ITEM_KEYRING:
         return 1;
     case ITEM_CONTAINER:
     case ITEM_FOOD:
@@ -676,6 +684,9 @@ int obj2html(FILE* f, struct obj_data* o)
             fprintf(f, "         <TD> %s </TD>\n", dirs[o->obj_flags.value[1]]);
         else /* shown in red here only: the footer is for objects no table lists */
             fprintf(f, "         <TD> <FONT COLOR=RED> %d </FONT> </TD>\n", o->obj_flags.value[1]);
+        break;
+    case ITEM_KEYRING:
+        fprintf(f, "         <TD> %d </TD>\n", o->obj_flags.value[0]);
         break;
     }
 

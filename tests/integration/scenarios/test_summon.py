@@ -16,10 +16,10 @@ pytestmark = [pytest.mark.scenario, pytest.mark.summon]
 
 # Room 1201, the only room of zone 12, whose map square is (3, 4).
 ROOM_DISTANT_CELL = 1201
-# Room 1901, the only room of zone 19, whose map square is (20, 0).
-ROOM_PLUS_TWENTY_CELL = 1901
-# Room 2101, the only room of zone 21, whose map square is (-20, 0).
-ROOM_MINUS_TWENTY_CELL = 2101
+# Room 9001, the only room of zone 90, whose map square is (20, 0).
+ROOM_PLUS_TWENTY_CELL = 9001
+# Room 9101, the only room of zone 91, whose map square is (-20, 0).
+ROOM_MINUS_TWENTY_CELL = 9101
 
 # A level-30 human mage in the arena centre who knows summon fully: 100 practice sessions put
 # its knowledge at the cap of 100 (recalc_skills, spec_pro.cpp).
@@ -50,7 +50,7 @@ DISTANT_VICTIM = Character(
     load_room=ROOM_DISTANT_CELL,
     class_name="warrior",
 )
-# A level-12 human warrior who starts in zone 19, twenty map squares from the caster's zone.
+# A level-12 human warrior who starts in zone 90, twenty map squares from the caster's zone.
 PLUS_TWENTY_VICTIM = Character(
     name="Testplus",
     race="human",
@@ -59,8 +59,8 @@ PLUS_TWENTY_VICTIM = Character(
     load_room=ROOM_PLUS_TWENTY_CELL,
     class_name="warrior",
 )
-# A level-12 human warrior who starts in zone 21, twenty map squares from the caster's zone on the
-# side opposite zone 19.
+# A level-12 human warrior who starts in zone 91, twenty map squares from the caster's zone on the
+# side opposite zone 90.
 MINUS_TWENTY_VICTIM = Character(
     name="Testminus",
     race="human",
@@ -107,7 +107,7 @@ SUMMONED_MARKER_FORMAT = "{} summons you!"
 TELEPORTED_MARKER = "has teleported you!"
 # What look prints instead of the room for a character who cannot see (do_look, act_info.cpp).
 DARK_ROOM_LOOK = "It is pitch black..."
-# The names look prints for the only rooms of zones 12, 19 and 21 (tests/integration/world/wld).
+# The names look prints for the only rooms of zones 12, 90 and 91 (tests/integration/world/wld).
 DISTANT_CELL_NAME = "Distant Cell"
 PLUS_TWENTY_CELL_NAME = "Plus Twenty Cell"
 MINUS_TWENTY_CELL_NAME = "Minus Twenty Cell"
@@ -445,9 +445,9 @@ def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_s
     """Legacy pin: summon's exclusive-or distance makes twenty squares certain one way, impossible the other.
 
     Records today's behaviour. spell_summon (mage.cpp) adds `((ch_x - v_x) ^ 2) + ((ch_y - v_y) ^ 2)`
-    to the victim's save, where `^` is C's exclusive or. Zone 19 at (20, 0) and zone 21 at
-    (-20, 0) are both twenty squares from zone 11 at (0, 0), but the bonus is -16 for zone 19, so
-    a weak victim there never saves, and 24 for zone 21, past new_saves_spell's forced save, so
+    to the victim's save, where `^` is C's exclusive or. Zone 90 at (20, 0) and zone 91 at
+    (-20, 0) are both twenty squares from zone 11 at (0, 0), but the bonus is -16 for zone 90, so
+    a weak victim there never saves, and 24 for zone 91, past new_saves_spell's forced save, so
     that victim always saves.
     The one draw left that can change the outcome is the concentration roll in do_cast, which
     cast_summon repeats; the affect-hours schedule keeps everything else from drawing. When the
@@ -463,9 +463,9 @@ def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_s
     caster_inputs, plus_inputs = setup_caster_and_victim(implementor, PLUS_TWENTY_VICTIM)
     minus_inputs = setup_another_victim(implementor, MINUS_TWENTY_VICTIM)
 
-    # Zone 19 case, caster in Arena Centre (zone 11), Testplus in the Plus Twenty Cell (zone 19):
+    # Zone 90 case, caster in Arena Centre (zone 11), Testplus in the Plus Twenty Cell (zone 90):
     #   dist       = ((ch_x - v_x) ^ 2) + ((ch_y - v_y) ^ 2)        (spell_summon, mage.cpp)
-    #              = ((0 - 20) ^ 2) + ((0 - 0) ^ 2)                 (zone 11 (0, 0), zone 19 (20, 0))
+    #              = ((0 - 20) ^ 2) + ((0 - 0) ^ 2)                 (zone 11 (0, 0), zone 90 (20, 0))
     #              = (-20 ^ 2) + (0 ^ 2) = -18 + 2 = -16
     #                (^ is exclusive or: it flips bit 1 of each difference)
     #   save_bonus = dist = -16              (the NPC level bonus does not apply to a player)
@@ -480,8 +480,8 @@ def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_s
     #   saved      = roll + save_value > casting_dc, roll = number(1, 20)  (new_saves_spell)
     #              = at most 20 + -17 = 3, never above 28: never saves; -16 is inside (-20, 20),
     #                so new_saves_spell returns that result rather than a forced one.
-    # Zone 21 case, Testminus in the Minus Twenty Cell (zone 21):
-    #   dist       = ((0 - -20) ^ 2) + ((0 - 0) ^ 2)                (zone 11 (0, 0), zone 21 (-20, 0))
+    # Zone 91 case, Testminus in the Minus Twenty Cell (zone 91):
+    #   dist       = ((0 - -20) ^ 2) + ((0 - 0) ^ 2)                (zone 11 (0, 0), zone 91 (-20, 0))
     #              = (20 ^ 2) + (0 ^ 2) = 22 + 2 = 24
     #   save_bonus = dist = 24, at least 20: new_saves_spell returns a save whatever the roll
     #                (spell_pa.cpp), so this victim always saves.
@@ -489,8 +489,8 @@ def test_summon_reaches_a_player_twenty_squares_away_on_one_side_but_never_the_s
     assert plus_inputs == (3, VICTIM_INTELLIGENCE, 0), plus_inputs
     assert minus_inputs == (3, VICTIM_INTELLIGENCE, 0), minus_inputs
     caster_square = zone_map_square(11)
-    plus_square = zone_map_square(19)
-    minus_square = zone_map_square(21)
+    plus_square = zone_map_square(90)
+    minus_square = zone_map_square(91)
     assert (caster_square, plus_square, minus_square) == ((0, 0), (20, 0), (-20, 0))
     plus_distance = exclusive_or_distance(caster_square, plus_square)
     minus_distance = exclusive_or_distance(caster_square, minus_square)
@@ -518,8 +518,8 @@ def test_a_player_twenty_map_squares_away_always_resists_in_either_direction(ser
     """New-behaviour pin: a summon across twenty map squares always fails, whichever side.
 
     spell_summon (mage.cpp) adds the straight-line distance between the two zones' map squares,
-    rounded down, to the victim's save: 20 from zone 11 at (0, 0) to zone 19 at (20, 0), and 20
-    to zone 21 at (-20, 0). new_saves_spell (spell_pa.cpp) returns a save whatever the roll once
+    rounded down, to the victim's save: 20 from zone 11 at (0, 0) to zone 90 at (20, 0), and 20
+    to zone 91 at (-20, 0). new_saves_spell (spell_pa.cpp) returns a save whatever the roll once
     the bonus reaches FORCED_SAVE_BONUS, so the caster reads "You failed." both times and neither
     victim moves. The caster and the victims are set up as in the legacy twenty-square pin.
     The one draw left that can change the outcome is the concentration roll in do_cast, which
@@ -535,12 +535,12 @@ def test_a_player_twenty_map_squares_away_always_resists_in_either_direction(ser
     caster_inputs, plus_inputs = setup_caster_and_victim(implementor, PLUS_TWENTY_VICTIM)
     minus_inputs = setup_another_victim(implementor, MINUS_TWENTY_VICTIM)
 
-    # Zone 19 case, caster in Arena Centre (zone 11), Testplus in the Plus Twenty Cell (zone 19):
+    # Zone 90 case, caster in Arena Centre (zone 11), Testplus in the Plus Twenty Cell (zone 90):
     #   dist       = (int)sqrt(delta_x * delta_x + delta_y * delta_y)      (spell_summon, mage.cpp)
-    #              = (int)sqrt((0 - 20) * (0 - 20) + (0 - 0) * (0 - 0))  (zone 11 (0, 0), zone 19 (20, 0))
+    #              = (int)sqrt((0 - 20) * (0 - 20) + (0 - 0) * (0 - 0))  (zone 11 (0, 0), zone 90 (20, 0))
     #              = (int)sqrt(400) = 20
-    # Zone 21 case, Testminus in the Minus Twenty Cell (zone 21):
-    #   dist       = (int)sqrt((0 - -20) * (0 - -20) + (0 - 0) * (0 - 0)) (zone 21 (-20, 0))
+    # Zone 91 case, Testminus in the Minus Twenty Cell (zone 91):
+    #   dist       = (int)sqrt((0 - -20) * (0 - -20) + (0 - 0) * (0 - 0)) (zone 91 (-20, 0))
     #              = (int)sqrt(400) = 20
     # Both cases:
     #   save_bonus = dist = 20               (the NPC level bonus does not apply to a player)
@@ -551,8 +551,8 @@ def test_a_player_twenty_map_squares_away_always_resists_in_either_direction(ser
     assert plus_inputs == (3, VICTIM_INTELLIGENCE, 0), plus_inputs
     assert minus_inputs == (3, VICTIM_INTELLIGENCE, 0), minus_inputs
     caster_square = zone_map_square(11)
-    plus_square = zone_map_square(19)
-    minus_square = zone_map_square(21)
+    plus_square = zone_map_square(90)
+    minus_square = zone_map_square(91)
     assert (caster_square, plus_square, minus_square) == ((0, 0), (20, 0), (-20, 0))
     plus_distance = straight_line_distance(caster_square, plus_square)
     minus_distance = straight_line_distance(caster_square, minus_square)

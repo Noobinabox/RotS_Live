@@ -1,10 +1,10 @@
 #19
-Harness plus-twenty zone~
-A zone for the summon-distance scenarios: map (20,0), 20 squares from zone 11.
+Harness key hall~
+Zone for the keyring scenarios: a hall and a store room behind a locked door, and the keyring fixtures.
 ~
 ~
 0
-? 20 0 5
+? 9 5 5
 1999
 999
 2

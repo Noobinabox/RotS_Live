@@ -574,7 +574,9 @@ ACMD(do_pick)
         send_to_char("Pick what?\n\r", ch);
     else if (generic_find(argument, FIND_OBJ_INV | FIND_OBJ_ROOM, ch, &victim, &obj))
 
-        if (obj->obj_flags.type_flag != ITEM_CONTAINER)
+        if (refuse_keyring(ch, obj, keyring_action::lock)) {
+            /* refuse_keyring told ch */
+        } else if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
         else if (!IS_SET(obj->obj_flags.value[1], CONT_CLOSED))
             send_to_char("Silly - it isn't even closed!\n\r", ch);

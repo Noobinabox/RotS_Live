@@ -1398,10 +1398,7 @@ void equip_char(char_data* character, obj_data* item, int item_slot)
     // Encumb and weight update:
     character->points.encumb += item->obj_flags.value[2] * encumb_table[item_slot];
     character->specials2.leg_encumb += item->obj_flags.value[2] * leg_encumb_table[item_slot];
-    if (encumb_table[item_slot])
-        GET_ENCUMB_WEIGHT(character) += GET_OBJ_WEIGHT(item) * encumb_table[item_slot];
-    else
-        GET_ENCUMB_WEIGHT(character) += GET_OBJ_WEIGHT(item) / 2;
+    GET_ENCUMB_WEIGHT(character) += worn_encumb_weight(GET_OBJ_WEIGHT(item), item_slot);
     GET_WORN_WEIGHT(character) += GET_OBJ_WEIGHT(item);
 
     IS_CARRYING_W(character) += GET_OBJ_WEIGHT(item);
@@ -1477,10 +1474,7 @@ struct obj_data* unequip_char(struct char_data* ch, int pos)
 
     ch->points.encumb -= obj->obj_flags.value[2] * encumb_table[pos];
     ch->specials2.leg_encumb -= obj->obj_flags.value[2] * leg_encumb_table[pos];
-    if (encumb_table[pos])
-        GET_ENCUMB_WEIGHT(ch) -= GET_OBJ_WEIGHT(obj) * encumb_table[pos];
-    else
-        GET_ENCUMB_WEIGHT(ch) -= GET_OBJ_WEIGHT(obj) / 2;
+    GET_ENCUMB_WEIGHT(ch) -= worn_encumb_weight(GET_OBJ_WEIGHT(obj), pos);
     GET_WORN_WEIGHT(ch) -= GET_OBJ_WEIGHT(obj);
 
     IS_CARRYING_W(ch) -= GET_OBJ_WEIGHT(obj);
@@ -1799,6 +1793,39 @@ void obj_from_room(struct obj_data* object)
     object->next_content = 0;
 }
 
+/* The encumbrance weight an item of this weight adds when worn in this
+ * slot. equip_char, unequip_char and recalc_worn_weight all use it, but
+ * recalc_worn_weight passes get_weight() (at least 1), so a 0-weight worn
+ * item counts 1 after a login (older behavior, every item type). */
+int worn_encumb_weight(int weight, int slot)
+{
+    if (encumb_table[slot])
+        return weight * encumb_table[slot];
+    return weight / 2;
+}
+
+/* A worn keyring's weight just went from old_weight to its weight now (a
+ * key went on or came off). Keep its wearer's worn and encumbrance weight
+ * equal to what equip_char would add for the ring as it is now, so wearing
+ * and removing it cannot drift them. Keyrings only: worn quivers and other
+ * containers keep the old behavior. */
+static void update_worn_keyring_weight(obj_data* ring, int old_weight)
+{
+    char_data* wearer = ring->carried_by;
+    if (!wearer || !ring->is_keyring())
+        return;
+
+    for (int slot = 0; slot < MAX_WEAR; slot++) {
+        if (wearer->equipment[slot] == ring) {
+            int new_weight = GET_OBJ_WEIGHT(ring);
+            GET_WORN_WEIGHT(wearer) += new_weight - old_weight;
+            GET_ENCUMB_WEIGHT(wearer) += worn_encumb_weight(new_weight, slot)
+                - worn_encumb_weight(old_weight, slot);
+            return;
+        }
+    }
+}
+
 /* put an object in an object (quaint)  */
 void obj_to_obj(obj_data* item, obj_data* container, char change_weight)
 {
@@ -1816,10 +1843,12 @@ void obj_to_obj(obj_data* item, obj_data* container, char change_weight)
         }
 
         /* top level object.  Subtract weight from inventory if necessary. */
+        int old_weight = GET_OBJ_WEIGHT(tmp_obj);
         GET_OBJ_WEIGHT(tmp_obj) += GET_OBJ_WEIGHT(item);
         if (tmp_obj->carried_by) {
             IS_CARRYING_W(tmp_obj->carried_by) += GET_OBJ_WEIGHT(item);
         }
+        update_worn_keyring_weight(tmp_obj, old_weight);
     }
 }
 
@@ -1853,10 +1882,12 @@ void obj_from_obj(obj_data* item)
         }
 
         /* Subtract weight from char that carries the object */
+        int old_weight = GET_OBJ_WEIGHT(tmp);
         GET_OBJ_WEIGHT(tmp) -= GET_OBJ_WEIGHT(item);
         if (tmp->carried_by) {
             IS_CARRYING_W(tmp->carried_by) -= GET_OBJ_WEIGHT(item);
         }
+        update_worn_keyring_weight(tmp, old_weight);
 
         item->in_obj = 0;
         item->next_content = 0;
@@ -2230,7 +2261,7 @@ struct char_data* get_char_vis(struct char_data* ch, const char* name, int dark_
 }
 
 struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* name,
-    struct obj_data* list, int num)
+    struct obj_data* list, int num, int only_type)
 {
     struct obj_data* i;
     int j, number;
@@ -2238,6 +2269,12 @@ struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* nam
     char* tmp;
 
     if (num < 9999) {
+        if (only_type >= 0) { /* the num-th item of this type */
+            for (i = list, j = 1; i; i = i->next_content)
+                if (GET_ITEM_TYPE(i) == only_type && j++ >= num)
+                    return (i);
+            return (0);
+        }
         for (i = list, j = 1; i && (j < num); i = i->next_content, j++)
             ;
         return (i);
@@ -2249,7 +2286,7 @@ struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* nam
         return (0);
 
     for (i = list, j = 1; i && (j <= number); i = i->next_content)
-        if (isname(tmp, i->name, 0))
+        if ((only_type < 0 || GET_ITEM_TYPE(i) == only_type) && isname(tmp, i->name, 0))
             if (CAN_SEE_OBJ(ch, i)) {
                 if (j == number)
                     return (i);
@@ -2442,6 +2479,8 @@ int generic_find(const char* arg, int bitvector, struct char_data* ch,
 
     if (IS_SET(bitvector, FIND_OBJ_EQUIP)) {
         for (found = FALSE, i = 0; i < MAX_WEAR && !found; i++) {
+            if (IS_SET(bitvector, FIND_OBJ_BELT_KEYRING) && belt_keyring(ch, i, nullptr))
+                continue; /* searched last, below */
             if (namelen > 2)
                 tmpfound = (ch->equipment[i] && strn_cmp(name, ch->equipment[i]->name, namelen) == 0);
             else
@@ -2469,6 +2508,35 @@ int generic_find(const char* arg, int bitvector, struct char_data* ch,
         }
     }
 
+    if (IS_SET(bitvector, FIND_OBJ_BELT_KEYRING)) {
+        /* The inventory step takes the Nth match (no sight needed), else the
+         * room step the Nth it can see; the belt numbers on after the longer
+         * list, so every belt keyring has a number. */
+        char numbered[256];
+        char* word = numbered;
+        strcpy(numbered, name);
+        int number = get_number(&word);
+        if (number > 0 && *word) {
+            int carried = 0, here = 0;
+            if (IS_SET(bitvector, FIND_OBJ_INV))
+                for (obj_data* o = ch->carrying; o; o = o->next_content)
+                    if (isname(word, o->name, 0))
+                        carried++;
+            if (IS_SET(bitvector, FIND_OBJ_ROOM))
+                for (obj_data* o = world[ch->in_room].contents; o; o = o->next_content)
+                    if (isname(word, o->name, 0) && CAN_SEE_OBJ(ch, o))
+                        here++;
+            number -= carried > here ? carried : here;
+            for (int slot = WEAR_BELT_1; slot <= WEAR_BELT_3 && number > 0; slot++) {
+                obj_data* ring = belt_keyring(ch, slot, word);
+                if (ring && --number == 0) {
+                    *tar_obj = ring;
+                    return (FIND_OBJ_BELT_KEYRING);
+                }
+            }
+        }
+    }
+
     if (IS_SET(bitvector, FIND_OBJ_WORLD)) {
         if ((*tar_obj = get_obj_vis(ch, name))) {
             return (FIND_OBJ_WORLD);
@@ -2476,6 +2544,32 @@ int generic_find(const char* arg, int bitvector, struct char_data* ch,
     }
 
     return (0);
+}
+
+obj_data* belt_keyring(char_data* ch, int slot, const char* name)
+{
+    if (slot < WEAR_BELT_1 || slot > WEAR_BELT_3)
+        return nullptr;
+    obj_data* item = ch->equipment[slot];
+    if (item && item->is_keyring() && (!name || isname(name, item->name, 0)))
+        return item;
+    return nullptr;
+}
+
+int find_container(char_data* ch, const char* arg, int bits, char_data** tar_ch,
+    obj_data** tar_obj)
+{
+    return generic_find(arg, bits | FIND_OBJ_BELT_KEYRING, ch, tar_ch, tar_obj);
+}
+
+bool refuse_keyring(char_data* ch, const obj_data* obj, keyring_action action)
+{
+    if (!obj->is_keyring())
+        return false;
+    send_to_char(action == keyring_action::open_close ? "A keyring is always open.\n\r"
+                                                      : "A keyring has no lock.\n\r",
+        ch);
+    return true;
 }
 
 /* a function to scan for "all" or "all.x" */

@@ -755,6 +755,9 @@ void do_stat_object(const struct char_data* ch, struct obj_data* j)
     case ITEM_SHIELD:
         sprintf(buf, "dodge: [%d], Parry: [%d], Encum: [%d], Block coef.: [%d]", j->obj_flags.value[0], j->obj_flags.value[1], j->obj_flags.value[2], j->obj_flags.value[3]);
         break;
+    case ITEM_KEYRING:
+        sprintf(buf, "Max-contains: %d", j->obj_flags.value[0]);
+        break;
     case ITEM_LEVER:
         sprintf(buf, "room: [%d], Direction: [(%d) %s]",
             j->obj_flags.value[0], j->obj_flags.value[1],

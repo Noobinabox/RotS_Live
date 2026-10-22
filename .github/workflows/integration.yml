@@ -113,10 +113,11 @@ jobs:
           ROTS_IT_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
         # The local launcher runs the programs directly inside the image; make integration reads
         # GROUP from the environment, and an empty GROUP runs every scenario. A shard whose share
-        # of the selection is empty passes.
+        # of the selection is empty passes. CI=true makes make integration run without its plan
+        # and confirmation.
         run: >-
           docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
-          --env GROUP --env ROTS_IT_SHARD --env HOME=/tmp --env ROTS_IT_LAUNCHER=local
+          --env CI --env GROUP --env ROTS_IT_SHARD --env HOME=/tmp --env ROTS_IT_LAUNCHER=local
           rots-dev:ci bash -lc 'ulimit -c 0;
           python3 -m venv /tmp/harness-venv &&
           /tmp/harness-venv/bin/pip install --quiet --requirement tests/integration/requirements.txt &&

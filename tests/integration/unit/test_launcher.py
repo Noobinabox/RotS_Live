@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Callable, Iterator, List, Optional
 
 import pytest
 
@@ -1200,3 +1200,118 @@ def test_close_control_channel_sees_the_line_a_real_process_logs_at_end_of_input
         assert process.poll() is None, "the line must arrive before the stop, not because the process exited"
     finally:
         launcher.terminate_process(process)
+
+
+# Logs what the server logs when its listening port is taken, then exits as the server does.
+PORT_TAKEN_SERVER = """
+import sys
+print("bind: Address already in use", file=sys.stderr, flush=True)
+sys.exit(1)
+"""
+
+
+class ScriptServerLauncher(launcher.LocalProcessLauncher):
+    """A local launcher whose server is a Python script run by this test's interpreter."""
+
+    def __init__(self, repo_root: Path, script: Path) -> None:
+        super().__init__(repo_root, startup_timeout=10.0)
+        # The script started in place of the server binary.
+        self._script = script
+
+    def command(self, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> list[str]:
+        return [sys.executable, str(self._script), str(port)]
+
+
+def start_script_server(tmp_path: Path, source: str) -> launcher.ServerHandle:
+    """Starts source as the server through ScriptServerLauncher in a fresh run directory."""
+    (tmp_path / "bin").mkdir()
+    (tmp_path / "bin" / "ageland").write_text("", encoding="utf-8")
+    script = tmp_path / "server.py"
+    script.write_text(source, encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    return ScriptServerLauncher(tmp_path, script).start(run_dir, run_dir / "lib", launcher.allocate_free_port(), seed=1)
+
+
+def test_a_local_server_that_exits_because_its_port_is_taken_raises_port_in_use(tmp_path: Path) -> None:
+    with pytest.raises(launcher.PortInUse) as raised:
+        start_script_server(tmp_path, PORT_TAKEN_SERVER)
+    assert isinstance(raised.value, RuntimeError)
+    assert "bind: Address already in use" in str(raised.value)
+
+
+def test_a_local_server_that_exits_for_another_reason_raises_a_plain_runtime_error(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError) as raised:
+        start_script_server(tmp_path, EXITS_BEFORE_LISTENING_SERVER)
+    assert not isinstance(raised.value, launcher.PortInUse)
+    assert str(raised.value).startswith("server exited with status 3 before it was ready")
+
+
+class ScriptedStartLauncher:
+    """A launcher whose start raises the given failures in turn, then returns a handle; it records each port."""
+
+    def __init__(self, tmp_path: Path, failures: list[BaseException]) -> None:
+        # Raised by successive starts before any start succeeds.
+        self._failures = list(failures)
+        # The handle a start returns once the failures run out.
+        self.handle = launcher.ServerHandle(launcher.LOOPBACK, 0, tmp_path / "game.log", ExitedProcess())  # type: ignore[arg-type]
+        # The port each start was given, in order.
+        self.ports: list[int] = []
+
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> launcher.ServerHandle:
+        self.ports.append(port)
+        if self._failures:
+            raise self._failures.pop(0)
+        return self.handle
+
+
+def numbered_ports(first: int = 5001) -> Callable[[], int]:
+    """A port allocator returning first, first + 1 and so on."""
+    next_port = [first]
+
+    def allocate() -> int:
+        port = next_port[0]
+        next_port[0] += 1
+        return port
+
+    return allocate
+
+
+def test_a_start_whose_port_was_taken_runs_again_on_a_new_port(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [launcher.PortInUse("port taken")])
+
+    handle = launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert handle is scripted.handle
+    assert scripted.ports == [5001, 5002]
+
+
+def test_a_start_gives_up_once_every_attempt_found_its_port_taken(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [launcher.PortInUse(f"port taken {attempt}") for attempt in range(launcher.PORT_ATTEMPTS)])
+
+    with pytest.raises(launcher.PortInUse, match=f"port taken {launcher.PORT_ATTEMPTS - 1}"):
+        launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert len(scripted.ports) == launcher.PORT_ATTEMPTS == 3
+
+
+def test_any_other_start_failure_is_not_retried(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [RuntimeError("server exited with status 3 before it was ready")])
+
+    with pytest.raises(RuntimeError, match="status 3"):
+        launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert scripted.ports == [5001]
+
+
+def test_a_start_on_a_free_port_passes_the_schedule_and_seed_through(tmp_path: Path) -> None:
+    recorded: list[tuple[int, Optional[str]]] = []
+
+    class RecordingLauncher:
+        def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> str:
+            recorded.append((seed, schedule))
+            return "handle"
+
+    launcher.start_on_a_free_port(RecordingLauncher(), tmp_path, tmp_path / "lib", seed=9, schedule="affect-hours")  # type: ignore[arg-type]
+
+    assert recorded == [(9, "affect-hours")]

@@ -9,6 +9,9 @@ CMAKE_CONFIGURE_ARGS ?= -DCMAKE_CXX_COMPILER=g++
 CMAKE_CACHE := $(BUILD_DIR)/CMakeCache.txt
 # Parallel build jobs; rotsmud's two shared cores want JOBS=1.
 JOBS ?= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+# make integration's pytest-xdist workers: JOBS when it is set on the command line or in the
+# environment, otherwise 1, so the build default above never makes a scenario run parallel.
+INTEGRATION_JOBS = $(if $(filter file,$(origin JOBS)),1,$(JOBS))
 # Extra ctest arguments, e.g. CTEST_ARGS='-R JsonUtils'.
 CTEST_ARGS ?=
 # Python used for the integration harness; point it at a virtual environment's python.
@@ -31,7 +34,8 @@ help:
 	@printf "  make test              Run the C++ unit tests\n"
 	@printf "  make smoke-account     Build the game/proxy and run the account smoke flow\n"
 	@printf "  make integration-unit  Run the integration harness's own unit tests (no server)\n"
-	@printf "  make integration       Run the integration scenarios (GROUP=<name> for one group)\n"
+	@printf "  make integration       Run the integration scenarios (GROUP=<name> for one group,\n"
+	@printf "                         JOBS=<n> for n parallel workers)\n"
 	@printf "  make world-catalogue   Print the integration test world's zones, rooms, mobs, objects\n"
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
 	@printf "  make format            clang-format the WHOLE tree -- see the warning above the target;\n"
@@ -67,8 +71,9 @@ smoke-account: setup build
 integration-unit:
 	$(PYTHON) -m pytest tests/integration/unit -q
 
+# Writes each test's result and time to build/integration/results.xml and lists the slowest tests.
 integration:
-	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"
+	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"$(if $(filter-out 0 1,$(INTEGRATION_JOBS)), -n $(INTEGRATION_JOBS)) --junitxml=build/integration/results.xml --durations=25
 
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:

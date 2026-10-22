@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import shutil
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Protocol
@@ -22,6 +23,9 @@ ROTSTOOL_RELATIVE = "bin/rotstool"
 BOOT_OPTIONS_RELATIVE = "misc/game_boot_options.json"
 HOURS_PER_DAY = 24
 REBOOT_HOUR_OFFSET = 12
+# Starts the name of the folder a template is built in before it is renamed to its cache key;
+# the leading dot keeps it apart from the keys, which are hexadecimal digits.
+BUILDING_PREFIX = ".building-"
 
 
 class LibBuildError(RuntimeError):
@@ -34,6 +38,19 @@ class ToolRunner(Protocol):
     def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
         """Runs program_relative with arguments in working_dir and returns its exit status and output."""
         ...
+
+
+def session_templates_dir(templates_root: Path, session_id: str) -> Path:
+    """The folder holding one session's templates, one subfolder per character set, under templates_root."""
+    return templates_root / session_id
+
+
+def discard_session_templates(templates_root: Path, session_id: str) -> None:
+    """Deletes the session's template folder and everything in it, leaving other sessions' folders alone.
+
+    Does nothing when the folder does not exist; never raises.
+    """
+    shutil.rmtree(session_templates_dir(templates_root, session_id), ignore_errors=True)
 
 
 def reboot_hour_away_from(now: datetime) -> int:
@@ -75,14 +92,19 @@ class LibTemplateBuilder:
 
 
 class RunLibProvider:
-    """Gives each test its own lib for a character set, building each template once per session."""
+    """Gives each test its own lib for a character set, building each template at most once per session folder.
 
-    def __init__(self, builder: LibTemplateBuilder, cache_root: Path, seed: int, clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)) -> None:
-        self._builder = builder  # builds a template on first use
-        self._cache_root = cache_root  # one subdirectory per character set
+    Every process of a session (each pytest-xdist worker) has its own provider on the same
+    session folder. A template appears there under its cache key only once it is complete, so
+    providers share templates safely; two providers that miss the same template at the same time
+    both build it, and the copy renamed first is the one both use.
+    """
+
+    def __init__(self, builder: LibTemplateBuilder, session_dir: Path, seed: int, clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc)) -> None:
+        self._builder = builder  # builds a template a test needs that the session folder lacks
+        self._session_dir = session_dir  # this session's templates, one subfolder per cache key
         self._seed = seed  # passed to rotstool; part of the cache key
         self._clock = clock  # current time, for the reboot hour
-        self._built: set[str] = set()  # cache keys whose template finished building this session
 
     def cache_key(self, character_set: CharacterSet) -> str:
         """A short name for the set's template directory, unique per seed and character spec."""
@@ -90,23 +112,35 @@ class RunLibProvider:
         return digest.hexdigest()[:16]
 
     def lib_for(self, character_set: CharacterSet, run_dir: Path) -> Path:
-        """Copies the set's template into run_dir/lib, writes the run's boot options, and returns the lib."""
-        key = self.cache_key(character_set)
-        template_dir = self._cache_root / key
-        if key not in self._built:
-            try:
-                self._builder.build(template_dir, character_set, self._seed)
-            except BaseException:
-                shutil.rmtree(template_dir, ignore_errors=True)
-                raise
-            self._built.add(key)
+        """Copies the set's template into run_dir/lib, writes the run's boot options, and returns the lib.
+
+        Builds the template first when the session folder has no complete one; raises
+        LibBuildError when rotstool fails, leaving nothing of the failed build behind.
+        """
+        template_dir = self._session_dir / self.cache_key(character_set)
+        if not template_dir.is_dir():
+            self._build(template_dir, character_set)
         lib_dir = run_dir / "lib"
         shutil.copytree(template_dir / "lib", lib_dir)
         boot_options = {"daily_reboot_hour_utc": reboot_hour_away_from(self._clock())}
         (lib_dir / BOOT_OPTIONS_RELATIVE).write_text(json.dumps(boot_options, indent=2) + "\n", encoding="utf-8")
         return lib_dir
 
-    def discard_templates(self) -> None:
-        """Deletes every template and forgets they were built."""
-        shutil.rmtree(self._cache_root, ignore_errors=True)
-        self._built.clear()
+    def _build(self, template_dir: Path, character_set: CharacterSet) -> None:
+        """Builds the template in a temporary folder beside template_dir, then renames it to template_dir.
+
+        When another provider renamed its build to template_dir first, keeps that one and deletes
+        this build.
+        """
+        building_dir = template_dir.with_name(f"{BUILDING_PREFIX}{template_dir.name}-{uuid.uuid4().hex[:8]}")
+        try:
+            self._builder.build(building_dir, character_set, self._seed)
+            try:
+                building_dir.rename(template_dir)
+            except OSError:
+                # A rename onto a folder that exists and is not empty fails on every platform;
+                # only a complete template is ever renamed into place, so it can be used.
+                if not template_dir.is_dir():
+                    raise
+        finally:
+            shutil.rmtree(building_dir, ignore_errors=True)

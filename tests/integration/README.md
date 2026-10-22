@@ -53,6 +53,7 @@ scenarios; `unit/` tests the harness itself without a server.
 make integration-unit PYTHON=.venv/bin/python           # the harness's own tests; no server
 make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
+make integration PYTHON=.venv/bin/python JOBS=8         # every scenario, on 8 parallel workers
 ```
 
 A group is a marker such as `boot`, registered by its file `tests/integration/groups/<group>.txt`,
@@ -61,8 +62,26 @@ which holds the group's one-line description. `GROUP` may be an expression such 
 `pytest.ini` or pytest itself registers stops the run with a usage error that lists the registered
 names, so a misspelt group never passes by selecting nothing.
 
-Run one harness session per checkout at a time: every session in a checkout shares the template
-cache under `build/integration/libs/`.
+`JOBS=<n>` runs the selected scenarios on `n` pytest-xdist worker processes, each scenario still
+on its own fresh server. A scenario spends most of its time waiting on an idle server, so the
+run's time falls almost in proportion to `n`. `JOBS` unset or `1` runs them one at a time in
+one process. Only a `JOBS` given on the command line or in the environment counts: the default
+`make build` uses (the number of cores) never makes `make integration` parallel.
+Every run writes each test's result and time to `build/integration/results.xml` (JUnit XML) and
+lists the 25 slowest tests at the end.
+
+The workers of one run share:
+
+- the Docker lock, which the controlling pytest process takes once for the whole run (see Shared
+  Docker lock below); the workers never take it;
+- the run's template folder, `build/integration/libs/<session id>/`: a worker that needs a
+  character set's template no worker has finished builds it, and once one is complete every
+  worker uses it.
+
+Every run has its own template folder and run directories, so two runs in one checkout do not
+disturb each other's tests. With the `docker` launcher the second run waits for the first's lock;
+with the `local` launcher both run at once. Both runs write `build/integration/results.xml`, so
+it holds the results of whichever finished last.
 
 ## Continuous integration
 
@@ -86,7 +105,9 @@ touches. A name no group file registers fails the job and lists the registered g
 Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
 and the "Choose the integration groups" job's summary lists the groups that run and why. A run of
 every group is split across eight parallel jobs, `shard 1/8` to `shard 8/8`, through
-`ROTS_IT_SHARD`; a run of chosen groups is one job. When a scenario fails, its kept run
+`ROTS_IT_SHARD`; a run of chosen groups is one job. Each job uploads its
+`build/integration/results.xml`, with every test's result and time, as its
+`integration-results-shard-<k>` artifact, pass or fail. When a scenario fails, its kept run
 directories are uploaded as that job's `integration-runs-shard-<k>` artifact.
 
 Each job loads the development image from the Actions cache, or from the repository's
@@ -159,11 +180,15 @@ whoever wrote it before removing it. If the directory does not exist, create it
 (`mkdir -p /tmp/rots-docker-lock`).
 
 With the `docker` launcher the harness takes its own lock, `harness-it-<pid>-<id>.lock` on
-`build:<checkout>/build`, holds it for the whole pytest session, and removes it at the end. It
-waits only while another lock file holds that tree: a build into it, another harness session in
-the same checkout, an old-style lock for the same checkout, or a lock file it cannot read. It
-waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`), printing which lock files hold the tree, then
-fails.
+`build:<checkout>/build`, before the first test runs, holds it until every worker and server has
+stopped, and then removes it. The controlling pytest process takes it, once per run however
+many workers `JOBS` starts. A run that selects no scenario, `--collect-only`, and a run whose
+server or `rotstool` is missing take no lock (each scenario then fails at once with the build
+command); a run on workers takes it whatever it selects, because its controlling process
+does not see the selection. It waits only while another lock file holds that tree: a build
+into it, another harness run in the same checkout, an old-style lock for the same checkout, or a
+lock file it cannot read. It waits up to 10 minutes (`ROTS_IT_LOCK_WAIT`), printing which lock
+files hold the tree, then stops the run before any test.
 
 Ctrl-C, SIGTERM and SIGHUP all end the run the same way: the harness stops the server it
 started and removes its lock file. A `harness-it-<pid>-<id>.lock` whose process is no longer
@@ -186,13 +211,15 @@ Each test gets `build/integration/runs/<id>/` holding:
 
 A passing test's directory is deleted. It is kept when the lib or server fails to set up after
 the lib was copied in, when any test in the session has failed, when the server's checks fail,
-when the run is interrupted (Ctrl-C, SIGTERM or SIGHUP), or with `ROTS_IT_KEEP=1`. Kept
-directories are listed, each with its test, in a "kept run directories" section at the end of
-the run. An interrupt from a terminal also reaches the server and ends it, so during an
-interrupted run the server checks do not fail the test: what they found is listed under the
-kept directory instead. Template libs, one per character set,
-are built once per session under `build/integration/libs/` and deleted at the end unless
-`ROTS_IT_KEEP=1`.
+when the run is interrupted (Ctrl-C, SIGTERM or SIGHUP), or with `ROTS_IT_KEEP=1`. With `JOBS`,
+"any test in the session" means any earlier test on the same worker: the failing test's
+directory and every later one on that worker are kept, while the other workers keep only their
+own. Kept directories are listed, each with its test, in a "kept run directories" section at the
+end of the run, once, whichever worker kept them. An interrupt from a terminal also reaches the
+server and ends it, so during an interrupted run the server checks do not fail the test: what
+they found is listed under the kept directory instead. Template libs, one per character set,
+are built once per run under `build/integration/libs/<session id>/` and deleted at the end
+unless `ROTS_IT_KEEP=1`.
 Containers use `build/integration/tmp` as their `TMPDIR`.
 
 ## Writing a scenario

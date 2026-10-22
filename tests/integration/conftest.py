@@ -23,10 +23,10 @@ from rots_harness.launcher import (
     LocalProcessLauncher,
     ServerHandle,
     ServerLauncher,
-    allocate_free_port,
     check_repo_relative,
+    start_on_a_free_port,
 )
-from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider
+from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLibProvider, discard_session_templates, session_templates_dir
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
 from rots_harness.sharding import Shard, in_shard, parse_shard
@@ -40,7 +40,7 @@ GROUPS_DIR = INTEGRATION_ROOT / groups.GROUPS_DIRECTORY_NAME
 REPO_ROOT = INTEGRATION_ROOT.parents[1]
 # One directory per test: its lib, game.log and one transcript per character.
 RUNS_ROOT = REPO_ROOT / "build" / "integration" / "runs"
-# One template lib per character set, built once per session.
+# One folder per session, holding a template lib per character set that the session's workers share.
 TEMPLATES_ROOT = REPO_ROOT / "build" / "integration" / "libs"
 # The seed rotstool and every server use unless ROTS_IT_SEED gives another.
 DEFAULT_SEED = 20261011
@@ -62,6 +62,18 @@ RUN_DIRECTORY_REPORT_KEY = pytest.StashKey[RunDirectoryReport]()
 # Set by pytest_collection_modifyitems when ROTS_IT_SHARD left this run's share empty although the
 # selection was not; pytest_sessionfinish then reports success instead of "no tests ran".
 SHARD_LEFT_NOTHING_KEY = pytest.StashKey[bool]()
+# Where pytest_configure keeps the session id naming this session's folder under TEMPLATES_ROOT;
+# the controller makes it and each pytest-xdist worker receives the controller's.
+SESSION_ID_KEY = pytest.StashKey[str]()
+# The workerinput entry carrying the session id from the controller to a pytest-xdist worker.
+SESSION_ID_WORKER_INPUT = "rots_it_session_id"
+# The workeroutput entry carrying a pytest-xdist worker's kept run directories to the controller.
+KEPT_RUN_DIRECTORIES_WORKER_OUTPUT = "rots_it_kept_run_directories"
+# Where the controller keeps every pytest-xdist worker it starts, so pytest_sessionfinish can list
+# each worker's kept run directories.
+WORKER_NODES_KEY = pytest.StashKey[list]()
+# Where the controller keeps the Docker lock it holds while the tests run; absent while it holds none.
+DOCKER_LOCK_KEY = pytest.StashKey[DockerLock]()
 
 
 @pytest.hookimpl(trylast=True)
@@ -71,7 +83,8 @@ def pytest_configure(config: pytest.Config) -> None:
 
     Runs after the built-in plugins have registered their markers, so -m may name them. When
     the checks pass, makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock
-    is released and every started server stopped, and starts the kept run directory report.
+    is released and every started server stopped, starts the kept run directory report, and
+    sets the session id: a new one in the controller, the controller's in a pytest-xdist worker.
     """
     register_group_markers(config)
     expression = config.getoption("markexpr", default="") or ""
@@ -84,6 +97,23 @@ def pytest_configure(config: pytest.Config) -> None:
     report = RunDirectoryReport()
     config.pluginmanager.register(report)
     config.stash[RUN_DIRECTORY_REPORT_KEY] = report
+    if is_worker(config):
+        config.stash[SESSION_ID_KEY] = config.workerinput[SESSION_ID_WORKER_INPUT]
+    else:
+        config.stash[SESSION_ID_KEY] = uuid.uuid4().hex[:12]
+        config.stash[WORKER_NODES_KEY] = []
+
+
+def is_worker(config: pytest.Config) -> bool:
+    """Whether this process is a pytest-xdist worker; the process the run started in is the controller, with or without workers."""
+    return hasattr(config, "workerinput")
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_configure_node(node) -> None:
+    """Gives a pytest-xdist worker the controller's session id, and keeps the worker so its kept run directories are listed."""
+    node.workerinput[SESSION_ID_WORKER_INPUT] = node.config.stash[SESSION_ID_KEY]
+    node.config.stash[WORKER_NODES_KEY].append(node)
 
 
 def register_group_markers(config: pytest.Config) -> None:
@@ -106,11 +136,14 @@ def register_group_markers(config: pytest.Config) -> None:
 def pytest_unconfigure(config: pytest.Config) -> None:
     """Puts back the signal handlers pytest_configure replaced.
 
-    Prints the kept run directories to stderr when no terminal summary listed them.
+    In the controller, prints the kept run directories to stderr when no terminal summary listed
+    them; a pytest-xdist worker never prints them, since the controller lists them.
     """
     restore_signal_handlers = config.stash.get(RESTORE_SIGNAL_HANDLERS_KEY, None)
     if restore_signal_handlers is not None:
         restore_signal_handlers()
+    if is_worker(config):
+        return
     report = config.stash.get(RUN_DIRECTORY_REPORT_KEY, None)
     if report is not None and report.kept and config.pluginmanager.get_plugin("terminalreporter") is None:
         print("kept run directories:", *report.summary_lines(), sep="\n", file=sys.stderr, flush=True)
@@ -144,10 +177,83 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     config.stash[SHARD_LEFT_NOTHING_KEY] = not kept
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtestloop(session: pytest.Session):
+    """In the controller, takes the Docker lock before any test runs when controller_needs_docker_lock says so.
+
+    pytest_sessionfinish releases it. Stops the run before any test when the lock cannot be taken.
+    """
+    if not is_worker(session.config) and controller_needs_docker_lock(session):
+        take_docker_lock(session.config)
+    yield
+
+
+def controller_needs_docker_lock(session: pytest.Session) -> bool:
+    """Whether the controller holds the Docker lock while the tests run: only for the Docker launcher, and never for --collect-only.
+
+    It is needed when the run may start a server: always when pytest-xdist workers run the
+    tests, since the controller then collects none, and otherwise when a selected test uses the
+    server fixture. A missing server or rotstool takes no lock, so each scenario fails at once
+    with the build command instead of after the lock wait.
+    """
+    config = session.config
+    if launcher_mode() != "docker" or config.option.collectonly:
+        return False
+    distributed = config.pluginmanager.has_plugin("dsession")
+    if not distributed and not any("server" in item.fixturenames for item in session.items):
+        return False
+    selected = selected_launcher()
+    try:
+        selected.require_program(binary_relative())
+        selected.require_program(ROTSTOOL_RELATIVE)
+    except RuntimeError:
+        return False
+    return True
+
+
+def take_docker_lock(config: pytest.Config) -> None:
+    """Takes the Docker lock on this checkout's build tree and keeps it in the stash for pytest_sessionfinish to release.
+
+    Waits up to ROTS_IT_LOCK_WAIT while another job holds the tree, then stops the run with
+    pytest.exit, as it does at once when the lock directory is missing.
+    """
+    lock_dir = Path(os.environ.get("ROTS_IT_DOCKER_LOCK_DIR", str(DEFAULT_LOCK_DIR)))
+    lock = DockerLock(lock_dir, REPO_ROOT, wait_seconds=lock_wait_seconds(), report=terminal_line_writer(config))
+    try:
+        lock.acquire(purpose="integration test session")
+    except RuntimeError as failure:
+        pytest.exit(f"cannot take the Docker lock: {type(failure).__name__}: {failure}", returncode=pytest.ExitCode.INTERRUPTED)
+    config.stash[DOCKER_LOCK_KEY] = lock
+
+
+@pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    """Turns "no tests ran" into success for a shard whose share of a non-empty selection is empty."""
-    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED and session.config.stash.get(SHARD_LEFT_NOTHING_KEY, False):
+    """Turns "no tests ran" into success for a shard whose share of a non-empty selection is empty, then ends this process's part of the session.
+
+    A pytest-xdist worker hands its kept run directories to the controller. The controller adds
+    every worker's to its own report, releases the Docker lock, and deletes the session's
+    templates unless ROTS_IT_KEEP=1.
+    """
+    # trylast: pytest's own pytest_sessionfinish tears down the fixtures an interrupt left set up,
+    # stopping their servers, and pytest-xdist's stops the workers; both run first.
+    config = session.config
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED and config.stash.get(SHARD_LEFT_NOTHING_KEY, False):
         session.exitstatus = pytest.ExitCode.OK
+    report = config.stash[RUN_DIRECTORY_REPORT_KEY]
+    if is_worker(config):
+        config.workeroutput[KEPT_RUN_DIRECTORIES_WORKER_OUTPUT] = report.worker_entries()
+        return
+    for node in config.stash[WORKER_NODES_KEY]:
+        # Read from every worker started rather than as each one stops: an interrupt ends the
+        # controller's event loop before it hears from the workers still stopping their servers.
+        # A worker that died without finishing its session has no workeroutput.
+        worker_output = getattr(node, "workeroutput", {})
+        report.merge_worker_entries(worker_output.get(KEPT_RUN_DIRECTORIES_WORKER_OUTPUT, []))
+    lock = config.stash.get(DOCKER_LOCK_KEY, None)
+    if lock is not None:
+        lock.release()
+    if not keep_requested():
+        discard_session_templates(TEMPLATES_ROOT, config.stash[SESSION_ID_KEY])
 
 
 def terminal_line_writer(config: pytest.Config) -> Callable[[str], None]:
@@ -280,50 +386,33 @@ class HarnessServer:
         self.time_control.advance_hours(hours, hours * hour_timeout_seconds() + HOUR_TIMEOUT_MARGIN_SECONDS)
 
 
+def selected_launcher() -> ServerLauncher:
+    """The launcher ROTS_IT_LAUNCHER selects, running ROTS_IT_BINARY (default bin/ageland); checks no program."""
+    if launcher_mode() == "local":
+        return LocalProcessLauncher(REPO_ROOT, binary_relative())
+    return DockerComposeLauncher(REPO_ROOT, binary_relative())
+
+
 @pytest.fixture(scope="session")
 def harness_launcher() -> ServerLauncher:
-    """The launcher ROTS_IT_LAUNCHER selects, running ROTS_IT_BINARY (default bin/ageland).
+    """The launcher selected_launcher returns.
 
     Raises RuntimeError with that launcher's build command when the server or rotstool is missing.
     """
-    server_binary = binary_relative()
-    if launcher_mode() == "local":
-        selected: ServerLauncher = LocalProcessLauncher(REPO_ROOT, server_binary)
-    else:
-        selected = DockerComposeLauncher(REPO_ROOT, server_binary)
-    selected.require_program(server_binary)
+    selected = selected_launcher()
+    selected.require_program(binary_relative())
     selected.require_program(ROTSTOOL_RELATIVE)
     return selected
 
 
 @pytest.fixture(scope="session")
-def docker_lock(pytestconfig: pytest.Config, harness_launcher: ServerLauncher):
-    """The shared Docker lock, held for the whole session when the Docker launcher is in use; None otherwise.
+def lib_provider(pytestconfig: pytest.Config, harness_launcher: ServerLauncher) -> RunLibProvider:
+    """Builds each character set's template at most once in the session's template folder, which every worker shares.
 
-    Requests harness_launcher so a missing build fails before the lock wait, not after it.
+    The controller deletes the folder at the end of the session unless ROTS_IT_KEEP=1.
     """
-    if launcher_mode() != "docker":
-        yield None
-        return
-    lock_dir = Path(os.environ.get("ROTS_IT_DOCKER_LOCK_DIR", str(DEFAULT_LOCK_DIR)))
-    lock = DockerLock(lock_dir, REPO_ROOT, wait_seconds=lock_wait_seconds(), report=terminal_line_writer(pytestconfig))
-    lock.acquire(purpose="integration test session")
-    try:
-        yield lock
-    finally:
-        lock.release()
-
-
-@pytest.fixture(scope="session")
-def lib_provider(harness_launcher: ServerLauncher, docker_lock: DockerLock | None):
-    """Builds each character set's template once per session; the templates are deleted at the end unless ROTS_IT_KEEP=1."""
     builder = LibTemplateBuilder(REPO_ROOT, INTEGRATION_ROOT / "world", harness_launcher)
-    provider = RunLibProvider(builder, TEMPLATES_ROOT, session_seed())
-    try:
-        yield provider
-    finally:
-        if not keep_requested():
-            provider.discard_templates()
+    return RunLibProvider(builder, session_templates_dir(TEMPLATES_ROOT, pytestconfig.stash[SESSION_ID_KEY]), session_seed())
 
 
 def character_set_for(request: pytest.FixtureRequest) -> CharacterSet:
@@ -368,7 +457,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     (run_dir / TEST_NAME_FILE).write_text(request.node.nodeid + "\n", encoding="utf-8")
     try:
         lib_dir = lib_provider.lib_for(character_set, run_dir)
-        handle = harness_launcher.start(run_dir, lib_dir, allocate_free_port(), session_seed(), schedule=schedule)
+        handle = start_on_a_free_port(harness_launcher, run_dir, lib_dir, session_seed(), schedule=schedule)
         time_control = None
         if schedule is not None:
             # Any failure here stops the server, including the constructor's OSError for an

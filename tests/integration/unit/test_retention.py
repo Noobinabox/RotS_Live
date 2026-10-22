@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
@@ -56,3 +57,26 @@ def test_the_report_notes_an_interrupt() -> None:
     assert report.interrupted is False
     report.pytest_keyboard_interrupt(excinfo=None)
     assert report.interrupted is True
+
+
+def test_kept_directories_a_worker_hands_over_are_listed_once_in_order_with_their_notes(tmp_path: Path) -> None:
+    worker_report = RunDirectoryReport()
+    worker_report.record_kept(tmp_path / "first", "test_one", ["server process exited with status 0"])
+    worker_report.record_kept(tmp_path / "second", "test_two")
+    controller_report = RunDirectoryReport()
+
+    controller_report.merge_worker_entries(worker_report.worker_entries())
+
+    assert controller_report.summary_lines() == [
+        f"{tmp_path / 'first'}  test_one",
+        "    server process exited with status 0",
+        f"{tmp_path / 'second'}  test_two",
+    ]
+
+
+def test_a_workers_entries_are_plain_text_lists_and_mappings(tmp_path: Path) -> None:
+    # pytest-xdist sends workeroutput through execnet, which carries only built-in types.
+    report = RunDirectoryReport()
+    report.record_kept(tmp_path / "first", "test_one", ["a note"])
+    entries = report.worker_entries()
+    assert json.loads(json.dumps(entries)) == entries

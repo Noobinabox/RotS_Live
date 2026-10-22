@@ -118,8 +118,9 @@ Add `tests/integration/groups/<name>.txt` holding one line, what the group pins,
 `pytestmark = [pytest.mark.scenario, pytest.mark.<name>]`. `GROUP=<name>` then selects it.
 In CI, a pull request runs `boot` and the groups of the scenario and group files it changes; a
 change to the game's code runs a group only when the description names it as
-`@integration-test-<name>`. A change to the harness or the test world runs every group, as does
-every push (integration README, "Continuous integration").
+`@integration-test-<name>`. A change to the harness, the test world, `src/CMakeLists.txt` or a
+`lib/` file the harness copies into every test's lib runs every group, as does every push
+(integration README, "Continuous integration").
 
 ## 9. Run it repeatedly
 

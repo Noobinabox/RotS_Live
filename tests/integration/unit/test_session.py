@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -272,3 +273,69 @@ def test_ending_sessions_collects_quit_failures_and_still_quits_the_rest() -> No
     problems = end_sessions([refused, disconnected, last], server_alive=True)
     assert problems == ["Testimm: quit was refused or never answered", "Testmage: server closed the connection"]
     assert last.quit_calls == 1
+
+
+class SilentSocket:
+    """Stands in for a server that sends nothing: each recv() blocks for the read timeout last set, then times out."""
+
+    def __init__(self) -> None:
+        # The read timeout recv() waits out, as a real socket does; settimeout sets it.
+        self._timeout: Optional[float] = None
+        # Every timeout the session set, in order.
+        self.timeouts: list[float] = []
+
+    def settimeout(self, timeout: float) -> None:
+        self._timeout = timeout
+        self.timeouts.append(timeout)
+
+    def sendall(self, _data: bytes) -> None:
+        pass
+
+    def recv(self, _size: int) -> bytes:
+        assert self._timeout is not None and self._timeout > 0, "the session sets a positive read timeout before it reads"
+        time.sleep(self._timeout)
+        raise socket.timeout()
+
+    def close(self) -> None:
+        pass
+
+
+def connect_silent_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[GameSession, SilentSocket]:
+    """A session for Testmage connected to a SilentSocket."""
+    silent_socket = SilentSocket()
+    monkeypatch.setattr(session.socket, "create_connection", lambda _address, timeout: silent_socket)
+    handle = ServerHandle("127.0.0.1", 1, tmp_path / "game.log", None)  # type: ignore[arg-type]
+    return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path), silent_socket
+
+
+def test_a_short_drain_returns_once_its_time_is_up_rather_than_after_a_whole_read_timeout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _silent_socket = connect_silent_session(monkeypatch, tmp_path)
+    started = time.monotonic()
+    assert game_session.drain(0.1) == ""
+    assert time.monotonic() - started < 0.2
+
+
+def test_a_short_expect_times_out_once_its_time_is_up_rather_than_after_a_whole_read_timeout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _silent_socket = connect_silent_session(monkeypatch, tmp_path)
+    started = time.monotonic()
+    with pytest.raises(session.SessionTimeout, match=r"none of \['never sent'\] within 0.1s"):
+        game_session.expect(["never sent"], timeout=0.1)
+    assert time.monotonic() - started < 0.2
+
+
+def test_a_short_command_times_out_once_its_drain_and_wait_are_up(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, _silent_socket = connect_silent_session(monkeypatch, tmp_path)
+    started = time.monotonic()
+    with pytest.raises(session.SessionTimeout, match=r"no prompt after 'look' within 0.1s"):
+        game_session.command("look", timeout=0.1)
+    # The command drains for 0.1 s before it sends, then waits 0.1 s for the prompt.
+    assert time.monotonic() - started < 0.35
+
+
+def test_every_read_timeout_is_positive_and_no_longer_than_the_session_read_timeout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, silent_socket = connect_silent_session(monkeypatch, tmp_path)
+    game_session.drain(0.3)
+    with pytest.raises(session.SessionTimeout):
+        game_session.expect(["never sent"], timeout=0.05)
+    assert silent_socket.timeouts
+    assert all(0 < timeout <= session.READ_TIMEOUT_SECONDS for timeout in silent_socket.timeouts)

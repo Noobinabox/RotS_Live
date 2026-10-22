@@ -29,6 +29,10 @@ INCOMPLETE_CSI_PATTERN = re.compile(r"\x1b(\[[0-9;?]*)?\Z")
 # How much of the unread text an error message quotes.
 PENDING_TEXT_QUOTED = 1500
 FAREWELL_MARKERS = ("Goodbye", "As you quit")
+# The longest one read blocks, so a wait loop checks its deadline at least this often.
+READ_TIMEOUT_SECONDS = 0.25
+# The shortest read timeout a wait loop sets: settimeout(0) would make the socket non-blocking.
+MINIMUM_READ_TIMEOUT_SECONDS = 0.005
 
 
 class SessionTimeout(AssertionError):
@@ -82,7 +86,7 @@ class GameSession:
         # The game connection; owned by this session and released by close().
         self._socket = socket.create_connection((handle.host, handle.port), timeout=5.0)
         # A short read timeout lets the wait loops check their deadlines between reads.
-        self._socket.settimeout(0.25)
+        self._socket.settimeout(READ_TIMEOUT_SECONDS)
         # Turns received bytes into text, carrying telnet negotiation split across reads.
         self._sanitizer = TelnetStreamSanitizer()
         # Everything received so far, without telnet negotiation or control sequences; only ever appended to.
@@ -112,8 +116,11 @@ class GameSession:
         """True once the session has closed its connection."""
         return self._closed
 
-    def _pump(self) -> bool:
-        """Reads one chunk if any arrives within the read timeout; returns whether one did."""
+    def _pump(self, deadline: float) -> bool:
+        """Reads one chunk if any arrives before the monotonic deadline or within READ_TIMEOUT_SECONDS, whichever is sooner; returns whether one did."""
+        time_left = max(MINIMUM_READ_TIMEOUT_SECONDS, deadline - time.monotonic())
+        read_timeout = min(READ_TIMEOUT_SECONDS, time_left)
+        self._socket.settimeout(read_timeout)
         try:
             chunk = self._socket.recv(4096)
         except socket.timeout:
@@ -151,13 +158,13 @@ class GameSession:
                 return self._consume()
             if time.monotonic() >= deadline:
                 raise SessionTimeout(f"{self.character_name}: none of {list(markers)!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
-            self._pump()
+            self._pump(deadline)
 
     def drain(self, timeout: float = 0.5) -> str:
         """Reads for timeout seconds and returns all unread text as read."""
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            self._pump()
+            self._pump(deadline)
         return self._consume()
 
     def send_line(self, line: str) -> None:
@@ -175,7 +182,7 @@ class GameSession:
                 return Transcript(self._consume())
             if time.monotonic() >= deadline:
                 raise SessionTimeout(f"{self.character_name}: no prompt after {text!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
-            self._pump()
+            self._pump(deadline)
 
     def login(self, timeout: float = 15.0) -> None:
         """Logs in through the account menu, picks the character by name and enters the game; raises LoginRefused with the game's words."""

@@ -33,6 +33,10 @@ FAREWELL_MARKERS = ("Goodbye", "As you quit")
 READ_TIMEOUT_SECONDS = 0.25
 # The shortest read timeout a wait loop sets: settimeout(0) would make the socket non-blocking.
 MINIMUM_READ_TIMEOUT_SECONDS = 0.005
+# The longest one send blocks; a read sets its own shorter timeout, so every send sets this first.
+SEND_TIMEOUT_SECONDS = 5.0
+# How long command() and quit() read before they send, to discard text that arrived before them.
+PRE_COMMAND_DRAIN_SECONDS = 0.1
 
 
 class SessionTimeout(AssertionError):
@@ -169,11 +173,12 @@ class GameSession:
 
     def send_line(self, line: str) -> None:
         """Sends line followed by a newline; characters outside Latin-1 become '?'."""
+        self._socket.settimeout(SEND_TIMEOUT_SECONDS)
         self._socket.sendall(line.encode("latin-1", errors="replace") + b"\n")
 
     def command(self, text: str, timeout: float = 8.0) -> Transcript:
         """Discards unread text, sends text and returns its output up to the next prompt; raises SessionTimeout."""
-        self.drain(0.1)
+        self.drain(PRE_COMMAND_DRAIN_SECONDS)
         self.send_line(text)
         deadline = time.monotonic() + timeout
         while True:
@@ -216,7 +221,7 @@ class GameSession:
         Text received before the quit is discarded first, so only a farewell that answers this quit counts.
         """
         try:
-            self.drain(0.1)
+            self.drain(PRE_COMMAND_DRAIN_SECONDS)
             self.send_line("quit")
             self.expect(FAREWELL_MARKERS, timeout)
         except SessionTimeout as refusal:

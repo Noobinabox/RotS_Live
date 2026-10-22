@@ -28,6 +28,8 @@ tests/integration/requirements.txt`.
 | Every scenario, on 8 parallel workers | `make integration PYTHON=.venv/bin/python JOBS=8` |
 | One group | `make integration PYTHON=.venv/bin/python GROUP=poison` |
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
+| Only show the plan: each group's tests and estimated minutes | `make integration-plan PYTHON=.venv/bin/python GROUP="boot or poison"` |
+| Every scenario but some groups, without asking | `make integration PYTHON=.venv/bin/python SKIP_GROUPS="shaping practice" CONFIRM=yes` |
 | One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
 | One test, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
 | Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
@@ -38,8 +40,20 @@ tests/integration/requirements.txt`.
 | Build the three programs (inside the container on a Mac, under the build lock) | `make integration-build`; `docker compose run --rm -T rots bash -lc 'make integration-build'` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
-(<GROUP>)"`, adding `-n <JOBS>` when `JOBS` is above 1, and writes each test's result and time to
-`build/integration/results.xml` and lists the 25 slowest. Run directly, pytest finds the same
+(<GROUP>)"`, adding `and not (<skipped groups>)` for `SKIP_GROUPS` and unticked groups and `-n
+<JOBS>` when `JOBS` is above 1, and writes each test's result and time to
+`build/integration/results.xml` and lists the 25 slowest.
+
+Before that it shows its plan (`rots_harness/run_plan.py`): each selected group with its test
+count and minutes estimated from `build/integration/durations.json`, which every run updates (15
+s for a test without a time). At a terminal the groups are checkboxes to untick, and no answer
+starts the run after 5 minutes. Without a terminal, an estimate of `ROTS_IT_CONFIRM_MINUTES`
+(default 10) or more stops with exit status 10 unless `CONFIRM=yes`; `make` reports it as `Error
+10`. An agent then runs `make integration-plan`, shows its user the plan as a checklist, asks
+which groups to keep, and reruns with `SKIP_GROUPS=` (or `GROUP=`) and `CONFIRM=yes`; it never
+passes `CONFIRM=yes` for such a run without that answer. A cancelled prompt exits 11, a bad
+`SKIP_GROUPS`, `CONFIRM` or `ROTS_IT_CONFIRM_MINUTES` exits 2, and `CI=true` skips the plan
+altogether. After a run that left groups out, a `Repeat:` line gives the command that repeats it. Run directly, pytest finds the same
 `tests/integration/pytest.ini` and rootdir and reads the same `ROTS_IT_*` variables as `make
 integration`, but only `make integration` adds the group filter. A node id runs its test even
 when the test lacks its group marker, so step 9 checks membership with `--collect-only`. With
@@ -150,6 +164,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
 | `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI shards only a run of every group, eight ways. An empty share passes |
 | `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources; not checked by `validate_environment()` |
+| `ROTS_IT_CONFIRM_MINUTES` | `10` | the estimate from which `make integration` without a terminal needs `CONFIRM=yes`; checked by `rots_harness/run_plan.py`, not by `validate_environment()` |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.

@@ -64,6 +64,7 @@ make integration-unit PYTHON=.venv/bin/python           # the harness's own test
 make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
 make integration PYTHON=.venv/bin/python JOBS=8         # every scenario, on 8 parallel workers
+make integration-plan PYTHON=.venv/bin/python           # only show what make integration would run
 ```
 
 A group is a marker such as `boot`, registered by its file `tests/integration/groups/<group>.txt`,
@@ -93,6 +94,45 @@ disturb each other's tests. With the `docker` launcher the second run waits for 
 with the `local` launcher both run at once. Both runs write `build/integration/results.xml`, so
 it holds the results of whichever finished last.
 
+### The run plan
+
+`make integration` (`rots_harness/run_plan.py`) first prints its plan: one numbered checkbox per
+selected group with its test count and estimated minutes, then the total, the launcher, `JOBS`
+and any `ROTS_IT_SHARD`. A test counts toward every group that marks it; the total counts it
+once. `make integration-plan` prints the plan and exits 0 without asking or running anything.
+
+- At a terminal every group starts ticked. Numbers (and ranges such as `3-5`) toggle groups, `a`
+  ticks all, `n` unticks all, Enter or `y` starts and `q` (or Ctrl-C) cancels. With no answer
+  for 5 minutes the run starts with the groups still ticked; the first answer stops that
+  countdown. Unticking a group drops every test it marks, even one another ticked group marks.
+  A run that started by itself gets no input from the terminal.
+- Without a terminal (scripts, agents, `docker compose run -T`), a run estimated under
+  `ROTS_IT_CONFIRM_MINUTES` (default 10) starts at once. A longer one prints the plan and stops
+  with exit status 10 unless `CONFIRM=yes` is given, so whoever runs it can ask first or choose
+  fewer groups.
+- `CONFIRM=yes` starts the run as soon as the plan prints, without asking.
+- `SKIP_GROUPS="poison summon"` (spaces or commas) leaves groups out; they are listed as skipped.
+  A name no group file registers stops the run with the registered names.
+- A run that left groups out ends with a `Repeat: make integration ... CONFIRM=yes` line that
+  repeats the choice.
+- With `CI=true` (GitHub Actions sets it) none of this happens: the run is the plain pytest
+  command, with no plan.
+
+| Exit status | Meaning |
+| --- | --- |
+| 2 | a `SKIP_GROUPS`, `CONFIRM` or `ROTS_IT_CONFIRM_MINUTES` value it cannot use (pytest also uses 2 for an interrupted run) |
+| 10 | no terminal, and the estimate reached `ROTS_IT_CONFIRM_MINUTES` without `CONFIRM=yes` |
+| 11 | cancelled at the prompt; nothing ran |
+| anything else | pytest's own status |
+
+`make` itself exits 2 whenever its command fails; it names the command's status as
+`Error 10` or `Error 11`.
+
+Estimates come from `build/integration/durations.json`, which every run updates with the time of
+each scenario it ran (setup, call and teardown), keeping the rest. A scenario with no recorded time
+counts 15 seconds. The minutes are divided by `JOBS`, so they are only approximate; the plan says
+how many tests had no recorded time.
+
 ### The groups your changes reach
 
 ```bash
@@ -106,11 +146,12 @@ line counts, not an exported one), uncommitted changes to tracked files and untr
 does not ignore. A renamed file counts as both its old and its new path. It chooses groups by
 the pull request rules under Continuous integration below, without a description, prints why
 (with the commit `BASE` resolved to, so an out-of-date `origin/...` shows), and runs
-`make integration` with the result; an inherited `GROUP` never narrows it. One rule is local
-only: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also runs
-every group, since constants and layouts in headers reach any scenario. CI leaves it out because
-most pull requests touch a header. Changed game code (`.cpp`) is listed but selects no group:
-name its groups with `GROUP=` or run every scenario. To see the choice without running it:
+`make integration` with the result, which shows its plan as any run does. An inherited `GROUP`
+never narrows it; `SKIP_GROUPS` and `CONFIRM` on its command line reach that run. One rule is
+local only: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also
+runs every group, since constants and layouts in headers reach any scenario. CI leaves it out
+because most pull requests touch a header. Changed game code (`.cpp`) is listed but selects no
+group: name its groups with `GROUP=` or run every scenario. To see the choice without running it:
 
 ```bash
 PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only
@@ -181,6 +222,7 @@ Environment variables:
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
 | `ROTS_IT_SHARD` | unset | `k/N`, such as `2/4`: runs only every N-th selected test in node id order, starting at the k-th; a shard left with no tests passes |
 | `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources, for example to test an old build on purpose |
+| `ROTS_IT_CONFIRM_MINUTES` | `10` | the estimate, in minutes, from which `make integration` without a terminal needs `CONFIRM=yes`; a positive number (see The run plan) |
 
 A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`,
 `ROTS_IT_HOUR_TIMEOUT` or `ROTS_IT_SHARD` value the harness cannot use stops the run before any test with a usage

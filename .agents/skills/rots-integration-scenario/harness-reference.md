@@ -25,6 +25,7 @@ tests/integration/requirements.txt`.
 | --- | --- |
 | The harness's own tests, no server | `make integration-unit PYTHON=.venv/bin/python` |
 | Every scenario | `make integration PYTHON=.venv/bin/python` |
+| Every scenario, on 8 parallel workers | `make integration PYTHON=.venv/bin/python JOBS=8` |
 | One group | `make integration PYTHON=.venv/bin/python GROUP=poison` |
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
@@ -34,11 +35,13 @@ tests/integration/requirements.txt`.
 | Whether CI's group filter selects your tests | `.venv/bin/python -m pytest --collect-only -q -m "scenario and (bank)" <node ids>` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
-(<GROUP>)"`. Run directly, pytest finds the same `tests/integration/pytest.ini` and rootdir and
-reads the same `ROTS_IT_*` variables as `make integration`, but only `make integration` adds the
-group filter. A node id runs its test even when the test lacks its group marker, so step 9
-checks membership with `--collect-only`. With `-m scenario`, a lone node id whose test lacks
-`scenario` collects nothing and exits 5; among several, it only adds to `N deselected`.
+(<GROUP>)"`, adding `-n <JOBS>` when `JOBS` is above 1, and writes each test's result and time to
+`build/integration/results.xml` and lists the 25 slowest. Run directly, pytest finds the same
+`tests/integration/pytest.ini` and rootdir and reads the same `ROTS_IT_*` variables as `make
+integration`, but only `make integration` adds the group filter. A node id runs its test even
+when the test lacks its group marker, so step 9 checks membership with `--collect-only`. With
+`-m scenario`, a lone node id whose test lacks `scenario` collects nothing and exits 5; among
+several, it only adds to `N deselected`.
 `-k` is not checked: a name that matches nothing runs nothing and prints only `N deselected`.
 A node id that names nothing is an error (`ERROR: not found`), so node ids are the safer way to
 pick the tests step 9 repeats. `--collect-only -q` prints node ids relative to
@@ -49,8 +52,12 @@ nothing to run, and that run still passes.
 `-m` is checked: an unregistered name in it is a usage error listing the registered names
 (`pytest_configure` in `conftest.py`, `rots_harness/groups.py`).
 
-Run one harness session per checkout at a time: sessions in a checkout share the template
-cache under `build/integration/libs/`.
+Use `JOBS=8` for a run of many scenarios, such as the full suite or a large group: each
+scenario still gets its own server, and scenarios mostly wait on an idle server, so the run
+takes a fraction of the serial time. Each run has its own template folder,
+`build/integration/libs/<session id>/`, so two runs in one checkout do not disturb each other
+(with the Docker launcher the second waits for the first's lock); the README's "Running"
+section has the details.
 
 ### Launchers
 

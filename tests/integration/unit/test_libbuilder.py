@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable, Optional
 
 import pytest
 
@@ -116,13 +117,6 @@ def test_a_failed_build_caches_nothing(tmp_path: Path) -> None:
     assert not (tmp_path / "libs" / provider.cache_key(character_set)).exists()
 
 
-def test_discard_templates_removes_the_cache(tmp_path: Path) -> None:
-    provider = make_provider(tmp_path, FakeToolRunner())
-    provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / "a")
-    provider.discard_templates()
-    assert not (tmp_path / "libs").exists()
-
-
 def test_each_seed_gets_its_own_template(tmp_path: Path) -> None:
     world = make_repo(tmp_path)
     runner = FakeToolRunner()
@@ -132,3 +126,86 @@ def test_each_seed_gets_its_own_template(tmp_path: Path) -> None:
         provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / str(seed))
     assert len(runner.calls) == 2
     assert len(list((tmp_path / "libs").iterdir())) == 2, "a template built for one seed must not be reused for another"
+
+
+class InterleavingToolRunner(FakeToolRunner):
+    """A tool runner that runs another provider's lib_for in the middle of its own first rotstool call."""
+
+    def __init__(self, interleaved: Callable[[], None]) -> None:
+        super().__init__()
+        # Runs once, during the first rotstool call, as another worker's build would.
+        self._interleaved: Optional[Callable[[], None]] = interleaved
+
+    def run_to_completion(self, program_relative: str, arguments: list[str], working_dir: Path, timeout: float) -> ToolResult:
+        result = super().run_to_completion(program_relative, arguments, working_dir, timeout)
+        interleaved, self._interleaved = self._interleaved, None
+        if interleaved is not None:
+            interleaved()
+        return result
+
+
+def test_providers_sharing_a_session_folder_each_build_at_most_once_and_both_get_a_usable_lib(tmp_path: Path) -> None:
+    world = make_repo(tmp_path)
+    session_dir = tmp_path / "libs" / "session1"
+    character_set = CharacterSet((IMPLEMENTOR,))
+    other_runner = FakeToolRunner()
+    other_provider = libbuilder.RunLibProvider(libbuilder.LibTemplateBuilder(tmp_path, world, other_runner), session_dir, seed=7)
+    template_dir = session_dir / other_provider.cache_key(character_set)
+    seen_while_building: list[bool] = []
+    other_libs: list[Path] = []
+
+    def other_worker_builds_first() -> None:
+        seen_while_building.append(template_dir.exists())
+        other_libs.append(other_provider.lib_for(character_set, tmp_path / "runs" / "other"))
+
+    first_runner = InterleavingToolRunner(other_worker_builds_first)
+    first_provider = libbuilder.RunLibProvider(libbuilder.LibTemplateBuilder(tmp_path, world, first_runner), session_dir, seed=7)
+    first_lib = first_provider.lib_for(character_set, tmp_path / "runs" / "first")
+
+    assert seen_while_building == [False], "a template must not appear under its final name before it is complete"
+    assert len(first_runner.calls) == 1 and len(other_runner.calls) == 1
+    for lib in (first_lib, other_libs[0]):
+        assert (lib / "accounts" / "F-J" / "harness@example.com").is_dir()
+    assert [path.name for path in session_dir.iterdir()] == [template_dir.name], "the losing build's temporary folder must be removed"
+
+
+def test_a_completed_template_is_reused_by_another_provider_without_building(tmp_path: Path) -> None:
+    world = make_repo(tmp_path)
+    session_dir = tmp_path / "libs" / "session1"
+    character_set = CharacterSet((IMPLEMENTOR,))
+    first_runner = FakeToolRunner()
+    libbuilder.RunLibProvider(libbuilder.LibTemplateBuilder(tmp_path, world, first_runner), session_dir, seed=7).lib_for(character_set, tmp_path / "runs" / "a")
+    second_runner = FakeToolRunner()
+    second_provider = libbuilder.RunLibProvider(libbuilder.LibTemplateBuilder(tmp_path, world, second_runner), session_dir, seed=7)
+
+    lib = second_provider.lib_for(character_set, tmp_path / "runs" / "b")
+
+    assert second_runner.calls == []
+    assert (lib / "accounts" / "F-J" / "harness@example.com").is_dir()
+
+
+def test_a_failed_build_leaves_no_temporary_folder(tmp_path: Path) -> None:
+    provider = make_provider(tmp_path, FakeToolRunner(exit_status=2, output="refused"))
+    with pytest.raises(libbuilder.LibBuildError):
+        provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / "a")
+    assert list((tmp_path / "libs").glob("*")) == []
+
+
+def test_each_session_has_its_own_template_folder(tmp_path: Path) -> None:
+    assert libbuilder.session_templates_dir(tmp_path / "libs", "session1") == tmp_path / "libs" / "session1"
+
+
+def test_discarding_a_session_removes_only_its_folder(tmp_path: Path) -> None:
+    templates_root = tmp_path / "libs"
+    for session_id in ("session1", "session2"):
+        (libbuilder.session_templates_dir(templates_root, session_id) / "key" / "lib").mkdir(parents=True)
+
+    libbuilder.discard_session_templates(templates_root, "session1")
+
+    assert [path.name for path in templates_root.iterdir()] == ["session2"]
+    assert (templates_root / "session2" / "key" / "lib").is_dir()
+
+
+def test_discarding_a_session_that_built_nothing_is_not_an_error(tmp_path: Path) -> None:
+    libbuilder.discard_session_templates(tmp_path / "libs", "session1")
+    assert not (tmp_path / "libs").exists()

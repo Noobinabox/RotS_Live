@@ -12,8 +12,9 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Any, BinaryIO, Iterator, Optional
+from typing import Any, BinaryIO, Callable, Iterator, Optional
 
 LOOPBACK = "127.0.0.1"
 INTEGRATION_TMP_RELATIVE = "build/integration/tmp"
@@ -34,6 +35,9 @@ LOGIN_EMAIL_PROMPT = "Account email:"
 # The pause between two readiness attempts, and the longest one read blocks before the readiness
 # wait checks the process again.
 READY_RETRY_SECONDS = 0.25
+# The pause before the readiness wait retries a refused connection: a refusal comes back at once,
+# so the server is polled often enough to be found within moments of listening.
+REFUSED_RETRY_SECONDS = 0.05
 # The line the harness binary logs once its stdin reaches end of input; its control channel's
 # reader thread has finished by then.
 INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no more time requests will arrive."
@@ -41,6 +45,26 @@ INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no mor
 INPUT_CLOSED_WAIT_SECONDS = 5.0
 # The pause between two reads of game.log while a stop waits for INPUT_CLOSED_LOG_LINE.
 INPUT_CLOSED_POLL_SECONDS = 0.05
+# What the server logs before it exits when another process holds its port: init_socket in
+# src/comm.cpp reports the failed bind with perror.
+PORT_IN_USE_LOG_TEXT = "bind: Address already in use"
+# How many ports start_on_a_free_port tries before it gives up on a port taken each time.
+PORT_ATTEMPTS = 3
+# Set to 1 to run a program older than its sources, for example to test an old build on purpose.
+ALLOW_STALE_VARIABLE = "ROTS_IT_ALLOW_STALE"
+# The folder, relative to the repository root, holding the sources the programs are built from.
+SOURCE_DIRECTORY_RELATIVE = "src"
+# The suffixes of the source files whose changes make a program stale.
+SOURCE_SUFFIXES = (".cpp", ".h")
+# The unit tests' folder under SOURCE_DIRECTORY_RELATIVE; no program the harness runs is built from it.
+UNIT_TEST_SOURCES_RELATIVE = "tests"
+# Folders and files under SOURCE_DIRECTORY_RELATIVE built into one program only, mapped to that program;
+# every other program ignores them. Each program has its own main.cpp.
+PROGRAM_ONLY_SOURCES = {"harness": HARNESS_BINARY_RELATIVE, "tools/rotstool": "bin/rotstool", "main.cpp": "bin/ageland"}
+
+
+class PortInUse(RuntimeError):
+    """The local server exited before it was ready because another process held the port it was given."""
 
 
 @dataclass
@@ -96,6 +120,33 @@ def check_repo_relative(relative_path: str) -> None:
         raise ValueError(f"{relative_path!r} must name a file by a path relative to the repository root that stays inside it")
 
 
+def newest_source(source_root: Path, program_relative: str) -> Optional[tuple[Path, float]]:
+    """The newest .cpp or .h file under source_root that program_relative is built from, with its modification time.
+
+    Skips the unit tests and the folders and files built only into another program; None when no source is found.
+    """
+    excluded = {UNIT_TEST_SOURCES_RELATIVE}
+    excluded.update(folder for folder, owner in PROGRAM_ONLY_SOURCES.items() if owner != program_relative)
+    newest: Optional[tuple[Path, float]] = None
+    for directory, subdirectories, file_names in os.walk(source_root):
+        directory_path = Path(directory)
+        relative_directory = directory_path.relative_to(source_root)
+        # Pruned in place, so os.walk never descends into an excluded folder.
+        subdirectories[:] = [name for name in subdirectories if (relative_directory / name).as_posix() not in excluded]
+        for file_name in file_names:
+            if not file_name.endswith(SOURCE_SUFFIXES) or (relative_directory / file_name).as_posix() in excluded:
+                continue
+            source_path = directory_path / file_name
+            try:
+                modified = source_path.stat().st_mtime
+            except OSError:
+                # A file removed during the walk cannot make the program stale.
+                continue
+            if newest is None or modified > newest[1]:
+                newest = (source_path, modified)
+    return newest
+
+
 def wait_for_login_prompt(
     host: str, port: int, timeout_seconds: float, process: subprocess.Popen, log_path: Path, time_allowed: Optional[str] = None,
 ) -> None:
@@ -111,6 +162,9 @@ def wait_for_login_prompt(
         _raise_if_exited(process, log_path)
         try:
             connection = socket.create_connection((host, port), timeout=1.0)
+        except ConnectionRefusedError:
+            time.sleep(REFUSED_RETRY_SECONDS)
+            continue
         except OSError:
             time.sleep(READY_RETRY_SECONDS)
             continue
@@ -300,9 +354,28 @@ class ServerLauncher:
         return BUILD_COMMAND
 
     def require_program(self, program_relative: str) -> None:
-        """Raises RuntimeError naming build_hint() when the repo's program is missing or is not a file."""
-        if not (self._repo_root / program_relative).is_file():
+        """Raises RuntimeError naming build_hint() when the repo's program is missing, is not a file, or is stale.
+
+        A program is stale when it is older than the newest source it is built from (newest_source).
+        Setting ROTS_IT_ALLOW_STALE=1 skips that check.
+        """
+        program_path = self._repo_root / program_relative
+        if not program_path.is_file():
             raise RuntimeError(f"{program_relative} is missing; build it first: {self.build_hint()}")
+        if os.environ.get(ALLOW_STALE_VARIABLE) == "1":
+            return
+        newest = newest_source(self._repo_root / SOURCE_DIRECTORY_RELATIVE, program_relative)
+        if newest is None:
+            return
+        source_path, source_modified = newest
+        if program_path.stat().st_mtime >= source_modified:
+            return
+        source_relative = source_path.relative_to(self._repo_root).as_posix()
+        modified_text = datetime.fromtimestamp(source_modified).isoformat(sep=" ", timespec="seconds")
+        raise RuntimeError(
+            f"{program_relative} is older than {source_relative} (modified {modified_text}); rebuild it: {self.build_hint()}, "
+            f"or set {ALLOW_STALE_VARIABLE}=1 to run it as it is"
+        )
 
 
 class LocalProcessLauncher(ServerLauncher):
@@ -341,7 +414,8 @@ class LocalProcessLauncher(ServerLauncher):
     def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """See ServerLauncher.start; also fails with the build command when the binary is missing.
 
-        Raises RuntimeError naming the i386 runtime when this host cannot execute the binary.
+        Raises PortInUse when the server exits because another process holds port, and
+        RuntimeError naming the i386 runtime when this host cannot execute the binary.
         """
         program_relative = HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative
         self.require_program(program_relative)
@@ -355,6 +429,14 @@ class LocalProcessLauncher(ServerLauncher):
             handle = ServerHandle(LOOPBACK, port, log_path, process, has_control_channel=schedule is not None)
             wait_for_login_prompt(LOOPBACK, port, self._startup_timeout, process, log_path)
             return handle
+        except RuntimeError as failure:
+            # The port was free when allocate_free_port probed it, but every local server shares
+            # the host's ports, so another process can take it before this server binds it.
+            port_taken = process.poll() is not None and PORT_IN_USE_LOG_TEXT in read_log_tail(log_path)
+            terminate_process(process)
+            if port_taken:
+                raise PortInUse(f"port {port} was taken before the server could listen on it: {failure}") from failure
+            raise
         except BaseException:
             # BaseException so a Ctrl-C during the wait also stops the server: the fixture never
             # received the handle, so nothing else would. No close_control_channel first: a server
@@ -575,3 +657,23 @@ class DockerComposeLauncher(ServerLauncher):
             self._remove_container(container_name)
             raise
         return ToolResult(completed.returncode, completed.stdout.decode("latin-1", errors="replace"))
+
+
+def start_on_a_free_port(
+    server_launcher: ServerLauncher, run_dir: Path, lib_dir: Path, seed: int, schedule: Optional[str] = None,
+    attempts: int = PORT_ATTEMPTS, allocate_port: Callable[[], int] = allocate_free_port,
+) -> ServerHandle:
+    """Starts the server through server_launcher, as ServerLauncher.start does, on a port from allocate_port.
+
+    When start raises PortInUse, starts again on a newly allocated port, up to attempts starts in
+    all, and raises the last PortInUse when every one found its port taken. Any other failure
+    propagates from the first start without a retry.
+    """
+    attempt = 1
+    while True:
+        try:
+            return server_launcher.start(run_dir, lib_dir, allocate_port(), seed, schedule=schedule)
+        except PortInUse:
+            if attempt >= attempts:
+                raise
+            attempt += 1

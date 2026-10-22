@@ -25,20 +25,42 @@ tests/integration/requirements.txt`.
 | --- | --- |
 | The harness's own tests, no server | `make integration-unit PYTHON=.venv/bin/python` |
 | Every scenario | `make integration PYTHON=.venv/bin/python` |
+| Every scenario, on 8 parallel workers | `make integration PYTHON=.venv/bin/python JOBS=8` |
 | One group | `make integration PYTHON=.venv/bin/python GROUP=poison` |
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
-| One test, by node id | `.venv/bin/python -m pytest -q "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
+| One test, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
+| Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
+| Every test in a file | `.venv/bin/python -m pytest -q -m scenario tests/integration/scenarios/test_bank.py` |
+| Whether CI's group filter selects your tests | `.venv/bin/python -m pytest --collect-only -q -m "scenario and (bank)" <node ids>` |
+| The groups your changes reach: CI's rules on changes since `BASE` (default `origin/release-frodo-next`), uncommitted and untracked files, plus every group for a changed `src/**/*.h` outside `src/harness/` and `src/tests/`, `src/CMakeLists.txt`, `lib/text/` or a copied `lib/misc` file (`rots_harness/changed_groups.py`) | `make integration-changed PYTHON=.venv/bin/python` |
+| Only print that choice and its reasons | `PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only` |
+| Build the three programs (inside the container on a Mac, under the build lock) | `make integration-build`; `docker compose run --rm -T rots bash -lc 'make integration-build'` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
-(<GROUP>)"`. Run directly, pytest finds the same `tests/integration/pytest.ini` and rootdir and
-reads the same `ROTS_IT_*` variables, so the direct commands behave like `make integration`.
+(<GROUP>)"`, adding `-n <JOBS>` when `JOBS` is above 1, and writes each test's result and time to
+`build/integration/results.xml` and lists the 25 slowest. Run directly, pytest finds the same
+`tests/integration/pytest.ini` and rootdir and reads the same `ROTS_IT_*` variables as `make
+integration`, but only `make integration` adds the group filter. A node id runs its test even
+when the test lacks its group marker, so step 9 checks membership with `--collect-only`. With
+`-m scenario`, a lone node id whose test lacks `scenario` collects nothing and exits 5; among
+several, it only adds to `N deselected`.
 `-k` is not checked: a name that matches nothing runs nothing and prints only `N deselected`.
+A node id that names nothing is an error (`ERROR: not found`), so node ids are the safer way to
+pick the tests step 9 repeats. `--collect-only -q` prints node ids relative to
+`tests/integration` (`scenarios/test_bank.py::...`): put `tests/integration/` in front of each
+to run it from the repository root. A parametrized test's node id includes its case in
+brackets; quote it in the shell. Unset `ROTS_IT_SHARD` for these runs: a shard can leave a run
+nothing to run, and that run still passes.
 `-m` is checked: an unregistered name in it is a usage error listing the registered names
 (`pytest_configure` in `conftest.py`, `rots_harness/groups.py`).
 
-Run one harness session per checkout at a time: sessions in a checkout share the template
-cache under `build/integration/libs/`.
+Use `JOBS=8` for a run of many scenarios, such as the full suite or a large group: each
+scenario still gets its own server, and scenarios mostly wait on an idle server, so the run
+takes a fraction of the serial time. Each run has its own template folder,
+`build/integration/libs/<session id>/`, so two runs in one checkout do not disturb each other
+(with the Docker launcher the second waits for the first's lock); the README's "Running"
+section has the details.
 
 ### Launchers
 
@@ -87,8 +109,11 @@ repository root, with `ROTS_UID` and `ROTS_GID` exported
 docker compose -f docker-compose.yml run --rm -T rots bash -lc '
   ulimit -c 0
   python3 -m venv /tmp/harness-venv && /tmp/harness-venv/bin/pip install -q -r tests/integration/requirements.txt || exit 1
-  for run in 1 2 3; do ROTS_IT_LAUNCHER=local make integration PYTHON=/tmp/harness-venv/bin/python GROUP=<marker> || exit 1; done'
+  for run in 1 2 3; do ROTS_IT_LAUNCHER=local /tmp/harness-venv/bin/python -m pytest -q -m scenario <node ids> || exit 1; done'
 ```
+
+Put the node ids of the scenarios step 9 repeats in place of `<node ids>`, each in double
+quotes: the whole script is inside single quotes, so a single quote would end it.
 
 The container runs as the host user, so the run directories it writes stay the host user's.
 The command exits 1 at the first failing run. `ulimit -c 0` matters: a core dump of a crashing
@@ -100,9 +125,10 @@ process under emulation can hang the container.
 2. Rebuild `ageland` and `ageland_harness` (`cmake --build build --target ageland
    ageland_harness`; on a Mac through `docker compose run --rm -T rots bash -lc '...'` under a
    lock taken by hand).
-3. Run the pin's group once. It must fail on the pin's own assertion; a `SessionTimeout`, a
-   setup error or a crash means the break or the pin needs another look.
-4. Undo the edit with `git restore <files>`, rebuild, and run the group again: it must pass.
+3. Run your scenarios (skill, step 9) once, by node id. The pin must fail on its own
+   assertion; a `SessionTimeout`, a setup error or a crash means the break or the pin needs
+   another look.
+4. Undo the edit with `git restore <files>`, rebuild, and run them again: they must pass.
 5. Check `git status` shows no change in `src/` before you commit anything. Never commit the
    break.
 
@@ -123,6 +149,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
 | `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI shards only a run of every group, eight ways. An empty share passes |
+| `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources; not checked by `validate_environment()` |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.
@@ -156,6 +183,12 @@ sanitizer marker, `Error: signal`, any `SYSERR` line (none is allowed today), th
 during the test, and after the stop a non-zero status or a status 0 without the
 `Received SIGHUP, SIGINT, or SIGTERM` line. A session that does not answer `quit` also fails the
 test.
+
+A program that is missing, or older than the newest `.cpp` or `.h` file it is built from, stops
+each test that runs it at setup with the build command (`ServerLauncher.require_program` and
+`newest_source` in `rots_harness/launcher.py`). `src/tests/` never counts, `src/harness/` counts
+only for `ageland_harness`, `src/tools/rotstool/` only for `rotstool` and `src/main.cpp` only
+for `ageland`. `ROTS_IT_ALLOW_STALE=1` skips the age check.
 
 ## Characters
 

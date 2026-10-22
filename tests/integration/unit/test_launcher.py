@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import io
+import os
 import shlex
 import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Callable, Iterator, List, Optional
 
 import pytest
 
@@ -1200,3 +1201,261 @@ def test_close_control_channel_sees_the_line_a_real_process_logs_at_end_of_input
         assert process.poll() is None, "the line must arrive before the stop, not because the process exited"
     finally:
         launcher.terminate_process(process)
+
+
+# Logs what the server logs when its listening port is taken, then exits as the server does.
+PORT_TAKEN_SERVER = """
+import sys
+print("bind: Address already in use", file=sys.stderr, flush=True)
+sys.exit(1)
+"""
+
+
+class ScriptServerLauncher(launcher.LocalProcessLauncher):
+    """A local launcher whose server is a Python script run by this test's interpreter."""
+
+    def __init__(self, repo_root: Path, script: Path) -> None:
+        super().__init__(repo_root, startup_timeout=10.0)
+        # The script started in place of the server binary.
+        self._script = script
+
+    def command(self, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> list[str]:
+        return [sys.executable, str(self._script), str(port)]
+
+
+def start_script_server(tmp_path: Path, source: str) -> launcher.ServerHandle:
+    """Starts source as the server through ScriptServerLauncher in a fresh run directory."""
+    (tmp_path / "bin").mkdir()
+    (tmp_path / "bin" / "ageland").write_text("", encoding="utf-8")
+    script = tmp_path / "server.py"
+    script.write_text(source, encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    return ScriptServerLauncher(tmp_path, script).start(run_dir, run_dir / "lib", launcher.allocate_free_port(), seed=1)
+
+
+def test_a_local_server_that_exits_because_its_port_is_taken_raises_port_in_use(tmp_path: Path) -> None:
+    with pytest.raises(launcher.PortInUse) as raised:
+        start_script_server(tmp_path, PORT_TAKEN_SERVER)
+    assert isinstance(raised.value, RuntimeError)
+    assert "bind: Address already in use" in str(raised.value)
+
+
+def test_a_local_server_that_exits_for_another_reason_raises_a_plain_runtime_error(tmp_path: Path) -> None:
+    with pytest.raises(RuntimeError) as raised:
+        start_script_server(tmp_path, EXITS_BEFORE_LISTENING_SERVER)
+    assert not isinstance(raised.value, launcher.PortInUse)
+    assert str(raised.value).startswith("server exited with status 3 before it was ready")
+
+
+class ScriptedStartLauncher:
+    """A launcher whose start raises the given failures in turn, then returns a handle; it records each port."""
+
+    def __init__(self, tmp_path: Path, failures: list[BaseException]) -> None:
+        # Raised by successive starts before any start succeeds.
+        self._failures = list(failures)
+        # The handle a start returns once the failures run out.
+        self.handle = launcher.ServerHandle(launcher.LOOPBACK, 0, tmp_path / "game.log", ExitedProcess())  # type: ignore[arg-type]
+        # The port each start was given, in order.
+        self.ports: list[int] = []
+
+    def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> launcher.ServerHandle:
+        self.ports.append(port)
+        if self._failures:
+            raise self._failures.pop(0)
+        return self.handle
+
+
+def numbered_ports(first: int = 5001) -> Callable[[], int]:
+    """A port allocator returning first, first + 1 and so on."""
+    next_port = [first]
+
+    def allocate() -> int:
+        port = next_port[0]
+        next_port[0] += 1
+        return port
+
+    return allocate
+
+
+def test_a_start_whose_port_was_taken_runs_again_on_a_new_port(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [launcher.PortInUse("port taken")])
+
+    handle = launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert handle is scripted.handle
+    assert scripted.ports == [5001, 5002]
+
+
+def test_a_start_gives_up_once_every_attempt_found_its_port_taken(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [launcher.PortInUse(f"port taken {attempt}") for attempt in range(launcher.PORT_ATTEMPTS)])
+
+    with pytest.raises(launcher.PortInUse, match=f"port taken {launcher.PORT_ATTEMPTS - 1}"):
+        launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert len(scripted.ports) == launcher.PORT_ATTEMPTS == 3
+
+
+def test_any_other_start_failure_is_not_retried(tmp_path: Path) -> None:
+    scripted = ScriptedStartLauncher(tmp_path, [RuntimeError("server exited with status 3 before it was ready")])
+
+    with pytest.raises(RuntimeError, match="status 3"):
+        launcher.start_on_a_free_port(scripted, tmp_path, tmp_path / "lib", seed=1, allocate_port=numbered_ports())  # type: ignore[arg-type]
+
+    assert scripted.ports == [5001]
+
+
+def test_a_start_on_a_free_port_passes_the_schedule_and_seed_through(tmp_path: Path) -> None:
+    recorded: list[tuple[int, Optional[str]]] = []
+
+    class RecordingLauncher:
+        def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> str:
+            recorded.append((seed, schedule))
+            return "handle"
+
+    launcher.start_on_a_free_port(RecordingLauncher(), tmp_path, tmp_path / "lib", seed=9, schedule="affect-hours")  # type: ignore[arg-type]
+
+    assert recorded == [(9, "affect-hours")]
+
+
+class RunningProcess:
+    """Stands in for a server process that never exits."""
+
+    # The exit status a finished process would have; never set.
+    returncode: Optional[int] = None
+
+    def poll(self) -> Optional[int]:
+        return None
+
+
+class FakeConnection:
+    """Stands in for an accepted connection; only its use as a context manager matters."""
+
+    def __enter__(self) -> "FakeConnection":
+        return self
+
+    def __exit__(self, *_exception: object) -> None:
+        pass
+
+
+def test_ready_retries_a_refused_connection_after_the_short_refused_pause(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts: list[int] = []
+
+    def refuse_twice(_address: tuple[str, int], timeout: float) -> FakeConnection:
+        attempts.append(1)
+        if len(attempts) <= 2:
+            raise ConnectionRefusedError("nothing listens yet")
+        return FakeConnection()
+
+    pauses: list[float] = []
+    monkeypatch.setattr(launcher.socket, "create_connection", refuse_twice)
+    monkeypatch.setattr(launcher, "_receives_login_prompt", lambda *_arguments: True)
+    monkeypatch.setattr(launcher.time, "sleep", pauses.append)
+
+    launcher.wait_for_login_prompt(launcher.LOOPBACK, 1, 10.0, RunningProcess(), tmp_path / "game.log")  # type: ignore[arg-type]
+
+    assert len(attempts) == 3
+    assert pauses == [launcher.REFUSED_RETRY_SECONDS, launcher.REFUSED_RETRY_SECONDS]
+    assert launcher.REFUSED_RETRY_SECONDS < launcher.READY_RETRY_SECONDS
+
+
+# Seconds since the epoch at which write_built_repo dates the sources.
+OLD_TIME = 1_700_000_000
+# When write_built_repo's programs were built, after their sources.
+BUILD_TIME = OLD_TIME + 100
+# A source edited after the build.
+NEW_TIME = OLD_TIME + 200
+
+
+def write_dated(path: Path, modified: float) -> None:
+    """Creates path, with its folders, and dates its modification time."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("x", encoding="utf-8")
+    os.utime(path, (modified, modified))
+
+
+def write_built_repo(repo_root: Path) -> None:
+    """A repository whose three programs were built at BUILD_TIME from sources dated OLD_TIME."""
+    for source in ("src/comm.cpp", "src/structs.h", "src/main.cpp", "src/harness/main.cpp", "src/tools/rotstool/main.cpp"):
+        write_dated(repo_root / source, OLD_TIME)
+    for program in ("bin/ageland", launcher.HARNESS_BINARY_RELATIVE, "bin/rotstool"):
+        write_dated(repo_root / program, BUILD_TIME)
+
+
+@pytest.fixture
+def stale_check_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Runs the test without ROTS_IT_ALLOW_STALE, whatever the host sets."""
+    monkeypatch.delenv(launcher.ALLOW_STALE_VARIABLE, raising=False)
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+def test_require_program_accepts_a_program_newer_than_its_sources(tmp_path: Path, launcher_class: type) -> None:
+    write_built_repo(tmp_path)
+    for program in ("bin/ageland", launcher.HARNESS_BINARY_RELATIVE, "bin/rotstool"):
+        launcher_class(repo_root=tmp_path).require_program(program)
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+@pytest.mark.parametrize("source", ["src/comm.cpp", "src/structs.h", "src/mob_progs/mob_prog.cpp"])
+def test_require_program_refuses_a_program_older_than_a_source_and_names_both(tmp_path: Path, launcher_class: type, source: str) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / source, NEW_TIME)
+    program_launcher = launcher_class(repo_root=tmp_path)
+    with pytest.raises(RuntimeError) as stale:
+        program_launcher.require_program("bin/ageland")
+    message = str(stale.value)
+    assert message.startswith(f"bin/ageland is older than {source} (modified ")
+    assert program_launcher.build_hint() in message
+    assert launcher.ALLOW_STALE_VARIABLE in message
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_ignores_unit_tests_and_files_other_than_cpp_and_h(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    for path in ("src/tests/comm_tests.cpp", "src/tests/fake_harness_request.h", "src/CMakeLists.txt", "src/README.md"):
+        write_dated(tmp_path / path, NEW_TIME)
+    launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_checks_each_program_against_only_its_own_sources(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/harness/main.cpp", NEW_TIME)
+    write_dated(tmp_path / "src/tools/rotstool/main.cpp", NEW_TIME)
+    program_launcher = launcher.LocalProcessLauncher(repo_root=tmp_path)
+    program_launcher.require_program("bin/ageland")
+    with pytest.raises(RuntimeError, match=r"^bin/ageland_harness is older than src/harness/main\.cpp"):
+        program_launcher.require_program(launcher.HARNESS_BINARY_RELATIVE)
+    with pytest.raises(RuntimeError, match=r"^bin/rotstool is older than src/tools/rotstool/main\.cpp"):
+        program_launcher.require_program("bin/rotstool")
+
+
+def test_require_program_runs_a_stale_program_when_allowed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/comm.cpp", NEW_TIME)
+    monkeypatch.setenv(launcher.ALLOW_STALE_VARIABLE, "1")
+    launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_still_reports_a_missing_program_first(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/comm.cpp", NEW_TIME)
+    (tmp_path / "bin/ageland").unlink()
+    with pytest.raises(RuntimeError, match="^bin/ageland is missing; build it first: "):
+        launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("program, stale", [("bin/ageland", True), (launcher.HARNESS_BINARY_RELATIVE, False), ("bin/rotstool", False)])
+def test_the_servers_main_file_counts_only_for_the_server(tmp_path: Path, program: str, stale: bool) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/main.cpp", NEW_TIME)
+    program_launcher = launcher.LocalProcessLauncher(repo_root=tmp_path)
+    if stale:
+        with pytest.raises(RuntimeError, match=rf"^{program} is older than src/main\.cpp"):
+            program_launcher.require_program(program)
+    else:
+        program_launcher.require_program(program)

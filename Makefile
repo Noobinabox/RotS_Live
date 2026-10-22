@@ -9,6 +9,9 @@ CMAKE_CONFIGURE_ARGS ?= -DCMAKE_CXX_COMPILER=g++
 CMAKE_CACHE := $(BUILD_DIR)/CMakeCache.txt
 # Parallel build jobs; rotsmud's two shared cores want JOBS=1.
 JOBS ?= $(shell getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)
+# make integration's pytest-xdist workers: JOBS when it is set on the command line or in the
+# environment, otherwise 1, so the build default above never makes a scenario run parallel.
+INTEGRATION_JOBS = $(if $(filter file,$(origin JOBS)),1,$(JOBS))
 # Extra ctest arguments, e.g. CTEST_ARGS='-R JsonUtils'.
 CTEST_ARGS ?=
 # Python used for the integration harness; point it at a virtual environment's python.
@@ -19,9 +22,18 @@ GROUP ?=
 ZONE ?=
 # make world-catalogue prints only this table: zones, rooms, mobs, objects or scripts.
 CATEGORY ?=
+# The branch make integration-changed measures changes from, e.g. BASE=origin/master. Only a
+# command-line BASE counts: an exported BASE is too generic a name to trust. $(value ...) keeps
+# make from expanding anything inside it.
+ifeq ($(origin BASE),command line)
+INTEGRATION_CHANGED_BASE := $(value BASE)
+else
+INTEGRATION_CHANGED_BASE := origin/release-frodo-next
+endif
 
 .DEFAULT_GOAL := help
 .PHONY: help configure setup build test run smoke-account integration-unit integration world-catalogue format clean
+.PHONY: integration-build integration-changed
 
 help:
 	@printf "Available targets:\n"
@@ -31,14 +43,18 @@ help:
 	@printf "  make test              Run the C++ unit tests\n"
 	@printf "  make smoke-account     Build the game/proxy and run the account smoke flow\n"
 	@printf "  make integration-unit  Run the integration harness's own unit tests (no server)\n"
-	@printf "  make integration       Run the integration scenarios (GROUP=<name> for one group)\n"
+	@printf "  make integration       Run the integration scenarios (GROUP=<name> for one group,\n"
+	@printf "                         JOBS=<n> for n parallel workers)\n"
 	@printf "  make world-catalogue   Print the integration test world's zones, rooms, mobs, objects\n"
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
+	@printf "  make integration-build Build the server, harness server and rotstool the scenarios run\n"
+	@printf "  make integration-changed  Run the scenario groups this checkout's changes reach\n"
+	@printf "                         (BASE=<branch>, default origin/release-frodo-next)\n"
 	@printf "  make format            clang-format the WHOLE tree -- see the warning above the target;\n"
 	@printf "                         format only your changed files instead\n"
 	@printf "  make run               Build and start the server in the foreground\n"
 	@printf "  make clean             Clean the configured CMake build tree\n"
-	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, ZONE, CATEGORY\n" "$(BUILD_DIR)" "$(JOBS)"
+	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, ZONE, CATEGORY, BASE\n" "$(BUILD_DIR)" "$(JOBS)"
 	@printf "Changing CMAKE_CONFIGURE_ARGS needs a fresh BUILD_DIR; an existing tree keeps its cache.\n"
 
 $(CMAKE_CACHE):
@@ -67,12 +83,23 @@ smoke-account: setup build
 integration-unit:
 	$(PYTHON) -m pytest tests/integration/unit -q
 
+# Writes each test's result and time to build/integration/results.xml and lists the slowest tests.
 integration:
-	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"
+	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"$(if $(filter-out 0 1,$(INTEGRATION_JOBS)), -n $(INTEGRATION_JOBS)) --junitxml=build/integration/results.xml --durations=25
 
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:
 	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.world_catalogue$(if $(ZONE), --zone $(ZONE))$(if $(CATEGORY), --category $(CATEGORY))
+
+# The programs the scenarios run, built as CI builds them; make build builds only the server.
+integration-build: $(CMAKE_CACHE)
+	+$(CMAKE) --build $(BUILD_DIR) --target ageland ageland_harness rotstool --parallel $(JOBS)
+
+# Prints why each group was chosen, then runs make integration with them. The base reaches
+# Python through the environment, so the shell never reads it as command text.
+integration-changed: export INTEGRATION_CHANGED_BASE := $(INTEGRATION_CHANGED_BASE)
+integration-changed:
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.changed_groups --base="$$INTEGRATION_CHANGED_BASE" --python "$(PYTHON)" --make "$(MAKE)"
 
 # DO NOT RUN THIS on a change you are about to commit. It is clang-format over the WHOLE
 # tree: ~1200 lines nobody touched get rewritten (db.cpp and act_wiz.cpp worst), and the

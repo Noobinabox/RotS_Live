@@ -118,16 +118,43 @@ Add `tests/integration/groups/<name>.txt` holding one line, what the group pins,
 `pytestmark = [pytest.mark.scenario, pytest.mark.<name>]`. `GROUP=<name>` then selects it.
 In CI, a pull request runs `boot` and the groups of the scenario and group files it changes; a
 change to the game's code runs a group only when the description names it as
-`@integration-test-<name>` (integration README, "Continuous integration").
+`@integration-test-<name>`. A change to the harness or the test world runs every group, as does
+every push (integration README, "Continuous integration").
 
 ## 9. Run it repeatedly
 
 - While writing, run one test (reference, "Running"); run `make integration-unit` when the
   harness changed.
-- `make integration PYTHON=.venv/bin/python GROUP=<name>` three times through the Docker
-  launcher (on Linux, with `ROTS_IT_LAUNCHER=docker`) and three times through the local
-  launcher (on a Mac, inside a container), then once each with `ROTS_IT_SEED=1` and
-  `ROTS_IT_SEED=987654`. Every run must pass.
+- Your scenarios are every test that uses something you added or changed: its body, a
+  helper, a fixture, a module-level constant or `Character`, a `parametrize` case, a marker,
+  or a world fixture it reads. A change to the harness itself (`rots_harness/`, `conftest.py`)
+  follows extending-the-harness.md instead.
+- Check that CI will run them: `.venv/bin/python -m pytest --collect-only -q -m "scenario and
+  (<group>)" <node ids>` must list every one of your node ids. One it leaves out lacks
+  `pytest.mark.scenario` or its group marker, so no `make integration` run would select it,
+  yet a run by node id still passes.
+- Repeat your scenarios, selected by node id (reference, "Running"). Each scenario boots its
+  own server, so repeating the rest of its group adds no evidence about them:
+  - three times through the Docker launcher (on Linux, with `ROTS_IT_LAUNCHER=docker`), and
+    three times through the local launcher (on a Mac, inside a container). Between runs, the
+    starting game hour, month and moon follow the wall clock at boot, commands from different
+    connections arrive in any order, asynchronous text can land before or after a prompt, a
+    plain server's mobs and combat draw on the wall clock, and the two launchers time a
+    server differently, so one pass can be luck;
+  - once each with `ROTS_IT_SEED=1` and `ROTS_IT_SEED=987654`, which proves the seed is not
+    why they pass (step 4).
+- A game hour is one real minute, so back-to-back runs start within a few game hours of each
+  other. When an outcome can depend on the time of day (sunlight, the moon, a banker's
+  hours), start the runs on each launcher at least 8 minutes apart, so they begin in
+  different thirds of the game day.
+- The repeats prove a new or changed scenario is stable. Do them when you write or change it,
+  not again for each rebase or rebuild of the same scenario.
+- Then run every group your scenarios belong to once, `make integration
+  PYTHON=.venv/bin/python GROUP=<name>`, which catches a change that breaks a neighbour in the
+  same file. A change under `tests/integration/world/`, or to a scenario module that is not a
+  `test_*.py`, can break any group: run every scenario once (`make integration
+  PYTHON=.venv/bin/python`) instead.
+- Every run must pass.
 - Wait out lock waits; `DockerLockHeld` is not a result (reference, "The shared Docker
   lock").
 - On a failure, read the kept run directory (reference, "Run directories"); remove only your
@@ -136,9 +163,9 @@ change to the game's code runs a group only when the description names it as
 ## 10. Prove the pin bites
 
 For each pin, break the behaviour it pins with an uncommitted edit in `src/`, rebuild, and run
-its group. The pin must fail on an assertion about that behaviour, not on a timeout or setup
-error. Then undo the edit with `git restore <files>`, rebuild and see it pass. Never commit
-the break.
+your scenarios. The pin must fail on an assertion about that behaviour, not on a timeout or
+setup error. Then undo the edit with `git restore <files>`, rebuild and see it pass. Never
+commit the break.
 
 Commit only after the bite checks and the required runs. The commit message's `Tests:` list
 (each run and its result) names only what ran; amend it if a later run changes the result.

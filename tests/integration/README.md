@@ -78,7 +78,8 @@ runs:
 - the groups of each scenario file it changes, and the group of each group file it changes;
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
   `requirements.txt`, the test world (other than its notes), a scenario file other than a
-  `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile` or the workflow itself.
+  `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile`, the image action
+  (`.github/actions/dev-image/`) or the workflow itself.
 
 A change to the game's own code adds no group by itself, so name the groups whose behaviour it
 touches. A name no group file registers fails the job and lists the registered groups.
@@ -87,6 +88,11 @@ and the "Choose the integration groups" job's summary lists the groups that run 
 every group is split across eight parallel jobs, `shard 1/8` to `shard 8/8`, through
 `ROTS_IT_SHARD`; a run of chosen groups is one job. When a scenario fails, its kept run
 directories are uploaded as that job's `integration-runs-shard-<k>` artifact.
+
+Each job loads the development image from the Actions cache, or from the repository's
+`dev-image-jammy-<hash>` pre-release for the `Dockerfile`'s hash, and builds it from the Ubuntu
+snapshot only when neither has it, so a snapshot outage stops only a pull request that changes
+the `Dockerfile`. `.github/workflows/dev-image.yml` publishes that pre-release on a push.
 
 ## Launchers
 

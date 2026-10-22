@@ -1749,8 +1749,11 @@ void assign_command_pointers(void)
     COMMANDO(90, POSITION_DEAD, do_bash, 1, TRUE, 0,
         TAR_NONE_OK | TAR_CHAR_ROOM | TAR_FIGHT_VICT | TAR_DIR_NAME,
         TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
+    /* Never TAR_CHAR_WORLD: rescue only works in the room, and a word that names
+     * nobody here has to reach do_rescue as text for 'leader', 'master' and
+     * 'followers' -- any mob of that name elsewhere would otherwise win it. */
     COMMANDO(91, POSITION_FIGHTING, do_rescue, 1, TRUE, 0,
-        FULL_TARGET, FULL_TARGET, 0);
+        FULL_TARGET & ~TAR_CHAR_WORLD, FULL_TARGET, 0);
     COMMANDO(92, POSITION_FIGHTING, do_kick, 1, TRUE, SCMD_KICK,
         TAR_FIGHT_VICT | TAR_CHAR_ROOM, TAR_IGNORE, CMD_MASK_MOVE_PENALTY);
     COMMANDO(93, POSITION_RESTING, do_practice, 1, TRUE, 0,

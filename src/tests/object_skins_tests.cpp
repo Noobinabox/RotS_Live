@@ -597,6 +597,32 @@ std::string read_back(FILE* f)
 }
 }
 
+/* A keyring skin's row has as many cells as its parent's keyring row (one type cell, its
+ * capacity), so the columns of the keyring table line up. */
+TEST_F(ObjectSkins, Obj2htmlKeyringSkinRowMatchesParentRowCells)
+{
+    m_proto[0].obj_flags.type_flag = ITEM_KEYRING;
+    m_proto[0].obj_flags.value[0] = 500;
+    copy_skin_stats_from_base(m_proto[1], m_proto[0]);
+    m_proto[1].obj_flags.type_flag = ITEM_KEYRING;
+    auto cells = [](const std::string& row) {
+        size_t n = 0;
+        for (size_t at = row.find("<TD"); at != std::string::npos; at = row.find("<TD", at + 1))
+            ++n;
+        return n;
+    };
+    FILE* parent = tmpfile();
+    ASSERT_NE(parent, nullptr);
+    obj2html(parent, &m_proto[0]);
+    FILE* skin = tmpfile();
+    ASSERT_NE(skin, nullptr);
+    obj2html_skin(skin, &m_proto[1], &m_proto[0]);
+    std::string parent_row = read_back(parent);
+    std::string skin_row = read_back(skin);
+    EXPECT_NE(parent_row.find("<TD> 500 </TD>"), std::string::npos) << parent_row;
+    EXPECT_EQ(cells(skin_row), cells(parent_row)) << parent_row << skin_row;
+}
+
 /* A lever with a bad direction, or a bad material, is written with the number in red (not read
  * past dirs[] or the material names). It is in the lever table already, so the problem table at
  * the end, which is for objects no table lists, leaves it out. */

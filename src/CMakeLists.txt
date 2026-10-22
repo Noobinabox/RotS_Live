@@ -174,6 +174,7 @@ set(ROTS_SERVER_SOURCES
 set(ROTS_TEST_SOURCES
     tests/barter_vendor_tests.cpp
     tests/banker_tests.cpp
+    tests/keyring_tests.cpp
     tests/ranger_prog_tests.cpp
     tests/mage_prog_tests.cpp
     tests/guild_practice_tests.cpp
@@ -252,6 +253,7 @@ set(ROTS_TEST_SOURCES
     tests/harness_affect_hours_transcript_tests.cpp
     tests/harness_command_line_parser_tests.cpp
     tests/harness_options_tests.cpp
+    tests/rescue_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
     tests/startup_options_tests.cpp

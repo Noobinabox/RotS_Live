@@ -48,6 +48,7 @@ HARNESS_FILES = frozenset({
     "tests/integration/requirements.txt",
     "Dockerfile",
     ".github/workflows/integration.yml",
+    ".github/actions/dev-image/action.yml",
 })
 
 

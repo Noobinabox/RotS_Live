@@ -308,6 +308,8 @@ it. There is no input.
 /6 is used to assign and change the keywords of the last extra description.
 See /5 for examples. The input is lower case words separated by spaces,
 without commas.
+Avoid a keyword that is another object's name, such as 'keyring' or
+'sword': look and examine may show this text instead of that object.
 #
 "OBJ 7"
 
@@ -348,11 +350,12 @@ BOAT               22
 FOUNTAIN           23
 SHIELD             24
 LEVER              25
+KEYRING            26
 
 Depending on this type, object values (/12) are different.
 See 'SHAPE OBJ ITEM_TYPE' for meaning of the values.
 See 'SHAPE OBJLIST' for the list of appropriate zones for objects.
-The default value is 13 (Change!), the input is an integer from 1 to 25.
+The default value is 13 (Change!), the input is an integer from 1 to 26.
 #
 "OBJ 10"
 
@@ -643,6 +646,25 @@ Value[1]: The door direction, (n e s w u d) = (0 1 2 3 4 5)
   It is recommended to make lever NOTAKE always, and to set the LEVER
 flag on the corresponding door.
   More than one lever can be used on the same door.
+
+#
+"OBJ KEYRING"
+
+OBJ KEYRING (26)
+  A ring that holds keys and nothing else. It is always open: it has no
+lock and cannot be closed. Keys on the ring unlock doors and containers
+as if they were carried.
+
+Value[0]: Capacity in weight units, including the keyring's own weight
+Value[1]: NOT USED
+Value[2]: NOT USED
+Value[3]: NOT USED
+Value[4]: NOT USED
+
+  Give a keyring the BELT wear flag. It is meant for a belt hook: only a
+keyring worn on a belt can be used with put and get without taking it
+off. Look in and examine work on a keyring worn anywhere, and keys on a
+keyring worn anywhere still unlock.
 
 #
 "OBJ 13"

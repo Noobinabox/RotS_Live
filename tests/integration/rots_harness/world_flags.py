@@ -90,6 +90,7 @@ ITEM_TYPES = NameTable("structs.h", "ITEM_", numbered(
     "ITEM_MISSILE", "ITEM_TREASURE", "ITEM_ARMOR", "ITEM_POTION", "ITEM_WORN", "ITEM_OTHER",
     "ITEM_TRASH", "ITEM_TRAP", "ITEM_CONTAINER", "ITEM_NOTE", "ITEM_DRINKCON", "ITEM_KEY",
     "ITEM_FOOD", "ITEM_MONEY", "ITEM_PEN", "ITEM_BOAT", "ITEM_FOUNTAIN", "ITEM_SHIELD", "ITEM_LEVER",
+    "ITEM_KEYRING",
 ))
 # Object extra flags, the second number ('extra_flags'); bit 13 has no name.
 ITEM_EXTRA_FLAGS = NameTable("structs.h", "ITEM_", bits(

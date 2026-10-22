@@ -1931,7 +1931,7 @@ char* item_types[] = {
     "FIRE WEAPON", "MISSILE", "TREASURE", "ARMOR", "POTION", "WORN",
     "OTHER", "TRASH", "TRAP", "CONTAINER", "NOTE", "LIQUID CONTAINER",
     "KEY", "FOOD", "MONEY", "PEN", "BOAT", "FOUNTAIN",
-    "SHIELD", "LEVER", "\n"
+    "SHIELD", "LEVER", "KEYRING", "\n"
 };
 
 // const

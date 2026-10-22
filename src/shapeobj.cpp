@@ -428,6 +428,8 @@ static const char* obj_value_names(int type)
         return "DODGE PARRY ENCUMBRANCE - -";
     case ITEM_LEVER:
         return "ROOM_VNUM DIRECTION - - -";
+    case ITEM_KEYRING:
+        return "CAPACITY - - - -";
     default:
         return "- - - - - (none used by this type)";
     }
@@ -917,14 +919,15 @@ void shape_center_obj(struct char_data* ch, char* arg)
                              "   2 SCROLL         9 ARMOR      16 NOTE               23 FOUNTAIN\n\r"
                              "   3 WAND          10 POTION     17 LIQUID CONTAINER   24 SHIELD\n\r"
                              "   4 STAFF         11 WORN       18 KEY                25 LEVER\n\r"
-                             "   5 WEAPON        12 OTHER      19 FOOD\n\r"
+                             "   5 WEAPON        12 OTHER      19 FOOD               26 KEYRING\n\r"
                              "   6 FIRE WEAPON   13 TRASH      20 MONEY\n\r"
                              "   7 MISSILE       14 TRAP       21 PEN\n\r\n\r",
                     ch);
             tmp3 = obj->obj_flags.type_flag;
             DIGITCHANGE("TYPE (changes what /12 means)", obj->obj_flags.type_flag);
-            if (tmp != tmp3 && (tmp < 1 || tmp > 25)) {
-                send_to_char("Item type must be 1-25. dropped.\n\r", ch);
+            if (tmp != tmp3 && (tmp < 1 || tmp > ITEM_KEYRING)) { /* the highest type */
+                sprintf(tmpstr, "Item type must be 1-%d. dropped.\n\r", ITEM_KEYRING);
+                send_to_char(tmpstr, ch);
                 obj->obj_flags.type_flag = tmp3;
             } else if (tmp != tmp3 && (tmp == ITEM_KEY || tmp == ITEM_NOTE) && edited_base_with_skins(ch) >= 0) {
                 send_has_skins(ch, edited_vnum(ch), edited_base_with_skins(ch), tmp == ITEM_KEY ? "a key" : "a note");
@@ -990,7 +993,7 @@ void shape_center_obj(struct char_data* ch, char* arg)
                 sprintf(tmpstr, "Enter VALUES for %s: %s\n\r"
                                 "  ('-' = not used; fewer numbers keep the rest, blank keeps all)\n\r"
                                 "Current: %d %d %d %d %d\n\r",
-                    obj->obj_flags.type_flag <= ITEM_LEVER ? item_types[obj->obj_flags.type_flag] : "?",
+                    obj->obj_flags.type_flag <= ITEM_KEYRING ? item_types[obj->obj_flags.type_flag] : "?",
                     obj_value_names(obj->obj_flags.type_flag),
                     obj->obj_flags.value[0], obj->obj_flags.value[1], obj->obj_flags.value[2],
                     obj->obj_flags.value[3], obj->obj_flags.value[4]);

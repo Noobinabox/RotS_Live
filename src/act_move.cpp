@@ -477,7 +477,7 @@ void parse_container_for_stay_zone(char_data* ch, const obj_data* container, con
     for (obj_data* item = container->contains; item; item = next_item) {
         next_item = item->next_content;
 
-        if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
+        if (item->holds_items()) {
             parse_container_for_stay_zone(ch, item, room);
         }
 
@@ -501,6 +501,12 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
             continue;
         }
 
+        /* Keys on a worn keyring drop like keys in a bag; other worn
+         * containers are left as they are. */
+        if (item->is_keyring()) {
+            parse_container_for_stay_zone(ch, item, room);
+        }
+
         if (IS_OBJ_STAT(ch->equipment[gear_index], ITEM_STAY_ZONE)) {
             obj_data* item = unequip_char(ch, gear_index);
             obj_to_room(item, room);
@@ -511,7 +517,7 @@ void prohibit_item_stay_zone_move(char_data* ch, int room)
     obj_data* next_item = nullptr;
     for (obj_data* item = ch->carrying; item; item = next_item) {
         next_item = item->next_content;
-        if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
+        if (item->holds_items()) {
             parse_container_for_stay_zone(ch, item, room);
         }
 
@@ -1218,7 +1224,9 @@ ACMD(do_open)
         }
     }
     if (obj) {
-        if (obj->obj_flags.type_flag != ITEM_CONTAINER)
+        if (refuse_keyring(ch, obj, keyring_action::open_close)) {
+            /* refuse_keyring told ch */
+        } else if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
         else if (!IS_SET(obj->obj_flags.value[1], CONT_CLOSED))
             send_to_char("But it's already open!\n\r", ch);
@@ -1327,7 +1335,9 @@ ACMD(do_close)
         }
     }
     if (obj) {
-        if (obj->obj_flags.type_flag != ITEM_CONTAINER)
+        if (refuse_keyring(ch, obj, keyring_action::open_close)) {
+            /* refuse_keyring told ch */
+        } else if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
         else if (IS_SET(obj->obj_flags.value[1], CONT_CLOSED))
             send_to_char("But it's already closed!\n\r", ch);
@@ -1343,21 +1353,44 @@ ACMD(do_close)
 
 bool is_key(const obj_data* item) { return item->obj_flags.type_flag == ITEM_KEY; }
 
+/* True for an unbroken key that opens lock number key. */
+static bool is_usable_key(const obj_data* item, int key)
+{
+    return is_key(item) && item->item_number >= 0
+        && obj_index[item->item_number].virt == key
+        && !IS_SET(item->obj_flags.extra_flags, ITEM_BROKEN);
+}
+
+/* The direct contents of a keyring; keyrings inside other containers are not searched. */
+static obj_data* key_on_keyring(obj_data* ring, int key)
+{
+    if (!ring->is_keyring())
+        return NULL;
+    for (obj_data* item = ring->contains; item; item = item->next_content)
+        if (is_usable_key(item, key))
+            return item;
+    return NULL;
+}
+
 /* returns NULL if the character does not have the key (or it is broken),
                    a pointer to the key if the character does have the key  */
 obj_data* has_key(const char_data* character, int key)
 {
     for (obj_data* item = character->carrying; item; item = item->next_content)
-        if (obj_index[item->item_number].virt == key)
-            if (!(IS_SET(item->obj_flags.extra_flags, ITEM_BROKEN)))
-                if (is_key(item))
-                    return (item);
+        if (is_usable_key(item, key))
+            return (item);
 
-    if (character->equipment[HOLD])
-        if (obj_index[character->equipment[HOLD]->item_number].virt == key)
-            if (!(IS_SET(character->equipment[HOLD]->obj_flags.extra_flags, ITEM_BROKEN)))
-                if (is_key(character->equipment[HOLD]))
-                    return (character->equipment[HOLD]);
+    if (character->equipment[HOLD] && is_usable_key(character->equipment[HOLD], key))
+        return (character->equipment[HOLD]);
+
+    for (obj_data* item = character->carrying; item; item = item->next_content)
+        if (obj_data* found = key_on_keyring(item, key))
+            return found;
+
+    for (int slot = 0; slot < MAX_WEAR; ++slot)
+        if (character->equipment[slot])
+            if (obj_data* found = key_on_keyring(character->equipment[slot], key))
+                return found;
 
     return NULL;
 }
@@ -1392,7 +1425,9 @@ ACMD(do_lock)
 
         /* this is an object */
 
-        if (obj->obj_flags.type_flag != ITEM_CONTAINER)
+        if (refuse_keyring(ch, obj, keyring_action::lock)) {
+            /* refuse_keyring told ch */
+        } else if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
         else if (!IS_SET(obj->obj_flags.value[1], CONT_CLOSED))
             send_to_char("Maybe you should close it first...\n\r", ch);
@@ -1459,7 +1494,9 @@ ACMD(do_unlock)
 
         /* this is an object */
 
-        if (obj->obj_flags.type_flag != ITEM_CONTAINER)
+        if (refuse_keyring(ch, obj, keyring_action::lock)) {
+            /* refuse_keyring told ch */
+        } else if (obj->obj_flags.type_flag != ITEM_CONTAINER)
             send_to_char("That's not a container.\n\r", ch);
         else if (!IS_SET(obj->obj_flags.value[1], CONT_CLOSED))
             send_to_char("Silly - it ain't even closed!\n\r", ch);

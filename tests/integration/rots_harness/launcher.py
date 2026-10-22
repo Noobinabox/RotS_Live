@@ -34,6 +34,9 @@ LOGIN_EMAIL_PROMPT = "Account email:"
 # The pause between two readiness attempts, and the longest one read blocks before the readiness
 # wait checks the process again.
 READY_RETRY_SECONDS = 0.25
+# The pause before the readiness wait retries a refused connection: a refusal comes back at once,
+# so the server is polled often enough to be found within moments of listening.
+REFUSED_RETRY_SECONDS = 0.05
 # The line the harness binary logs once its stdin reaches end of input; its control channel's
 # reader thread has finished by then.
 INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no more time requests will arrive."
@@ -120,6 +123,9 @@ def wait_for_login_prompt(
         _raise_if_exited(process, log_path)
         try:
             connection = socket.create_connection((host, port), timeout=1.0)
+        except ConnectionRefusedError:
+            time.sleep(REFUSED_RETRY_SECONDS)
+            continue
         except OSError:
             time.sleep(READY_RETRY_SECONDS)
             continue

@@ -1315,3 +1315,44 @@ def test_a_start_on_a_free_port_passes_the_schedule_and_seed_through(tmp_path: P
     launcher.start_on_a_free_port(RecordingLauncher(), tmp_path, tmp_path / "lib", seed=9, schedule="affect-hours")  # type: ignore[arg-type]
 
     assert recorded == [(9, "affect-hours")]
+
+
+class RunningProcess:
+    """Stands in for a server process that never exits."""
+
+    # The exit status a finished process would have; never set.
+    returncode: Optional[int] = None
+
+    def poll(self) -> Optional[int]:
+        return None
+
+
+class FakeConnection:
+    """Stands in for an accepted connection; only its use as a context manager matters."""
+
+    def __enter__(self) -> "FakeConnection":
+        return self
+
+    def __exit__(self, *_exception: object) -> None:
+        pass
+
+
+def test_ready_retries_a_refused_connection_after_the_short_refused_pause(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts: list[int] = []
+
+    def refuse_twice(_address: tuple[str, int], timeout: float) -> FakeConnection:
+        attempts.append(1)
+        if len(attempts) <= 2:
+            raise ConnectionRefusedError("nothing listens yet")
+        return FakeConnection()
+
+    pauses: list[float] = []
+    monkeypatch.setattr(launcher.socket, "create_connection", refuse_twice)
+    monkeypatch.setattr(launcher, "_receives_login_prompt", lambda *_arguments: True)
+    monkeypatch.setattr(launcher.time, "sleep", pauses.append)
+
+    launcher.wait_for_login_prompt(launcher.LOOPBACK, 1, 10.0, RunningProcess(), tmp_path / "game.log")  # type: ignore[arg-type]
+
+    assert len(attempts) == 3
+    assert pauses == [launcher.REFUSED_RETRY_SECONDS, launcher.REFUSED_RETRY_SECONDS]
+    assert launcher.REFUSED_RETRY_SECONDS < launcher.READY_RETRY_SECONDS

@@ -124,10 +124,18 @@ change to the game's code runs a group only when the description names it as
 
 - While writing, run one test (reference, "Running"); run `make integration-unit` when the
   harness changed.
-- `make integration PYTHON=.venv/bin/python GROUP=<name>` three times through the Docker
-  launcher (on Linux, with `ROTS_IT_LAUNCHER=docker`) and three times through the local
-  launcher (on a Mac, inside a container), then once each with `ROTS_IT_SEED=1` and
-  `ROTS_IT_SEED=987654`. Every run must pass.
+- Repeat only your scenarios: each test you added or changed, and each test whose helper you
+  changed. Every scenario boots its own server, so repeating the rest of its group proves
+  nothing more. Select them by node id (reference, "Running"), then run them:
+  - three times through the Docker launcher (on Linux, with `ROTS_IT_LAUNCHER=docker`), and
+    three times through the local launcher (on a Mac, inside a container). Mob activity and
+    combat draw on the wall clock, and the two launchers time a server differently, so one
+    pass can be luck;
+  - once each with `ROTS_IT_SEED=1` and `ROTS_IT_SEED=987654`, which proves the seed is not
+    why they pass (step 4).
+- Then run each group you touched once, `make integration PYTHON=.venv/bin/python
+  GROUP=<name>`, so a change to a shared helper or the test world cannot pass unseen.
+- Every run must pass.
 - Wait out lock waits; `DockerLockHeld` is not a result (reference, "The shared Docker
   lock").
 - On a failure, read the kept run directory (reference, "Run directories"); remove only your
@@ -136,9 +144,9 @@ change to the game's code runs a group only when the description names it as
 ## 10. Prove the pin bites
 
 For each pin, break the behaviour it pins with an uncommitted edit in `src/`, rebuild, and run
-its group. The pin must fail on an assertion about that behaviour, not on a timeout or setup
-error. Then undo the edit with `git restore <files>`, rebuild and see it pass. Never commit
-the break.
+your scenarios. The pin must fail on an assertion about that behaviour, not on a timeout or
+setup error. Then undo the edit with `git restore <files>`, rebuild and see it pass. Never
+commit the break.
 
 Commit only after the bite checks and the required runs. The commit message's `Tests:` list
 (each run and its result) names only what ran; amend it if a later run changes the result.

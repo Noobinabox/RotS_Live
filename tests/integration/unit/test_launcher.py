@@ -1359,9 +1359,11 @@ def test_ready_retries_a_refused_connection_after_the_short_refused_pause(tmp_pa
     assert launcher.REFUSED_RETRY_SECONDS < launcher.READY_RETRY_SECONDS
 
 
-# Seconds since the epoch at which write_built_repo's files are dated, older to newer.
+# Seconds since the epoch at which write_built_repo dates the sources.
 OLD_TIME = 1_700_000_000
+# When write_built_repo's programs were built, after their sources.
 BUILD_TIME = OLD_TIME + 100
+# A source edited after the build.
 NEW_TIME = OLD_TIME + 200
 
 
@@ -1374,7 +1376,7 @@ def write_dated(path: Path, modified: float) -> None:
 
 def write_built_repo(repo_root: Path) -> None:
     """A repository whose three programs were built at BUILD_TIME from sources dated OLD_TIME."""
-    for source in ("src/comm.cpp", "src/structs.h", "src/harness/main.cpp", "src/tools/rotstool/main.cpp"):
+    for source in ("src/comm.cpp", "src/structs.h", "src/main.cpp", "src/harness/main.cpp", "src/tools/rotstool/main.cpp"):
         write_dated(repo_root / source, OLD_TIME)
     for program in ("bin/ageland", launcher.HARNESS_BINARY_RELATIVE, "bin/rotstool"):
         write_dated(repo_root / program, BUILD_TIME)
@@ -1444,3 +1446,16 @@ def test_require_program_still_reports_a_missing_program_first(tmp_path: Path) -
     (tmp_path / "bin/ageland").unlink()
     with pytest.raises(RuntimeError, match="^bin/ageland is missing; build it first: "):
         launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("program, stale", [("bin/ageland", True), (launcher.HARNESS_BINARY_RELATIVE, False), ("bin/rotstool", False)])
+def test_the_servers_main_file_counts_only_for_the_server(tmp_path: Path, program: str, stale: bool) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/main.cpp", NEW_TIME)
+    program_launcher = launcher.LocalProcessLauncher(repo_root=tmp_path)
+    if stale:
+        with pytest.raises(RuntimeError, match=rf"^{program} is older than src/main\.cpp"):
+            program_launcher.require_program(program)
+    else:
+        program_launcher.require_program(program)

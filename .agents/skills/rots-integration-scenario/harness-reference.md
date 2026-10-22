@@ -187,8 +187,8 @@ test.
 A program that is missing, or older than the newest `.cpp` or `.h` file it is built from, stops
 each test that runs it at setup with the build command (`ServerLauncher.require_program` and
 `newest_source` in `rots_harness/launcher.py`). `src/tests/` never counts, `src/harness/` counts
-only for `ageland_harness` and `src/tools/rotstool/` only for `rotstool`. `ROTS_IT_ALLOW_STALE=1`
-skips the age check.
+only for `ageland_harness`, `src/tools/rotstool/` only for `rotstool` and `src/main.cpp` only
+for `ageland`. `ROTS_IT_ALLOW_STALE=1` skips the age check.
 
 ## Characters
 

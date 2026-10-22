@@ -262,6 +262,22 @@ def test_prefixed_tables_name_every_constant_of_their_prefix(table: world_flags.
     assert expected - {name for name, _ in table.entries} == set()
 
 
+def test_the_item_type_table_names_every_item_type() -> None:
+    """The item types are the run of ITEM_ constants in structs.h from ITEM_LIGHT = 1 to the
+    first line that is not one (ITEM_ is shared with the extra and wear flags, so the
+    prefix test above cannot cover them)."""
+    lines = (SOURCE_DIR / "structs.h").read_text(encoding="latin-1").splitlines()
+    start = next(i for i, line in enumerate(lines) if re.search(r"\bITEM_LIGHT = 1;", line))
+    types = []
+    for line in lines[start:]:
+        match = re.match(r"\s*inline constexpr int (ITEM_\w+) = \d+;", line)
+        if not match:
+            break
+        types.append(match.group(1))
+    assert len(types) >= 26  # the run was found
+    assert set(types) - {name for name, _ in world_flags.ITEM_TYPES.entries} == set()
+
+
 def test_the_trigger_table_names_every_on_constant() -> None:
     constants = header_constants("script.h")
     assert {name for name in constants if name.startswith("ON_")} == {name for name, _ in world_flags.SCRIPT_TRIGGERS.entries}

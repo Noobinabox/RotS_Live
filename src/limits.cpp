@@ -610,13 +610,46 @@ void update_room_tracks();
 void update_bleed_tracks();
 extern int LOOT_DECAY_TIME;
 
+/* A decaying object drops what it holds where it was: into its container,
+ * the room of whoever carries it, or its room. A bag, a corpse and a keyring
+ * alike; a decaying corpse tells big brother first. */
+void spill_decayed_contents(obj_data* j)
+{
+    struct obj_data *jj, *next_thing2;
+
+    if (!j->holds_items())
+        return;
+    // If this is a corpse, let big brother know that it is decaying.
+    if (GET_ITEM_TYPE(j) == ITEM_CONTAINER && j->obj_flags.value[3] == 1) {
+        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
+        bb_instance.on_corpse_decayed(j);
+    }
+
+    for (jj = j->contains; jj; jj = next_thing2) {
+        next_thing2 = jj->next_content; /* Next in inventory */
+        obj_from_obj(jj);
+
+        if (j->in_obj) {
+            obj_to_obj(jj, j->in_obj);
+        } else if (j->carried_by) {
+            obj_to_room(jj, j->carried_by->in_room);
+        } else if (j->in_room != NOWHERE) {
+            obj_to_room(jj, j->in_room);
+        } else {
+            log("SYSERR: OBJ DECAYED IN NOWHERE (limits.c)!!!");
+        }
+
+        jj->obj_flags.timer = LOOT_DECAY_TIME;
+    }
+}
+
 void point_update(void)
 {
     int recalc_flag = 0, full_update, feeling, mytime, tmp;
     void update_char_objects(const struct char_data * ch); /* handler.c */
     void extract_obj(struct obj_data * obj); /* handler.c */
     struct char_data *i, *next_dude;
-    struct obj_data *j, *next_thing, *jj, *next_thing2;
+    struct obj_data *j, *next_thing;
     struct affected_type* hjp;
 
     /* characters */
@@ -798,30 +831,7 @@ void point_update(void)
                     act("$p decays into dust.", TRUE, world[j->in_room].people, j, 0, TO_CHAR);
                 }
 
-                if (GET_ITEM_TYPE(j) == ITEM_CONTAINER) {
-                    // If this is a corpse, let big brother know that it is decaying.
-                    if (j->obj_flags.value[3] == 1) {
-                        game_rules::big_brother& bb_instance = game_rules::big_brother::instance();
-                        bb_instance.on_corpse_decayed(j);
-                    }
-
-                    for (jj = j->contains; jj; jj = next_thing2) {
-                        next_thing2 = jj->next_content; /* Next in inventory */
-                        obj_from_obj(jj);
-
-                        if (j->in_obj) {
-                            obj_to_obj(jj, j->in_obj);
-                        } else if (j->carried_by) {
-                            obj_to_room(jj, j->carried_by->in_room);
-                        } else if (j->in_room != NOWHERE) {
-                            obj_to_room(jj, j->in_room);
-                        } else {
-                            log("SYSERR: OBJ DECAYED IN NOWHERE (limits.c)!!!");
-                        }
-
-                        jj->obj_flags.timer = LOOT_DECAY_TIME;
-                    }
-                }
+                spill_decayed_contents(j);
 
                 extract_obj(j);
                 continue;

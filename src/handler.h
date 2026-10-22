@@ -64,6 +64,8 @@ void obj_from_char(struct obj_data* object);
 
 void equip_char(struct char_data* ch, struct obj_data* obj, int pos);
 struct obj_data* unequip_char(struct char_data* ch, int pos);
+/* Encumbrance weight an item of this weight adds when worn in this slot. */
+int worn_encumb_weight(int weight, int slot);
 
 struct obj_data* get_obj_in_list(const char* name, struct obj_data* list);
 struct obj_data* get_obj_in_list_num(int num, struct obj_data* list);
@@ -105,11 +107,28 @@ struct char_data* get_char_room_vis(struct char_data* ch, const char* name,
 struct char_data* get_player_vis(struct char_data* ch, const char* name);
 struct char_data* get_char_vis(struct char_data* ch, const char* name,
     int dark_ok = 0);
+/* only_type: count and return only items of this type (-1: any type). */
 struct obj_data* get_obj_in_list_vis(const struct char_data* ch, const char* name,
-    struct obj_data* list, int num);
+    struct obj_data* list, int num, int only_type = -1);
 struct obj_data* get_obj_vis(const struct char_data* ch, const char* name);
 struct obj_data* get_object_in_equip_vis(const struct char_data* ch,
     const char* arg, struct obj_data* equipment[], int* j);
+
+/* Splits "N.name": returns N (1 with no number, 0 if N is not a number)
+ * and leaves just the keyword in *name. */
+int get_number(char** name);
+/* A container named by arg for put, get, look and examine: generic_find
+ * with bits and FIND_OBJ_BELT_KEYRING. */
+int find_container(struct char_data* ch, const char* arg, int bits,
+    struct char_data** tar_ch, struct obj_data** tar_obj);
+/* The keyring on this belt slot if it answers to name by any keyword
+ * (nullptr name: any keyring), else nullptr. */
+struct obj_data* belt_keyring(struct char_data* ch, int slot, const char* name);
+/* A keyring is always open and has no lock: for a keyring, tells ch so and
+ * returns true; false for anything else. */
+enum class keyring_action { open_close,
+    lock };
+bool refuse_keyring(struct char_data* ch, const struct obj_data* obj, keyring_action action);
 
 void add_follower(struct char_data* ch, struct char_data* leader, int mode);
 void stop_follower(struct char_data* ch, int mode);
@@ -140,6 +159,12 @@ inline constexpr int FIND_OBJ_ROOM = 8;
 inline constexpr int FIND_OBJ_WORLD = 16;
 
 inline constexpr int FIND_OBJ_EQUIP = 32;
+/* Belt keyrings come last (put, get, look in, examine): the worn-gear step
+ * passes over keyrings on the belt slots, and after the room they are
+ * searched by any keyword, "N.name" numbering on after the longer of the
+ * inventory and room match lists. A belt keyring found there returns
+ * FIND_OBJ_BELT_KEYRING (its weight is already carried, as for FIND_OBJ_INV). */
+inline constexpr int FIND_OBJ_BELT_KEYRING = 64;
 
 /* prototypes from crash save system */
 

@@ -607,7 +607,7 @@ void remove_random_item(const struct char_data* ch, const struct obj_data* corps
 
             if (i % 25 == chance) {
                 if (!IS_SET(obj->obj_flags.extra_flags, ITEM_NORENT) && GET_ITEM_TYPE(obj) != ITEM_KEY && !IS_ARTIFACT(obj)) {
-                    if (GET_ITEM_TYPE(obj) == ITEM_CONTAINER) {
+                    if (obj->holds_items()) {
                         i--;
                     } else {
                         extract_obj(obj);
@@ -661,6 +661,9 @@ void parse_container(obj_data* corpse, const obj_data* container)
             move_from_container_to_corpse(corpse, item);
         } else if (GET_ITEM_TYPE(item) == ITEM_KEY) {
             // Move keys into base inventory.
+            move_from_container_to_corpse(corpse, item);
+        } else if (item->is_keyring()) {
+            // A keyring is moved whole; its keys stay on it.
             move_from_container_to_corpse(corpse, item);
         } else if (GET_ITEM_TYPE(item) == ITEM_CONTAINER) {
             // Recursively parse containers so people can't hide anything.

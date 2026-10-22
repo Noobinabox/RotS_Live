@@ -168,3 +168,92 @@ TEST(BigBrotherAfkProtection, AfkCommandGrantsProtectionOnceTheDelayHasPassed)
     EXPECT_TRUE(context.was_told(PROTECTION_GRANTED)) << context.output();
     EXPECT_FALSE(context.was_told(PROTECTION_REFUSED)) << context.output();
 }
+
+namespace {
+// A human player's corpse protected by Big Brother after an orc player killed him. The
+// corpse holds a keyring, a bag, bread, a key and a last item that is never looted (so
+// no loot clears the protection). Big Brother forgets the corpse and both characters on
+// destruction.
+class ProtectedCorpseContext {
+public:
+    ProtectedCorpseContext()
+    {
+        big_brother::create(weather_info, &world);
+
+        dead.abs_number = 4201;
+        dead.player.name = dead_name;
+        dead.player.race = RACE_HUMAN;
+        enemy.abs_number = 4202;
+        enemy.player.name = enemy_name;
+        enemy.player.race = RACE_ORC;
+
+        set_item(keyring, ITEM_KEYRING, keyring_name, &bag);
+        set_item(bag, ITEM_CONTAINER, bag_name, &bread);
+        set_item(bread, ITEM_FOOD, bread_name, &key);
+        set_item(key, ITEM_KEY, key_name, &last);
+        set_item(last, ITEM_TRASH, last_name, nullptr);
+        corpse.contains = &keyring;
+
+        big_brother::instance().on_character_died(&dead, &enemy, &corpse);
+    }
+
+    ~ProtectedCorpseContext()
+    {
+        big_brother& rules = big_brother::instance();
+        rules.on_corpse_decayed(&corpse);
+        rules.on_character_disconnected(&dead);
+        rules.on_character_disconnected(&enemy);
+    }
+
+    bool enemy_loots(obj_data& item)
+    {
+        return big_brother::instance().on_loot_item(&enemy, &corpse, &item);
+    }
+
+    char_data dead {};
+    char_data enemy {};
+    obj_data corpse {};
+    obj_data keyring {};
+    obj_data bag {};
+    obj_data bread {};
+    obj_data key {};
+    obj_data last {};
+
+private:
+    static void set_item(obj_data& item, int type, char* name, obj_data* next)
+    {
+        item.obj_flags.type_flag = type;
+        item.name = name;
+        item.short_description = name;
+        item.next_content = next;
+    }
+
+    char dead_name[16] = "Fallen";
+    char enemy_name[16] = "Looter";
+    char keyring_name[16] = "keyring iron";
+    char bag_name[16] = "bag leather";
+    char bread_name[16] = "bread loaf";
+    char key_name[16] = "key brass";
+    char last_name[16] = "trash bone";
+};
+} // namespace
+
+TEST(BigBrotherCorpseLoot, EnemyMayLootKeyringAsOneItem)
+{
+    ProtectedCorpseContext context;
+
+    EXPECT_TRUE(context.enemy_loots(context.keyring));
+    EXPECT_TRUE(context.enemy_loots(context.bread));
+    // The keyring and the bread used the two items an enemy may take.
+    EXPECT_FALSE(context.enemy_loots(context.key));
+}
+
+TEST(BigBrotherCorpseLoot, EnemyMayNotLootBag)
+{
+    ProtectedCorpseContext context;
+
+    EXPECT_FALSE(context.enemy_loots(context.bag));
+    // The refused bag did not use up an item.
+    EXPECT_TRUE(context.enemy_loots(context.bread));
+    EXPECT_TRUE(context.enemy_loots(context.key));
+}

@@ -630,11 +630,7 @@ void recalc_worn_weight(char_data* character)
             character->points.encumb += item->obj_flags.value[2] * encumb_value;
             character->specials2.leg_encumb += item->obj_flags.value[2] * leg_encumb_value;
 
-            if (encumb_value > 0) {
-                character->specials.encumb_weight += item_weight * encumb_value;
-            } else {
-                character->specials.encumb_weight += item_weight / 2;
-            }
+            character->specials.encumb_weight += worn_encumb_weight(item_weight, item_slot);
 
             character->specials.worn_weight += item_weight;
         }
@@ -1002,6 +998,7 @@ int Crash_obj2store(const obj_data* obj, const char_data* ch,
 }
 
 int Crash_save(const struct obj_data* obj, const struct char_data* ch, int pos, FILE* fp);
+void Crash_restore_weight(const struct obj_data* obj);
 
 void Crash_follower_save(const struct char_data* ch, FILE* fp)
 {
@@ -1043,13 +1040,15 @@ void Crash_follower_save(const struct char_data* ch, FILE* fp)
             perror("Writing crash data Crash_follower_save");
             return;
         }
-        for (x = 0; x < MAX_WEAR; x++)
-            if (k->follower->equipment[x])
-                if (!Crash_is_unrentable(k->follower->equipment[x]))
-                    if (!Crash_save(k->follower->equipment[x], k->follower, x, fp)) {
-                        /* the caller owns fp and closes it; closing it here too was a double fclose */
-                        return;
-                    }
+        for (x = 0; x < MAX_WEAR; x++) {
+            if (k->follower->equipment[x] && !Crash_is_unrentable(k->follower->equipment[x])) {
+                if (!Crash_save(k->follower->equipment[x], k->follower, x, fp)) {
+                    /* the caller owns fp and closes it; closing it here too was a double fclose */
+                    return;
+                }
+                Crash_restore_weight(k->follower->equipment[x]); /* as for the player's own gear */
+            }
+        }
         if (fwrite(&dummy_object, sizeof(struct obj_file_elem), 1, fp) < 1) {
             perror("Writing dummy_object Crash_follower_save");
             return;

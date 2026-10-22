@@ -83,6 +83,26 @@ disturb each other's tests. With the `docker` launcher the second run waits for 
 with the `local` launcher both run at once. Both runs write `build/integration/results.xml`, so
 it holds the results of whichever finished last.
 
+### The groups your changes reach
+
+```bash
+make integration-changed PYTHON=.venv/bin/python                    # changes since origin/release-frodo-next
+make integration-changed PYTHON=.venv/bin/python BASE=origin/master
+```
+
+`make integration-changed` (`rots_harness/changed_groups.py`) lists the files changed since the
+merge base with `BASE` (default `origin/release-frodo-next`), uncommitted changes to tracked
+files and untracked files git does not ignore. It chooses groups by the pull request rules under
+Continuous integration below, without a description, prints why, and runs `make integration`
+with the result. A changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`)
+also runs every group, since constants and layouts in headers reach any scenario. Changed game
+code (`.cpp`) is listed but selects no group: name its groups with `GROUP=` or run every
+scenario. To see the choice without running it:
+
+```bash
+PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only
+```
+
 ## Continuous integration
 
 The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull requests into

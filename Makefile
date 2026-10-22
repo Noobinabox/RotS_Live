@@ -22,9 +22,12 @@ GROUP ?=
 ZONE ?=
 # make world-catalogue prints only this table: zones, rooms, mobs, objects or scripts.
 CATEGORY ?=
+# The branch make integration-changed measures changes from.
+BASE ?= origin/release-frodo-next
 
 .DEFAULT_GOAL := help
 .PHONY: help configure setup build test run smoke-account integration-unit integration world-catalogue format clean
+.PHONY: integration-changed
 
 help:
 	@printf "Available targets:\n"
@@ -38,6 +41,8 @@ help:
 	@printf "                         JOBS=<n> for n parallel workers)\n"
 	@printf "  make world-catalogue   Print the integration test world's zones, rooms, mobs, objects\n"
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
+	@printf "  make integration-changed  Run the scenario groups this checkout's changes reach\n"
+	@printf "                         (BASE=<branch>, default %s)\n" "$(BASE)"
 	@printf "  make format            clang-format the WHOLE tree -- see the warning above the target;\n"
 	@printf "                         format only your changed files instead\n"
 	@printf "  make run               Build and start the server in the foreground\n"
@@ -78,6 +83,10 @@ integration:
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:
 	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.world_catalogue$(if $(ZONE), --zone $(ZONE))$(if $(CATEGORY), --category $(CATEGORY))
+
+# Prints why each group was chosen, then runs make integration with them.
+integration-changed:
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.changed_groups --base "$(BASE)" --python "$(PYTHON)" --make "$(MAKE)"
 
 # DO NOT RUN THIS on a change you are about to commit. It is clang-format over the WHOLE
 # tree: ~1200 lines nobody touched get rewritten (db.cpp and act_wiz.cpp worst), and the

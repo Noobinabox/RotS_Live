@@ -13,7 +13,7 @@ import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, BinaryIO, Iterator, Optional
+from typing import Any, BinaryIO, Callable, Iterator, Optional
 
 LOOPBACK = "127.0.0.1"
 INTEGRATION_TMP_RELATIVE = "build/integration/tmp"
@@ -41,6 +41,15 @@ INPUT_CLOSED_LOG_LINE = "Harness: the control channel's input has closed; no mor
 INPUT_CLOSED_WAIT_SECONDS = 5.0
 # The pause between two reads of game.log while a stop waits for INPUT_CLOSED_LOG_LINE.
 INPUT_CLOSED_POLL_SECONDS = 0.05
+# What the server logs before it exits when another process holds its port: init_socket in
+# src/comm.cpp reports the failed bind with perror.
+PORT_IN_USE_LOG_TEXT = "bind: Address already in use"
+# How many ports start_on_a_free_port tries before it gives up on a port taken each time.
+PORT_ATTEMPTS = 3
+
+
+class PortInUse(RuntimeError):
+    """The local server exited before it was ready because another process held the port it was given."""
 
 
 @dataclass
@@ -341,7 +350,8 @@ class LocalProcessLauncher(ServerLauncher):
     def start(self, run_dir: Path, lib_dir: Path, port: int, seed: int, schedule: Optional[str] = None) -> ServerHandle:
         """See ServerLauncher.start; also fails with the build command when the binary is missing.
 
-        Raises RuntimeError naming the i386 runtime when this host cannot execute the binary.
+        Raises PortInUse when the server exits because another process holds port, and
+        RuntimeError naming the i386 runtime when this host cannot execute the binary.
         """
         program_relative = HARNESS_BINARY_RELATIVE if schedule is not None else self._binary_relative
         self.require_program(program_relative)
@@ -355,6 +365,14 @@ class LocalProcessLauncher(ServerLauncher):
             handle = ServerHandle(LOOPBACK, port, log_path, process, has_control_channel=schedule is not None)
             wait_for_login_prompt(LOOPBACK, port, self._startup_timeout, process, log_path)
             return handle
+        except RuntimeError as failure:
+            # The port was free when allocate_free_port probed it, but every local server shares
+            # the host's ports, so another process can take it before this server binds it.
+            port_taken = process.poll() is not None and PORT_IN_USE_LOG_TEXT in read_log_tail(log_path)
+            terminate_process(process)
+            if port_taken:
+                raise PortInUse(f"port {port} was taken before the server could listen on it: {failure}") from failure
+            raise
         except BaseException:
             # BaseException so a Ctrl-C during the wait also stops the server: the fixture never
             # received the handle, so nothing else would. No close_control_channel first: a server
@@ -575,3 +593,23 @@ class DockerComposeLauncher(ServerLauncher):
             self._remove_container(container_name)
             raise
         return ToolResult(completed.returncode, completed.stdout.decode("latin-1", errors="replace"))
+
+
+def start_on_a_free_port(
+    server_launcher: ServerLauncher, run_dir: Path, lib_dir: Path, seed: int, schedule: Optional[str] = None,
+    attempts: int = PORT_ATTEMPTS, allocate_port: Callable[[], int] = allocate_free_port,
+) -> ServerHandle:
+    """Starts the server through server_launcher, as ServerLauncher.start does, on a port from allocate_port.
+
+    When start raises PortInUse, starts again on a newly allocated port, up to attempts starts in
+    all, and raises the last PortInUse when every one found its port taken. Any other failure
+    propagates from the first start without a retry.
+    """
+    attempt = 1
+    while True:
+        try:
+            return server_launcher.start(run_dir, lib_dir, allocate_port(), seed, schedule=schedule)
+        except PortInUse:
+            if attempt >= attempts:
+                raise
+            attempt += 1

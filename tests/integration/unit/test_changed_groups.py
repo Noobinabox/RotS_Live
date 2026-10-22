@@ -113,6 +113,16 @@ def test_a_changed_game_header_runs_every_group() -> None:
     assert selection.reasons == ["every group: header src/structs.h changed, and constants and layouts in headers reach any scenario"]
 
 
+def test_a_changed_game_header_runs_every_group_only_locally() -> None:
+    assert ci_groups.select_groups("pull_request", "", ["src/structs.h"], read_scenario, GROUPS).groups == ["boot"]
+    assert select("src/structs.h").groups is None
+
+
+@pytest.mark.parametrize("path", ["src/CMakeLists.txt", "lib/text/news", "lib/misc/socials"])
+def test_ci_and_local_runs_agree_on_the_build_file_and_copied_lib_files(path: str) -> None:
+    assert select(path) == ci_groups.select_groups("pull_request", "", [path], read_scenario, GROUPS)
+
+
 def test_a_changed_unit_test_header_selects_no_group() -> None:
     assert select("src/tests/game_tick_schedule_contract.h").groups == ["boot"]
 

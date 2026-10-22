@@ -2,12 +2,15 @@
 
 `boot` always runs. A description token `@integration-test-<group>` adds that group, and
 `@integration-test-all` runs every group. A changed scenario file adds the groups it marks, and a
-changed group file (tests/integration/groups/<group>.txt) adds its group. A change to the harness
-itself, or a push, runs every group. Only a run of every group is split
-across parallel shards; a run of chosen groups is one job.
+changed group file (tests/integration/groups/<group>.txt) adds its group. These run every group:
+a push; a change to the harness itself; a change to `src/CMakeLists.txt`, whose compile settings
+reach every program; and a change to the `lib/` files the harness copies into every test's lib
+(`lib/text/` and the `lib/misc` files in libbuilder.TRACKED_MISC_FILES). Only a run of every group
+is split across parallel shards; a run of chosen groups is one job.
 
 Run from tests/integration as `python3 -m rots_harness.ci_groups`; the description arrives in
-the PR_BODY environment variable so it is never part of a shell command.
+the PR_BODY environment variable so it is never part of a shell command. --changed-files names a
+file of NUL-separated paths, as `git diff --name-only -z --no-renames` prints them.
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Optional
 
 from rots_harness import groups as group_files
+from rots_harness import libbuilder
 
 ALWAYS_RUN_GROUP = "boot"
 ALL_GROUPS_TOKEN = "all"
@@ -50,6 +54,14 @@ HARNESS_FILES = frozenset({
     ".github/workflows/integration.yml",
     ".github/actions/dev-image/action.yml",
 })
+# The build file whose compile settings reach every program the scenarios run.
+BUILD_FILE = "src/CMakeLists.txt"
+# The lib folder the lib builder copies whole into every test's lib.
+COPIED_LIB_TEXT_DIRECTORY = "lib/text/"
+# The lib/misc files the lib builder copies into every test's lib.
+COPIED_LIB_MISC_FILES = frozenset(f"lib/misc/{name}" for name in libbuilder.TRACKED_MISC_FILES)
+# Separates the paths in a --changed-files file, as git's -z option writes them.
+CHANGED_PATH_SEPARATOR = "\0"
 
 
 class UnknownGroups(ValueError):
@@ -112,6 +124,22 @@ def is_harness_path(path: str) -> bool:
     return path.startswith(SCENARIO_DIRECTORY) and not Path(path).name.startswith("test_")
 
 
+def every_group_reason(path: str) -> Optional[str]:
+    """Why a change to this repository path runs every group, or None when it does not."""
+    if is_harness_path(path):
+        return f"every group: harness file {path} changed"
+    if path == BUILD_FILE:
+        return f"every group: {path} changed, and its compile settings reach every program"
+    if path.startswith(COPIED_LIB_TEXT_DIRECTORY) or path in COPIED_LIB_MISC_FILES:
+        return f"every group: {path} changed, and the harness copies it into every test's lib"
+    return None
+
+
+def read_changed_paths(listing: str) -> list[str]:
+    """The paths in a NUL-separated listing, each kept whole; an empty listing holds none."""
+    return [path for path in listing.split(CHANGED_PATH_SEPARATOR) if path]
+
+
 def select_groups(
     event: str, body: str, changed_paths: Iterable[str], read_scenario: Callable[[str], Optional[str]], groups: list[str],
 ) -> Selection:
@@ -133,9 +161,10 @@ def select_groups(
     if ALL_GROUPS_TOKEN in tokens:
         return Selection(None, [f"every group: the description has @integration-test-{ALL_GROUPS_TOKEN}"])
     changed = list(changed_paths)
-    harness_changes = [path for path in changed if is_harness_path(path)]
-    if harness_changes:
-        return Selection(None, [f"every group: harness file {harness_changes[0]} changed"])
+    for path in changed:
+        reason = every_group_reason(path)
+        if reason is not None:
+            return Selection(None, [reason])
     selected = [ALWAYS_RUN_GROUP]
     reasons = [f"{ALWAYS_RUN_GROUP}: always runs"]
     for name in tokens:
@@ -178,7 +207,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--event", required=True, help="the GitHub event name: pull_request or push")
-    parser.add_argument("--changed-files", type=Path, help="a file listing the changed paths, one per line")
+    parser.add_argument("--changed-files", type=Path, help="a file of NUL-separated changed paths, as git diff --name-only -z prints them")
     parser.add_argument("--repo-root", type=Path, default=Path("../.."), help="the repository root")
     parser.add_argument("--output", type=Path, required=True, help="the file that receives group=<expression>")
     parser.add_argument("--summary", type=Path, help="the file that receives the markdown summary")
@@ -194,7 +223,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 2
     changed = []
     if arguments.changed_files is not None:
-        changed = [line.strip() for line in arguments.changed_files.read_text(encoding="utf-8").splitlines() if line.strip()]
+        # surrogateescape keeps a file name that is not valid UTF-8 intact, as changed_groups does.
+        changed = read_changed_paths(arguments.changed_files.read_text(encoding="utf-8", errors="surrogateescape"))
 
     def read_scenario(path: str) -> Optional[str]:
         scenario_path = repo_root / path

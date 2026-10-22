@@ -1,13 +1,13 @@
-"""Runs the scenario groups this checkout's changes reach, chosen by CI's rules plus local rules for files every scenario uses.
+"""Runs the scenario groups this checkout's changes reach, chosen by CI's rules plus a local rule for game headers.
 
 The changed paths are those committed since the merge base with --base, plus uncommitted changes
 to tracked files and untracked files git does not ignore; a rename counts as both its old and its
-new path. `boot` always runs; changed scenario and group files add their groups and a harness
-change runs every group, as in ci_groups (without a pull request description). These also run
-every group: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`),
-`src/CMakeLists.txt`, and the `lib/` files the harness copies into every test's lib. Changed game
-code (`.cpp`) selects no group; it is listed so the reader can name groups with GROUP= or run
-every scenario.
+new path. ci_groups' rules apply first (without a pull request description): `boot` always runs,
+changed scenario and group files add their groups, and a change to the harness, `src/CMakeLists.txt`
+or a `lib/` file the harness copies into every test's lib runs every group. The one local-only
+rule: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also runs every
+group. CI leaves it out because most pull requests touch a header. Changed game code (`.cpp`)
+selects no group; it is listed so the reader can name groups with GROUP= or run every scenario.
 
 Run from the repository root as `make integration-changed`; it prints the choice and then runs
 `make integration` with it.
@@ -23,7 +23,6 @@ from typing import Callable, Iterable, Optional
 
 from rots_harness import ci_groups
 from rots_harness import groups as group_files
-from rots_harness import libbuilder
 
 # The branch changes are measured from unless --base names another.
 DEFAULT_BASE = "origin/release-frodo-next"
@@ -31,12 +30,6 @@ DEFAULT_BASE = "origin/release-frodo-next"
 GAME_SOURCE_DIRECTORY = "src/"
 # Folders under src/ whose files are not game code: CI's rules cover the harness, and unit tests reach no scenario.
 NON_GAME_SOURCE_PREFIXES = ("src/harness/", "src/tests/")
-# The build file whose compile settings reach every program the scenarios run.
-BUILD_FILE = "src/CMakeLists.txt"
-# The lib folder the lib builder copies whole into every test's lib.
-COPIED_LIB_TEXT_DIRECTORY = "lib/text/"
-# The lib/misc files the lib builder copies into every test's lib.
-COPIED_LIB_MISC_FILES = frozenset(f"lib/misc/{name}" for name in libbuilder.TRACKED_MISC_FILES)
 # Why a changed game source file is listed without adding a group.
 GAME_CODE_NOTE = "a game-code change selects no group; name groups with GROUP= or run every scenario with make integration"
 
@@ -78,14 +71,10 @@ def _is_game_source(path: str, suffix: str) -> bool:
     return path.startswith(GAME_SOURCE_DIRECTORY) and path.endswith(suffix) and not path.startswith(NON_GAME_SOURCE_PREFIXES)
 
 
-def _every_group_reason(path: str) -> Optional[str]:
-    """Why a change to path runs every group under the local rules, or None when it does not."""
+def _local_every_group_reason(path: str) -> Optional[str]:
+    """Why a change to path runs every group under the local-only rule, or None when it does not."""
     if _is_game_source(path, ".h"):
         return f"every group: header {path} changed, and constants and layouts in headers reach any scenario"
-    if path == BUILD_FILE:
-        return f"every group: {path} changed, and its compile settings reach every program"
-    if path.startswith(COPIED_LIB_TEXT_DIRECTORY) or path in COPIED_LIB_MISC_FILES:
-        return f"every group: {path} changed, and the harness copies it into every test's lib"
     return None
 
 
@@ -100,7 +89,7 @@ def select_local_groups(changed: Iterable[str], read_scenario: Callable[[str], O
     if selection.groups is None:
         return selection
     for path in changed_list:
-        reason = _every_group_reason(path)
+        reason = _local_every_group_reason(path)
         if reason is not None:
             return ci_groups.Selection(None, [reason])
     game_code = [path for path in changed_list if _is_game_source(path, ".cpp")]

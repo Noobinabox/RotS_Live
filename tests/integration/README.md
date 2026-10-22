@@ -106,13 +106,11 @@ line counts, not an exported one), uncommitted changes to tracked files and untr
 does not ignore. A renamed file counts as both its old and its new path. It chooses groups by
 the pull request rules under Continuous integration below, without a description, prints why
 (with the commit `BASE` resolved to, so an out-of-date `origin/...` shows), and runs
-`make integration` with the result; an inherited `GROUP` never narrows it. These also run every
-group: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`), since
-constants and layouts in headers reach any scenario; `src/CMakeLists.txt`, whose compile
-settings reach every program; and the `lib/` files the harness copies into every test's lib
-(`lib/text/` and the tracked `lib/misc` files in `rots_harness/libbuilder.py`). Changed game
-code (`.cpp`) is listed but selects no group: name its groups with `GROUP=` or run every
-scenario. To see the choice without running it:
+`make integration` with the result; an inherited `GROUP` never narrows it. One rule is local
+only: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also runs
+every group, since constants and layouts in headers reach any scenario. CI leaves it out because
+most pull requests touch a header. Changed game code (`.cpp`) is listed but selects no group:
+name its groups with `GROUP=` or run every scenario. To see the choice without running it:
 
 ```bash
 PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only
@@ -133,9 +131,13 @@ runs:
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
   `requirements.txt`, the test world (other than its notes), a scenario file other than a
   `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile`, the image action
-  (`.github/actions/dev-image/`) or the workflow itself.
+  (`.github/actions/dev-image/`) or the workflow itself;
+- every group when it changes `src/CMakeLists.txt`, whose compile settings reach every program,
+  or a `lib/` file the harness copies into every test's lib (`lib/text/` and the tracked
+  `lib/misc` files in `rots_harness/libbuilder.py`).
 
-A change to the game's own code adds no group by itself, so name the groups whose behaviour it
+A renamed file counts as both its old and its new path, so moving a file out of one of these
+folders still counts. A change to the game's own code, headers included, adds no group by itself, so name the groups whose behaviour it
 touches. A name no group file registers fails the job and lists the registered groups.
 Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
 and the "Choose the integration groups" job's summary lists the groups that run and why. A run of

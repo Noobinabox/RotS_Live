@@ -5,7 +5,7 @@ from typing import Optional
 
 import pytest
 
-from rots_harness import ci_groups, groups
+from rots_harness import ci_groups, groups, libbuilder
 
 # Each group file's description, by group name.
 GROUP_DESCRIPTIONS = {
@@ -152,10 +152,28 @@ def test_a_harness_change_runs_every_group(path: str) -> None:
         "tests/integration/world/notes/zone-11.md",
         "src/handler.cpp",
         ".github/workflows/ci.yml",
+        "lib/misc/game_boot_options.json",
+        "lib/plrobjs/a/alice",
+        "lib/world/wld/11.wld",
+        # A game header runs every group only locally (changed_groups); in CI it selects boot.
+        "src/structs.h",
     ],
 )
 def test_other_changes_do_not_run_every_group(path: str) -> None:
     assert select(changed=(path,)).groups == ["boot"]
+
+
+def test_a_changed_build_file_runs_every_group() -> None:
+    selection = select(changed=("src/spells.cpp", "src/CMakeLists.txt"))
+    assert selection.groups is None
+    assert selection.reasons == ["every group: src/CMakeLists.txt changed, and its compile settings reach every program"]
+
+
+@pytest.mark.parametrize("path", ["lib/text/news", "lib/text/help", "lib/text/help/spells", *(f"lib/misc/{name}" for name in libbuilder.TRACKED_MISC_FILES)])
+def test_a_changed_lib_file_the_harness_copies_runs_every_group(path: str) -> None:
+    selection = select(changed=("src/spells.cpp", path))
+    assert selection.groups is None
+    assert selection.reasons == [f"every group: {path} changed, and the harness copies it into every test's lib"]
 
 
 def test_a_push_runs_every_group_whatever_the_description() -> None:
@@ -180,7 +198,7 @@ def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, 
     write_repo(repo_root)
     (repo_root / "tests/integration/scenarios/test_summon.py").write_text(SCENARIO_SOURCES["tests/integration/scenarios/test_summon.py"], encoding="utf-8")
     changed_files = tmp_path / "changed.txt"
-    changed_files.write_text("src/spells.cpp\ntests/integration/scenarios/test_summon.py\n\n", encoding="utf-8")
+    changed_files.write_text("src/spells.cpp\0tests/integration/scenarios/test_summon.py\0", encoding="utf-8")
     output = tmp_path / "output"
     output.write_text("earlier=line\n", encoding="utf-8")
     summary = tmp_path / "summary.md"
@@ -193,6 +211,48 @@ def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, 
     assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\nshards=[1]\n"
     assert summary.read_text(encoding="utf-8").startswith("### Integration groups: `boot`, `poison`, `summon`\n")
     assert "parallel shards" not in summary.read_text(encoding="utf-8")
+
+
+def run_main_on_changed_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, listing: bytes) -> str:
+    """Runs main for a pull request with no description on a changed-files file holding listing; returns the output file's text."""
+    changed_files = tmp_path / "changed"
+    changed_files.write_bytes(listing)
+    output = tmp_path / "output"
+    monkeypatch.setenv("PR_BODY", "")
+    status = ci_groups.main([
+        "--event", "pull_request", "--changed-files", str(changed_files), "--repo-root", str(tmp_path / "repo"),
+        "--output", str(output), "--full-suite-shards", "8",
+    ])
+    assert status == 0
+    return output.read_text(encoding="utf-8")
+
+
+def test_main_reads_nul_separated_paths_whole(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # git diff -z lists a path with a space or a non-ASCII letter unquoted; neither may split or miss its rule.
+    scenario = "tests/integration/scenarios/test_sümmon spells.py"
+    write_repo(tmp_path / "repo")
+    (tmp_path / "repo" / scenario).write_text(SCENARIO_SOURCES["tests/integration/scenarios/test_summon.py"], encoding="utf-8")
+    listing = f"docs/release notes.md\0{scenario}\0".encode("utf-8")
+    assert run_main_on_changed_files(tmp_path, monkeypatch, listing) == "group=boot or summon\nshards=[1]\n"
+
+
+def test_main_runs_every_group_for_a_path_renamed_out_of_the_harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # With --no-renames git lists a move from src/harness/main.cpp to docs/main.cpp as both paths.
+    write_repo(tmp_path / "repo")
+    output = run_main_on_changed_files(tmp_path, monkeypatch, b"docs/main.cpp\0src/harness/main.cpp\0")
+    assert output == "group=\nshards=[1, 2, 3, 4, 5, 6, 7, 8]\n"
+
+
+def test_main_reads_an_empty_changed_files_file_as_no_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_repo(tmp_path / "repo")
+    assert run_main_on_changed_files(tmp_path, monkeypatch, b"") == "group=boot\nshards=[1]\n"
+
+
+def test_main_reads_newlines_as_part_of_a_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The file is NUL-separated only, so a newline-separated list is one path that matches no rule.
+    write_repo(tmp_path / "repo")
+    listing = b"src/spells.cpp\nsrc/harness/main.cpp\n"
+    assert run_main_on_changed_files(tmp_path, monkeypatch, listing) == "group=boot\nshards=[1]\n"
 
 
 def test_main_shards_a_run_of_every_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

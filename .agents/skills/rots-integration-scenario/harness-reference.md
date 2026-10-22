@@ -33,6 +33,8 @@ tests/integration/requirements.txt`.
 | Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
 | Every test in a file | `.venv/bin/python -m pytest -q -m scenario tests/integration/scenarios/test_bank.py` |
 | Whether CI's group filter selects your tests | `.venv/bin/python -m pytest --collect-only -q -m "scenario and (bank)" <node ids>` |
+| The groups your changes reach: CI's rules on changes since `BASE` (default `origin/release-frodo-next`), uncommitted and untracked files, plus every group for a changed `src/**/*.h` outside `src/harness/` and `src/tests/` (`rots_harness/changed_groups.py`) | `make integration-changed PYTHON=.venv/bin/python` |
+| Only print that choice and its reasons | `PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
 (<GROUP>)"`, adding `-n <JOBS>` when `JOBS` is above 1, and writes each test's result and time to

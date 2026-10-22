@@ -30,6 +30,7 @@ from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLi
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
 from rots_harness.sharding import Shard, in_shard, parse_shard
+from rots_harness.telnet_profile import SILENT_CLIENT, TelnetClientProfile
 from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
 
 # tests/integration: this file, pytest.ini, the group files and the test world.
@@ -236,7 +237,7 @@ def hour_timeout_seconds() -> float:
 
 @dataclass
 class HarnessServer:
-    """One test's running server, its lib and run directory, and the sessions logged in to it."""
+    """One test's running server, its lib and run directory, and the sessions opened to it."""
 
     # The started server; the server fixture stops it after the test.
     handle: ServerHandle
@@ -248,7 +249,8 @@ class HarnessServer:
     character_set: CharacterSet
     # Reads the server's log and exit state for crash evidence.
     monitor: CrashMonitor
-    # Every session login() opened, quit by the server fixture after the test.
+    # Every session connect() or login() opened; the server fixture quits those that logged in
+    # and closes the rest after the test.
     sessions: list[GameSession] = field(default_factory=list)
     # Set by the crash checks; keeps the run directory.
     crash_detected: bool = False
@@ -258,16 +260,26 @@ class HarnessServer:
     # Drives game time on a server started with @pytest.mark.schedule(...); None otherwise.
     time_control: Optional[TimeControl] = None
 
-    def login(self, name: str) -> GameSession:
-        """Logs the named character in and returns its session; the fixture quits it after the test."""
+    def connect(self, name: str, client: TelnetClientProfile = SILENT_CLIENT) -> GameSession:
+        """Opens a session for the named declared character, answering negotiation as client, without logging in.
+
+        The session is registered at once, so the fixture closes it after the test if it never logs in.
+        """
         character = self.character_set.character(name)
-        game_session = GameSession(self.handle, character.name, self.character_set.email, self.character_set.password, self.run_dir)
+        game_session = GameSession(self.handle, character.name, self.character_set.email, self.character_set.password, self.run_dir, client=client)
+        self.sessions.append(game_session)
+        return game_session
+
+    def login(self, name: str, client: TelnetClientProfile = SILENT_CLIENT) -> GameSession:
+        """Logs the named character in and returns its session; the fixture quits it after the test."""
+        game_session = self.connect(name, client)
         try:
             game_session.login()
         except BaseException:
+            # Closed here so the failure does not leave a socket open; it stays registered, and
+            # teardown skips closed sessions, so it is neither quit nor closed twice.
             game_session.close()
             raise
-        self.sessions.append(game_session)
         return game_session
 
     def advance_hours(self, hours: int) -> None:

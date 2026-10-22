@@ -117,6 +117,15 @@ jobs:
           /tmp/harness-venv/bin/pip install --quiet --requirement tests/integration/requirements.txt &&
           make integration PYTHON=/tmp/harness-venv/bin/python'
 
+      - name: Upload the test results
+        # make integration writes each test's result and time here; uploaded pass or fail.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results-shard-${{ matrix.shard }}
+          path: build/integration/results.xml
+          if-no-files-found: ignore
+
       - name: Upload the kept run directories
         if: failure()
         uses: actions/upload-artifact@v4

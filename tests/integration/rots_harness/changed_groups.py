@@ -149,6 +149,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return scenario_path.read_text(encoding="utf-8") if scenario_path.is_file() else None
 
     selection = select_local_groups(changed, read_scenario, groups)
+    # The reasons quote changed paths, which may hold bytes that are not UTF-8.
+    ci_groups.escape_unencodable_output(sys.stdout)
     # A short commit id shows when a remote-tracking base is out of date.
     print(f"Changes since {arguments.base} ({base_commit[:12]}), uncommitted changes and untracked files choose:")
     for reason in selection.reasons:

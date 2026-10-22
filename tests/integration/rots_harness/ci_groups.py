@@ -22,7 +22,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, Optional, TextIO
 
 from rots_harness import groups as group_files
 from rots_harness import libbuilder
@@ -62,6 +62,9 @@ COPIED_LIB_TEXT_DIRECTORY = "lib/text/"
 COPIED_LIB_MISC_FILES = frozenset(f"lib/misc/{name}" for name in libbuilder.TRACKED_MISC_FILES)
 # Separates the paths in a --changed-files file, as git's -z option writes them.
 CHANGED_PATH_SEPARATOR = "\0"
+# How text naming a changed path is written: a byte that is not UTF-8 arrives as a surrogate,
+# which strict encoding refuses, so it is written as a backslash escape instead.
+REASON_ENCODING_ERRORS = "backslashreplace"
 
 
 class UnknownGroups(ValueError):
@@ -138,6 +141,16 @@ def every_group_reason(path: str) -> Optional[str]:
 def read_changed_paths(listing: str) -> list[str]:
     """The paths in a NUL-separated listing, each kept whole; an empty listing holds none."""
     return [path for path in listing.split(CHANGED_PATH_SEPARATOR) if path]
+
+
+def escape_unencodable_output(stream: TextIO) -> None:
+    """Makes stream write a character its encoding cannot hold as a backslash escape instead of raising.
+
+    A stream without reconfigure, such as one a caller substituted, is left as it is.
+    """
+    reconfigure = getattr(stream, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(errors=REASON_ENCODING_ERRORS)
 
 
 def select_groups(
@@ -223,7 +236,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return 2
     changed = []
     if arguments.changed_files is not None:
-        # surrogateescape keeps a file name that is not valid UTF-8 intact, as changed_groups does.
+        # surrogateescape keeps the bytes of a file name that is not valid UTF-8, so the name still
+        # reaches read_scenario as listed; the reasons that quote it are written escaped below.
         changed = read_changed_paths(arguments.changed_files.read_text(encoding="utf-8", errors="surrogateescape"))
 
     def read_scenario(path: str) -> Optional[str]:
@@ -241,8 +255,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         output.write(f"shards={json.dumps(shards)}\n")
     summary = summary_markdown(selection, len(shards))
     if arguments.summary is not None:
-        with arguments.summary.open("a", encoding="utf-8") as summary_file:
+        with arguments.summary.open("a", encoding="utf-8", errors=REASON_ENCODING_ERRORS) as summary_file:
             summary_file.write(summary)
+    escape_unencodable_output(sys.stdout)
     print(summary, end="")
     return 0
 

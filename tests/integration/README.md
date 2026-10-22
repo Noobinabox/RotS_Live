@@ -119,10 +119,10 @@ PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --l
 ## Continuous integration
 
 The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull requests into
-`master` and `release-frodo`, and runs every scenario on each push to `release-frodo`. Its
-"Choose the integration groups" job first runs `make integration-unit`, which includes the test
-world check (`unit/test_world_files.py`), so a broken world fails in seconds. A pull request
-runs:
+`master`, `release-frodo` and `release-frodo-next`, and runs every scenario on each push to
+`release-frodo` or `release-frodo-next`. Its "Choose the integration groups" job first runs
+`make integration-unit`, which includes the test world check (`unit/test_world_files.py`), so a
+broken world fails in seconds. A pull request runs:
 
 - `boot`, always;
 - each group its description names as `@integration-test-<group>`, such as
@@ -137,7 +137,8 @@ runs:
   `lib/misc` files in `rots_harness/libbuilder.py`).
 
 A renamed file counts as both its old and its new path, so moving a file out of one of these
-folders still counts. A change to the game's own code, headers included, adds no group by itself, so name the groups whose behaviour it
+folders still counts. In CI, a change to the game's own code adds no group by itself, headers
+included (locally a header runs every group, as above), so name the groups whose behaviour it
 touches. A name no group file registers fails the job and lists the registered groups.
 Tokens inside an HTML comment (`<!-- -->`) are ignored. Editing the description reruns the jobs,
 and the "Choose the integration groups" job's summary lists the groups that run and why. A run of

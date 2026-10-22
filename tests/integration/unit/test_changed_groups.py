@@ -240,6 +240,13 @@ def test_main_list_only_prints_the_choice_and_runs_nothing(tmp_path: Path, monke
     assert "GROUP=boot or poison" in capsys.readouterr().out
 
 
+def test_main_escapes_a_file_name_that_is_not_utf8_in_its_output(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    # git's output is decoded with surrogateescape, so the name's 0xE9 byte arrives as the surrogate U+DCE9.
+    fake_run = make_fake_run(tmp_path, "lib/text/caf\udce9\0")
+    assert run_main(tmp_path, monkeypatch, fake_run, "--list-only") == 0
+    assert "- every group: lib/text/caf\\udce9 changed" in capsys.readouterr().out
+
+
 def test_main_fails_with_status_2_and_git_words_when_the_base_does_not_resolve(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     fake_run = make_fake_run(tmp_path, "", base_known=False)
     assert run_main(tmp_path, monkeypatch, fake_run) == 2

@@ -18,6 +18,10 @@ CTEST_ARGS ?=
 PYTHON ?= python3
 # Scenario group for make integration, e.g. GROUP=boot; empty runs every scenario.
 GROUP ?=
+# Groups make integration leaves out, separated by spaces or commas, e.g. SKIP_GROUPS="poison summon".
+SKIP_GROUPS ?=
+# CONFIRM=yes starts make integration without asking, however long its estimate.
+CONFIRM ?=
 # make world-catalogue prints only this test-world zone, e.g. ZONE=13; empty prints every zone.
 ZONE ?=
 # make world-catalogue prints only this table: zones, rooms, mobs, objects or scripts.
@@ -33,7 +37,7 @@ endif
 
 .DEFAULT_GOAL := help
 .PHONY: help configure setup build test run smoke-account integration-unit integration world-catalogue format clean
-.PHONY: integration-build integration-changed
+.PHONY: integration-build integration-changed integration-plan
 
 help:
 	@printf "Available targets:\n"
@@ -43,8 +47,10 @@ help:
 	@printf "  make test              Run the C++ unit tests\n"
 	@printf "  make smoke-account     Build the game/proxy and run the account smoke flow\n"
 	@printf "  make integration-unit  Run the integration harness's own unit tests (no server)\n"
-	@printf "  make integration       Run the integration scenarios (GROUP=<name> for one group,\n"
-	@printf "                         JOBS=<n> for n parallel workers)\n"
+	@printf "  make integration       Show the planned scenario groups, ask, then run them (GROUP=<name>\n"
+	@printf "                         for one group, SKIP_GROUPS=<names> to leave groups out,\n"
+	@printf "                         JOBS=<n> for n parallel workers, CONFIRM=yes to skip the question)\n"
+	@printf "  make integration-plan  Only show that plan\n"
 	@printf "  make world-catalogue   Print the integration test world's zones, rooms, mobs, objects\n"
 	@printf "                         and scripts (ZONE=<n>, CATEGORY=<table> to narrow it)\n"
 	@printf "  make integration-build Build the server, harness server and rotstool the scenarios run\n"
@@ -54,7 +60,7 @@ help:
 	@printf "                         format only your changed files instead\n"
 	@printf "  make run               Build and start the server in the foreground\n"
 	@printf "  make clean             Clean the configured CMake build tree\n"
-	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, ZONE, CATEGORY, BASE\n" "$(BUILD_DIR)" "$(JOBS)"
+	@printf "\nVariables: BUILD_DIR (%s), JOBS (%s), CMAKE_CONFIGURE_ARGS, CTEST_ARGS, PYTHON, GROUP, SKIP_GROUPS, CONFIRM, ZONE, CATEGORY, BASE\n" "$(BUILD_DIR)" "$(JOBS)"
 	@printf "Changing CMAKE_CONFIGURE_ARGS needs a fresh BUILD_DIR; an existing tree keeps its cache.\n"
 
 $(CMAKE_CACHE):
@@ -83,9 +89,18 @@ smoke-account: setup build
 integration-unit:
 	$(PYTHON) -m pytest tests/integration/unit -q
 
-# Writes each test's result and time to build/integration/results.xml and lists the slowest tests.
+# Shows the planned groups and asks about them (rots_harness/run_plan.py), then runs pytest, which
+# writes each test's result and time to build/integration/results.xml and lists the slowest tests.
+# The values reach Python through the environment, so the shell never reads a GROUP expression as
+# command text.
+integration integration-plan: export ROTS_IT_RUN_GROUP := $(GROUP)
+integration integration-plan: export ROTS_IT_RUN_SKIP_GROUPS := $(SKIP_GROUPS)
+integration integration-plan: export ROTS_IT_RUN_CONFIRM := $(CONFIRM)
 integration:
-	$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario$(if $(GROUP), and ($(GROUP)))"$(if $(filter-out 0 1,$(INTEGRATION_JOBS)), -n $(INTEGRATION_JOBS)) --junitxml=build/integration/results.xml --durations=25
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python "$(PYTHON)" --jobs "$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --confirm="$$ROTS_IT_RUN_CONFIRM"
+
+integration-plan:
+	PYTHONPATH="tests/integration$${PYTHONPATH:+:$$PYTHONPATH}" $(PYTHON) -m rots_harness.run_plan --python "$(PYTHON)" --jobs "$(INTEGRATION_JOBS)" --group="$$ROTS_IT_RUN_GROUP" --skip-groups="$$ROTS_IT_RUN_SKIP_GROUPS" --plan-only
 
 # PYTHONPATH rather than cd, so a relative PYTHON such as .venv/bin/python still resolves.
 world-catalogue:

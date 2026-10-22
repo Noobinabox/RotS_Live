@@ -13,7 +13,7 @@ from typing import Callable, Optional
 
 import pytest
 
-from rots_harness import groups, interrupts
+from rots_harness import durations, groups, interrupts
 from rots_harness.characters import CharacterSet
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock, parse_wait_seconds
@@ -74,6 +74,8 @@ KEPT_RUN_DIRECTORIES_WORKER_OUTPUT = "rots_it_kept_run_directories"
 WORKER_NODES_KEY = pytest.StashKey[list]()
 # Where the controller keeps the Docker lock it holds while the tests run; absent while it holds none.
 DOCKER_LOCK_KEY = pytest.StashKey[DockerLock]()
+# Each test's last recorded time, which the run plan estimates a run from.
+DURATIONS_FILE = REPO_ROOT / durations.DURATIONS_RELATIVE
 
 
 @pytest.hookimpl(trylast=True)
@@ -85,6 +87,7 @@ def pytest_configure(config: pytest.Config) -> None:
     the checks pass, makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock
     is released and every started server stopped, starts the kept run directory report, and
     sets the session id: a new one in the controller, the controller's in a pytest-xdist worker.
+    The controller also starts recording each test's time.
     """
     register_group_markers(config)
     expression = config.getoption("markexpr", default="") or ""
@@ -102,6 +105,7 @@ def pytest_configure(config: pytest.Config) -> None:
     else:
         config.stash[SESSION_ID_KEY] = uuid.uuid4().hex[:12]
         config.stash[WORKER_NODES_KEY] = []
+        config.pluginmanager.register(durations.DurationRecorder(DURATIONS_FILE))
 
 
 def is_worker(config: pytest.Config) -> bool:

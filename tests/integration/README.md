@@ -101,11 +101,16 @@ make integration-changed PYTHON=.venv/bin/python BASE=origin/master
 ```
 
 `make integration-changed` (`rots_harness/changed_groups.py`) lists the files changed since the
-merge base with `BASE` (default `origin/release-frodo-next`), uncommitted changes to tracked
-files and untracked files git does not ignore. It chooses groups by the pull request rules under
-Continuous integration below, without a description, prints why, and runs `make integration`
-with the result. A changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`)
-also runs every group, since constants and layouts in headers reach any scenario. Changed game
+merge base with `BASE` (default `origin/release-frodo-next`; only a `BASE` on the make command
+line counts, not an exported one), uncommitted changes to tracked files and untracked files git
+does not ignore. A renamed file counts as both its old and its new path. It chooses groups by
+the pull request rules under Continuous integration below, without a description, prints why
+(with the commit `BASE` resolved to, so an out-of-date `origin/...` shows), and runs
+`make integration` with the result; an inherited `GROUP` never narrows it. These also run every
+group: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`), since
+constants and layouts in headers reach any scenario; `src/CMakeLists.txt`, whose compile
+settings reach every program; and the `lib/` files the harness copies into every test's lib
+(`lib/text/` and the tracked `lib/misc` files in `rots_harness/libbuilder.py`). Changed game
 code (`.cpp`) is listed but selects no group: name its groups with `GROUP=` or run every
 scenario. To see the choice without running it:
 

@@ -193,8 +193,8 @@ def controller_needs_docker_lock(session: pytest.Session) -> bool:
 
     It is needed when the run may start a server: always when pytest-xdist workers run the
     tests, since the controller then collects none, and otherwise when a selected test uses the
-    server fixture. A missing server or rotstool takes no lock, so each scenario fails at once
-    with the build command instead of after the lock wait.
+    server fixture. A missing or stale server or rotstool takes no lock, so each scenario fails
+    at once with the build command instead of after the lock wait.
     """
     config = session.config
     if launcher_mode() != "docker" or config.option.collectonly:
@@ -397,7 +397,8 @@ def selected_launcher() -> ServerLauncher:
 def harness_launcher() -> ServerLauncher:
     """The launcher selected_launcher returns.
 
-    Raises RuntimeError with that launcher's build command when the server or rotstool is missing.
+    Raises RuntimeError with that launcher's build command when the server or rotstool is missing,
+    or older than the sources it is built from (ServerLauncher.require_program).
     """
     selected = selected_launcher()
     selected.require_program(binary_relative())

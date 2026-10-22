@@ -41,6 +41,16 @@ scenarios; `unit/` tests the harness itself without a server.
    lock when the build ends. A run whose server binary, `ageland_harness` (for a test with a
    schedule) or `rotstool` is missing stops at once with the build command for its launcher.
 
+   `make integration-build` runs that build (`make configure`, then the three targets with
+   `--parallel $(JOBS)`), on Linux or inside the container
+   (`docker compose run --rm -T rots bash -lc 'make integration-build'`). A program older than
+   the newest `.cpp` or `.h` file it is built from also stops the run with the build command.
+   That is any such file under `src/` except `src/tests/`, with `src/harness/` counting only for
+   `ageland_harness`, `src/tools/rotstool/` only for `rotstool` and `src/main.cpp` only for
+   `ageland`. `ROTS_IT_ALLOW_STALE=1` runs it anyway. The check compares modification times
+   only, so a deleted source goes unnoticed and files copied with their old times can read as
+   fresh; `ROTS_IT_ALLOW_STALE=1` is also the way past a wrong verdict.
+
 2. Create the virtual environment once, from the repository root (Python 3.9 or later):
 
    ```bash
@@ -82,6 +92,31 @@ Every run has its own template folder and run directories, so two runs in one ch
 disturb each other's tests. With the `docker` launcher the second run waits for the first's lock;
 with the `local` launcher both run at once. Both runs write `build/integration/results.xml`, so
 it holds the results of whichever finished last.
+
+### The groups your changes reach
+
+```bash
+make integration-changed PYTHON=.venv/bin/python                    # changes since origin/release-frodo-next
+make integration-changed PYTHON=.venv/bin/python BASE=origin/master
+```
+
+`make integration-changed` (`rots_harness/changed_groups.py`) lists the files changed since the
+merge base with `BASE` (default `origin/release-frodo-next`; only a `BASE` on the make command
+line counts, not an exported one), uncommitted changes to tracked files and untracked files git
+does not ignore. A renamed file counts as both its old and its new path. It chooses groups by
+the pull request rules under Continuous integration below, without a description, prints why
+(with the commit `BASE` resolved to, so an out-of-date `origin/...` shows), and runs
+`make integration` with the result; an inherited `GROUP` never narrows it. These also run every
+group: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`), since
+constants and layouts in headers reach any scenario; `src/CMakeLists.txt`, whose compile
+settings reach every program; and the `lib/` files the harness copies into every test's lib
+(`lib/text/` and the tracked `lib/misc` files in `rots_harness/libbuilder.py`). Changed game
+code (`.cpp`) is listed but selects no group: name its groups with `GROUP=` or run every
+scenario. To see the choice without running it:
+
+```bash
+PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only
+```
 
 ## Continuous integration
 
@@ -142,6 +177,7 @@ Environment variables:
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared Docker lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `server.advance_hours` allows per game hour, a positive finite number |
 | `ROTS_IT_SHARD` | unset | `k/N`, such as `2/4`: runs only every N-th selected test in node id order, starting at the k-th; a shard left with no tests passes |
+| `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources, for example to test an old build on purpose |
 
 A `ROTS_IT_LAUNCHER`, `ROTS_IT_SEED`, `ROTS_IT_LOCK_WAIT`, `ROTS_IT_BINARY`,
 `ROTS_IT_HOUR_TIMEOUT` or `ROTS_IT_SHARD` value the harness cannot use stops the run before any test with a usage

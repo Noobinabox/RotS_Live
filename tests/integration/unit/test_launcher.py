@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import shlex
 import subprocess
 import sys
@@ -1356,3 +1357,90 @@ def test_ready_retries_a_refused_connection_after_the_short_refused_pause(tmp_pa
     assert len(attempts) == 3
     assert pauses == [launcher.REFUSED_RETRY_SECONDS, launcher.REFUSED_RETRY_SECONDS]
     assert launcher.REFUSED_RETRY_SECONDS < launcher.READY_RETRY_SECONDS
+
+
+# Seconds since the epoch at which write_built_repo's files are dated, older to newer.
+OLD_TIME = 1_700_000_000
+BUILD_TIME = OLD_TIME + 100
+NEW_TIME = OLD_TIME + 200
+
+
+def write_dated(path: Path, modified: float) -> None:
+    """Creates path, with its folders, and dates its modification time."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("x", encoding="utf-8")
+    os.utime(path, (modified, modified))
+
+
+def write_built_repo(repo_root: Path) -> None:
+    """A repository whose three programs were built at BUILD_TIME from sources dated OLD_TIME."""
+    for source in ("src/comm.cpp", "src/structs.h", "src/harness/main.cpp", "src/tools/rotstool/main.cpp"):
+        write_dated(repo_root / source, OLD_TIME)
+    for program in ("bin/ageland", launcher.HARNESS_BINARY_RELATIVE, "bin/rotstool"):
+        write_dated(repo_root / program, BUILD_TIME)
+
+
+@pytest.fixture
+def stale_check_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Runs the test without ROTS_IT_ALLOW_STALE, whatever the host sets."""
+    monkeypatch.delenv(launcher.ALLOW_STALE_VARIABLE, raising=False)
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+def test_require_program_accepts_a_program_newer_than_its_sources(tmp_path: Path, launcher_class: type) -> None:
+    write_built_repo(tmp_path)
+    for program in ("bin/ageland", launcher.HARNESS_BINARY_RELATIVE, "bin/rotstool"):
+        launcher_class(repo_root=tmp_path).require_program(program)
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+@pytest.mark.parametrize("launcher_class", [launcher.LocalProcessLauncher, launcher.DockerComposeLauncher])
+@pytest.mark.parametrize("source", ["src/comm.cpp", "src/structs.h", "src/mob_progs/mob_prog.cpp"])
+def test_require_program_refuses_a_program_older_than_a_source_and_names_both(tmp_path: Path, launcher_class: type, source: str) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / source, NEW_TIME)
+    program_launcher = launcher_class(repo_root=tmp_path)
+    with pytest.raises(RuntimeError) as stale:
+        program_launcher.require_program("bin/ageland")
+    message = str(stale.value)
+    assert message.startswith(f"bin/ageland is older than {source} (modified ")
+    assert program_launcher.build_hint() in message
+    assert launcher.ALLOW_STALE_VARIABLE in message
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_ignores_unit_tests_and_files_other_than_cpp_and_h(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    for path in ("src/tests/comm_tests.cpp", "src/tests/fake_harness_request.h", "src/CMakeLists.txt", "src/README.md"):
+        write_dated(tmp_path / path, NEW_TIME)
+    launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_checks_each_program_against_only_its_own_sources(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/harness/main.cpp", NEW_TIME)
+    write_dated(tmp_path / "src/tools/rotstool/main.cpp", NEW_TIME)
+    program_launcher = launcher.LocalProcessLauncher(repo_root=tmp_path)
+    program_launcher.require_program("bin/ageland")
+    with pytest.raises(RuntimeError, match=r"^bin/ageland_harness is older than src/harness/main\.cpp"):
+        program_launcher.require_program(launcher.HARNESS_BINARY_RELATIVE)
+    with pytest.raises(RuntimeError, match=r"^bin/rotstool is older than src/tools/rotstool/main\.cpp"):
+        program_launcher.require_program("bin/rotstool")
+
+
+def test_require_program_runs_a_stale_program_when_allowed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/comm.cpp", NEW_TIME)
+    monkeypatch.setenv(launcher.ALLOW_STALE_VARIABLE, "1")
+    launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")
+
+
+@pytest.mark.usefixtures("stale_check_enabled")
+def test_require_program_still_reports_a_missing_program_first(tmp_path: Path) -> None:
+    write_built_repo(tmp_path)
+    write_dated(tmp_path / "src/comm.cpp", NEW_TIME)
+    (tmp_path / "bin/ageland").unlink()
+    with pytest.raises(RuntimeError, match="^bin/ageland is missing; build it first: "):
+        launcher.LocalProcessLauncher(repo_root=tmp_path).require_program("bin/ageland")

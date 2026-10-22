@@ -35,6 +35,7 @@ tests/integration/requirements.txt`.
 | Whether CI's group filter selects your tests | `.venv/bin/python -m pytest --collect-only -q -m "scenario and (bank)" <node ids>` |
 | The groups your changes reach: CI's rules on changes since `BASE` (default `origin/release-frodo-next`), uncommitted and untracked files, plus every group for a changed `src/**/*.h` outside `src/harness/` and `src/tests/` (`rots_harness/changed_groups.py`) | `make integration-changed PYTHON=.venv/bin/python` |
 | Only print that choice and its reasons | `PYTHONPATH=tests/integration .venv/bin/python -m rots_harness.changed_groups --list-only` |
+| Build the three programs (inside the container on a Mac, under the build lock) | `make integration-build`; `docker compose run --rm -T rots bash -lc 'make integration-build'` |
 
 `make integration` runs `$(PYTHON) -m pytest tests/integration/scenarios -q -m "scenario and
 (<GROUP>)"`, adding `-n <JOBS>` when `JOBS` is above 1, and writes each test's result and time to
@@ -148,6 +149,7 @@ a usage error naming the variable. `ROTS_IT_KEEP` (only `1` counts) and
 | `ROTS_IT_DOCKER_LOCK_DIR` | `/tmp/rots-docker-lock` | the shared lock directory |
 | `ROTS_IT_HOUR_TIMEOUT` | `10.0` | seconds `advance_hours` allows per game hour; the wait is `hours * timeout + 10` |
 | `ROTS_IT_SHARD` | unset | `k/N`: keeps every N-th selected test in sorted node id order from the k-th (`rots_harness/sharding.py`); CI shards only a run of every group, eight ways. An empty share passes |
+| `ROTS_IT_ALLOW_STALE` | unset | `1` runs a program older than its sources; not checked by `validate_environment()` |
 
 The local launcher passes the server a clean environment, forwarding only `ASAN_OPTIONS`,
 `LSAN_OPTIONS`, `UBSAN_OPTIONS` and `ASAN_SYMBOLIZER_PATH`.
@@ -181,6 +183,12 @@ sanitizer marker, `Error: signal`, any `SYSERR` line (none is allowed today), th
 during the test, and after the stop a non-zero status or a status 0 without the
 `Received SIGHUP, SIGINT, or SIGTERM` line. A session that does not answer `quit` also fails the
 test.
+
+A program that is missing, or older than the newest `.cpp` or `.h` file it is built from, stops
+each test that runs it at setup with the build command (`ServerLauncher.require_program` and
+`newest_source` in `rots_harness/launcher.py`). `src/tests/` never counts, `src/harness/` counts
+only for `ageland_harness` and `src/tools/rotstool/` only for `rotstool`. `ROTS_IT_ALLOW_STALE=1`
+skips the age check.
 
 ## Characters
 

@@ -76,12 +76,15 @@ WORKER_NODES_KEY = pytest.StashKey[list]()
 DOCKER_LOCK_KEY = pytest.StashKey[DockerLock]()
 # Each test's last recorded time, which the run plan estimates a run from.
 DURATIONS_FILE = REPO_ROOT / durations.DURATIONS_RELATIVE
+# The name the subgroup marking check is registered under as a plugin.
+SUBGROUP_CHECK_PLUGIN_NAME = "rots_it_subgroup_marking_check"
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Registers a marker per group file, then stops the run with a usage error for a bad group
-    file, an unregistered marker in -m or a bad ROTS_IT_* variable.
+    """Registers a marker per group and subgroup file and the subgroup marking check, then stops the
+    run with a usage error for a bad group file, an unregistered marker in -m or a bad ROTS_IT_*
+    variable.
 
     Runs after the built-in plugins have registered their markers, so -m may name them. When
     the checks pass, makes SIGTERM and SIGHUP interrupt the run like Ctrl-C, so the Docker lock
@@ -89,7 +92,8 @@ def pytest_configure(config: pytest.Config) -> None:
     sets the session id: a new one in the controller, the controller's in a pytest-xdist worker.
     The controller also starts recording each test's time.
     """
-    register_group_markers(config)
+    subgroups = register_group_markers(config)
+    config.pluginmanager.register(SubgroupMarkingCheck(subgroups), SUBGROUP_CHECK_PLUGIN_NAME)
     expression = config.getoption("markexpr", default="") or ""
     registered = groups.registered_marker_names(config.getini("markers"))
     unknown = groups.unknown_marker_names(expression, registered)
@@ -120,21 +124,47 @@ def pytest_configure_node(node) -> None:
     node.config.stash[WORKER_NODES_KEY].append(node)
 
 
-def register_group_markers(config: pytest.Config) -> None:
-    """Registers each group file's marker, so --strict-markers and -m accept the group.
+def register_group_markers(config: pytest.Config) -> dict[str, list[str]]:
+    """Registers each group and subgroup file's marker, so --strict-markers and -m accept the group,
+    and returns each group that has subgroups, with them (groups.subgroups_by_parent).
 
     Raises pytest.UsageError for a group file the harness cannot read, or one named like a
     marker pytest.ini or pytest itself already registers.
     """
     try:
-        descriptions = groups.read_group_descriptions(GROUPS_DIR)
+        group_list = groups.read_groups(GROUPS_DIR)
     except (groups.GroupFileError, OSError) as error:
         raise pytest.UsageError(f"cannot read the scenario groups: {error}") from error
     registered = set(groups.registered_marker_names(config.getini("markers")))
-    for name, description in descriptions.items():
-        if name in registered:
-            raise pytest.UsageError(f"group file {GROUPS_DIR / name}{groups.GROUP_FILE_SUFFIX} names the marker {name}, which is already registered")
-        config.addinivalue_line("markers", f"{name}: {description}")
+    for group in group_list:
+        if group.name in registered:
+            raise pytest.UsageError(f"the group file for {group.name} in {GROUPS_DIR} names the marker {group.name}, which is already registered")
+        config.addinivalue_line("markers", f"{group.name}: {group.description}")
+    return groups.subgroups_by_parent(group_list)
+
+
+class SubgroupMarkingCheck:
+    """Stops the run when a collected test breaks the subgroup marking rules (groups.subgroup_marking_problems)."""
+
+    def __init__(self, subgroups: dict[str, list[str]]) -> None:
+        # Each group that has subgroups, with them, as the group files register them.
+        self._subgroups = subgroups
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_collection_modifyitems(self, session: pytest.Session, items: list[pytest.Item]) -> None:
+        """Raises pytest.UsageError naming each collected test that breaks the rules and what is wrong.
+
+        tryfirst, so neither -m and -k nor the shard (this file's pytest_collection_modifyitems) has
+        deselected anything yet: every collected test is checked, whatever the run selects.
+        """
+        tests = ((item.nodeid, {marker.name for marker in item.iter_markers()}) for item in items)
+        problems = groups.subgroup_marking_problems(tests, self._subgroups)
+        if problems:
+            message = "scenarios break the subgroup marking rules:\n" + "\n".join(problems)
+            # A pytest-xdist worker hands shouldstop to the controller, which stops the run with this
+            # message; without it the controller reports only a crashed worker.
+            session.shouldstop = message
+            raise pytest.UsageError(message)
 
 
 def pytest_unconfigure(config: pytest.Config) -> None:

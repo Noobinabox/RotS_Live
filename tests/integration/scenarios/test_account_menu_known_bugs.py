@@ -86,6 +86,7 @@ def closes_within(connection: GameSession, seconds: float) -> bool:
     return False
 
 
+@pytest.mark.account_menu_characters
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -116,6 +117,7 @@ def test_a_name_refused_at_the_new_character_confirmation_is_followed_by_another
         assert ROLEPLAY_QUESTION_FORMAT.format(FREE_NEW_NAME) in retried, retried
 
 
+@pytest.mark.account_menu_store
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,

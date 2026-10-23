@@ -63,6 +63,7 @@ scenarios; `unit/` tests the harness itself without a server.
 make integration-unit PYTHON=.venv/bin/python           # the harness's own tests; no server
 make integration PYTHON=.venv/bin/python                # every scenario
 make integration PYTHON=.venv/bin/python GROUP=boot     # one group
+make integration PYTHON=.venv/bin/python GROUP=shaping_zone_editor  # one subgroup of a large group
 make integration PYTHON=.venv/bin/python JOBS=8         # every scenario, on 8 parallel workers
 make integration-plan PYTHON=.venv/bin/python           # only show what make integration would run
 ```
@@ -72,6 +73,16 @@ which holds the group's one-line description. `GROUP` may be an expression such 
 `GROUP="boot or other"`; it always stays inside the `scenario` filter. A name that no group file,
 `pytest.ini` or pytest itself registers stops the run with a usage error that lists the registered
 names, so a misspelt group never passes by selecting nothing.
+
+A large group is split into subgroups, one behaviour each. A file
+`tests/integration/groups/<group>/<sub>.txt`, beside `<group>.txt`, registers the subgroup
+`<group>_<sub>` with its one-line description; a subgroup has no subgroups of its own. Every test
+of a group with subgroups marks the group and exactly one of its subgroups, and a test marking a
+subgroup also marks its group. Under `make integration` collection stops with a usage error naming
+each test that breaks either rule; pytest with `-n` (so `CI=true` with `JOBS` above 1) ends with
+`Interrupted:` and the same list, exit status 2. `make integration-unit` checks the rules too. So
+`GROUP=shaping` still runs every shaping test, and `GROUP=shaping_zone_editor` runs the zone
+editor's alone.
 
 `JOBS=<n>` runs the selected scenarios on `n` pytest-xdist worker processes, each scenario still
 on its own fresh server. A scenario spends most of its time waiting on an idle server, so the
@@ -98,14 +109,18 @@ it holds the results of whichever finished last.
 
 `make integration` (`rots_harness/run_plan.py`) first prints its plan: one numbered checkbox per
 selected group with its test count and estimated minutes, then the total, the launcher, `JOBS`
-and any `ROTS_IT_SHARD`. A test counts toward every group that marks it; the total counts it
-once. Each group counts only the tests that will run, so a test another left-out group also
-marks is not counted. With `ROTS_IT_SHARD` the plan shows this shard's share of the tests left
-after the groups left out, which is what the run then runs. `make integration-plan` prints the
-plan and exits 0 without asking or running anything.
+and any `ROTS_IT_SHARD`. A group with subgroups is a numbered header with its totals, followed by
+its selected subgroups, indented, each a numbered checkbox. A test counts toward every group that
+marks it; the total counts it once. Each group counts only the tests that will run, so a test
+another left-out group also marks is not counted. With `ROTS_IT_SHARD` the plan shows this
+shard's share of the tests left after the groups left out, which is what the run then runs.
+`make integration-plan` prints the plan and exits 0 without asking or running anything.
 
 - At a terminal every group starts ticked. Numbers (and ranges such as `3-5`) toggle groups, `a`
-  ticks all, `n` unticks all, Enter or `y` starts and `q` (or Ctrl-C) cancels. With no answer
+  ticks all, `n` unticks all, Enter or `y` starts and `q` (or Ctrl-C) cancels. A header's number
+  unticks all its subgroups when any is ticked and ticks them all otherwise; its box shows `x`
+  for all ticked, `-` for some and blank for none. A range toggles each subgroup it covers once,
+  a header covering its subgroups. With no answer
   for 5 minutes the run starts with the groups still ticked; the first answer stops that
   countdown. Unticking a group drops every test it marks, even one another ticked group marks.
   A run that started by itself gets no input from the terminal.
@@ -116,9 +131,11 @@ plan and exits 0 without asking or running anything.
   2 (below), so a script looks for that line instead.
 - `CONFIRM=yes` starts the run as soon as the plan prints, without asking.
 - `SKIP_GROUPS="poison summon"` (spaces or commas) leaves groups out; they are listed as skipped.
-  A name no group file registers stops the run with the registered names.
+  A group leaves out all its subgroups, and a subgroup only itself. A name no group file
+  registers stops the run with the registered names.
 - A run that left groups out ends with a `Repeat: make integration ... CONFIRM=yes` line that
-  repeats the choice.
+  repeats the choice. It names each unticked subgroup, or the group when all its subgroups were
+  unticked.
 - With `CI=true` (GitHub Actions sets it) none of this happens: the run is the plain pytest
   command, with no plan. A `SKIP_GROUPS` given there still leaves its groups out, and an
   unregistered name in it still stops the run.
@@ -176,9 +193,12 @@ The `Integration` workflow (`.github/workflows/integration.yml`) runs on pull re
 broken world fails in seconds. A pull request runs:
 
 - `boot`, always;
-- each group its description names as `@integration-test-<group>`, such as
-  `@integration-test-poison`, or every group for `@integration-test-all`;
-- the groups of each scenario file it changes, and the group of each group file it changes;
+- each group or subgroup its description names as `@integration-test-<group>`, such as
+  `@integration-test-poison` or `@integration-test-shaping_zone_editor`, or every group for
+  `@integration-test-all`;
+- the groups of each scenario file it changes, and the group of each group file it changes; for
+  a group whose subgroups the file also marks, only those subgroups, not the whole group;
+- the groups of each scenario file that imports a changed scenario file (one level);
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
   `requirements.txt`, the test world (other than its notes), a scenario file other than a
   `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile`, the image action
@@ -347,7 +367,9 @@ online unless the account owns a character above level 91, so a test that logs i
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).
 
 A new group needs its own file, `groups/<group>.txt`, holding one line that says what the group
-pins; `conftest.py` registers a marker for each file.
+pins; `conftest.py` registers a marker for each file. A test in a group with subgroups (a folder
+`groups/<group>/`) also marks one of them: add it to `pytestmark` when the whole file belongs to
+one, or as `@pytest.mark.<group>_<sub>` on each test otherwise.
 
 The test world's fixtures are listed by `make world-catalogue PYTHON=.venv/bin/python`
 (`ZONE=<n>` for one zone, `CATEGORY=rooms` for one table), and explained in one notes file per

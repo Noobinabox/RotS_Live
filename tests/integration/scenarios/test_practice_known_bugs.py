@@ -173,6 +173,7 @@ def practice_once(pupil: GameSession, skill: str) -> str:
     )
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, RESET_PUPIL)
 @pytest.mark.xfail(
@@ -214,6 +215,7 @@ def test_pracreset_leaves_the_session_count_the_next_login_computes(server) -> N
     assert plain_sessions(pupil) == 340
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.xfail(
@@ -235,6 +237,7 @@ def test_the_pracreset_command_asks_whom_without_a_name(server) -> None:
     assert reply.contains(WHOM_MARKER), reply.text
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, RESET_PUPIL)
 @pytest.mark.xfail(
@@ -270,6 +273,7 @@ def test_advancing_down_leaves_the_count_the_login_recount_gives(server) -> None
     assert stat_value(STAT_SESSIONS_PATTERN, lowered) == (287,)
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(
@@ -302,6 +306,7 @@ def test_a_chosen_spoken_language_survives_the_next_skill_recount(server, recoun
     assert spoken_language(pupil) == "orcish language"
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, REROLL_PUPIL)
 @pytest.mark.xfail(
@@ -346,6 +351,7 @@ def test_the_angels_reroll_recounts_the_sessions_from_the_new_learning(server) -
     assert plain_sessions(pupil) == 6 * 3 + 6 * rerolled_learning // 5 + 10
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(
@@ -372,6 +378,7 @@ def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(serv
     assert TRAINER_REJECT_MARKER in reply, reply
 
 
+@pytest.mark.practice_abilities
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(

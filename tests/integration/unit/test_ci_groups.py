@@ -20,8 +20,26 @@ SCENARIO_SOURCES = {
 }
 
 
+# The registered groups when shaping has two subgroups, in registration order.
+GROUPS_WITH_SUBGROUPS = ["boot", "shaping", "shaping_commands", "shaping_zone_editor", "summon"]
+# shaping's subgroups.
+SUBGROUPS = {"shaping": ["shaping_commands", "shaping_zone_editor"]}
+# A scenario file marking shaping for every test and a subgroup per test.
+SPLIT_SCENARIO_SOURCE = (
+    "pytestmark = [pytest.mark.scenario, pytest.mark.shaping]\n"
+    "@pytest.mark.shaping_zone_editor\ndef test_one(server): pass\n"
+    "@pytest.mark.shaping_commands\ndef test_two(server): pass\n"
+)
+
+
 def read_scenario(path: str) -> Optional[str]:
     return SCENARIO_SOURCES.get(path)
+
+
+def select_with_subgroups(body: str = "", changed: tuple[str, ...] = (), sources: Optional[dict[str, str]] = None) -> ci_groups.Selection:
+    """select_groups for a pull request over GROUPS_WITH_SUBGROUPS, reading scenario files from sources."""
+    scenario_sources = sources or {}
+    return ci_groups.select_groups("pull_request", body, changed, scenario_sources.get, GROUPS_WITH_SUBGROUPS, SUBGROUPS)
 
 
 def select(body: str = "", changed: tuple[str, ...] = (), event: str = "pull_request") -> ci_groups.Selection:
@@ -107,6 +125,137 @@ def test_a_deleted_group_file_adds_nothing() -> None:
 @pytest.mark.parametrize("path", ["tests/integration/groups/README.md", "tests/integration/groups/nested/poison.txt"])
 def test_other_files_in_the_group_folder_add_nothing(path: str) -> None:
     assert select(changed=(path,)).groups == ["boot"]
+
+
+@pytest.mark.parametrize("path, name", [
+    ("tests/integration/groups/shaping.txt", "shaping"),
+    ("tests/integration/groups/shaping/zone_editor.txt", "shaping_zone_editor"),
+    ("tests/integration/groups/shaping/deeper/zone_editor.txt", None),
+    ("tests/integration/groups/shaping/README.md", None),
+])
+def test_a_group_file_path_names_its_group_or_subgroup(path: str, name: Optional[str]) -> None:
+    assert ci_groups.changed_group_file(path) == name
+
+
+def test_a_changed_subgroup_file_adds_its_subgroup() -> None:
+    selection = select_with_subgroups(changed=("tests/integration/groups/shaping/zone_editor.txt",))
+    assert selection.groups == ["boot", "shaping_zone_editor"]
+    assert selection.reasons[1] == "shaping_zone_editor: its group file shaping/zone_editor.txt changed"
+
+
+def test_a_scenario_file_marking_a_group_and_its_subgroups_adds_only_the_subgroups() -> None:
+    sources = {"tests/integration/scenarios/test_shaping.py": SPLIT_SCENARIO_SOURCE}
+    selection = select_with_subgroups(changed=tuple(sources), sources=sources)
+    assert selection.groups == ["boot", "shaping_zone_editor", "shaping_commands"]
+    assert selection.reasons[1:] == ["shaping_zone_editor: test_shaping.py changed", "shaping_commands: test_shaping.py changed"]
+
+
+def test_a_scenario_file_marking_only_a_group_with_subgroups_adds_the_group() -> None:
+    sources = {"tests/integration/scenarios/test_shaping.py": "pytestmark = [pytest.mark.scenario, pytest.mark.shaping]\n"}
+    assert select_with_subgroups(changed=tuple(sources), sources=sources).groups == ["boot", "shaping"]
+
+
+def test_scenario_groups_keeps_a_group_without_subgroups_beside_a_subgroup() -> None:
+    source = SPLIT_SCENARIO_SOURCE + "@pytest.mark.summon\ndef test_three(server): pass\n"
+    assert ci_groups.scenario_groups(source, GROUPS_WITH_SUBGROUPS, SUBGROUPS) == ["shaping_zone_editor", "shaping_commands", "summon"]
+
+
+# A scenario file marking tame, which other scenario files import.
+TAME_SCENARIO = "tests/integration/scenarios/test_tame.py"
+# A scenario file marking summon that imports TAME_SCENARIO.
+IMPORTER_SCENARIO = "tests/integration/scenarios/test_importer.py"
+# The registered groups the import tests choose from.
+IMPORT_GROUPS = ["boot", "poison", "shaping", "shaping_commands", "shaping_zone_editor", "summon", "tame"]
+
+
+def select_with_importers(changed: tuple[str, ...], sources: dict[str, str]) -> ci_groups.Selection:
+    """select_groups for a pull request over IMPORT_GROUPS, with every scenario file in sources in the checkout."""
+    scenario_paths = sorted(sources)
+    return ci_groups.select_groups("pull_request", "", changed, sources.get, IMPORT_GROUPS, SUBGROUPS, scenario_paths)
+
+
+@pytest.mark.parametrize("import_line", [
+    "from test_tame import TAMER",
+    "from test_tame import (\n    TAMER,\n)",
+    "import test_tame",
+    "import test_tame as tame_scenario",
+    "from . import test_tame",
+    "from .test_tame import TAMER",
+    "from scenarios import test_tame",
+    "from scenarios.test_tame import TAMER",
+    "def helper():\n    from test_tame import TAMER\n    return TAMER",
+])
+def test_a_changed_scenario_file_also_adds_the_groups_of_the_files_that_import_it(import_line: str) -> None:
+    sources = {
+        TAME_SCENARIO: "pytestmark = [pytest.mark.scenario, pytest.mark.tame]\n",
+        IMPORTER_SCENARIO: f"{import_line}\npytestmark = [pytest.mark.scenario, pytest.mark.summon]\n",
+    }
+    selection = select_with_importers((TAME_SCENARIO,), sources)
+    assert selection.groups == ["boot", "tame", "summon"]
+    assert selection.reasons[2] == "summon: test_importer.py imports test_tame.py"
+
+
+@pytest.mark.parametrize("import_line", ["from rots_harness import world", "import test_tame_extra", "from test_tamer import TAMER", "# from test_tame import TAMER"])
+def test_a_file_importing_something_else_adds_nothing(import_line: str) -> None:
+    sources = {
+        TAME_SCENARIO: "pytestmark = [pytest.mark.scenario, pytest.mark.tame]\n",
+        IMPORTER_SCENARIO: f"{import_line}\npytestmark = [pytest.mark.scenario, pytest.mark.summon]\n",
+    }
+    assert select_with_importers((TAME_SCENARIO,), sources).groups == ["boot", "tame"]
+
+
+def test_a_deleted_scenario_file_still_adds_the_groups_of_the_files_that_import_it() -> None:
+    sources = {IMPORTER_SCENARIO: "from test_tame import TAMER\npytestmark = [pytest.mark.scenario, pytest.mark.summon]\n"}
+    assert select_with_importers((TAME_SCENARIO,), sources).groups == ["boot", "summon"]
+
+
+def test_an_importer_that_does_not_parse_counts_as_importing() -> None:
+    sources = {
+        TAME_SCENARIO: "pytestmark = [pytest.mark.scenario, pytest.mark.tame]\n",
+        IMPORTER_SCENARIO: "def broken(:\npytestmark = [pytest.mark.scenario, pytest.mark.summon]\n",
+    }
+    selection = select_with_importers((TAME_SCENARIO,), sources)
+    assert selection.groups == ["boot", "tame", "summon"]
+    assert selection.reasons[2] == "summon: test_importer.py does not parse, so it may import test_tame.py"
+
+
+def test_an_importer_with_subgroups_adds_only_its_subgroups() -> None:
+    sources = {
+        TAME_SCENARIO: "pytestmark = [pytest.mark.scenario, pytest.mark.tame]\n",
+        IMPORTER_SCENARIO: "from test_tame import TAMER\n" + SPLIT_SCENARIO_SOURCE,
+    }
+    assert select_with_importers((TAME_SCENARIO,), sources).groups == ["boot", "tame", "shaping_zone_editor", "shaping_commands"]
+
+
+def test_an_importers_own_imports_are_not_followed() -> None:
+    # One level: a file importing the importer is not reached.
+    second = "tests/integration/scenarios/test_second.py"
+    sources = {
+        TAME_SCENARIO: "pytestmark = [pytest.mark.scenario, pytest.mark.tame]\n",
+        IMPORTER_SCENARIO: "from test_tame import TAMER\npytestmark = [pytest.mark.scenario, pytest.mark.summon]\n",
+        second: "from test_importer import TAMER\npytestmark = [pytest.mark.scenario, pytest.mark.poison]\n",
+    }
+    assert select_with_importers((TAME_SCENARIO,), sources).groups == ["boot", "tame", "summon"]
+
+
+def test_scenario_file_paths_lists_the_test_files_in_the_scenarios_folder(tmp_path: Path) -> None:
+    scenarios = tmp_path / "tests/integration/scenarios"
+    scenarios.mkdir(parents=True)
+    for name in ("test_b.py", "test_a.py", "conftest.py", "helpers.py", "test_notes.md"):
+        (scenarios / name).write_text("", encoding="utf-8")
+    assert ci_groups.scenario_file_paths(tmp_path) == ["tests/integration/scenarios/test_a.py", "tests/integration/scenarios/test_b.py"]
+
+
+def test_a_subgroup_token_adds_the_subgroup() -> None:
+    selection = select_with_subgroups(body="@integration-test-shaping_zone_editor")
+    assert selection.groups == ["boot", "shaping_zone_editor"]
+    assert selection.expression() == "boot or shaping_zone_editor"
+
+
+def test_an_unknown_token_lists_the_subgroups_among_the_registered_groups() -> None:
+    expected = r"unknown integration groups: shaping_zone; registered groups: boot, shaping, shaping_commands, shaping_zone_editor, summon \(or all\)"
+    with pytest.raises(ci_groups.UnknownGroups, match=expected):
+        select_with_subgroups(body="@integration-test-shaping_zone")
 
 
 def test_a_group_file_changed_with_its_scenario_file_is_listed_once() -> None:
@@ -224,6 +373,35 @@ def test_main_writes_the_group_and_summary_from_the_environment(tmp_path: Path, 
     assert output.read_text(encoding="utf-8") == "earlier=line\ngroup=boot or poison or summon\nshards=[1]\n"
     assert summary.read_text(encoding="utf-8").startswith("### Integration groups: `boot`, `poison`, `summon`\n")
     assert "parallel shards" not in summary.read_text(encoding="utf-8")
+
+
+def test_main_reads_the_subgroups_from_the_group_folder(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = tmp_path / "repo"
+    write_repo(repo_root)
+    groups_dir = repo_root / ci_groups.GROUPS_DIRECTORY
+    (groups_dir / "shaping.txt").write_text("the shaping editors\n", encoding="utf-8")
+    (groups_dir / "shaping").mkdir()
+    for name in ("commands", "zone_editor"):
+        (groups_dir / "shaping" / f"{name}.txt").write_text(f"the {name}\n", encoding="utf-8")
+    scenario = "tests/integration/scenarios/test_shaping.py"
+    (repo_root / scenario).write_text(SPLIT_SCENARIO_SOURCE, encoding="utf-8")
+    changed_files = tmp_path / "changed"
+    changed_files.write_text(f"{scenario}\0", encoding="utf-8")
+    output = tmp_path / "output"
+    monkeypatch.setenv("PR_BODY", "")
+    status = ci_groups.main(["--event", "pull_request", "--changed-files", str(changed_files), "--repo-root", str(repo_root), "--output", str(output)])
+    assert status == 0
+    assert output.read_text(encoding="utf-8") == "group=boot or shaping_zone_editor or shaping_commands\nshards=[1]\n"
+
+
+def test_main_adds_the_groups_of_scenario_files_that_import_a_changed_one(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = tmp_path / "repo"
+    write_repo(repo_root)
+    (repo_root / "tests/integration/scenarios/test_poison.py").write_text(SCENARIO_SOURCES["tests/integration/scenarios/test_poison.py"], encoding="utf-8")
+    importer = "from test_poison import DOSE\n" + SCENARIO_SOURCES["tests/integration/scenarios/test_summon.py"]
+    (repo_root / "tests/integration/scenarios/test_summon.py").write_text(importer, encoding="utf-8")
+    listing = b"tests/integration/scenarios/test_poison.py\0"
+    assert run_main_on_changed_files(tmp_path, monkeypatch, listing) == "group=boot or poison or summon\nshards=[1]\n"
 
 
 def run_main_on_changed_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, listing: bytes) -> str:

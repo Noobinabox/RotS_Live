@@ -41,6 +41,16 @@ def plan(skipped: Optional[list[str]] = None, jobs: int = 1, shard: Optional[Sha
     return run_plan.build_plan(TESTS, GROUPS, skipped or [], DURATIONS, jobs, shard)
 
 
+def flat_rows(ticked: tuple[bool, ...]) -> list[run_plan.PlanRow]:
+    """One numbered group checkbox per tick, as a plan without subgroups numbers them."""
+    return [run_plan.PlanRow(f"group_{position + 1}", run_plan.RowKind.GROUP, (position,)) for position in range(len(ticked))]
+
+
+def answer(text: str, ticked: tuple[bool, ...]) -> run_plan.AnswerResult:
+    """apply_answer on a plan of len(ticked) groups without subgroups."""
+    return run_plan.apply_answer(text, ticked, flat_rows(ticked))
+
+
 # Plan building
 
 
@@ -172,6 +182,244 @@ def test_the_plan_text_counts_the_kept_tests_without_a_recorded_time() -> None:
     assert "2 tests have no recorded time and count 15 s each" in text
 
 
+# Groups with subgroups
+
+# The registered groups in registration order: shaping has three subgroups, of which
+# shaping_saving marks no selected test.
+TREE_GROUPS = ["boot", "shaping", "shaping_commands", "shaping_editor", "shaping_saving", "summon"]
+# shaping's subgroups.
+TREE_SUBGROUPS = {"shaping": ["shaping_commands", "shaping_editor", "shaping_saving"]}
+# Five selected tests; the shaping_editor test is in summon too.
+TREE_TESTS = [
+    CollectedTest("scenarios/test_boot.py::test_one", frozenset({"scenario", "boot"})),
+    CollectedTest("scenarios/test_shaping.py::test_a", frozenset({"scenario", "shaping", "shaping_commands"})),
+    CollectedTest("scenarios/test_shaping.py::test_b", frozenset({"scenario", "shaping", "shaping_commands"})),
+    CollectedTest("scenarios/test_shaping.py::test_c", frozenset({"scenario", "shaping", "shaping_editor", "summon"})),
+    CollectedTest("scenarios/test_summon.py::test_d", frozenset({"scenario", "summon"})),
+]
+# Every tree test's node id, in collection order.
+TREE_IDS = [test.node_id for test in TREE_TESTS]
+# Recorded seconds: shaping_commands takes 1.0 min (45 + 15 s), shaping_editor 0.5 min.
+TREE_DURATIONS = {TREE_IDS[1]: 45.0, TREE_IDS[3]: 30.0}
+# The context the tree plans are formatted with.
+TREE_CONTEXT = run_plan.RunContext(launcher="local", jobs_text="1", shard=None)
+
+
+def tree_plan(skipped: Optional[list[str]] = None) -> run_plan.RunPlan:
+    return run_plan.build_plan(TREE_TESTS, TREE_GROUPS, skipped or [], TREE_DURATIONS, 1, subgroups=TREE_SUBGROUPS)
+
+
+def tree_rows(skipped: Optional[list[str]] = None) -> list[run_plan.PlanRow]:
+    return run_plan.plan_rows(tree_plan(skipped))
+
+
+def test_subgroups_are_offered_and_their_group_is_not() -> None:
+    built = tree_plan()
+    assert built.offered_groups == ["boot", "shaping_commands", "shaping_editor", "summon"]
+    assert built.skipped_groups == []
+
+
+def test_the_rows_number_a_header_before_its_subgroups() -> None:
+    assert tree_rows() == [
+        run_plan.PlanRow("boot", run_plan.RowKind.GROUP, (0,)),
+        run_plan.PlanRow("shaping", run_plan.RowKind.HEADER, (1, 2)),
+        run_plan.PlanRow("shaping_commands", run_plan.RowKind.SUBGROUP, (1,)),
+        run_plan.PlanRow("shaping_editor", run_plan.RowKind.SUBGROUP, (2,)),
+        run_plan.PlanRow("summon", run_plan.RowKind.GROUP, (3,)),
+    ]
+
+
+def test_a_group_none_of_whose_subgroups_has_a_selected_test_is_left_out() -> None:
+    commands_only = [test for test in TREE_TESTS if "shaping_editor" not in test.markers and "summon" not in test.markers]
+    built = run_plan.build_plan(commands_only, TREE_GROUPS, ["shaping_commands"], {}, 1, subgroups=TREE_SUBGROUPS)
+    assert built.offered_groups == ["boot"]
+    assert [row.name for row in run_plan.plan_rows(built)] == ["boot"]
+
+
+def test_the_nested_plan_shows_the_header_totals_and_indents_the_subgroups() -> None:
+    lines = run_plan.format_plan(tree_plan(), (True, True, True, True), TREE_CONTEXT)
+    assert lines[1:6] == [
+        f"  [x] 1. {'boot':<20}  {'1 test':>9}  {'0.2 min':>8}",
+        f"  [x] 2. {'shaping':<20}  {'3 tests':>9}  {'1.5 min':>8}",
+        f"      [x] 3. {'shaping_commands':<16}  {'2 tests':>9}  {'1.0 min':>8}",
+        f"      [x] 4. {'shaping_editor':<16}  {'1 test':>9}  {'0.5 min':>8}",
+        f"  [x] 5. {'summon':<20}  {'2 tests':>9}  {'0.8 min':>8}",
+    ]
+
+
+def test_a_header_box_shows_some_ticked_and_counts_what_its_ticked_subgroups_run() -> None:
+    text = "\n".join(run_plan.format_plan(tree_plan(), (True, False, True, True), TREE_CONTEXT))
+    assert f"  [-] 2. {'shaping':<20}  {'1 test':>9}" in text
+    assert f"      [ ] 3. {'shaping_commands':<16}  {'2 tests':>9}" in text
+
+
+def test_a_header_with_nothing_ticked_counts_what_ticking_its_subgroups_adds() -> None:
+    text = "\n".join(run_plan.format_plan(tree_plan(), (True, False, False, True), TREE_CONTEXT))
+    assert f"  [ ] 2. {'shaping':<20}  {'3 tests':>9}" in text
+    # test_c is in summon too, so summon still runs it while shaping is unticked.
+    assert "Total: 2 tests," in text
+
+
+@pytest.mark.parametrize("ticked, toggled", [
+    ((True, True, True, True), (True, False, False, True)),
+    ((True, False, True, True), (True, False, False, True)),
+    ((True, False, False, True), (True, True, True, True)),
+])
+def test_a_header_number_unticks_its_subgroups_when_any_is_ticked_and_ticks_them_all_otherwise(
+    ticked: tuple[bool, ...], toggled: tuple[bool, ...],
+) -> None:
+    result = run_plan.apply_answer("2", ticked, tree_rows())
+    assert result.outcome is AnswerOutcome.CONTINUE
+    assert result.ticked == toggled
+
+
+@pytest.mark.parametrize("typed, ticked", [
+    ("3", (True, False, True, True)),
+    ("1 4", (False, True, False, True)),
+    ("1-3", (False, False, False, True)),
+    ("2-5", (True, False, False, False)),
+    ("4-5", (True, True, False, False)),
+    ("a", (True, True, True, True)),
+    ("n", (False, False, False, False)),
+])
+def test_numbers_and_ranges_count_the_headers_and_a_range_toggles_each_subgroup_once(typed: str, ticked: tuple[bool, ...]) -> None:
+    assert run_plan.apply_answer(typed, (True, True, True, True), tree_rows()).ticked == ticked
+
+
+def test_a_number_past_the_last_row_is_refused_with_the_row_count() -> None:
+    result = run_plan.apply_answer("6", (True, True, True, True), tree_rows())
+    assert result.ticked == (True, True, True, True)
+    assert result.message is not None and "from 1 to 5" in result.message
+
+
+def test_starting_with_every_subgroup_and_group_unticked_is_refused() -> None:
+    result = run_plan.apply_answer("", (False, False, False, False), tree_rows())
+    assert result.outcome is AnswerOutcome.CONTINUE
+    assert result.message is not None and "nothing is ticked" in result.message
+
+
+@pytest.mark.parametrize("ticked, unticked", [
+    ((True, True, True, True), []),
+    ((True, False, True, True), ["shaping_commands"]),
+    ((True, False, False, True), ["shaping"]),
+    ((False, False, False, False), ["boot", "shaping", "summon"]),
+])
+def test_the_unticked_groups_name_a_group_whose_offered_subgroups_are_all_unticked(ticked: tuple[bool, ...], unticked: list[str]) -> None:
+    assert run_plan.unticked_groups(tree_plan(), ticked) == unticked
+
+
+def test_skipping_a_group_skips_its_subgroups_and_lists_the_group_alone() -> None:
+    built = tree_plan(skipped=["shaping"])
+    assert built.offered_groups == ["boot", "summon"]
+    assert built.skipped_groups == ["shaping"]
+    assert built.kept_test_ids([]) == [TREE_IDS[0], TREE_IDS[4]]
+    text = "\n".join(run_plan.format_plan(built, (True, True), TREE_CONTEXT))
+    assert "skipped: shaping (3 tests)" in text
+    assert "shaping_commands" not in text
+
+
+def test_skipping_a_subgroup_lists_it_as_skipped_and_offers_the_rest() -> None:
+    built = tree_plan(skipped=["shaping_editor"])
+    assert built.offered_groups == ["boot", "shaping_commands", "summon"]
+    assert built.skipped_groups == ["shaping_editor"]
+    assert built.kept_test_ids([]) == [TREE_IDS[0], TREE_IDS[1], TREE_IDS[2], TREE_IDS[4]]
+    assert [row.name for row in run_plan.plan_rows(built)] == ["boot", "shaping", "shaping_commands", "summon"]
+    text = "\n".join(run_plan.format_plan(built, (True, True, True), TREE_CONTEXT))
+    assert "skipped: shaping_editor (1 test)" in text
+
+
+def test_a_group_offered_with_one_subgroup_is_a_header_over_it_that_toggles_with_it() -> None:
+    # GROUP=shaping_commands selects only that subgroup's tests.
+    commands_tests = [test for test in TREE_TESTS if "shaping_commands" in test.markers]
+    built = run_plan.build_plan(commands_tests, TREE_GROUPS, [], TREE_DURATIONS, 1, subgroups=TREE_SUBGROUPS)
+    rows = run_plan.plan_rows(built)
+    assert rows == [
+        run_plan.PlanRow("shaping", run_plan.RowKind.HEADER, (0,)),
+        run_plan.PlanRow("shaping_commands", run_plan.RowKind.SUBGROUP, (0,)),
+    ]
+    assert run_plan.format_plan(built, (True,), TREE_CONTEXT)[1:3] == [
+        f"  [x] 1. {'shaping':<20}  {'2 tests':>9}  {'1.0 min':>8}",
+        f"      [x] 2. {'shaping_commands':<16}  {'2 tests':>9}  {'1.0 min':>8}",
+    ]
+    for typed in ("1", "2"):
+        unticked = run_plan.apply_answer(typed, (True,), rows).ticked
+        assert unticked == (False,)
+        assert run_plan.format_plan(built, unticked, TREE_CONTEXT)[1].startswith(f"  [ ] 1. {'shaping':<20}  {'2 tests':>9}")
+        assert run_plan.unticked_groups(built, unticked) == ["shaping"]
+        assert run_plan.apply_answer(typed, unticked, rows).ticked == (True,)
+    assert run_plan.apply_answer("", (False,), rows).message is not None
+
+
+def test_a_skipped_subgroup_and_the_rest_unticked_leave_out_the_whole_group_and_nothing_more() -> None:
+    built = tree_plan(skipped=["shaping_editor"])
+    ticked = (True, False, True)
+    unticked = run_plan.unticked_groups(built, ticked)
+    assert unticked == ["shaping"]
+    # What pytest's -m keeps for "not (shaping_editor or shaping)", and what the plan counts.
+    excluded = {"shaping_editor", *unticked}
+    assert [test.node_id for test in TREE_TESTS if not test.markers & excluded] == [TREE_IDS[0], TREE_IDS[4]]
+    assert built.kept_test_ids(["shaping_commands"]) == [TREE_IDS[0], TREE_IDS[4]]
+    text = "\n".join(run_plan.format_plan(built, ticked, TREE_CONTEXT))
+    assert f"  [ ] 2. {'shaping':<20}  {'2 tests':>9}" in text
+    assert "Total: 2 tests," in text
+
+
+def test_a_sharded_plan_with_subgroups_counts_this_shards_tests_under_each_header() -> None:
+    built = run_plan.build_plan(TREE_TESTS, TREE_GROUPS, [], TREE_DURATIONS, 1, Shard(1, 2), subgroups=TREE_SUBGROUPS)
+    lines = run_plan.format_plan(built, (True, True, True, True), run_plan.RunContext(launcher="local", jobs_text="1", shard="1/2"))
+    # The sorted selection is one, a, b, c, d; shard 1/2 keeps one, b and d.
+    assert lines[1:6] == [
+        f"  [x] 1. {'boot':<20}  {'1 test':>9}  {'0.2 min':>8}",
+        f"  [x] 2. {'shaping':<20}  {'1 test':>9}  {'0.2 min':>8}",
+        f"      [x] 3. {'shaping_commands':<16}  {'1 test':>9}  {'0.2 min':>8}",
+        f"      [x] 4. {'shaping_editor':<16}  {'0 tests':>9}  {'0.0 min':>8}",
+        f"  [x] 5. {'summon':<20}  {'1 test':>9}  {'0.2 min':>8}",
+    ]
+    assert "Total: 3 tests," in lines[6]
+    assert lines[-1] == run_plan.SHARD_FOOTER
+
+
+def test_skip_groups_accepts_a_subgroup() -> None:
+    assert run_plan.parse_skip_groups("shaping_editor shaping", TREE_GROUPS) == ["shaping_editor", "shaping"]
+
+
+def write_tree_groups(groups_dir: Path) -> None:
+    """Group files registering TREE_GROUPS."""
+    groups_dir.mkdir()
+    (groups_dir / "shaping").mkdir()
+    for name in TREE_GROUPS:
+        if name.startswith("shaping_"):
+            path = groups_dir / "shaping" / f"{name[len('shaping_'):]}.txt"
+        else:
+            path = groups_dir / f"{name}.txt"
+        path.write_text(f"the {name} group\n", encoding="utf-8")
+
+
+def collect_tree_tests(python: str, group: str, environ) -> tuple[Optional[list[CollectedTest]], int]:
+    return TREE_TESTS, 0
+
+
+@pytest.mark.parametrize("arguments, answers, expression, skip_groups", [
+    ([], ["2\n", "y\n"], "scenario and not (shaping)", "SKIP_GROUPS=shaping"),
+    ([], ["3\n", "y\n"], "scenario and not (shaping_commands)", "SKIP_GROUPS=shaping_commands"),
+    (["--skip-groups", "shaping_editor"], ["3\n", "y\n"], "scenario and not (shaping_editor or shaping)", "SKIP_GROUPS='shaping_editor shaping'"),
+])
+def test_at_a_terminal_unticked_subgroups_reach_the_run_and_the_repeat_line(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture,
+    arguments: list[str], answers: list[str], expression: str, skip_groups: str,
+) -> None:
+    write_tree_groups(tmp_path / "groups")
+    monkeypatch.setattr(run_plan, "GROUPS_DIR", tmp_path / "groups")
+    runner = FakeRunner()
+    status = run_plan.main(
+        ["--python", "py", *arguments], environ={}, run_command=runner, collect=collect_tree_tests, interactive=True,
+        reader=ScriptedReader(answers), durations_path=tmp_path / "durations.json",
+    )
+    assert status == 0
+    assert runner.commands == [(run_plan.pytest_run_command("py", expression, ""), True)]
+    assert f"Repeat: make integration PYTHON=py {skip_groups} CONFIRM=yes" in capsys.readouterr().out
+
+
 # Expressions and commands
 
 
@@ -206,48 +454,48 @@ def test_the_repeat_line_leaves_out_defaults() -> None:
 # Answers
 
 
-@pytest.mark.parametrize("answer, ticked", [
+@pytest.mark.parametrize("typed, ticked", [
     ("2", (True, False, True)),
     ("1 3", (False, True, False)),
     ("1,3", (False, True, False)),
     ("2-3", (True, False, False)),
     ("a", (True, True, True)),
 ])
-def test_answers_toggle_and_tick_groups(answer: str, ticked: tuple[bool, ...]) -> None:
-    result = run_plan.apply_answer(answer, (True, True, True))
+def test_answers_toggle_and_tick_groups(typed: str, ticked: tuple[bool, ...]) -> None:
+    result = answer(typed, (True, True, True))
     assert result.outcome is AnswerOutcome.CONTINUE
     assert result.ticked == ticked
 
 
 def test_n_unticks_every_group() -> None:
-    assert run_plan.apply_answer("n", (True, False)).ticked == (False, False)
+    assert answer("n", (True, False)).ticked == (False, False)
 
 
 def test_toggling_twice_ticks_again() -> None:
-    once = run_plan.apply_answer("2", (True, True))
-    assert run_plan.apply_answer("2", once.ticked).ticked == (True, True)
+    once = answer("2", (True, True))
+    assert answer("2", once.ticked).ticked == (True, True)
 
 
-@pytest.mark.parametrize("answer", ["", "y", "Y", "yes"])
-def test_enter_or_y_starts(answer: str) -> None:
-    result = run_plan.apply_answer(answer, (True, False))
+@pytest.mark.parametrize("typed", ["", "y", "Y", "yes"])
+def test_enter_or_y_starts(typed: str) -> None:
+    result = answer(typed, (True, False))
     assert result.outcome is AnswerOutcome.START
     assert result.ticked == (True, False)
 
 
 def test_q_cancels() -> None:
-    assert run_plan.apply_answer("q", (True,)).outcome is AnswerOutcome.CANCEL
+    assert answer("q", (True,)).outcome is AnswerOutcome.CANCEL
 
 
 def test_starting_with_nothing_ticked_is_refused() -> None:
-    result = run_plan.apply_answer("", (False, False))
+    result = answer("", (False, False))
     assert result.outcome is AnswerOutcome.CONTINUE
     assert result.message is not None and "nothing is ticked" in result.message
 
 
-@pytest.mark.parametrize("answer", ["0", "4", "3-2", "x", "1-", "2 zebra"])
-def test_bad_answers_change_nothing_and_say_why(answer: str) -> None:
-    result = run_plan.apply_answer(answer, (True, True, True))
+@pytest.mark.parametrize("typed", ["0", "4", "3-2", "x", "1-", "2 zebra"])
+def test_bad_answers_change_nothing_and_say_why(typed: str) -> None:
+    result = answer(typed, (True, True, True))
     assert result.outcome is AnswerOutcome.CONTINUE
     assert result.ticked == (True, True, True)
     assert result.message
@@ -321,6 +569,7 @@ def ask(reader, timeout_seconds: float = 300.0, step_seconds: float = 60.0) -> t
     written: list[str] = []
     result = run_plan.ask(
         3, lambda ticked: [f"plan {ticked}"], reader, written.append, timeout_seconds=timeout_seconds, countdown_step_seconds=step_seconds,
+        rows=flat_rows((True, True, True)),
     )
     return result, written
 

@@ -27,10 +27,11 @@ tests/integration/requirements.txt`.
 | Every scenario | `make integration PYTHON=.venv/bin/python` |
 | Every scenario, on 8 parallel workers | `make integration PYTHON=.venv/bin/python JOBS=8` |
 | One group | `make integration PYTHON=.venv/bin/python GROUP=poison` |
+| One subgroup of a large group | `make integration PYTHON=.venv/bin/python GROUP=shaping_zone_editor` |
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | Only show the plan: each group's tests and estimated minutes | `make integration-plan PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | Every scenario but some groups, without asking | `make integration PYTHON=.venv/bin/python SKIP_GROUPS="shaping practice" CONFIRM=yes` |
-| One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
+| One test, by part of its name; `-k` also matches marker names, so a fragment such as `saving` or `sessions` pulls in whole subgroups: use the node id or a longer fragment | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
 | One test, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
 | Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
 | Every test in a file | `.venv/bin/python -m pytest -q -m scenario tests/integration/scenarios/test_bank.py` |
@@ -485,6 +486,7 @@ not groups:
 | `characters(*characters)` | the test's characters; a test using `server` without it fails |
 | `schedule(name)` | runs `bin/ageland_harness --schedule <name>`; game time advances only through `advance_hours` |
 | a group, one per `tests/integration/groups/<name>.txt` | no behaviour of its own |
+| a subgroup `<name>_<sub>`, one per `tests/integration/groups/<name>/<sub>.txt` | no behaviour of its own; a test marking it also marks `<name>` |
 
 A new group is a new file `tests/integration/groups/<name>.txt` holding its description on one
 line, plus `pytest.mark.<name>` in the scenario's `pytestmark`. `conftest.py` registers a marker
@@ -492,6 +494,15 @@ per file (`register_group_markers`, reading through `rots_harness/groups.py`), a
 choice reads the same folder. A name must be a marker name (letters, digits and underscores). A
 unit test (`unit/test_groups.py`) fails when a scenario marks a group with no file or a file names
 a group no scenario marks. Neither `pytest.ini` nor the Makefile changes.
+
+A subgroup is a file `tests/integration/groups/<name>/<sub>.txt` beside `<name>.txt`, registering
+`<name>_<sub>`; subgroups go one level deep. Each test of a group with subgroups marks the group
+and exactly one subgroup, and each test marking a subgroup marks its group:
+`SubgroupMarkingCheck` in `conftest.py` stops collection otherwise, before `-m` or the shard
+deselects anything (`groups.subgroup_marking_problems`). CI and `make integration-changed` run
+only the subgroups a changed scenario file marks, plus the groups of the scenario files that
+import it; a changed `<name>.txt` or `@integration-test-<name>` still runs the whole group. The
+run plan shows a group's subgroups under a header.
 
 ## Time control
 
@@ -677,7 +688,7 @@ file ends with a `#99999` record, which `count_hash_records` (`db.cpp`) counts o
 | `tests/integration/scenarios/test_<group>.py` | `tests/integration/conftest.py` |
 | `tests/integration/world/`, its notes files included | `tests/integration/rots_harness/` other than `world.py` |
 | room constants shared by two scenario files, in `rots_harness/world.py` | `tests/integration/unit/` |
-| a group file in `tests/integration/groups/` | `src/harness/`, `src/tools/rotstool/` |
+| a group or subgroup file in `tests/integration/groups/` | `src/harness/`, `src/tools/rotstool/` |
 
 A helper or constant used by one scenario file stays in that file, as `hit_points` does in
 `test_poison.py` and `ROOM_BANK_HALL` in `test_bank.py`.

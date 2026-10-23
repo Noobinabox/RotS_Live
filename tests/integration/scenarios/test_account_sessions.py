@@ -26,7 +26,7 @@ from rots_harness.session import (
     LoginRefused,
 )
 
-pytestmark = [pytest.mark.scenario, pytest.mark.account_menu]
+pytestmark = [pytest.mark.scenario, pytest.mark.account_menu, pytest.mark.account_menu_sessions]
 
 # The account's first character, a level-20 human warrior.
 ALPHA = Character(name="Testalpha", race="human", sex="male", level=20, load_room=world.ROOM_ARENA_CENTRE, class_name="warrior")

@@ -83,6 +83,7 @@ def give_new_object(implementor: GameSession, vnum: int, keyword: str, mob: Scri
     return reply.text
 
 
+@pytest.mark.scripts_delays
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a script whose last row is DO_WAIT should end when that wait ends")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -106,6 +107,7 @@ def test_a_script_ending_in_a_wait_ends_when_the_wait_does(server) -> None:
     assert heard.count(second_line) == 1, heard
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="every mob in the room should hear a say, even after one that moves itself on hearing it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -127,6 +129,7 @@ def test_a_listener_after_a_mob_that_leaves_on_speech_still_answers(server) -> N
     assert reply.count(said(LISTENER.short_description, LISTENER_LINE)) == 1, reply
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a false IF should run its else branch when its block ends with a nested block without an else")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -151,6 +154,7 @@ def test_a_false_if_ending_in_a_nested_block_without_an_else_runs_its_else_branc
     assert not any(line in reply for line in SKIPPED_LINES), reply
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a false IF should skip its whole block when a nested block in it has a non-empty else branch")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -175,6 +179,7 @@ def test_a_false_if_skips_a_nested_block_with_a_non_empty_else_branch(server) ->
     assert not any(line in reply for line in SKIPPED_LINES), reply
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="LOAD_OBJ_X should copy ob1 whatever its first parameter, which the script editor calls unused")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)

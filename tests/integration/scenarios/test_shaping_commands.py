@@ -12,7 +12,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_commands]
 
 
 class Editor(NamedTuple):

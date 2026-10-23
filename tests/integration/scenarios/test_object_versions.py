@@ -457,6 +457,7 @@ def wait_for_log_line(log_path: Path, line: str) -> None:
     wait_for_log_count(log_path, line, 1)
 
 
+@pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_stat_shows_no_version_and_no_enchants_on_a_plain_copy(server) -> None:
@@ -473,6 +474,7 @@ def test_stat_shows_no_version_and_no_enchants_on_a_plain_copy(server) -> None:
     assert NO_ENCHANTS_LINE in stat_lines, stat_lines
 
 
+@pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 @pytest.mark.parametrize(
@@ -507,6 +509,7 @@ def test_enchant_weapon_records_the_enchant_with_the_casters_alignment(server, a
     assert flags_line in stat_lines, stat_lines
 
 
+@pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_a_second_enchant_weapon_on_the_same_sword_does_nothing(server) -> None:
@@ -539,6 +542,7 @@ def test_a_second_enchant_weapon_on_the_same_sword_does_nothing(server) -> None:
     assert GOOD_ENCHANT_FLAGS_LINE in stat_lines, stat_lines
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_bump_saved_with_done_writes_the_version_to_the_world_file(server) -> None:
@@ -569,6 +573,7 @@ def test_a_bump_saved_with_done_writes_the_version_to_the_world_file(server) -> 
     assert REFRESHED_LINE in stat_lines, stat_lines
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_version_bump_refreshes_the_owners_copy_at_the_next_login_and_keeps_its_enchant(server) -> None:
@@ -611,6 +616,7 @@ def test_a_version_bump_refreshes_the_owners_copy_at_the_next_login_and_keeps_it
     wait_for_log_line(server.run_dir / "game.log", refresh_line)
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_second_login_after_a_refresh_refreshes_nothing(server) -> None:
@@ -646,6 +652,7 @@ def test_a_second_login_after_a_refresh_refreshes_nothing(server) -> None:
     assert refresh_lines[0].endswith(refresh_line), refresh_lines
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_a_version_bump_refreshes_a_mortals_rented_copy_when_it_returns_and_keeps_its_enchant(server) -> None:
@@ -695,6 +702,7 @@ def test_a_version_bump_refreshes_a_mortals_rented_copy_when_it_returns_and_keep
     wait_for_log_line(log_path, refresh_line)
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_the_test_innkeeper_quotes_rent_for_what_a_mortal_carries(server) -> None:
@@ -720,6 +728,7 @@ def test_the_test_innkeeper_quotes_rent_for_what_a_mortal_carries(server) -> Non
     assert OFFER_QUOTE_MARKER in reply, reply
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 @pytest.mark.parametrize(
@@ -752,6 +761,7 @@ def test_the_innkeeper_refuses_to_store_an_unrentable_item_and_the_mortal_keeps_
     stat_carried_object(implementor, keyword, MORTAL_MYSTIC)
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_the_innkeeper_refuses_an_unrentable_item_inside_a_container(server) -> None:
@@ -777,6 +787,7 @@ def test_the_innkeeper_refuses_an_unrentable_item_inside_a_container(server) -> 
     assert CONTAINED_LOCATION_LINE_FORMAT.format(BAG_SHORT_DESCRIPTION, LOADER_NAME) in token_lines, token_lines
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_an_offer_gives_the_same_refusal_and_no_quote(server) -> None:
@@ -794,6 +805,7 @@ def test_an_offer_gives_the_same_refusal_and_no_quote(server) -> None:
     assert OFFER_QUOTE_FRAGMENT not in reply, reply
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 def test_rent_with_nothing_carried_tells_the_mortal_to_quit(server) -> None:
@@ -810,6 +822,7 @@ def test_rent_with_nothing_carried_tells_the_mortal_to_quit(server) -> None:
     assert CHARACTER_MENU_PROMPT not in reply, reply
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_broken_key_stays_broken_across_a_refresh(server) -> None:
@@ -853,6 +866,7 @@ def test_a_broken_key_stays_broken_across_a_refresh(server) -> None:
     assert NO_PROPER_KEY_MARKER in refused_after, refused_after
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_refreshed_worn_item_gives_its_wearer_the_new_prototypes_affect(server) -> None:
@@ -882,6 +896,7 @@ def test_a_refreshed_worn_item_gives_its_wearer_the_new_prototypes_affect(server
     assert strength_base_and_constant(implementor, OWNER.name) == (WEARER_STRENGTH, WEARER_STRENGTH)
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_turning_the_version_off_stamps_new_copies_and_refreshes_no_saved_copy(server) -> None:
@@ -916,6 +931,7 @@ def test_turning_the_version_off_stamps_new_copies_and_refreshes_no_saved_copy(s
     assert MADE_WHILE_OFF_LINE in new_copy_lines, new_copy_lines
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_refresh_keeps_what_is_left_in_a_drink_container(server) -> None:
@@ -946,6 +962,7 @@ def test_a_refresh_keeps_what_is_left_in_a_drink_container(server) -> None:
     assert SIPPED_WATERSKIN_LINE in refreshed_lines, refreshed_lines
 
 
+@pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
 def test_a_version_bump_to_a_prototype_that_cannot_take_the_enchant_drops_it(server) -> None:

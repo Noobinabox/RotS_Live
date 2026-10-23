@@ -15,7 +15,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_saving]
 
 # A second implementor, who reads the live game from the signpost room while the first one shapes.
 # Implementors enter the game in the immortal start room whatever their load room, so the

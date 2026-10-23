@@ -179,6 +179,7 @@ def start_the_patient_foremans_wait(implementor: GameSession) -> None:
     assert said(PATIENT_FOREMAN.short_description, FAREWELL_LINE) in spoken.text, spoken.text
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.parametrize("smith", SMITHS)
@@ -202,6 +203,7 @@ def test_a_false_if_skips_its_whole_block_with_the_nested_block_inside(server, s
     assert GUARD_LINE not in reply, reply
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.parametrize("smith", SMITHS)
@@ -226,6 +228,7 @@ def test_a_true_if_runs_its_block_past_the_skipped_nested_guard(server, smith: S
     assert GUARD_LINE not in reply, reply
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_true_nested_guard_halts_the_script_for_a_mob_giver(server) -> None:
@@ -249,6 +252,7 @@ def test_a_true_nested_guard_halts_the_script_for_a_mob_giver(server) -> None:
     assert FINAL_LINE not in reply, reply
 
 
+@pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_finished_script_leaves_no_script_delay_on_its_mob(server) -> None:
@@ -267,6 +271,7 @@ def test_a_finished_script_leaves_no_script_delay_on_its_mob(server) -> None:
     assert (int(delay.group(1)), int(delay.group(2))) == (0, 0), stat
 
 
+@pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_waiting_script_shows_its_delay_on_its_mob(server) -> None:
@@ -286,6 +291,7 @@ def test_a_waiting_script_shows_its_delay_on_its_mob(server) -> None:
     assert int(delay.group(2)) > 0, stat
 
 
+@pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_slaying_a_mob_whose_script_finished_does_not_repeat_its_last_line(server) -> None:
@@ -305,6 +311,7 @@ def test_slaying_a_mob_whose_script_finished_does_not_repeat_its_last_line(serve
     assert LAST_LINE not in reply.text, reply.text
 
 
+@pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_slaying_a_mob_mid_wait_runs_the_rest_of_its_script_before_it_dies(server) -> None:
@@ -385,6 +392,7 @@ ROOM_WATCHER = Character(
 )
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.parametrize("case", REPORTED_LINES)
@@ -405,6 +413,7 @@ def test_a_script_line_that_would_crash_is_reported_and_skipped(server, case: Re
         assert count_logged(server, case.report, case.boot_reports + gives) == case.boot_reports + gives
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, ROOM_WATCHER)
 def test_a_script_report_reaches_an_immortal_with_syslog_on_and_no_mortal(server) -> None:
@@ -434,6 +443,7 @@ def test_a_script_report_reaches_an_immortal_with_syslog_on_and_no_mortal(server
     assert "SCRIPT ERROR" not in watched, watched
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_assign_eq_on_an_unset_character_finds_no_object(server) -> None:
@@ -454,6 +464,7 @@ def test_assign_eq_on_an_unset_character_finds_no_object(server) -> None:
     assert said(appraiser.short_description, STILL_HERE_LINE) in reply, reply
 
 
+@pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_skipping_a_false_if_whose_nested_block_never_ends_ends_the_script(server) -> None:
@@ -510,6 +521,7 @@ UNSET_VARIABLE_LINES = [
 ]
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 @pytest.mark.parametrize("case", UNSET_VARIABLE_LINES)
@@ -529,6 +541,7 @@ def test_a_script_line_on_an_unset_variable_is_skipped(server, case: UnsetVariab
         assert count_logged(server, case.log_message, 1) == 1
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_do_wear_wears_an_object_the_mob_carries(server) -> None:
@@ -545,6 +558,7 @@ def test_do_wear_wears_an_object_the_mob_carries(server) -> None:
     assert "A hatter wears a leather cap on his head." in reply, reply
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_load_obj_x_copies_the_given_object(server) -> None:
@@ -571,6 +585,7 @@ MOB_CONSTITUTION = 10
 FAST_UPDATES_PER_HOUR = 20
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_script_hit_write_above_the_limit_is_clamped_and_reads_healthy(server) -> None:
@@ -592,6 +607,7 @@ def test_a_script_hit_write_above_the_limit_is_clamped_and_reads_healthy(server)
     assert "A hale wrestler looks healthy." in looked, looked
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_script_hit_write_of_zero_stuns_and_a_later_write_stands_the_mob_up(server) -> None:
@@ -625,6 +641,7 @@ def test_a_script_hit_write_of_zero_stuns_and_a_later_write_stands_the_mob_up(se
     assert stat_value(POSITION_PATTERN, stat) == "Standing", stat
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_script_hit_write_far_below_zero_leaves_the_mob_dead_until_the_hourly_sweep(server) -> None:
@@ -668,6 +685,7 @@ def test_a_script_hit_write_far_below_zero_leaves_the_mob_dead_until_the_hourly_
     assert "A doomed wrestler" not in looked, looked
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_script_division_by_zero_gives_zero_and_is_logged(server) -> None:
@@ -701,6 +719,7 @@ GATE_WATCHER = Character(
 )
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, GATE_WATCHER)
 def test_a_script_opens_and_locks_a_north_door_from_both_sides(server) -> None:
@@ -755,6 +774,7 @@ BOOT_REPORTS = [
 ]
 
 
+@pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_the_boot_check_reports_every_script_line_naming_something_missing(server) -> None:
@@ -779,6 +799,7 @@ LISTENER = ScriptMob(vnum=1724, keyword="listener", short_description="a listene
 LISTENER_LINE = "I heard that."
 
 
+@pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_listener_ahead_of_a_mob_that_leaves_on_speech_still_answers(server) -> None:

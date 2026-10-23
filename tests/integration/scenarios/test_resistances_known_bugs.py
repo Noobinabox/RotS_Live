@@ -12,7 +12,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.resistances]
+pytestmark = [pytest.mark.scenario, pytest.mark.resistances, pytest.mark.resistances_worn]
 
 # A level-10 human mystic in the arena centre who knows protection: ten practice sessions put
 # protection's knowledge at the cap of 100 (learn_diff 1, recalc_skills in spec_pro.cpp), and its

@@ -389,6 +389,7 @@ def mage_coefficient_and_level(implementor: GameSession, name: str) -> tuple[int
     return int(coefficients.group(1)), int(levels.group(1))
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_practice_all_stops_at_the_guildmasters_limit_and_spends_nothing_more(server) -> None:
@@ -427,6 +428,7 @@ def test_practice_all_stops_at_the_guildmasters_limit_and_spends_nothing_more(se
     assert sessions_left(pupil, PUPIL.name) == STARTING_SESSIONS - 3
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.parametrize("arguments", ["blink 3", "3 blink"], ids=["skill-first", "count-first"])
@@ -454,6 +456,7 @@ def test_a_counted_practice_spends_exactly_that_many_sessions_in_either_word_ord
     assert sessions_left(pupil, PUPIL.name) == STARTING_SESSIONS - 3
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_running_out_of_sessions_part_way_stops_with_the_no_sessions_line(server) -> None:
@@ -475,6 +478,7 @@ def test_running_out_of_sessions_part_way_stops_with_the_no_sessions_line(server
     assert sessions_left(pupil, PUPIL.name) == 0
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.parametrize(
@@ -504,6 +508,7 @@ def test_a_practice_the_guildmaster_cannot_carry_out_is_refused_and_spends_nothi
     assert sessions_left(pupil, PUPIL.name) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, LISTED_PUPIL)
 def test_the_guildmaster_list_shows_sessions_spent_and_the_plain_list_does_not(server) -> None:
@@ -527,6 +532,7 @@ def test_the_guildmaster_list_shows_sessions_spent_and_the_plain_list_does_not(s
     assert guild_row(listed, "blink")[1] == BLINK_SESSIONS_SPENT, listed
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_a_skill_stopped_at_one_guildmasters_limit_is_finished_at_a_higher_one(server) -> None:
@@ -569,6 +575,7 @@ def test_a_skill_stopped_at_one_guildmasters_limit_is_finished_at_a_higher_one(s
     assert listed_sessions(finished_list) == STARTING_SESSIONS - 5
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_a_lower_limit_guildmaster_refuses_a_skill_already_past_it_and_spends_nothing(
@@ -601,6 +608,7 @@ def test_a_lower_limit_guildmaster_refuses_a_skill_already_past_it_and_spends_no
     assert listed_sessions(scorther_list) == STARTING_SESSIONS - 3
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.parametrize(
@@ -636,6 +644,7 @@ def test_a_spell_one_guildmaster_does_not_teach_is_refused_there_and_taught_by_t
     assert listed_sessions(teaching_list) == STARTING_SESSIONS - 1
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, BEORNING_PUPIL)
 def test_a_race_outside_the_guildmasters_mask_is_sent_away(server) -> None:
@@ -661,6 +670,7 @@ def test_a_race_outside_the_guildmasters_mask_is_sent_away(server) -> None:
     assert stat_sessions is not None and int(stat_sessions.group(1)) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, NOVICE_PUPIL)
 def test_a_spell_above_the_pupils_mage_level_is_not_taught(server) -> None:
@@ -682,6 +692,7 @@ def test_a_spell_above_the_pupils_mage_level_is_not_taught(server) -> None:
     assert sessions_left(pupil, NOVICE_PUPIL.name) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, RANGER_PUPIL)
 def test_a_specialization_skill_is_taught_only_to_a_pupil_with_that_specialization(
@@ -719,6 +730,7 @@ def test_a_specialization_skill_is_taught_only_to_a_pupil_with_that_specializati
     assert sessions_left(pupil, RANGER_PUPIL.name, ARODEN) == STARTING_SESSIONS - 1
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CAPPED_PUPIL)
 def test_a_skill_with_51_sessions_spent_is_refused_at_once(server) -> None:
@@ -741,6 +753,7 @@ def test_a_skill_with_51_sessions_spent_is_refused_at_once(server) -> None:
     assert sessions_left(pupil, CAPPED_PUPIL.name, ARODEN) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PERFECT_PUPIL)
 def test_a_skill_already_at_100_is_refused_as_perfect(server) -> None:
@@ -794,6 +807,7 @@ def test_a_skill_already_at_100_is_refused_as_perfect(server) -> None:
 # awareness in 37 sessions (tmps = 246, t = 1000 - 37 * 20 * 246 * 10 / 2000 = 90).
 
 
+@pytest.mark.practice_coefficients
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, RANGER_PUPIL, WIZARD_PUPIL)
 @pytest.mark.parametrize(
@@ -824,6 +838,7 @@ def test_awareness_takes_fewer_sessions_to_master_the_higher_the_ranger_coeffici
     assert guild_row(listed, "awareness") == (100, sessions, "Mastered"), listed
 
 
+@pytest.mark.practice_coefficients
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, RANGER_PUPIL, LOW_RANGER_PUPIL)
 @pytest.mark.parametrize(
@@ -877,6 +892,7 @@ def test_a_low_ranger_coefficient_reaches_the_session_cap_before_mastering_trave
 #   (10000 - 729316 / 100) / 99 = (10000 - 7293) / 99 = 27
 
 
+@pytest.mark.practice_coefficients
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL, URUK_PUPIL, ORC_PUPIL)
 @pytest.mark.parametrize(
@@ -920,6 +936,7 @@ def test_one_session_of_magic_missile_teaches_each_race_by_its_adjusted_mage_coe
     assert listed_sessions(listed) == STARTING_SESSIONS - 1
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, ORC_PUPIL)
 def test_the_glass_eyed_shaman_teaches_and_stops_with_its_own_lines(server) -> None:
@@ -951,6 +968,7 @@ def test_the_glass_eyed_shaman_teaches_and_stops_with_its_own_lines(server) -> N
     assert listed_sessions(listed) == STARTING_SESSIONS - 1
 
 
+@pytest.mark.practice_coefficients
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, LHUTH_PUPIL)
 def test_an_uruk_lhuth_knows_blink_at_10_percent_unpractised_and_again_after_pracreset(
@@ -1009,6 +1027,7 @@ MASTERY_KNOWLEDGE = [
 ]
 
 
+@pytest.mark.practice_coefficients
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MASTERY_PUPIL)
 def test_weapon_mastery_sessions_raise_every_weapon_skill_without_sessions_of_its_own(
@@ -1028,6 +1047,7 @@ def test_weapon_mastery_sessions_raise_every_weapon_skill_without_sessions_of_it
         assert guild_row(listed, skill)[:2] == (knowledge, sessions_spent), (skill, listed)
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.parametrize(
@@ -1065,6 +1085,7 @@ def test_a_guildmaster_whose_program_names_no_row_is_only_posing(
     assert listed_sessions(listed) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OVERSPENT_PUPIL)
 def test_more_sessions_spent_than_the_formula_gives_leaves_a_negative_count(server) -> None:
@@ -1102,6 +1123,7 @@ def test_more_sessions_spent_than_the_formula_gives_leaves_a_negative_count(serv
     assert sessions_left(pupil, name) == -53
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_a_sitting_pupil_gets_the_plain_list_and_practises_nothing(server) -> None:
@@ -1128,6 +1150,7 @@ def test_a_sitting_pupil_gets_the_plain_list_and_practises_nothing(server) -> No
     assert sessions_left(pupil, PUPIL.name) == STARTING_SESSIONS
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 def test_a_skill_abbreviation_names_the_first_skill_in_table_order(server) -> None:
@@ -1161,6 +1184,7 @@ ARCANE_SPECIALIZATION = 17
 #   slow: time MAX(1, (6 * 3 + 1) / 2) = 9,   stamina (5 * 1 + 1) / 2 = 3
 
 
+@pytest.mark.practice_lists
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, LISTED_PUPIL)
 @pytest.mark.parametrize(

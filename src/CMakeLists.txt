@@ -249,6 +249,8 @@ set(ROTS_TEST_SOURCES
     tests/harness_affect_hours_transcript_tests.cpp
     tests/harness_command_line_parser_tests.cpp
     tests/harness_options_tests.cpp
+    tests/harness_run_token_tests.cpp
+    tests/harness_token_entry_policy_tests.cpp
     tests/rescue_tests.cpp
     tests/save_benchmark_tests.cpp
     tests/spell_pa_tests.cpp
@@ -332,9 +334,12 @@ set(HARNESS_SOURCES
     harness/harness_controlled_schedule.cpp
     harness/harness_options.cpp
     harness/harness_request_registry.cpp
+    harness/real_time_registration.cpp
     harness/request_dispatch.cpp
+    harness/run_token.cpp
     harness/schedule_registry.cpp
     harness/standard_stream_channel.cpp
+    harness/token_entry_policy.cpp
 )
 
 # The test build of the server, whose world time advances only on the integration harness's

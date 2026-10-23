@@ -3,12 +3,14 @@
 #include "harness_control_channel.h"
 #include "harness_controlled_schedule.h"
 #include "harness_options.h"
-#include "password_login_only.h"
+#include "real_time_registration.h"
+#include "run_token.h"
 #include "schedule_definition.h"
 #include "schedule_registry.h"
 #include "schedule_setup.h"
 #include "server_startup.h"
 #include "standard_stream_channel.h"
+#include "token_entry_policy.h"
 #include "utils.h"
 
 #include <cstdlib>
@@ -29,6 +31,10 @@ int main(int argc, char** argv)
     if (!affect_hours_registered) {
         return EXIT_FAILURE;
     }
+    const bool real_time_registered = harness::register_real_time_schedule(schedules);
+    if (!real_time_registered) {
+        return EXIT_FAILURE;
+    }
 
     harness::HarnessOptions options;
     std::string parse_error;
@@ -43,9 +49,8 @@ int main(int argc, char** argv)
     }
 
     prepare_server_process(options.startup);
-    const std::string mode = "Harness: world time advances only on request over standard input "
-                             "(schedule "
-        + options.schedule_name + ").";
+    const std::string mode = "Harness: the world advances by the schedule " + options.schedule_name
+        + "; harness requests are read from standard input.";
     log(mode.c_str());
 
     // The schedule is built after prepare_server_process, because a factory may rely on the data
@@ -66,6 +71,12 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    const std::string run_token = harness::create_run_token();
+    // The ready reply is read only by the process that started the server; it learns the token
+    // there.
+    setup.ready_state = harness::with_entry_token(setup.ready_state, run_token);
+    harness::TokenEntryPolicy entry_policy(run_token);
+
     // Untied, so the reading thread's reads never flush standard output while the game thread
     // writes to it.
     std::cin.tie(nullptr);
@@ -75,7 +86,6 @@ int main(int argc, char** argv)
     std::shared_ptr<GameTickSchedule> tick_schedule
         = std::make_shared<harness::HarnessControlledSchedule>(
             definition->name, std::move(setup), std::move(channel));
-    PasswordLoginOnly entry_policy;
     run_the_game(options.startup.port, std::move(tick_schedule), entry_policy);
     return EXIT_SUCCESS;
 }

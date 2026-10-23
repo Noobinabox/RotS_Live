@@ -4,7 +4,8 @@ The changed paths are those committed since the merge base with --base, plus unc
 to tracked files and untracked files git does not ignore; a rename counts as both its old and its
 new path. ci_groups' rules apply first (without a pull request description): `boot` always runs,
 changed scenario and group files add their groups (only the subgroups a changed scenario file marks,
-for a group whose subgroups it marks), and a change to the harness, `src/CMakeLists.txt`
+for a group whose subgroups it marks, and the groups of the scenario files that import it), and a
+change to the harness, `src/CMakeLists.txt`
 or a `lib/` file the harness copies into every test's lib runs every group. The one local-only
 rule: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also runs every
 group. CI leaves it out because most pull requests touch a header. Changed game code (`.cpp`)
@@ -84,15 +85,16 @@ def select_local_groups(
     read_scenario: Callable[[str], Optional[str]],
     groups: list[str],
     subgroups: Optional[Mapping[str, Sequence[str]]] = None,
+    scenario_paths: Iterable[str] = (),
 ) -> ci_groups.Selection:
     """The groups a local run of these changed paths tests.
 
-    read_scenario returns a changed scenario file's source, or None when the change deleted it.
+    read_scenario returns a scenario file's source, or None when the file is not in the checkout.
     groups lists the registered groups and subgroups; subgroups gives each group that has
-    subgroups, with them.
+    subgroups, with them; scenario_paths lists every scenario file in the checkout.
     """
     changed_list = list(changed)
-    selection = ci_groups.select_groups("pull_request", "", changed_list, read_scenario, groups, subgroups)
+    selection = ci_groups.select_groups("pull_request", "", changed_list, read_scenario, groups, subgroups, scenario_paths)
     if selection.groups is None:
         return selection
     for path in changed_list:
@@ -156,7 +158,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         return scenario_path.read_text(encoding="utf-8") if scenario_path.is_file() else None
 
     groups = [group.name for group in group_list]
-    selection = select_local_groups(changed, read_scenario, groups, group_files.subgroups_by_parent(group_list))
+    subgroups = group_files.subgroups_by_parent(group_list)
+    selection = select_local_groups(changed, read_scenario, groups, subgroups, ci_groups.scenario_file_paths(repo_root))
     # The reasons quote changed paths, which may hold bytes that are not UTF-8.
     ci_groups.escape_unencodable_output(sys.stdout)
     # A short commit id shows when a remote-tracking base is out of date.

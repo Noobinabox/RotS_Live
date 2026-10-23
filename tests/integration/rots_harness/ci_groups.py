@@ -2,7 +2,8 @@
 
 `boot` always runs. A description token `@integration-test-<group>` adds that group or subgroup,
 and `@integration-test-all` runs every group. A changed scenario file adds the groups it marks, and
-only their subgroups for a group whose subgroups it also marks. A changed group file
+only their subgroups for a group whose subgroups it also marks, and the groups of every scenario
+file that imports it (one level). A changed group file
 (tests/integration/groups/<group>.txt, or <group>/<sub>.txt for a subgroup) adds its group or
 subgroup. These run every group:
 a push; a change to the harness itself; a change to `src/CMakeLists.txt`, whose compile settings
@@ -18,6 +19,7 @@ file of NUL-separated paths, as `git diff --name-only -z --no-renames` prints th
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -37,6 +39,10 @@ DESCRIPTION_TOKEN = re.compile(r"(?<![\w-])@integration-test-([A-Za-z0-9_]+)")
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
 SCENARIO_MARKER = re.compile(r"pytest\.mark\.([A-Za-z_][A-Za-z0-9_]*)")
 SCENARIO_DIRECTORY = "tests/integration/scenarios/"
+# The scenario files whose changes select groups; another file in the folder is a shared helper.
+SCENARIO_FILE_PATTERN = "test_*.py"
+# The scenarios folder's name, as a package-qualified import names it (from scenarios import test_x).
+SCENARIO_PACKAGE = "scenarios"
 # One <group>.txt per group and <group>/<sub>.txt per subgroup; a change to one adds only its group
 # or subgroup, so it is not a harness path.
 GROUPS_DIRECTORY = f"tests/integration/{group_files.GROUPS_DIRECTORY_NAME}/"
@@ -127,6 +133,56 @@ def scenario_groups(source: str, groups: Iterable[str], subgroups: Optional[Mapp
     return [name for name in found if not any(subgroup in found for subgroup in subgroup_names.get(name, ()))]
 
 
+def imported_module_names(source: str) -> Optional[set[str]]:
+    """The last part of every module name a source imports, anywhere in it, or None when it does not parse.
+
+    from scenarios import test_x and from . import test_x name the modules they import, so their
+    imported names are given instead of the package.
+    """
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return None
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name.rsplit(".", 1)[-1] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            package = (node.module or "").rsplit(".", 1)[-1]
+            if package in ("", SCENARIO_PACKAGE):
+                names.update(alias.name for alias in node.names)
+            else:
+                names.add(package)
+    return names
+
+
+def importer_reasons(path: str, scenario_paths: Iterable[str], read_scenario: Callable[[str], Optional[str]]) -> list[tuple[str, str]]:
+    """Each other scenario file that imports the scenario file at path, with why it counts, in the order given.
+
+    A file that does not parse counts, since it may import path. Its own importers are not followed.
+    """
+    module = Path(path).stem
+    importers = []
+    for other in scenario_paths:
+        if other == path:
+            continue
+        source = read_scenario(other)
+        if source is None:
+            continue
+        imported = imported_module_names(source)
+        if imported is None:
+            importers.append((other, f"{Path(other).name} does not parse, so it may import {Path(path).name}"))
+        elif module in imported:
+            importers.append((other, f"{Path(other).name} imports {Path(path).name}"))
+    return importers
+
+
+def scenario_file_paths(repo_root: Path) -> list[str]:
+    """The repository-relative paths of the scenario files in repo_root's scenarios folder, sorted; none when it is missing."""
+    folder = repo_root / SCENARIO_DIRECTORY
+    return sorted(f"{SCENARIO_DIRECTORY}{path.name}" for path in folder.glob(SCENARIO_FILE_PATTERN) if path.is_file())
+
+
 def is_harness_path(path: str) -> bool:
     """Whether a change to this repository path can affect every scenario."""
     if path.startswith(WORLD_NOTES_DIRECTORY):
@@ -170,12 +226,15 @@ def select_groups(
     read_scenario: Callable[[str], Optional[str]],
     groups: list[str],
     subgroups: Optional[Mapping[str, Sequence[str]]] = None,
+    scenario_paths: Iterable[str] = (),
 ) -> Selection:
     """The groups a CI run tests.
 
-    read_scenario returns a changed scenario file's source, or None when the change deleted it.
+    read_scenario returns a scenario file's source, or None when the file is not in the checkout.
     groups lists the registered groups and subgroups; a changed group file adds its group only
     while it is one. subgroups gives each group that has subgroups, with them (scenario_groups).
+    scenario_paths lists every scenario file in the checkout (scenario_file_paths); a changed
+    scenario file, even a deleted one, also adds the groups of those that import it.
     Raises UnknownGroups when the description names a group no group file registers.
     """
     if event == "push":
@@ -190,6 +249,7 @@ def select_groups(
     if ALL_GROUPS_TOKEN in tokens:
         return Selection(None, [f"every group: the description has @integration-test-{ALL_GROUPS_TOKEN}"])
     changed = list(changed_paths)
+    all_scenarios = list(scenario_paths)
     for path in changed:
         reason = every_group_reason(path)
         if reason is not None:
@@ -210,12 +270,17 @@ def select_groups(
         if not (path.startswith(SCENARIO_DIRECTORY) and path.endswith(".py")):
             continue
         source = read_scenario(path)
-        if source is None:
-            continue
-        for name in scenario_groups(source, groups, subgroups):
-            if name not in selected:
-                selected.append(name)
-                reasons.append(f"{name}: {Path(path).name} changed")
+        if source is not None:
+            for name in scenario_groups(source, groups, subgroups):
+                if name not in selected:
+                    selected.append(name)
+                    reasons.append(f"{name}: {Path(path).name} changed")
+        # An importer's tests run the changed file's code, though it marks none of their groups.
+        for importer, why in importer_reasons(path, all_scenarios, read_scenario):
+            for name in scenario_groups(read_scenario(importer) or "", groups, subgroups):
+                if name not in selected:
+                    selected.append(name)
+                    reasons.append(f"{name}: {why}")
     return Selection(selected, reasons)
 
 
@@ -263,7 +328,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         return scenario_path.read_text(encoding="utf-8") if scenario_path.is_file() else None
 
     try:
-        selection = select_groups(arguments.event, os.environ.get("PR_BODY", ""), changed, read_scenario, groups, subgroups)
+        selection = select_groups(
+            arguments.event, os.environ.get("PR_BODY", ""), changed, read_scenario, groups, subgroups, scenario_file_paths(repo_root),
+        )
     except UnknownGroups as unknown:
         print(f"error: {unknown}", file=sys.stderr)
         return 2

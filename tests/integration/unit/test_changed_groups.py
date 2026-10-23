@@ -107,6 +107,20 @@ def test_a_changed_harness_file_runs_every_group_as_in_ci() -> None:
     assert selection.reasons == ["every group: harness file tests/integration/rots_harness/session.py changed"]
 
 
+def test_a_changed_scenario_file_with_subgroups_runs_only_its_subgroups() -> None:
+    scenario = "tests/integration/scenarios/test_shaping.py"
+    source = (
+        "pytestmark = [pytest.mark.scenario, pytest.mark.shaping]\n"
+        "@pytest.mark.shaping_zone_editor\ndef test_one(server): pass\n"
+    )
+    groups = ["boot", "shaping", "shaping_commands", "shaping_zone_editor"]
+    subgroups = {"shaping": ["shaping_commands", "shaping_zone_editor"]}
+    selection = changed_groups.select_local_groups([scenario], {scenario: source}.get, groups, subgroups)
+    assert selection.groups == ["boot", "shaping_zone_editor"]
+    command = changed_groups.integration_command("make", "python3", selection)
+    assert command == ["make", "integration", "PYTHON=python3", "GROUP=boot or shaping_zone_editor"]
+
+
 def test_a_changed_game_header_runs_every_group() -> None:
     selection = select(POISON_SCENARIO, "src/structs.h")
     assert selection.groups is None

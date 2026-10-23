@@ -3,7 +3,8 @@
 The changed paths are those committed since the merge base with --base, plus uncommitted changes
 to tracked files and untracked files git does not ignore; a rename counts as both its old and its
 new path. ci_groups' rules apply first (without a pull request description): `boot` always runs,
-changed scenario and group files add their groups, and a change to the harness, `src/CMakeLists.txt`
+changed scenario and group files add their groups (only the subgroups a changed scenario file marks,
+for a group whose subgroups it marks), and a change to the harness, `src/CMakeLists.txt`
 or a `lib/` file the harness copies into every test's lib runs every group. The one local-only
 rule: a changed game header (`src/**/*.h` outside `src/harness/` and `src/tests/`) also runs every
 group. CI leaves it out because most pull requests touch a header. Changed game code (`.cpp`)
@@ -19,7 +20,7 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, Mapping, Optional, Sequence
 
 from rots_harness import ci_groups
 from rots_harness import groups as group_files
@@ -78,14 +79,20 @@ def _local_every_group_reason(path: str) -> Optional[str]:
     return None
 
 
-def select_local_groups(changed: Iterable[str], read_scenario: Callable[[str], Optional[str]], groups: list[str]) -> ci_groups.Selection:
+def select_local_groups(
+    changed: Iterable[str],
+    read_scenario: Callable[[str], Optional[str]],
+    groups: list[str],
+    subgroups: Optional[Mapping[str, Sequence[str]]] = None,
+) -> ci_groups.Selection:
     """The groups a local run of these changed paths tests.
 
     read_scenario returns a changed scenario file's source, or None when the change deleted it.
-    groups lists the registered groups.
+    groups lists the registered groups and subgroups; subgroups gives each group that has
+    subgroups, with them.
     """
     changed_list = list(changed)
-    selection = ci_groups.select_groups("pull_request", "", changed_list, read_scenario, groups)
+    selection = ci_groups.select_groups("pull_request", "", changed_list, read_scenario, groups, subgroups)
     if selection.groups is None:
         return selection
     for path in changed_list:
@@ -138,7 +145,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         repo_root = Path(top_level)
         run_git = _git_runner(repo_root)
         base_commit = resolve_base(arguments.base, run_git)
-        groups = list(group_files.read_group_descriptions(repo_root / ci_groups.GROUPS_DIRECTORY))
+        group_list = group_files.read_groups(repo_root / ci_groups.GROUPS_DIRECTORY)
         changed = changed_paths(base_commit, run_git)
     except (GitFailed, group_files.GroupFileError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)
@@ -148,7 +155,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         scenario_path = repo_root / path
         return scenario_path.read_text(encoding="utf-8") if scenario_path.is_file() else None
 
-    selection = select_local_groups(changed, read_scenario, groups)
+    groups = [group.name for group in group_list]
+    selection = select_local_groups(changed, read_scenario, groups, group_files.subgroups_by_parent(group_list))
     # The reasons quote changed paths, which may hold bytes that are not UTF-8.
     ci_groups.escape_unencodable_output(sys.stdout)
     # A short commit id shows when a remote-tracking base is out of date.

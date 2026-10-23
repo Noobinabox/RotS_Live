@@ -1,8 +1,10 @@
 """Chooses the scenario groups a CI run tests, from the pull request's description and changed files.
 
-`boot` always runs. A description token `@integration-test-<group>` adds that group, and
-`@integration-test-all` runs every group. A changed scenario file adds the groups it marks, and a
-changed group file (tests/integration/groups/<group>.txt) adds its group. These run every group:
+`boot` always runs. A description token `@integration-test-<group>` adds that group or subgroup,
+and `@integration-test-all` runs every group. A changed scenario file adds the groups it marks, and
+only their subgroups for a group whose subgroups it also marks. A changed group file
+(tests/integration/groups/<group>.txt, or <group>/<sub>.txt for a subgroup) adds its group or
+subgroup. These run every group:
 a push; a change to the harness itself; a change to `src/CMakeLists.txt`, whose compile settings
 reach every program; and a change to the `lib/` files the harness copies into every test's lib
 (`lib/text/` and the `lib/misc` files in libbuilder.TRACKED_MISC_FILES). Only a run of every group
@@ -22,7 +24,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable, Optional, TextIO
+from typing import Callable, Iterable, Mapping, Optional, Sequence, TextIO
 
 from rots_harness import groups as group_files
 from rots_harness import libbuilder
@@ -35,7 +37,8 @@ DESCRIPTION_TOKEN = re.compile(r"(?<![\w-])@integration-test-([A-Za-z0-9_]+)")
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
 SCENARIO_MARKER = re.compile(r"pytest\.mark\.([A-Za-z_][A-Za-z0-9_]*)")
 SCENARIO_DIRECTORY = "tests/integration/scenarios/"
-# One <group>.txt per group; a change to one adds only its group, so it is not a harness path.
+# One <group>.txt per group and <group>/<sub>.txt per subgroup; a change to one adds only its group
+# or subgroup, so it is not a harness path.
 GROUPS_DIRECTORY = f"tests/integration/{group_files.GROUPS_DIRECTORY_NAME}/"
 # Paths whose change can affect any scenario, so every group runs.
 HARNESS_PATH_PREFIXES = (
@@ -68,7 +71,7 @@ REASON_ENCODING_ERRORS = "backslashreplace"
 
 
 class UnknownGroups(ValueError):
-    """The description names groups no group file registers; the message lists the valid ones."""
+    """The description names groups no group file registers; the message lists the valid ones, subgroups included."""
 
 
 @dataclass
@@ -91,11 +94,13 @@ class Selection:
 
 
 def changed_group_file(path: str) -> Optional[str]:
-    """The group a changed path's group file names, or None when the path is not a group file."""
+    """The group or subgroup a changed path's group file names, or None when the path is not a group or subgroup file."""
     if not (path.startswith(GROUPS_DIRECTORY) and path.endswith(group_files.GROUP_FILE_SUFFIX)):
         return None
-    relative = path[len(GROUPS_DIRECTORY):]
-    return None if "/" in relative else relative[: -len(group_files.GROUP_FILE_SUFFIX)]
+    parts = path[len(GROUPS_DIRECTORY): -len(group_files.GROUP_FILE_SUFFIX)].split("/")
+    if len(parts) > 2:
+        return None
+    return "_".join(parts)
 
 
 def description_tokens(body: str) -> list[str]:
@@ -107,14 +112,19 @@ def description_tokens(body: str) -> list[str]:
     return names
 
 
-def scenario_groups(source: str, groups: Iterable[str]) -> list[str]:
-    """The groups a scenario file's source marks."""
+def scenario_groups(source: str, groups: Iterable[str], subgroups: Optional[Mapping[str, Sequence[str]]] = None) -> list[str]:
+    """The groups and subgroups a scenario file's source marks, in order, leaving out a group whose subgroups it also marks.
+
+    subgroups gives each group that has subgroups, with them. Every test of such a group marks one
+    of its subgroups, so the subgroups the file marks cover the group's tests in it.
+    """
     known = set(groups)
     found = []
     for name in SCENARIO_MARKER.findall(source):
         if name in known and name not in found:
             found.append(name)
-    return found
+    subgroup_names = subgroups or {}
+    return [name for name in found if not any(subgroup in found for subgroup in subgroup_names.get(name, ()))]
 
 
 def is_harness_path(path: str) -> bool:
@@ -154,12 +164,18 @@ def escape_unencodable_output(stream: TextIO) -> None:
 
 
 def select_groups(
-    event: str, body: str, changed_paths: Iterable[str], read_scenario: Callable[[str], Optional[str]], groups: list[str],
+    event: str,
+    body: str,
+    changed_paths: Iterable[str],
+    read_scenario: Callable[[str], Optional[str]],
+    groups: list[str],
+    subgroups: Optional[Mapping[str, Sequence[str]]] = None,
 ) -> Selection:
     """The groups a CI run tests.
 
     read_scenario returns a changed scenario file's source, or None when the change deleted it.
-    groups lists the registered groups; a changed group file adds its group only while it is one.
+    groups lists the registered groups and subgroups; a changed group file adds its group only
+    while it is one. subgroups gives each group that has subgroups, with them (scenario_groups).
     Raises UnknownGroups when the description names a group no group file registers.
     """
     if event == "push":
@@ -189,14 +205,14 @@ def select_groups(
         if group_name is not None:
             if group_name in groups and group_name not in selected:
                 selected.append(group_name)
-                reasons.append(f"{group_name}: its group file {Path(path).name} changed")
+                reasons.append(f"{group_name}: its group file {path[len(GROUPS_DIRECTORY):]} changed")
             continue
         if not (path.startswith(SCENARIO_DIRECTORY) and path.endswith(".py")):
             continue
         source = read_scenario(path)
         if source is None:
             continue
-        for name in scenario_groups(source, groups):
+        for name in scenario_groups(source, groups, subgroups):
             if name not in selected:
                 selected.append(name)
                 reasons.append(f"{name}: {Path(path).name} changed")
@@ -230,10 +246,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         parser.error("--full-suite-shards must be at least 1")
     repo_root = arguments.repo_root
     try:
-        groups = list(group_files.read_group_descriptions(repo_root / GROUPS_DIRECTORY))
+        group_list = group_files.read_groups(repo_root / GROUPS_DIRECTORY)
     except (group_files.GroupFileError, OSError) as error:
         print(f"error: cannot read the scenario groups: {error}", file=sys.stderr)
         return 2
+    groups = [group.name for group in group_list]
+    subgroups = group_files.subgroups_by_parent(group_list)
     changed = []
     if arguments.changed_files is not None:
         # surrogateescape keeps the bytes of a file name that is not valid UTF-8, so the name still
@@ -245,7 +263,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return scenario_path.read_text(encoding="utf-8") if scenario_path.is_file() else None
 
     try:
-        selection = select_groups(arguments.event, os.environ.get("PR_BODY", ""), changed, read_scenario, groups)
+        selection = select_groups(arguments.event, os.environ.get("PR_BODY", ""), changed, read_scenario, groups, subgroups)
     except UnknownGroups as unknown:
         print(f"error: {unknown}", file=sys.stderr)
         return 2

@@ -19,6 +19,9 @@
 #include <system_error>
 #include <utility>
 
+// The specializations' names, indexed by PLRSPEC_* number (consts.cpp).
+extern const char* specialize_name[];
+
 namespace {
 
 // The races the creation menu offers, as RACE_* numbers; each one's name is pc_races[race].
@@ -45,6 +48,24 @@ constexpr int MAX_PRACTICES = std::numeric_limits<unsigned char>::max();
 
 // Most a set value can be, because abilities are stored as sh_int.
 constexpr int MAX_SET_VALUE = std::numeric_limits<sh_int>::max();
+
+// Most coins a character can carry; wizset gold's top.
+constexpr int MAX_GOLD = 100000000;
+
+// The size of the alignment range either side of zero; wizset alignment's limit.
+constexpr int MAX_ALIGNMENT = 1000;
+
+// The condition value that switches a condition off; wizset's "off".
+constexpr int CONDITION_OFF = -1;
+
+// Most a hunger, thirst or drunkenness condition can be; wizset's top for each.
+constexpr int MAX_CONDITION = 24;
+
+// Most a base ability can be; wizset's top for str, int, will, dex, con and lea.
+constexpr int MAX_BASE_ABILITY = 40;
+
+// Most base stamina (maximum mana) can be; wizset maxstamina's top.
+constexpr int MAX_BASE_STAMINA = 5000;
 
 // Most bytes read_fixture_spec_file() reads: one past the limit, so a larger file is detected
 // without reading it in full.
@@ -281,6 +302,58 @@ bool parse_skills_object(
     return reader.parse_object(parse_property, &out_error_message);
 }
 
+// Resolves a specialization's name, as specialize_name spells it and in any case, to its
+// PLRSPEC_* number.
+bool resolve_specialization(std::string_view specialization_name, int& out_specialization,
+    std::string& out_error_message)
+{
+    const std::string wanted = lower_case(specialization_name);
+    for (int specialization = 0; specialization < game_types::PS_Count; ++specialization) {
+        if (wanted == specialize_name[specialization]) {
+            out_specialization = specialization;
+            return true;
+        }
+    }
+    out_error_message = "'specialization': '" + std::string(specialization_name) + "' is not a specialization.";
+    return false;
+}
+
+// A numeric key of the set object, the field it fills and the values it accepts.
+struct SetIntegerKey {
+    // The key as the spec writes it.
+    std::string_view name;
+    // The lowest value the key accepts.
+    int minimum;
+    // The highest value the key accepts.
+    int maximum;
+    // The field the value is written to.
+    std::optional<int> FixtureSpec::Character::* current_field;
+    // The stored-value field the value is written to, when current_field is null.
+    std::optional<int> FixtureSpec::StoredValues::* stored_field;
+};
+
+// The set object's numeric keys. hit, mana and move are current values limited by what a
+// character file holds; the rest use the limits of the wizset field of the same name.
+const std::array<SetIntegerKey, 16> SET_INTEGER_KEYS = { {
+    { "hit", 1, MAX_SET_VALUE, &FixtureSpec::Character::hit, nullptr },
+    { "mana", 1, MAX_SET_VALUE, &FixtureSpec::Character::mana, nullptr },
+    { "move", 1, MAX_SET_VALUE, &FixtureSpec::Character::move, nullptr },
+    { "gold", 0, MAX_GOLD, nullptr, &FixtureSpec::StoredValues::gold },
+    { "spirit", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), nullptr,
+        &FixtureSpec::StoredValues::spirit },
+    { "alignment", -MAX_ALIGNMENT, MAX_ALIGNMENT, nullptr, &FixtureSpec::StoredValues::alignment },
+    { "hunger", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::hunger },
+    { "thirst", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::thirst },
+    { "drunk", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::drunk },
+    { "str", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::strength },
+    { "int", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::intelligence },
+    { "wil", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::will },
+    { "dex", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::dexterity },
+    { "con", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::constitution },
+    { "lea", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::learning },
+    { "maxstamina", 1, MAX_BASE_STAMINA, nullptr, &FixtureSpec::StoredValues::max_stamina },
+} };
+
 bool parse_set_object(JsonReader& reader, FixtureSpec::Character& out_character, std::string& out_error_message)
 {
     std::set<std::string> seen_keys;
@@ -290,22 +363,32 @@ bool parse_set_object(JsonReader& reader, FixtureSpec::Character& out_character,
         if (!note_new_key(key, seen_keys, out_error_message)) {
             return false;
         }
-        std::optional<int>* target = nullptr;
-        if (key == "hit") {
-            target = &out_character.hit;
-        } else if (key == "mana") {
-            target = &out_character.mana;
-        } else if (key == "move") {
-            target = &out_character.move;
-        } else {
+        if (key == "specialization") {
+            std::string specialization_name;
+            int specialization = 0;
+            if (!read_string_value(*property_reader, key, specialization_name, out_error_message)
+                || !resolve_specialization(specialization_name, specialization, out_error_message)) {
+                return false;
+            }
+            out_character.stored.specialization = specialization;
+            return true;
+        }
+        const auto set_key = std::find_if(SET_INTEGER_KEYS.begin(), SET_INTEGER_KEYS.end(),
+            [&key](const SetIntegerKey& candidate) -> bool { return candidate.name == key; });
+        if (set_key == SET_INTEGER_KEYS.end()) {
             out_error_message = "Unknown key '" + key + "'.";
             return false;
         }
         int value = 0;
-        if (!read_bounded_integer(*property_reader, key, 1, MAX_SET_VALUE, value, out_error_message)) {
+        if (!read_bounded_integer(
+                *property_reader, key, set_key->minimum, set_key->maximum, value, out_error_message)) {
             return false;
         }
-        *target = value;
+        if (set_key->current_field != nullptr) {
+            out_character.*(set_key->current_field) = value;
+        } else {
+            out_character.stored.*(set_key->stored_field) = value;
+        }
         return true;
     };
     return reader.parse_object(parse_property, &out_error_message);

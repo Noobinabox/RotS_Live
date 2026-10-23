@@ -13,6 +13,7 @@
 #include <limits>
 #include <string>
 #include <system_error>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -365,6 +366,92 @@ TEST(RotstoolFixtureSpec, RefusesPracticesOutOfRange)
             + std::to_string(most_practices);
         EXPECT_TRUE(contains(error_message, expected)) << practices << ": " << error_message;
     }
+}
+
+TEST(RotstoolFixtureSpec, ParsesStoredValuesIntoTheirFields)
+{
+    FixtureSpec spec;
+    std::string error_message;
+    const std::string text = spec_with_character("", R"("set": { "gold": 500, "spirit": 120, "alignment": -1000,
+        "specialization": "Wild Fighting", "hunger": 10, "thirst": -1, "drunk": 24, "str": 40, "int": 0,
+        "wil": 12, "dex": 13, "con": 14, "lea": 15, "maxstamina": 5000, "hit": 20 })");
+    ASSERT_TRUE(parse_fixture_spec(text, spec, error_message)) << error_message;
+
+    const FixtureSpec::StoredValues& stored = spec.characters[0].stored;
+    EXPECT_EQ(stored.gold, 500);
+    EXPECT_EQ(stored.spirit, 120);
+    EXPECT_EQ(stored.alignment, -1000);
+    EXPECT_EQ(stored.specialization, PLRSPEC_WILD);
+    EXPECT_EQ(stored.hunger, 10);
+    EXPECT_EQ(stored.thirst, -1);
+    EXPECT_EQ(stored.drunk, 24);
+    EXPECT_EQ(stored.strength, 40);
+    EXPECT_EQ(stored.intelligence, 0);
+    EXPECT_EQ(stored.will, 12);
+    EXPECT_EQ(stored.dexterity, 13);
+    EXPECT_EQ(stored.constitution, 14);
+    EXPECT_EQ(stored.learning, 15);
+    EXPECT_EQ(stored.max_stamina, 5000);
+    EXPECT_EQ(spec.characters[0].hit, 20);
+}
+
+TEST(RotstoolFixtureSpec, LeavesStoredValuesTheSpecDoesNotSetUnset)
+{
+    FixtureSpec spec;
+    std::string error_message;
+    ASSERT_TRUE(parse_fixture_spec(spec_with_character("", R"("set": { "gold": 1 })"), spec, error_message))
+        << error_message;
+
+    const FixtureSpec::StoredValues& stored = spec.characters[0].stored;
+    EXPECT_EQ(stored.gold, 1);
+    EXPECT_FALSE(stored.spirit.has_value());
+    EXPECT_FALSE(stored.specialization.has_value());
+    EXPECT_FALSE(stored.learning.has_value());
+    EXPECT_FALSE(stored.max_stamina.has_value());
+}
+
+TEST(RotstoolFixtureSpec, RefusesStoredValuesOutsideTheirWizsetLimits)
+{
+    // (key, value just outside the limit, the limits the refusal names)
+    const std::vector<std::tuple<std::string, int, std::string>> refusals = {
+        { "gold", -1, "0 to 100000000" },
+        { "gold", 100000001, "0 to 100000000" },
+        { "alignment", -1001, "-1000 to 1000" },
+        { "alignment", 1001, "-1000 to 1000" },
+        { "hunger", -2, "-1 to 24" },
+        { "thirst", 25, "-1 to 24" },
+        { "drunk", 25, "-1 to 24" },
+        { "str", -1, "0 to 40" },
+        { "int", 41, "0 to 40" },
+        { "wil", 41, "0 to 40" },
+        { "dex", 41, "0 to 40" },
+        { "con", 41, "0 to 40" },
+        { "lea", 41, "0 to 40" },
+        { "maxstamina", 0, "1 to 5000" },
+        { "maxstamina", 5001, "1 to 5000" },
+    };
+    for (const std::tuple<std::string, int, std::string>& refusal : refusals) {
+        const std::string& key = std::get<0>(refusal);
+        const std::string value = std::to_string(std::get<1>(refusal));
+        const std::string error_message
+            = parse_error_of(spec_with_character("", "\"set\": { \"" + key + "\": " + value + " }"));
+        const std::string expected = "'set': '" + key + "': " + value + " is outside " + std::get<2>(refusal);
+        EXPECT_TRUE(contains(error_message, expected)) << key << " " << value << ": " << error_message;
+    }
+}
+
+TEST(RotstoolFixtureSpec, RefusesAnUnknownSpecialization)
+{
+    const std::string error_message
+        = parse_error_of(spec_with_character("", R"("set": { "specialization": "juggling" })"));
+    EXPECT_TRUE(contains(error_message, "'set': 'specialization': 'juggling' is not a specialization"))
+        << error_message;
+}
+
+TEST(RotstoolFixtureSpec, RefusesAWizsetFieldTheSpecDoesNotStore)
+{
+    const std::string error_message = parse_error_of(spec_with_character("", R"("set": { "practices": 5 })"));
+    EXPECT_TRUE(contains(error_message, "'set': Unknown key 'practices'")) << error_message;
 }
 
 TEST(RotstoolFixtureSpec, RefusesAnEmptyCharacterList)

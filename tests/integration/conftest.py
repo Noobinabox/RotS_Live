@@ -30,7 +30,7 @@ from rots_harness.libbuilder import ROTSTOOL_RELATIVE, LibTemplateBuilder, RunLi
 from rots_harness.retention import RunDirectoryReport, keep_run_directory
 from rots_harness.session import GameSession, end_sessions
 from rots_harness.sharding import Shard, in_shard, parse_shard
-from rots_harness.timecontrol import OUTPUT_LOG_NAME, TimeControl, parse_hour_timeout, schedule_name_from_marker
+from rots_harness.timecontrol import OUTPUT_LOG_NAME, REAL_TIME_SCHEDULE, TimeControl, parse_hour_timeout, server_schedule
 
 # tests/integration: this file, pytest.ini, the group files and the test world.
 INTEGRATION_ROOT = Path(__file__).resolve().parent
@@ -395,13 +395,20 @@ class HarnessServer:
     # What the crash check found during an interrupted run, listed under the kept run directory
     # instead of failing the test.
     interrupted_problems: list[str] = field(default_factory=list)
-    # Drives game time on a server started with @pytest.mark.schedule(...); None otherwise.
+    # Reads a harness server's replies and drives its game time; None for plain bin/ageland.
     time_control: Optional[TimeControl] = None
+    # The harness server's schedule; None for plain bin/ageland.
+    schedule: Optional[str] = None
+    # The harness server's entry token, which login() enters with; None for plain bin/ageland,
+    # whose characters log in through the account menu.
+    entry_token: Optional[str] = None
 
     def login(self, name: str) -> GameSession:
         """Logs the named character in and returns its session; the fixture quits it after the test."""
         character = self.character_set.character(name)
-        game_session = GameSession(self.handle, character.name, self.character_set.email, self.character_set.password, self.run_dir)
+        game_session = GameSession(
+            self.handle, character.name, self.character_set.email, self.character_set.password, self.run_dir, entry_token=self.entry_token,
+        )
         try:
             game_session.login()
         except BaseException:
@@ -413,9 +420,10 @@ class HarnessServer:
     def advance_hours(self, hours: int) -> None:
         """Runs hours game hours on a harness server and returns once the server acknowledges them.
 
-        Fails the test when the test has no @pytest.mark.schedule(...), since a plain server's time cannot be driven.
+        Fails the test when the test has no @pytest.mark.schedule(...): neither plain bin/ageland nor
+        the real-time schedule takes time requests.
         """
-        if self.time_control is None:
+        if self.time_control is None or self.schedule == REAL_TIME_SCHEDULE:
             pytest.fail("advance_hours needs @pytest.mark.schedule(...) on the test", pytrace=False)
         self.time_control.advance_hours(hours, hours * hour_timeout_seconds() + HOUR_TIMEOUT_MARGIN_SECONDS)
 
@@ -459,12 +467,12 @@ def character_set_for(request: pytest.FixtureRequest) -> CharacterSet:
 
 
 def schedule_for(request: pytest.FixtureRequest) -> Optional[str]:
-    """The schedule the test's @pytest.mark.schedule(...) names, or None without one; fails the test on a malformed marker."""
+    """The schedule the test's server runs (timecontrol.server_schedule), or None for plain bin/ageland; fails the test on a malformed or conflicting marker."""
     marker = request.node.get_closest_marker("schedule")
-    if marker is None:
-        return None
+    schedule_args = None if marker is None else marker.args
+    real_login = request.node.get_closest_marker("real_login") is not None
     try:
-        return schedule_name_from_marker(marker.args)
+        return server_schedule(schedule_args, real_login)
     except ValueError as malformed:
         pytest.fail(f"{request.node.nodeid}: {malformed}", pytrace=False)
 
@@ -480,7 +488,9 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     test in the session has failed, this server's checks failed, the run was interrupted, or
     ROTS_IT_KEEP=1. Kept directories are listed at the end of the run. A test marked
     @pytest.mark.schedule(name) gets the harness binary with that schedule, whose time
-    advance_hours drives.
+    advance_hours drives; a test marked @pytest.mark.real_login gets plain bin/ageland; any other
+    test gets the harness binary with the real-time schedule. On the harness binary, login()
+    enters characters with the server's entry token instead of the account menu.
     """
     report = request.config.stash[RUN_DIRECTORY_REPORT_KEY]
     character_set = character_set_for(request)
@@ -494,12 +504,13 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         lib_dir = lib_provider.lib_for(character_set, run_dir)
         handle = start_on_a_free_port(harness_launcher, run_dir, lib_dir, session_seed(), schedule=schedule)
         time_control = None
+        entry_token = None
         if schedule is not None:
             # Any failure here stops the server, including the constructor's OSError for an
             # output log it cannot open.
             try:
                 time_control = TimeControl(handle.process.stdin, handle.process.stdout, run_dir / OUTPUT_LOG_NAME)
-                time_control.wait_ready(schedule, READY_TIMEOUT_SECONDS)
+                entry_token = time_control.wait_ready(schedule, READY_TIMEOUT_SECONDS)
             except BaseException:
                 harness_launcher.stop(handle)
                 if time_control is not None:
@@ -515,7 +526,9 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
         else:
             shutil.rmtree(run_dir, ignore_errors=True)
         raise
-    harness_server = HarnessServer(handle, lib_dir, run_dir, character_set, CrashMonitor(handle), time_control=time_control)
+    harness_server = HarnessServer(
+        handle, lib_dir, run_dir, character_set, CrashMonitor(handle), time_control=time_control, schedule=schedule, entry_token=entry_token,
+    )
     try:
         yield harness_server
     finally:

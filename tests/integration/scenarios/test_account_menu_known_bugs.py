@@ -13,7 +13,7 @@ from rots_harness.characters import HARNESS_EMAIL, HARNESS_PASSWORD, IMPLEMENTOR
 from rots_harness.launcher import LOGIN_EMAIL_PROMPT
 from rots_harness.session import ACCOUNT_MENU_PROMPT, LOGIN_PASSWORD_PROMPT, GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.account_menu]
+pytestmark = [pytest.mark.scenario, pytest.mark.account_menu, pytest.mark.real_login]
 
 # The account menu's create-a-new-character choice (show_account_menu, interpre.cpp).
 ACCOUNT_MENU_NEW_CHARACTER = "4"

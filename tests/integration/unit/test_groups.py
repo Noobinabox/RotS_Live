@@ -6,7 +6,16 @@ from pathlib import Path
 
 import pytest
 
-from rots_harness.groups import GroupFileError, read_group_descriptions, registered_marker_names, unknown_marker_names
+from rots_harness.groups import (
+    Group,
+    GroupFileError,
+    read_group_descriptions,
+    read_groups,
+    registered_marker_names,
+    subgroup_marking_problems,
+    subgroups_by_parent,
+    unknown_marker_names,
+)
 
 # tests/integration, whose groups/ folder and scenarios/ the consistency tests read.
 INTEGRATION_ROOT = Path(__file__).resolve().parents[1]
@@ -44,8 +53,139 @@ def test_group_files_give_each_group_its_description_in_name_order(tmp_path: Pat
     (tmp_path / "summon.txt").write_text("summon cannot reach a dark room\n", encoding="utf-8")
     (tmp_path / "boot.txt").write_text("\n  the server boots  \n\n", encoding="utf-8")
     (tmp_path / "README.md").write_text("not a group\n", encoding="utf-8")
-    (tmp_path / "nested.txt").mkdir()
     assert read_group_descriptions(tmp_path) == {"boot": "the server boots", "summon": "summon cannot reach a dark room"}
+
+
+def write_group_tree(groups_dir: Path) -> None:
+    """Two top-level groups, shaping with two subgroups, and files the reader ignores."""
+    (groups_dir / "shaping.txt").write_text("the shaping editors\n", encoding="utf-8")
+    (groups_dir / "boot.txt").write_text("the server boots\n", encoding="utf-8")
+    (groups_dir / "shaping").mkdir()
+    (groups_dir / "shaping" / "zone_editor.txt").write_text("the zone editor\n", encoding="utf-8")
+    (groups_dir / "shaping" / "commands.txt").write_text("the disabled commands\n", encoding="utf-8")
+    (groups_dir / "shaping" / "README.md").write_text("not a subgroup\n", encoding="utf-8")
+
+
+def test_a_subfolder_registers_its_files_as_subgroups_after_their_group(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / "summon.txt").write_text("summon\n", encoding="utf-8")
+    assert read_groups(tmp_path) == [
+        Group("boot", "the server boots"),
+        Group("shaping", "the shaping editors"),
+        Group("shaping_commands", "the disabled commands", parent="shaping"),
+        Group("shaping_zone_editor", "the zone editor", parent="shaping"),
+        Group("summon", "summon"),
+    ]
+
+
+def test_group_descriptions_include_the_subgroups_in_registration_order(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    assert list(read_group_descriptions(tmp_path).items()) == [
+        ("boot", "the server boots"),
+        ("shaping", "the shaping editors"),
+        ("shaping_commands", "the disabled commands"),
+        ("shaping_zone_editor", "the zone editor"),
+    ]
+
+
+def test_subgroups_by_parent_lists_only_the_groups_with_subgroups(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    assert subgroups_by_parent(read_groups(tmp_path)) == {"shaping": ["shaping_commands", "shaping_zone_editor"]}
+
+
+def test_a_subfolder_without_its_group_file_is_refused(tmp_path: Path) -> None:
+    (tmp_path / "boot.txt").write_text("the server boots\n", encoding="utf-8")
+    (tmp_path / "shaping").mkdir()
+    (tmp_path / "shaping" / "zone_editor.txt").write_text("the zone editor\n", encoding="utf-8")
+    with pytest.raises(GroupFileError, match="no group file shaping.txt beside it"):
+        read_groups(tmp_path)
+
+
+def test_a_folder_named_like_a_group_file_is_refused(tmp_path: Path) -> None:
+    (tmp_path / "nested.txt").mkdir()
+    with pytest.raises(GroupFileError, match="no group file nested.txt.txt beside it"):
+        read_groups(tmp_path)
+
+
+def test_a_folder_inside_a_subgroup_folder_is_refused(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / "shaping" / "zone_editor").mkdir()
+    with pytest.raises(GroupFileError, match="a subgroup has no subgroups"):
+        read_groups(tmp_path)
+
+
+@pytest.mark.parametrize("file_name", ["zone-editor.txt", "1st.txt", "or.txt"])
+def test_a_subgroup_file_not_named_like_a_marker_is_refused(tmp_path: Path, file_name: str) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / "shaping" / file_name).write_text("a subgroup\n", encoding="utf-8")
+    with pytest.raises(GroupFileError, match="is not a marker name"):
+        read_groups(tmp_path)
+
+
+def test_a_subgroup_file_without_exactly_one_line_is_refused(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / "shaping" / "saving.txt").write_text("first line\nsecond line\n", encoding="utf-8")
+    with pytest.raises(GroupFileError, match="on one line"):
+        read_groups(tmp_path)
+
+
+def test_a_subgroup_named_like_a_top_level_group_is_refused(tmp_path: Path) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / "shaping_zone_editor.txt").write_text("the zone editor again\n", encoding="utf-8")
+    with pytest.raises(GroupFileError, match=r"shaping_zone_editor.txt registers shaping_zone_editor, which .*zone_editor.txt also registers"):
+        read_groups(tmp_path)
+
+
+def test_two_subgroups_registering_one_name_are_refused(tmp_path: Path) -> None:
+    # a/b_c.txt and a_b/c.txt would both register a_b_c.
+    for name in ("a", "a_b"):
+        (tmp_path / f"{name}.txt").write_text(f"group {name}\n", encoding="utf-8")
+        (tmp_path / name).mkdir()
+    (tmp_path / "a" / "b_c.txt").write_text("one\n", encoding="utf-8")
+    (tmp_path / "a_b" / "c.txt").write_text("two\n", encoding="utf-8")
+    with pytest.raises(GroupFileError, match=r"c.txt registers a_b_c, which .*b_c.txt also registers"):
+        read_groups(tmp_path)
+
+
+# shaping's subgroups, for the marking checks.
+SUBGROUPS = {"shaping": ["shaping_commands", "shaping_zone_editor"]}
+
+
+def test_a_test_with_its_group_and_one_subgroup_breaks_no_rule() -> None:
+    tests = [
+        ("test_a.py::test_one", {"scenario", "shaping", "shaping_commands"}),
+        ("test_b.py::test_two", {"scenario", "boot"}),
+    ]
+    assert subgroup_marking_problems(tests, SUBGROUPS) == []
+
+
+def test_a_test_of_a_group_with_subgroups_needs_one_of_them() -> None:
+    problems = subgroup_marking_problems([("test_a.py::test_one", {"scenario", "shaping"})], SUBGROUPS)
+    assert problems == ["test_a.py::test_one: marks shaping but none of its subgroups (shaping_commands, shaping_zone_editor)"]
+
+
+def test_a_test_marking_two_subgroups_of_one_group_is_reported() -> None:
+    problems = subgroup_marking_problems([("test_a.py::test_one", {"shaping", "shaping_zone_editor", "shaping_commands"})], SUBGROUPS)
+    assert problems == ["test_a.py::test_one: marks 2 subgroups of shaping (shaping_commands, shaping_zone_editor); a test marks exactly one"]
+
+
+def test_a_subgroup_without_its_group_is_reported() -> None:
+    problems = subgroup_marking_problems([("test_a.py::test_one", {"scenario", "shaping_commands"})], SUBGROUPS)
+    assert problems == ["test_a.py::test_one: marks the subgroup shaping_commands without its group shaping"]
+
+
+def test_every_problem_of_every_test_is_reported_in_order() -> None:
+    tests = [
+        ("test_a.py::test_one", {"shaping"}),
+        ("test_a.py::test_two", {"shaping", "shaping_commands"}),
+        ("test_a.py::test_three", {"shaping_commands", "shaping_zone_editor"}),
+    ]
+    assert subgroup_marking_problems(tests, SUBGROUPS) == [
+        "test_a.py::test_one: marks shaping but none of its subgroups (shaping_commands, shaping_zone_editor)",
+        "test_a.py::test_three: marks 2 subgroups of shaping (shaping_commands, shaping_zone_editor); a test marks exactly one",
+        "test_a.py::test_three: marks the subgroup shaping_commands without its group shaping",
+        "test_a.py::test_three: marks the subgroup shaping_zone_editor without its group shaping",
+    ]
 
 
 @pytest.mark.parametrize("file_name", ["bad-name.txt", "1st.txt", "or.txt"])

@@ -230,6 +230,76 @@ def scenario_marker_names() -> set[str]:
     return names
 
 
+def decorator_marker_names(decorators: list[ast.expr]) -> set[str]:
+    """The names X of every pytest.mark.X in the decorator expressions, called or not."""
+    names = set()
+    for decorator in decorators:
+        names |= mark_names(decorator)
+    return names
+
+
+def mark_names(expression: ast.AST) -> set[str]:
+    """The names X of every pytest.mark.X inside expression."""
+    names = set()
+    for node in ast.walk(expression):
+        is_mark = isinstance(node, ast.Attribute) and isinstance(node.value, ast.Attribute) and node.value.attr == "mark"
+        if is_mark and isinstance(node.value.value, ast.Name) and node.value.value.id == "pytest":
+            names.add(node.attr)
+    return names
+
+
+def pytestmark_names(body: list[ast.stmt]) -> set[str]:
+    """The marker names a module or class body's pytestmark assignment gives every test in it."""
+    names = set()
+    for statement in body:
+        if isinstance(statement, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "pytestmark" for target in statement.targets):
+            names |= mark_names(statement.value)
+    return names
+
+
+def scenario_tests_and_markers(source: str, file_name: str) -> list[tuple[str, set[str]]]:
+    """Each test function in a scenario file's source, as "<file>::[<class>::]<test>", with the markers
+    its module pytestmark, its class (decorators and pytestmark) and its own decorators give it."""
+    tree = ast.parse(source)
+    module_markers = pytestmark_names(tree.body)
+    tests = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+            tests.append((f"{file_name}::{node.name}", module_markers | decorator_marker_names(node.decorator_list)))
+        if isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+            class_markers = module_markers | decorator_marker_names(node.decorator_list) | pytestmark_names(node.body)
+            for method in node.body:
+                if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) and method.name.startswith("test"):
+                    tests.append((f"{file_name}::{node.name}::{method.name}", class_markers | decorator_marker_names(method.decorator_list)))
+    return tests
+
+
+def test_scenario_markers_are_read_from_the_module_its_class_and_the_test() -> None:
+    source = (
+        "pytestmark = [pytest.mark.scenario, pytest.mark.shaping]\n"
+        "@pytest.mark.shaping_saving\n@pytest.mark.xfail(strict=True)\ndef test_one(server): pass\n"
+        "def helper(): pass\n"
+        "@pytest.mark.boot\nclass TestGroup:\n"
+        "    pytestmark = pytest.mark.summon\n"
+        "    @pytest.mark.poison\n    def test_two(self, server): pass\n"
+    )
+    assert scenario_tests_and_markers(source, "test_a.py") == [
+        ("test_a.py::test_one", {"scenario", "shaping", "shaping_saving", "xfail"}),
+        ("test_a.py::TestGroup::test_two", {"scenario", "shaping", "boot", "summon", "poison"}),
+    ]
+
+
+def test_every_scenario_test_marks_its_split_groups_subgroup_and_each_subgroups_group() -> None:
+    # The same rules conftest.py's SubgroupMarkingCheck applies at collection, checked here without
+    # collecting, so make integration-unit catches a test that misses its subgroup.
+    subgroups = subgroups_by_parent(read_groups(INTEGRATION_ROOT / "groups"))
+    tests = []
+    for path in sorted((INTEGRATION_ROOT / "scenarios").glob("test_*.py")):
+        tests.extend(scenario_tests_and_markers(path.read_text(encoding="utf-8"), path.name))
+    assert tests, "no scenario tests found"
+    assert subgroup_marking_problems(tests, subgroups) == []
+
+
 def test_the_group_folder_registers_exactly_the_groups_the_scenarios_mark() -> None:
     groups = set(read_group_descriptions(INTEGRATION_ROOT / "groups"))
     marked = scenario_marker_names() - pytest_ini_marker_names() - PYTEST_BUILTIN_MARKERS

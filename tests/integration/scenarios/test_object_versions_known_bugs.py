@@ -126,7 +126,7 @@ def extra_flags_line(stat_lines: list) -> str:
     raise AssertionError(f"no extra flags line in {stat_lines!r}")
 
 
-@pytest.mark.object_versions_rent
+@pytest.mark.object_versions_handling
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="purge <player> should leave the purging immortal's inventory alone; today it destroys it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
@@ -189,7 +189,7 @@ def test_a_sipped_drink_containers_weight_is_kept_across_a_login(server) -> None
     assert any(line.startswith(SIPPED_WATERSKIN_WEIGHT_LINE_START) for line in returned_lines), returned_lines
 
 
-@pytest.mark.object_versions_refresh
+@pytest.mark.object_versions_handling
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="an object built with WILLPOWER should keep it when it leaves a character; today any move out of an inventory clears it, as if it came from attune")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)

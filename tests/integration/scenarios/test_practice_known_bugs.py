@@ -378,7 +378,7 @@ def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(serv
     assert TRAINER_REJECT_MARKER in reply, reply
 
 
-@pytest.mark.practice_sessions
+@pytest.mark.practice_abilities
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
 @pytest.mark.xfail(

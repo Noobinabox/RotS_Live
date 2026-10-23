@@ -1,4 +1,8 @@
 #include "login_test_fixtures.h"
+#include "login_world_test.h"
+#include "scoped_empty_player_table.h"
+#include "temporary_working_directory.h"
+#include "test_connection.h"
 #include "token_entry_policy.h"
 
 #include "account_cache.h"
@@ -68,7 +72,7 @@ std::string read_file_bytes(const std::filesystem::path& path)
 std::string with_save_times_cleared(std::string player_file)
 {
     for (const std::string_view field : SAVE_TIME_FIELDS) {
-        const std::size_t field_start = player_file.find(field.data(), 0, field.size());
+        const std::size_t field_start = player_file.find(field);
         if (field_start == std::string::npos) {
             ADD_FAILURE() << "The player file has no " << field;
             continue;
@@ -153,22 +157,23 @@ protected:
     {
         LoginWorldTest::SetUp();
         // A new connection is logged in to no account.
-        connection.data().account_name[0] = '\0';
+        connection.descriptor().account_name[0] = '\0';
     }
 
-    // Offers line to the policy on connection after discarding its output, keeping what the
-    // policy logged in logged. Returns whether the policy handled the line.
+    // Offers line to the policy on offered_connection after discarding its output, keeping what
+    // the policy logged in logged. Returns whether the policy handled the line.
     bool offer(TestConnection& offered_connection, std::string_view line)
     {
         offered_connection.clear_output();
         testing::internal::CaptureStderr();
-        const bool handled = policy.try_enter(offered_connection.data(), line);
+        const bool handled = policy.try_enter(offered_connection.descriptor(), line);
         logged = testing::internal::GetCapturedStderr();
         return handled;
     }
 
     // Enters typed_name through the login dialogue, from the roster to the character menu's
-    // "1", with a player table of its own, and records what it left.
+    // "1", with a player table of its own, and records what it left. stored_name is the name the
+    // character's files are stored under.
     EnteredCharacter enter_through_dialogue(std::string_view typed_name, std::string_view stored_name)
     {
         ScopedEmptyPlayerTable run_player_table;
@@ -183,13 +188,14 @@ protected:
     }
 
     // Enters typed_name through the policy with a good entry line, with a player table of its
-    // own, and records what it left.
+    // own, and records what it left. stored_name is the name the character's files are stored
+    // under.
     EnteredCharacter enter_through_policy(std::string_view typed_name, std::string_view stored_name)
     {
         ScopedEmptyPlayerTable run_player_table;
         account_cache::clear();
         TestConnection policy_connection(CON_NME);
-        policy_connection.data().account_name[0] = '\0';
+        policy_connection.descriptor().account_name[0] = '\0';
         EXPECT_TRUE(offer(policy_connection, good_entry_line(typed_name)));
         const EnteredCharacter entered = record_entry(policy_connection, stored_name);
         clear_the_game();
@@ -219,7 +225,7 @@ TEST_F(TokenEntryPolicyTest, DeclinesALineThatIsNotAnEntryLine)
         EXPECT_EQ(connection.state(), CON_NME) << "Expected the state unchanged by: '" << line << "'";
         EXPECT_EQ(connection.output(), "") << "Expected nothing sent for: '" << line << "'";
         EXPECT_EQ(connection.character(), nullptr) << "Expected no character for: '" << line << "'";
-        EXPECT_STREQ(connection.data().account_name, "") << "Expected no account for: '" << line << "'";
+        EXPECT_STREQ(connection.descriptor().account_name, "") << "Expected no account for: '" << line << "'";
     }
 }
 
@@ -321,11 +327,11 @@ TEST_F(TokenEntryPolicyTest, RefusesACharacterAnotherSessionOnTheAccountForbids)
 
     // Aragorn, below the level that lets an account play two characters, is already playing.
     TestConnection aragorn_connection(CON_PLYNG);
-    aragorn_connection.data().descriptor = 7;
+    aragorn_connection.descriptor().descriptor = OTHER_PLAYER_SOCKET;
     char_data* aragorn = create_character_in_game("aragorn", 50, 4242);
-    aragorn->desc = &aragorn_connection.data();
-    aragorn_connection.data().character = aragorn;
-    descriptor_list = &aragorn_connection.data();
+    aragorn->desc = &aragorn_connection.descriptor();
+    aragorn_connection.descriptor().character = aragorn;
+    descriptor_list = &aragorn_connection.descriptor();
 
     EXPECT_TRUE(offer(connection, good_entry_line("legolas")));
 
@@ -362,12 +368,12 @@ TEST_F(TokenEntryPolicyTest, EntersTheNamedCharacterInItsLoadRoom)
     char_data* const legolas = connection.character();
     ASSERT_NE(legolas, nullptr);
     EXPECT_STREQ(GET_NAME(legolas), "legolas");
-    EXPECT_EQ(legolas->desc, &connection.data());
+    EXPECT_EQ(legolas->desc, &connection.descriptor());
     EXPECT_EQ(legolas->in_room, LOAD_ROOM_RNUM);
     EXPECT_TRUE(room_holds(LOAD_ROOM_RNUM, legolas));
     EXPECT_TRUE(game_holds(legolas));
-    EXPECT_EQ(connection.data().prompt_mode, 1);
-    EXPECT_STREQ(connection.data().account_name, ACCOUNT_NAME);
+    EXPECT_EQ(connection.descriptor().prompt_mode, 1);
+    EXPECT_STREQ(connection.descriptor().account_name, ACCOUNT_NAME);
     EXPECT_NE(logged.find("Harness entry: legolas"), std::string::npos)
         << "Expected the entry logged; log was: " << logged;
 }
@@ -384,7 +390,7 @@ TEST_F(TokenEntryPolicyTest, EntersACharacterExactlyAsTheLoginDialogueDoes)
     // in a copy of the storage, then the dialogue in the original.
     EnteredCharacter by_policy;
     {
-        TemporaryWorkingDirectory copy_directory;
+        rots_tests::TemporaryWorkingDirectory copy_directory;
         std::filesystem::copy(stored_directory, ".", std::filesystem::copy_options::recursive, error);
         ASSERT_FALSE(error) << "Could not copy the storage: " << error.message();
         by_policy = enter_through_policy("Testimm", "testimm");

@@ -1,4 +1,6 @@
 #include "login_test_fixtures.h"
+#include "login_world_test.h"
+#include "test_connection.h"
 
 #include "account_management.h"
 #include "interpre.h"
@@ -14,8 +16,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-
-int create_entry(const char* name);
 
 namespace {
 
@@ -53,16 +53,15 @@ constexpr char LEGACY_PASSWORD[] = "LegacyPw1";
 constexpr std::string_view ROSTER_PROMPT_END = "Character number or name: ";
 
 // Where text first appears in output, or npos.
-std::size_t position_of(const std::string& output, std::string_view text)
+std::size_t position_of(std::string_view output, std::string_view text)
 {
-    return output.find(text.data(), 0, text.size());
+    return output.find(text);
 }
 
 // Whether output ends with text.
-bool ends_with(const std::string& output, std::string_view text)
+bool ends_with(std::string_view output, std::string_view text)
 {
-    return output.size() >= text.size()
-        && output.compare(output.size() - text.size(), text.size(), text.data(), text.size()) == 0;
+    return output.size() >= text.size() && output.substr(output.size() - text.size()) == text;
 }
 
 // One connection at the account roster, for driving the login from character selection into the
@@ -84,7 +83,7 @@ protected:
         player_table[player_index].race = stored_gimli.race;
         player_table[player_index].idnum = stored_gimli.specials2.idnum;
 
-        descriptor_data& legacy_descriptor = legacy_connection.data();
+        descriptor_data& legacy_descriptor = legacy_connection.descriptor();
         legacy_descriptor.account_name[0] = '\0';
         legacy_descriptor.pos = player_index;
         std::snprintf(legacy_descriptor.pwd, sizeof(legacy_descriptor.pwd), "%s", LEGACY_PASSWORD);
@@ -121,10 +120,10 @@ TEST_F(LoginEntryTest, SelectingACharacterShowsTheMotdAndTheCharacterMenu)
     EXPECT_EQ(connection.state(), CON_SLCT);
     ASSERT_NE(connection.character(), nullptr);
     EXPECT_STREQ(GET_NAME(connection.character()), "legolas");
-    EXPECT_EQ(connection.character()->desc, &connection.data());
+    EXPECT_EQ(connection.character()->desc, &connection.descriptor());
     EXPECT_EQ(connection.output(), std::string(MORTAL_MOTD) + std::string(ACCOUNT_CHARACTER_MENU));
     ASSERT_EQ(top_of_p_table, 0);
-    EXPECT_EQ(connection.data().pos, 0);
+    EXPECT_EQ(connection.descriptor().pos, 0);
     EXPECT_STREQ(player_table[0].name, "legolas");
 }
 
@@ -176,7 +175,7 @@ TEST_F(LoginEntryTest, SelectingACharacterShowsNoFailedLoginNoticeBecauseItsFile
     EXPECT_EQ(connection.character()->specials2.bad_pws, 0);
 
     char_file_u saved { };
-    ASSERT_TRUE(read_stored_character("legolas", &saved));
+    ASSERT_TRUE(read_stored_character("legolas", saved));
     EXPECT_EQ(saved.specials2.bad_pws, 0);
 }
 
@@ -190,7 +189,7 @@ TEST_F(LoginEntryTest, SelectingADeletedCharacterRefusesAndStaysOnTheRoster)
 
     EXPECT_EQ(connection.state(), CON_ACCTSLCT);
     EXPECT_EQ(connection.character(), nullptr);
-    EXPECT_EQ(connection.data().pos, -1);
+    EXPECT_EQ(connection.descriptor().pos, -1);
     const std::string output = connection.output();
     EXPECT_EQ(position_of(output, "That linked character is deleted and cannot be selected.\n\r"), 0u) << output;
     EXPECT_TRUE(ends_with(output, ROSTER_PROMPT_END)) << output;
@@ -278,30 +277,30 @@ TEST_F(LoginEntryTest, SelectingASwitchedImmortalReconnectsToTheOriginalBody)
 
     // Gandalf's player is switched into a mob; the original body waits in the load room.
     char_data* original_body = create_character_in_game("gandalf", 95, 9595);
-    place_in_room(original_body, LOAD_ROOM_RNUM);
+    place_in_room(*original_body, LOAD_ROOM_RNUM);
     char_data* mob = nullptr;
     CREATE(mob, struct char_data, 1);
     clear_char(mob, MOB_ISNPC);
     SET_BIT(mob->specials2.act, MOB_ISNPC);
     mob->nr = -1;
     mob->player.name = copy_for_game("mob");
-    place_in_room(mob, LOAD_ROOM_RNUM);
+    place_in_room(*mob, LOAD_ROOM_RNUM);
     TestConnection switched_connection(CON_PLYNG);
-    switched_connection.data().descriptor = 7;
-    switched_connection.data().character = mob;
-    switched_connection.data().original = original_body;
-    mob->desc = &switched_connection.data();
+    switched_connection.descriptor().descriptor = OTHER_PLAYER_SOCKET;
+    switched_connection.descriptor().character = mob;
+    switched_connection.descriptor().original = original_body;
+    mob->desc = &switched_connection.descriptor();
 
     connection.send("gandalf");
 
     EXPECT_EQ(connection.state(), CON_PLYNG);
     EXPECT_EQ(connection.character(), original_body);
-    EXPECT_EQ(original_body->desc, &connection.data());
+    EXPECT_EQ(original_body->desc, &connection.descriptor());
     EXPECT_EQ(connection.output(), "Reconnecting to unswitched char.");
     EXPECT_EQ(switched_connection.state(), CON_CLOSE);
     EXPECT_EQ(switched_connection.character(), nullptr);
-    EXPECT_EQ(switched_connection.data().original, nullptr);
-    EXPECT_EQ(std::string(switched_connection.data().output), "Disconnecting.");
+    EXPECT_EQ(switched_connection.descriptor().original, nullptr);
+    EXPECT_EQ(std::string(switched_connection.descriptor().output), "Disconnecting.");
 
     // The game leaves the mob in the world; free it here once the old connection let it go.
     if (switched_connection.character() == nullptr) {
@@ -323,8 +322,8 @@ TEST_F(LoginEntryTest, EnteringTheGamePutsTheCharacterInItsLoadRoomAndPlaying)
     EXPECT_EQ(legolas->in_room, LOAD_ROOM_RNUM);
     EXPECT_TRUE(room_holds(LOAD_ROOM_RNUM, legolas));
     EXPECT_TRUE(game_holds(legolas));
-    EXPECT_EQ(connection.data().prompt_mode, 1);
-    EXPECT_NE(connection.data().pProtocol, nullptr);
+    EXPECT_EQ(connection.descriptor().prompt_mode, 1);
+    EXPECT_NE(connection.descriptor().pProtocol, nullptr);
 }
 
 TEST_F(LoginEntryTest, EnteringTheGameAppliesTheAccountPreferences)
@@ -390,13 +389,13 @@ TEST_F(LoginEntryTest, EnteringTheGameSavesThePlayerFile)
     ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
     select_from_roster(connection, "legolas");
     char_file_u saved_at_selection { };
-    ASSERT_TRUE(read_stored_character("legolas", &saved_at_selection));
+    ASSERT_TRUE(read_stored_character("legolas", saved_at_selection));
 
     connection.send("1");
 
     // Selection saves the room number; entering saves again with the room's index in the world.
     char_file_u saved_at_entry { };
-    ASSERT_TRUE(read_stored_character("legolas", &saved_at_entry));
+    ASSERT_TRUE(read_stored_character("legolas", saved_at_entry));
     EXPECT_EQ(saved_at_selection.specials2.load_room, LOAD_ROOM_VNUM);
     EXPECT_EQ(saved_at_entry.specials2.load_room, LOAD_ROOM_RNUM);
 }
@@ -411,11 +410,11 @@ TEST_F(LoginEntryTest, EnteringTheGameAfterAnotherConnectionUsedTheUnlockReturns
 
     // Aragorn, below the level that lets an account play two characters, is already playing.
     TestConnection aragorn_connection(CON_PLYNG);
-    aragorn_connection.data().descriptor = 7;
+    aragorn_connection.descriptor().descriptor = OTHER_PLAYER_SOCKET;
     char_data* aragorn = create_character_in_game("aragorn", 50, 4242);
-    aragorn->desc = &aragorn_connection.data();
-    aragorn_connection.data().character = aragorn;
-    descriptor_list = &aragorn_connection.data();
+    aragorn->desc = &aragorn_connection.descriptor();
+    aragorn_connection.descriptor().character = aragorn;
+    descriptor_list = &aragorn_connection.descriptor();
 
     account::AccountData account_data;
     ASSERT_TRUE(account::read_account_file(".", ACCOUNT_NAME, &account_data, &error_message)) << error_message;
@@ -432,7 +431,7 @@ TEST_F(LoginEntryTest, EnteringTheGameAfterAnotherConnectionUsedTheUnlockReturns
 
     EXPECT_EQ(second_connection.state(), CON_ACCTMENU);
     EXPECT_EQ(second_connection.character(), nullptr);
-    EXPECT_EQ(second_connection.data().pos, -1);
+    EXPECT_EQ(second_connection.descriptor().pos, -1);
     EXPECT_EQ(second_connection.output(),
         "You are already connected as Aragorn. Reconnect to that character or log out before playing another character.\n\r"
         "\n\rAccount: player@example.com"
@@ -460,22 +459,22 @@ TEST_F(LoginEntryTest, EnteringTheGameWhileTheCharacterPlaysElsewhereTakesOverTh
 
     // Between the selection and entering, the same character comes into play on another connection.
     TestConnection other_connection(CON_PLYNG);
-    other_connection.data().descriptor = 7;
+    other_connection.descriptor().descriptor = OTHER_PLAYER_SOCKET;
     char_data* playing_body = create_character_in_game("legolas", 45, 5252);
-    playing_body->desc = &other_connection.data();
-    other_connection.data().character = playing_body;
-    place_in_room(playing_body, LOAD_ROOM_RNUM);
+    playing_body->desc = &other_connection.descriptor();
+    other_connection.descriptor().character = playing_body;
+    place_in_room(*playing_body, LOAD_ROOM_RNUM);
     ASSERT_NE(selected_copy, playing_body);
 
     connection.send("1");
 
     EXPECT_EQ(connection.state(), CON_PLYNG);
     EXPECT_EQ(connection.character(), playing_body);
-    EXPECT_EQ(playing_body->desc, &connection.data());
+    EXPECT_EQ(playing_body->desc, &connection.descriptor());
     EXPECT_EQ(connection.output(), "You take over your own body, already in use!\n\r");
     EXPECT_EQ(other_connection.state(), CON_CLOSE);
     EXPECT_EQ(other_connection.character(), nullptr);
-    EXPECT_EQ(std::string(other_connection.data().output), "This body has been usurped!\n\r");
+    EXPECT_EQ(std::string(other_connection.descriptor().output), "This body has been usurped!\n\r");
 }
 
 TEST_F(LoginEntryTest, LegacyPasswordLoginShowsTheMotdAndTheLegacyMenu)

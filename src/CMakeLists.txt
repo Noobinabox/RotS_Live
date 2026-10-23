@@ -255,6 +255,7 @@ set(ROTS_TEST_SOURCES
     tests/startup_options_tests.cpp
     tests/gtest_main.cpp
     tests/olog_hai_tests.cpp
+    tests/password_login_only_tests.cpp
     tests/number_text_tests.cpp
     tests/obj_flag_data_tests.cpp
     tests/object_skins_tests.cpp
@@ -414,6 +415,15 @@ if(BUILD_TESTING)
     gtest_discover_tests(ageland_tests
         DISCOVERY_MODE PRE_TEST
         WORKING_DIRECTORY "${ROTS_REPO_ROOT}"
+    )
+
+    # The live server must not contain the integration harness's code, so ageland's symbol table
+    # may name nothing in namespace harness.
+    add_test(NAME ageland_has_no_harness_symbols
+        COMMAND "${CMAKE_COMMAND}"
+            "-DNM=${CMAKE_NM}"
+            "-DBINARY=$<TARGET_FILE:ageland>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_no_harness_symbols.cmake"
     )
 endif()
 

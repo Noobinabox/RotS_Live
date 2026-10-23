@@ -3,6 +3,7 @@
 #include "harness_control_channel.h"
 #include "harness_controlled_schedule.h"
 #include "harness_options.h"
+#include "password_login_only.h"
 #include "schedule_definition.h"
 #include "schedule_registry.h"
 #include "schedule_setup.h"
@@ -74,6 +75,7 @@ int main(int argc, char** argv)
     std::shared_ptr<GameTickSchedule> tick_schedule
         = std::make_shared<harness::HarnessControlledSchedule>(
             definition->name, std::move(setup), std::move(channel));
-    run_the_game(options.startup.port, std::move(tick_schedule));
+    PasswordLoginOnly entry_policy;
+    run_the_game(options.startup.port, std::move(tick_schedule), entry_policy);
     return EXIT_SUCCESS;
 }

@@ -25,6 +25,7 @@
 #include "char_utils.h"
 #include "color.h"
 #include "comm.h"
+#include "connection_entry_policy.h"
 #include "db.h"
 #include "game_heartbeat.h"
 #include "game_time_text.h"
@@ -258,7 +259,7 @@ int finish_proxy_header_if_ready(descriptor_data* descriptor)
 
 /* functions in this file */
 int get_from_q(struct txt_q* queue, char* dest);
-void game_loop(SocketType s, GameHeartbeat& heartbeat);
+void game_loop(SocketType s, GameHeartbeat& heartbeat, ConnectionEntryPolicy& entry_policy);
 SocketType init_socket(sh_int port);
 SocketType pnew_connection(SocketType s);
 void check_pre_login_idle(); /* below, in this file */
@@ -497,7 +498,8 @@ void sigsegv_handler(int sig)
 std::vector<char_data*> specialized_mages;
 
 /* Init sockets, run game, and cleanup sockets */
-void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule)
+void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule,
+    ConnectionEntryPolicy& entry_policy)
 {
     int s;
 
@@ -520,7 +522,7 @@ void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule)
     specialized_mages.clear();
     // The heartbeat only observes the schedule; the parameter keeps it alive for the loop.
     GameHeartbeat heartbeat(schedule);
-    game_loop(s, heartbeat);
+    game_loop(s, heartbeat, entry_policy);
 
     close_sockets(s);
     // fclose(player_fl);
@@ -860,7 +862,7 @@ void check_state_deadlines(time_t now)
     }
 }
 
-void game_loop(SocketType s, GameHeartbeat& heartbeat)
+void game_loop(SocketType s, GameHeartbeat& heartbeat, ConnectionEntryPolicy& entry_policy)
 {
     fd_set input_set, output_set, exc_set;
     struct timeval null_time;
@@ -1049,7 +1051,13 @@ void game_loop(SocketType s, GameHeartbeat& heartbeat)
                             }
                         }
                     } else {
-                        nanny(point, comm);
+                        bool entered_directly = false;
+                        if (STATE(point) == CON_NME) {
+                            entered_directly = entry_policy.try_enter(*point, comm);
+                        }
+                        if (!entered_directly) {
+                            nanny(point, comm);
+                        }
                     }
                 }
             }

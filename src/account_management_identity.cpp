@@ -676,6 +676,43 @@ bool create_account_for_email(const std::string& root_directory, const std::stri
     return false;
 }
 
+namespace {
+
+// Returns false, with the password login's refusal in error_message, when account is blocked.
+bool check_account_not_blocked(const AccountData& account, std::string* error_message)
+{
+    if (account.blocked) {
+        set_error(error_message, "Account authentication failed.");
+        return false;
+    }
+    return true;
+}
+
+// Returns false, with the password login's refusal in error_message, when account's email
+// address is not verified yet.
+bool check_account_email_verified(const AccountData& account, std::string* error_message)
+{
+    if (!account.email_verified) {
+        set_error(error_message, "Account email verification is still pending.");
+        return false;
+    }
+    return true;
+}
+
+} // namespace
+
+bool check_account_may_log_in(const AccountData& account, std::string* error_message)
+{
+    if (!check_account_not_blocked(account, error_message)) {
+        return false;
+    }
+    if (!check_account_email_verified(account, error_message)) {
+        return false;
+    }
+    set_error(error_message, "");
+    return true;
+}
+
 bool authenticate_account(const std::string& root_directory, const std::string& account_name, const std::string& password, AccountData* account, std::string* error_message)
 {
     if (!validate_identifier_for_path(account_name, "Account name", error_message))
@@ -695,8 +732,10 @@ bool authenticate_account(const std::string& root_directory, const std::string& 
     if (account_index_is_authoritative_for(root_directory))
         account_index::clear_unreadable_at_runtime(normalize_email(stored_account.normalized_email));
 
-    if (stored_account.blocked) {
-        set_error(error_message, "Account authentication failed.");
+    // check_account_may_log_in's two checks, one each side of the password: a blocked account is
+    // refused before its password is hashed, and an unverified one is handed back, for the
+    // verification prompt, only to the holder of its password.
+    if (!check_account_not_blocked(stored_account, error_message)) {
         return false;
     }
 
@@ -705,10 +744,10 @@ bool authenticate_account(const std::string& root_directory, const std::string& 
         return false;
     }
 
-    if (!stored_account.email_verified) {
-        if (account)
+    if (!check_account_email_verified(stored_account, error_message)) {
+        if (account) {
             *account = stored_account;
-        set_error(error_message, "Account email verification is still pending.");
+        }
         return false;
     }
 

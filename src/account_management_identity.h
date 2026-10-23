@@ -31,6 +31,10 @@ bool reset_account_password(AccountData* account, const std::string& new_passwor
 
 bool create_account(const std::string& root_directory, const std::string& account_name, const std::string& email, const std::string& password, long created_at, AccountData* account, std::string* error_message = nullptr);
 bool create_account_for_email(const std::string& root_directory, const std::string& email, const std::string& password, long created_at, AccountData* account, std::string* error_message = nullptr);
+// The checks a login makes that need no password, in the password login's order and words: returns
+// false with "Account authentication failed." when account is blocked, then with "Account email
+// verification is still pending." when its email address is not verified yet.
+bool check_account_may_log_in(const AccountData& account, std::string* error_message = nullptr);
 bool authenticate_account(const std::string& root_directory, const std::string& account_name, const std::string& password, AccountData* account, std::string* error_message = nullptr);
 bool authenticate_account_by_email(const std::string& root_directory, const std::string& email, const std::string& password, AccountData* account, std::string* error_message = nullptr);
 // Note a rejected account-login password on the stored account so the owner can be told about it

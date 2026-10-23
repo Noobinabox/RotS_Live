@@ -126,6 +126,7 @@ def extra_flags_line(stat_lines: list) -> str:
     raise AssertionError(f"no extra flags line in {stat_lines!r}")
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="purge <player> should leave the purging immortal's inventory alone; today it destroys it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
@@ -155,6 +156,7 @@ def test_purging_a_player_leaves_the_purgers_inventory_alone(server) -> None:
     assert inventory.contains(SWORD_SHORT_DESCRIPTION), inventory.text
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a drink container's saved weight should come back at login; today it is reset to the prototype's while its contents are kept")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, OWNER)
@@ -187,6 +189,7 @@ def test_a_sipped_drink_containers_weight_is_kept_across_a_login(server) -> None
     assert any(line.startswith(SIPPED_WATERSKIN_WEIGHT_LINE_START) for line in returned_lines), returned_lines
 
 
+@pytest.mark.object_versions_refresh
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="an object built with WILLPOWER should keep it when it leaves a character; today any move out of an inventory clears it, as if it came from attune")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -211,6 +214,7 @@ def test_a_builder_set_willpower_flag_survives_a_drop(server) -> None:
     assert WILLPOWER_FLAG in dropped_flags, dropped_flags
 
 
+@pytest.mark.object_versions_rent
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="an offer to a mortal with no gold should not both quote a price and promise a lifetime of rent")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)

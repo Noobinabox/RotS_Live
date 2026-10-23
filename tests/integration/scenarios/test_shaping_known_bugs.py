@@ -92,6 +92,7 @@ def file_text(path: Path) -> str:
     return path.read_bytes().decode("latin-1")
 
 
+@pytest.mark.shaping_script_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a builder without permission over the zone cannot /implement a script in it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, BUILDER)
@@ -121,6 +122,7 @@ def test_a_builder_without_permission_cannot_implement_a_script(server) -> None:
     assert "Script #1100: harness stub" in lines_of(shown), shown
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a zone /done refused for want of permission keeps the editor open with the edits")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, BUILDER)
@@ -161,6 +163,7 @@ def room_record(text: str, vnum: int) -> str:
     return found.group(0)
 
 
+@pytest.mark.shaping_room_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="/save of a room with no edit keeps its extra descriptions in file order")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -193,6 +196,7 @@ def look_and_stat_extra_descriptions(implementor: GameSession) -> tuple:
     return looked, extra_descs.rstrip()
 
 
+@pytest.mark.shaping_room_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="/implement of a room with no edit leaves what look shows unchanged")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -218,6 +222,7 @@ def test_implementing_a_room_unedited_keeps_what_look_shows(server) -> None:
     assert after[1] == BOOTED_EXTRA_DESCS, after
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="zreset names the zone by its number, as its log line does")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -250,6 +255,7 @@ RECORD_EDITORS = [
 ]
 
 
+@pytest.mark.shaping_saving
 @pytest.mark.parametrize("editor", RECORD_EDITORS, ids=[editor.open_line.split()[1] for editor in RECORD_EDITORS])
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="/save leaves the file after the saved record byte for byte as it was")
 @pytest.mark.schedule("affect-hours")
@@ -276,6 +282,7 @@ def test_saving_a_record_leaves_the_rest_of_the_file_unchanged(server, editor: R
     assert saved[saved.index(next_record):] == booted[booted.index(next_record):]
 
 
+@pytest.mark.shaping_script_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="/1 in the script editor labels the rows Prev:, Curr: and Next:")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -297,6 +304,7 @@ def test_the_script_editors_1_labels_the_rows_it_shows(server) -> None:
     assert any(line.startswith("Next: ") and "(third)" in line for line in shown_lines), shown
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a lower-case letter at the zone /2 filter lists that letter's rows")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -315,6 +323,7 @@ def test_a_lower_case_zone_filter_letter_lists_its_rows(server) -> None:
     assert any(line.startswith("  1 M::") for line in lines_of(listing)), listing
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a $ typed into a zone row's comment is stored once")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -334,6 +343,7 @@ def test_a_dollar_typed_into_a_zone_comment_is_stored_once(server) -> None:
     assert "costs $5" in shown_lines, shown
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a zone D row with a direction above 5 is refused")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
@@ -363,6 +373,7 @@ def test_a_door_row_with_a_direction_above_5_is_refused(server) -> None:
 NEGATIVE_ZONE_CASES = [("/23", "-5", "Reset time: 999;"), ("/25", "-3", "Level:5")]
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.parametrize(("field_line", "answer", "kept"), NEGATIVE_ZONE_CASES, ids=["lifespan", "level"])
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="the zone lifespan and level prompts refuse a negative number")
 @pytest.mark.schedule("affect-hours")
@@ -382,6 +393,7 @@ def test_a_negative_zone_lifespan_or_level_is_refused(server, field_line: str, a
     assert kept in shown, shown
 
 
+@pytest.mark.shaping_zone_editor
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="zone /save with no edit writes the zone file's words unchanged")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)

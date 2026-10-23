@@ -347,6 +347,7 @@ def stored_vnums(path: Path) -> list:
     return [stored["item_number"] for stored in data["objects"]]
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_keeps_an_item_lists_it_and_hands_it_back(server) -> None:
@@ -371,6 +372,7 @@ def test_a_banker_keeps_an_item_lists_it_and_hands_it_back(server) -> None:
     assert depositor.command("withdraw 1").contains(NOTHING_LIKE_THAT_MARKER)
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_keeps_coins_up_to_what_the_purse_and_the_vault_hold(server) -> None:
@@ -396,6 +398,7 @@ def test_a_banker_keeps_coins_up_to_what_the_purse_and_the_vault_hold(server) ->
     assert depositor.command("balance").contains(coins_line("3 gold"))
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR, KINSMAN, OUTSIDER)
 def test_an_accounts_characters_share_one_vault_per_side(server) -> None:
@@ -429,6 +432,7 @@ def test_an_accounts_characters_share_one_vault_per_side(server) -> None:
     assert (folder / LIGHT_VAULT_FILE_NAME).read_bytes() == light_vault_bytes
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_deposited_item_is_written_to_the_accounts_vault_file(server) -> None:
@@ -452,6 +456,7 @@ def test_a_deposited_item_is_written_to_the_accounts_vault_file(server) -> None:
     assert [(stored["item_number"], stored["wear_pos"]) for stored in stored_objects] == [(CAP_VNUM, 0)], vault
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_deposit_and_a_withdrawal_save_the_characters_objects_file(server) -> None:
@@ -476,6 +481,7 @@ def test_a_deposit_and_a_withdrawal_save_the_characters_objects_file(server) -> 
     assert CAP_VNUM not in stored_vnums(account_folder(server.lib_dir) / LIGHT_VAULT_FILE_NAME)
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_refuses_a_gift(server) -> None:
@@ -492,6 +498,7 @@ def test_a_banker_refuses_a_gift(server) -> None:
     assert depositor.command("inventory").contains(CAP_NAME)
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(DEPOSITOR)
 def test_a_banker_refuses_an_attack_and_no_fight_starts(server) -> None:
@@ -513,6 +520,7 @@ def test_a_banker_refuses_an_attack_and_no_fight_starts(server) -> None:
     assert FIGHT_ONGOING_MARKER not in second_attack.text, second_attack.text
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_refuses_will_kill_and_blind_before_and_after_a_stat_file(server) -> None:
@@ -540,6 +548,7 @@ def test_a_banker_refuses_will_kill_and_blind_before_and_after_a_stat_file(serve
         assert reply.contains(NO_ATTACKS_MARKER), f"{command}: {reply.text}"
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_holds_nothing_for_an_immortal_and_says_so_to_the_room(server) -> None:
@@ -558,6 +567,7 @@ def test_a_banker_holds_nothing_for_an_immortal_and_says_so_to_the_room(server) 
     depositor.expect([NOT_YOUR_KIND_MARKER])
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_refuses_a_customer_it_cannot_see_aloud(server) -> None:
@@ -576,6 +586,7 @@ def test_a_banker_refuses_a_customer_it_cannot_see_aloud(server) -> None:
     depositor.expect([UNSEEN_CUSTOMER_MARKER])
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(DARK_CUSTOMER)
 def test_a_banker_in_a_dark_room_refuses_a_customer_it_cannot_see(server) -> None:
@@ -591,6 +602,7 @@ def test_a_banker_in_a_dark_room_refuses_a_customer_it_cannot_see(server) -> Non
     assert customer.command("balance").contains(f"says '{UNSEEN_CUSTOMER_TEXT}'")
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR, KINSMAN)
 def test_a_bystander_sees_item_moves_but_not_coin_moves_or_the_bankers_tells(server) -> None:
@@ -624,6 +636,7 @@ def test_a_bystander_sees_item_moves_but_not_coin_moves_or_the_bankers_tells(ser
     assert "gold" not in seen_by_withdrawal, seen_by_withdrawal
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_refuses_a_key_loose_or_inside_a_bag(server) -> None:
@@ -646,6 +659,7 @@ def test_a_banker_refuses_a_key_loose_or_inside_a_bag(server) -> None:
     assert_lines(depositor.command("balance"), EMPTY_VAULT_LINES)
 
 
+@pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_banker_refuses_a_cursed_item_inside_a_bag_or_loose(server) -> None:
@@ -670,6 +684,7 @@ def test_a_banker_refuses_a_cursed_item_inside_a_bag_or_loose(server) -> None:
     assert_lines(depositor.command("balance"), EMPTY_VAULT_LINES)
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_vault_takes_its_tenth_item_and_refuses_the_eleventh(server) -> None:
@@ -700,6 +715,7 @@ def test_a_vault_takes_its_tenth_item_and_refuses_the_eleventh(server) -> None:
     assert STAFF_VAULT_FULL_MARKER in staff_reply(implementor, f"vault put {account_name} 1 cap")
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_coin_deposit_past_the_vault_limit_is_cut_to_what_fits(server) -> None:
@@ -723,6 +739,7 @@ def test_a_coin_deposit_past_the_vault_limit_is_cut_to_what_fits(server) -> None
     assert depositor.command("balance").contains(coins_line(f"{VAULT_COIN_LIMIT_GOLD} gold"))
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_withdrawal_finds_its_slot_by_number_keyword_or_abbreviation_and_renumbers(server) -> None:
@@ -756,6 +773,7 @@ def test_a_withdrawal_finds_its_slot_by_number_keyword_or_abbreviation_and_renum
     assert_lines(depositor.command("balance"), balance_lines("0 copper", (empty_bag_row,)))
 
 
+@pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_a_deposited_bag_keeps_its_contents_and_lists_as_sealed(server) -> None:
@@ -779,6 +797,7 @@ def test_a_deposited_bag_keeps_its_contents_and_lists_as_sealed(server) -> None:
     assert [(stored["item_number"], stored["wear_pos"]) for stored in stored_objects] == [(BAG_VNUM, 0), (CAP_VNUM, 1)]
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, LESSER_GOD, GREATER_GOD, ELDER_GOD)
 def test_vault_and_gameoptions_need_their_command_levels(server) -> None:
@@ -800,6 +819,7 @@ def test_vault_and_gameoptions_need_their_command_levels(server) -> None:
     implementor.expect(["bank_slots", UNRECOGNIZED_MARKER])
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_vault_shows_a_characters_account_side_and_slots(server) -> None:
@@ -828,6 +848,7 @@ def test_vault_shows_a_characters_account_side_and_slots(server) -> None:
     assert (slot_row.group(1).rstrip(), slot_row.group(2)) in ((CAP_NAME, "0"), (CAP_NAME, "1")), view
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_vault_take_and_put_move_items_and_coins_and_the_owner_sees_it(server) -> None:
@@ -853,6 +874,7 @@ def test_vault_take_and_put_move_items_and_coins_and_the_owner_sees_it(server) -
     assert_lines(depositor.command("balance"), balance_lines("3 gold", (CAP_NAME,)))
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_vault_take_refuses_a_missing_slot_a_bad_amount_and_an_email(server) -> None:
@@ -874,6 +896,7 @@ def test_vault_take_refuses_a_missing_slot_a_bad_amount_and_an_email(server) -> 
     assert_lines(depositor.command("balance"), ONE_CAP_VAULT_LINES)
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
 def test_gameoptions_writes_bank_slots_for_the_next_reboot_only(server) -> None:
@@ -895,6 +918,7 @@ def test_gameoptions_writes_bank_slots_for_the_next_reboot_only(server) -> None:
     assert depositor.command("balance").contains(slots_line(0, VAULT_SLOTS))
 
 
+@pytest.mark.bank_staff
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_gameoptions_refuses_out_of_range_values_unknown_names_and_bad_numbers(server) -> None:
@@ -916,6 +940,7 @@ def test_gameoptions_refuses_out_of_range_values_unknown_names_and_bad_numbers(s
     assert settings["bank_slots"] == 100, settings
 
 
+@pytest.mark.bank_hours
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, EARLY_CUSTOMER, LATE_CUSTOMER)
 def test_bankers_open_only_in_their_hours_and_swap_after_twelve_hours(server) -> None:
@@ -952,6 +977,7 @@ def test_bankers_open_only_in_their_hours_and_swap_after_twelve_hours(server) ->
     assert after == (not before[0], not before[1]), (before, after)
 
 
+@pytest.mark.bank_hours
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(STRANDED_CUSTOMER)
 def test_a_banker_with_a_bad_fee_is_logged_at_boot_and_closed(server) -> None:

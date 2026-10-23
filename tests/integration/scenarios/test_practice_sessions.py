@@ -11,7 +11,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.practice]
+pytestmark = [pytest.mark.scenario, pytest.mark.practice, pytest.mark.practice_sessions]
 
 # The blink sessions the pupil has spent; three put blink at 84% (recalc_skills, spec_pro.cpp).
 BLINK_SESSIONS_SPENT = 3

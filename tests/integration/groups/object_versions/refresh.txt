@@ -1,0 +1,1 @@
+a version bump refreshes saved copies at login, keeping enchants, broken keys, worn affects and drink contents; turning the version off

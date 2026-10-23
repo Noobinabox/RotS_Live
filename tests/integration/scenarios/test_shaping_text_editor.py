@@ -9,7 +9,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_prompts]
 
 # A level-10 human warrior in the arena: a mortal editing its own description.
 MORTAL = Character(

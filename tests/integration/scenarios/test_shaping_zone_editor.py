@@ -12,7 +12,7 @@ import pytest
 from rots_harness.characters import IMPLEMENTOR
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_zone_editor]
 
 # The test world's zone 11.
 ZONE_NUMBER = 11

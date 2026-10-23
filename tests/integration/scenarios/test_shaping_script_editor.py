@@ -10,7 +10,7 @@ import pytest
 from rots_harness.characters import IMPLEMENTOR
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_script_editor]
 
 # The test world's scripts: #1180 has three ON_ENTER rows numbered 1, 2 and 3 with the texts
 # first, second and third; #1181 has rows numbered 1, 2, 4 and 3 with the texts one, two, four

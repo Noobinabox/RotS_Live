@@ -324,6 +324,7 @@ def fire_lines(shown: str) -> int:
     return resistances.count(line_start("fire"))
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC, SAGE)
 @pytest.mark.parametrize("caster", [MYSTIC, SAGE], ids=["level-20", "level-30"])
@@ -356,6 +357,7 @@ def test_a_mystic_casts_protection_from_dark_and_affections_shows_its_strength(s
     assert PROTECTION_AFFECT_PATTERN.search(shown), shown
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_a_mystic_already_protected_is_refused_a_protection_from_another_sphere(server) -> None:
@@ -377,6 +379,7 @@ def test_a_mystic_already_protected_is_refused_a_protection_from_another_sphere(
     assert fire_lines(shown) == 0, shown
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_unprotect_frees_the_mystic_for_a_protection_from_another_sphere(server) -> None:
@@ -397,6 +400,7 @@ def test_unprotect_frees_the_mystic_for_a_protection_from_another_sphere(server)
     assert resistance_line("dark", 30) not in shown, shown
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_protection_names_dark_among_its_spheres_when_given_one_it_does_not_know(server) -> None:
@@ -414,6 +418,7 @@ def test_protection_names_dark_among_its_spheres_when_given_one_it_does_not_know
     assert NOT_AFFECTED_MARKER in affections(mystic)
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_protection_in_each_other_sphere_grants_that_element_at_the_mystic_strength(server) -> None:
@@ -452,6 +457,7 @@ def test_protection_in_each_other_sphere_grants_that_element_at_the_mystic_stren
         assert mystic.command("unprotect").contains(RENOUNCED_MARKER), typed
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC, WEARER)
 def test_protection_cast_on_another_tells_each_observer_and_uses_the_casters_strength(server) -> None:
@@ -497,6 +503,7 @@ def test_protection_cast_on_another_tells_each_observer_and_uses_the_casters_str
     assert PROTECTION_AFFECT_PATTERN.search(shown), shown
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC, WEARER)
 def test_protection_cast_on_another_already_protected_is_refused_with_their_pronoun(server) -> None:
@@ -516,6 +523,7 @@ def test_protection_cast_on_another_already_protected_is_refused_with_their_pron
     assert GRANT_MARKER_START not in second_reply, second_reply
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_protection_cast_on_a_name_nobody_here_answers_to_is_refused(server) -> None:
@@ -533,6 +541,7 @@ def test_protection_cast_on_a_name_nobody_here_answers_to_is_refused(server) -> 
     assert NOT_AFFECTED_MARKER in affections(mystic)
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_unprotect_drops_protection_and_a_second_unprotect_does_nothing(server) -> None:
@@ -557,6 +566,7 @@ def test_unprotect_drops_protection_and_a_second_unprotect_does_nothing(server) 
     assert not again.contains(RENOUNCED_MARKER), again.text
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_a_resting_mystic_cannot_unprotect(server) -> None:
@@ -575,6 +585,7 @@ def test_a_resting_mystic_cannot_unprotect(server) -> None:
     assert resistance_line("dark", 30) in affections(mystic)
 
 
+@pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC)
 def test_a_mystic_keeps_its_protection_and_strength_across_quit_and_login(server) -> None:
@@ -596,6 +607,7 @@ def test_a_mystic_keeps_its_protection_and_strength_across_quit_and_login(server
     assert PROTECTION_AFFECT_PATTERN.search(shown), shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC, WEARER)
 def test_a_save_keeps_the_protection_and_drops_the_worn_items_resistance(server) -> None:
@@ -632,6 +644,7 @@ def test_a_save_keeps_the_protection_and_drops_the_worn_items_resistance(server)
     assert not [affect for affect in affects if affect["duration"] < 0], affects
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_an_immortal_wearing_a_resist_item_has_it_once_after_quit_and_login(server) -> None:
@@ -657,6 +670,7 @@ def test_an_immortal_wearing_a_resist_item_has_it_once_after_quit_and_login(serv
     assert NOT_AFFECTED_MARKER in affections(again)
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, MYSTIC, WEARER)
 def test_protection_and_worn_fire_items_coexist_and_the_strongest_applies(server) -> None:
@@ -698,6 +712,7 @@ def test_protection_and_worn_fire_items_coexist_and_the_strongest_applies(server
     assert fire_lines(shown) == 1, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 @pytest.mark.parametrize("strong_first", [False, True], ids=["weak-first", "strong-first"])
@@ -727,6 +742,7 @@ def test_the_strongest_worn_fire_resistance_applies_whatever_the_wear_order(serv
     assert len(ITEM_RESIST_AFFECT_PATTERN.findall(shown)) == 1, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_removing_the_stronger_fire_item_falls_back_quietly_to_the_weaker(server) -> None:
@@ -749,6 +765,7 @@ def test_removing_the_stronger_fire_item_falls_back_quietly_to_the_weaker(server
     assert ITEM_RESIST_AFFECT_PATTERN.search(shown), shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_removing_the_weaker_fire_item_changes_nothing(server) -> None:
@@ -770,6 +787,7 @@ def test_removing_the_weaker_fire_item_changes_nothing(server) -> None:
     assert resistance_line("fire", WEAK_ITEM_PERCENT) not in shown, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_removing_the_only_fire_item_leaves_no_resistance(server) -> None:
@@ -790,6 +808,7 @@ def test_removing_the_only_fire_item_leaves_no_resistance(server) -> None:
     assert fire_lines(shown) == 0, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_a_flag_only_fire_resistance_shows_the_flat_strength_and_no_affect_list(server) -> None:
@@ -810,6 +829,7 @@ def test_a_flag_only_fire_resistance_shows_the_flat_strength_and_no_affect_list(
     assert NOT_AFFECTED_MARKER not in shown, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_a_fire_vulnerability_alone_shows_under_its_own_header(server) -> None:
@@ -827,6 +847,7 @@ def test_a_fire_vulnerability_alone_shows_under_its_own_header(server) -> None:
     assert AFFECTED_HEADER not in shown, shown
 
 
+@pytest.mark.resistances_worn
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_a_fire_resistance_and_a_fire_vulnerability_both_show_with_their_own_strengths(server) -> None:
@@ -851,6 +872,7 @@ def test_a_fire_resistance_and_a_fire_vulnerability_both_show_with_their_own_str
     assert ITEM_RESIST_AFFECT_PATTERN.search(shown), shown
 
 
+@pytest.mark.resistances_debug
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, WEARER)
 def test_debug_is_an_immortal_command_that_toggles(server) -> None:
@@ -864,6 +886,7 @@ def test_debug_is_an_immortal_command_that_toggles(server) -> None:
     assert implementor.command("debug").contains(DEBUG_OFF_MARKER)
 
 
+@pytest.mark.resistances_debug
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_debug_traces_an_item_resistance_once_on_wearing_and_removing(server) -> None:
@@ -885,6 +908,7 @@ def test_debug_traces_an_item_resistance_once_on_wearing_and_removing(server) ->
     assert "::RESIST::" not in removed, removed
 
 
+@pytest.mark.resistances_debug
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
 def test_debug_traces_the_poison_damage_of_putting_on_the_poison_amulet(server) -> None:

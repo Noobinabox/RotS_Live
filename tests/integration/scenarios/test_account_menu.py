@@ -354,6 +354,7 @@ def account_show_characters(implementor: GameSession) -> str:
     return lines[0]
 
 
+@pytest.mark.account_menu_sessions
 @pytest.mark.characters(IMPLEMENTOR)
 def test_logging_out_of_the_account_menu_says_goodbye_and_closes_the_connection(server) -> None:
     """Pins #279: the account menu's 0 prints Goodbye. and then the server closes the connection."""
@@ -365,6 +366,7 @@ def test_logging_out_of_the_account_menu_says_goodbye_and_closes_the_connection(
         assert closes_within(connection, CLOSE_SECONDS), f"the connection stayed open after {GOODBYE_MARKER!r}"
 
 
+@pytest.mark.account_menu_sessions
 @pytest.mark.characters(LEAVER)
 def test_a_character_quits_back_through_both_menus_and_logs_out(server) -> None:
     """Pins #279: quitting a character leaves the connection at the character menu, whose 0 returns
@@ -385,6 +387,7 @@ def test_a_character_quits_back_through_both_menus_and_logs_out(server) -> None:
     assert len(game_log_lines(server, ACCOUNT_LOGOUT_LOG_LINE)) == 1, server.handle.log_path.read_text(encoding="latin-1")
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_the_fifth_wrong_password_opens_the_reset_menu(server) -> None:
     """Pins #284: the first four wrong passwords prompt again; the fifth shows the reset menu instead."""
@@ -401,6 +404,7 @@ def test_the_fifth_wrong_password_opens_the_reset_menu(server) -> None:
             assert menu_line in last_reply, last_reply
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_five_wrong_reset_codes_end_the_reset_and_close_the_connection(server) -> None:
     """Pins #284: after a reset request, four wrong codes prompt again and the fifth closes the connection.
@@ -432,6 +436,7 @@ def spend_reset_code(server, label: str) -> None:
         assert closes_within(connection, CLOSE_SECONDS), "the connection stayed open after the last wrong code"
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_five_wrong_reset_codes_clear_the_stored_code_but_keep_when_it_was_sent(server) -> None:
     """Pins #284: the account record keeps the spent attempts and when the code was sent, clears the
@@ -451,6 +456,7 @@ def test_five_wrong_reset_codes_clear_the_stored_code_but_keep_when_it_was_sent(
     assert account["password_reset_code_sent_at"] > 0, account
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_second_reset_request_within_a_minute_sends_no_new_code(server) -> None:
     """Pins #284: a reset requested again inside the 60-second cooldown reads exactly like the first,
@@ -496,6 +502,7 @@ def open_reset_with_known_code(server, connection: GameSession) -> None:
     account_path.write_text(record.replace(stored_code, f'"password_reset_code_hash": "{account["password_hash"]}"'), encoding="utf-8")
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_correct_reset_code_sets_a_new_password_and_the_old_one_stops_working(server) -> None:
     """Pins #284: a correct reset code asks for a new password twice, says it was updated and closes
@@ -522,6 +529,7 @@ def test_a_correct_reset_code_sets_a_new_password_and_the_old_one_stops_working(
         assert ACCOUNT_MENU_HEADER in new_password and ACCOUNT_MENU_PROMPT in new_password, new_password
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_reset_refuses_a_short_new_password_and_a_mismatched_retype(server) -> None:
     """Pins #284: after a correct reset code, a password under eight characters and a retype that
@@ -542,6 +550,7 @@ def test_a_reset_refuses_a_short_new_password_and_a_mismatched_retype(server) ->
     assert stored_account(server)["password_reset_by"] == ""
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_failed_logins_are_reported_at_the_next_successful_login(server) -> None:
     """Pins #284: a login after two wrong passwords opens with the count of failed attempts.
@@ -560,6 +569,7 @@ def test_failed_logins_are_reported_at_the_next_successful_login(server) -> None
         assert FAILED_LOGIN_NOTICE_FORMAT.format(failed_attempts) in login, login
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_one_failed_login_is_reported_in_the_singular(server) -> None:
     """Pins #284: after a single wrong password the notice says ATTEMPT, not ATTEMPTS."""
@@ -572,6 +582,7 @@ def test_one_failed_login_is_reported_in_the_singular(server) -> None:
         assert FAILED_LOGIN_PLURAL_WORD not in login, login
 
 
+@pytest.mark.account_menu_passwords
 @pytest.mark.characters(IMPLEMENTOR)
 def test_the_failed_login_notice_is_shown_only_once(server) -> None:
     """Pins #284: the login that shows the failed-login notice clears the count; the next shows none."""
@@ -588,6 +599,7 @@ def test_the_failed_login_notice_is_shown_only_once(server) -> None:
         assert FAILED_LOGIN_NOTICE_WORDS not in second_login, second_login
 
 
+@pytest.mark.account_menu_characters
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_new_character_name_already_linked_or_not_all_letters_is_refused(server) -> None:
     """Pins the account menu's new character prompt: a linked name and a name with a digit are each
@@ -600,6 +612,7 @@ def test_a_new_character_name_already_linked_or_not_all_letters_is_refused(serve
         assert INVALID_NAME_REFUSAL in malformed and NEW_CHARACTER_NAME_PROMPT in malformed, malformed
 
 
+@pytest.mark.account_menu_characters
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_free_new_character_name_is_offered_for_confirmation_and_no_returns_to_the_account_menu(server) -> None:
     """Pins the account menu's new character prompt: a free name gets the roleplay question, and
@@ -614,6 +627,7 @@ def test_a_free_new_character_name_is_offered_for_confirmation_and_no_returns_to
         assert NEW_CHARACTER_NAME_PROMPT not in declined, declined
 
 
+@pytest.mark.account_menu_characters
 @pytest.mark.characters(IMPLEMENTOR, RENAMEE)
 def test_renaming_a_playing_character_moves_its_account_files_and_frees_the_old_name(server) -> None:
     """Pins #297: `wizset player <name> name <new>` on an account-native character renames it in the
@@ -636,6 +650,7 @@ def test_renaming_a_playing_character_moves_its_account_files_and_frees_the_old_
         assert ROLEPLAY_QUESTION_FORMAT.format(RENAMEE.name) in old_name, old_name
 
 
+@pytest.mark.account_menu_characters
 @pytest.mark.characters(IMPLEMENTOR, RENAMEE)
 def test_renaming_a_character_to_a_taken_name_is_refused_and_changes_nothing(server) -> None:
     """Pins #297: `wizset ... name` to another character's name is refused with its reason, and the
@@ -650,6 +665,7 @@ def test_renaming_a_character_to_a_taken_name_is_refused_and_changes_nothing(ser
         assert (account_folder / f"{RENAMEE.name.lower()}.{kind}.json").is_file(), kind
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_the_roster_selects_a_character_by_its_full_name_in_any_case(server) -> None:
     """Pins #285: a linked character's full name selects it at the roster, whatever the letters' case."""
@@ -661,6 +677,7 @@ def test_the_roster_selects_a_character_by_its_full_name_in_any_case(server) -> 
         connection.quit()
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_the_roster_rejects_the_start_of_a_name(server) -> None:
     """Pins #285: selecting by name needs the whole name; its first letters select nobody."""
@@ -671,6 +688,7 @@ def test_the_roster_rejects_the_start_of_a_name(server) -> None:
         assert CHARACTER_MENU_PROMPT not in reply, reply
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.parametrize(
     ("sort_key", "expected_names"),
     [
@@ -698,6 +716,7 @@ def test_a_sort_key_reorders_the_roster(server, sort_key: str, expected_names: l
         assert_rows_numbered_from_one(sorted_rendering)
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_the_side_sort_lists_good_then_evil_under_their_headers(server) -> None:
     """Pins #291 and #296: the side key lists Good, then Evil, A-Z within each, under -- Good -- and
@@ -714,6 +733,7 @@ def test_the_side_sort_lists_good_then_evil_under_their_headers(server) -> None:
             assert forbidden_word not in rendering, rendering
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.parametrize(
     ("filter_key", "label", "expected_names"),
     [
@@ -739,6 +759,7 @@ def test_a_filter_key_shows_only_that_class_and_counts_them(
         assert footer in filtered, filtered
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_a_filter_after_a_sort_lists_that_class_in_the_sorted_order(server) -> None:
     """Pins #291: a filter keeps the active sort; under the race sort the warriors show uruk before
@@ -752,6 +773,7 @@ def test_a_filter_after_a_sort_lists_that_class_in_the_sorted_order(server) -> N
         assert f"2 of {len(ROSTER)} characters shown (Warrior).  Press W to clear." in filtered, filtered
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_a_number_under_a_filter_selects_the_row_shown_with_that_number(server) -> None:
     """Pins #291: with the warrior filter on, 2 selects the second warrior shown, not the account's
@@ -766,6 +788,7 @@ def test_a_number_under_a_filter_selects_the_row_shown_with_that_number(server) 
         connection.quit()
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_a_name_the_filter_hides_still_selects_its_character(server) -> None:
     """Pins #291: a filter narrows the list but not the names it accepts; the mage, hidden by the
@@ -780,6 +803,7 @@ def test_a_name_the_filter_hides_still_selects_its_character(server) -> None:
         connection.quit()
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_filter_that_matches_nobody_says_so(server) -> None:
     """Pins #291: on an account whose only character is a warrior, the ranger filter lists no row and
@@ -791,6 +815,7 @@ def test_a_filter_that_matches_nobody_says_so(server) -> None:
         assert roster_names(filtered) == [], filtered
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(IMPLEMENTOR)
 def test_a_one_character_roster_counts_one_character(server) -> None:
     """Pins #291: the footer of a one-character roster is in the singular."""
@@ -800,6 +825,7 @@ def test_a_one_character_roster_counts_one_character(server) -> None:
         assert ONE_CHARACTER_FOOTER in rendering and "1 characters" not in rendering, rendering
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_pressing_a_filter_key_again_clears_the_filter(server) -> None:
     """Pins #291: the active filter's own key clears it and brings every character back."""
@@ -812,6 +838,7 @@ def test_pressing_a_filter_key_again_clears_the_filter(server) -> None:
         assert f"{len(ROSTER)} characters displayed." in cleared, cleared
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_the_roster_keeps_its_sort_in_the_next_session(server) -> None:
     """Pins #291: a sort chosen before leaving the roster is stored on the account and is the order
@@ -830,6 +857,7 @@ def test_the_roster_keeps_its_sort_in_the_next_session(server) -> None:
         assert roster_names(rendering) == LEVEL_ORDER, rendering
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(*ROSTER)
 def test_a_sort_chosen_before_selecting_a_character_is_kept_in_the_next_session(server) -> None:
     """Pins #291: selecting a character is the other way off the roster that stores a changed sort;
@@ -856,6 +884,7 @@ def link_ghost(server) -> None:
     assert CHARACTER_LINKED_REPLY in linked.text, linked.text
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(IMPLEMENTOR, SURVIVOR)
 def test_a_linked_character_without_a_file_is_listed_last_as_unreadable_and_never_under_a_filter(server) -> None:
     """Pins #291 and #296: a linked character whose file cannot be read shows `[ ?? ???]`, sorts last
@@ -879,6 +908,7 @@ def test_a_linked_character_without_a_file_is_listed_last_as_unreadable_and_neve
         assert "2 of 3 characters shown (Warrior).  Press W to clear." in filtered, filtered
 
 
+@pytest.mark.account_menu_roster
 @pytest.mark.characters(IMPLEMENTOR, SURVIVOR)
 def test_selecting_a_linked_character_without_a_file_is_refused_and_the_roster_still_works(server) -> None:
     """Pins #285: selecting a linked character with no file says it is not ready and shows the roster

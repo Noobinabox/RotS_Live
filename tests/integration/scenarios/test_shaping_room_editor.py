@@ -9,7 +9,7 @@ from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
 
-pytestmark = [pytest.mark.scenario, pytest.mark.shaping]
+pytestmark = [pytest.mark.scenario, pytest.mark.shaping, pytest.mark.shaping_room_editor]
 
 # The room the implementor arrives in and shapes; it has no flags, so it boots with no affection.
 ROOM_VNUM = world.ROOM_IMMORTAL_START

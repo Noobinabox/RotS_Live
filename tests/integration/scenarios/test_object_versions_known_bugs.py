@@ -3,10 +3,12 @@ strict xfail until the bug is fixed, when it starts failing as an unexpected pas
 
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.object_versions]
@@ -49,13 +51,17 @@ RELIC_SHORT_DESCRIPTION = "a strange relic"
 # (do_drink, act_obj2.cpp, takes the drink's amount off the weight).
 SIPPED_WATERSKIN_WEIGHT_LINE_START = "Weight: 29,"
 SIPPED_WATERSKIN_CONTENTS_FRAGMENT = "Contains: 9,"
-# Thirst and drunkenness the implementor gives the owner before it sips: an immortal's conditions
-# read 255 (advance_level, profs.cpp), and do_drink refuses a drinker more than 10 drunk, or more
-# than 23 thirsty.
+# Thirst and drunkenness the owner is stored with before it sips: an immortal's conditions
+# otherwise read 255 (advance_level, profs.cpp), and do_drink refuses a drinker more than 10
+# drunk, or more than 23 thirsty.
 SIPPER_THIRST = 10
 SIPPER_DRUNKENNESS = 0
 # The mortal's gold for the offer: none at all.
 OFFER_GOLD = 0
+# The owner who sips from the waterskin.
+SIPPING_OWNER = dataclasses.replace(OWNER, stored=StoredValues(drunk=SIPPER_DRUNKENNESS, thirst=SIPPER_THIRST))
+# The mortal mystic with no gold.
+PENNILESS_MYSTIC = dataclasses.replace(MORTAL_MYSTIC, stored=StoredValues(gold=OFFER_GOLD))
 
 # What the implementor reads when a load, a give or a drop goes through (do_load, act_wiz.cpp;
 # give and drop, act_obj1.cpp).
@@ -102,12 +108,6 @@ def give_new_object(implementor: GameSession, vnum: int, keyword: str, short_des
     assert created.contains(CREATED_MARKER_FORMAT.format(short_description)), created.text
     given = implementor.command(f"give {keyword} {receiver.name.lower()}")
     assert given.contains(GIVEN_MARKER_FORMAT.format(short_description, receiver.name)), given.text
-
-
-def wizset(implementor: GameSession, name: str, field: str, value: int) -> None:
-    """Sets a character's field and asserts wizset's reply."""
-    reply = implementor.command(f"wizset player {name.lower()} {field} {value}")
-    assert reply.contains(f"{name}'s {field} set to {value}."), reply.text
 
 
 def stat_object(implementor: GameSession, keyword: str) -> list:
@@ -159,7 +159,7 @@ def test_purging_a_player_leaves_the_purgers_inventory_alone(server) -> None:
 @pytest.mark.object_versions_refresh
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a drink container's saved weight should come back at login; today it is reset to the prototype's while its contents are kept")
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, OWNER)
+@pytest.mark.characters(IMPLEMENTOR, SIPPING_OWNER)
 def test_a_sipped_drink_containers_weight_is_kept_across_a_login(server) -> None:
     """Pins the correct weight of a part-drunk waterskin after a login: what it weighed when saved.
 
@@ -172,8 +172,6 @@ def test_a_sipped_drink_containers_weight_is_kept_across_a_login(server) -> None
     """
     implementor = server.login(IMPLEMENTOR.name)
     owner = server.login(OWNER.name)
-    wizset(implementor, OWNER.name, "drunk", SIPPER_DRUNKENNESS)
-    wizset(implementor, OWNER.name, "thirst", SIPPER_THIRST)
     give_new_object(implementor, WATERSKIN_VNUM, WATERSKIN_KEYWORD, WATERSKIN_SHORT_DESCRIPTION, OWNER)
     owner.send_line(f"sip {WATERSKIN_KEYWORD}")
     sipped = owner.expect([SIP_MARKER, TOO_DRUNK_MARKER, TOO_FULL_MARKER]) + owner.drain(SETTLE_SECONDS)
@@ -217,7 +215,7 @@ def test_a_builder_set_willpower_flag_survives_a_drop(server) -> None:
 @pytest.mark.object_versions_rent
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="an offer to a mortal with no gold should not both quote a price and promise a lifetime of rent")
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
+@pytest.mark.characters(IMPLEMENTOR, PENNILESS_MYSTIC)
 def test_an_offer_to_a_mortal_without_gold_does_not_promise_a_lifetime_of_rent(server) -> None:
     """Pins that the inn's offer agrees with itself: a mortal with no gold who is quoted 6 silver
     and 88 copper a day is not told its gold lasts a lifetime.
@@ -230,7 +228,6 @@ def test_an_offer_to_a_mortal_without_gold_does_not_promise_a_lifetime_of_rent(s
     """
     implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MORTAL_MYSTIC.name)
-    wizset(implementor, MORTAL_MYSTIC.name, "gold", OFFER_GOLD)
     give_new_object(implementor, PLAIN_SWORD_VNUM, SWORD_KEYWORD, SWORD_SHORT_DESCRIPTION, MORTAL_MYSTIC)
     teleport = implementor.command(f"teleport {MORTAL_MYSTIC.name.lower()} {world.ROOM_INN}")
     assert not teleport.contains(NO_ONE_MARKER), teleport.text

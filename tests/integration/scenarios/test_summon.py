@@ -8,13 +8,18 @@ from pathlib import Path
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.summon]
 
 # Room 1201, the only room of zone 12, whose map square is (3, 4).
 ROOM_DISTANT_CELL = 1201
+
+# The intelligence the caster is stored with: the top of wizset's range.
+CASTER_INTELLIGENCE = 40
+# The intelligence each victim is stored with: the bottom of wizset's range.
+VICTIM_INTELLIGENCE = 0
 
 # A level-30 human mage in the arena centre who knows summon fully: 100 practice sessions put
 # its knowledge at the cap of 100 (recalc_skills, spec_pro.cpp).
@@ -26,6 +31,7 @@ CASTER = Character(
     load_room=world.ROOM_ARENA_CENTRE,
     class_name="mage",
     skills=(("summon", 100),),
+    stored=StoredValues(int=CASTER_INTELLIGENCE),
 )
 # A level-12 human warrior who starts in the dark cell: a mortal on the caster's side.
 DARK_VICTIM = Character(
@@ -35,6 +41,7 @@ DARK_VICTIM = Character(
     level=12,
     load_room=world.ROOM_DARK_CELL,
     class_name="warrior",
+    stored=StoredValues(int=VICTIM_INTELLIGENCE),
 )
 # A level-12 human warrior who starts in zone 12, five map squares from the caster's zone.
 DISTANT_VICTIM = Character(
@@ -44,12 +51,9 @@ DISTANT_VICTIM = Character(
     level=12,
     load_room=ROOM_DISTANT_CELL,
     class_name="warrior",
+    stored=StoredValues(int=VICTIM_INTELLIGENCE),
 )
 
-# The intelligence the implementor gives the caster: the top of wizset's range.
-CASTER_INTELLIGENCE = 40
-# The intelligence the implementor gives each victim: the bottom of wizset's range.
-VICTIM_INTELLIGENCE = 0
 # The caster's mage level: a single-class mage's mage level is its overall level, up to 30.
 CASTER_MAGE_LEVEL = CASTER.level
 # The test world's zone files, which hold each zone's map square.
@@ -113,17 +117,6 @@ def zone_map_square(zone_number: int) -> tuple:
     return int(match.group(1)), int(match.group(2))
 
 
-def set_intelligence(implementor: GameSession, name: str, intelligence: int) -> None:
-    """Sets a character's constant intelligence, then runs `restore` so its current value follows.
-
-    The restore also refills the character's hit points, mana and moves.
-    """
-    reply = implementor.command(f"wizset player {name.lower()} int {intelligence}")
-    assert reply.contains(f"set to {intelligence}."), reply.text
-    restored = implementor.command(f"restore {name.lower()}")
-    assert restored.contains("Done."), restored.text
-
-
 def save_inputs(implementor: GameSession, name: str) -> tuple:
     """The mage level, current intelligence and spell penetration stat shows for a character."""
     implementor.send_line(f"stat player {name.lower()}")
@@ -160,14 +153,12 @@ def cast_summon(caster: GameSession, target_name: str) -> str:
 
 
 def setup_caster_and_victim(implementor: GameSession, victim: Character) -> tuple:
-    """Gives the caster and the victim their intelligences and returns both save inputs.
+    """Returns the caster's and the victim's save inputs.
 
     Holylight lets the implementor stat a character standing in the dark cell.
     """
     holylight = implementor.command("set holylight on")
     assert holylight.contains("Holylight mode is now on."), holylight.text
-    set_intelligence(implementor, CASTER.name, CASTER_INTELLIGENCE)
-    set_intelligence(implementor, victim.name, VICTIM_INTELLIGENCE)
     return save_inputs(implementor, CASTER.name), save_inputs(implementor, victim.name)
 
 

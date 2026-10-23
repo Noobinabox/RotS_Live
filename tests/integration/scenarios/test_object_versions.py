@@ -5,6 +5,7 @@ refusals of items it cannot store."""
 
 from __future__ import annotations
 
+import dataclasses
 import re
 import time
 from pathlib import Path
@@ -12,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.object_versions]
@@ -75,26 +76,45 @@ BAG_VNUM = 1136
 BAG_KEYWORD = "bag"
 BAG_SHORT_DESCRIPTION = "a leather bag"
 
-# Spirit the implementor gives each caster: enchant weapon costs 50 and a lost concentration 25
+# Spirit each caster is stored with: enchant weapon costs 50 and a lost concentration 25
 # (do_cast, spell_pa.cpp), and nothing restores spirit between requests under affect-hours.
 CASTER_SPIRIT = 500
-# Alignments wizset gives a caster, at the ends of its range and the middle (IS_GOOD at 100 or
-# more, IS_EVIL at -100 or less, utils.h).
+# Alignments a caster is stored with, at the ends of wizset's range and the middle (IS_GOOD at
+# 100 or more, IS_EVIL at -100 or less, utils.h).
 GOOD_ALIGNMENT = 1000
 EVIL_ALIGNMENT = -1000
 NEUTRAL_ALIGNMENT = 0
 # The affect the builder gives a prototype in the object editor's field 19: location 1 (STR),
 # modifier 1. On the sword it means the sword can no longer take an enchant.
 STRENGTH_AFFECT_ANSWER = "(1 1)"
-# The strength constant the implementor gives the helm's wearer, so its base strength is known.
+# The strength constant the helm's wearer is stored with, so its base strength is known.
 WEARER_STRENGTH = 15
-# Thirst and drunkenness the implementor gives the owner before it sips: an immortal's conditions
-# read 255 (advance_level, profs.cpp), and do_drink (act_obj2.cpp) refuses a drinker more than 10
-# drunk, or more than 23 thirsty.
+# Thirst and drunkenness the owner is stored with before it sips: an immortal's conditions
+# otherwise read 255 (advance_level, profs.cpp), and do_drink (act_obj2.cpp) refuses a drinker
+# more than 10 drunk, or more than 23 thirsty.
 SIPPER_THIRST = 10
 SIPPER_DRUNKENNESS = 0
 # The renting mortal's gold: rent costs nothing, and the rent's log line shows the gold.
 RENTER_GOLD = 0
+
+
+def caster(character: Character, alignment: int, gold: int | None = None) -> Character:
+    """character stored with alignment, enough spirit for the casts and their repeats, and gold when given."""
+    return dataclasses.replace(character, stored=StoredValues(alignment=alignment, spirit=CASTER_SPIRIT, gold=gold))
+
+
+# The mortal mystic as a good, an evil and a neutral caster.
+GOOD_MYSTIC = caster(MORTAL_MYSTIC, GOOD_ALIGNMENT)
+EVIL_MYSTIC = caster(MORTAL_MYSTIC, EVIL_ALIGNMENT)
+NEUTRAL_MYSTIC = caster(MORTAL_MYSTIC, NEUTRAL_ALIGNMENT)
+# The good mortal caster who rents at the inn.
+RENTING_MYSTIC = caster(MORTAL_MYSTIC, GOOD_ALIGNMENT, RENTER_GOLD)
+# The owner as a good caster.
+GOOD_OWNER = caster(OWNER, GOOD_ALIGNMENT)
+# The owner who wears the helm, with a known strength constant.
+STRONG_OWNER = dataclasses.replace(OWNER, stored=StoredValues(str=WEARER_STRENGTH))
+# The owner who sips from the waterskin.
+SIPPING_OWNER = dataclasses.replace(OWNER, stored=StoredValues(drunk=SIPPER_DRUNKENNESS, thirst=SIPPER_THIRST))
 
 # What the caster reads when the spell goes off (do_cast).
 CAST_DONE_MARKER = "Ok."
@@ -288,18 +308,6 @@ def give_plain_sword(implementor: GameSession, receiver: Character) -> None:
     give_new_object(implementor, PLAIN_SWORD_VNUM, SWORD_KEYWORD, SWORD_SHORT_DESCRIPTION, receiver)
 
 
-def wizset(implementor: GameSession, name: str, field: str, value: int) -> None:
-    """Sets a character's field and asserts wizset's reply."""
-    reply = implementor.command(f"wizset player {name.lower()} {field} {value}")
-    assert reply.contains(f"{name}'s {field} set to {value}."), reply.text
-
-
-def prepare_caster(implementor: GameSession, caster: Character, alignment: int) -> None:
-    """Gives the caster its alignment and enough spirit for the casts and their repeats."""
-    wizset(implementor, caster.name, "alignment", alignment)
-    wizset(implementor, caster.name, "spirit", CASTER_SPIRIT)
-
-
 def cast_enchant_weapon(caster: GameSession) -> str:
     """Casts enchant weapon on the sword; returns what the caster read once the spell went off.
 
@@ -476,17 +484,15 @@ def test_stat_shows_no_version_and_no_enchants_on_a_plain_copy(server) -> None:
 
 @pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
 @pytest.mark.parametrize(
-    ("alignment", "glow_colour", "alignment_name", "flags_line"),
+    ("glow_colour", "alignment_name", "flags_line"),
     [
-        (GOOD_ALIGNMENT, "blue", "good", GOOD_ENCHANT_FLAGS_LINE),
-        (EVIL_ALIGNMENT, "red", "evil", EVIL_ENCHANT_FLAGS_LINE),
-        (NEUTRAL_ALIGNMENT, "yellow", "neutral", NEUTRAL_ENCHANT_FLAGS_LINE),
+        pytest.param("blue", "good", GOOD_ENCHANT_FLAGS_LINE, marks=pytest.mark.characters(IMPLEMENTOR, GOOD_MYSTIC), id="good"),
+        pytest.param("red", "evil", EVIL_ENCHANT_FLAGS_LINE, marks=pytest.mark.characters(IMPLEMENTOR, EVIL_MYSTIC), id="evil"),
+        pytest.param("yellow", "neutral", NEUTRAL_ENCHANT_FLAGS_LINE, marks=pytest.mark.characters(IMPLEMENTOR, NEUTRAL_MYSTIC), id="neutral"),
     ],
-    ids=["good", "evil", "neutral"],
 )
-def test_enchant_weapon_records_the_enchant_with_the_casters_alignment(server, alignment, glow_colour, alignment_name, flags_line) -> None:
+def test_enchant_weapon_records_the_enchant_with_the_casters_alignment(server, glow_colour, alignment_name, flags_line) -> None:
     """Pins #343: a successful enchant weapon is recorded on the item with the caster's alignment.
 
     The caster reads the glow for its alignment, and stat obj lists the recorded enchant,
@@ -497,7 +503,6 @@ def test_enchant_weapon_records_the_enchant_with_the_casters_alignment(server, a
     """
     implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MORTAL_MYSTIC.name)
-    prepare_caster(implementor, MORTAL_MYSTIC, alignment)
     give_plain_sword(implementor, MORTAL_MYSTIC)
 
     reply = cast_enchant_weapon(mystic)
@@ -511,7 +516,7 @@ def test_enchant_weapon_records_the_enchant_with_the_casters_alignment(server, a
 
 @pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
+@pytest.mark.characters(IMPLEMENTOR, GOOD_MYSTIC)
 def test_a_second_enchant_weapon_on_the_same_sword_does_nothing(server) -> None:
     """Pins today's refusal of a second enchant weapon on an enchanted sword: nothing happens.
 
@@ -525,7 +530,6 @@ def test_a_second_enchant_weapon_on_the_same_sword_does_nothing(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MORTAL_MYSTIC.name)
-    prepare_caster(implementor, MORTAL_MYSTIC, GOOD_ALIGNMENT)
     give_plain_sword(implementor, MORTAL_MYSTIC)
 
     first_reply = cast_enchant_weapon(mystic)
@@ -575,7 +579,7 @@ def test_a_bump_saved_with_done_writes_the_version_to_the_world_file(server) -> 
 
 @pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, OWNER)
+@pytest.mark.characters(IMPLEMENTOR, GOOD_OWNER)
 def test_a_version_bump_refreshes_the_owners_copy_at_the_next_login_and_keeps_its_enchant(server) -> None:
     """Pins #343: after a version bump, the owner's saved copy is refreshed at its next login and
     keeps its recorded enchant, since the bumped prototype can still take it.
@@ -590,7 +594,6 @@ def test_a_version_bump_refreshes_the_owners_copy_at_the_next_login_and_keeps_it
     """
     implementor = server.login(IMPLEMENTOR.name)
     owner = server.login(OWNER.name)
-    prepare_caster(implementor, OWNER, GOOD_ALIGNMENT)
     give_plain_sword(implementor, OWNER)
     owner_idnum = player_idnum(implementor, OWNER.name)
 
@@ -654,7 +657,7 @@ def test_a_second_login_after_a_refresh_refreshes_nothing(server) -> None:
 
 @pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MORTAL_MYSTIC)
+@pytest.mark.characters(IMPLEMENTOR, RENTING_MYSTIC)
 def test_a_version_bump_refreshes_a_mortals_rented_copy_when_it_returns_and_keeps_its_enchant(server) -> None:
     """Pins #343 for a mortal: the copy a mortal saves by renting at an inn is refreshed when it
     returns, and keeps its recorded enchant, since the bumped prototype can still take it.
@@ -673,8 +676,6 @@ def test_a_version_bump_refreshes_a_mortals_rented_copy_when_it_returns_and_keep
     """
     implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MORTAL_MYSTIC.name)
-    prepare_caster(implementor, MORTAL_MYSTIC, GOOD_ALIGNMENT)
-    wizset(implementor, MORTAL_MYSTIC.name, "gold", RENTER_GOLD)
     give_plain_sword(implementor, MORTAL_MYSTIC)
     mystic_idnum = player_idnum(implementor, MORTAL_MYSTIC.name)
     log_path = server.run_dir / "game.log"
@@ -868,7 +869,7 @@ def test_a_broken_key_stays_broken_across_a_refresh(server) -> None:
 
 @pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, OWNER)
+@pytest.mark.characters(IMPLEMENTOR, STRONG_OWNER)
 def test_a_refreshed_worn_item_gives_its_wearer_the_new_prototypes_affect(server) -> None:
     """Pins #343 for worn gear: a worn copy refreshed at login (Crash_obj2char, objsave.cpp) brings
     the new prototype's affect to its wearer, and taking it off removes exactly that affect.
@@ -880,7 +881,6 @@ def test_a_refreshed_worn_item_gives_its_wearer_the_new_prototypes_affect(server
     """
     implementor = server.login(IMPLEMENTOR.name)
     owner = server.login(OWNER.name)
-    wizset(implementor, OWNER.name, "str", WEARER_STRENGTH)
     give_new_object(implementor, HELM_VNUM, HELM_KEYWORD, HELM_SHORT_DESCRIPTION, OWNER)
     worn = owner.command(f"wear {HELM_KEYWORD}")
     assert worn.contains(WORN_MARKER), worn.text
@@ -933,7 +933,7 @@ def test_turning_the_version_off_stamps_new_copies_and_refreshes_no_saved_copy(s
 
 @pytest.mark.object_versions_refresh
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, OWNER)
+@pytest.mark.characters(IMPLEMENTOR, SIPPING_OWNER)
 def test_a_refresh_keeps_what_is_left_in_a_drink_container(server) -> None:
     """Pins #343's promise that a refresh keeps play state: a waterskin keeps what is left in it.
 
@@ -944,8 +944,6 @@ def test_a_refresh_keeps_what_is_left_in_a_drink_container(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     owner = server.login(OWNER.name)
-    wizset(implementor, OWNER.name, "drunk", SIPPER_DRUNKENNESS)
-    wizset(implementor, OWNER.name, "thirst", SIPPER_THIRST)
     give_new_object(implementor, WATERSKIN_VNUM, WATERSKIN_KEYWORD, WATERSKIN_SHORT_DESCRIPTION, OWNER)
     owner.send_line(f"sip {WATERSKIN_KEYWORD}")
     sipped = owner.expect([SIP_MARKER, TOO_DRUNK_MARKER, TOO_FULL_MARKER]) + owner.drain(SETTLE_SECONDS)
@@ -964,7 +962,7 @@ def test_a_refresh_keeps_what_is_left_in_a_drink_container(server) -> None:
 
 @pytest.mark.object_versions_enchant
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, OWNER)
+@pytest.mark.characters(IMPLEMENTOR, GOOD_OWNER)
 def test_a_version_bump_to_a_prototype_that_cannot_take_the_enchant_drops_it(server) -> None:
     """Pins #343: a refresh drops a recorded enchant the bumped prototype can no longer take.
 
@@ -979,7 +977,6 @@ def test_a_version_bump_to_a_prototype_that_cannot_take_the_enchant_drops_it(ser
     """
     implementor = server.login(IMPLEMENTOR.name)
     owner = server.login(OWNER.name)
-    prepare_caster(implementor, OWNER, GOOD_ALIGNMENT)
     give_plain_sword(implementor, OWNER)
     owner_idnum = player_idnum(implementor, OWNER.name)
 

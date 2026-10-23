@@ -4,13 +4,15 @@ language a recount resets, a guildmaster's refusal text and gear bonuses a sessi
 
 from __future__ import annotations
 
+import dataclasses
 import re
 
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
+from rots_harness.world_resets import MobReset
 
 pytestmark = [pytest.mark.scenario, pytest.mark.practice]
 
@@ -51,11 +53,9 @@ TRAVELLER_CREATED_MARKER = "You create a mysterious traveller."
 # The scarred trainer (mob/guildmasters.mob), program 9, the URUK WARRIOR row, whose reject
 # message is "$n snarls 'Get out!'"; it teaches only uruk-hai (will_teach 2048).
 TRAINER_VNUM = 4608
-TRAINER_CREATED_MARKER = "You create a scarred trainer."
 TRAINER_LINE_START = "A scarred trainer"
 # The shining angel (mob/11.mob): MOB_SPEC with program 14, the resetter (spec_ass.cpp).
 ANGEL_VNUM = 1170
-ANGEL_CREATED_MARKER = "You create a shining angel."
 # The iron circlet (obj/11.obj): head armour whose one affect is APPLY_STR +2.
 CIRCLET_VNUM = 1171
 CIRCLET_CREATED_MARKER = "You create an iron circlet."
@@ -66,6 +66,8 @@ CIRCLET_STRENGTH_BONUS = 2
 LEARNING = 40
 # Learning that is not a multiple of LEA_PRAC_FACTOR (5), so a level's share has a fraction.
 FRACTIONAL_LEARNING = 37
+# The reset pupil stored with FRACTIONAL_LEARNING.
+FRACTIONAL_PUPIL = dataclasses.replace(RESET_PUPIL, stored=StoredValues(lea=FRACTIONAL_LEARNING))
 # The practice sessions the implementor gives a pupil before practicing.
 STARTING_SESSIONS = 20
 
@@ -106,15 +108,6 @@ GO_AWAY_SPEECH = "says 'Go away, I won't teach you anything!'"
 TRAINER_REJECT_MARKER = f"{TRAINER_LINE_START} snarls 'Get out!'"
 # Seconds to keep reading after an outcome, for text already sent to arrive.
 SETTLE_SECONDS = 1.0
-
-
-def set_learning(implementor: GameSession, pupil: GameSession, name: str, learning: int) -> None:
-    """Sets the character's constant learning, then restores it so the current value follows."""
-    reply = implementor.command(f"wizset player {name.lower()} lea {learning}")
-    assert reply.contains(f"{name}'s lea set to {learning}."), reply.text
-    reply = implementor.command(f"restore {name.lower()}")
-    assert reply.contains("Done."), reply.text
-    pupil.expect(["You have been fully healed by"])
 
 
 def give_sessions(implementor: GameSession, name: str, sessions: int) -> None:
@@ -239,7 +232,7 @@ def test_the_pracreset_command_asks_whom_without_a_name(server) -> None:
 
 @pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, RESET_PUPIL)
+@pytest.mark.characters(IMPLEMENTOR, FRACTIONAL_PUPIL)
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -255,10 +248,7 @@ def test_advancing_down_leaves_the_count_the_login_recount_gives(server) -> None
     (limits.cpp:469) subtracts per level the same way. Nothing on the way draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    pupil = server.login(RESET_PUPIL.name)
-    set_learning(implementor, pupil, RESET_PUPIL.name, FRACTIONAL_LEARNING)
-    pupil.quit()
-    pupil = server.login(RESET_PUPIL.name)
+    server.login(RESET_PUPIL.name)
     # Recount at login: 30 * 3 + 30 * 37 / 5 + 10 - 3 = 90 + 222 + 10 - 3 = 319
     # (Lev: [30]; Lea base 37; 3 blink sessions spent).
     assert stat_value(STAT_SESSIONS_PATTERN, stat_player(implementor, RESET_PUPIL.name)) == (319,)
@@ -309,6 +299,7 @@ def test_a_chosen_spoken_language_survives_the_next_skill_recount(server, recoun
 @pytest.mark.practice_sessions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, REROLL_PUPIL)
+@pytest.mark.world_resets(MobReset(ANGEL_VNUM, world.ROOM_ARENA_CENTRE))
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -331,7 +322,6 @@ def test_the_angels_reroll_recounts_the_sessions_from_the_new_learning(server) -
     original_learning = stat_value(LEARNING_PATTERN, before)[1]
     # The login recount: 6 * 3 + 6 * learning / 5 + 10 - 0 (Lev: [6]; nothing spent).
     assert plain_sessions(pupil) == 6 * 3 + 6 * original_learning // 5 + 10
-    load_mob(implementor, ANGEL_VNUM, ANGEL_CREATED_MARKER)
 
     rerolled_learning = original_learning
     while rerolled_learning == original_learning:
@@ -354,6 +344,7 @@ def test_the_angels_reroll_recounts_the_sessions_from_the_new_learning(server) -
 @pytest.mark.practice_limits
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
+@pytest.mark.world_resets(MobReset(TRAINER_VNUM, world.ROOM_ARENA_CENTRE))
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -370,7 +361,6 @@ def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(serv
     implementor = server.login(IMPLEMENTOR.name)
     pupil = server.login(PUPIL.name)
     give_sessions(implementor, PUPIL.name, STARTING_SESSIONS)
-    load_mob(implementor, TRAINER_VNUM, TRAINER_CREATED_MARKER)
 
     reply = practice_once(pupil, "slashing")
     assert PRACTICED_MARKER not in reply, reply
@@ -381,6 +371,7 @@ def test_a_race_the_guildmaster_will_not_teach_reads_its_own_reject_message(serv
 @pytest.mark.practice_abilities
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, PUPIL)
+@pytest.mark.world_resets(MobReset(TRAVELLER_VNUM, world.ROOM_ARENA_CENTRE))
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
@@ -406,7 +397,6 @@ def test_a_practice_session_keeps_the_strength_worn_gear_adds(server) -> None:
     worn = stat_value(STRENGTH_PATTERN, stat_player(implementor, PUPIL.name))
     assert worn[1] == worn[2] + CIRCLET_STRENGTH_BONUS, worn
     give_sessions(implementor, PUPIL.name, STARTING_SESSIONS)
-    load_mob(implementor, TRAVELLER_VNUM, TRAVELLER_CREATED_MARKER)
 
     assert PRACTICED_MARKER in practice_once(pupil, "blink")
     practised = stat_value(STRENGTH_PATTERN, stat_player(implementor, PUPIL.name))

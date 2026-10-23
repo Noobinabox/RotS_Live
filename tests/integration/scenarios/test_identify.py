@@ -8,11 +8,14 @@ import re
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.identify]
 
+# The base and current mana the mage is stored with: a fresh level-30 mage has less than
+# identify's 70 (USE_MANA, spells.h), and a lost concentration costs half of it (do_cast).
+MAGE_MAXIMUM_MANA = 500
 # A level-30 human mage in the implementors' room who knows identify fully. Identify is a
 # level-18 mage spell that targets an object the caster carries (skills[] in consts.cpp).
 MAGE = Character(
@@ -23,6 +26,8 @@ MAGE = Character(
     load_room=world.ROOM_IMMORTAL_START,
     class_name="mage",
     skills=(("identify", 100),),
+    mana=MAGE_MAXIMUM_MANA,
+    stored=StoredValues(maxstamina=MAGE_MAXIMUM_MANA),
 )
 
 # The objects identified, each with its keyword and short description (tests/integration/world):
@@ -42,9 +47,6 @@ BREAD_SHORT_DESCRIPTION = "a piece of tainted bread"
 AMULET_VNUM = 1138
 AMULET_KEYWORD = "amulet"
 AMULET_SHORT_DESCRIPTION = "a sickly amulet"
-# The maximum mana the implementor gives the mage: a fresh level-30 mage logs in with less than
-# identify's 70 (USE_MANA, spells.h), and a lost concentration costs half of it (do_cast).
-MAGE_MAXIMUM_MANA = 500
 
 # What the implementor reads when the load and the give go through (do_load, act_wiz.cpp; give).
 CREATED_MARKER_FORMAT = "You create {}."
@@ -90,13 +92,8 @@ SETTLE_SECONDS = 1.0
 
 
 def prepare_mage_with_object(implementor: GameSession, vnum: int, keyword: str, short_description: str) -> None:
-    """Gives the mage the mana for identify and its repeats, then loads the object and hands it over."""
+    """Loads the object and hands it to the mage."""
     mage_keyword = MAGE.name.lower()
-    # wizset calls maximum mana "maxstamina"; restore fills current mana to the new maximum.
-    set_mana = implementor.command(f"wizset player {mage_keyword} maxstamina {MAGE_MAXIMUM_MANA}")
-    assert set_mana.contains(f"{MAGE.name}'s maxstamina set to {MAGE_MAXIMUM_MANA}."), set_mana.text
-    restored = implementor.command(f"restore {mage_keyword}")
-    assert restored.contains("Done."), restored.text
     created = implementor.command(f"load obj {vnum}")
     assert created.contains(CREATED_MARKER_FORMAT.format(short_description)), created.text
     given = implementor.command(f"give {keyword} {mage_keyword}")

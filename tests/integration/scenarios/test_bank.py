@@ -4,6 +4,7 @@ its opening hours and options, and the staff commands `vault` and `gameoptions`.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from pathlib import Path
@@ -11,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession, Transcript
 
 pytestmark = [pytest.mark.scenario, pytest.mark.bank]
@@ -130,9 +131,13 @@ KEY_NAME = "a brass key"
 # A cursed ring: extra flags 128, ITEM_NODROP.
 CURSED_RING_VNUM = 1307
 CURSED_RING_NAME = "a cursed ring"
-# The copper the implementor gives the depositor: 10 gold (COPP_IN_GOLD is 1000, structs.h).
+# The copper in a purse: 10 gold (COPP_IN_GOLD is 1000, structs.h).
 PURSE_COPPER = 10000
 COPPER_IN_GOLD = 1000
+# The depositor stored with a purse of PURSE_COPPER.
+PURSED_DEPOSITOR = dataclasses.replace(DEPOSITOR, stored=StoredValues(gold=PURSE_COPPER))
+# The depositor stored with 1500 gold, more than a vault holds.
+RICH_DEPOSITOR = dataclasses.replace(DEPOSITOR, stored=StoredValues(gold=1500 * COPPER_IN_GOLD))
 # The limits in game_boot_options.cpp's defaults; the harness lib's
 # lib/misc/game_boot_options.json sets only daily_reboot_hour_utc.
 VAULT_SLOTS = 10
@@ -374,7 +379,7 @@ def test_a_banker_keeps_an_item_lists_it_and_hands_it_back(server) -> None:
 
 @pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
+@pytest.mark.characters(PURSED_DEPOSITOR)
 def test_a_banker_keeps_coins_up_to_what_the_purse_and_the_vault_hold(server) -> None:
     """Pins coin deposits and withdrawals at a banker, and their refusals (PR #369).
 
@@ -382,9 +387,7 @@ def test_a_banker_keeps_coins_up_to_what_the_purse_and_the_vault_hold(server) ->
     5 gold in the vault, `withdraw 9 gold` is refused and `withdraw 2 gold` is paid out. score
     shows the purse after each change. Nothing on this path draws.
     """
-    implementor = server.login(IMPLEMENTOR.name)
     depositor = server.login(DEPOSITOR.name)
-    set_gold(implementor, DEPOSITOR, PURSE_COPPER)
     assert depositor.command("score").contains("Gold: 10,")
 
     assert depositor.command("deposit 20 gold").contains(PURSE_SHORT_MARKER)
@@ -604,7 +607,7 @@ def test_a_banker_in_a_dark_room_refuses_a_customer_it_cannot_see(server) -> Non
 
 @pytest.mark.bank_refusals
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, DEPOSITOR, KINSMAN)
+@pytest.mark.characters(IMPLEMENTOR, PURSED_DEPOSITOR, KINSMAN)
 def test_a_bystander_sees_item_moves_but_not_coin_moves_or_the_bankers_tells(server) -> None:
     """Pins what a same-side bystander sees of another's banking (PR #369).
 
@@ -617,7 +620,6 @@ def test_a_bystander_sees_item_moves_but_not_coin_moves_or_the_bankers_tells(ser
     implementor = server.login(IMPLEMENTOR.name)
     depositor = server.login(DEPOSITOR.name)
     bystander = server.login(KINSMAN.name)
-    set_gold(implementor, DEPOSITOR, PURSE_COPPER)
     give_cap_in_bank_hall(implementor, DEPOSITOR)
     bystander.expect([f"gives {CAP_NAME} to {DEPOSITOR.name}."])
 
@@ -717,7 +719,7 @@ def test_a_vault_takes_its_tenth_item_and_refuses_the_eleventh(server) -> None:
 
 @pytest.mark.bank_deposits
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, DEPOSITOR)
+@pytest.mark.characters(RICH_DEPOSITOR)
 def test_a_coin_deposit_past_the_vault_limit_is_cut_to_what_fits(server) -> None:
     """Pins the vault's coin limit for a player's deposit (PR #369).
 
@@ -726,9 +728,7 @@ def test_a_coin_deposit_past_the_vault_limit_is_cut_to_what_fits(server) -> None
     the purse keeps 500. A further `deposit 1 gold` is refused outright. Nothing on this path
     draws.
     """
-    implementor = server.login(IMPLEMENTOR.name)
     depositor = server.login(DEPOSITOR.name)
-    set_gold(implementor, DEPOSITOR, 1500 * COPPER_IN_GOLD)
 
     assert_lines(
         depositor.command("deposit 1500 gold"),

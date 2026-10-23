@@ -6,6 +6,7 @@ budget, skill keys, maximums); this module checks only what it needs to build th
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from dataclasses import dataclass, field
 from typing import Optional
@@ -32,6 +33,37 @@ class ProfessionPoints:
 
 
 @dataclass(frozen=True)
+class StoredValues:
+    """Values a character is stored with, named and limited like the wizset fields that set them in a running game."""
+
+    # Coins carried, 0 to 100000000.
+    gold: Optional[int] = None
+    # Spirit points.
+    spirit: Optional[int] = None
+    # Alignment, -1000 to 1000.
+    alignment: Optional[int] = None
+    # The specialization's name as the game spells it, such as "fire" or "wild fighting".
+    specialization: Optional[str] = None
+    # Hunger, thirst and drunkenness, 0 to 24, or -1 for off.
+    hunger: Optional[int] = None
+    thirst: Optional[int] = None
+    drunk: Optional[int] = None
+    # Base abilities, 0 to 40.
+    str: Optional[int] = None
+    int: Optional[int] = None
+    wil: Optional[int] = None
+    dex: Optional[int] = None
+    con: Optional[int] = None
+    lea: Optional[int] = None
+    # Base stamina (maximum mana), 1 to 5000.
+    maxstamina: Optional[int] = None
+
+    def to_spec(self) -> dict:
+        """The values the spec's set object carries, without the unset ones."""
+        return {name: value for name, value in dataclasses.asdict(self).items() if value is not None}
+
+
+@dataclass(frozen=True)
 class Character:
     """One test character, with either a standard class name or a custom profession split."""
 
@@ -46,6 +78,8 @@ class Character:
     hit: Optional[int] = None
     mana: Optional[int] = None
     move: Optional[int] = None
+    # Stored values the spec's set object carries beside hit, mana and move.
+    stored: StoredValues = StoredValues()
 
     def __post_init__(self) -> None:
         if (self.class_name is None) == (self.points is None):
@@ -63,6 +97,7 @@ class Character:
         if self.skills:
             spec["skills"] = {skill_key: practices for skill_key, practices in self.skills}
         set_values = {name: value for name, value in (("hit", self.hit), ("mana", self.mana), ("move", self.move)) if value is not None}
+        set_values.update(self.stored.to_spec())
         if set_values:
             spec["set"] = set_values
         return spec

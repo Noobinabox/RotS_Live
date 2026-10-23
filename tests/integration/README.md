@@ -366,6 +366,16 @@ fixture quits every session after the test. The game lets an account have only o
 online unless the account owns a character above level 91, so a test that logs in two
 characters at once also declares one above that level, such as `IMPLEMENTOR` (level 100).
 
+A character can also start with stored values that `wizset` would otherwise set after login:
+`Character(..., stored=StoredValues(gold=500, lea=40, specialization="fire"))`, each named and
+limited like its `wizset` field. Mobs and floor objects the test needs from the start go in the
+test's world with `@pytest.mark.world_resets(MobReset(mob_vnum, room_vnum),
+ObjectReset(object_vnum, room_vnum))` (`rots_harness/world_resets.py`): boot places them before
+the first login. A server on the wall clock resets a zone again when its lifespan ends, which
+brings back a placed mob a test has purged or killed; a test that relies on a mob being gone
+loads it with `load mob` instead. The skill's harness reference lists the fields and their
+limits.
+
 A new group needs its own file, `groups/<group>.txt`, holding one line that says what the group
 pins; `conftest.py` registers a marker for each file. A test in a group with subgroups (a folder
 `groups/<group>/`) also marks one of them: add it to `pytestmark` when the whole file belongs to

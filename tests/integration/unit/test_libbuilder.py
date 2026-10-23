@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,6 +11,7 @@ import pytest
 from rots_harness import libbuilder
 from rots_harness.characters import IMPLEMENTOR, CharacterSet, custom_mage
 from rots_harness.launcher import ToolResult
+from rots_harness.world_resets import MobReset
 
 
 def make_repo(root: Path) -> Path:
@@ -126,6 +128,46 @@ def test_each_seed_gets_its_own_template(tmp_path: Path) -> None:
         provider.lib_for(CharacterSet((IMPLEMENTOR,)), tmp_path / "runs" / str(seed))
     assert len(runner.calls) == 2
     assert len(list((tmp_path / "libs").iterdir())) == 2, "a template built for one seed must not be reused for another"
+
+
+def make_world_with_one_zone(world: Path) -> None:
+    """Writes zone 11 with room 1131 and mob 1130 into the minimal repo's world."""
+    (world / "zon" / "11.zon").write_text("#11\nZone~\n~\n~\n0\n? 0 0 5\n1199\n999\n2\nS\n", encoding="latin-1")
+    (world / "zon" / "index").write_text("11.zon\n$\n", encoding="latin-1")
+    (world / "wld" / "11.wld").write_text("#1131\nroom~\n#99999\n", encoding="latin-1")
+    (world / "wld" / "index").write_text("11.wld\n$\n", encoding="latin-1")
+    (world / "mob" / "11.mob").write_text("#1130\nmob~\n#99999\n", encoding="latin-1")
+    (world / "mob" / "index").write_text("11.mob\n$\n", encoding="latin-1")
+
+
+def test_the_template_world_holds_the_resets_rows_and_the_committed_world_does_not(tmp_path: Path) -> None:
+    world = make_repo(tmp_path)
+    make_world_with_one_zone(world)
+    lib = libbuilder.LibTemplateBuilder(tmp_path, world, FakeToolRunner()).build(tmp_path / "t1", CharacterSet((IMPLEMENTOR,)), seed=7, resets=(MobReset(1130, 1131),))
+    assert "M 0 1130 1131 0 100 100 1 1" in (lib / "world" / "zon" / "11.zon").read_text(encoding="latin-1")
+    assert "M 0" not in (world / "zon" / "11.zon").read_text(encoding="latin-1")
+
+
+def test_a_reset_naming_an_unknown_room_fails_the_build_before_rotstool_runs(tmp_path: Path) -> None:
+    world = make_repo(tmp_path)
+    make_world_with_one_zone(world)
+    runner = FakeToolRunner()
+    with pytest.raises(libbuilder.LibBuildError, match="no room 1132"):
+        libbuilder.LibTemplateBuilder(tmp_path, world, runner).build(tmp_path / "t1", CharacterSet((IMPLEMENTOR,)), seed=7, resets=(MobReset(1130, 1132),))
+    assert runner.calls == []
+
+
+def test_resets_get_their_own_template_and_no_resets_keep_the_spec_only_key(tmp_path: Path) -> None:
+    runner = FakeToolRunner()
+    provider = make_provider(tmp_path, runner)
+    make_world_with_one_zone(tmp_path / "tests" / "integration" / "world")
+    character_set = CharacterSet((IMPLEMENTOR,))
+    spec_only_key = hashlib.sha256(f"7\n{character_set.spec_json()}".encode("utf-8")).hexdigest()[:16]
+    assert provider.cache_key(character_set) == spec_only_key
+    assert provider.cache_key(character_set, (MobReset(1130, 1131),)) != spec_only_key
+    provider.lib_for(character_set, tmp_path / "runs" / "a")
+    provider.lib_for(character_set, tmp_path / "runs" / "b", (MobReset(1130, 1131),))
+    assert len(runner.calls) == 2
 
 
 class InterleavingToolRunner(FakeToolRunner):

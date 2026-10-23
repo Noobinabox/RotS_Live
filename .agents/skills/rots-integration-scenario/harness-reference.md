@@ -226,31 +226,53 @@ message.
 | `sex` | `male`, `female` |
 | `level` | 1 to 100, reached through the game's own levelling, so abilities, hit points, mana and moves are those of a real character of that level |
 | `class_name` or `points` | exactly one. `class_name`: `mystic`, `ranger`, `warrior`, `mage`, `conjurer`, `wizard`, `healer`, `swashbuckler`, `barbarian`, `adventurer`. `points`: `ProfessionPoints(mage, mystic, ranger, warrior)`, each 0 to 150 and 150 in total at most |
-| `load_room` | a room vnum; not checked against the world |
+| `load_room` | a room vnum; not checked against the world. A character above level 90 starts in Immortal Start (1101) whatever it says: `advance_level` (`profs.cpp`) makes an immortal's race god, and `calc_load_room` (`objsave.cpp`) sends race god to 1101. An immortal needed elsewhere moves there with `goto` |
 | `skills` | `(("skill_key", practices), ...)`: the key is the skill name in lower case with other characters as `_` (`magic_missile`); practices 1 to 255 are practice sessions, not a percentage |
 | `hit`, `mana`, `move` | current points, 1 to the levelled maximum; above it the whole write fails |
+| `stored` | `StoredValues(...)`: values the character is stored with, named and limited like the `wizset` fields that set them in game (table below) |
+
+`StoredValues` fields, each optional; rotstool refuses a value outside its range:
+
+| Field | Range | What it sets |
+| --- | --- | --- |
+| `gold` | 0 to 100000000 | coins carried, in copper |
+| `spirit` | any | spirit points |
+| `alignment` | -1000 to 1000 | alignment |
+| `specialization` | a name from `specialize_name` (`consts.cpp`), such as `"fire"` or `"wild fighting"` | the specialization |
+| `hunger`, `thirst`, `drunk` | 0 to 24, or -1 for off | the conditions |
+| `str`, `int`, `wil`, `dex`, `con`, `lea` | 0 to 40 | the ability's constant, base and current value alike, as `wizset` then `restore` leave them |
+| `maxstamina` | 1 to 5000 | the constant behind maximum mana; current mana keeps its levelled value unless `mana` sets it |
+
+A stored value is in the character file before boot, so the first login reads it the way a
+player's own file is read: a stored `lea` already gives the login recount of practice sessions.
+Practice sessions themselves are not stored values, because that recount replaces them.
 
 Shared definitions: `IMPLEMENTOR` (`Testimm`, human male warrior, level 100, starts in 1101) and
-`custom_mage()` (`Testmage`, human female, level 30, points 70/40/20/20, starts in 1131). A
+`custom_mage()` (`Testmage`, human female, level 30, points 70/40/20/20, starts in 1131). A test
+that needs a variant declares one with `dataclasses.replace`, such as
+`dataclasses.replace(MAGE, stored=StoredValues(gold=500))`. A
 test's characters all share one account, in marker order. The game allows one character online
 per account unless the account owns one above level 91, so a test with two characters online
 declares `IMPLEMENTOR`; without it the second login fails with `You are already connected as`.
 
-### What rotstool cannot set, and the in-game command that does
+### What changes in game, and the command that does it
 
-The implementor sets these after logging in. `wizset` (`do_wizset`, `act_wiz.cpp`) matches its
+Set what a test starts with in the character (`stored`, a mortal's `load_room`) or the world
+(`world_resets`, "Markers and groups") before boot. The implementor sets the rest, and anything
+that changes during the test, after logging in. `wizset` (`do_wizset`, `act_wiz.cpp`) matches its
 field by prefix, takes the first match, clamps the value, and replies `<Name>'s <field> set to
 <value>.` with the clamped value: assert that reply.
 
 | Need | Command (as the implementor) | Notes |
 | --- | --- | --- |
-| Hunger, thirst | `wizset player <name> hunger 10` | 0 to 24, or `off` |
-| Gold | `wizset player <name> gold 100` | |
-| Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`), then `restore <name>` | 0 to 40. Sets the constant, and the base follows; the current value, which formulas read, does not change until `restore`. See "Abilities" below |
+| Hunger, thirst | `wizset player <name> hunger 10` | 0 to 24, or `off`. At the start: `stored` |
+| Gold | `wizset player <name> gold 100` | At the start: `stored` |
+| Abilities | `wizset player <name> str 18` (`int`, `will`, `dex`, `con`, `lea`), then `restore <name>` | 0 to 40. Sets the constant, and the base follows; the current value, which formulas read, does not change until `restore`. See "Abilities" below. At the start: `stored` |
+| Practice sessions | `wizset player <name> practices 20` | Login recounts them from level, learning and the sessions spent, so they cannot be stored |
 | The `saving_throw` field | `wizset player <name> saving_throw 5` | -100 to 100. Sets `specials2.saving_throw` (`GET_SAVE`, `utils.h`), the value gear and affects change. `saves_spell` (`spell_pa.cpp`) and spell damage reduction (`get_victim_saving_throw`, `mage.cpp`) read it, and MSDP reports it; `new_saves_spell` and `get_character_saving_throw` (`spell_pa.cpp`) do not, using the mage level and current intelligence instead. Check which save function the behaviour calls before relying on it |
 | Hit points | `wizset player <name> hit 50`; `maxhit` sets the constant behind the maximum | `restore <name>` refills hit points, mana and moves to the maximum, so set them after any `restore` |
 | Items | `load obj <vnum>` (into the implementor's inventory), then `give <keyword> <name>` in the same room | `<name>` is matched as below, "Names, sides and lookups" |
-| Mobs | `load mob <vnum>` (into the implementor's room) | |
+| Mobs | `load mob <vnum>` (into the implementor's room) | At the start: `world_resets` |
 | Position in the world | the character's `load_room`; `teleport <name> <vnum>`, `transfer <name>`, `goto <vnum>` | `load_room` works for every race; `teleport` and `transfer` match `<name>` as below |
 | Profession levels | none | `wizset ... level` sets only the overall level and `wizset ... prof` does nothing; choose `level` and `class_name` or `points` (see "Profession levels" below) |
 | Affects, flags | cast the spell, or wear an object that sets it | |
@@ -306,10 +328,11 @@ Each ability in `stat` is `Int:[current/base/constant]` (`do_stat_character`, `a
   `restore` also refills hit points, mana and moves, so set those afterwards.
 - The scenario's order is therefore `wizset`, `restore`, then `stat player` to read the
   current value the formula will use.
-- rotstool cannot set abilities. They are rolled from the seeded random stream when rotstool
-  makes each character, in the order the `characters` marker lists them (`profs.cpp`), so a
-  different `ROTS_IT_SEED`, or a reordered marker, gives different rolled abilities. Read them
-  with `stat`, or set them as above.
+- An ability the character's `stored` values leave unset is rolled from the seeded random
+  stream when rotstool makes the character, in the order the `characters` marker lists them
+  (`profs.cpp`), so a different `ROTS_IT_SEED`, or a reordered marker, gives different rolled
+  abilities. Read them with `stat`, store them, or set them as above. A stored ability is the
+  constant, base and current value alike.
 
 ### Profession levels
 
@@ -485,6 +508,7 @@ not groups:
 | `scenario` | boots its own server through the `server` fixture; `make integration` always selects it |
 | `characters(*characters)` | the test's characters; a test using `server` without it fails |
 | `schedule(name)` | runs `bin/ageland_harness --schedule <name>`; game time advances only through `advance_hours` |
+| `world_resets(*resets)` | `MobReset(mob_vnum, room_vnum)` and `ObjectReset(object_vnum, room_vnum)` (`rots_harness/world_resets.py`): the test's lib adds one reset row per value to the zone that owns the room, so boot places each mob in its room and each object on its floor before the first login. A vnum the world lacks fails the lib build, naming it. A server on the wall clock resets a zone again when its lifespan ends, which brings back a placed mob the test has purged or killed, so a test that relies on a mob being gone loads it with `load mob` instead |
 | a group, one per `tests/integration/groups/<name>.txt` | no behaviour of its own |
 | a subgroup `<name>_<sub>`, one per `tests/integration/groups/<name>/<sub>.txt` | no behaviour of its own; a test marking it also marks `<name>` |
 
@@ -676,7 +700,7 @@ file ends with a `#99999` record, which `count_hash_records` (`db.cpp`) counts o
 - **Append to zone 11's files** (`wld/11.wld` before `#99999`, `mob/11.mob`, `obj/11.obj`) only
   for a fixture zone 11's existing scenarios need, keeping its vnums between 1101 and 1199.
 - A mob: a special needs the `MOB_SPEC` act flag as well as the program number. Place it with a
-  zone reset row or `load mob`.
+  zone reset row, a test's `world_resets` marker or `load mob`.
 - An object the object editor must load goes in its zone's file.
 - Record each new fixture's purpose and quirks in its zone's notes file, and name a room in
   `rots_harness/world.py` only when a second scenario file needs it.

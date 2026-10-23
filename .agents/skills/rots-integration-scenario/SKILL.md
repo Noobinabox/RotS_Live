@@ -73,11 +73,16 @@ the harness (extending-the-harness.md); never rely on luck.
 
 ## 5. Declare the characters
 
-Use `@pytest.mark.characters(...)` (fields in the reference). The implementor sets
-what rotstool cannot (hunger, gold, items, abilities, and the `saving_throw` field, which only
-some save functions read); assert each reply, such as `hunger set to 10.`. Declare
-`IMPLEMENTOR` whenever two characters are online. Across sides a command matches a player's
-race keyword, never its name (reference, "Names, sides and lookups").
+Use `@pytest.mark.characters(...)` (fields in the reference). Starting values go in the
+character: a mortal's `load_room` (an immortal always starts in 1101) and its `stored` values
+(hunger, gold, abilities, spirit, alignment, specialization and more, each limited like its
+`wizset` field). Mobs and floor objects the test starts with go in
+`@pytest.mark.world_resets(...)`. The implementor sets what changes during the test and what
+neither can hold (items, practice sessions, and the `saving_throw` field, which only some save
+functions read); assert each reply, such as `hunger set to 10.`. Declare `IMPLEMENTOR` whenever
+two characters are online. Across sides a command matches a player's race keyword, never its
+name (reference, "Names, sides and lookups").
+
 
 ## 6. Change the world only when it lacks what you need
 

@@ -13,6 +13,7 @@ from rots_harness.characters import (
     Character,
     CharacterSet,
     ProfessionPoints,
+    StoredValues,
     custom_mage,
 )
 
@@ -82,3 +83,15 @@ def test_an_unknown_name_is_refused() -> None:
 def test_an_empty_character_set_is_refused() -> None:
     with pytest.raises(ValueError, match="at least one character"):
         CharacterSet(())
+
+
+def test_stored_values_join_the_set_object_beside_hit_mana_and_move() -> None:
+    stored = StoredValues(gold=500, specialization="fire", str=20, int=21, wil=22, maxstamina=300)
+    character = Character(name="Testwiz", race="human", sex="male", level=30, load_room=1101, class_name="wizard", mana=40, stored=stored)
+    assert character.to_spec()["set"] == {"mana": 40, "gold": 500, "specialization": "fire", "str": 20, "int": 21, "wil": 22, "maxstamina": 300}
+
+
+def test_equal_stored_values_give_identical_spec_text() -> None:
+    first = Character(name="Testwiz", race="human", sex="male", level=30, load_room=1101, class_name="wizard", stored=StoredValues(lea=10, gold=5))
+    second = Character(name="Testwiz", race="human", sex="male", level=30, load_room=1101, class_name="wizard", stored=StoredValues(gold=5, lea=10))
+    assert CharacterSet((first,)).spec_json() == CharacterSet((second,)).spec_json()

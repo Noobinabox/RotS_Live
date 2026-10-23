@@ -284,6 +284,16 @@ target_compile_options(rots_server_objects PRIVATE
 )
 target_link_libraries(rots_server_objects PUBLIC rots_codegen)
 
+# The live server is built from these objects and must not contain the integration harness's
+# code, which lives under harness/.
+get_target_property(ROTS_SERVER_OBJECT_SOURCES rots_server_objects SOURCES)
+foreach(server_source IN LISTS ROTS_SERVER_OBJECT_SOURCES)
+    if(server_source MATCHES "(^|/)harness/")
+        message(FATAL_ERROR "rots_server_objects compiles ${server_source}, which is the integration "
+            "harness's code; harness sources belong in HARNESS_SOURCES.")
+    endif()
+endforeach()
+
 add_executable(ageland main.cpp)
 target_compile_options(ageland PRIVATE
     -w
@@ -423,13 +433,18 @@ if(BUILD_TESTING)
     )
 
     # The live server must not contain the integration harness's code, so ageland's symbol table
-    # may name nothing in namespace harness.
-    add_test(NAME ageland_has_no_harness_symbols
-        COMMAND "${CMAKE_COMMAND}"
-            "-DNM=${CMAKE_NM}"
-            "-DBINARY=$<TARGET_FILE:ageland>"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_no_harness_symbols.cmake"
-    )
+    # may name nothing in namespace harness. Listing it needs nm, which a toolchain without
+    # binutils lacks.
+    if(CMAKE_NM)
+        add_test(NAME ageland_has_no_harness_symbols
+            COMMAND "${CMAKE_COMMAND}"
+                "-DNM=${CMAKE_NM}"
+                "-DBINARY=$<TARGET_FILE:ageland>"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_no_harness_symbols.cmake"
+        )
+    else()
+        message(STATUS "No nm program found: skipping the check that ageland holds no harness:: symbols.")
+    endif()
 endif()
 
 set(ROTS_RUNTIME_DIRS

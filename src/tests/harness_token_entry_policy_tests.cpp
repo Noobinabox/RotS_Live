@@ -32,7 +32,9 @@ constexpr std::string_view OTHER_RUN_TOKEN = "fedcba9876543210fedcba9876543210";
 // What a refused connection is told before the reason.
 constexpr std::string_view REFUSED = harness::TokenEntryPolicy::REFUSAL_PREFIX;
 // What the log line of every refusal starts with.
-constexpr std::string_view REFUSAL_LOG = "SYSERR: harness::TokenEntryPolicy::try_enter: ";
+constexpr std::string_view REFUSAL_LOG = "SYSERR: refuse_entry: ";
+// When the test account's email was verified, or later unverified or blocked; any fixed time will do.
+constexpr long ACCOUNT_STATUS_CHANGED_AT = ACCOUNT_CREATED_AT + 10;
 
 // The fields of the saved player file that hold the time of the save, which differs between two
 // saves of the same character a moment apart.
@@ -156,6 +158,11 @@ protected:
     void SetUp() override
     {
         LoginWorldTest::SetUp();
+        // An account the password login lets in.
+        std::string error_message;
+        ASSERT_TRUE(account::admin_verify_email(".", ACCOUNT_NAME, "VerifierAdmin", ACCOUNT_STATUS_CHANGED_AT,
+            nullptr, &error_message))
+            << error_message;
         // A new connection is logged in to no account.
         connection.descriptor().account_name[0] = '\0';
     }
@@ -346,16 +353,85 @@ TEST_F(TokenEntryPolicyTest, RefusesACharacterAnotherSessionOnTheAccountForbids)
     descriptor_list = nullptr;
 }
 
-TEST_F(TokenEntryPolicyTest, LeavesAWizlockRefusalToTheGamesOwnWords)
+TEST_F(TokenEntryPolicyTest, FollowsTheGamesWizlockRefusalWithTheHarnessRefusal)
 {
     ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
     restrict = 46;
 
-    EXPECT_TRUE(offer(connection, good_entry_line("legolas")));
+    EXPECT_TRUE(offer(connection, good_entry_line("Legolas")));
 
     EXPECT_EQ(connection.state(), CON_CLOSE);
     EXPECT_EQ(connection.output(),
-        "The game is temporarily restricted.\r\nTry again later." + std::string(WIZLOCK_MESSAGE) + "\n\r");
+        "The game is temporarily restricted.\r\nTry again later." + std::string(WIZLOCK_MESSAGE) + "\n\r"
+            + std::string(REFUSED) + "the game refused legolas at admission.\n\r");
+    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "Legolas: the game refused legolas at admission."),
+        std::string::npos)
+        << "Expected the refusal logged with the character; log was: " << logged;
+}
+
+TEST_F(TokenEntryPolicyTest, RefusesABlockedAccountAsThePasswordLoginDoes)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+    std::string error_message;
+    ASSERT_TRUE(account::admin_block_account(".", ACCOUNT_NAME, "AdminUser", "Chargeback",
+        ACCOUNT_STATUS_CHANGED_AT, nullptr, &error_message))
+        << error_message;
+
+    EXPECT_TRUE(offer(connection, good_entry_line("legolas")));
+
+    EXPECT_EQ(connection.state(), CON_CLOSE);
+    EXPECT_EQ(connection.output(), std::string(REFUSED) + "Account authentication failed.\n\r");
+    EXPECT_EQ(connection.character(), nullptr);
+    EXPECT_STREQ(connection.descriptor().account_name, "") << "Expected the connection bound to no account.";
+    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: Account authentication failed."), std::string::npos)
+        << "Expected the refusal logged with the character; log was: " << logged;
+}
+
+TEST_F(TokenEntryPolicyTest, RefusesAnUnverifiedAccountAsThePasswordLoginDoes)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+    std::string error_message;
+    ASSERT_TRUE(account::admin_unverify_email(".", ACCOUNT_NAME, ACCOUNT_STATUS_CHANGED_AT, nullptr, &error_message))
+        << error_message;
+
+    EXPECT_TRUE(offer(connection, good_entry_line("legolas")));
+
+    EXPECT_EQ(connection.state(), CON_CLOSE);
+    EXPECT_EQ(connection.output(), std::string(REFUSED) + "Account email verification is still pending.\n\r");
+    EXPECT_EQ(connection.character(), nullptr);
+    EXPECT_STREQ(connection.descriptor().account_name, "") << "Expected the connection bound to no account.";
+    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: Account email verification is still pending."),
+        std::string::npos)
+        << "Expected the refusal logged with the character; log was: " << logged;
+}
+
+TEST_F(TokenEntryPolicyTest, RefusesACharacterGivenByRosterNumber)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+
+    EXPECT_TRUE(offer(connection, good_entry_line("1")));
+
+    EXPECT_EQ(connection.state(), CON_CLOSE);
+    EXPECT_EQ(connection.output(), std::string(REFUSED) + "a character is entered by name, not by roster number.\n\r");
+    EXPECT_EQ(connection.character(), nullptr);
+    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "1: a character is entered by name"), std::string::npos)
+        << "Expected the refusal logged with the character; log was: " << logged;
+}
+
+TEST_F(TokenEntryPolicyTest, JoinsTheBodyOfALinkDeadCharacterAlreadyInTheGame)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+    // Legolas lost his connection and his body waits, link-dead, in the load room.
+    char_data* waiting_body = create_character_in_game("legolas", 45, 5252);
+    place_in_room(*waiting_body, LOAD_ROOM_RNUM);
+
+    EXPECT_TRUE(offer(connection, good_entry_line("legolas")));
+
+    EXPECT_EQ(connection.state(), CON_PLYNG) << connection.output();
+    EXPECT_EQ(connection.character(), waiting_body);
+    EXPECT_EQ(waiting_body->desc, &connection.descriptor());
+    EXPECT_EQ(connection.output(), "Reconnecting.\n\r");
+    EXPECT_TRUE(room_holds(LOAD_ROOM_RNUM, waiting_body));
 }
 
 TEST_F(TokenEntryPolicyTest, EntersTheNamedCharacterInItsLoadRoom)

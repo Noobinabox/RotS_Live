@@ -25,12 +25,15 @@ public:
     // Returns false, leaving the connection untouched, for any line whose first word is not
     // ENTRY_WORD. Otherwise handles the line and returns true: enters the named character through
     // the login steps, or sends the connection REFUSAL_PREFIX and the reason, logs the refusal
-    // with the character's name and closes the connection. Words are separated by spaces; a line
-    // with other than four words is refused.
+    // with the character's name and closes the connection. When the game itself refuses the
+    // character at admission (site ban or wizlock), its own words come first. Words are separated
+    // by spaces; a line with other than four words is refused, as is an account the password
+    // login would refuse whatever the password (account::check_account_may_log_in) and a
+    // character given by roster number instead of by name.
     [[nodiscard]] bool try_enter(descriptor_data& connection, std::string_view line) override;
 
 private:
-    // The secret every entry line must carry; only the process that started the server is told it.
+    // The secret every entry line must carry: this run's token (see create_run_token).
     std::string token;
 };
 

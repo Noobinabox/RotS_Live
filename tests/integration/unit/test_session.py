@@ -267,6 +267,14 @@ def connect_scripted_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, ch
     return GameSession(handle, "Testmage", "harness@example.com", "Harness1x", tmp_path)
 
 
+def test_an_entry_the_game_refuses_at_admission_raises_login_refused_before_the_connection_closes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    wizlock = b"The game is temporarily restricted.\r\nTry again later.Closed for testing.\n\r\n\r"
+    refusal = b"Harness entry refused: the game refused testmage at admission.\n\r"
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [GREETING, wizlock, refusal], close_after=True)
+    with pytest.raises(session.LoginRefused, match=r"Testmage: Harness entry refused: the game refused testmage at admission\.$"):
+        game_session.enter(ENTRY_TOKEN, timeout=1.0)
+
+
 COLOURED_ROOM = b"\x1b[1;33mArena Centre\x1b[0m    Exits are: N\r\nS:Powered>"
 
 

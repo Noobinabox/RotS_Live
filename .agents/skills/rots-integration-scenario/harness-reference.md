@@ -418,10 +418,12 @@ What an observer reads for a character is `PERS` (`utility.cpp`): the name, a st
 
 How characters enter: on `ageland_harness` the fixture reads the entry token from the ready line
 (`TimeControl.wait_ready`) and `server.login` hands it to the session, so `login()` takes two
-round trips, the greeting and the entry line. The server checks the token, the account and the
-character, then runs the same login steps the dialogue runs and shows the same arrival text
-(`Here we go...`, the room, the prompt). A refusal is `Harness entry refused: <reason>`, after
-which the server closes the connection; `enter` raises `LoginRefused` with that line. Plain
+round trips, the greeting and the entry line. The server checks the token, the account (refused
+when blocked or unverified, as the password login refuses it) and the character, then runs the
+same login steps the dialogue runs and shows the same arrival text (`Here we go...`, the room,
+the prompt). A refusal is `Harness entry refused: <reason>`, after the game's own words when a
+site ban or wizlock refuses the character, and then the server closes the connection; `enter`
+raises `LoginRefused` with that line. Plain
 `ageland` ignores entry lines, so on a `real_login` server `login()` walks the account menu.
 
 `Transcript` has `.text`, `.contains(marker)` and `.room_name()`, the first non-empty line up to

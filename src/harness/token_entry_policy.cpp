@@ -17,12 +17,12 @@
 namespace harness {
 
 namespace {
-// The account storage root the login dialogue reads, relative to the game's data directory.
-const std::string ACCOUNT_STORAGE_ROOT = ".";
 // Stands in for the character's name in the log when a line is too malformed to name one.
 constexpr std::string_view UNNAMED_CHARACTER = "(no character named)";
 // Line endings, which a reason sent or logged on one line may not hold.
 constexpr std::string_view LINE_ENDINGS = "\r\n";
+// The decimal digits. A name of nothing else is a roster number, which an entry line may not use.
+constexpr std::string_view DIGITS = "0123456789";
 
 // The words of an entry line after ENTRY_WORD.
 struct EntryLine {
@@ -125,7 +125,7 @@ void refuse_entry(descriptor_data& connection, std::string_view character_name, 
     message += "\n\r";
     SEND_TO_Q(message.c_str(), &connection);
 
-    std::string log_line = "SYSERR: harness::TokenEntryPolicy::try_enter: ";
+    std::string log_line = std::string("SYSERR: ") + __func__ + ": ";
     log_line.append(character_name);
     log_line += ": ";
     log_line.append(reason_line);
@@ -151,8 +151,9 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
 
     const std::optional<EntryLine> entry = parse_entry_words(words);
     if (!entry.has_value()) {
-        refuse_entry(connection, UNNAMED_CHARACTER,
-            "an entry line is \"harness-enter <token> <account email> <character>\".");
+        const std::string reason
+            = "an entry line is \"" + std::string(ENTRY_WORD) + " <token> <account email> <character>\".";
+        refuse_entry(connection, UNNAMED_CHARACTER, reason);
         return true;
     }
     // An empty token never matches: an entry line's token is a word, never empty.
@@ -161,11 +162,25 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
         return true;
     }
 
+    // The roster would read a name of digits alone as a row number and pick whichever character
+    // the row holds.
+    if (entry->character_name.find_first_not_of(DIGITS) == std::string_view::npos) {
+        refuse_entry(connection, entry->character_name, "a character is entered by name, not by roster number.");
+        return true;
+    }
+
+    const std::string storage_root(account_storage_root());
     account::AccountData account_data;
     std::string error_message;
     const std::string email(entry->account_email);
-    if (!account::read_account_file_by_email(ACCOUNT_STORAGE_ROOT, email, &account_data, &error_message)) {
+    if (!account::read_account_file_by_email(storage_root, email, &account_data, &error_message)) {
         refuse_entry(connection, entry->character_name, reason_or(error_message, "the account could not be read."));
+        return true;
+    }
+    // Unlike the password login, this read does not clear the account index's unreadable-since-boot
+    // mark: that is bookkeeping for a record repaired on a running server, not a check on entry.
+    if (!account::check_account_may_log_in(account_data, &error_message)) {
+        refuse_entry(connection, entry->character_name, reason_or(error_message, "the account may not log in."));
         return true;
     }
     bind_connection_to_account(connection, account_data);
@@ -173,7 +188,7 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
     // The roster's own match, so a name resolves exactly as typing it at the roster would.
     std::string selected_name;
     const std::string typed_name(entry->character_name);
-    if (!account::select_linked_character(ACCOUNT_STORAGE_ROOT, account_data, typed_name,
+    if (!account::select_linked_character(storage_root, account_data, typed_name,
             account::RosterSort::Name, account::RosterFilter::None, &selected_name, &error_message)) {
         refuse_entry(connection, entry->character_name,
             reason_or(error_message, "the character is not linked to the account."));
@@ -188,8 +203,13 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
     }
 
     const Admission admission = admit_selected_character(connection);
-    if (admission != Admission::Admitted) {
-        // Refused has already told the connection and logged why; Reconnected is playing.
+    if (admission == Admission::Refused) {
+        // The game has told the connection why in its own words; say that it was the harness's
+        // entry the game refused, so the process that sent the line reads a refusal.
+        refuse_entry(connection, entry->character_name, "the game refused " + selected_name + " at admission.");
+        return true;
+    }
+    if (admission == Admission::Reconnected) {
         return true;
     }
 

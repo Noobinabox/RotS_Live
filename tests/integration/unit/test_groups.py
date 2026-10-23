@@ -97,14 +97,24 @@ def test_a_subfolder_without_its_group_file_is_refused(tmp_path: Path) -> None:
     (tmp_path / "boot.txt").write_text("the server boots\n", encoding="utf-8")
     (tmp_path / "shaping").mkdir()
     (tmp_path / "shaping" / "zone_editor.txt").write_text("the zone editor\n", encoding="utf-8")
-    with pytest.raises(GroupFileError, match="no group file shaping.txt beside it"):
+    with pytest.raises(GroupFileError, match=f"folder {tmp_path.name}/shaping has no group file {tmp_path.name}/shaping.txt"):
         read_groups(tmp_path)
 
 
-def test_a_folder_named_like_a_group_file_is_refused(tmp_path: Path) -> None:
+def test_a_folder_named_like_a_group_file_is_refused_as_misnamed(tmp_path: Path) -> None:
     (tmp_path / "nested.txt").mkdir()
-    with pytest.raises(GroupFileError, match="no group file nested.txt.txt beside it"):
+    with pytest.raises(GroupFileError, match=f"folder {tmp_path.name}/nested.txt is named like a group file") as raised:
         read_groups(tmp_path)
+    assert "nested.txt.txt" not in str(raised.value)
+
+
+@pytest.mark.parametrize("folder_name", [".git", ".DS_Store_dir", "__pycache__"])
+def test_hidden_and_cache_folders_are_ignored(tmp_path: Path, folder_name: str) -> None:
+    write_group_tree(tmp_path)
+    (tmp_path / folder_name).mkdir()
+    (tmp_path / folder_name / "stray.txt").write_text("not a group\n", encoding="utf-8")
+    (tmp_path / "shaping" / folder_name).mkdir()
+    assert [group.name for group in read_groups(tmp_path)] == ["boot", "shaping", "shaping_commands", "shaping_zone_editor"]
 
 
 def test_a_folder_inside_a_subgroup_folder_is_refused(tmp_path: Path) -> None:

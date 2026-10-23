@@ -24,6 +24,9 @@ GROUPS_DIRECTORY_NAME = "groups"
 # The suffix of a group file; the file's name without it is the group's marker name, after
 # <group>_ for a subgroup.
 GROUP_FILE_SUFFIX = ".txt"
+# Folders a tool may leave in the groups folder or a subgroup folder, which the reader ignores
+# along with every hidden (dot) folder.
+IGNORED_FOLDER_NAMES = frozenset({"__pycache__"})
 
 
 class GroupFileError(ValueError):
@@ -67,20 +70,24 @@ def read_groups(groups_dir: Path) -> list[Group]:
     followed at once by its subgroups in name order.
 
     groups_dir/<name>.txt registers a top-level group, and groups_dir/<name>/<sub>.txt registers
-    the subgroup <name>_<sub>. Files with another suffix are ignored. Raises GroupFileError for a
-    file whose name is not a marker name or that does not hold exactly one non-empty line, a
-    subfolder with no group file of its own name beside it, a folder inside a subfolder, or two
-    files registering one name; raises OSError when a folder cannot be read.
+    the subgroup <name>_<sub>. Files with another suffix, hidden folders and __pycache__ are
+    ignored. Raises GroupFileError for a file whose name is not a marker name or that does not
+    hold exactly one non-empty line, any other folder with no group file of its own name beside
+    it, a folder inside a subfolder, or two files registering one name; raises OSError when a
+    folder cannot be read.
     """
     entries = sorted(groups_dir.iterdir())
     group_files = [path for path in entries if _is_group_file(path)]
     group_file_names = {path.stem for path in group_files}
     subgroup_files: dict[str, list[Path]] = {}
     for folder in entries:
-        if not folder.is_dir():
+        if not folder.is_dir() or _is_ignored_folder(folder):
             continue
+        shown = f"{groups_dir.name}/{folder.name}"
+        if folder.suffix == GROUP_FILE_SUFFIX:
+            raise GroupFileError(f"folder {shown} is named like a group file; a subgroup folder takes its group's name without {GROUP_FILE_SUFFIX}")
         if folder.name not in group_file_names:
-            raise GroupFileError(f"{folder}: a subgroup folder needs its group's file, but there is no group file {folder.name}{GROUP_FILE_SUFFIX} beside it")
+            raise GroupFileError(f"folder {shown} has no group file {shown}{GROUP_FILE_SUFFIX}; a subgroup folder sits beside its group's file")
         subgroup_files[folder.name] = _subgroup_files(folder)
     groups = []
     registered_by: dict[str, Path] = {}
@@ -97,6 +104,11 @@ def read_groups(groups_dir: Path) -> list[Group]:
     return groups
 
 
+def _is_ignored_folder(path: Path) -> bool:
+    """Whether path is a hidden or cache folder the reader skips."""
+    return path.name.startswith(".") or path.name in IGNORED_FOLDER_NAMES
+
+
 def _is_group_file(path: Path) -> bool:
     """Whether path is a file the reader registers: a regular file with the group file suffix."""
     return path.is_file() and path.suffix == GROUP_FILE_SUFFIX
@@ -106,7 +118,7 @@ def _subgroup_files(folder: Path) -> list[Path]:
     """The subgroup files in a group's subfolder, in name order; raises GroupFileError for a folder inside it."""
     paths = []
     for path in sorted(folder.iterdir()):
-        if path.is_dir():
+        if path.is_dir() and not _is_ignored_folder(path):
             raise GroupFileError(f"{path}: a subgroup has no subgroups, so a subgroup folder holds no folder")
         if _is_group_file(path):
             paths.append(path)

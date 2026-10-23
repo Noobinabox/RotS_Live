@@ -491,18 +491,16 @@ def repeat_command(python: str, group: str, excluded: Sequence[str], jobs_text: 
     return " ".join(parts)
 
 
-def apply_answer(text: str, ticked: Sequence[bool], rows: Optional[Sequence[PlanRow]] = None) -> AnswerResult:
+def apply_answer(text: str, ticked: Sequence[bool], rows: Sequence[PlanRow]) -> AnswerResult:
     """What one line typed at the prompt does to the ticks.
 
-    rows numbers the plan's lines from 1 (plan_rows); without them each tick is a numbered group.
-    A number toggles its group or subgroup. A header's number unticks all its subgroups when any is
-    ticked and ticks them all otherwise. A range toggles each checkbox it covers once, a header
-    covering its subgroups. a ticks all, n unticks all, Enter or y starts and q cancels. Starting
-    with nothing ticked, or an answer with any part that is not one of these, changes nothing and
-    says why.
+    rows numbers the plan's lines from 1 (plan_rows). A number toggles its group or subgroup. A
+    header's number unticks all its subgroups when any is ticked and ticks them all otherwise. A
+    range toggles each checkbox it covers once, a header covering its subgroups. a ticks all, n
+    unticks all, Enter or y starts and q cancels. Starting with nothing ticked, or an answer with
+    any part that is not one of these, changes nothing and says why.
     """
     current = tuple(ticked)
-    numbered = rows if rows is not None else [PlanRow("", RowKind.GROUP, (position,)) for position in range(len(current))]
     answer = text.strip().lower()
     if answer in START_ANSWERS:
         if not any(current):
@@ -521,16 +519,16 @@ def apply_answer(text: str, ticked: Sequence[bool], rows: Optional[Sequence[Plan
         match = GROUP_RANGE_PATTERN.fullmatch(token)
         first = int(match.group(1)) if match else 0
         last = int(match.group(2) or first) if match else 0
-        if not match or first < 1 or last < first or last > len(numbered):
-            return AnswerResult(AnswerOutcome.CONTINUE, current, f"{token!r} is not a group number from 1 to {len(numbered)} or a range such as 2-3")
-        if first == last and numbered[first - 1].kind is RowKind.HEADER:
-            members = numbered[first - 1].checkboxes
+        if not match or first < 1 or last < first or last > len(rows):
+            return AnswerResult(AnswerOutcome.CONTINUE, current, f"{token!r} is not a group number from 1 to {len(rows)} or a range such as 2-3")
+        if first == last and rows[first - 1].kind is RowKind.HEADER:
+            members = rows[first - 1].checkboxes
             tick_all = not any(toggled[position] for position in members)
             for position in members:
                 toggled[position] = tick_all
             continue
         positions: list[int] = []
-        for row in numbered[first - 1:last]:
+        for row in rows[first - 1:last]:
             positions.extend(position for position in row.checkboxes if position not in positions)
         for position in positions:
             toggled[position] = not toggled[position]
@@ -605,7 +603,7 @@ def ask(
     *,
     timeout_seconds: float,
     countdown_step_seconds: float,
-    rows: Optional[Sequence[PlanRow]] = None,
+    rows: Sequence[PlanRow],
 ) -> PromptResult:
     """Asks which of group_count groups to run, starting with all of them ticked.
 

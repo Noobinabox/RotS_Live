@@ -9,6 +9,7 @@
 
 #include "../game_tick_schedule.h"
 #include "../real_time_tick_schedule.h"
+#include "../structs.h"
 
 #include <gtest/gtest.h>
 #include <memory>
@@ -34,8 +35,9 @@ harness::ScheduleDefinition make_definition(
     return definition;
 }
 
-// Passes enough to cover two game hours of the real-time cadence.
-constexpr int TWO_REAL_TIME_HOURS_OF_PASSES = 480;
+// Passes enough to cover two game hours of the real-time cadence, counted as
+// real_time_tick_schedule.cpp counts a game hour.
+constexpr int TWO_REAL_TIME_HOURS_OF_PASSES = 2 * SECS_PER_MUD_HOUR * TICS_PER_SECOND;
 
 // Builds the real-time setup through its registration and the registry's factory.
 harness::ScheduleSetup create_registered_real_time_setup()

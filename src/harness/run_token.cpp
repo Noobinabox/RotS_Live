@@ -2,6 +2,7 @@
 
 #include "run_token.h"
 
+#include <limits>
 #include <random>
 
 namespace harness {
@@ -10,7 +11,7 @@ namespace {
 // The digits of a token, indexed by their value.
 constexpr std::string_view HEX_DIGITS = "0123456789abcdef";
 // The largest value of one byte.
-constexpr unsigned int MAX_BYTE_VALUE = 255;
+constexpr unsigned int MAX_BYTE_VALUE = std::numeric_limits<unsigned char>::max();
 // The field the ready reply carries the token in.
 constexpr std::string_view ENTRY_FIELD = "entry=";
 } // namespace

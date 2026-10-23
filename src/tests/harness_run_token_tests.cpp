@@ -10,11 +10,11 @@ namespace {
 constexpr std::string_view LOWERCASE_HEX_DIGITS = "0123456789abcdef";
 } // namespace
 
-TEST(RunToken, IsThirtyTwoLowercaseHexadecimalCharacters)
+TEST(RunToken, IsRunTokenLengthLowercaseHexadecimalCharacters)
 {
     const std::string token = harness::create_run_token();
 
-    EXPECT_EQ(token.size(), 32u) << "Unexpected token: " << token;
+    EXPECT_EQ(token.size(), harness::RUN_TOKEN_LENGTH) << "Unexpected token: " << token;
     EXPECT_EQ(token.find_first_not_of(LOWERCASE_HEX_DIGITS), std::string::npos)
         << "Expected only lowercase hexadecimal digits: " << token;
 }

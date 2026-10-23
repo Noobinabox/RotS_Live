@@ -5,6 +5,7 @@
 #include "real_time_tick_schedule.h"
 #include "schedule_definition.h"
 #include "schedule_setup.h"
+#include "structs.h"
 
 #include <memory>
 #include <string>
@@ -16,6 +17,7 @@ namespace {
 // The schedule's line in the harness binary's usage text.
 constexpr std::string_view REAL_TIME_SUMMARY
     = "the live server's cadence, one game hour every 240 passes; accepts no requests";
+static_assert(SECS_PER_MUD_HOUR * TICS_PER_SECOND == 240, "REAL_TIME_SUMMARY says a game hour is 240 passes.");
 
 // Builds a RealTimeTickSchedule with no requests and an empty ready state.
 [[nodiscard]] ScheduleSetup create_real_time_setup()

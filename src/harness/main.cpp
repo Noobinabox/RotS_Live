@@ -72,8 +72,6 @@ int main(int argc, char** argv)
     }
 
     const std::string run_token = harness::create_run_token();
-    // The ready reply is read only by the process that started the server; it learns the token
-    // there.
     setup.ready_state = harness::with_entry_token(setup.ready_state, run_token);
     harness::TokenEntryPolicy entry_policy(run_token);
 

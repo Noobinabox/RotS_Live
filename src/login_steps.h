@@ -33,8 +33,8 @@ void bind_connection_to_account(descriptor_data& connection, const account::Acco
 
 // Loads character_name, a character linked to account_data, onto the connection, migrating it to
 // account storage first when it has not been. The connection must already be bound to
-// account_data (bind_connection_to_account); a connection bound to another account is refused,
-// with a SYSERR logged. Refuses, as the roster does, when another session on the account forbids
+// account_data (bind_connection_to_account): the character's files are read from the account the
+// connection is bound to. Refuses, as the roster does, when another session on the account forbids
 // the character. On success the player file is saved with its failed-login count cleared and the
 // character's object data is staged for entering the game. When refused, the selected character
 // is not on the connection; a refusal because the runtime support files could not be prepared

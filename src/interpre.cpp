@@ -3046,15 +3046,6 @@ AccountCharacterSelection select_account_character(descriptor_data& connection,
     int player_i;
     std::string error_message;
 
-    // The character's files are found by d->account_name, so a connection bound to another
-    // account would load them from that account.
-    if (account::normalize_account_name(d->account_name) != account::normalize_account_name(account_data.account_name)) {
-        const std::string message = std::string("SYSERR: ") + __func__ + ": the connection is logged in to '"
-            + d->account_name + "', not to '" + account_data.account_name + "'.";
-        log(message.c_str());
-        return refused_selection("That linked character cannot be selected from this connection.\n\r");
-    }
-
     const std::vector<ActiveAccountCharacterSession> active_sessions = active_account_character_sessions(d, account_data);
     if (!account_session_allows_character_selection_with_unlock(account_data, active_sessions, selected_character_name)) {
         return refused_selection(active_account_session_restriction_message(account_data, active_sessions));

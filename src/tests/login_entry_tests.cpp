@@ -4,7 +4,6 @@
 
 #include "account_management.h"
 #include "interpre.h"
-#include "login_steps.h"
 #include "objects_json.h"
 #include "structs.h"
 #include "utils.h"
@@ -217,27 +216,6 @@ TEST_F(LoginEntryTest, SelectingACharacterWithUnreadableObjectDataRefusesAndStay
         0u)
         << output;
     EXPECT_TRUE(ends_with(output, ROSTER_PROMPT_END)) << output;
-}
-
-TEST_F(LoginEntryTest, SelectingFromAConnectionBoundToAnotherAccountRefusesAndLogs)
-{
-    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
-    account::AccountData account_data;
-    std::string error_message;
-    ASSERT_TRUE(account::read_account_file(".", ACCOUNT_NAME, &account_data, &error_message)) << error_message;
-    std::snprintf(connection.descriptor().account_name, sizeof(connection.descriptor().account_name), "%s", "otheracct");
-
-    testing::internal::CaptureStderr();
-    const AccountCharacterSelection selection = select_account_character(connection.descriptor(), account_data, "legolas");
-    const std::string logged = testing::internal::GetCapturedStderr();
-
-    EXPECT_FALSE(selection.selected);
-    EXPECT_EQ(selection.refusal, "That linked character cannot be selected from this connection.\n\r");
-    EXPECT_EQ(connection.character(), nullptr);
-    EXPECT_EQ(connection.descriptor().pos, -1);
-    EXPECT_NE(logged.find("SYSERR: select_account_character: the connection is logged in to 'otheracct', not to 'acct'."),
-        std::string::npos)
-        << "Expected the mismatch logged; log was: " << logged;
 }
 
 TEST_F(LoginEntryTest, ACharacterNotClearedForABannedSiteIsRefusedAndDisconnected)

@@ -207,6 +207,7 @@ set(ROTS_TEST_SOURCES
     tests/exploit_record_tests.cpp
     tests/exploits_json_tests.cpp
     tests/interpre_account_menu_tests.cpp
+    tests/login_entry_tests.cpp
     tests/intrusive_list_tests.cpp
     tests/room_lists_tests.cpp
     tests/fight_proc_tests.cpp

@@ -116,6 +116,11 @@ scenario territory; the rest of `tests/integration/` and `src/harness/` is the h
 
 Add `tests/integration/groups/<name>.txt` holding one line, what the group pins, and set
 `pytestmark = [pytest.mark.scenario, pytest.mark.<name>]`. `GROUP=<name>` then selects it.
+When a group passes about 20 tests or covers several behaviours, split it into subgroups:
+`groups/<name>/<sub>.txt` registers `<name>_<sub>`, and every test of the group then marks exactly
+one subgroup as well (in `pytestmark` for a whole file, or `@pytest.mark.<name>_<sub>` per test).
+A new test in a group with subgroups carries one; collection refuses it otherwise. A known-bug
+pin joins the subgroup of the behaviour it pins.
 In CI, a pull request runs `boot` and the groups of the scenario and group files it changes; a
 change to the game's code runs a group only when the description names it as
 `@integration-test-<name>`. A change to the harness, the test world, `src/CMakeLists.txt` or a

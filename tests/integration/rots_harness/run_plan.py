@@ -1,8 +1,9 @@
 """Shows the scenario groups a local `make integration` would run, asks about them, and runs pytest with the groups kept.
 
 The plan lists each selected group with its test count and estimated minutes, from the times
-build/integration/durations.json recorded. At a terminal every group starts ticked: the developer
-can untick groups, start or cancel, and an unanswered plan starts by itself after 5 minutes.
+build/integration/durations.json recorded; a group with subgroups is a header over its selected
+subgroups. At a terminal every group starts ticked: the developer can untick groups and
+subgroups, start or cancel, and an unanswered plan starts by itself after 5 minutes.
 Without a terminal a run estimated under ROTS_IT_CONFIRM_MINUTES (default 10) starts at once and
 a longer one prints a NEEDS_CONFIRMATION_PREFIX line and stops with EXIT_NEEDS_CONFIRMATION unless
 CONFIRM=yes. Under CI=true it runs the pytest command make integration always ran, leaving out
@@ -27,7 +28,7 @@ import sys
 import tempfile
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Mapping, Optional, Sequence
 
@@ -40,7 +41,7 @@ from rots_harness.sharding import Shard
 INTEGRATION_ROOT = Path(__file__).resolve().parents[1]
 # The checkout whose scenarios run; every pytest command runs here.
 REPO_ROOT = INTEGRATION_ROOT.parents[1]
-# One <group>.txt file per registered scenario group.
+# One <group>.txt file per registered scenario group, and a <group> folder of subgroup files.
 GROUPS_DIR = INTEGRATION_ROOT / group_files.GROUPS_DIRECTORY_NAME
 # The scenarios folder, relative to the repository root, as make integration names it.
 SCENARIOS_RELATIVE = "tests/integration/scenarios"
@@ -85,13 +86,18 @@ GROUP_RANGE_PATTERN = re.compile(r"(\d+)(?:-(\d+))?")
 # The answers that start the run.
 START_ANSWERS = frozenset({"", "y", "yes"})
 # The prompt's one line of help.
-PROMPT_HELP = "Numbers (and ranges like 3-5) toggle groups, a ticks all, n unticks all, Enter or y starts, q cancels."
+PROMPT_HELP = (
+    "Numbers (and ranges like 3-5) toggle groups, a header's number its subgroups together; a ticks all, n unticks all, "
+    "Enter or y starts, q cancels."
+)
 # The plan's footer about tests in several groups.
 UNTICK_FOOTER = "Unticking a group drops every test it marks, even one another ticked group also marks."
 # The plan's footer under ROTS_IT_SHARD.
 SHARD_FOOTER = "ROTS_IT_SHARD splits the tests left after the groups left out, so unticking a group changes which tests this shard runs."
 # Seconds between checks on pytest while it runs, so a signal handled on the main thread is acted on promptly.
 WAIT_POLL_SECONDS = 0.25
+# What a subgroup's line adds in front of a group's, under its header.
+SUBGROUP_INDENT = "    "
 
 
 @dataclass
@@ -104,9 +110,11 @@ class RunPlan:
 
     # Every test GROUP selects, in collection order, before any shard.
     tests: list[CollectedTest]
-    # The groups offered as checkboxes, in registration order; a group no selected test is in is left out.
+    # The groups and subgroups offered as checkboxes, in registration order; one no selected test is
+    # in is left out, and a group with subgroups is offered through them instead.
     offered_groups: list[str]
-    # The SKIP_GROUPS groups with a selected test, in registration order.
+    # The SKIP_GROUPS groups and subgroups with a selected test, in registration order; a subgroup of
+    # a skipped group is left out.
     skipped_groups: list[str]
     # Every SKIP_GROUPS name; their tests never run.
     skipped_names: frozenset[str]
@@ -118,6 +126,8 @@ class RunPlan:
     shard: Optional[Shard] = None
     # The node ids of the selected tests that no registered group marks.
     ungrouped_ids: frozenset[str] = frozenset()
+    # The group each registered subgroup belongs to.
+    parent_of: Mapping[str, str] = field(default_factory=dict)
 
     def kept_test_ids(self, unticked: Iterable[str]) -> list[str]:
         """The node ids of the tests the run keeps with the unticked groups left out, in collection order."""
@@ -130,6 +140,18 @@ class RunPlan:
         tests ticking it again would add.
         """
         excluded = (self.skipped_names | set(unticked)) - {name}
+        run_ids = set(self._run_test_ids(excluded))
+        return [test.node_id for test in self.tests if name in test.markers and test.node_id in run_ids]
+
+    def header_test_ids(self, name: str, unticked: Iterable[str]) -> list[str]:
+        """The node ids of the tests a group with subgroups runs through its ticked subgroups.
+
+        With none of its offered subgroups ticked, the tests ticking them all again would add.
+        """
+        excluded = self.skipped_names | set(unticked)
+        offered = {subgroup for subgroup in self.offered_groups if self.parent_of.get(subgroup) == name}
+        if offered <= excluded:
+            excluded -= offered
         run_ids = set(self._run_test_ids(excluded))
         return [test.node_id for test in self.tests if name in test.markers and test.node_id in run_ids]
 
@@ -167,6 +189,30 @@ class RunContext:
     jobs_text: str
     # ROTS_IT_SHARD, or None when unset.
     shard: Optional[str]
+
+
+class RowKind(enum.Enum):
+    """What a numbered line of the plan is."""
+
+    # A group's own checkbox.
+    GROUP = "group"
+    # The line over a group's subgroups; its number toggles them together.
+    HEADER = "header"
+    # A subgroup's checkbox, indented under its group's header.
+    SUBGROUP = "subgroup"
+
+
+@dataclass(frozen=True)
+class PlanRow:
+    """One numbered line of the plan's checklist."""
+
+    # The group or subgroup the line names.
+    name: str
+    # Whether the line is a checkbox of its own or a header.
+    kind: RowKind
+    # The positions in the ticks (one per offered group, in plan order) the line's number toggles:
+    # its own for a checkbox, its subgroups' for a header.
+    checkboxes: tuple[int, ...]
 
 
 class AnswerOutcome(enum.Enum):
@@ -278,22 +324,76 @@ def build_plan(
     recorded_seconds: Mapping[str, float],
     workers: int,
     shard: Optional[Shard] = None,
+    subgroups: Optional[Mapping[str, Sequence[str]]] = None,
 ) -> RunPlan:
-    """The plan for the tests GROUP selects, collected without a shard: a test counts toward every registered group it is marked with."""
+    """The plan for the tests GROUP selects, collected without a shard: a test counts toward every registered group it is marked with.
+
+    registered lists the groups and subgroups in registration order, each group's subgroups right
+    after it; subgroups gives each group that has subgroups, with them.
+    """
     test_list = list(tests)
     skipped_names = frozenset(skipped)
+    parent_of = {subgroup: parent for parent, names in (subgroups or {}).items() for subgroup in names}
     offered: list[str] = []
     skipped_groups: list[str] = []
     for name in registered:
         if not any(name in test.markers for test in test_list):
             continue
+        if parent_of.get(name) in skipped_names:
+            # Its group's skipped line covers it.
+            continue
         if name in skipped_names:
             skipped_groups.append(name)
-        else:
+        elif not (subgroups and name in subgroups):
             offered.append(name)
     registered_names = set(registered)
     ungrouped_ids = frozenset(test.node_id for test in test_list if not test.markers & registered_names)
-    return RunPlan(test_list, offered, skipped_groups, skipped_names, dict(recorded_seconds), max(workers, 1), shard, ungrouped_ids)
+    return RunPlan(test_list, offered, skipped_groups, skipped_names, dict(recorded_seconds), max(workers, 1), shard, ungrouped_ids, parent_of)
+
+
+def plan_rows(plan: RunPlan) -> list[PlanRow]:
+    """The plan's numbered lines in order: each offered group, and for a group with subgroups a header followed by its offered subgroups."""
+    rows: list[PlanRow] = []
+    headed: set[str] = set()
+    for position, name in enumerate(plan.offered_groups):
+        parent = plan.parent_of.get(name)
+        if parent is None:
+            rows.append(PlanRow(name, RowKind.GROUP, (position,)))
+            continue
+        # Registration order puts a group's subgroups together, so the header comes right before them.
+        if parent not in headed:
+            headed.add(parent)
+            members = tuple(index for index, offered in enumerate(plan.offered_groups) if plan.parent_of.get(offered) == parent)
+            rows.append(PlanRow(parent, RowKind.HEADER, members))
+        rows.append(PlanRow(name, RowKind.SUBGROUP, (position,)))
+    return rows
+
+
+def header_box(row: PlanRow, ticked: Sequence[bool]) -> str:
+    """A header's box: x with all its subgroups ticked, - with some, blank with none."""
+    ticked_count = sum(1 for position in row.checkboxes if ticked[position])
+    if ticked_count == len(row.checkboxes):
+        return "x"
+    if ticked_count:
+        return "-"
+    return " "
+
+
+def unticked_groups(plan: RunPlan, ticked: Sequence[bool]) -> list[str]:
+    """The groups the unticked boxes leave out, in plan order: each unticked group and subgroup, or a
+    group itself instead of its subgroups when every one it offers is unticked."""
+    names: list[str] = []
+    for row in plan_rows(plan):
+        if row.kind is RowKind.HEADER:
+            if not any(ticked[position] for position in row.checkboxes):
+                names.append(row.name)
+            continue
+        if ticked[row.checkboxes[0]]:
+            continue
+        parent = plan.parent_of.get(row.name)
+        if parent is None or parent not in names:
+            names.append(row.name)
+    return names
 
 
 def count_text(count: int) -> str:
@@ -309,20 +409,30 @@ def format_minutes(minutes: float) -> str:
 
 
 def format_plan(plan: RunPlan, ticked: Sequence[bool], context: RunContext) -> list[str]:
-    """The plan's lines: a heading, one checkbox per offered group, the skipped groups, the total and the footer."""
+    """The plan's lines: a heading, one numbered line per row of plan_rows, the skipped groups, the total and the footer."""
     heading = f"Integration run plan: launcher {context.launcher}, JOBS {context.jobs_text or '1'}"
     if context.shard:
         heading += f", shard {context.shard}"
     lines = [heading]
-    shown = plan.offered_groups + plan.skipped_groups
-    name_width = max((len(name) for name in shown), default=0)
-    number_width = len(str(len(plan.offered_groups)))
+    rows = plan_rows(plan)
+    name_widths = [len(row.name) + (len(SUBGROUP_INDENT) if row.kind is RowKind.SUBGROUP else 0) for row in rows]
+    name_widths.extend(len(name) for name in plan.skipped_groups)
+    name_width = max(name_widths, default=0)
+    number_width = len(str(len(rows)))
     unticked = [name for name, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
-    for number, (name, is_ticked) in enumerate(zip(plan.offered_groups, ticked), start=1):
-        box = "x" if is_ticked else " "
-        group_ids = plan.group_test_ids(name, unticked)
+    for number, row in enumerate(rows, start=1):
+        indent = ""
+        if row.kind is RowKind.HEADER:
+            box = header_box(row, ticked)
+            group_ids = plan.header_test_ids(row.name, unticked)
+        else:
+            box = "x" if ticked[row.checkboxes[0]] else " "
+            group_ids = plan.group_test_ids(row.name, unticked)
+            if row.kind is RowKind.SUBGROUP:
+                indent = SUBGROUP_INDENT
         minutes = format_minutes(plan.estimated_minutes(group_ids))
-        lines.append(f"  [{box}] {number:>{number_width}}. {name:<{name_width}}  {count_text(len(group_ids)):>9}  {minutes:>8}")
+        name_text = f"{row.name:<{name_width - len(indent)}}"
+        lines.append(f"  {indent}[{box}] {number:>{number_width}}. {name_text}  {count_text(len(group_ids)):>9}  {minutes:>8}")
     for name in plan.skipped_groups:
         group_ids = plan.group_test_ids(name, unticked)
         lines.append(f"  skipped: {name} ({count_text(len(group_ids))})")
@@ -381,14 +491,18 @@ def repeat_command(python: str, group: str, excluded: Sequence[str], jobs_text: 
     return " ".join(parts)
 
 
-def apply_answer(text: str, ticked: Sequence[bool]) -> AnswerResult:
+def apply_answer(text: str, ticked: Sequence[bool], rows: Optional[Sequence[PlanRow]] = None) -> AnswerResult:
     """What one line typed at the prompt does to the ticks.
 
-    Numbers and ranges toggle groups (numbered from 1), a ticks all, n unticks all, Enter or y
-    starts and q cancels. Starting with nothing ticked, or an answer with any part that is not one
-    of these, changes nothing and says why.
+    rows numbers the plan's lines from 1 (plan_rows); without them each tick is a numbered group.
+    A number toggles its group or subgroup. A header's number unticks all its subgroups when any is
+    ticked and ticks them all otherwise. A range toggles each checkbox it covers once, a header
+    covering its subgroups. a ticks all, n unticks all, Enter or y starts and q cancels. Starting
+    with nothing ticked, or an answer with any part that is not one of these, changes nothing and
+    says why.
     """
     current = tuple(ticked)
+    numbered = rows if rows is not None else [PlanRow("", RowKind.GROUP, (position,)) for position in range(len(current))]
     answer = text.strip().lower()
     if answer in START_ANSWERS:
         if not any(current):
@@ -407,10 +521,19 @@ def apply_answer(text: str, ticked: Sequence[bool]) -> AnswerResult:
         match = GROUP_RANGE_PATTERN.fullmatch(token)
         first = int(match.group(1)) if match else 0
         last = int(match.group(2) or first) if match else 0
-        if not match or first < 1 or last < first or last > len(current):
-            return AnswerResult(AnswerOutcome.CONTINUE, current, f"{token!r} is not a group number from 1 to {len(current)} or a range such as 2-3")
-        for index in range(first - 1, last):
-            toggled[index] = not toggled[index]
+        if not match or first < 1 or last < first or last > len(numbered):
+            return AnswerResult(AnswerOutcome.CONTINUE, current, f"{token!r} is not a group number from 1 to {len(numbered)} or a range such as 2-3")
+        if first == last and numbered[first - 1].kind is RowKind.HEADER:
+            members = numbered[first - 1].checkboxes
+            tick_all = not any(toggled[position] for position in members)
+            for position in members:
+                toggled[position] = tick_all
+            continue
+        positions: list[int] = []
+        for row in numbered[first - 1:last]:
+            positions.extend(position for position in row.checkboxes if position not in positions)
+        for position in positions:
+            toggled[position] = not toggled[position]
     return AnswerResult(AnswerOutcome.CONTINUE, tuple(toggled))
 
 
@@ -482,13 +605,15 @@ def ask(
     *,
     timeout_seconds: float,
     countdown_step_seconds: float,
+    rows: Optional[Sequence[PlanRow]] = None,
 ) -> PromptResult:
     """Asks which of group_count groups to run, starting with all of them ticked.
 
-    render gives the plan's lines for a set of ticks; reader.read(timeout) gives the next line,
-    "" at the end of input, or None after timeout seconds. Until the first answer a line counts
-    down each countdown_step_seconds, and the run starts with the groups still ticked once
-    timeout_seconds pass; after it the prompt waits for ever. The end of input cancels.
+    render gives the plan's lines for a set of ticks, and rows numbers them for apply_answer;
+    reader.read(timeout) gives the next line, "" at the end of input, or None after timeout
+    seconds. Until the first answer a line counts down each countdown_step_seconds, and the run
+    starts with the groups still ticked once timeout_seconds pass; after it the prompt waits for
+    ever. The end of input cancels.
     """
     ticked = (True,) * group_count
     for line in render(ticked):
@@ -515,7 +640,7 @@ def ask(
         if line == "":
             write("Input closed: cancelled.")
             return PromptResult(AnswerOutcome.CANCEL, ticked)
-        result = apply_answer(line, ticked)
+        result = apply_answer(line, ticked, rows)
         if result.outcome is not AnswerOutcome.CONTINUE:
             return PromptResult(result.outcome, result.ticked)
         if result.message:
@@ -714,7 +839,8 @@ def main(
         return run_ci(arguments.python, arguments.group, arguments.skip_groups, arguments.jobs, run_command)
     shard_text = environment.get(SHARD_VARIABLE)
     try:
-        registered = list(group_files.read_group_descriptions(GROUPS_DIR))
+        group_list = group_files.read_groups(GROUPS_DIR)
+        registered = [group.name for group in group_list]
         skipped = parse_skip_groups(arguments.skip_groups, registered)
         confirm = parse_confirm(arguments.confirm)
         threshold_minutes = parse_confirm_minutes(environment.get(CONFIRM_MINUTES_VARIABLE))
@@ -733,7 +859,7 @@ def main(
     if tests is None:
         return status
     recorded = durations.read_durations(durations_path or REPO_ROOT / durations.DURATIONS_RELATIVE)
-    plan = build_plan(tests, registered, skipped, recorded, parse_jobs(arguments.jobs), shard)
+    plan = build_plan(tests, registered, skipped, recorded, parse_jobs(arguments.jobs), shard, group_files.subgroups_by_parent(group_list))
     context = RunContext(launcher_name(environment), arguments.jobs, shard_text)
 
     def render(ticked: tuple[bool, ...]) -> list[str]:
@@ -753,6 +879,7 @@ def main(
         try:
             result = ask(
                 len(plan.offered_groups), render, line_reader, _write_line, timeout_seconds=prompt_timeout_seconds, countdown_step_seconds=countdown_step_seconds,
+                rows=plan_rows(plan),
             )
         except KeyboardInterrupt:
             # Ctrl-C at the prompt cancels like q.
@@ -774,8 +901,7 @@ def main(
                 f"or choose fewer groups with GROUP= or SKIP_GROUPS= (exit status {EXIT_NEEDS_CONFIRMATION})."
             )
             return EXIT_NEEDS_CONFIRMATION
-    unticked = [name for name, is_ticked in zip(plan.offered_groups, ticked) if not is_ticked]
-    excluded = skipped + [name for name in unticked if name not in skipped]
+    excluded = skipped + [name for name in unticked_groups(plan, ticked) if name not in skipped]
     status = run_command(pytest_run_command(arguments.python, run_expression(arguments.group, excluded), arguments.jobs), keep_stdin)
     if excluded:
         _write_line(f"Repeat: {repeat_command(arguments.python, arguments.group, excluded, arguments.jobs)}")

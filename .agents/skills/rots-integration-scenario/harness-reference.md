@@ -31,7 +31,7 @@ tests/integration/requirements.txt`.
 | Several groups | `make integration PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | Only show the plan: each group's tests and estimated minutes | `make integration-plan PYTHON=.venv/bin/python GROUP="boot or poison"` |
 | Every scenario but some groups, without asking | `make integration PYTHON=.venv/bin/python SKIP_GROUPS="shaping practice" CONFIRM=yes` |
-| One test, by part of its name | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
+| One test, by part of its name; `-k` also matches marker names, so a fragment such as `saving` or `sessions` pulls in whole subgroups: use the node id or a longer fragment | `.venv/bin/python -m pytest tests/integration/scenarios -q -m scenario -k tainted_bread` |
 | One test, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_boot.py::test_an_implementor_logs_in_to_immortal_start"` |
 | Several tests, by node id | `.venv/bin/python -m pytest -q -m scenario "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_a_gift" "tests/integration/scenarios/test_bank.py::test_a_banker_refuses_an_attack_and_no_fight_starts"` |
 | Every test in a file | `.venv/bin/python -m pytest -q -m scenario tests/integration/scenarios/test_bank.py` |
@@ -500,8 +500,9 @@ A subgroup is a file `tests/integration/groups/<name>/<sub>.txt` beside `<name>.
 and exactly one subgroup, and each test marking a subgroup marks its group:
 `SubgroupMarkingCheck` in `conftest.py` stops collection otherwise, before `-m` or the shard
 deselects anything (`groups.subgroup_marking_problems`). CI and `make integration-changed` run
-only the subgroups a changed scenario file marks, and the run plan shows a group's subgroups
-under a header.
+only the subgroups a changed scenario file marks, plus the groups of the scenario files that
+import it; a changed `<name>.txt` or `@integration-test-<name>` still runs the whole group. The
+run plan shows a group's subgroups under a header.
 
 ## Time control
 

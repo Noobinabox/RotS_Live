@@ -78,9 +78,11 @@ A large group is split into subgroups, one behaviour each. A file
 `tests/integration/groups/<group>/<sub>.txt`, beside `<group>.txt`, registers the subgroup
 `<group>_<sub>` with its one-line description; a subgroup has no subgroups of its own. Every test
 of a group with subgroups marks the group and exactly one of its subgroups, and a test marking a
-subgroup also marks its group; collection stops with a usage error naming each test that breaks
-either rule. So `GROUP=shaping` still runs every shaping test, and `GROUP=shaping_zone_editor`
-runs the zone editor's alone.
+subgroup also marks its group. Under `make integration` collection stops with a usage error naming
+each test that breaks either rule; pytest with `-n` (so `CI=true` with `JOBS` above 1) ends with
+`Interrupted:` and the same list, exit status 2. `make integration-unit` checks the rules too. So
+`GROUP=shaping` still runs every shaping test, and `GROUP=shaping_zone_editor` runs the zone
+editor's alone.
 
 `JOBS=<n>` runs the selected scenarios on `n` pytest-xdist worker processes, each scenario still
 on its own fresh server. A scenario spends most of its time waiting on an idle server, so the
@@ -108,11 +110,11 @@ it holds the results of whichever finished last.
 `make integration` (`rots_harness/run_plan.py`) first prints its plan: one numbered checkbox per
 selected group with its test count and estimated minutes, then the total, the launcher, `JOBS`
 and any `ROTS_IT_SHARD`. A group with subgroups is a numbered header with its totals, followed by
-its selected subgroups, indented, each a numbered checkbox. A test counts toward every group that marks it; the total counts it
-once. Each group counts only the tests that will run, so a test another left-out group also
-marks is not counted. With `ROTS_IT_SHARD` the plan shows this shard's share of the tests left
-after the groups left out, which is what the run then runs. `make integration-plan` prints the
-plan and exits 0 without asking or running anything.
+its selected subgroups, indented, each a numbered checkbox. A test counts toward every group that
+marks it; the total counts it once. Each group counts only the tests that will run, so a test
+another left-out group also marks is not counted. With `ROTS_IT_SHARD` the plan shows this
+shard's share of the tests left after the groups left out, which is what the run then runs.
+`make integration-plan` prints the plan and exits 0 without asking or running anything.
 
 - At a terminal every group starts ticked. Numbers (and ranges such as `3-5`) toggle groups, `a`
   ticks all, `n` unticks all, Enter or `y` starts and `q` (or Ctrl-C) cancels. A header's number
@@ -196,6 +198,7 @@ broken world fails in seconds. A pull request runs:
   `@integration-test-all`;
 - the groups of each scenario file it changes, and the group of each group file it changes; for
   a group whose subgroups the file also marks, only those subgroups, not the whole group;
+- the groups of each scenario file that imports a changed scenario file (one level);
 - every group when it changes the harness: `rots_harness/`, `conftest.py`, `pytest.ini`,
   `requirements.txt`, the test world (other than its notes), a scenario file other than a
   `test_*.py`, `src/harness/`, `src/tools/rotstool/`, the `Dockerfile`, the image action

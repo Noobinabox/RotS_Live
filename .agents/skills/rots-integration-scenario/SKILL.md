@@ -121,8 +121,9 @@ When a group passes about 20 tests or covers several behaviours, split it into s
 one subgroup as well (in `pytestmark` for a whole file, or `@pytest.mark.<name>_<sub>` per test).
 A new test in a group with subgroups carries one; collection refuses it otherwise. A known-bug
 pin joins the subgroup of the behaviour it pins.
-In CI, a pull request runs `boot` and the groups of the scenario and group files it changes; a
-change to the game's code runs a group only when the description names it as
+In CI, a pull request runs `boot` and the groups of the scenario and group files it changes (only
+the subgroups a changed scenario file marks, plus the groups of the scenario files importing it);
+a change to the game's code runs a group or subgroup only when the description names it as
 `@integration-test-<name>`. A change to the harness, the test world, `src/CMakeLists.txt` or a
 `lib/` file the harness copies into every test's lib runs every group, as does every push
 (integration README, "Continuous integration").

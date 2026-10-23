@@ -34,14 +34,14 @@ def test_prompt_detection_accepts_trailing_whitespace_and_both_terminators() -> 
 
 class FakeSocket:
     """Stands in for the server connection. `replies` maps a line the session sends to the answers
-    for its first, second, ... send; a line with no answer left is never answered. `greeting` is
-    what the server sends on connect."""
+    for its first, second, ... send; a line with no answer left is never answered. An answer given
+    as a tuple of chunks arrives one chunk per recv(). `greeting` is what the server sends on connect."""
 
-    def __init__(self, replies: dict[str, list[bytes]], greeting: bytes = b"") -> None:
+    def __init__(self, replies: dict[str, list[bytes | tuple[bytes, ...]]], greeting: bytes = b"") -> None:
         # Answers still to give per sent line, in send order; copied so the caller's lists stay intact.
         self._replies = {line: list(answers) for line, answers in replies.items()}
-        # Bytes the next recv() returns; empty means recv() times out.
-        self._pending = greeting
+        # Chunks the coming recv() calls return, one each; empty means recv() times out.
+        self._pending: list[bytes] = [greeting] if greeting else []
         # Whether the session has closed the connection.
         self.closed = False
         # Every line the session sent, in order and without the newline.
@@ -55,13 +55,13 @@ class FakeSocket:
         self.sent_lines.append(line)
         answers = self._replies.get(line, [])
         if answers:
-            self._pending += answers.pop(0)
+            answer = answers.pop(0)
+            self._pending.extend(answer if isinstance(answer, tuple) else [answer])
 
     def recv(self, _size: int) -> bytes:
         if not self._pending:
             raise socket.timeout()
-        chunk, self._pending = self._pending, b""
-        return chunk
+        return self._pending.pop(0)
 
     def close(self) -> None:
         self.closed = True
@@ -71,21 +71,21 @@ GREETING = b"Log in with your account email address at the prompt.\r\n\r\nAccoun
 CHARACTER_LIST = b"\r\n1) [100 Imm] Testimm     2) [ 30 Hum] Testmage\r\n\r\nCharacter number or name: "
 CHARACTER_MENU = b"\r\nWelcome to Arda!\r\n0) Back to Account Menu.\r\n1) Enter the game.\r\n\r\n   Make your choice: "
 ARENA = b"\r\nArena Centre    Exits are: N E S W\r\nThe centre of the harness arena.\r\n\r\nS:Powered>"
+ARRIVAL = b"\r\nThere is no unread news.\r\n\r\nHere we go...\r\n"
 
 
-def login_replies() -> dict[str, list[bytes]]:
+def login_replies() -> dict[str, list[bytes | tuple[bytes, ...]]]:
     """A server that lets Testmage in when the session picks it by name from the character list."""
     return {
         "harness@example.com": [b"Account password: "],
         "Harness1x": [b"\r\nAccount: harness@example.com\r\n2) Play a linked character\r\n0) Log out\r\n\r\nChoice: "],
         "2": [CHARACTER_LIST],
         "Testmage": [CHARACTER_MENU],
-        "1": [b"\r\nThere is no unread news.\r\n\r\nHere we go...\r\n" + ARENA],
-        "look": [ARENA],
+        "1": [ARRIVAL + ARENA],
     }
 
 
-def connect_fake_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, replies: dict[str, list[bytes]], greeting: bytes = b"") -> tuple[GameSession, FakeSocket]:
+def connect_fake_session(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, replies: dict[str, list[bytes | tuple[bytes, ...]]], greeting: bytes = b"") -> tuple[GameSession, FakeSocket]:
     """A session for Testmage connected to a FakeSocket that answers with `replies` after sending `greeting`."""
     fake_socket = FakeSocket(replies, greeting)
     monkeypatch.setattr(session.socket, "create_connection", lambda _address, timeout: fake_socket)
@@ -99,6 +99,31 @@ def test_login_walks_the_account_menu_and_enters_the_game(monkeypatch: pytest.Mo
     assert "Arena Centre" in game_session.everything
     assert fake_socket.sent_lines[:4] == ["harness@example.com", "Harness1x", "2", "Testmage"], "the character is picked by name"
     assert (tmp_path / "testmage.txt").read_text(encoding="utf-8").rstrip().endswith("S:Powered>")
+
+
+def test_login_returns_at_the_arrival_prompt_without_sending_a_command(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, login_replies(), GREETING)
+    game_session.login(timeout=1.0)
+    assert fake_socket.sent_lines == ["harness@example.com", "Harness1x", "2", "Testmage", "1"]
+    assert game_session.drain(0.05) == "", "login read everything up to the arrival prompt"
+
+
+def test_login_waits_for_an_arrival_prompt_that_comes_in_a_later_read(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    replies = login_replies()
+    replies["1"] = [(ARRIVAL, ARENA)]
+    game_session, fake_socket = connect_fake_session(monkeypatch, tmp_path, replies, GREETING)
+    game_session.login(timeout=1.0)
+    assert "look" not in fake_socket.sent_lines
+    assert game_session.drain(0.05) == "", "login read the room and its prompt"
+    assert game_session.everything.rstrip().endswith("S:Powered>")
+
+
+def test_a_login_with_no_arrival_prompt_times_out_naming_the_arrival_marker(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    replies = login_replies()
+    replies["1"] = [ARRIVAL + b"\r\nArena Centre    Exits are: N E S W\r\n"]
+    game_session, _fake_socket = connect_fake_session(monkeypatch, tmp_path, replies, GREETING)
+    with pytest.raises(session.SessionTimeout, match=r"no prompt after 'Here we go\.\.\.' within 0.3s"):
+        game_session.login(timeout=0.3)
 
 
 def test_bad_credentials_fail_the_login_at_once(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

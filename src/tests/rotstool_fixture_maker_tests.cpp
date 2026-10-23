@@ -397,8 +397,6 @@ TEST_F(RotstoolFixtureMaker, LoginReadsStoredAbilitiesAsBaseMaximumAndCurrentVal
     FixtureSpec::Character spec = make_spec(30);
     spec.stored.intelligence = 22;
     spec.stored.learning = 26;
-    spec.stored.max_stamina = 300;
-    spec.stored.specialization = PLRSPEC_FIRE;
     char_file_u stored {};
     std::vector<int> knowledge;
     std::string error_message;
@@ -411,6 +409,20 @@ TEST_F(RotstoolFixtureMaker, LoginReadsStoredAbilitiesAsBaseMaximumAndCurrentVal
     EXPECT_EQ(character->tmpabilities.intel, 22);
     EXPECT_EQ(character->constabilities.lea, 26);
     EXPECT_EQ(character->tmpabilities.lea, 26);
+}
+
+TEST_F(RotstoolFixtureMaker, LoginReadsStoredMaximumStaminaAndSpecialization)
+{
+    FixtureSpec::Character spec = make_spec(30);
+    spec.stored.max_stamina = 300;
+    spec.stored.specialization = PLRSPEC_FIRE;
+    char_file_u stored { };
+    std::vector<int> knowledge;
+    std::string error_message;
+    ASSERT_TRUE(make_fixture_character(spec, account_name, fixture_idnum, now, stored, knowledge, error_message))
+        << error_message;
+
+    const std::unique_ptr<char_data, LoadedCharacterReleaser> character = load_stored_character(stored);
     EXPECT_EQ(character->constabilities.mana, 300);
     EXPECT_GE(GET_MAX_MANA(character.get()), 300);
     EXPECT_EQ(GET_SPEC(character.get()), PLRSPEC_FIRE);

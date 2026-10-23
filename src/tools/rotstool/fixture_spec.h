@@ -27,7 +27,8 @@ struct FixtureSpec {
         std::optional<int> hunger;
         std::optional<int> thirst;
         std::optional<int> drunk;
-        // Base abilities, 0 to 40; wizset str, int, will, dex, con and lea.
+        // Base abilities, 0 to 40, under the spec keys str, int, wil, dex, con and lea; wizset str,
+        // int, will, dex, con and lea.
         std::optional<int> strength;
         std::optional<int> intelligence;
         std::optional<int> will;

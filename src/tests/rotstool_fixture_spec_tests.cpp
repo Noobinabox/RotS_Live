@@ -13,7 +13,6 @@
 #include <limits>
 #include <string>
 #include <system_error>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -412,31 +411,41 @@ TEST(RotstoolFixtureSpec, LeavesStoredValuesTheSpecDoesNotSetUnset)
 
 TEST(RotstoolFixtureSpec, RefusesStoredValuesOutsideTheirWizsetLimits)
 {
-    // (key, value just outside the limit, the limits the refusal names)
-    const std::vector<std::tuple<std::string, int, std::string>> refusals = {
-        { "gold", -1, "0 to 100000000" },
-        { "gold", 100000001, "0 to 100000000" },
-        { "alignment", -1001, "-1000 to 1000" },
-        { "alignment", 1001, "-1000 to 1000" },
-        { "hunger", -2, "-1 to 24" },
-        { "thirst", 25, "-1 to 24" },
-        { "drunk", 25, "-1 to 24" },
-        { "str", -1, "0 to 40" },
-        { "int", 41, "0 to 40" },
-        { "wil", 41, "0 to 40" },
-        { "dex", 41, "0 to 40" },
-        { "con", 41, "0 to 40" },
-        { "lea", 41, "0 to 40" },
-        { "maxstamina", 0, "1 to 5000" },
-        { "maxstamina", 5001, "1 to 5000" },
+    // A stored value just outside its limits and the limits the refusal names.
+    struct OutOfRangeValue {
+        // The set object's key.
+        std::string key;
+        // The value given, one past a limit.
+        int value;
+        // The lowest value the key accepts.
+        int minimum;
+        // The highest value the key accepts.
+        int maximum;
     };
-    for (const std::tuple<std::string, int, std::string>& refusal : refusals) {
-        const std::string& key = std::get<0>(refusal);
-        const std::string value = std::to_string(std::get<1>(refusal));
+    const std::vector<OutOfRangeValue> out_of_range_values = {
+        { "gold", MIN_GOLD - 1, MIN_GOLD, MAX_GOLD },
+        { "gold", MAX_GOLD + 1, MIN_GOLD, MAX_GOLD },
+        { "alignment", -MAX_ALIGNMENT - 1, -MAX_ALIGNMENT, MAX_ALIGNMENT },
+        { "alignment", MAX_ALIGNMENT + 1, -MAX_ALIGNMENT, MAX_ALIGNMENT },
+        { "hunger", CONDITION_OFF - 1, CONDITION_OFF, MAX_CONDITION },
+        { "thirst", MAX_CONDITION + 1, CONDITION_OFF, MAX_CONDITION },
+        { "drunk", MAX_CONDITION + 1, CONDITION_OFF, MAX_CONDITION },
+        { "str", MIN_BASE_ABILITY - 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "int", MAX_BASE_ABILITY + 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "wil", MAX_BASE_ABILITY + 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "dex", MAX_BASE_ABILITY + 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "con", MAX_BASE_ABILITY + 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "lea", MAX_BASE_ABILITY + 1, MIN_BASE_ABILITY, MAX_BASE_ABILITY },
+        { "maxstamina", MIN_BASE_STAMINA - 1, MIN_BASE_STAMINA, MAX_BASE_STAMINA },
+        { "maxstamina", MAX_BASE_STAMINA + 1, MIN_BASE_STAMINA, MAX_BASE_STAMINA },
+    };
+    for (const OutOfRangeValue& out_of_range : out_of_range_values) {
+        const std::string value = std::to_string(out_of_range.value);
         const std::string error_message
-            = parse_error_of(spec_with_character("", "\"set\": { \"" + key + "\": " + value + " }"));
-        const std::string expected = "'set': '" + key + "': " + value + " is outside " + std::get<2>(refusal);
-        EXPECT_TRUE(contains(error_message, expected)) << key << " " << value << ": " << error_message;
+            = parse_error_of(spec_with_character("", "\"set\": { \"" + out_of_range.key + "\": " + value + " }"));
+        const std::string expected = "'set': '" + out_of_range.key + "': " + value + " is outside "
+            + std::to_string(out_of_range.minimum) + " to " + std::to_string(out_of_range.maximum);
+        EXPECT_TRUE(contains(error_message, expected)) << out_of_range.key << " " << value << ": " << error_message;
     }
 }
 

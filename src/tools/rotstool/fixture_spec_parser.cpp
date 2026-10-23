@@ -49,24 +49,6 @@ constexpr int MAX_PRACTICES = std::numeric_limits<unsigned char>::max();
 // Most a set value can be, because abilities are stored as sh_int.
 constexpr int MAX_SET_VALUE = std::numeric_limits<sh_int>::max();
 
-// Most coins a character can carry; wizset gold's top.
-constexpr int MAX_GOLD = 100000000;
-
-// The size of the alignment range either side of zero; wizset alignment's limit.
-constexpr int MAX_ALIGNMENT = 1000;
-
-// The condition value that switches a condition off; wizset's "off".
-constexpr int CONDITION_OFF = -1;
-
-// Most a hunger, thirst or drunkenness condition can be; wizset's top for each.
-constexpr int MAX_CONDITION = 24;
-
-// Most a base ability can be; wizset's top for str, int, will, dex, con and lea.
-constexpr int MAX_BASE_ABILITY = 40;
-
-// Most base stamina (maximum mana) can be; wizset maxstamina's top.
-constexpr int MAX_BASE_STAMINA = 5000;
-
 // Most bytes read_fixture_spec_file() reads: one past the limit, so a larger file is detected
 // without reading it in full.
 constexpr std::uintmax_t FIXTURE_SPEC_READ_LIMIT = FIXTURE_SPEC_BYTE_LIMIT + 1;
@@ -326,32 +308,32 @@ struct SetIntegerKey {
     int minimum;
     // The highest value the key accepts.
     int maximum;
-    // The field the value is written to.
+    // The current-value field written, or null when stored_field is used.
     std::optional<int> FixtureSpec::Character::* current_field;
     // The stored-value field the value is written to, when current_field is null.
     std::optional<int> FixtureSpec::StoredValues::* stored_field;
 };
 
 // The set object's numeric keys. hit, mana and move are current values limited by what a
-// character file holds; the rest use the limits of the wizset field of the same name.
-const std::array<SetIntegerKey, 16> SET_INTEGER_KEYS = { {
+// character file holds; the rest use the limits of the matching wizset field.
+constexpr std::array<SetIntegerKey, 16> SET_INTEGER_KEYS = { {
     { "hit", 1, MAX_SET_VALUE, &FixtureSpec::Character::hit, nullptr },
     { "mana", 1, MAX_SET_VALUE, &FixtureSpec::Character::mana, nullptr },
     { "move", 1, MAX_SET_VALUE, &FixtureSpec::Character::move, nullptr },
-    { "gold", 0, MAX_GOLD, nullptr, &FixtureSpec::StoredValues::gold },
+    { "gold", MIN_GOLD, MAX_GOLD, nullptr, &FixtureSpec::StoredValues::gold },
     { "spirit", std::numeric_limits<int>::min(), std::numeric_limits<int>::max(), nullptr,
         &FixtureSpec::StoredValues::spirit },
     { "alignment", -MAX_ALIGNMENT, MAX_ALIGNMENT, nullptr, &FixtureSpec::StoredValues::alignment },
     { "hunger", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::hunger },
     { "thirst", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::thirst },
     { "drunk", CONDITION_OFF, MAX_CONDITION, nullptr, &FixtureSpec::StoredValues::drunk },
-    { "str", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::strength },
-    { "int", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::intelligence },
-    { "wil", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::will },
-    { "dex", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::dexterity },
-    { "con", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::constitution },
-    { "lea", 0, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::learning },
-    { "maxstamina", 1, MAX_BASE_STAMINA, nullptr, &FixtureSpec::StoredValues::max_stamina },
+    { "str", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::strength },
+    { "int", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::intelligence },
+    { "wil", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::will },
+    { "dex", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::dexterity },
+    { "con", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::constitution },
+    { "lea", MIN_BASE_ABILITY, MAX_BASE_ABILITY, nullptr, &FixtureSpec::StoredValues::learning },
+    { "maxstamina", MIN_BASE_STAMINA, MAX_BASE_STAMINA, nullptr, &FixtureSpec::StoredValues::max_stamina },
 } };
 
 bool parse_set_object(JsonReader& reader, FixtureSpec::Character& out_character, std::string& out_error_message)

@@ -1,6 +1,7 @@
 #include "fixture_character_maker.h"
 
 #include "db.h"
+#include "fixture_spec_parser.h"
 #include "handler.h"
 #include "limits.h"
 #include "spells.h"
@@ -8,6 +9,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <optional>
 
@@ -105,12 +107,23 @@ bool stored_value_matches(const char* character_name, const char* field_name, co
     return false;
 }
 
+// The parser's limits for the stored values that narrow on the cast below fit their fields: the
+// abilities' signed char and maximum stamina's sh_int. Gold, spirit, alignment and the conditions
+// are int fields.
+static_assert(MIN_BASE_ABILITY >= std::numeric_limits<signed char>::min()
+        && MAX_BASE_ABILITY <= std::numeric_limits<signed char>::max(),
+    "a base ability must fit char_ability_data's signed char fields");
+static_assert(MIN_BASE_STAMINA >= std::numeric_limits<sh_int>::min()
+        && MAX_BASE_STAMINA <= std::numeric_limits<sh_int>::max(),
+    "base stamina must fit char_ability_data's sh_int mana field");
+
 // Copies requested into out_field when the spec sets it.
 template <typename Field>
 void apply_stored_value(const std::optional<int>& requested, Field& out_field)
 {
     if (requested.has_value()) {
-        // The parser bounded the value by the wizset limit, which fits the field's type.
+        // The parser bounded the value by its wizset limit, which the static_asserts above prove
+        // fits the field's type.
         out_field = static_cast<Field>(*requested);
     }
 }
@@ -136,8 +149,7 @@ void apply_stored_values(const FixtureSpec::StoredValues& stored, char_data& cha
     apply_stored_value(stored.learning, character.constabilities.lea);
     apply_stored_value(stored.max_stamina, character.constabilities.mana);
     // affect_total derives an ability's maximum from its base but leaves the current value, which
-    // login keeps; a character without gear or affects is rested at its base, as wizset and
-    // restore leave it.
+    // login keeps; a character with no gear or affects is rested at its base.
     apply_stored_value(stored.strength, character.tmpabilities.str);
     apply_stored_value(stored.intelligence, character.tmpabilities.intel);
     apply_stored_value(stored.will, character.tmpabilities.wil);

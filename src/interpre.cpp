@@ -2770,7 +2770,7 @@ void show_account_character_list(struct descriptor_data* d, const account::Accou
 
 // Logs the connection of the admitted character and shows the MOTD, a notice of load_result
 // failed password attempts when there were any, and the character menu.
-void show_motd_and_character_menu(struct descriptor_data* d, int load_result)
+static void show_motd_and_character_menu(struct descriptor_data* d, int load_result)
 {
     char buf[1000];
 
@@ -3006,14 +3006,28 @@ static bool reconnect_to_body_in_game(struct descriptor_data* d)
     return false;
 }
 
-// A refused selection whose words are message followed by detail on a line of its own.
+// A refused selection whose words are message, which ends in its own line ending.
+static AccountCharacterSelection refused_selection(std::string_view message)
+{
+    AccountCharacterSelection selection;
+    selection.refusal = message;
+    return selection;
+}
+
+// A refused selection whose words are message and then detail, each on a line of its own.
 static AccountCharacterSelection refused_selection(std::string_view message, std::string_view detail)
 {
     AccountCharacterSelection selection;
     selection.refusal.append(message);
+    selection.refusal.append("\n\r");
     selection.refusal.append(detail);
     selection.refusal.append("\n\r");
     return selection;
+}
+
+std::string_view account_storage_root()
+{
+    return kAccountStorageRoot;
 }
 
 void bind_connection_to_account(descriptor_data& connection, const account::AccountData& account_data)
@@ -3032,21 +3046,28 @@ AccountCharacterSelection select_account_character(descriptor_data& connection,
     int player_i;
     std::string error_message;
 
+    // The character's files are found by d->account_name, so a connection bound to another
+    // account would load them from that account.
+    if (account::normalize_account_name(d->account_name) != account::normalize_account_name(account_data.account_name)) {
+        const std::string message = std::string("SYSERR: ") + __func__ + ": the connection is logged in to '"
+            + d->account_name + "', not to '" + account_data.account_name + "'.";
+        log(message.c_str());
+        return refused_selection("That linked character cannot be selected from this connection.\n\r");
+    }
+
     const std::vector<ActiveAccountCharacterSession> active_sessions = active_account_character_sessions(d, account_data);
     if (!account_session_allows_character_selection_with_unlock(account_data, active_sessions, selected_character_name)) {
-        AccountCharacterSelection selection;
-        selection.refusal = active_account_session_restriction_message(account_data, active_sessions);
-        return selection;
+        return refused_selection(active_account_session_restriction_message(account_data, active_sessions));
     }
 
     std::string object_file_bytes;
     if (account::read_account_character_file(kAccountStorageRoot, d->account_name, selected_character_name, &tmp_store, &error_message)) {
         if (!load_object_save_bytes_for_character(kAccountStorageRoot, selected_character_name, &object_file_bytes, &error_message)) {
-            return refused_selection("That linked character is missing required object-save data in account storage.\n\r", error_message);
+            return refused_selection("That linked character is missing required object-save data in account storage.", error_message);
         }
         const std::string character_path = account::account_character_player_path(kAccountStorageRoot, d->account_name, selected_character_name);
         if (!update_player_index_entry_from_store(&tmp_store, character_path.c_str(), &error_message)) {
-            return refused_selection("That linked character cannot be loaded from account storage.\n\r", error_message);
+            return refused_selection("That linked character cannot be loaded from account storage.", error_message);
         }
         player_i = tmp_store.player_index;
     } else {
@@ -3054,35 +3075,33 @@ AccountCharacterSelection select_account_character(descriptor_data& connection,
         bool account_character_exists = false;
         std::string inspect_error;
         if (!account::inspect_account_character_file(kAccountStorageRoot, d->account_name, selected_character_name, &account_character_exists, &inspect_error)) {
-            return refused_selection("That linked character could not be loaded from account storage.\n\r", inspect_error);
+            return refused_selection("That linked character could not be loaded from account storage.", inspect_error);
         }
         if (account_character_exists) {
-            return refused_selection("That linked character could not be loaded from account storage.\n\r", read_error);
+            return refused_selection("That linked character could not be loaded from account storage.", read_error);
         }
 
         account::CharacterMigrationData migration;
         if (!account::ensure_character_migration(kAccountStorageRoot, d->account_name, selected_character_name, time(0), &migration, &error_message)) {
-            return refused_selection("That linked character is not ready for account-backed play yet.\n\r", error_message);
+            return refused_selection("That linked character is not ready for account-backed play yet.", error_message);
         }
 
         if (!account::read_account_character_file(kAccountStorageRoot, d->account_name, selected_character_name, &tmp_store, &error_message)) {
-            return refused_selection("That linked character could not be loaded from account storage.\n\r", error_message);
+            return refused_selection("That linked character could not be loaded from account storage.", error_message);
         }
         const std::string character_path = account::account_character_player_path(kAccountStorageRoot, d->account_name, selected_character_name);
         if (!update_player_index_entry_from_store(&tmp_store, character_path.c_str(), &error_message)) {
-            return refused_selection("That linked character cannot be loaded from account storage.\n\r", error_message);
+            return refused_selection("That linked character cannot be loaded from account storage.", error_message);
         }
         player_i = tmp_store.player_index;
 
         if (!load_object_save_bytes_for_character(kAccountStorageRoot, selected_character_name, &object_file_bytes, &error_message)) {
-            return refused_selection("That linked character is missing required object-save data in account storage.\n\r", error_message);
+            return refused_selection("That linked character is missing required object-save data in account storage.", error_message);
         }
     }
 
     if (IS_SET(tmp_store.specials2.act, PLR_DELETED)) {
-        AccountCharacterSelection selection;
-        selection.refusal = "That linked character is deleted and cannot be selected.\n\r";
-        return selection;
+        return refused_selection("That linked character is deleted and cannot be selected.\n\r");
     }
 
     d->pos = player_i;
@@ -3104,7 +3123,7 @@ AccountCharacterSelection select_account_character(descriptor_data& connection,
             d->character = nullptr;
             d->pos = -1;
         }
-        return refused_selection("That linked character could not prepare its runtime support files for account-backed play.\n\r", error_message);
+        return refused_selection("That linked character could not prepare its runtime support files for account-backed play.", error_message);
     }
 
     selection.selected = true;
@@ -3307,7 +3326,6 @@ void nanny(struct descriptor_data* d, char* arg)
     int player_i, load_result;
     char tmp_name[20];
     struct char_file_u tmp_store;
-    int i;
 
     int load_char(char* name, struct char_file_u* char_element);
 

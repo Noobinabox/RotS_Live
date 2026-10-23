@@ -23,15 +23,22 @@ enum class Admission {
     Admitted,
 };
 
+// The directory account storage is read from and written to, relative to the game's data
+// directory.
+[[nodiscard]] std::string_view account_storage_root();
+
 // Records account_data as the account the connection is logged in to, and clears the
 // connection's failed password count.
 void bind_connection_to_account(descriptor_data& connection, const account::AccountData& account_data);
 
 // Loads character_name, a character linked to account_data, onto the connection, migrating it to
-// account storage first when it has not been. The connection must be bound to account_data. The
-// session rule is the roster's. On success the player file is saved with its failed-login count
-// cleared and the character's object data is staged for entering the game. When refused, the
-// selected character is not on the connection.
+// account storage first when it has not been. The connection must already be bound to
+// account_data (bind_connection_to_account); a connection bound to another account is refused,
+// with a SYSERR logged. Refuses, as the roster does, when another session on the account forbids
+// the character. On success the player file is saved with its failed-login count cleared and the
+// character's object data is staged for entering the game. When refused, the selected character
+// is not on the connection; a refusal because the runtime support files could not be prepared
+// comes after the player file was saved.
 [[nodiscard]] AccountCharacterSelection select_account_character(descriptor_data& connection,
     const account::AccountData& account_data, std::string_view character_name);
 

@@ -1,5 +1,6 @@
 #include "affect_hours_registration.h"
 #include "comm.h"
+#include "game_run_settings.h"
 #include "harness_control_channel.h"
 #include "harness_controlled_schedule.h"
 #include "harness_options.h"
@@ -84,6 +85,7 @@ int main(int argc, char** argv)
     std::shared_ptr<GameTickSchedule> tick_schedule
         = std::make_shared<harness::HarnessControlledSchedule>(
             definition->name, std::move(setup), std::move(channel));
-    run_the_game(options.startup.port, std::move(tick_schedule), entry_policy);
+    GameRunSettings settings { options.startup.port, std::move(tick_schedule), entry_policy };
+    run_the_game(std::move(settings));
     return EXIT_SUCCESS;
 }

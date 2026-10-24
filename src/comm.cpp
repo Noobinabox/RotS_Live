@@ -28,6 +28,7 @@
 #include "connection_entry_policy.h"
 #include "db.h"
 #include "game_heartbeat.h"
+#include "game_run_settings.h"
 #include "game_time_text.h"
 #include "handler.h"
 #include "interpre.h"
@@ -259,7 +260,7 @@ int finish_proxy_header_if_ready(descriptor_data* descriptor)
 
 /* functions in this file */
 int get_from_q(struct txt_q* queue, char* dest);
-void game_loop(SocketType s, GameHeartbeat& heartbeat, ConnectionEntryPolicy& entry_policy);
+void game_loop(SocketType s, const GameRunSettings& settings);
 SocketType init_socket(sh_int port);
 SocketType pnew_connection(SocketType s);
 void check_pre_login_idle(); /* below, in this file */
@@ -498,8 +499,7 @@ void sigsegv_handler(int sig)
 std::vector<char_data*> specialized_mages;
 
 /* Init sockets, run game, and cleanup sockets */
-void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule,
-    ConnectionEntryPolicy& entry_policy)
+void run_the_game(GameRunSettings settings)
 {
     int s;
 
@@ -511,7 +511,7 @@ void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule,
     signal_setup();
 
     log("Opening mother connection.");
-    mother_desc = s = init_socket(port);
+    mother_desc = s = init_socket(settings.port);
 
     boot_db();
 
@@ -520,9 +520,7 @@ void run_the_game(sh_int port, std::shared_ptr<GameTickSchedule> schedule,
     log("Entering game loop.");
 
     specialized_mages.clear();
-    // The heartbeat only observes the schedule; the parameter keeps it alive for the loop.
-    GameHeartbeat heartbeat(schedule);
-    game_loop(s, heartbeat, entry_policy);
+    game_loop(s, settings);
 
     close_sockets(s);
     // fclose(player_fl);
@@ -862,8 +860,10 @@ void check_state_deadlines(time_t now)
     }
 }
 
-void game_loop(SocketType s, GameHeartbeat& heartbeat, ConnectionEntryPolicy& entry_policy)
+void game_loop(SocketType s, const GameRunSettings& settings)
 {
+    // The heartbeat only observes the schedule; settings keeps it alive for the loop.
+    GameHeartbeat heartbeat(settings.schedule);
     fd_set input_set, output_set, exc_set;
     struct timeval null_time;
     // The real time each pass of the loop is given.
@@ -1053,7 +1053,7 @@ void game_loop(SocketType s, GameHeartbeat& heartbeat, ConnectionEntryPolicy& en
                     } else {
                         bool entered_directly = false;
                         if (STATE(point) == CON_NME) {
-                            entered_directly = entry_policy.try_enter(*point, comm);
+                            entered_directly = settings.entry_policy.try_enter(*point, comm);
                         }
                         if (!entered_directly) {
                             nanny(point, comm);

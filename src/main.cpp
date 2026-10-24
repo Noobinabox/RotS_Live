@@ -1,4 +1,5 @@
 #include "comm.h"
+#include "game_run_settings.h"
 #include "password_login_only.h"
 #include "real_time_tick_schedule.h"
 #include "server_startup.h"
@@ -28,6 +29,7 @@ int main(int argc, char** argv)
     prepare_server_process(startup_options);
     std::shared_ptr<GameTickSchedule> tick_schedule = std::make_shared<RealTimeTickSchedule>();
     PasswordLoginOnly entry_policy;
-    run_the_game(startup_options.port, std::move(tick_schedule), entry_policy);
+    GameRunSettings settings { startup_options.port, std::move(tick_schedule), entry_policy };
+    run_the_game(std::move(settings));
     return (0);
 }

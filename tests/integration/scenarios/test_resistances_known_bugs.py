@@ -9,11 +9,14 @@ import re
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.resistances, pytest.mark.resistances_worn]
 
+# The spirit the novice is stored with: protection costs 5 (skills[] in consts.cpp) and a lost
+# concentration 2, so this pays for the cast and leaves room for losses.
+NOVICE_SPIRIT = 40
 # A level-10 human mystic in the arena centre who knows protection: ten practice sessions put
 # protection's knowledge at the cap of 100 (learn_diff 1, recalc_skills in spec_pro.cpp), and its
 # protection is weaker than the flat resistance of a flag-only item.
@@ -25,6 +28,7 @@ NOVICE = Character(
     load_room=world.ROOM_ARENA_CENTRE,
     class_name="mystic",
     skills=(("protection", 10),),
+    stored=StoredValues(spirit=NOVICE_SPIRIT),
 )
 # A level-20 human warrior in the arena centre who wears the level item.
 WEARER = Character(
@@ -36,9 +40,6 @@ WEARER = Character(
     class_name="warrior",
 )
 
-# The spirit the implementor gives the novice: protection costs 5 (skills[] in consts.cpp) and a
-# lost concentration 2, so this pays for the cast and leaves room for losses.
-NOVICE_SPIRIT = 40
 # The highest mystic level cast_resist_magnitude (mystic.cpp) counts; it adds ten to the level.
 RESIST_LEVEL_CAP = 30
 RESIST_LEVEL_BONUS = 10
@@ -189,8 +190,6 @@ def test_a_weak_protection_does_not_lower_a_flag_only_fire_resistance(server) ->
     implementor = server.login(IMPLEMENTOR.name)
     novice = server.login(NOVICE.name)
     hand_item_to(implementor, NOVICE, FLAG_RESIST_ITEM_VNUM, FLAG_RESIST_ITEM_KEYWORD)
-    spirit = implementor.command(f"wizset player {NOVICE.name.lower()} spirit {NOVICE_SPIRIT}")
-    assert spirit.contains(f"spirit set to {NOVICE_SPIRIT}."), spirit.text
     assert novice.command(f"wear {FLAG_RESIST_ITEM_KEYWORD}").contains(FLAG_RESIST_ITEM_WORN_MARKER)
     assert resistance_line("fire", FLAG_RESIST_PERCENT) in affections(novice)
 

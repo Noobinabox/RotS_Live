@@ -8,11 +8,12 @@ import shutil
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Callable, Protocol, Sequence
 
 from rots_harness.characters import CharacterSet
 from rots_harness.launcher import ToolResult
 from rots_harness.world_files import WORLD_CATEGORIES
+from rots_harness.world_resets import WorldReset, WorldResetError, resets_key_text, write_world_resets
 
 BUCKETS = ("A-E", "F-J", "K-O", "P-T", "U-Z", "ZZZ")
 BUCKETED_DIRECTORIES = ("players", "accounts", "account_characters", "plrobjs", "exploits")
@@ -29,7 +30,7 @@ BUILDING_PREFIX = ".building-"
 
 
 class LibBuildError(RuntimeError):
-    """rotstool could not write a character set's account and characters."""
+    """rotstool could not write a character set's account and characters, or a world reset names a vnum the world lacks."""
 
 
 class ToolRunner(Protocol):
@@ -59,7 +60,8 @@ def reboot_hour_away_from(now: datetime) -> int:
 
 
 class LibTemplateBuilder:
-    """Builds the template lib for one character set: copied data, the test world and rotstool's characters."""
+    """Builds the template lib for one character set and world resets: copied data, the test world with
+    the resets' rows, and rotstool's characters."""
 
     def __init__(self, repo_root: Path, world_dir: Path, tool_runner: ToolRunner, timeout: float = 600.0) -> None:
         self._repo_root = repo_root  # source of lib/text and lib/misc
@@ -67,8 +69,9 @@ class LibTemplateBuilder:
         self._tool_runner = tool_runner  # runs rotstool where the i386 binaries can run
         self._timeout = timeout  # seconds rotstool may take; generous for QEMU
 
-    def build(self, template_dir: Path, character_set: CharacterSet, seed: int) -> Path:
-        """Builds template_dir/lib from scratch and returns it; raises LibBuildError when rotstool fails."""
+    def build(self, template_dir: Path, character_set: CharacterSet, seed: int, resets: Sequence[WorldReset] = ()) -> Path:
+        """Builds template_dir/lib from scratch and returns it; raises LibBuildError when a reset names
+        a vnum the world lacks or rotstool fails."""
         if template_dir.exists():
             shutil.rmtree(template_dir)
         lib_dir = template_dir / "lib"
@@ -83,6 +86,10 @@ class LibTemplateBuilder:
         (lib_dir / "boards").mkdir()
         for category in WORLD_CATEGORIES:
             shutil.copytree(self._world_dir / category, lib_dir / "world" / category)
+        try:
+            write_world_resets(lib_dir / "world", resets)
+        except WorldResetError as unknown_vnum:
+            raise LibBuildError(f"world resets: {unknown_vnum}") from None
         (template_dir / SPEC_FILE_NAME).write_text(character_set.spec_json(), encoding="utf-8")
         arguments = ["fixtures", "write", "--lib", "lib", "--random-seed", str(seed), SPEC_FILE_NAME]
         result = self._tool_runner.run_to_completion(ROTSTOOL_RELATIVE, arguments, template_dir, self._timeout)
@@ -106,27 +113,31 @@ class RunLibProvider:
         self._seed = seed  # passed to rotstool; part of the cache key
         self._clock = clock  # current time, for the reboot hour
 
-    def cache_key(self, character_set: CharacterSet) -> str:
-        """A short name for the set's template directory, unique per seed and character spec."""
-        digest = hashlib.sha256(f"{self._seed}\n{character_set.spec_json()}".encode("utf-8"))
+    def cache_key(self, character_set: CharacterSet, resets: Sequence[WorldReset] = ()) -> str:
+        """A short name for the template directory, unique per seed, character spec and world resets.
+
+        Without resets the key text is the seed and spec alone, so those templates keep their keys.
+        """
+        digest = hashlib.sha256(f"{self._seed}\n{character_set.spec_json()}{resets_key_text(resets)}".encode("utf-8"))
         return digest.hexdigest()[:16]
 
-    def lib_for(self, character_set: CharacterSet, run_dir: Path) -> Path:
-        """Copies the set's template into run_dir/lib, writes the run's boot options, and returns the lib.
+    def lib_for(self, character_set: CharacterSet, run_dir: Path, resets: Sequence[WorldReset] = ()) -> Path:
+        """Copies the template for the set and resets into run_dir/lib, writes the run's boot options, and returns the lib.
 
         Builds the template first when the session folder has no complete one; raises
-        LibBuildError when rotstool fails, leaving nothing of the failed build behind.
+        LibBuildError when a reset names a vnum the world lacks or rotstool fails, leaving
+        nothing of the failed build behind.
         """
-        template_dir = self._session_dir / self.cache_key(character_set)
+        template_dir = self._session_dir / self.cache_key(character_set, resets)
         if not template_dir.is_dir():
-            self._build(template_dir, character_set)
+            self._build(template_dir, character_set, resets)
         lib_dir = run_dir / "lib"
         shutil.copytree(template_dir / "lib", lib_dir)
         boot_options = {"daily_reboot_hour_utc": reboot_hour_away_from(self._clock())}
         (lib_dir / BOOT_OPTIONS_RELATIVE).write_text(json.dumps(boot_options, indent=2) + "\n", encoding="utf-8")
         return lib_dir
 
-    def _build(self, template_dir: Path, character_set: CharacterSet) -> None:
+    def _build(self, template_dir: Path, character_set: CharacterSet, resets: Sequence[WorldReset]) -> None:
         """Builds the template in a temporary folder beside template_dir, then renames it to template_dir.
 
         When another provider renamed its build to template_dir first, keeps that one and deletes
@@ -134,7 +145,7 @@ class RunLibProvider:
         """
         building_dir = template_dir.with_name(f"{BUILDING_PREFIX}{template_dir.name}-{uuid.uuid4().hex[:8]}")
         try:
-            self._builder.build(building_dir, character_set, self._seed)
+            self._builder.build(building_dir, character_set, self._seed, resets)
             try:
                 building_dir.rename(template_dir)
             except OSError:

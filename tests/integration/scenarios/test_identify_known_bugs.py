@@ -6,11 +6,14 @@ from __future__ import annotations
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.identify]
 
+# The base and current mana the mage is stored with: a fresh level-30 mage has less than
+# identify's 70 (USE_MANA, spells.h), and a lost concentration costs half of it (do_cast).
+MAGE_MAXIMUM_MANA = 500
 # A level-30 human mage in the implementors' room who knows identify fully. Identify is a
 # level-18 mage spell that targets an object the caster carries (skills[] in consts.cpp).
 MAGE = Character(
@@ -21,6 +24,8 @@ MAGE = Character(
     load_room=world.ROOM_IMMORTAL_START,
     class_name="mage",
     skills=(("identify", 100),),
+    mana=MAGE_MAXIMUM_MANA,
+    stored=StoredValues(maxstamina=MAGE_MAXIMUM_MANA),
 )
 
 # The relic (tests/integration/world/obj/16.obj): wear flags TAKE and THROW (bit 15), and every
@@ -30,9 +35,6 @@ MAGE = Character(
 RELIC_VNUM = 1609
 RELIC_KEYWORD = "relic"
 RELIC_SHORT_DESCRIPTION = "a strange relic"
-# The maximum mana the implementor gives the mage: a fresh level-30 mage logs in with less than
-# identify's 70 (USE_MANA, spells.h), and a lost concentration costs half of it (do_cast).
-MAGE_MAXIMUM_MANA = 500
 
 # What the implementor reads when the load and the give go through (do_load, act_wiz.cpp; give).
 CREATED_MARKER = f"You create {RELIC_SHORT_DESCRIPTION}."
@@ -74,11 +76,6 @@ def identify_relic(server) -> list:
     implementor = server.login(IMPLEMENTOR.name)
     mage: GameSession = server.login(MAGE.name)
     mage_keyword = MAGE.name.lower()
-    # wizset calls maximum mana "maxstamina"; restore fills current mana to the new maximum.
-    set_mana = implementor.command(f"wizset player {mage_keyword} maxstamina {MAGE_MAXIMUM_MANA}")
-    assert set_mana.contains(f"{MAGE.name}'s maxstamina set to {MAGE_MAXIMUM_MANA}."), set_mana.text
-    restored = implementor.command(f"restore {mage_keyword}")
-    assert restored.contains("Done."), restored.text
     created = implementor.command(f"load obj {RELIC_VNUM}")
     assert created.contains(CREATED_MARKER), created.text
     given = implementor.command(f"give {RELIC_KEYWORD} {mage_keyword}")

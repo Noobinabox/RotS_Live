@@ -10,6 +10,7 @@ import pytest
 from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
+from rots_harness.world_resets import MobReset
 
 pytestmark = [pytest.mark.scenario, pytest.mark.followers]
 
@@ -296,13 +297,13 @@ def test_a_follower_without_moves_left_behind_gets_ack_lines(server) -> None:
 
 
 def follow_the_bystander(implementor: GameSession, followers: list, room: int) -> None:
-    """Brings the implementor to room, loads the bystander orc there and has every follower follow it.
+    """Brings the implementor to room, where the world places the bystander orc, and has every
+    follower follow the orc.
 
     Each follower reads the orc by its short description: they share its room.
     """
     arrived = implementor.command(f"goto {room}")
     assert arrived.room_name() is not None, arrived.text
-    load_mob(implementor, BYSTANDER_VNUM, "a bystander orc")
     for follower in followers:
         following = follower.command("follow bystander")
         assert following.contains(NOW_FOLLOWING_MARKER_FORMAT.format("a bystander orc")), following.text
@@ -311,6 +312,7 @@ def follow_the_bystander(implementor: GameSession, followers: list, room: int) -
 
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, *PIT_FOLLOWERS)
+@pytest.mark.world_resets(MobReset(BYSTANDER_VNUM, world.ROOM_GALLOWS_APPROACH))
 def test_every_follower_walks_in_after_a_leader_that_dies_where_it_arrives(server) -> None:
     """Pins #389: when the leader is removed where it arrives, every follower still takes the step.
 
@@ -340,6 +342,7 @@ def test_every_follower_walks_in_after_a_leader_that_dies_where_it_arrives(serve
 
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, *ARENA_FOLLOWERS)
+@pytest.mark.world_resets(MobReset(BYSTANDER_VNUM, world.ROOM_ARENA_CENTRE))
 def test_every_follower_follows_a_mob_leader_that_survives_the_step(server) -> None:
     """Control for the Gallows Pit pin: the same three followers follow the same orc east and live.
 
@@ -476,6 +479,7 @@ def test_a_sitting_follower_the_leader_cannot_see_leaves_the_leader_no_ack_line(
 
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR, CAPTAIN)
+@pytest.mark.world_resets(MobReset(BYSTANDER_VNUM, world.ROOM_ARENA_CENTRE))
 def test_a_sitting_mob_follower_left_behind_gives_its_leader_an_ack_line(server) -> None:
     """Pins #389's ACK line for a mob follower that is not standing, read by a mortal and an immortal leader.
 
@@ -487,7 +491,6 @@ def test_a_sitting_mob_follower_left_behind_gives_its_leader_an_ack_line(server)
     implementor = server.login(IMPLEMENTOR.name)
     captain = server.login(CAPTAIN.name)
     assert implementor.command(f"goto {world.ROOM_ARENA_CENTRE}").room_name() == "Arena Centre"
-    load_mob(implementor, BYSTANDER_VNUM, "a bystander orc")
 
     force(implementor, "bystander", f"follow {CAPTAIN.name.lower()}")
     assert "A bystander orc sits down." in force(implementor, "bystander", "sit")
@@ -503,10 +506,10 @@ def test_a_sitting_mob_follower_left_behind_gives_its_leader_an_ack_line(server)
 
 
 def ride_after_the_leader(leader: GameSession, rider: GameSession) -> None:
-    """Has the rider follow the leader in the arena centre and mount the harness pony there."""
+    """Brings the leader to the arena centre, where the world places the harness pony, and has the
+    rider follow the leader and mount the pony."""
     arrived = leader.command(f"goto {world.ROOM_ARENA_CENTRE}")
     assert arrived.contains("Arena Centre"), arrived.text
-    load_mob(leader, PONY_VNUM, "a harness pony")
     following = rider.command(f"follow {LEADER.name.lower()}")
     assert following.contains(NOW_FOLLOWING_MARKER_FORMAT.format(LEADER.name)), following.text
     mounted = rider.command("ride pony")
@@ -516,6 +519,7 @@ def ride_after_the_leader(leader: GameSession, rider: GameSession) -> None:
 
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(LEADER, RIDER)
+@pytest.mark.world_resets(MobReset(PONY_VNUM, world.ROOM_ARENA_CENTRE))
 def test_a_rider_whose_mount_cannot_move_gets_the_riding_ack_lines(server) -> None:
     """Pins the riding ACK lines for a follower whose mount has no moves.
 

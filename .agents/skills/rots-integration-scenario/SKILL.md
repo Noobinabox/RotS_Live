@@ -76,11 +76,15 @@ the harness (extending-the-harness.md); never rely on luck.
 Use `@pytest.mark.characters(...)` (fields in the reference). `server.login(name)` enters each
 one straight into the game with the harness binary's entry token. Add `@pytest.mark.real_login`
 (plain `ageland` and the account menu dialogue) only to a test of the login dialogue, the account
-menu or the boot, or one that opens its own connections at the email prompt. The implementor sets
-what rotstool cannot (hunger, gold, items, abilities, and the `saving_throw` field, which only
-some save functions read); assert each reply, such as `hunger set to 10.`. Declare
-`IMPLEMENTOR` whenever two characters are online. Across sides a command matches a player's
-race keyword, never its name (reference, "Names, sides and lookups").
+menu or the boot, or one that opens its own connections at the email prompt. Starting values go
+in the character: a mortal's `load_room` (an immortal always starts in 1101) and its `stored`
+values (hunger, gold, abilities, spirit, alignment, specialization and more, each limited like its
+`wizset` field). Mobs and floor objects the test starts with go in
+`@pytest.mark.world_resets(...)`. The implementor sets what changes during the test and what
+neither can hold (items, practice sessions, and the `saving_throw` field, which only some save
+functions read); assert each reply, such as `hunger set to 10.`. Declare `IMPLEMENTOR` whenever
+two characters are online. Across sides a command matches a player's race keyword, never its
+name (reference, "Names, sides and lookups").
 
 ## 6. Change the world only when it lacks what you need
 

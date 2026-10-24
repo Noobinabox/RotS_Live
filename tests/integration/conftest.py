@@ -15,6 +15,7 @@ import pytest
 
 from rots_harness import durations, groups, interrupts
 from rots_harness.characters import CharacterSet
+from rots_harness.world_resets import MobReset, ObjectReset, WorldReset
 from rots_harness.crashmonitor import CrashMonitor
 from rots_harness.dockerlock import DEFAULT_LOCK_DIR, DEFAULT_WAIT_SECONDS, DockerLock, parse_wait_seconds
 from rots_harness.launcher import (
@@ -466,6 +467,18 @@ def character_set_for(request: pytest.FixtureRequest) -> CharacterSet:
     return CharacterSet(tuple(marker.args))
 
 
+def world_resets_for(request: pytest.FixtureRequest) -> tuple[WorldReset, ...]:
+    """The mobs and objects the test's @pytest.mark.world_resets(...) places at boot, or none without the
+    marker; fails the test when an argument is not a MobReset or ObjectReset."""
+    marker = request.node.get_closest_marker("world_resets")
+    if marker is None:
+        return ()
+    for argument in marker.args:
+        if not isinstance(argument, (MobReset, ObjectReset)):
+            pytest.fail(f"{request.node.nodeid}: world_resets takes MobReset and ObjectReset values, not {argument!r}", pytrace=False)
+    return tuple(marker.args)
+
+
 def schedule_for(request: pytest.FixtureRequest) -> Optional[str]:
     """The schedule the test's server runs (timecontrol.server_schedule), or None for plain bin/ageland; fails the test on a malformed or conflicting marker."""
     marker = request.node.get_closest_marker("schedule")
@@ -479,7 +492,7 @@ def schedule_for(request: pytest.FixtureRequest) -> Optional[str]:
 
 @pytest.fixture
 def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib_provider: RunLibProvider):
-    """A fresh server on a lib holding the test's declared characters, as a HarnessServer.
+    """A fresh server on a lib holding the test's declared characters and world resets, as a HarnessServer.
 
     After the test it quits every session, stops the server, and fails the test when a session
     does not quit or the shutdown shows problems; during an interrupted run those problems are
@@ -494,6 +507,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     """
     report = request.config.stash[RUN_DIRECTORY_REPORT_KEY]
     character_set = character_set_for(request)
+    resets = world_resets_for(request)
     schedule = schedule_for(request)
     if schedule is not None:
         harness_launcher.require_program(HARNESS_BINARY_RELATIVE)
@@ -501,7 +515,7 @@ def server(request: pytest.FixtureRequest, harness_launcher: ServerLauncher, lib
     run_dir.mkdir(parents=True)
     (run_dir / TEST_NAME_FILE).write_text(request.node.nodeid + "\n", encoding="utf-8")
     try:
-        lib_dir = lib_provider.lib_for(character_set, run_dir)
+        lib_dir = lib_provider.lib_for(character_set, run_dir, resets)
         handle = start_on_a_free_port(harness_launcher, run_dir, lib_dir, session_seed(), schedule=schedule)
         time_control = None
         entry_token = None

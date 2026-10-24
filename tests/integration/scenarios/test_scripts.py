@@ -16,6 +16,7 @@ import pytest
 from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
+from rots_harness.world_resets import MobReset
 
 pytestmark = [pytest.mark.scenario, pytest.mark.scripts]
 
@@ -37,6 +38,11 @@ class ScriptMob:
     short_description: str
 
 
+def placed(*mobs: ScriptMob) -> pytest.MarkDecorator:
+    """The world_resets marker that places each mob in the implementors' room at boot, in order."""
+    return pytest.mark.world_resets(*(MobReset(mob.vnum, world.ROOM_IMMORTAL_START) for mob in mobs))
+
+
 # Script 1700 (tests/integration/world/scr/17.scr): Brali's shape (#2709), an outer IF on the
 # star token whose block holds a nested guard IF / BEGIN / ... / END_ELSE_BEGIN / END with an
 # empty else branch, then the reward; the outer else branch and a final line follow.
@@ -44,7 +50,10 @@ PLAIN_SMITH = ScriptMob(vnum=1700, keyword="plain", short_description="a plain s
 # Script 1701: script 1700 with SECTION rows between the outer IF and its BEGIN, before the
 # nested IF, and on the nested block's empty else branch.
 LABELLED_SMITH = ScriptMob(vnum=1701, keyword="labelled", short_description="a labelled smith")
-SMITHS = [pytest.param(PLAIN_SMITH, id="plain"), pytest.param(LABELLED_SMITH, id="labelled")]
+SMITHS = [
+    pytest.param(PLAIN_SMITH, id="plain", marks=placed(PLAIN_SMITH)),
+    pytest.param(LABELLED_SMITH, id="labelled", marks=placed(LABELLED_SMITH)),
+]
 
 # The star token, a grey pebble (tests/integration/world/obj/17.obj) and the leather cap
 # (obj/11.obj), a piece of head armour.
@@ -157,13 +166,12 @@ def count_logged(server, message: str, expected_count: int) -> int:
 
 
 def finish_the_foremans_script(implementor: GameSession) -> None:
-    """Loads the weary foreman, starts its script by speaking, and waits for the script's last line.
+    """Starts the weary foreman's script by speaking, and waits for the script's last line.
 
     The first line runs inside the say (do_say, act_comm.cpp). The last runs when the foreman's
     wait ends on the game loop's waiting list (comm.cpp), which runs every pass under the
     affect-hours schedule too.
     """
-    load_mob(implementor, WEARY_FOREMAN)
     spoken = implementor.command("say Your shift is done.")
     assert said(WEARY_FOREMAN.short_description, FAREWELL_LINE) in spoken.text, spoken.text
     last_line_said = said(WEARY_FOREMAN.short_description, LAST_LINE)
@@ -173,8 +181,7 @@ def finish_the_foremans_script(implementor: GameSession) -> None:
 
 
 def start_the_patient_foremans_wait(implementor: GameSession) -> None:
-    """Loads the patient foreman and starts its script, which then waits for 100 seconds."""
-    load_mob(implementor, PATIENT_FOREMAN)
+    """Starts the patient foreman's script, which then waits for 100 seconds."""
     spoken = implementor.command("say Your shift is done.")
     assert said(PATIENT_FOREMAN.short_description, FAREWELL_LINE) in spoken.text, spoken.text
 
@@ -194,7 +201,6 @@ def test_a_false_if_skips_its_whole_block_with_the_nested_block_inside(server, s
     draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, smith)
 
     reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", smith)
     assert said(smith.short_description, FINAL_LINE) in reply, reply
@@ -217,7 +223,6 @@ def test_a_true_if_runs_its_block_past_the_skipped_nested_guard(server, smith: S
     lands on, does nothing. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, smith)
 
     reply = give_new_object(implementor, STAR_TOKEN_VNUM, "token", smith)
     reward = said(smith.short_description, REWARD_LINE)
@@ -231,6 +236,7 @@ def test_a_true_if_runs_its_block_past_the_skipped_nested_guard(server, smith: S
 @pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(PLAIN_SMITH, PORTER)
 def test_a_true_nested_guard_halts_the_script_for_a_mob_giver(server) -> None:
     """A smith given the star token by a mob runs the nested guard's body and stops there.
 
@@ -241,8 +247,6 @@ def test_a_true_nested_guard_halts_the_script_for_a_mob_giver(server) -> None:
     block. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, PLAIN_SMITH)
-    load_mob(implementor, PORTER)
     give_new_object(implementor, STAR_TOKEN_VNUM, "token", PORTER)
 
     reply = implementor.command(f"force {PORTER.keyword} give token {PLAIN_SMITH.keyword}").text
@@ -255,6 +259,7 @@ def test_a_true_nested_guard_halts_the_script_for_a_mob_giver(server) -> None:
 @pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(WEARY_FOREMAN)
 def test_a_finished_script_leaves_no_script_delay_on_its_mob(server) -> None:
     """Once a waiting script has run to its end, the mob's delay command is cleared.
 
@@ -274,6 +279,7 @@ def test_a_finished_script_leaves_no_script_delay_on_its_mob(server) -> None:
 @pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(PATIENT_FOREMAN)
 def test_a_waiting_script_shows_its_delay_on_its_mob(server) -> None:
     """While a script waits, stat shows the script's delay command and the passes left.
 
@@ -294,6 +300,7 @@ def test_a_waiting_script_shows_its_delay_on_its_mob(server) -> None:
 @pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(WEARY_FOREMAN)
 def test_slaying_a_mob_whose_script_finished_does_not_repeat_its_last_line(server) -> None:
     """Killing a mob whose script has finished does not run the script's last line again.
 
@@ -314,6 +321,7 @@ def test_slaying_a_mob_whose_script_finished_does_not_repeat_its_last_line(serve
 @pytest.mark.scripts_delays
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(PATIENT_FOREMAN)
 def test_slaying_a_mob_mid_wait_runs_the_rest_of_its_script_before_it_dies(server) -> None:
     """Killing a mob whose script is still waiting runs the rest of the script as it dies.
 
@@ -354,31 +362,35 @@ SURVEYOR_LINE = ReportedLine(
     "SCRIPT ERROR: script #1704, line 2 (change exit to): room 1101 has no exit 4",
     0,
 )
+# The mobs whose scripts reach the reported lines below, each running the script of its own number.
+COURIER = ScriptMob(vnum=1705, keyword="courier", short_description="a courier")
+VALET = ScriptMob(vnum=1706, keyword="valet", short_description="a valet")
+DRESSER = ScriptMob(vnum=1707, keyword="dresser", short_description="a dresser")
 REPORTED_LINES = [
-    pytest.param(SURVEYOR_LINE, id="change-exit-to-a-missing-exit"),
+    pytest.param(SURVEYOR_LINE, id="change-exit-to-a-missing-exit", marks=placed(SURVEYOR_LINE.mob)),
     pytest.param(
         ReportedLine(
-            ScriptMob(vnum=1705, keyword="courier", short_description="a courier"),
+            COURIER,
             "SCRIPT ERROR: script #1705, line 3 (teleport xl): room not found",
             0,
         ),
-        id="teleport-xl-to-an-unset-room",
+        marks=placed(COURIER), id="teleport-xl-to-an-unset-room",
     ),
     pytest.param(
         ReportedLine(
-            ScriptMob(vnum=1706, keyword="valet", short_description="a valet"),
+            VALET,
             "SCRIPT ERROR: script #1706, line 2 (assign eq): slot 22 is not 0-21",
             1,
         ),
-        id="assign-eq-slot-22",
+        marks=placed(VALET), id="assign-eq-slot-22",
     ),
     pytest.param(
         ReportedLine(
-            ScriptMob(vnum=1707, keyword="dresser", short_description="a dresser"),
+            DRESSER,
             "SCRIPT ERROR: script #1707, line 2 (do remove): slot 22 is not 0-21",
             1,
         ),
-        id="do-remove-slot-22",
+        marks=placed(DRESSER), id="do-remove-slot-22",
     ),
 ]
 # A level-20 human warrior in the implementor's room, who must not read script reports.
@@ -404,7 +416,6 @@ def test_a_script_line_that_would_crash_is_reported_and_skipped(server, case: Re
     row. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, case.mob)
     still_here = said(case.mob.short_description, STILL_HERE_LINE)
 
     for gives in (1, 2):
@@ -443,9 +454,14 @@ def test_a_script_report_reaches_an_immortal_with_syslog_on_and_no_mortal(server
     assert "SCRIPT ERROR" not in watched, watched
 
 
+# The appraiser (mob 1708), whose script ASSIGN_EQs from a character its trigger leaves unset.
+APPRAISER = ScriptMob(vnum=1708, keyword="appraiser", short_description="an appraiser")
+
+
 @pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(APPRAISER)
 def test_assign_eq_on_an_unset_character_finds_no_object(server) -> None:
     """ASSIGN_EQ on an unset character finds nothing, even after another line looked up an object.
 
@@ -455,18 +471,21 @@ def test_assign_eq_on_an_unset_character_finds_no_object(server) -> None:
     draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    appraiser = ScriptMob(vnum=1708, keyword="appraiser", short_description="an appraiser")
-    load_mob(implementor, appraiser)
 
-    reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", appraiser)
-    assert said(appraiser.short_description, "Nothing.") in reply, reply
+    reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", APPRAISER)
+    assert said(APPRAISER.short_description, "Nothing.") in reply, reply
     assert "Phantom." not in reply, reply
-    assert said(appraiser.short_description, STILL_HERE_LINE) in reply, reply
+    assert said(APPRAISER.short_description, STILL_HERE_LINE) in reply, reply
+
+
+# The mumbler (mob 1709), whose script has a false IF whose nested block never ends.
+MUMBLER = ScriptMob(vnum=1709, keyword="mumbler", short_description="a mumbler")
 
 
 @pytest.mark.scripts_control_flow
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(MUMBLER)
 def test_skipping_a_false_if_whose_nested_block_never_ends_ends_the_script(server) -> None:
     """A false IF whose nested block never reaches an END ends the script instead of crashing it.
 
@@ -476,12 +495,10 @@ def test_skipping_a_false_if_whose_nested_block_never_ends_ends_the_script(serve
     the mob still answer. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    mumbler = ScriptMob(vnum=1709, keyword="mumbler", short_description="a mumbler")
-    load_mob(implementor, mumbler)
 
     for give_number in (1, 2):
-        reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", mumbler)
-        assert reply.count(said(mumbler.short_description, STILL_HERE_LINE)) == 1, (give_number, reply)
+        reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", MUMBLER)
+        assert reply.count(said(MUMBLER.short_description, STILL_HERE_LINE)) == 1, (give_number, reply)
         assert "Never said." not in reply, (give_number, reply)
 
 
@@ -498,25 +515,30 @@ class UnsetVariableLine:
 # Script 1710: ASSIGN_STR to ch1.name, which get_text_param_writable refuses. Script 1711:
 # DO_SOCIAL performed by ch3, which is unset. Script 1712: DO_WEAR of ob1, which a hear trigger
 # leaves unset. Script 1713: LOAD_OBJ_X, which copies ob1.
+# The mobs whose scripts run the unset-variable lines below, each running the script of its own number.
+RENAMER = ScriptMob(vnum=1710, keyword="renamer", short_description="a renamer")
+SMILER = ScriptMob(vnum=1711, keyword="smiler", short_description="a smiler")
+FITTER = ScriptMob(vnum=1712, keyword="fitter", short_description="a fitter")
+COPIER = ScriptMob(vnum=1713, keyword="copier", short_description="a copier")
 UNSET_VARIABLE_LINES = [
     pytest.param(
         UnsetVariableLine(
-            ScriptMob(vnum=1710, keyword="renamer", short_description="a renamer"),
+            RENAMER,
             "Script #1710 attempted to write to string variable 101.",
         ),
-        id="assign-str-to-ch1-name",
+        marks=placed(RENAMER), id="assign-str-to-ch1-name",
     ),
     pytest.param(
-        UnsetVariableLine(ScriptMob(vnum=1711, keyword="smiler", short_description="a smiler"), None),
-        id="do-social-by-unset-ch3",
+        UnsetVariableLine(SMILER, None),
+        marks=placed(SMILER), id="do-social-by-unset-ch3",
     ),
     pytest.param(
-        UnsetVariableLine(ScriptMob(vnum=1712, keyword="fitter", short_description="a fitter"), None),
-        id="do-wear-of-unset-ob1",
+        UnsetVariableLine(FITTER, None),
+        marks=placed(FITTER), id="do-wear-of-unset-ob1",
     ),
     pytest.param(
-        UnsetVariableLine(ScriptMob(vnum=1713, keyword="copier", short_description="a copier"), None),
-        id="load-obj-x-of-unset-ob1",
+        UnsetVariableLine(COPIER, None),
+        marks=placed(COPIER), id="load-obj-x-of-unset-ob1",
     ),
 ]
 
@@ -533,7 +555,6 @@ def test_a_script_line_on_an_unset_variable_is_skipped(server, case: UnsetVariab
     would answer each other without end. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, case.mob)
 
     reply = implementor.command("say Hello there.").text
     assert reply.count(said(case.mob.short_description, STILL_HERE_LINE)) == 1, reply
@@ -541,9 +562,14 @@ def test_a_script_line_on_an_unset_variable_is_skipped(server, case: UnsetVariab
         assert count_logged(server, case.log_message, 1) == 1
 
 
+# The hatter (mob 1714), whose script wears an object it carries.
+HATTER = ScriptMob(vnum=1714, keyword="hatter", short_description="a hatter")
+
+
 @pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(HATTER)
 def test_do_wear_wears_an_object_the_mob_carries(server) -> None:
     """DO_WEAR on set variables wears the object: the control for the unset-object case above.
 
@@ -551,16 +577,19 @@ def test_do_wear_wears_an_object_the_mob_carries(server) -> None:
     act_obj2.cpp). Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    hatter = ScriptMob(vnum=1714, keyword="hatter", short_description="a hatter")
-    load_mob(implementor, hatter)
 
-    reply = give_new_object(implementor, LEATHER_CAP_VNUM, "cap", hatter)
+    reply = give_new_object(implementor, LEATHER_CAP_VNUM, "cap", HATTER)
     assert "A hatter wears a leather cap on his head." in reply, reply
+
+
+# The scribe (mob 1715), whose script copies the object it is given with LOAD_OBJ_X.
+SCRIBE = ScriptMob(vnum=1715, keyword="scribe", short_description="a scribe")
 
 
 @pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(SCRIBE)
 def test_load_obj_x_copies_the_given_object(server) -> None:
     """LOAD_OBJ_X with ob1 set copies it: the control for the unset-object case above.
 
@@ -569,10 +598,8 @@ def test_load_obj_x_copies_the_given_object(server) -> None:
     random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    scribe = ScriptMob(vnum=1715, keyword="scribe", short_description="a scribe")
-    load_mob(implementor, scribe)
 
-    reply = give_new_object(implementor, LEATHER_CAP_VNUM, "cap", scribe)
+    reply = give_new_object(implementor, LEATHER_CAP_VNUM, "cap", SCRIBE)
     assert "A scribe gives you a leather cap." in reply, reply
 
 
@@ -585,9 +612,14 @@ MOB_CONSTITUTION = 10
 FAST_UPDATES_PER_HOUR = 20
 
 
+# The hale wrestler (mob 1716), whose script writes hit points above its maximum.
+HALE = ScriptMob(vnum=1716, keyword="hale", short_description="a hale wrestler")
+
+
 @pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(HALE)
 def test_a_script_hit_write_above_the_limit_is_clamped_and_reads_healthy(server) -> None:
     """A script writing 5000000 to its mob's hit points stores 1000000, which look reports as healthy.
 
@@ -597,19 +629,22 @@ def test_a_script_hit_write_above_the_limit_is_clamped_and_reads_healthy(server)
     number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    hale = ScriptMob(vnum=1716, keyword="hale", short_description="a hale wrestler")
-    load_mob(implementor, hale)
-    give_new_object(implementor, PEBBLE_VNUM, "pebble", hale)
+    give_new_object(implementor, PEBBLE_VNUM, "pebble", HALE)
 
-    stat = read_mob_stat(implementor, hale)
+    stat = read_mob_stat(implementor, HALE)
     assert int(stat_value(HIT_POINTS_PATTERN, stat)) == SCRIPT_HIT_LIMIT, stat
-    looked = implementor.command(f"look {hale.keyword}").text
+    looked = implementor.command(f"look {HALE.keyword}").text
     assert "A hale wrestler looks healthy." in looked, looked
+
+
+# The dazed wrestler (mob 1717), whose script writes zero hit points, then more.
+DAZED = ScriptMob(vnum=1717, keyword="dazed", short_description="a dazed wrestler")
 
 
 @pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(DAZED)
 def test_a_script_hit_write_of_zero_stuns_and_a_later_write_stands_the_mob_up(server) -> None:
     """A script writing 0 to its mob's hit points stuns it; writing 50 afterwards stands it up.
 
@@ -618,11 +653,9 @@ def test_a_script_hit_write_of_zero_stuns_and_a_later_write_stands_the_mob_up(se
     stunned, incapacitated or dead. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    dazed = ScriptMob(vnum=1717, keyword="dazed", short_description="a dazed wrestler")
-    load_mob(implementor, dazed)
-    give_new_object(implementor, PEBBLE_VNUM, "pebble", dazed)
+    give_new_object(implementor, PEBBLE_VNUM, "pebble", DAZED)
 
-    stat = read_mob_stat(implementor, dazed)
+    stat = read_mob_stat(implementor, DAZED)
     # update_pos (fight.cpp) for the dazed wrestler, with hit 0 and Con from stat:
     #   GET_HIT > 0                  : 0 > 0                      is false
     #   GET_HIT <= -GET_CON / 2      : 0 <= -10 / 2 = -5          is false
@@ -636,14 +669,19 @@ def test_a_script_hit_write_of_zero_stuns_and_a_later_write_stands_the_mob_up(se
     assert "A dazed wrestler is lying here, stunned." in looked, looked
 
     implementor.command("say Wake up.")
-    stat = read_mob_stat(implementor, dazed)
+    stat = read_mob_stat(implementor, DAZED)
     assert int(stat_value(HIT_POINTS_PATTERN, stat)) == 50, stat
     assert stat_value(POSITION_PATTERN, stat) == "Standing", stat
+
+
+# The doomed wrestler (mob 1718), whose script writes hit points far below zero.
+DOOMED = ScriptMob(vnum=1718, keyword="doomed", short_description="a doomed wrestler")
 
 
 @pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(DOOMED)
 def test_a_script_hit_write_far_below_zero_leaves_the_mob_dead_until_the_hourly_sweep(server) -> None:
     """A script writing -5000000 to its mob's hit points leaves it dead, and the next game hour kills it.
 
@@ -653,11 +691,9 @@ def test_a_script_hit_write_far_below_zero_leaves_the_mob_dead_until_the_hourly_
     hour's regeneration is bounded below.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    doomed = ScriptMob(vnum=1718, keyword="doomed", short_description="a doomed wrestler")
-    load_mob(implementor, doomed)
-    give_new_object(implementor, PEBBLE_VNUM, "pebble", doomed)
+    give_new_object(implementor, PEBBLE_VNUM, "pebble", DOOMED)
 
-    stat = read_mob_stat(implementor, doomed)
+    stat = read_mob_stat(implementor, DOOMED)
     hit_match = HIT_POINTS_PATTERN.search(stat)
     assert hit_match is not None, stat
     hit, hourly_gain = int(hit_match.group(1)), int(hit_match.group(3))
@@ -680,14 +716,19 @@ def test_a_script_hit_write_far_below_zero_leaves_the_mob_dead_until_the_hourly_
     # advance_hours returns once the hour has run; the drain collects what the hour sent.
     server.advance_hours(1)
     hour = implementor.drain(SETTLE_SECONDS)
-    assert hour.count(death_cry(doomed.short_description)) == 1, hour
+    assert hour.count(death_cry(DOOMED.short_description)) == 1, hour
     looked = implementor.command("look").text
     assert "A doomed wrestler" not in looked, looked
+
+
+# The accountant (mob 1719), whose script divides by zero.
+ACCOUNTANT = ScriptMob(vnum=1719, keyword="accountant", short_description="an accountant")
 
 
 @pytest.mark.scripts_reports
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(ACCOUNTANT)
 def test_a_script_division_by_zero_gives_zero_and_is_logged(server) -> None:
     """SET_INT_DIV by zero stores 0 and logs the attempt, instead of drawing a random number.
 
@@ -696,11 +737,9 @@ def test_a_script_division_by_zero_gives_zero_and_is_logged(server) -> None:
     shows too; a fall-through would draw number(0, 1000000), 0 once in 1000001 draws.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    accountant = ScriptMob(vnum=1719, keyword="accountant", short_description="an accountant")
-    load_mob(implementor, accountant)
 
-    reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", accountant)
-    assert said(accountant.short_description, "Quotient zero.") in reply, reply
+    reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", ACCOUNTANT)
+    assert said(ACCOUNTANT.short_description, "Quotient zero.") in reply, reply
     assert "Quotient not zero." not in reply, reply
     assert count_logged(server, "Script #1719 tried to divide by 0.", 1) == 1
 
@@ -802,6 +841,7 @@ LISTENER_LINE = "I heard that."
 @pytest.mark.scripts_actions
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(LISTENER, WANDERER)
 def test_a_listener_ahead_of_a_mob_that_leaves_on_speech_still_answers(server) -> None:
     """Every mob in the room hears a say, when the one that leaves comes after the listener.
 
@@ -810,8 +850,6 @@ def test_a_listener_ahead_of_a_mob_that_leaves_on_speech_still_answers(server) -
     then leaves for room 1201. Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, LISTENER)
-    load_mob(implementor, WANDERER)
 
     reply = implementor.command("say Anyone there?").text
     assert reply.count(said(LISTENER.short_description, LISTENER_LINE)) == 1, reply

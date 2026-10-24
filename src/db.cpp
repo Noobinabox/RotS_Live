@@ -3260,6 +3260,7 @@ bool write_player_text(struct char_data* ch, int load_room, const char* scratch_
     char_to_store(ch, &chd);
     strcpy(chd.pwd, ch->desc->pwd);
     strncpy(chd.host, ch->desc->host, HOST_LEN);
+    chd.host[HOST_LEN] = '\0'; // strncpy leaves a host of HOST_LEN or more bytes unterminated
     if (!PLR_FLAGGED(ch, PLR_LOADROOM))
         chd.specials2.load_room = load_room;
 
@@ -3282,7 +3283,9 @@ bool write_player_text(struct char_data* ch, int load_room, const char* scratch_
     fprintf(pf, "last_logon  %ld\n", chd.last_logon);
     memcpy(pwdcrypt, chd.pwd, MAX_PWD_LENGTH);
     encrypt_line((unsigned char*)pwdcrypt, MAX_PWD_LENGTH);
-    fprintf(pf, "password    %s\n", pwdcrypt);
+    // The encrypted password fills pwdcrypt with no terminator, and the loader reads
+    // MAX_PWD_LENGTH bytes back.
+    fprintf(pf, "password    %.*s\n", MAX_PWD_LENGTH, pwdcrypt);
     fprintf(pf, "host        %s\n", chd.host);
     fprintf(pf, "idnum       %ld\n", chd.specials2.idnum);
     fprintf(pf, "load_room   %d\n", chd.specials2.load_room);
@@ -3587,7 +3590,7 @@ char* fread_string(FILE* fl, const char* error)
 {
     char buf[MAX_STRING_LENGTH], tmp[MAX_STRING_LENGTH];
     char* rslt;
-    register char *point, *tmppoint;
+    char* tmppoint;
     int flag, markfirst;
 
     bzero(buf, MAX_STRING_LENGTH);
@@ -3617,11 +3620,14 @@ char* fread_string(FILE* fl, const char* error)
         } else
             strcat(buf, tmppoint);
 
-        for (point = buf + strlen(buf) - 2; point >= buf && isspace(*point);
-            point--)
-            continue;
-        if ((flag = (*point == '~')))
-            *point = 0;
+        // Walk back from before the kept newline to the last non-blank byte. A blank first line
+        // leaves buf empty, so the walk can end in front of buf, where there is nothing to test.
+        int last_index = static_cast<int>(strlen(buf)) - 2;
+        while (last_index >= 0 && isspace(static_cast<unsigned char>(buf[last_index])))
+            last_index--;
+        flag = last_index >= 0 && buf[last_index] == '~';
+        if (flag)
+            buf[last_index] = 0;
         else if (strlen(buf)) {
             *(buf + strlen(buf) + 1) = '\0';
             *(buf + strlen(buf)) = '\r';

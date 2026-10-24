@@ -1,0 +1,141 @@
+name: Integration
+
+# Runs the integration scenarios a pull request asks for. Separate from ci.yml so that editing
+# the description reruns only this job. tests/integration/rots_harness/ci_groups.py chooses the
+# groups: boot always, each @integration-test-<group> in the description, the groups of changed
+# scenario and group files, and every group for @integration-test-all, a push, or a change to the
+# harness, src/CMakeLists.txt or a lib file the harness copies into every test's lib.
+# The harness's own unit tests, the test world check among them, run first in the select job.
+# A run of every group is split across parallel shards, one job each; a run of chosen groups is
+# one job.
+
+on:
+  push:
+    branches:
+      - release-frodo
+      - release-frodo-next
+  pull_request:
+    branches:
+      - master
+      - release-frodo
+      - release-frodo-next
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push or description edit replaces the run in progress.
+  group: integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    name: Choose the integration groups
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      group: ${{ steps.select.outputs.group }}
+      shards: ${{ steps.select.outputs.shards }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          # The full history, so the pull request's changed files can be listed.
+          fetch-depth: 0
+
+      - name: Run the harness unit tests
+        # Includes the test world check, so a misordered or conflicted world fails here in seconds,
+        # before any shard builds the server.
+        run: |
+          python3 -m venv "$RUNNER_TEMP/harness-venv"
+          "$RUNNER_TEMP/harness-venv/bin/pip" install --quiet --requirement tests/integration/requirements.txt
+          make integration-unit PYTHON="$RUNNER_TEMP/harness-venv/bin/python"
+
+      - name: Choose the scenario groups
+        id: select
+        env:
+          # Read only through the environment, so the description is never part of a command.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed_files="$RUNNER_TEMP/changed-files.txt"
+          : > "$changed_files"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # NUL-separated and unquoted, with a rename listed as its old and new paths, so a file
+            # moved out of a rule's folder still counts and no file name is quoted or split.
+            git diff --name-only -z --no-renames "$BASE_SHA...$HEAD_SHA" > "$changed_files"
+          fi
+          cd tests/integration
+          # A run of every group uses this many shards; the scenarios job reads the list as its matrix.
+          python3 -m rots_harness.ci_groups --event "$EVENT_NAME" --changed-files "$changed_files" \
+            --output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY" --full-suite-shards 8
+
+  scenarios:
+    needs: select
+    name: >-
+      ${{ strategy.job-total > 1
+      && format('Integration scenarios (Ubuntu 22.04 image, shard {0}/{1})', matrix.shard, strategy.job-total)
+      || 'Integration scenarios (Ubuntu 22.04 image)' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      # Every shard reports its own failures, so one failing shard does not cancel the others.
+      fail-fast: false
+      matrix:
+        # Each job builds the server and runs every shard-th selected scenario (ROTS_IT_SHARD).
+        shard: ${{ fromJSON(needs.select.outputs.shards) }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Load or build the development image
+        # From the Actions cache or the repository's pre-release when one matches the Dockerfile,
+        # so an Ubuntu snapshot outage stops only a pull request that changes the Dockerfile.
+        uses: ./.github/actions/dev-image
+
+      - name: Build the server, the harness server and rotstool
+        # Running as the runner's user keeps the build tree writable by later steps.
+        run: >-
+          docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
+          rots-dev:ci bash -lc 'make configure && cmake --build build --target ageland ageland_harness rotstool --parallel "$(nproc)"'
+
+      - name: Run the scenarios
+        env:
+          GROUP: ${{ needs.select.outputs.group }}
+          ROTS_IT_SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
+        # The local launcher runs the programs directly inside the image; make integration reads
+        # GROUP from the environment, and an empty GROUP runs every scenario. A shard whose share
+        # of the selection is empty passes. CI=true makes make integration run without its plan
+        # and confirmation.
+        run: >-
+          docker run --rm --user "$(id -u):$(id -g)" --volume "$PWD:/rots" --workdir /rots
+          --env CI --env GROUP --env ROTS_IT_SHARD --env HOME=/tmp --env ROTS_IT_LAUNCHER=local
+          rots-dev:ci bash -lc 'ulimit -c 0;
+          python3 -m venv /tmp/harness-venv &&
+          /tmp/harness-venv/bin/pip install --quiet --requirement tests/integration/requirements.txt &&
+          make integration PYTHON=/tmp/harness-venv/bin/python'
+
+      - name: Upload the test results
+        # make integration writes each test's result and time here; uploaded pass or fail.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results-shard-${{ matrix.shard }}
+          path: build/integration/results.xml
+          if-no-files-found: ignore
+
+      - name: Upload the kept run directories
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-runs-shard-${{ matrix.shard }}
+          path: build/integration/runs/
+          if-no-files-found: ignore

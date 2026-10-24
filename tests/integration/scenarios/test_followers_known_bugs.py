@@ -9,6 +9,7 @@ import pytest
 from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 from rots_harness.session import GameSession
+from rots_harness.world_resets import MobReset
 
 pytestmark = [pytest.mark.scenario]
 
@@ -118,12 +119,6 @@ def gather_in_arena_centre(leader: GameSession, follower: GameSession) -> None:
     leader.drain(SETTLE_SECONDS)
 
 
-def load_mob(implementor: GameSession, vnum: int, short_description: str) -> None:
-    """Loads a mob into the implementor's room and asserts the reply names it."""
-    created = implementor.command(f"load mob {vnum}")
-    assert created.contains(f"You create {short_description}."), created.text
-
-
 def load_object(implementor: GameSession, vnum: int, short_description: str) -> None:
     """Loads an object into the implementor's inventory and asserts the reply names it."""
     created = implementor.command(f"load obj {vnum}")
@@ -146,10 +141,10 @@ def group_the_member(captain: GameSession, member: GameSession) -> None:
 
 
 def ride_after_the_leader(leader: GameSession, rider: GameSession) -> None:
-    """Has the rider follow the leader in the arena centre and mount the harness pony there."""
+    """Brings the leader to the arena centre, where the world places the harness pony, and has the
+    rider follow the leader and mount the pony."""
     arrived = leader.command(f"goto {world.ROOM_ARENA_CENTRE}")
     assert arrived.contains("Arena Centre"), arrived.text
-    load_mob(leader, PONY_VNUM, "a harness pony")
     following = rider.command(f"follow {LEADER.name.lower()}")
     assert following.contains(NOW_FOLLOWING_MARKER_FORMAT.format(LEADER.name)), following.text
     mounted = rider.command("ride pony")
@@ -195,6 +190,7 @@ def test_ungroup_refuses_a_character_outside_the_group(server) -> None:
 )
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@pytest.mark.world_resets(MobReset(BYSTANDER_VNUM, world.ROOM_ARENA_CENTRE))
 def test_report_keeps_the_capital_i_its_format_string_writes(server) -> None:
     """Bug: do_report (act_othe.cpp:646-647) lower-cases every character after the first.
 
@@ -205,7 +201,6 @@ def test_report_keeps_the_capital_i_its_format_string_writes(server) -> None:
     """
     implementor = server.login(IMPLEMENTOR.name)
     assert implementor.command(f"goto {world.ROOM_ARENA_CENTRE}").room_name() == "Arena Centre"
-    load_mob(implementor, BYSTANDER_VNUM, "a bystander orc")
     report = implementor.command("force bystander report")
     assert report.contains("Ok."), report.text
     assert BYSTANDER_REPORT_AS_WRITTEN in report.text, report.text
@@ -296,6 +291,7 @@ def test_a_follower_without_moves_the_leader_cannot_see_leaves_the_leader_no_ack
 )
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(LEADER, RIDER)
+@pytest.mark.world_resets(MobReset(PONY_VNUM, world.ROOM_ARENA_CENTRE))
 def test_a_rider_whose_mount_cannot_move_is_not_told_it_follows(server) -> None:
     """Bug: do_move's riding branch (act_move.cpp:953) sends "You follow $N." before the mount's check.
 
@@ -320,6 +316,7 @@ def test_a_rider_whose_mount_cannot_move_is_not_told_it_follows(server) -> None:
 )
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(LEADER, RIDER)
+@pytest.mark.world_resets(MobReset(PONY_VNUM, world.ROOM_ARENA_CENTRE))
 def test_mounting_names_the_mount_by_its_own_pronoun(server) -> None:
     """Bug: do_ride (ranger.cpp:185-186) writes `$m`, the rider's pronoun, where the mount's `$M` is meant.
 
@@ -331,7 +328,6 @@ def test_mounting_names_the_mount_by_its_own_pronoun(server) -> None:
     rider = server.login(RIDER.name)
     arrived = leader.command(f"goto {world.ROOM_ARENA_CENTRE}")
     assert arrived.contains("Arena Centre"), arrived.text
-    load_mob(leader, PONY_VNUM, "a harness pony")
     rider.drain(SETTLE_SECONDS)
 
     mounted = rider.command("ride pony")

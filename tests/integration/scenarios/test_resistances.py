@@ -4,16 +4,23 @@ what a save and a new login keep, and the debug trace of both."""
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 
 import pytest
 
 from rots_harness import world
-from rots_harness.characters import IMPLEMENTOR, Character
+from rots_harness.characters import IMPLEMENTOR, Character, StoredValues
 from rots_harness.session import GameSession
 
 pytestmark = [pytest.mark.scenario, pytest.mark.resistances]
+
+# The spirit each mystic is stored with: protection costs 5 (skills[] in consts.cpp) and a lost
+# concentration 2, so this pays for every cast a test makes and leaves room for losses.
+MYSTIC_SPIRIT = 40
+# The spirit for the test that casts once in each of five spheres.
+SPHERE_LOOP_SPIRIT = 80
 
 # A level-20 human mystic in the arena centre who knows protection: ten practice sessions put
 # protection's knowledge at the cap of 100 (learn_diff 1, recalc_skills in spec_pro.cpp).
@@ -25,6 +32,7 @@ MYSTIC = Character(
     load_room=world.ROOM_ARENA_CENTRE,
     class_name="mystic",
     skills=(("protection", 10),),
+    stored=StoredValues(spirit=MYSTIC_SPIRIT),
 )
 # A level-30 human mystic in the arena centre who knows protection: its mystic level is at the
 # profession cap of 30.
@@ -36,7 +44,10 @@ SAGE = Character(
     load_room=world.ROOM_ARENA_CENTRE,
     class_name="mystic",
     skills=(("protection", 10),),
+    stored=StoredValues(spirit=MYSTIC_SPIRIT),
 )
+# The level-20 mystic with the spirit for five casts.
+SPHERE_LOOP_MYSTIC = dataclasses.replace(MYSTIC, stored=StoredValues(spirit=SPHERE_LOOP_SPIRIT))
 # A level-20 human warrior in the arena centre who wears the fire fixtures and receives the
 # mystic's protection; a warrior's mystic level is low.
 WEARER = Character(
@@ -51,11 +62,6 @@ WEARER = Character(
 # The possessive pronoun act()'s $s and $S print for each sex (HSHR, utils.h).
 POSSESSIVE_PRONOUNS = {"female": "her", "male": "his"}
 
-# The spirit the implementor gives a mystic: protection costs 5 (skills[] in consts.cpp) and a
-# lost concentration 2, so this pays for every cast a test makes and leaves room for losses.
-MYSTIC_SPIRIT = 40
-# The spirit for the test that casts once in each of five spheres.
-SPHERE_LOOP_SPIRIT = 80
 # The highest mystic level cast_resist_magnitude (mystic.cpp) counts; it adds ten to the level.
 RESIST_LEVEL_CAP = 30
 RESIST_LEVEL_BONUS = 10
@@ -204,12 +210,6 @@ def possessive(character: Character) -> str:
     return POSSESSIVE_PRONOUNS[character.sex]
 
 
-def give_spirit(implementor: GameSession, caster: Character = MYSTIC, spirit: int = MYSTIC_SPIRIT) -> None:
-    """Sets a mystic's spirit, the pool cleric spells are paid from."""
-    reply = implementor.command(f"wizset player {caster.name.lower()} spirit {spirit}")
-    assert reply.contains(f"spirit set to {spirit}."), reply.text
-
-
 def stat_player(implementor: GameSession, character: Character) -> str:
     """The whole reply to the implementor's `stat player` for the character."""
     implementor.send_line(f"stat player {character.name.lower()}")
@@ -275,14 +275,12 @@ def give_items(implementor: GameSession, recipient: Character, items: tuple[tupl
 
 
 def protect_from_dark(server, caster: Character = MYSTIC) -> tuple:
-    """Logs in the implementor and the caster, funds the caster and has it cast protection dark.
+    """Logs in the caster and has it cast protection dark.
 
-    Returns the two sessions and what the caster read after the cast.
+    Returns the caster's session and what it read after the cast.
     """
-    implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(caster.name)
-    give_spirit(implementor, caster)
-    return implementor, mystic, cast_protection(mystic, "dark")
+    return mystic, cast_protection(mystic, "dark")
 
 
 def hand_out_items(server, items: tuple[tuple[int, str], ...]) -> tuple:
@@ -299,9 +297,8 @@ def hand_out_fire_items(server) -> tuple:
     return hand_out_items(server, ((WEAK_ITEM_VNUM, WEAK_ITEM_KEYWORD), (STRONG_ITEM_VNUM, STRONG_ITEM_KEYWORD)))
 
 
-def protect_wearer_from_fire(mystic: GameSession, implementor: GameSession) -> str:
+def protect_wearer_from_fire(mystic: GameSession) -> str:
     """Has the mystic cast protection fire on the wearer; returns what the mystic read."""
-    give_spirit(implementor)
     reply = cast_protection(mystic, "fire", WEARER.name.lower())
     assert GRANT_MARKER_FORMAT.format(WEARER.name, "fire") in reply, reply
     return reply
@@ -335,7 +332,8 @@ def test_a_mystic_casts_protection_from_dark_and_affections_shows_its_strength(s
     cast_protection repeats; the strength itself comes from the profession level, not from a
     roll (cast_resist_magnitude, mystic.cpp).
     """
-    implementor, mystic, reply = protect_from_dark(server, caster)
+    implementor = server.login(IMPLEMENTOR.name)
+    mystic, reply = protect_from_dark(server, caster)
     assert DARK_PROTECTION_MARKER in reply, reply
 
     # Testmystic (level-20 mystic):
@@ -359,7 +357,7 @@ def test_a_mystic_casts_protection_from_dark_and_affections_shows_its_strength(s
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_a_mystic_already_protected_is_refused_a_protection_from_another_sphere(server) -> None:
     """A protection cast while one holds is refused whatever its sphere (spell_protection).
 
@@ -367,7 +365,7 @@ def test_a_mystic_already_protected_is_refused_a_protection_from_another_sphere(
     dark protection is refused and dark stays. The one draw that can stop either cast is the
     concentration roll in do_cast, which cast_protection repeats.
     """
-    _, mystic, first_reply = protect_from_dark(server)
+    mystic, first_reply = protect_from_dark(server)
     assert DARK_PROTECTION_MARKER in first_reply, first_reply
 
     second_reply = cast_protection(mystic, "fire")
@@ -381,14 +379,14 @@ def test_a_mystic_already_protected_is_refused_a_protection_from_another_sphere(
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_unprotect_frees_the_mystic_for_a_protection_from_another_sphere(server) -> None:
     """After unprotect a protection from another sphere takes, and replaces the first (PR #315).
 
     The one draw that can stop either cast is the concentration roll in do_cast, which
     cast_protection repeats; unprotect itself draws nothing.
     """
-    _, mystic, first_reply = protect_from_dark(server)
+    mystic, first_reply = protect_from_dark(server)
     assert DARK_PROTECTION_MARKER in first_reply, first_reply
     assert mystic.command("unprotect").contains(RENOUNCED_MARKER)
 
@@ -402,16 +400,14 @@ def test_unprotect_frees_the_mystic_for_a_protection_from_another_sphere(server)
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_protection_names_dark_among_its_spheres_when_given_one_it_does_not_know(server) -> None:
     """Protection from an unknown sphere lists the six it knows, dark last (PR #342).
 
     The one draw that can stop the cast is the concentration roll in do_cast, which
     cast_protection repeats.
     """
-    implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MYSTIC.name)
-    give_spirit(implementor)
 
     reply = cast_protection(mystic, "water")
     assert WRONG_SPHERE_MARKER in reply, reply
@@ -420,7 +416,7 @@ def test_protection_names_dark_among_its_spheres_when_given_one_it_does_not_know
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(SPHERE_LOOP_MYSTIC)
 def test_protection_in_each_other_sphere_grants_that_element_at_the_mystic_strength(server) -> None:
     """Protection from fire, cold, lightning, physical and illusion each grant their element (PR #315).
 
@@ -430,9 +426,7 @@ def test_protection_in_each_other_sphere_grants_that_element_at_the_mystic_stren
     The one draw that can stop a cast is the concentration roll in do_cast, which
     cast_protection repeats; unprotect draws nothing.
     """
-    implementor = server.login(IMPLEMENTOR.name)
-    mystic = server.login(MYSTIC.name)
-    give_spirit(implementor, MYSTIC, SPHERE_LOOP_SPIRIT)
+    mystic = server.login(SPHERE_LOOP_MYSTIC.name)
     # (what the caster types, the element in the cast message, the element in affections)
     spheres = (
         ("fire", "fire", "fire"),
@@ -473,7 +467,7 @@ def test_protection_cast_on_another_tells_each_observer_and_uses_the_casters_str
     wearer = server.login(WEARER.name)
     goto_character(implementor, WEARER)
 
-    reply = protect_wearer_from_fire(mystic, implementor)
+    reply = protect_wearer_from_fire(mystic)
     assert CAST_PAID_MARKER in reply, reply
     assert FIRE_RESISTANT_MARKER not in reply, reply
 
@@ -515,7 +509,7 @@ def test_protection_cast_on_another_already_protected_is_refused_with_their_pron
     implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MYSTIC.name)
     server.login(WEARER.name)
-    protect_wearer_from_fire(mystic, implementor)
+    protect_wearer_from_fire(mystic)
 
     second_reply = cast_protection(mystic, "cold", WEARER.name.lower())
     refusal = OTHER_ALREADY_PROTECTED_FORMAT.format(WEARER.name, possessive(WEARER))
@@ -525,16 +519,14 @@ def test_protection_cast_on_another_already_protected_is_refused_with_their_pron
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_protection_cast_on_a_name_nobody_here_answers_to_is_refused(server) -> None:
     """A protection aimed at a name nobody in the room has is refused (spell_protection).
 
     The one draw that can stop the cast is the concentration roll in do_cast, which
     cast_protection repeats.
     """
-    implementor = server.login(IMPLEMENTOR.name)
     mystic = server.login(MYSTIC.name)
-    give_spirit(implementor)
 
     reply = cast_protection(mystic, "fire", "nobody")
     assert NOBODY_MARKER in reply, reply
@@ -550,7 +542,8 @@ def test_unprotect_drops_protection_and_a_second_unprotect_does_nothing(server) 
     The one draw that can stop the cast is the concentration roll in do_cast, which
     cast_protection repeats; unprotect itself draws nothing.
     """
-    implementor, mystic, reply = protect_from_dark(server)
+    implementor = server.login(IMPLEMENTOR.name)
+    mystic, reply = protect_from_dark(server)
     assert DARK_PROTECTION_MARKER in reply, reply
     goto_character(implementor, MYSTIC)
 
@@ -568,14 +561,14 @@ def test_unprotect_drops_protection_and_a_second_unprotect_does_nothing(server) 
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_a_resting_mystic_cannot_unprotect(server) -> None:
     """unprotect needs its user standing, so a resting mystic keeps its protection (PR #315).
 
     The one draw that can stop the cast is the concentration roll in do_cast, which
     cast_protection repeats.
     """
-    _, mystic, reply = protect_from_dark(server)
+    mystic, reply = protect_from_dark(server)
     assert DARK_PROTECTION_MARKER in reply, reply
     assert mystic.command("rest").contains(RESTING_MARKER)
 
@@ -587,7 +580,7 @@ def test_a_resting_mystic_cannot_unprotect(server) -> None:
 
 @pytest.mark.resistances_protection
 @pytest.mark.schedule("affect-hours")
-@pytest.mark.characters(IMPLEMENTOR, MYSTIC)
+@pytest.mark.characters(MYSTIC)
 def test_a_mystic_keeps_its_protection_and_strength_across_quit_and_login(server) -> None:
     """A protection is saved on quit with its strength and returns on the next login (PR #315).
 
@@ -595,7 +588,7 @@ def test_a_mystic_keeps_its_protection_and_strength_across_quit_and_login(server
     bit. The one draw that can stop the cast is the concentration roll in do_cast, which
     cast_protection repeats.
     """
-    _, mystic, reply = protect_from_dark(server)
+    mystic, reply = protect_from_dark(server)
     assert DARK_PROTECTION_MARKER in reply, reply
 
     mystic.quit()
@@ -622,7 +615,7 @@ def test_a_save_keeps_the_protection_and_drops_the_worn_items_resistance(server)
     implementor, wearer = hand_out_items(server, ((STRONG_ITEM_VNUM, STRONG_ITEM_KEYWORD),))
     mystic = server.login(MYSTIC.name)
     assert wearer.command(f"wear {STRONG_ITEM_KEYWORD}").contains(FIRE_RESISTANT_MARKER)
-    protect_wearer_from_fire(mystic, implementor)
+    protect_wearer_from_fire(mystic)
     shown = affections(wearer)
     assert ITEM_RESIST_AFFECT_PATTERN.search(shown) and PROTECTION_AFFECT_PATTERN.search(shown), shown
 
@@ -683,7 +676,7 @@ def test_protection_and_worn_fire_items_coexist_and_the_strongest_applies(server
     """
     implementor, wearer = hand_out_fire_items(server)
     mystic = server.login(MYSTIC.name)
-    protect_wearer_from_fire(mystic, implementor)
+    protect_wearer_from_fire(mystic)
 
     assert wearer.command(f"wear {WEAK_ITEM_KEYWORD}").contains(WEAK_ITEM_WORN_MARKER)
     shown = affections(wearer)

@@ -10,8 +10,10 @@ from dataclasses import dataclass
 
 import pytest
 
+from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR
 from rots_harness.session import GameSession
+from rots_harness.world_resets import MobReset
 
 pytestmark = [pytest.mark.scenario, pytest.mark.scripts]
 
@@ -69,10 +71,9 @@ def said(short_description: str, line: str) -> str:
     return f"{short_description[0].upper()}{short_description[1:]} says '{line}'"
 
 
-def load_mob(implementor: GameSession, mob: ScriptMob) -> None:
-    """Loads a mob into the implementor's room and checks the game's reply."""
-    reply = implementor.command(f"load mob {mob.vnum}")
-    assert reply.contains(f"You create {mob.short_description}."), reply.text
+def placed(*mobs: ScriptMob) -> pytest.MarkDecorator:
+    """The world_resets marker that places each mob in the implementors' room at boot, in order."""
+    return pytest.mark.world_resets(*(MobReset(mob.vnum, world.ROOM_IMMORTAL_START) for mob in mobs))
 
 
 def give_new_object(implementor: GameSession, vnum: int, keyword: str, mob: ScriptMob) -> str:
@@ -87,6 +88,7 @@ def give_new_object(implementor: GameSession, vnum: int, keyword: str, mob: Scri
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a script whose last row is DO_WAIT should end when that wait ends")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(CRIER)
 def test_a_script_ending_in_a_wait_ends_when_the_wait_does(server) -> None:
     """A script whose last row is DO_WAIT should stop after that wait, not repeat the rows after its previous wait.
 
@@ -97,7 +99,6 @@ def test_a_script_ending_in_a_wait_ends_when_the_wait_does(server) -> None:
     Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, CRIER)
 
     spoken = implementor.command("say Go on.").text
     assert said(CRIER.short_description, "First.") in spoken, spoken
@@ -111,6 +112,7 @@ def test_a_script_ending_in_a_wait_ends_when_the_wait_does(server) -> None:
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="every mob in the room should hear a say, even after one that moves itself on hearing it")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(WANDERER, LISTENER)
 def test_a_listener_after_a_mob_that_leaves_on_speech_still_answers(server) -> None:
     """A mob whose script moves itself out of the room while it hears a say should not stop the mobs after it hearing.
 
@@ -122,8 +124,6 @@ def test_a_listener_after_a_mob_that_leaves_on_speech_still_answers(server) -> N
     listener answers (test_scripts.py). Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, WANDERER)
-    load_mob(implementor, LISTENER)
 
     reply = implementor.command("say Anyone there?").text
     assert reply.count(said(LISTENER.short_description, LISTENER_LINE)) == 1, reply
@@ -133,6 +133,7 @@ def test_a_listener_after_a_mob_that_leaves_on_speech_still_answers(server) -> N
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a false IF should run its else branch when its block ends with a nested block without an else")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(FIRST_CLERK)
 def test_a_false_if_ending_in_a_nested_block_without_an_else_runs_its_else_branch(server) -> None:
     """A false IF whose block ends with a nested IF / BEGIN / ... / END should run its else branch, then go on.
 
@@ -144,7 +145,6 @@ def test_a_false_if_ending_in_a_nested_block_without_an_else_runs_its_else_branc
     here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, FIRST_CLERK)
 
     reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", FIRST_CLERK)
     outer_else = said(FIRST_CLERK.short_description, OUTER_ELSE_LINE)
@@ -158,6 +158,7 @@ def test_a_false_if_ending_in_a_nested_block_without_an_else_runs_its_else_branc
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="a false IF should skip its whole block when a nested block in it has a non-empty else branch")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(SECOND_CLERK)
 def test_a_false_if_skips_a_nested_block_with_a_non_empty_else_branch(server) -> None:
     """A false IF whose block holds a nested IF / BEGIN / ... / END_ELSE_BEGIN / ... / END should skip all of its block.
 
@@ -169,7 +170,6 @@ def test_a_false_if_skips_a_nested_block_with_a_non_empty_else_branch(server) ->
     here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, SECOND_CLERK)
 
     reply = give_new_object(implementor, PEBBLE_VNUM, "pebble", SECOND_CLERK)
     outer_else = said(SECOND_CLERK.short_description, OUTER_ELSE_LINE)
@@ -183,6 +183,7 @@ def test_a_false_if_skips_a_nested_block_with_a_non_empty_else_branch(server) ->
 @pytest.mark.xfail(strict=True, raises=AssertionError, reason="LOAD_OBJ_X should copy ob1 whatever its first parameter, which the script editor calls unused")
 @pytest.mark.schedule("affect-hours")
 @pytest.mark.characters(IMPLEMENTOR)
+@placed(CARELESS_COPYIST)
 def test_load_obj_x_copies_with_0_in_its_unused_parameter(server) -> None:
     """LOAD_OBJ_X should copy ob1 when its first parameter is 0, since the editor calls that parameter unused.
 
@@ -193,7 +194,6 @@ def test_load_obj_x_copies_with_0_in_its_unused_parameter(server) -> None:
     gives the copy (test_scripts.py). Nothing here draws a random number.
     """
     implementor = server.login(IMPLEMENTOR.name)
-    load_mob(implementor, CARELESS_COPYIST)
 
     reply = give_new_object(implementor, LEATHER_CAP_VNUM, "cap", CARELESS_COPYIST)
     assert "A careless copyist gives you a leather cap." in reply, reply

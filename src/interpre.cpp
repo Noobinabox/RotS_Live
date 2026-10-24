@@ -2311,10 +2311,9 @@ int _parse_name(const char* arg, char* name)
         if (!isalpha(*arg) || i > 15)
             return 1;
 
+    // The copy ends with the terminator already written.
     if (!i)
         return 1;
-    else
-        name[i] = 0;
 
     return 0;
 }

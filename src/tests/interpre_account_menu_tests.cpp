@@ -41,6 +41,7 @@ extern char* motd;
 void clear_char(struct char_data* ch, int mode);
 sh_int get_naked_perception(const struct char_data* ch);
 int register_pc_char(struct char_data* ch);
+int _parse_name(const char* arg, char* name);
 void introduce_char(struct descriptor_data* d);
 int Crash_alias_load(struct char_data* ch, FILE* fp);
 int create_entry(const char* name);
@@ -5755,3 +5756,29 @@ TEST(InterpreAccountMenu, ForgotPasswordCompletionLeavesAnActivePlayingSessionCo
 }
 
 } // namespace
+
+TEST(ParseName, LeavesTheBytesAfterTheNameAlone)
+{
+    // A 20-byte name buffer with a guard area after it, as new characters' names are read into.
+    struct NameBufferWithGuard {
+        char name[20];
+        char guard[20];
+    } buffers;
+    std::memset(&buffers, 'x', sizeof(buffers));
+
+    ASSERT_EQ(_parse_name("  Galadrielle", buffers.name), 0);
+
+    EXPECT_STREQ(buffers.name, "Galadrielle");
+    EXPECT_EQ(std::string(buffers.name + 12, sizeof(buffers.name) - 12), std::string(8, 'x'));
+    EXPECT_EQ(std::string(buffers.guard, sizeof(buffers.guard)), std::string(20, 'x'));
+}
+
+TEST(ParseName, RefusesEmptyAndNonLetterNames)
+{
+    char name[20];
+    EXPECT_EQ(_parse_name("", name), 1);
+    EXPECT_EQ(_parse_name("   ", name), 1);
+    EXPECT_EQ(_parse_name("Frodo2", name), 1);
+    EXPECT_EQ(_parse_name("Seventeenletterss", name), 1);
+    EXPECT_EQ(_parse_name("Sixteenletterssx", name), 0);
+}

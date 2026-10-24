@@ -10,7 +10,7 @@ import pytest
 from rots_harness import world
 from rots_harness.characters import IMPLEMENTOR, Character
 
-pytestmark = [pytest.mark.scenario, pytest.mark.account_menu, pytest.mark.account_menu_crowded_floor]
+pytestmark = [pytest.mark.scenario, pytest.mark.account_menu, pytest.mark.account_menu_crowded_floor, pytest.mark.real_login]
 
 # A level-20 human warrior in the arena centre, who looks at the crowded floor.
 ONLOOKER = Character(

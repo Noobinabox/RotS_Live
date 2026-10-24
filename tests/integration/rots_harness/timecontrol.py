@@ -18,6 +18,13 @@ OUTPUT_LOG_NAME = "stdout.log"
 # Seconds advance_hours allows per game hour when ROTS_IT_HOUR_TIMEOUT is unset: about twice an
 # hour's 20 passes at four passes a second, for the i386 emulator.
 DEFAULT_HOUR_TIMEOUT_SECONDS = 10.0
+# The schedule a scenario without @pytest.mark.schedule(...) or @pytest.mark.real_login runs: the
+# live server's real-time world, which accepts no time requests.
+REAL_TIME_SCHEDULE = "real-time"
+# The schedules whose ready line reports the game hours run so far, which must be 0 at the start.
+SCHEDULES_REPORTING_HOURS = frozenset({"affect-hours"})
+# A ready line: the schedule's name, an optional hours report and the run's entry token.
+READY_LINE_PATTERN = re.compile(r"ready schedule=(?P<schedule>\S+)(?P<hours> hours=0)? entry=(?P<token>[0-9a-f]{32})")
 
 
 class TimeControlError(AssertionError):
@@ -29,6 +36,36 @@ def schedule_name_from_marker(args: tuple) -> str:
     if len(args) != 1 or not isinstance(args[0], str) or not args[0]:
         raise ValueError(f"@pytest.mark.schedule takes one schedule name, not {args!r}")
     return args[0]
+
+
+def server_schedule(schedule_args: Optional[tuple], real_login: bool) -> Optional[str]:
+    """The schedule a test's server runs, or None for plain bin/ageland.
+
+    schedule_args are the test's @pytest.mark.schedule(...) arguments, None without the marker;
+    real_login says whether it carries @pytest.mark.real_login. A schedule marker names the
+    schedule, real_login alone asks for plain bin/ageland, and neither gives REAL_TIME_SCHEDULE.
+    Raises ValueError for a malformed schedule marker or for both markers on one test.
+    """
+    if schedule_args is None:
+        return None if real_login else REAL_TIME_SCHEDULE
+    if real_login:
+        raise ValueError("@pytest.mark.real_login runs plain bin/ageland, which takes no @pytest.mark.schedule(...)")
+    return schedule_name_from_marker(schedule_args)
+
+
+def entry_token_from_ready_line(reply: str, schedule_name: str) -> str:
+    """The entry token in reply, the ready line for schedule_name; raises TimeControlError when reply is not that line.
+
+    A schedule in SCHEDULES_REPORTING_HOURS must report hours=0.
+    """
+    match = READY_LINE_PATTERN.fullmatch(reply)
+    if match is None or match["schedule"] != schedule_name:
+        raise TimeControlError(
+            f"expected 'ready schedule={schedule_name} [hours=0] entry=<32 hex digits>', the server sent {reply!r}"
+        )
+    if schedule_name in SCHEDULES_REPORTING_HOURS and match["hours"] is None:
+        raise TimeControlError(f"the ready line for {schedule_name!r} does not report hours=0: {reply!r}")
+    return match["token"]
 
 
 def parse_hour_timeout(value: Optional[str]) -> float:
@@ -113,12 +150,10 @@ class TimeControl:
             raise TimeControlError(f"the server's output ended before {awaited}")
         return reply
 
-    def wait_ready(self, schedule_name: str, timeout: float) -> None:
-        """Waits for the server's ready line and checks it names schedule_name; raises TimeControlError or SessionTimeout."""
+    def wait_ready(self, schedule_name: str, timeout: float) -> str:
+        """Waits for the server's ready line for schedule_name and returns its entry token; raises TimeControlError or SessionTimeout."""
         reply = self._next_reply(timeout, "ready line")
-        expected = f"ready schedule={schedule_name} hours=0"
-        if reply != expected:
-            raise TimeControlError(f"expected {expected!r}, the server sent {reply!r}")
+        return entry_token_from_ready_line(reply, schedule_name)
 
     def advance_hours(self, hours: int, timeout: float) -> None:
         """Asks the server to run hours game hours and returns once it acknowledges them.

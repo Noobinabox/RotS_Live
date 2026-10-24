@@ -20,6 +20,11 @@ CHARACTER_MENU_ENTER = "1"
 ENTER_GAME_MARKER = "Here we go..."
 BAD_CREDENTIALS_MARKER = "Invalid account credentials"
 ONE_CHARACTER_ONLINE_MARKER = "You are already connected as"
+# The first word of the line that enters a character straight from the email prompt; only the
+# harness binary accepts it, and only with its run's entry token.
+ENTRY_WORD = "harness-enter"
+# What the harness binary sends before it closes a connection whose entry line it refused.
+ENTRY_REFUSED_MARKER = "Harness entry refused:"
 ONE_CHARACTER_ONLINE_RULE = "an account may have one character online unless it owns a character above level 91 (interpre.cpp, first_restricting_active_account_session_for_account)"
 PROMPT_TERMINATORS = (">", "]")
 # A complete control sequence: colour codes and the clear-screen pair ESC[H ESC[J.
@@ -37,6 +42,8 @@ MINIMUM_READ_TIMEOUT_SECONDS = 0.005
 SEND_TIMEOUT_SECONDS = 5.0
 # How long command() and quit() read before they send, to discard text that arrived before them.
 PRE_COMMAND_DRAIN_SECONDS = 0.1
+# How long a login refusal cut short by a split read waits for the rest of its line.
+REFUSAL_LINE_SECONDS = 2.0
 
 
 class SessionTimeout(AssertionError):
@@ -80,13 +87,17 @@ class Transcript:
 class GameSession:
     """A character's connection to a running server; every byte read is mirrored to a transcript file."""
 
-    def __init__(self, handle: ServerHandle, character_name: str, email: str, password: str, transcript_dir: Path) -> None:
-        """Connects to the server; login() then brings the character into the game, picking it from the account's list by name."""
+    def __init__(
+        self, handle: ServerHandle, character_name: str, email: str, password: str, transcript_dir: Path, entry_token: Optional[str] = None,
+    ) -> None:
+        """Connects to the server; login() then brings the character into the game, with entry_token when given, else through the account menu."""
         # Names the character in errors and in the transcript file name, and picks it at the character list.
         self._character_name = character_name
         # The account credentials login() sends.
         self._email = email
         self._password = password
+        # The harness binary's run token, which login() enters with instead of the account menu; None for the dialogue.
+        self._entry_token = entry_token
         # The game connection; owned by this session and released by close().
         self._socket = socket.create_connection((handle.host, handle.port), timeout=5.0)
         # A short read timeout lets the wait loops check their deadlines between reads.
@@ -194,7 +205,14 @@ class GameSession:
             self._pump(deadline)
 
     def login(self, timeout: float = 15.0) -> None:
-        """Logs in through the account menu, picks the character by name and enters the game, reading up to the arrival prompt; raises LoginRefused with the game's words."""
+        """Brings the character into the game, reading up to the arrival prompt; raises LoginRefused with the game's words.
+
+        With an entry token it enters straight from the email prompt (enter); without one it logs
+        in through the account menu and picks the character by name.
+        """
+        if self._entry_token is not None:
+            self.enter(self._entry_token, timeout)
+            return
         self.expect([LOGIN_EMAIL_PROMPT], timeout)
         self.send_line(self._email)
         self.expect([LOGIN_PASSWORD_PROMPT], timeout)
@@ -207,19 +225,44 @@ class GameSession:
         self._expect_or_refuse([CHARACTER_MENU_PROMPT], timeout)
         self.send_line(CHARACTER_MENU_ENTER)
         arrival = self._expect_or_refuse([ENTER_GAME_MARKER], timeout)
-        # Entering the game shows the room and then a prompt; expect may already have read that prompt.
+        self._finish_arrival(arrival, timeout)
+
+    def enter(self, entry_token: str, timeout: float = 15.0) -> None:
+        """Enters the game straight from the email prompt with this run's entry token, reading up to the arrival prompt; raises LoginRefused with the game's words."""
+        self.expect([LOGIN_EMAIL_PROMPT], timeout)
+        self.send_line(f"{ENTRY_WORD} {entry_token} {self._email} {self._character_name}")
+        arrival = self._expect_or_refuse([ENTER_GAME_MARKER], timeout)
+        self._finish_arrival(arrival, timeout)
+
+    def _finish_arrival(self, arrival: str, timeout: float) -> None:
+        """Reads up to the prompt that follows the room shown on entering the game, unless arrival already ends in it; raises SessionTimeout."""
         if not ends_with_prompt(arrival):
             self.wait_for_prompt(timeout, after=ENTER_GAME_MARKER)
 
     def _expect_or_refuse(self, markers: List[str], timeout: float) -> str:
         """Like expect, but raises LoginRefused as soon as the game refuses the login instead of waiting out the timeout."""
-        text = self.expect([*markers, BAD_CREDENTIALS_MARKER, ONE_CHARACTER_ONLINE_MARKER], timeout)
+        text = self.expect([*markers, ENTRY_REFUSED_MARKER, BAD_CREDENTIALS_MARKER, ONE_CHARACTER_ONLINE_MARKER], timeout)
+        if ENTRY_REFUSED_MARKER in text:
+            refusal = self._whole_line(text, ENTRY_REFUSED_MARKER)
+            raise LoginRefused(f"{self.character_name}: {refusal}")
         if BAD_CREDENTIALS_MARKER in text:
             raise LoginRefused(f"{self.character_name}: the server refused the account login: {BAD_CREDENTIALS_MARKER}")
         if ONE_CHARACTER_ONLINE_MARKER in text:
-            refusal = next(line.strip() for line in text.splitlines() if ONE_CHARACTER_ONLINE_MARKER in line)
+            refusal = self._whole_line(text, ONE_CHARACTER_ONLINE_MARKER)
             raise LoginRefused(f"{self.character_name}: {refusal} The game's rule: {ONE_CHARACTER_ONLINE_RULE}.")
         return text
+
+    def _whole_line(self, text: str, marker: str) -> str:
+        """The line of text holding marker, stripped; reads on when a split read cut it short, until its line ending, the connection's close or REFUSAL_LINE_SECONDS."""
+        deadline = time.monotonic() + REFUSAL_LINE_SECONDS
+        line_start = text.index(marker)
+        while not any(ending in text[line_start:] for ending in "\r\n") and time.monotonic() < deadline:
+            try:
+                self._pump(deadline)
+            except ConnectionError:
+                break
+            text += self._consume()
+        return next(line.strip() for line in text[line_start:].splitlines())
 
     def quit(self, timeout: float = 8.0) -> None:
         """Quits the game and closes the connection either way; raises QuitRefused when no farewell arrives.

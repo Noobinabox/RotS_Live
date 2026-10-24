@@ -26,7 +26,7 @@ from rots_harness.session import (
     GameSession,
 )
 
-pytestmark = [pytest.mark.scenario, pytest.mark.account_menu]
+pytestmark = [pytest.mark.scenario, pytest.mark.account_menu, pytest.mark.real_login]
 
 # Room 1190, the Uruk-hai idle room (mortal_idle_room, consts.cpp).
 ROOM_URUK_IDLE = 1190

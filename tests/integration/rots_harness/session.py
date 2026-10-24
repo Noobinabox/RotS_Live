@@ -180,17 +180,21 @@ class GameSession:
         """Discards unread text, sends text and returns its output up to the next prompt; raises SessionTimeout."""
         self.drain(PRE_COMMAND_DRAIN_SECONDS)
         self.send_line(text)
+        return self.wait_for_prompt(timeout, after=text)
+
+    def wait_for_prompt(self, timeout: float = 8.0, after: str = "") -> Transcript:
+        """Waits until the unread text ends in a prompt and returns it as read; raises SessionTimeout naming what it waited after."""
         deadline = time.monotonic() + timeout
         while True:
             pending = self._unconsumed()
             if ends_with_prompt(pending):
                 return Transcript(self._consume())
             if time.monotonic() >= deadline:
-                raise SessionTimeout(f"{self.character_name}: no prompt after {text!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
+                raise SessionTimeout(f"{self.character_name}: no prompt after {after!r} within {timeout}s; pending text:\n{pending[-PENDING_TEXT_QUOTED:]}")
             self._pump(deadline)
 
     def login(self, timeout: float = 15.0) -> None:
-        """Logs in through the account menu, picks the character by name and enters the game; raises LoginRefused with the game's words."""
+        """Logs in through the account menu, picks the character by name and enters the game, reading up to the arrival prompt; raises LoginRefused with the game's words."""
         self.expect([LOGIN_EMAIL_PROMPT], timeout)
         self.send_line(self._email)
         self.expect([LOGIN_PASSWORD_PROMPT], timeout)
@@ -202,8 +206,10 @@ class GameSession:
         self.send_line(self._character_name)
         self._expect_or_refuse([CHARACTER_MENU_PROMPT], timeout)
         self.send_line(CHARACTER_MENU_ENTER)
-        self._expect_or_refuse([ENTER_GAME_MARKER], timeout)
-        self.command("look", timeout)
+        arrival = self._expect_or_refuse([ENTER_GAME_MARKER], timeout)
+        # Entering the game shows the room and then a prompt; expect may already have read that prompt.
+        if not ends_with_prompt(arrival):
+            self.wait_for_prompt(timeout, after=ENTER_GAME_MARKER)
 
     def _expect_or_refuse(self, markers: List[str], timeout: float) -> str:
         """Like expect, but raises LoginRefused as soon as the game refuses the login instead of waiting out the timeout."""

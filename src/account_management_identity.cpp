@@ -676,9 +676,6 @@ bool create_account_for_email(const std::string& root_directory, const std::stri
     return false;
 }
 
-namespace {
-
-// Returns false, with the password login's refusal in error_message, when account is blocked.
 bool check_account_not_blocked(const AccountData& account, std::string* error_message)
 {
     if (account.blocked) {
@@ -688,28 +685,12 @@ bool check_account_not_blocked(const AccountData& account, std::string* error_me
     return true;
 }
 
-// Returns false, with the password login's refusal in error_message, when account's email
-// address is not verified yet.
 bool check_account_email_verified(const AccountData& account, std::string* error_message)
 {
     if (!account.email_verified) {
         set_error(error_message, "Account email verification is still pending.");
         return false;
     }
-    return true;
-}
-
-} // namespace
-
-bool check_account_may_log_in(const AccountData& account, std::string* error_message)
-{
-    if (!check_account_not_blocked(account, error_message)) {
-        return false;
-    }
-    if (!check_account_email_verified(account, error_message)) {
-        return false;
-    }
-    set_error(error_message, "");
     return true;
 }
 
@@ -732,9 +713,10 @@ bool authenticate_account(const std::string& root_directory, const std::string& 
     if (account_index_is_authoritative_for(root_directory))
         account_index::clear_unreadable_at_runtime(normalize_email(stored_account.normalized_email));
 
-    // check_account_may_log_in's two checks, one each side of the password: a blocked account is
-    // refused before its password is hashed, and an unverified one is handed back, for the
-    // verification prompt, only to the holder of its password.
+    // The two checks that need no password, one each side of it: a blocked account is refused
+    // before its password is hashed, and an unverified one is handed back, for the verification
+    // prompt, only to the holder of its password. The harness entry (harness::TokenEntryPolicy)
+    // runs the same two, so a refusal added here belongs there too.
     if (!check_account_not_blocked(stored_account, error_message)) {
         return false;
     }

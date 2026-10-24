@@ -162,10 +162,14 @@ TEST(ScheduleRegistry, RealTimeRunsTheLiveServersCadence)
 {
     harness::ScheduleSetup setup = create_registered_real_time_setup();
     ASSERT_NE(setup.schedule, nullptr) << "Expected the factory to build a schedule.";
+    // The schedule as ageland_harness runs it: inside the wrapper that answers the control channel.
+    harness::HarnessControlledSchedule harness_schedule(harness::REAL_TIME_SCHEDULE_NAME, std::move(setup),
+        std::make_unique<harness_tests::FakeControlChannel>(
+            std::make_shared<harness_tests::FakeControlChannel::State>()));
     RealTimeTickSchedule live_schedule;
 
     for (int pass_number = 1; pass_number <= TWO_REAL_TIME_HOURS_OF_PASSES; ++pass_number) {
-        const GameTickSchedule::WorldPass harness_pass = setup.schedule->next_pass();
+        const GameTickSchedule::WorldPass harness_pass = harness_schedule.next_pass();
         const GameTickSchedule::WorldPass live_pass = live_schedule.next_pass();
         ASSERT_TRUE(same_pass(harness_pass, live_pass)) << "Passes differ at pass " << pass_number;
     }

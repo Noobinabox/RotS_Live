@@ -27,9 +27,10 @@ public:
     // the login steps, or sends the connection REFUSAL_PREFIX and the reason, logs the refusal
     // with the character's name and closes the connection. When the game itself refuses the
     // character at admission (site ban or wizlock), its own words come first. Words are separated
-    // by spaces; a line with other than four words is refused, as is an account the password
-    // login would refuse whatever the password (account::check_account_may_log_in) and a
-    // character given by roster number instead of by name.
+    // by spaces. A line with other than four words, another run's token or a character given by
+    // roster number is a fault in the sender, logged as a SYSERR. A refusal by the game's rules,
+    // such as a blocked or unverified account the password login would refuse whatever the
+    // password, is logged under REFUSAL_PREFIX instead, as a scenario may expect it.
     [[nodiscard]] bool try_enter(descriptor_data& connection, std::string_view line) override;
 
 private:

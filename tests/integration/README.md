@@ -365,7 +365,9 @@ logging in. On `ageland_harness` it sends one line at the email prompt,
 `harness-enter <token> <account email> <character name>`, with the token from the server's
 ready line; the server enters the character as the login dialogue does and shows the same
 arrival text. A refused entry fails the test with the server's reason (`Harness entry refused:
-...`). On plain `ageland` it walks the account menu and picks the character by name. It returns
+...`). A refusal by the game's own rules, such as a blocked account or wizlock, is logged without
+`SYSERR`, so a test can expect it with `pytest.raises(LoginRefused)`; a malformed line or a wrong
+token is logged as a `SYSERR`. On plain `ageland` it walks the account menu and picks the character by name. It returns
 a session whose `command(text)` returns the command's output; the fixture quits every session
 after the test. The game lets an account have only one character
 online unless the account owns a character above level 91, so a test that logs in two
@@ -401,7 +403,7 @@ Which server a test gets depends on its markers:
 - `@pytest.mark.schedule("affect-hours")`: `bin/ageland_harness` with that schedule, whose game
   time stands still until `server.advance_hours(n)` runs `n` whole game hours of the hourly and
   fast updates and returns once the server acknowledges them. Zone resets, mob activity, combat
-  and skill timers do not run under that schedule.
+  and skill timers do not run under that schedule. Its characters also enter with the token.
 - `@pytest.mark.real_login`: the shipped `bin/ageland` (`ROTS_IT_BINARY`), whose characters log
   in through the account menu. Use it only for a test of the login dialogue, the account menu
   or the boot itself, or one that opens its own connections at the email prompt; the account

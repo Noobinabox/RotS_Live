@@ -9,7 +9,7 @@ import sys
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 import pytest
 
@@ -228,8 +228,10 @@ def controller_needs_docker_lock(session: pytest.Session) -> bool:
 
     It is needed when the run may start a server: always when pytest-xdist workers run the
     tests, since the controller then collects none, and otherwise when a selected test uses the
-    server fixture. A missing or stale server or rotstool takes no lock, so each scenario fails
-    at once with the build command instead of after the lock wait.
+    server fixture. A missing or stale server, harness server or rotstool takes no lock, so each
+    scenario fails at once with the build command instead of after the lock wait. The harness
+    server is checked whenever workers run the tests, since the controller cannot see which of
+    them need it.
     """
     config = session.config
     if launcher_mode() != "docker" or config.option.collectonly:
@@ -241,9 +243,16 @@ def controller_needs_docker_lock(session: pytest.Session) -> bool:
     try:
         selected.require_program(binary_relative())
         selected.require_program(ROTSTOOL_RELATIVE)
+        if distributed or needs_harness_binary(session.items):
+            selected.require_program(HARNESS_BINARY_RELATIVE)
     except RuntimeError:
         return False
     return True
+
+
+def needs_harness_binary(items: Sequence[pytest.Item]) -> bool:
+    """Whether any of items runs its server on the harness binary: uses the server fixture without @pytest.mark.real_login."""
+    return any("server" in item.fixturenames and item.get_closest_marker("real_login") is None for item in items)
 
 
 def take_docker_lock(config: pytest.Config) -> None:
@@ -437,15 +446,18 @@ def selected_launcher() -> ServerLauncher:
 
 
 @pytest.fixture(scope="session")
-def harness_launcher() -> ServerLauncher:
+def harness_launcher(request: pytest.FixtureRequest) -> ServerLauncher:
     """The launcher selected_launcher returns.
 
     Raises RuntimeError with that launcher's build command when the server or rotstool is missing,
-    or older than the sources it is built from (ServerLauncher.require_program).
+    or older than the sources it is built from (ServerLauncher.require_program), and likewise for
+    the harness server when a selected test needs it (needs_harness_binary).
     """
     selected = selected_launcher()
     selected.require_program(binary_relative())
     selected.require_program(ROTSTOOL_RELATIVE)
+    if needs_harness_binary(request.session.items):
+        selected.require_program(HARNESS_BINARY_RELATIVE)
     return selected
 
 

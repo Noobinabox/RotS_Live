@@ -275,6 +275,20 @@ def test_an_entry_the_game_refuses_at_admission_raises_login_refused_before_the_
         game_session.enter(ENTRY_TOKEN, timeout=1.0)
 
 
+def test_a_refusal_split_across_reads_is_reported_whole(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    refusal_start = b"Harness entry refused: the tok"
+    refusal_end = b"en is not this run's.\n\r"
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [GREETING, refusal_start, refusal_end], close_after=True)
+    with pytest.raises(session.LoginRefused, match=r"Testmage: Harness entry refused: the token is not this run's\.$"):
+        game_session.enter(ENTRY_TOKEN, timeout=1.0)
+
+
+def test_a_refusal_cut_off_by_the_connection_closing_is_reported_as_far_as_it_came(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    game_session = connect_scripted_session(monkeypatch, tmp_path, [GREETING, b"Harness entry refused: the tok"], close_after=True)
+    with pytest.raises(session.LoginRefused, match=r"Testmage: Harness entry refused: the tok$"):
+        game_session.enter(ENTRY_TOKEN, timeout=1.0)
+
+
 COLOURED_ROOM = b"\x1b[1;33mArena Centre\x1b[0m    Exits are: N\r\nS:Powered>"
 
 

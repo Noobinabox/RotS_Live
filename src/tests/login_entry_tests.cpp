@@ -1,5 +1,6 @@
 #include "login_test_fixtures.h"
 #include "login_world_test.h"
+#include "scoped_global.h"
 #include "test_connection.h"
 
 #include "account_management.h"
@@ -224,7 +225,8 @@ TEST_F(LoginEntryTest, ACharacterNotClearedForABannedSiteIsRefusedAndDisconnecte
     ban_list_element site_ban { };
     std::snprintf(site_ban.site, sizeof(site_ban.site), "%s", CONNECTION_HOST);
     site_ban.type = BAN_SELECT;
-    ban_list = &site_ban;
+    // Declared after site_ban, so the ban list is emptied again before site_ban goes.
+    const rots_tests::ScopedGlobal<ban_list_element*> banned_site { ban_list, &site_ban };
 
     connection.send("legolas");
 
@@ -240,7 +242,8 @@ TEST_F(LoginEntryTest, ACharacterClearedForABannedSiteIsAdmitted)
     ban_list_element site_ban { };
     std::snprintf(site_ban.site, sizeof(site_ban.site), "%s", CONNECTION_HOST);
     site_ban.type = BAN_SELECT;
-    ban_list = &site_ban;
+    // Declared after site_ban, so the ban list is emptied again before site_ban goes.
+    const rots_tests::ScopedGlobal<ban_list_element*> banned_site { ban_list, &site_ban };
 
     connection.send("legolas");
 
@@ -307,6 +310,44 @@ TEST_F(LoginEntryTest, SelectingASwitchedImmortalReconnectsToTheOriginalBody)
         mob->desc = nullptr;
         free_char(mob);
     }
+}
+
+TEST_F(LoginEntryTest, SelectingALinkDeadCharacterReconnectsToItsBody)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+    // Legolas lost his connection and his body waits, link-dead, in the load room.
+    char_data* waiting_body = create_character_in_game("legolas", 45, 5252);
+    place_in_room(*waiting_body, LOAD_ROOM_RNUM);
+
+    connection.send("legolas");
+
+    EXPECT_EQ(connection.state(), CON_PLYNG);
+    EXPECT_EQ(connection.character(), waiting_body);
+    EXPECT_EQ(waiting_body->desc, &connection.descriptor());
+    EXPECT_EQ(connection.output(), "Reconnecting.\n\r");
+    EXPECT_TRUE(room_holds(LOAD_ROOM_RNUM, waiting_body));
+}
+
+TEST_F(LoginEntryTest, SelectingACharacterPlayedElsewhereTakesOverThatBody)
+{
+    ASSERT_TRUE(link_character(make_stored_character("legolas", 45, 5252)));
+    // Legolas is already playing on another connection.
+    TestConnection other_connection(CON_PLYNG);
+    other_connection.descriptor().descriptor = OTHER_PLAYER_SOCKET;
+    char_data* playing_body = create_character_in_game("legolas", 45, 5252);
+    playing_body->desc = &other_connection.descriptor();
+    other_connection.descriptor().character = playing_body;
+    place_in_room(*playing_body, LOAD_ROOM_RNUM);
+
+    connection.send("legolas");
+
+    EXPECT_EQ(connection.state(), CON_PLYNG);
+    EXPECT_EQ(connection.character(), playing_body);
+    EXPECT_EQ(playing_body->desc, &connection.descriptor());
+    EXPECT_EQ(connection.output(), "You take over your own body, already in use!\n\r");
+    EXPECT_EQ(other_connection.state(), CON_CLOSE);
+    EXPECT_EQ(other_connection.character(), nullptr);
+    EXPECT_EQ(std::string(other_connection.descriptor().output), "This body has been usurped!\n\r");
 }
 
 TEST_F(LoginEntryTest, EnteringTheGamePutsTheCharacterInItsLoadRoomAndPlaying)

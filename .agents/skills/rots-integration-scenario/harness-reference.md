@@ -446,7 +446,8 @@ when blocked or unverified, as the password login refuses it) and the character,
 same login steps the dialogue runs and shows the same arrival text (`Here we go...`, the room,
 the prompt). A refusal is `Harness entry refused: <reason>`, after the game's own words when a
 site ban or wizlock refuses the character, and then the server closes the connection; `enter`
-raises `LoginRefused` with that line. Plain
+raises `LoginRefused` with that line. A refusal by the game's rules is logged without `SYSERR`,
+so a test can expect it; a malformed line or another run's token is logged as a `SYSERR`. Plain
 `ageland` ignores entry lines, so on a `real_login` server `login()` walks the account menu.
 
 `Transcript` has `.text`, `.contains(marker)` and `.room_name()`, the first non-empty line up to

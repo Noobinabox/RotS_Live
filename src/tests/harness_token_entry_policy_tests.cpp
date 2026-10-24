@@ -31,8 +31,11 @@ constexpr std::string_view RUN_TOKEN = "0123456789abcdef0123456789abcdef";
 constexpr std::string_view OTHER_RUN_TOKEN = "fedcba9876543210fedcba9876543210";
 // What a refused connection is told before the reason.
 constexpr std::string_view REFUSED = harness::TokenEntryPolicy::REFUSAL_PREFIX;
-// What the log line of every refusal starts with.
-constexpr std::string_view REFUSAL_LOG = "SYSERR: refuse_entry: ";
+// What the log line of a refused malformed line, wrong token or roster number starts with.
+constexpr std::string_view BAD_LINE_LOG = "SYSERR: refuse_entry: ";
+// What the log line of a refusal by the game's rules starts with; no SYSERR, as a scenario may
+// expect the refusal.
+constexpr std::string_view REFUSAL_LOG = harness::TokenEntryPolicy::REFUSAL_PREFIX;
 // When the test account's email was verified, or later unverified or blocked; any fixed time will do.
 constexpr long ACCOUNT_STATUS_CHANGED_AT = ACCOUNT_CREATED_AT + 10;
 
@@ -250,7 +253,7 @@ TEST_F(TokenEntryPolicyTest, RefusesAnEntryLineWithTheWrongNumberOfWords)
         EXPECT_EQ(malformed_connection.output(),
             std::string(REFUSED) + "an entry line is \"harness-enter <token> <account email> <character>\".\n\r")
             << line;
-        EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "(no character named): "), std::string::npos)
+        EXPECT_NE(logged.find(std::string(BAD_LINE_LOG) + "(no character named): "), std::string::npos)
             << "Expected the refusal logged; log was: " << logged;
     }
 }
@@ -264,7 +267,7 @@ TEST_F(TokenEntryPolicyTest, RefusesAnotherRunsTokenAndClosesTheConnection)
     EXPECT_EQ(connection.state(), CON_CLOSE);
     EXPECT_EQ(connection.output(), std::string(REFUSED) + "the token is not this run's.\n\r");
     EXPECT_EQ(connection.character(), nullptr);
-    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: the token is not this run's."), std::string::npos)
+    EXPECT_NE(logged.find(std::string(BAD_LINE_LOG) + "legolas: the token is not this run's."), std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
 }
 
@@ -290,6 +293,7 @@ TEST_F(TokenEntryPolicyTest, RefusesAnUnknownAccountAndClosesTheConnection)
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: No account exists for that email address."),
         std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesACharacterNotLinkedToTheAccount)
@@ -306,6 +310,7 @@ TEST_F(TokenEntryPolicyTest, RefusesACharacterNotLinkedToTheAccount)
     EXPECT_EQ(connection.character(), nullptr);
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "gimli: "), std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesADeletedCharacterWithTheRostersWords)
@@ -323,6 +328,7 @@ TEST_F(TokenEntryPolicyTest, RefusesADeletedCharacterWithTheRostersWords)
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: That linked character is deleted and cannot be selected."),
         std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesACharacterAnotherSessionOnTheAccountForbids)
@@ -348,6 +354,7 @@ TEST_F(TokenEntryPolicyTest, RefusesACharacterAnotherSessionOnTheAccountForbids)
             + "You are already connected as Aragorn. Reconnect to that character or log out before playing another character.\n\r");
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: You are already connected as Aragorn."), std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 
     // Aragorn's connection ends with this test.
     descriptor_list = nullptr;
@@ -367,6 +374,7 @@ TEST_F(TokenEntryPolicyTest, FollowsTheGamesWizlockRefusalWithTheHarnessRefusal)
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "Legolas: the game refused legolas at admission."),
         std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesABlockedAccountAsThePasswordLoginDoes)
@@ -385,6 +393,7 @@ TEST_F(TokenEntryPolicyTest, RefusesABlockedAccountAsThePasswordLoginDoes)
     EXPECT_STREQ(connection.descriptor().account_name, "") << "Expected the connection bound to no account.";
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: Account authentication failed."), std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesAnUnverifiedAccountAsThePasswordLoginDoes)
@@ -403,6 +412,7 @@ TEST_F(TokenEntryPolicyTest, RefusesAnUnverifiedAccountAsThePasswordLoginDoes)
     EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "legolas: Account email verification is still pending."),
         std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
+    EXPECT_EQ(logged.find("SYSERR"), std::string::npos) << "Expected no SYSERR; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, RefusesACharacterGivenByRosterNumber)
@@ -414,7 +424,7 @@ TEST_F(TokenEntryPolicyTest, RefusesACharacterGivenByRosterNumber)
     EXPECT_EQ(connection.state(), CON_CLOSE);
     EXPECT_EQ(connection.output(), std::string(REFUSED) + "a character is entered by name, not by roster number.\n\r");
     EXPECT_EQ(connection.character(), nullptr);
-    EXPECT_NE(logged.find(std::string(REFUSAL_LOG) + "1: a character is entered by name"), std::string::npos)
+    EXPECT_NE(logged.find(std::string(BAD_LINE_LOG) + "1: a character is entered by name"), std::string::npos)
         << "Expected the refusal logged with the character; log was: " << logged;
 }
 
@@ -452,6 +462,9 @@ TEST_F(TokenEntryPolicyTest, EntersTheNamedCharacterInItsLoadRoom)
     EXPECT_STREQ(connection.descriptor().account_name, ACCOUNT_NAME);
     EXPECT_NE(logged.find("Harness entry: legolas"), std::string::npos)
         << "Expected the entry logged; log was: " << logged;
+    EXPECT_NE(logged.find("Harness account login for " + std::string(ACCOUNT_EMAIL) + " [" + CONNECTION_HOST + "]"),
+        std::string::npos)
+        << "Expected the account login audited; log was: " << logged;
 }
 
 TEST_F(TokenEntryPolicyTest, EntersACharacterExactlyAsTheLoginDialogueDoes)
@@ -482,7 +495,8 @@ TEST_F(TokenEntryPolicyTest, EntersACharacterExactlyAsTheLoginDialogueDoes)
     EXPECT_FALSE(by_dialogue.affects.empty()) << "Expected the stored affect restored.";
     EXPECT_EQ(by_policy.affects, by_dialogue.affects);
     EXPECT_EQ(by_policy.preference_flags, by_dialogue.preference_flags);
-    EXPECT_TRUE(IS_SET(by_policy.preference_flags, PRF_COMPACT | PRF_WRAP));
+    EXPECT_TRUE(IS_SET(by_policy.preference_flags, PRF_COMPACT));
+    EXPECT_TRUE(IS_SET(by_policy.preference_flags, PRF_WRAP));
     EXPECT_FALSE(by_dialogue.saved_player_bytes.empty());
     EXPECT_EQ(by_policy.saved_player_bytes, by_dialogue.saved_player_bytes);
 }

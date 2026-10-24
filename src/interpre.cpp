@@ -2322,7 +2322,7 @@ int _parse_name(const char* arg, char* name)
 
 namespace {
 
-const char* kAccountStorageRoot = ".";
+const char* kAccountStorageRoot = ACCOUNT_STORAGE_ROOT;
 const char* kAccountOnlyPasswordMarker = "*ACCOUNT*";
 const int kAccountActiveSessionAlternateCharacterLevel = 91;
 
@@ -3023,11 +3023,6 @@ static AccountCharacterSelection refused_selection(std::string_view message, std
     selection.refusal.append(detail);
     selection.refusal.append("\n\r");
     return selection;
-}
-
-std::string_view account_storage_root()
-{
-    return kAccountStorageRoot;
 }
 
 void bind_connection_to_account(descriptor_data& connection, const account::AccountData& account_data)

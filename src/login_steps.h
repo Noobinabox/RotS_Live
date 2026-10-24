@@ -24,8 +24,8 @@ enum class Admission {
 };
 
 // The directory account storage is read from and written to, relative to the game's data
-// directory.
-[[nodiscard]] std::string_view account_storage_root();
+// directory. A character array, as the account functions take std::string.
+inline constexpr char ACCOUNT_STORAGE_ROOT[] = ".";
 
 // Records account_data as the account the connection is logged in to, and clears the
 // connection's failed password count.

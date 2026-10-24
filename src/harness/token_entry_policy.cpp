@@ -114,9 +114,19 @@ std::string_view reason_or(std::string_view reason, std::string_view fallback)
     return reason;
 }
 
-// Refuses the entry: tells the connection reason, logs it with character_name, and closes the
-// connection.
-void refuse_entry(descriptor_data& connection, std::string_view character_name, std::string_view reason)
+// Why an entry is refused, which decides how the refusal is logged.
+enum class RefusalCause {
+    // The line is not an entry line for this run: a fault in whatever sent it, logged as a SYSERR.
+    BadEntryLine,
+    // The game's rules refuse the account or character, as they would refuse a login. Logged
+    // without SYSERR, so a scenario can expect the refusal without the crash monitor failing it.
+    GameRule,
+};
+
+// Refuses the entry: tells the connection reason, logs it with character_name as cause decides,
+// and closes the connection.
+void refuse_entry(descriptor_data& connection, RefusalCause cause, std::string_view character_name,
+    std::string_view reason)
 {
     const std::string reason_line = one_line(reason);
 
@@ -125,7 +135,10 @@ void refuse_entry(descriptor_data& connection, std::string_view character_name, 
     message += "\n\r";
     SEND_TO_Q(message.c_str(), &connection);
 
-    std::string log_line = std::string("SYSERR: ") + __func__ + ": ";
+    std::string log_line(TokenEntryPolicy::REFUSAL_PREFIX);
+    if (cause == RefusalCause::BadEntryLine) {
+        log_line = std::string("SYSERR: ") + __func__ + ": ";
+    }
     log_line.append(character_name);
     log_line += ": ";
     log_line.append(reason_line);
@@ -153,51 +166,70 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
     if (!entry.has_value()) {
         const std::string reason
             = "an entry line is \"" + std::string(ENTRY_WORD) + " <token> <account email> <character>\".";
-        refuse_entry(connection, UNNAMED_CHARACTER, reason);
+        refuse_entry(connection, RefusalCause::BadEntryLine, UNNAMED_CHARACTER, reason);
         return true;
     }
     // An empty token never matches: an entry line's token is a word, never empty.
     if (!tokens_match(entry->token, token)) {
-        refuse_entry(connection, entry->character_name, "the token is not this run's.");
+        refuse_entry(connection, RefusalCause::BadEntryLine, entry->character_name, "the token is not this run's.");
         return true;
     }
 
     // The roster would read a name of digits alone as a row number and pick whichever character
     // the row holds.
     if (entry->character_name.find_first_not_of(DIGITS) == std::string_view::npos) {
-        refuse_entry(connection, entry->character_name, "a character is entered by name, not by roster number.");
+        refuse_entry(connection, RefusalCause::BadEntryLine, entry->character_name,
+            "a character is entered by name, not by roster number.");
         return true;
     }
 
-    const std::string storage_root(account_storage_root());
+    const std::string storage_root(ACCOUNT_STORAGE_ROOT);
     account::AccountData account_data;
     std::string error_message;
     const std::string email(entry->account_email);
     if (!account::read_account_file_by_email(storage_root, email, &account_data, &error_message)) {
-        refuse_entry(connection, entry->character_name, reason_or(error_message, "the account could not be read."));
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name, reason_or(error_message, "the account could not be read."));
         return true;
     }
     // Unlike the password login, this read does not clear the account index's unreadable-since-boot
     // mark: that is bookkeeping for a record repaired on a running server, not a check on entry.
-    if (!account::check_account_may_log_in(account_data, &error_message)) {
-        refuse_entry(connection, entry->character_name, reason_or(error_message, "the account may not log in."));
+    // The password login's two checks that need no password, in its order.
+    if (!account::check_account_not_blocked(account_data, &error_message)) {
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name,
+            reason_or(error_message, "the account is blocked."));
+        return true;
+    }
+    if (!account::check_account_email_verified(account_data, &error_message)) {
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name,
+            reason_or(error_message, "the account's email address is not verified."));
         return true;
     }
     bind_connection_to_account(connection, account_data);
+    // The password login's audit line, named for the harness. Unlike that login, the entry leaves
+    // the account's failed password count alone: clearing it is what follows telling the owner
+    // about those failures, which an entry line never shows.
+    const char* host = "<unknown-host>";
+    if (*connection.host) {
+        host = connection.host;
+    }
+    vmudlog(BRF, "Harness account login for %s [%s]", account_data.normalized_email.c_str(), host);
 
-    // The roster's own match, so a name resolves exactly as typing it at the roster would.
+    // The roster's own match, in the order and filter the roster opens with, so a name resolves
+    // exactly as typing it at the roster would.
+    account::RosterSort stored_sort = account::RosterSort::Account;
+    account::roster_sort_from_string(account_data.roster_sort, &stored_sort);
     std::string selected_name;
     const std::string typed_name(entry->character_name);
     if (!account::select_linked_character(storage_root, account_data, typed_name,
-            account::RosterSort::Name, account::RosterFilter::None, &selected_name, &error_message)) {
-        refuse_entry(connection, entry->character_name,
+            stored_sort, account::RosterFilter::None, &selected_name, &error_message)) {
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name,
             reason_or(error_message, "the character is not linked to the account."));
         return true;
     }
 
     const AccountCharacterSelection selection = select_account_character(connection, account_data, selected_name);
     if (!selection.selected) {
-        refuse_entry(connection, entry->character_name,
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name,
             reason_or(selection.refusal, "the character could not be selected."));
         return true;
     }
@@ -206,7 +238,7 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
     if (admission == Admission::Refused) {
         // The game has told the connection why in its own words; say that it was the harness's
         // entry the game refused, so the process that sent the line reads a refusal.
-        refuse_entry(connection, entry->character_name, "the game refused " + selected_name + " at admission.");
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name, "the game refused " + selected_name + " at admission.");
         return true;
     }
     if (admission == Admission::Reconnected) {
@@ -215,7 +247,7 @@ bool TokenEntryPolicy::try_enter(descriptor_data& connection, std::string_view l
 
     std::string refusal;
     if (!claim_account_session(connection, account_data, refusal)) {
-        refuse_entry(connection, entry->character_name,
+        refuse_entry(connection, RefusalCause::GameRule, entry->character_name,
             reason_or(refusal, "another session on the account forbids the character."));
         return true;
     }

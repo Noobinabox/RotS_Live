@@ -42,6 +42,8 @@ MINIMUM_READ_TIMEOUT_SECONDS = 0.005
 SEND_TIMEOUT_SECONDS = 5.0
 # How long command() and quit() read before they send, to discard text that arrived before them.
 PRE_COMMAND_DRAIN_SECONDS = 0.1
+# How long a login refusal cut short by a split read waits for the rest of its line.
+REFUSAL_LINE_SECONDS = 2.0
 
 
 class SessionTimeout(AssertionError):
@@ -241,14 +243,26 @@ class GameSession:
         """Like expect, but raises LoginRefused as soon as the game refuses the login instead of waiting out the timeout."""
         text = self.expect([*markers, ENTRY_REFUSED_MARKER, BAD_CREDENTIALS_MARKER, ONE_CHARACTER_ONLINE_MARKER], timeout)
         if ENTRY_REFUSED_MARKER in text:
-            refusal = next(line.strip() for line in text.splitlines() if ENTRY_REFUSED_MARKER in line)
+            refusal = self._whole_line(text, ENTRY_REFUSED_MARKER)
             raise LoginRefused(f"{self.character_name}: {refusal}")
         if BAD_CREDENTIALS_MARKER in text:
             raise LoginRefused(f"{self.character_name}: the server refused the account login: {BAD_CREDENTIALS_MARKER}")
         if ONE_CHARACTER_ONLINE_MARKER in text:
-            refusal = next(line.strip() for line in text.splitlines() if ONE_CHARACTER_ONLINE_MARKER in line)
+            refusal = self._whole_line(text, ONE_CHARACTER_ONLINE_MARKER)
             raise LoginRefused(f"{self.character_name}: {refusal} The game's rule: {ONE_CHARACTER_ONLINE_RULE}.")
         return text
+
+    def _whole_line(self, text: str, marker: str) -> str:
+        """The line of text holding marker, stripped; reads on when a split read cut it short, until its line ending, the connection's close or REFUSAL_LINE_SECONDS."""
+        deadline = time.monotonic() + REFUSAL_LINE_SECONDS
+        line_start = text.index(marker)
+        while not any(ending in text[line_start:] for ending in "\r\n") and time.monotonic() < deadline:
+            try:
+                self._pump(deadline)
+            except ConnectionError:
+                break
+            text += self._consume()
+        return next(line.strip() for line in text[line_start:].splitlines())
 
     def quit(self, timeout: float = 8.0) -> None:
         """Quits the game and closes the connection either way; raises QuitRefused when no farewell arrives.
